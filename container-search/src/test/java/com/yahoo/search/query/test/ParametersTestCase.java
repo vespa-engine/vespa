@@ -16,52 +16,54 @@ import static org.junit.Assert.assertEquals;
  */
 public class ParametersTestCase {
 
+    private final double delta = 0.000001;
+
     @Test
     public void testSettingRankProperty() {
-        Query query=new Query("?query=test&ranking.properties.dotProduct.X=(a:1,b:2)");
-        assertEquals("[(a:1,b:2)]",query.getRanking().getProperties().get("dotProduct.X").toString());
+        Query query = new Query("?query=test&ranking.properties.dotProduct.X=(a:1,b:2)");
+        assertEquals("[(a:1,b:2)]", query.getRanking().getProperties().get("dotProduct.X").toString());
     }
 
     @Test
     public void testSettingRankPropertyAsAlias() {
-        Query query=new Query("?query=test&rankproperty.dotProduct.X=(a:1,b:2)");
-        assertEquals("[(a:1,b:2)]",query.getRanking().getProperties().get("dotProduct.X").toString());
+        Query query = new Query("?query=test&rankproperty.dotProduct.X=(a:1,b:2)");
+        assertEquals("[(a:1,b:2)]", query.getRanking().getProperties().get("dotProduct.X").toString());
     }
 
     @Test
     public void testSettingRankFeature() {
-        Query query=new Query("?query=test&ranking.features.matches=3");
-        assertEquals("3",query.getRanking().getFeatures().get("matches").toString());
+        Query query = new Query("?query=test&ranking.features.matches=3");
+        assertEquals(3, query.getRanking().getFeatures().getDouble("matches").getAsDouble(), delta);
     }
 
     @Test
     public void testSettingRankFeatureAsAlias() {
-        Query query=new Query("?query=test&rankfeature.matches=3");
-        assertEquals("3",query.getRanking().getFeatures().get("matches").toString());
+        Query query = new Query("?query=test&rankfeature.matches=3");
+        assertEquals(3, query.getRanking().getFeatures().getDouble("matches").getAsDouble(), delta);
     }
 
     @Test
     public void testSettingRankPropertyWithQueryProfile() {
-        Query query=new Query(HttpRequest.createTestRequest("?query=test&ranking.properties.dotProduct.X=(a:1,b:2)", Method.GET), createProfile());
-        assertEquals("[(a:1,b:2)]",query.getRanking().getProperties().get("dotProduct.X").toString());
+        Query query = new Query(HttpRequest.createTestRequest("?query=test&ranking.properties.dotProduct.X=(a:1,b:2)", Method.GET), createProfile());
+        assertEquals("[(a:1,b:2)]", query.getRanking().getProperties().get("dotProduct.X").toString());
     }
 
     @Test
     public void testSettingRankPropertyAsAliasWithQueryProfile() {
-        Query query=new Query(HttpRequest.createTestRequest("?query=test&rankproperty.dotProduct.X=(a:1,b:2)", Method.GET), createProfile());
-        assertEquals("[(a:1,b:2)]",query.getRanking().getProperties().get("dotProduct.X").toString());
+        Query query = new Query(HttpRequest.createTestRequest("?query=test&rankproperty.dotProduct.X=(a:1,b:2)", Method.GET), createProfile());
+        assertEquals("[(a:1,b:2)]", query.getRanking().getProperties().get("dotProduct.X").toString());
     }
 
     @Test
     public void testSettingRankFeatureWithQueryProfile() {
-        Query query=new Query(HttpRequest.createTestRequest("?query=test&ranking.features.matches=3", Method.GET), createProfile());
-        assertEquals("3",query.getRanking().getFeatures().get("matches").toString());
+        Query query = new Query(HttpRequest.createTestRequest("?query=test&ranking.features.matches=3", Method.GET), createProfile());
+        assertEquals(3, query.getRanking().getFeatures().getDouble("matches").getAsDouble(), delta);
     }
 
     @Test
     public void testSettingRankFeatureAsAliasWithQueryProfile() {
-        Query query=new Query(HttpRequest.createTestRequest("?query=test&rankfeature.matches=3", Method.GET), createProfile());
-        assertEquals("3",query.getRanking().getFeatures().get("matches").toString());
+        Query query = new Query(HttpRequest.createTestRequest("?query=test&rankfeature.matches=3", Method.GET), createProfile());
+        assertEquals(3, query.getRanking().getFeatures().getDouble("matches").getAsDouble(), delta);
     }
 
     public CompiledQueryProfile createProfile() {

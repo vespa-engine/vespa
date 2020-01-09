@@ -489,6 +489,7 @@ public class GroupingExecutorTestCase {
      */
     @Test
     public void testRankProperties() {
+        final double delta = 0.000000001;
         Execution exc = newExecution(new GroupingExecutor());
         {
             Query query = new Query("?query=foo");
@@ -496,21 +497,21 @@ public class GroupingExecutorTestCase {
         }
         {
             Query query = new Query("?query=foo&rankfeature.fieldMatch(foo)=2");
-            assertEquals("2", query.getRanking().getFeatures().get("fieldMatch(foo)"));
+            assertEquals(2, query.getRanking().getFeatures().getDouble("fieldMatch(foo)").getAsDouble(), delta);
             exc.search(query);
-            assertEquals("2", query.getRanking().getFeatures().get("fieldMatch(foo)"));
+            assertEquals(2.0, query.getRanking().getFeatures().getDouble("fieldMatch(foo)").getAsDouble(), delta);
         }
         {
             Query query = new Query("?query=foo&rankfeature.query(now)=4");
-            assertEquals("4", query.getRanking().getFeatures().get("query(now)"));
+            assertEquals(4, query.getRanking().getFeatures().getDouble("query(now)").getAsDouble(), delta);
             exc.search(query);
-            assertEquals("4", query.getRanking().getProperties().get("now").get(0));
+            assertEquals("4.0", query.getRanking().getProperties().get("now").get(0));
         }
         {
             Query query = new Query("?query=foo&rankfeature.$bar=8");
-            assertEquals("8", query.getRanking().getFeatures().get("$bar"));
+            assertEquals(8, query.getRanking().getFeatures().getDouble("$bar").getAsDouble(), delta);
             exc.search(query);
-            assertEquals("8", query.getRanking().getProperties().get("bar").get(0));
+            assertEquals("8.0", query.getRanking().getProperties().get("bar").get(0));
         }
         {
             Query query = new Query("?query=foo&rankproperty.bar=8");
@@ -520,12 +521,12 @@ public class GroupingExecutorTestCase {
         }
         {
             Query query = new Query("?query=foo&rankfeature.fieldMatch(foo)=2&rankfeature.query(now)=4&rankproperty.bar=8");
-            assertEquals("2", query.getRanking().getFeatures().get("fieldMatch(foo)"));
-            assertEquals("4", query.getRanking().getFeatures().get("query(now)"));
+            assertEquals(2, query.getRanking().getFeatures().getDouble("fieldMatch(foo)").getAsDouble(), delta);
+            assertEquals(4, query.getRanking().getFeatures().getDouble("query(now)").getAsDouble(), delta);
             assertEquals("8", query.getRanking().getProperties().get("bar").get(0));
             exc.search(query);
-            assertEquals("2", query.getRanking().getFeatures().get("fieldMatch(foo)"));
-            assertEquals("4", query.getRanking().getProperties().get("now").get(0));
+            assertEquals(2, query.getRanking().getFeatures().getDouble("fieldMatch(foo)").getAsDouble(), delta);
+            assertEquals("4.0", query.getRanking().getProperties().get("now").get(0));
             assertEquals("8", query.getRanking().getProperties().get("bar").get(0));
         }
     }

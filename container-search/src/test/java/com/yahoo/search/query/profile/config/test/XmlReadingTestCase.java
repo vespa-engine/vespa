@@ -310,12 +310,12 @@ public class XmlReadingTestCase {
         CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase1").compile();
 
         Query query;
-        query=new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),registry.getComponent("default"));
-        assertEquals("0.0",query.properties().get("ranking.features.b"));
-        assertEquals("0.0",query.properties().listProperties().get("ranking.features.b"));
-        query=new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),registry.getComponent("default"));
-        assertEquals("0.1",query.properties().get("ranking.features.b"));
-        assertEquals("0.1",query.properties().listProperties().get("ranking.features.b"));
+        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),registry.getComponent("default"));
+        assertEquals(0.0, query.properties().get("ranking.features.b"));
+        assertEquals("0.0", query.properties().listProperties().get("ranking.features.b"));
+        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),registry.getComponent("default"));
+        assertEquals(0.1, query.properties().get("ranking.features.b"));
+        assertEquals("0.1", query.properties().listProperties().get("ranking.features.b"));
     }
 
     @Test

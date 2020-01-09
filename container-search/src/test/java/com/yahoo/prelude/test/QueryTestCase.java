@@ -39,16 +39,16 @@ public class QueryTestCase {
     public void testSimpleQueryParsing () {
         Query q = newQuery("/search?query=foobar&offset=10&hits=20");
         assertEquals("foobar",((WordItem) q.getModel().getQueryTree().getRoot()).getWord());
-        assertEquals(10,q.getOffset());
-        assertEquals(20,q.getHits());
+        assertEquals(10, q.getOffset());
+        assertEquals(20, q.getHits());
     }
 
     @Test
     public void testAdvancedQueryParsing () {
         Query q = newQuery("/search?query=fOObar and kanoo&offset=10&hits=20&filter=-foo +bar&type=adv&suggestonly=true");
         assertEquals("AND (+(AND fOObar kanoo) -|foo) |bar", q.getModel().getQueryTree().getRoot().toString());
-        assertEquals(10,q.getOffset());
-        assertEquals(20,q.getHits());
+        assertEquals(10, q.getOffset());
+        assertEquals(20, q.getHits());
         assertEquals(true, q.properties().getBoolean("suggestonly", false));
     }
 
@@ -56,10 +56,10 @@ public class QueryTestCase {
     public void testAnyQueryParsing () {
         Query q = newQuery("/search?query=foobar and kanoo&offset=10&hits=10&type=any&suggestonly=true&filter=-fast.type:offensive&encoding=latin1");
         assertEquals("+(OR foobar and kanoo) -|fast.type:offensive", q.getModel().getQueryTree().getRoot().toString());
-        assertEquals(10,q.getOffset());
-        assertEquals(10,q.getHits());
+        assertEquals(10, q.getOffset());
+        assertEquals(10, q.getHits());
         assertEquals(true, q.properties().getBoolean("suggestonly", false));
-        assertEquals("latin1",q.getModel().getEncoding());
+        assertEquals("latin1", q.getModel().getEncoding());
     }
 
     @Test
@@ -71,8 +71,8 @@ public class QueryTestCase {
                             +"interest:www+yahoo+com!136"
                             +"&hits=20&offset=0&vectorranking=queryrank");
         assertEquals("/p13n", q.getHttpRequest().getUri().getPath());
-        assertEquals(0,q.getOffset());
-        assertEquals(20,q.getHits());
+        assertEquals(0, q.getOffset());
+        assertEquals(20, q.getHits());
         assertEquals("queryrank", q.properties().get("vectorranking"));
     }
 
@@ -84,7 +84,7 @@ public class QueryTestCase {
     @Test
     public void testGetParamInt() {
         Query q = newQuery("/search?query=foo%20bar&someint=10&notint=hello");
-        assertEquals(10,(int)q.properties().getInteger("someint"));
+        assertEquals(10, (int)q.properties().getInteger("someint"));
 
         // provoke an exception.  if exception is not triggered
         // we fail the test.
@@ -99,7 +99,7 @@ public class QueryTestCase {
     @Test
     public void testUtf8Decoding() {
         Query q = new Query("/?query=beyonc%C3%A9");
-        assertEquals("beyonc\u00e9",((WordItem) q.getModel().getQueryTree().getRoot()).getWord());
+        assertEquals("beyonc\u00e9", ((WordItem) q.getModel().getQueryTree().getRoot()).getWord());
     }
 
     @Test
@@ -226,14 +226,14 @@ public class QueryTestCase {
     public void testNaNHitValue() {
         assertQueryError(
                 "?query=test&hits=NaN",
-                containsString("Could not set 'hits' to 'NaN': Not a valid integer"));
+                containsString("Could not set 'hits' to 'NaN': 'NaN' is not a valid integer"));
     }
 
     @Test
     public void testNoneHitValue() {
         assertQueryError(
                 "?query=test&hits=(none)",
-                containsString("Could not set 'hits' to '(none)': Not a valid integer"));
+                containsString("Could not set 'hits' to '(none)': '(none)' is not a valid integer"));
     }
 
     @Test
@@ -247,14 +247,14 @@ public class QueryTestCase {
     public void testNaNOffsetValue() {
         assertQueryError(
                 "?query=test&offset=NaN",
-                containsString("Could not set 'offset' to 'NaN': Not a valid integer"));
+                containsString("Could not set 'offset' to 'NaN': 'NaN' is not a valid integer"));
     }
 
     @Test
     public void testNoneOffsetValue() {
         assertQueryError(
                 "?query=test&offset=(none)",
-                containsString("Could not set 'offset' to '(none)': Not a valid integer"));
+                containsString("Could not set 'offset' to '(none)': '(none)' is not a valid integer"));
     }
 
     @Test
@@ -263,7 +263,7 @@ public class QueryTestCase {
                 "?query=test&hits=(none)&offset=-10",
                 anyOf(
                         containsString("Could not set 'offset' to '-10': Must be a positive number"),
-                        containsString("Could not set 'hits' to '(none)': Not a valid integer")));
+                        containsString("Could not set 'hits' to '(none)': '(none)' is not a valid integer")));
     }
 
     @Test
@@ -271,7 +271,7 @@ public class QueryTestCase {
         assertQueryError(
                 "?query=test&hits=(none)&offset=-10",
                 anyOf(
-                        containsString("Could not set 'hits' to '(none)': Not a valid integer"),
+                        containsString("Could not set 'hits' to '(none)': '(none)' is not a valid integer"),
                         containsString("Could not set 'offset' to '-10': Must be a positive number")));
     }
 
@@ -325,7 +325,7 @@ public class QueryTestCase {
         query.getRanking().setFreshness("now");
 
         assertTrue(query.getRanking().getFreshness().getSystemTimeInSecondsSinceEpoch() >= query.getRanking().getFreshness().getRefTime());
-        int presize= query.errors().size();
+        int presize = query.errors().size();
         query.getRanking().setFreshness("sometimeslater");
 
         int postsize = query.errors().size();
@@ -335,12 +335,12 @@ public class QueryTestCase {
     @Test
     public void testCopy() {
         Query qs = newQuery("?query=test&rankfeature.something=2");
-        assertEquals("test",qs.getModel().getQueryTree().toString());
+        assertEquals("test", qs.getModel().getQueryTree().toString());
         assertEquals((int)qs.properties().getInteger("rankfeature.something"),2);
         Query qp = new Query(qs);
         assertEquals("test", qp.getModel().getQueryTree().getRoot().toString());
         assertFalse(qp.getRanking().getFeatures().isEmpty());
-        assertEquals("2", qp.getRanking().getFeatures().get("something"));
+        assertEquals(2.0, qp.getRanking().getFeatures().getDouble("something").getAsDouble(), 0.000001);
     }
 
     private Query newQuery(String queryString) {
