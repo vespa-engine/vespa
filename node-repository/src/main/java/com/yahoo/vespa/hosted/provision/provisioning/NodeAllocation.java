@@ -213,8 +213,7 @@ class NodeAllocation {
         if (node.state() != Node.State.active) return false;
         if (! node.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
 
-        return cluster.type() == ClusterSpec.Type.content ||
-               cluster.type() == ClusterSpec.Type.combined ||
+        return cluster.type().isContent() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleFlavor(node));
     }
 
