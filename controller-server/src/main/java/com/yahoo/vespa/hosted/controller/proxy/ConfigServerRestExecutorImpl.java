@@ -213,7 +213,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                                                         HostnameVerifier hostnameVerifier) {
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-proxy-client")
-                .setSslcontext(sslContextProvider.getIdentitySslContext())
+                .setSSLContext(sslContextProvider.getIdentitySslContext())
                 .setSSLHostnameVerifier(hostnameVerifier)
                 .setDefaultRequestConfig(config)
                 .setMaxConnPerRoute(10)

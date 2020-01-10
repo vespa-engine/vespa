@@ -87,7 +87,7 @@ class FlagsClient {
         return HttpClientBuilder.create()
                 .setUserAgent("controller-flags-v1-client")
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(5, /*retry on non-idempotent requests*/true))
-                .setSslcontext(identityProvider.getIdentitySslContext())
+                .setSSLContext(identityProvider.getIdentitySslContext())
                 .setSSLHostnameVerifier(new FlagTargetsHostnameVerifier(targets))
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout((int) Duration.ofSeconds(10).toMillis())
