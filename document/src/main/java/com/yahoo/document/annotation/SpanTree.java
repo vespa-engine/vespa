@@ -2,7 +2,6 @@
 package com.yahoo.document.annotation;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultiset;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
@@ -12,14 +11,9 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
+import org.apache.commons.collections.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A SpanTree holds a root node of a tree of SpanNodes, and a List of Annotations pointing to these nodes
@@ -678,8 +672,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         List<Annotation> annotationCollection = new LinkedList<Annotation>(getAnnotations());
         List<Annotation> otherAnnotations = new LinkedList<Annotation>(tree.getAnnotations());
 
-        return annotationCollection.size() == otherAnnotations.size() &&
-                ImmutableMultiset.copyOf(annotationCollection).equals(ImmutableMultiset.copyOf(otherAnnotations));
+        return annotationCollection.size() == otherAnnotations.size() && CollectionUtils.isEqualCollection(annotationCollection, otherAnnotations);
     }
 
     @Override
