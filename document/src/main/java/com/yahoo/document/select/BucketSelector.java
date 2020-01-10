@@ -39,7 +39,7 @@ public class BucketSelector {
      * when dealing with unknown bucket sets.
      *
      * @param selector The document selection string
-     * @return A list of buckets with arbitrary number of location bits set,
+     * @return a list of buckets with arbitrary number of location bits set,
      *         <i>or</i>, <code>null</code> if the document selection resulted
      *         in an unknown set
      * @throws ParseException if <code>selector</code> couldn't be parsed

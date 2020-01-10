@@ -13,17 +13,17 @@ import java.util.List;
 /**
  * Base class for classes capable of building vespa model.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public abstract class VespaModelBuilder {
-
 
     public abstract ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, AbstractConfigProducer parent);
     public abstract List<ServiceCluster> getClusters(DeployState pkg, AbstractConfigProducer parent);
 
     /**
      * Processing that requires access across plugins
-     * @param producerRoot The root producer.
+     *
+     * @param producerRoot the root producer.
      * @param configModelRepo a {@link com.yahoo.config.model.ConfigModelRepo instance}
      */
     public abstract void postProc(DeployLogger deployLogger, AbstractConfigProducer producerRoot, ConfigModelRepo configModelRepo);

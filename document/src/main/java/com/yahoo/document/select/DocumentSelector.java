@@ -24,8 +24,8 @@ public class DocumentSelector {
     /**
      * Creates a document selector from a Document Selection Language string
      *
-     * @param selector The string to parse as a selector.
-     * @throws ParseException Thrown if the string could not be parsed.
+     * @param selector the string to parse as a selector
+     * @throws ParseException Thrown if the string could not be parsed
      */
     public DocumentSelector(String selector) throws ParseException {
         SelectInput input = new SelectInput(selector);
@@ -45,8 +45,8 @@ public class DocumentSelector {
     /**
      * Returns true if the document referenced by this document operation is accepted by this selector
      *
-     * @param op A document operation
-     * @return True if the document is accepted.
+     * @param op a document operation
+     * @return true if the document is accepted
      * @throws RuntimeException if the evaluation enters an illegal state
      */
     public Result accepts(DocumentOperation op) {
@@ -56,8 +56,8 @@ public class DocumentSelector {
     /**
      * Returns true if the document referenced by this context is accepted by this selector
      *
-     * @param context The context to match in.
-     * @return True if the document is accepted.
+     * @param context the context to match in
+     * @return true if the document is accepted
      * @throws RuntimeException if the evaluation enters an illegal state
      */
     public Result accepts(Context context) {
@@ -65,11 +65,10 @@ public class DocumentSelector {
     }
 
     /**
-     * Returns the list of different variables resulting in a true state for this
-     * expression.
+     * Returns the list of different variables resulting in a true state for this expression
      *
-     * @param op The document to evaluate.
-     * @return True if the document is accepted.
+     * @param op the document to evaluate
+     * @return true if the document is accepted
      * @throws RuntimeException if the evaluation enters an illegal state
      */
     public ResultList getMatchingResultList(DocumentOperation op) {
@@ -77,32 +76,25 @@ public class DocumentSelector {
     }
 
     /**
-     * Returns the list of different variables resulting in a true state for this
-     * expression.
+     * Returns the list of different variables resulting in a true state for this expression
      *
-     * @param context The context to match in.
-     * @return True if the document is accepted.
+     * @param context the context to match in
+     * @return true if the document is accepted
      * @throws RuntimeException if the evaluation enters an illegal state
      */
     private ResultList getMatchingResultList(Context context) {
         return ResultList.toResultList(expression.evaluate(context));
     }
 
-    /**
-     * Returns this selector as a Document Selection Language string.
-     *
-     * @return The selection string.
-     */
+    /** Returns this selector as a Document Selection Language string */
+    @Override
     public String toString() {
         return expression.toString();
     }
 
-    /**
-     * Visits the expression tree.
-     *
-     * @param visitor The visitor to use.
-     */
+    /** Visits the expression tree */
     public void visit(Visitor visitor) {
         expression.accept(visitor);
     }
+
 }

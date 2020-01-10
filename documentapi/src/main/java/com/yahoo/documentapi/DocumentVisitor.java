@@ -4,20 +4,19 @@ package com.yahoo.documentapi;
 /**
  * Visitor that simply returns documents found in storage.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public class DocumentVisitor extends VisitorParameters {
 
     /**
-     * Create a document visitor.
+     * Creates a document visitor.
      *
-     * @param documentSelection The document selection criteria.
+     * @param documentSelection the document selection criteria.
      */
     public DocumentVisitor(String documentSelection) {
         super(documentSelection);
     }
 
-    // Inherited docs from VisitorParameters
     public String getVisitorLibrary() { return "DumpVisitor"; }
 
 }

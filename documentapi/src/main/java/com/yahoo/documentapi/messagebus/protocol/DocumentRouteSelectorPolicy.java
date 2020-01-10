@@ -119,9 +119,9 @@ public class DocumentRouteSelectorPolicy
      * This method runs the selector associated with the given location on the content of the message. If the selector
      * validates the location, this method returns true.
      *
-     * @param context   The routing context that contains the necessary data.
-     * @param routeName The candidate route whose selector to run.
-     * @return Whether or not to send to the given recipient.
+     * @param context   the routing context that contains the necessary data.
+     * @param routeName the candidate route whose selector to run.
+     * @return whether or not to send to the given recipient.
      */
     private boolean select(RoutingContext context, String routeName) {
         if (config == null) {

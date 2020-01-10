@@ -10,7 +10,7 @@ import com.yahoo.document.select.rule.ComparisonNode;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class DocumentCalculator {
 
@@ -36,4 +36,5 @@ public class DocumentCalculator {
             throw new IllegalArgumentException("Arithmetic exception " + e.getMessage(), e);
         }
     }
+
 }

@@ -22,9 +22,10 @@ import java.util.logging.Logger;
  * Concurrent access to a single VisitorIterator instance is not safe and must
  * be handled atomically by the caller.</p>
  *
- * @author <a href="mailto:vekterli@yahoo-inc.com">Tor Brede Vekterli</a>
+ * @author vekterli
  */
 public class VisitorIterator {
+
     private ProgressToken progressToken;
     private BucketSource bucketSource;
     private int distributionBitCount;
