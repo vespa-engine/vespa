@@ -11,7 +11,8 @@ namespace vespalib::tensor {
  * This returns a tensor which contains the matching cells in the two tensors,
  * with their values multiplied.
  *
- * If the two tensors have exactly the same dimensions, this is the Hadamard product.
+ * Only used when two tensors have exactly the same dimensions,
+ * this is the Hadamard product.
  */
 class SparseTensorMatch : public TensorOperation<SparseTensor>
 {
@@ -21,7 +22,6 @@ public:
     using Parent::_builder;
 private:
     void fastMatch(const TensorImplType &lhs, const TensorImplType &rhs);
-    void slowMatch(const TensorImplType &lhs, const TensorImplType &rhs);
 public:
     SparseTensorMatch(const TensorImplType &lhs, const TensorImplType &rhs);
 };
