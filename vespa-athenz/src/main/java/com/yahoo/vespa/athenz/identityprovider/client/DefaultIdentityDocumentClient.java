@@ -101,7 +101,7 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                                                         HostnameVerifier hostnameVerifier) {
         return HttpClientBuilder.create()
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
-                .setSSLContext(sslContext)
+                .setSslcontext(sslContext)
                 .setSSLHostnameVerifier(hostnameVerifier)
                 .setUserAgent("default-identity-document-client")
                 .setDefaultRequestConfig(RequestConfig.custom()

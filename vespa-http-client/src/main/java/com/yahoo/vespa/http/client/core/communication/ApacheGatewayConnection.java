@@ -413,7 +413,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             } else {
                 clientBuilder = HttpClientBuilder.create();
                 if (connectionParams.getSslContext() != null) {
-                    clientBuilder.setSSLContext(connectionParams.getSslContext());
+                    clientBuilder.setSslcontext(connectionParams.getSslContext());
                 } else {
                     SslContextBuilder builder = new SslContextBuilder();
                     if (connectionParams.getPrivateKey() != null && connectionParams.getCertificate() != null) {
@@ -422,7 +422,7 @@ class ApacheGatewayConnection implements GatewayConnection {
                     if (connectionParams.getCaCertificates() != null) {
                         builder.withTrustStore(connectionParams.getCaCertificates());
                     }
-                    clientBuilder.setSSLContext(builder.build());
+                    clientBuilder.setSslcontext(builder.build());
                 }
                 if (connectionParams.getHostnameVerifier() != null) {
                     clientBuilder.setSSLHostnameVerifier(connectionParams.getHostnameVerifier());

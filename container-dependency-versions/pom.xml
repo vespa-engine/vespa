@@ -313,7 +313,7 @@
                 <artifactId>javassist</artifactId>
                 <version>${javassist.version}</version>
             </dependency>
-	    <dependency> <!-- TODO Vespa 8: upgrade to newest version. Consider removing as provided dependency -->
+            <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
                 <version>${org.json.version}</version>

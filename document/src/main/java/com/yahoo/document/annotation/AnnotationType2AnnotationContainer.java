@@ -1,10 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.annotation;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
+import org.apache.commons.collections.map.MultiValueMap;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -12,11 +10,11 @@ import java.util.NoSuchElementException;
 
 /**
  *
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 // TODO: Should this be removed?
 public class AnnotationType2AnnotationContainer extends IteratingAnnotationContainer {
-    private final Multimap<AnnotationType, Annotation> annotationType2Annotation = Multimaps.newMultimap(new IdentityHashMap<>(), ArrayList::new);
+    private final MultiValueMap annotationType2Annotation = MultiValueMap.decorate(new IdentityHashMap());
 
     @Override
     void annotateAll(Collection<Annotation> annotations) {
