@@ -26,6 +26,12 @@ using vespalib::slime::inject;
 
 namespace search::docsummary {
 
+const std::vector<uint32_t>&
+MatchedElementsFilterDFW::get_matching_elements(uint32_t docid, GetDocsumsState& state) const
+{
+    return state.get_matching_elements(*_struct_field_mapper).get_matching_elements(docid, _input_field_name);
+}
+
 MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum,
                                                    std::shared_ptr<StructFieldMapper> struct_field_mapper)
     : _input_field_name(input_field_name),
@@ -68,33 +74,30 @@ decode_input_field_to_slime(const ResEntry& entry, search::RawBuf& target_buf, S
 }
 
 void
-convert_input_field_to_slime(const FieldValue& input_field_value, Slime& input_field_as_slime)
+filter_matching_elements_in_input_field_while_converting_to_slime(const FieldValue& input_field_value,
+                                                                  const std::vector<uint32_t>& matching_elems,
+                                                                  vespalib::slime::Inserter& target)
 {
-    // This is the same conversion that happens in proton::DocumentStoreAdapter.
-    auto converted = SummaryFieldConverter::convertSummaryField(false, input_field_value);
+    // This is a similar conversion that happens in proton::DocumentStoreAdapter.
+    // Only difference is that we filter matched elements on the fly.
+    auto converted = SummaryFieldConverter::convert_field_with_filter(false, input_field_value, matching_elems);
     // This should hold as we also have asserted that (type == ResType::RES_JSONSTRING);
     assert(converted->getClass().inherits(LiteralFieldValueB::classId));
     auto& literal = static_cast<const LiteralFieldValueB&>(*converted);
     vespalib::stringref buf = literal.getValueRef();
+    Slime input_field_as_slime;
     BinaryFormat::decode(vespalib::Memory(buf.data(), buf.size()), input_field_as_slime);
+    inject(input_field_as_slime.get(), target);
 }
 
 bool
 resolve_input_field_as_slime(GeneralResult& result, GetDocsumsState& state,
-                             int entry_idx, const vespalib::string& input_field_name,
-                             Slime& input_field_as_slime)
+                             int entry_idx, Slime& input_field_as_slime)
 {
     ResEntry* entry = result.GetEntry(entry_idx);
     if (entry != nullptr) {
         decode_input_field_to_slime(*entry, state._docSumFieldSpace, input_field_as_slime);
         return true;
-    } else {
-        // Use the document instance if the input field is not in the docsum blob.
-        auto field_value = result.get_field_value(input_field_name);
-        if (field_value) {
-            convert_input_field_to_slime(*field_value, input_field_as_slime);
-            return true;
-        }
     }
     return false;
 }
@@ -124,12 +127,16 @@ MatchedElementsFilterDFW::insertField(uint32_t docid, GeneralResult* result, Get
     assert(type == ResType::RES_JSONSTRING);
     int entry_idx = result->GetClass()->GetIndexFromEnumValue(_input_field_enum);
     Slime input_field;
-    if (resolve_input_field_as_slime(*result, *state, entry_idx, _input_field_name, input_field)) {
+    if (resolve_input_field_as_slime(*result, *state, entry_idx, input_field)) {
         Slime output_field;
-        filter_matching_elements_in_input_field(input_field,
-                                                state->get_matching_elements(*_struct_field_mapper)
-                                                        .get_matching_elements(docid, _input_field_name), output_field);
+        filter_matching_elements_in_input_field(input_field, get_matching_elements(docid, *state), output_field);
         inject(output_field.get(), target);
+    } else {
+        // Use the document instance if the input field is not in the docsum blob.
+        auto field_value = result->get_field_value(_input_field_name);
+        if (field_value) {
+            filter_matching_elements_in_input_field_while_converting_to_slime(*field_value, get_matching_elements(docid, *state), target);
+        }
     }
 }
 

@@ -331,9 +331,44 @@ SummaryFieldValueConverter::~SummaryFieldValueConverter() = default;
 
 using namespace vespalib::slime::convenience;
 
+
+
 class SlimeFiller : public ConstFieldValueVisitor {
+private:
+    class MapFieldValueInserter {
+    private:
+        Cursor& _array;
+        Symbol _key_sym;
+        Symbol _val_sym;
+        bool _tokenize;
+
+    public:
+        MapFieldValueInserter(Inserter& parent_inserter, bool tokenize)
+            : _array(parent_inserter.insertArray()),
+              _key_sym(_array.resolve("key")),
+              _val_sym(_array.resolve("value")),
+              _tokenize(tokenize)
+        {
+        }
+        void insert_entry(const FieldValue& key, const FieldValue& value) {
+            Cursor& c = _array.addObject();
+            ObjectSymbolInserter ki(c, _key_sym);
+            ObjectSymbolInserter vi(c, _val_sym);
+            SlimeFiller key_conv(ki, _tokenize);
+            SlimeFiller val_conv(vi, _tokenize);
+
+            key.accept(key_conv);
+            value.accept(val_conv);
+        }
+    };
+
     Inserter    &_inserter;
     bool         _tokenize;
+    const std::vector<uint32_t>* _matching_elems;
+
+    bool filter_matching_elements() const {
+        return _matching_elems != nullptr;
+    }
 
     void visit(const AnnotationReferenceFieldValue & v ) override {
         (void)v;
@@ -351,20 +386,17 @@ class SlimeFiller : public ConstFieldValueVisitor {
     }
 
     void visit(const MapFieldValue & v) override {
-        Cursor &a = _inserter.insertArray();
-        Symbol keysym = a.resolve("key");
-        Symbol valsym = a.resolve("value");
-        for (const auto & entry : v) {
-            Cursor &c = a.addObject();
-            ObjectSymbolInserter ki(c, keysym);
-            ObjectSymbolInserter vi(c, valsym);
-            SlimeFiller keyConv(ki, _tokenize);
-            SlimeFiller valConv(vi, _tokenize);
-
-            const FieldValue &key = *(entry.first);
-            key.accept(keyConv);
-            const FieldValue &val = *(entry.second);
-            val.accept(valConv);
+        MapFieldValueInserter map_inserter(_inserter, _tokenize);
+        if (filter_matching_elements()) {
+            assert(v.has_no_erased_keys());
+            for (uint32_t id_to_keep : (*_matching_elems)) {
+                auto entry = v[id_to_keep];
+                map_inserter.insert_entry(*entry.first, *entry.second);
+            }
+        } else {
+            for (const auto &entry : v) {
+                map_inserter.insert_entry(*entry.first, *entry.second);
+            }
         }
     }
 
@@ -373,8 +405,14 @@ class SlimeFiller : public ConstFieldValueVisitor {
         if (value.size() > 0) {
             ArrayInserter ai(a);
             SlimeFiller conv(ai, _tokenize);
-            for (const FieldValue &fv : value) {
-                fv.accept(conv);
+            if (filter_matching_elements()) {
+                for (uint32_t id_to_keep : (*_matching_elems)) {
+                    value[id_to_keep].accept(conv);
+                }
+            } else {
+                for (const FieldValue &fv : value) {
+                    fv.accept(conv);
+                }
             }
         }
     }
@@ -481,20 +519,38 @@ class SlimeFiller : public ConstFieldValueVisitor {
 
 public:
     SlimeFiller(Inserter &inserter, bool tokenize)
-        : _inserter(inserter), _tokenize(tokenize) {}
+        : _inserter(inserter),
+          _tokenize(tokenize),
+          _matching_elems()
+    {}
+
+    SlimeFiller(Inserter& inserter, bool tokenize, const std::vector<uint32_t>* matching_elems)
+            : _inserter(inserter),
+              _tokenize(tokenize),
+              _matching_elems(matching_elems)
+    {}
 };
 
 class SlimeConverter : public FieldValueConverter {
+private:
     bool _tokenize;
+    const std::vector<uint32_t>* _matching_elems;
+
 public:
     SlimeConverter(bool tokenize)
-        : _tokenize(tokenize)
+        : _tokenize(tokenize),
+          _matching_elems()
+    {}
+
+    SlimeConverter(bool tokenize, const std::vector<uint32_t>& matching_elems)
+            : _tokenize(tokenize),
+              _matching_elems(&matching_elems)
     {}
 
     FieldValue::UP convert(const FieldValue &input) override {
         vespalib::Slime slime;
         SlimeInserter inserter(slime);
-        SlimeFiller visitor(inserter, _tokenize);
+        SlimeFiller visitor(inserter, _tokenize, _matching_elems);
         input.accept(visitor);
         search::RawBuf rbuf(4096);
         search::SlimeOutputRawBufAdapter adapter(rbuf);
@@ -512,6 +568,15 @@ SummaryFieldConverter::convertSummaryField(bool markup,
 {
     SlimeConverter subConv(markup);
     return SummaryFieldValueConverter(markup, subConv).convert(value);
+}
+
+FieldValue::UP
+SummaryFieldConverter::convert_field_with_filter(bool markup,
+                                                 const document::FieldValue& value,
+                                                 const std::vector<uint32_t>& matching_elems)
+{
+    SlimeConverter sub_conv(markup, matching_elems);
+    return SummaryFieldValueConverter(markup, sub_conv).convert(value);
 }
 
 
