@@ -27,6 +27,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
 
 
     private static class GcOptions {
+
         public final int interval;
         public final String selection;
 
@@ -42,6 +43,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final boolean hasIndexedDocumentType;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
+
         ContentCluster parent;
 
         public Builder(ContentCluster parent) {

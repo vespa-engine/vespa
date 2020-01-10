@@ -17,22 +17,22 @@ public interface ExpressionNode {
     /**
      * Evaluate the content of this node based on document object, and return that value.
      *
-     * @param doc The document to evaluate over.
-     * @return The value of this.
+     * @param doc the document to evaluate over.
+     * @return the value of this.
      */
     Object evaluate(Context doc);
 
     /**
      * Returns the set of bucket ids covered by this node.
      *
-     * @param factory The factory used by the current application.
+     * @param factory the factory used by the current application.
      */
     BucketSet getBucketSet(BucketIdFactory factory);
 
     /**
      * Perform visitation of this node.
      *
-     * @param visitor The visitor that wishes to visit the node.
+     * @param visitor the visitor that wishes to visit the node.
      */
     void accept(Visitor visitor);
 

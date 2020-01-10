@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
  * @author ollivir
  */
 public class SearchPath {
+
     /**
      * Parse the search path and select nodes from the given cluster based on it.
      *
@@ -193,7 +194,7 @@ public class SearchPath {
     private static Pair<String, String> halveAt(char divider, String string) {
         int pos = string.indexOf(divider);
         if (pos >= 0) {
-            return new Pair<>(string.substring(0, pos), string.substring(pos + 1, string.length()));
+            return new Pair<>(string.substring(0, pos), string.substring(pos + 1));
         }
         return new Pair<>(string, "");
     }
