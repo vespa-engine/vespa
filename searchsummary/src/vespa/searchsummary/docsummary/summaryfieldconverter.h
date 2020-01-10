@@ -12,8 +12,16 @@ namespace search::docsummary {
 class SummaryFieldConverter
 {
 public:
-    static document::FieldValue::UP
-    convertSummaryField(bool markup, const document::FieldValue &value);
+    static document::FieldValue::UP convertSummaryField(bool markup, const document::FieldValue &value);
+
+    /**
+     * Converts the given field value to slime, only keeping the elements that are contained in the matching elements vector.
+     *
+     * Filtering occurs when the field value is an ArrayFieldValue or MapFieldValue.
+     */
+    static document::FieldValue::UP convert_field_with_filter(bool markup,
+                                                              const document::FieldValue& value,
+                                                              const std::vector<uint32_t>& matching_elems);
 };
 
 }

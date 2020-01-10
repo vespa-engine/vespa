@@ -18,6 +18,8 @@ private:
     uint32_t _input_field_enum;
     std::shared_ptr<StructFieldMapper> _struct_field_mapper;
 
+    const std::vector<uint32_t>& get_matching_elements(uint32_t docid, GetDocsumsState& state) const;
+
 public:
     MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum,
                              std::shared_ptr<StructFieldMapper> struct_field_mapper);

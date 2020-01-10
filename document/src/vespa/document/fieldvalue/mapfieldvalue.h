@@ -72,8 +72,8 @@ public:
         mutable pair   _current;
     };
     class const_iterator {
-        typedef std::pair<const FieldValue *, const FieldValue *> pair;
     public:
+        typedef std::pair<const FieldValue *, const FieldValue *> pair;
         const_iterator(const MapFieldValue & map, size_t index) : _map(&map), _index(index) { }
         bool operator == (const const_iterator & rhs) const { return _map == rhs._map && _index == rhs._index; }
         bool operator != (const const_iterator & rhs) const { return _map != rhs._map || _index != rhs._index; }
@@ -146,6 +146,20 @@ public:
 
     const_iterator find(const FieldValue& fv) const;
     iterator find(const FieldValue& fv);
+
+    bool has_no_erased_keys() const {
+        return (_keys->size() == _count) && (_values->size() == _count);
+    }
+
+    /**
+     * Returns the key-value pair at the given position in the underlying arrays.
+     *
+     * Note: Should only be used when has_no_erased_keys() returns true.
+     * Otherwise you might access elements that are conceptually removed.
+     */
+    const_iterator::pair operator[](size_t idx) const {
+        return const_iterator::pair(&(*_keys)[idx], &(*_values)[idx]);
+    }
 
     FieldValue::UP createValue() const;
 
