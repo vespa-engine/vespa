@@ -19,7 +19,7 @@ import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterC
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
-import com.yahoo.vespa.model.application.validation.first.AccessControlValidator;
+import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -91,7 +91,7 @@ public class Validation {
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
 }
