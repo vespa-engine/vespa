@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.annotation;
 
-import org.apache.commons.collections.map.MultiValueMap;
+
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,10 +15,10 @@ import java.util.List;
 /**
  * TODO: Should this be removed?
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 class SpanNode2AnnotationContainer extends AnnotationContainer {
-    private final MultiValueMap spanNode2Annotation = MultiValueMap.decorate(new IdentityHashMap());
+    private final Multimap<SpanNode, Annotation> spanNode2Annotation = Multimaps.newMultimap(new IdentityHashMap<>(), ArrayList::new);
 
     @Override
     void annotateAll(Collection<Annotation> annotations) {
@@ -43,7 +45,7 @@ class SpanNode2AnnotationContainer extends AnnotationContainer {
     @Override
     @SuppressWarnings("unchecked")
     Iterator<Annotation> iterator(SpanNode node) {
-        Collection<Annotation> annotationsForNode = spanNode2Annotation.getCollection(node);
+        Collection<Annotation> annotationsForNode = spanNode2Annotation.get(node);
         if (annotationsForNode == null) {
             return Collections.<Annotation>emptyList().iterator();
         }
@@ -63,7 +65,7 @@ class SpanNode2AnnotationContainer extends AnnotationContainer {
         }
         List<Collection<Annotation>> annotationLists = new ArrayList<Collection<Annotation>>(nodes.size());
         for (SpanNode includedNode : nodes.keySet()) {
-            Collection<Annotation> includedAnnotations = spanNode2Annotation.getCollection(includedNode);
+            Collection<Annotation> includedAnnotations = spanNode2Annotation.get(includedNode);
             if (includedAnnotations != null) {
                 annotationLists.add(includedAnnotations);
             }
