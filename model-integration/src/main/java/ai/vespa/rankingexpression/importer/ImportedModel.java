@@ -64,6 +64,9 @@ public class ImportedModel implements ImportedMlModel {
     @Override
     public String source() { return source; }
 
+    @Override
+    public String toString() { return "imported model '" + name + "' from " + source; }
+
     /** Returns an immutable map of the inputs of this */
     public Map<String, TensorType> inputs() { return Collections.unmodifiableMap(inputs); }
 

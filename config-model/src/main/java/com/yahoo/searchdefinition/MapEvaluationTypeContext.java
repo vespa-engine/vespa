@@ -138,6 +138,11 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 return featureTensorType.get();
             }
 
+            // A directly injected identifier? (Useful for stateless model evaluation)
+            if (reference.isIdentifier() && featureTypes.containsKey(reference)) {
+                return featureTypes.get(reference);
+            }
+
             // We do not know what this is - since we do not have complete knowledge about the match features
             // in Java we must assume this is a match feature and return the double type - which is the type of
             // all match features
