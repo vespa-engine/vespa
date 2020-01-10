@@ -3,29 +3,22 @@
 #include "sparse_tensor_address_combiner.h"
 #include "sparse_tensor_address_decoder.h"
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/visit_ranges.h>
 
 namespace vespalib::tensor::sparse {
 
 TensorAddressCombiner::TensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs)
 {
-    auto rhsItr = rhs.dimensions().cbegin();
-    auto rhsItrEnd = rhs.dimensions().cend();
-    for (auto &lhsDim : lhs.dimensions()) {
-        while (rhsItr != rhsItrEnd && rhsItr->name < lhsDim.name) {
-            _ops.push_back(AddressOp::RHS);
-            ++rhsItr;
-        }
-        if (rhsItr != rhsItrEnd && rhsItr->name == lhsDim.name) {
-            _ops.push_back(AddressOp::BOTH);
-            ++rhsItr;
-        } else {
-            _ops.push_back(AddressOp::LHS);
-        }
-    }
-    while (rhsItr != rhsItrEnd) {
-        _ops.push_back(AddressOp::RHS);
-        ++rhsItr;
-    }
+    auto visitor = overload{
+        [this](visit_ranges_first, const auto &) { _ops.push_back(AddressOp::LHS); },
+        [this](visit_ranges_second, const auto &) { _ops.push_back(AddressOp::RHS); },
+        [this](visit_ranges_both, const auto &, const auto &) { _ops.push_back(AddressOp::BOTH); }
+    };
+    visit_ranges(visitor,
+                 lhs.dimensions().cbegin(), lhs.dimensions().cend(),
+                 rhs.dimensions().cbegin(), rhs.dimensions().cend(),
+                 [](const auto & li, const auto & ri) { return li.name < ri.name; });
 }
 
 TensorAddressCombiner::~TensorAddressCombiner() = default;
