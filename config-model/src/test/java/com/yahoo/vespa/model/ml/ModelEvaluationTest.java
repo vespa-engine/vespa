@@ -121,26 +121,32 @@ public class ModelEvaluationTest {
 
         Model tensorflow_mnist = evaluator.models().get("mnist_saved");
         assertNotNull(tensorflow_mnist);
+        assertEquals(1, tensorflow_mnist.functions().size());
         assertNotNull(tensorflow_mnist.evaluatorOf("serving_default"));
         assertNotNull(tensorflow_mnist.evaluatorOf("serving_default", "y"));
         assertNotNull(tensorflow_mnist.evaluatorOf("serving_default.y"));
         assertNotNull(evaluator.evaluatorOf("mnist_saved", "serving_default.y"));
         assertNotNull(evaluator.evaluatorOf("mnist_saved", "serving_default", "y"));
+        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), tensorflow_mnist.functions().get(0).argumentTypes().get("input"));
 
         Model onnx_mnist_softmax = evaluator.models().get("mnist_softmax");
         assertNotNull(onnx_mnist_softmax);
+        assertEquals(1, onnx_mnist_softmax.functions().size());
         assertNotNull(onnx_mnist_softmax.evaluatorOf());
         assertNotNull(onnx_mnist_softmax.evaluatorOf("default"));
         assertNotNull(onnx_mnist_softmax.evaluatorOf("default", "add"));
         assertNotNull(onnx_mnist_softmax.evaluatorOf("default.add"));
         assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default.add"));
         assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default", "add"));
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[],d1[784])"), onnx_mnist_softmax.functions().get(0).argumentTypes().get("Placeholder"));
 
         Model tensorflow_mnist_softmax = evaluator.models().get("mnist_softmax_saved");
         assertNotNull(tensorflow_mnist_softmax);
+        assertEquals(1, tensorflow_mnist_softmax.functions().size());
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf());
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default"));
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default", "y"));
+        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), tensorflow_mnist_softmax.functions().get(0).argumentTypes().get("Placeholder"));
     }
 
     private final String mnistProfile =

@@ -102,8 +102,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
 
-
-        // Bound toi a function argument, and not to a same-named identifier (which would lead to a loop)?
+        // Bound to a function argument, and not to a same-named identifier (which would lead to a loop)?
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent() && ! binding.get().equals(reference.toString())) {
             try {
@@ -137,6 +136,11 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             Optional<TensorType> featureTensorType = tensorFeatureType(reference);
             if (featureTensorType.isPresent()) {
                 return featureTensorType.get();
+            }
+
+            // A directly injected identifier? (Useful for stateless model evaluation)
+            if (reference.isIdentifier() && featureTypes.containsKey(reference)) {
+                return featureTypes.get(reference);
             }
 
             // We do not know what this is - since we do not have complete knowledge about the match features
