@@ -5,8 +5,6 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -52,7 +50,6 @@ public abstract class ContainerModelBuilderTestBase {
             "  </nodes>";
 
     protected MockRoot root;
-    protected boolean isHosted = false;
 
     public static void createModel(MockRoot root, DeployState deployState, VespaModel vespaModel, Element... containerElems) {
         for (Element containerElem : containerElems) {
@@ -65,7 +62,7 @@ public abstract class ContainerModelBuilderTestBase {
     }
 
     public static void createModel(MockRoot root, Element... containerElems) {
-        createModel(root, root.getDeployState(), null, containerElems);
+        createModel(root, DeployState.createTestState(), null, containerElems);
     }
 
     public static void createModel(MockRoot root, DeployLogger testLogger, Element... containerElems) {
@@ -80,11 +77,7 @@ public abstract class ContainerModelBuilderTestBase {
 
     @Before
     public void prepareTest() {
-        root = new MockRoot("root",
-                            new DeployState.Builder()
-                                    .applicationPackage(new MockApplicationPackage.Builder().build())
-                                    .properties(new TestProperties().setHostedVespa(isHosted))
-                                    .build());
+        root = new MockRoot("root");
     }
 
     protected ComponentsConfig componentsConfig() {

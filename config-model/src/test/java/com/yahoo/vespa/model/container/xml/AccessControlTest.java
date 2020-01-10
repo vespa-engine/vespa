@@ -7,8 +7,8 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
-import com.yahoo.vespa.model.container.http.Binding;
 import com.yahoo.vespa.model.container.http.Http;
+import com.yahoo.vespa.model.container.http.Binding;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import org.junit.Test;
@@ -43,11 +43,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             "/statistics/",
             StateHandler.STATE_API_ROOT,
             ContainerCluster.ROOT_HANDLER_PATH);
-
-    public AccessControlTest() {
-        // Note: isHosted is assigned in the constructor as it is used by a @Before annotated method in the super class.
-        isHosted = true;
-    }
 
     @Test
     public void access_control_filter_chain_is_set_up() {
