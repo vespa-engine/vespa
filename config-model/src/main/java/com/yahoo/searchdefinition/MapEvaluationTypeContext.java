@@ -102,8 +102,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
 
-
-        // Bound toi a function argument, and not to a same-named identifier (which would lead to a loop)?
+        // Bound to a function argument, and not to a same-named identifier (which would lead to a loop)?
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent() && ! binding.get().equals(reference.toString())) {
             try {

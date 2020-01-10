@@ -387,11 +387,24 @@ public class ConvertedModel {
     private static void reduceBatchDimensions(RankingExpression expression, ImportedMlModel model,
                                               RankProfile profile, QueryProfileRegistry queryProfiles) {
         MapEvaluationTypeContext typeContext = profile.typeContext(queryProfiles);
+
+        // Add any missing inputs for type resolution
+        Set<String> functionNames = new HashSet<>();
+        addFunctionNamesIn(expression.getRoot(), functionNames, model);
+        for (String functionName : functionNames) {
+            Optional<TensorType> requiredType = model.inputTypeSpec(functionName).map(TensorType::fromSpec);
+            if (requiredType.isPresent()) {
+                Reference ref = Reference.fromIdentifier(functionName);
+                if (typeContext.getType(ref).equals(TensorType.empty)) {
+                    typeContext.setType(ref, requiredType.get());
+                }
+            }
+        }
+        typeContext.forgetResolvedTypes();
+
         TensorType typeBeforeReducing = expression.getRoot().type(typeContext);
 
         // Check generated functions for inputs to reduce
-        Set<String> functionNames = new HashSet<>();
-        addFunctionNamesIn(expression.getRoot(), functionNames, model);
         for (String functionName : functionNames) {
             if ( ! model.functions().containsKey(functionName)) continue;
 
