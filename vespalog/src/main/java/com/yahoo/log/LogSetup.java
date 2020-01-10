@@ -23,6 +23,8 @@ public class LogSetup {
     /** The log handler used by this */
     private static VespaLogHandler logHandler;
 
+    private static ZooKeeperFilter zooKeeperFilter = null;
+
     public static void clearHandlers () {
         Enumeration<String> names = LogManager.getLogManager().getLoggerNames();
         while (names.hasMoreElements()) {
@@ -147,7 +149,8 @@ public class LogSetup {
         logHandler = new VespaLogHandler(getLogTargetFromString(target), new VespaLevelControllerRepo(logCtlFn, lev, app), service, app);
         String zookeeperLogFile = System.getProperty("zookeeperlogfile");
         if (zookeeperLogFile != null) {
-            logHandler.setFilter(new ZooKeeperFilter(zookeeperLogFile));
+            zooKeeperFilter = new ZooKeeperFilter(zookeeperLogFile);
+            logHandler.setFilter(zooKeeperFilter);
         }
         Logger.getLogger("").addHandler(logHandler);
     }
@@ -155,6 +158,12 @@ public class LogSetup {
     /** Returns the log handler set up by this class */
     public static VespaLogHandler getLogHandler() {
         return logHandler;
+    }
+
+    /** Returns the log handler set up by this class */
+    public static void cleanup() {
+        if (zooKeeperFilter != null)
+            zooKeeperFilter.close();
     }
 
     /**
@@ -194,6 +203,10 @@ public class LogSetup {
             }
             fileHandler.publish(record);
             return false;
+        }
+
+        public void close() {
+            fileHandler.close();
         }
     }
 

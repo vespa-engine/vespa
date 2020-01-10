@@ -23,7 +23,6 @@ DISCRIMINATOR=`echo ${VESPA_CONFIG_ID} | md5sum | cut -d' ' -f1`
 CONTAINER_HOME="${VESPA_HOME}/var/jdisc_container/${DISCRIMINATOR}/"
 
 ZOOKEEPER_LOG_FILE="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}.log"
-rm -f $ZOOKEEPER_LOG_FILE*lck
 
 # common setup
 export VESPA_LOG_TARGET=file:${VESPA_HOME}/logs/vespa/vespa.log

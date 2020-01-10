@@ -121,7 +121,6 @@ fixlimits
 checkjava
 
 ZOOKEEPER_LOG_FILE="${VESPA_HOME}/logs/vespa/zookeeper.configserver.log"
-rm -f $ZOOKEEPER_LOG_FILE*lck
 
 # common setup
 export VESPA_LOG_TARGET=file:${VESPA_HOME}/logs/vespa/vespa.log
@@ -188,6 +187,6 @@ vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	-Djdisc.logger.level=ALL \
 	-Djdisc.logger.tag=jdisc/configserver \
 	-Dfile.encoding=UTF-8 \
-	-Dzookeeperlogfile=${VESPA_HOME}/logs/vespa/zookeeper.configserver.log \
+	-Dzookeeperlogfile=${ZOOKEEPER_LOG_FILE} \
 	-cp "$CP" \
 	com.yahoo.jdisc.core.StandaloneMain standalone-container-jar-with-dependencies.jar
