@@ -18,11 +18,9 @@ import java.util.TreeMap;
  *
  * @author mpolden
  */
-// TODO(mpolden): Remove this and replaces usages with NodeTypeVersionsSerializer after January 2020
 public class OsVersionsSerializer {
 
     private static final String VERSION_FIELD = "version";
-    private static final String ACTIVE_FIELD = "active";
 
     private OsVersionsSerializer() {}
 
@@ -32,7 +30,6 @@ public class OsVersionsSerializer {
         versions.forEach((nodeType, osVersion) -> {
             var versionObject = object.setObject(NodeSerializer.toString(nodeType));
             versionObject.setString(VERSION_FIELD, osVersion.toFullString());
-            versionObject.setBool(ACTIVE_FIELD, true);
         });
         try {
             return SlimeUtils.toJsonBytes(slime);
