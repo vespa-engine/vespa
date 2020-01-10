@@ -1,29 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("getweight_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
+#include <vespa/log/log.h>
+LOG_SETUP("getweight_test");
 
 using namespace search::query;
 using namespace search::queryeval;
 
-class Test : public vespalib::TestApp {
-public:
-    int32_t getWeight(const Node &node);
-    int Main() override;
-};
-
-int32_t
-Test::getWeight(const Node &node) {
-    return getWeightFromNode(node).percent();
+namespace {
+    int32_t
+    getWeight(const Node &node) {
+        return getWeightFromNode(node).percent();
+    }
 }
 
-int
-Test::Main()
+TEST("test variations of getWeight")
 {
-    TEST_INIT("getweight_test");
     EXPECT_EQUAL(0, getWeight(SimpleAnd()));
     EXPECT_EQUAL(0, getWeight(SimpleAndNot()));
     EXPECT_EQUAL(42, getWeight(SimpleEquiv(0, Weight(42))));
@@ -42,7 +37,6 @@ Test::Main()
     EXPECT_EQUAL(42, getWeight(SimpleWeightedSetTerm("bar", 1, Weight(42))));
     EXPECT_EQUAL(42, getWeight(SimpleDotProduct("bar", 1, Weight(42))));
     EXPECT_EQUAL(42, getWeight(SimpleWandTerm("bar", 1, Weight(42), 57, 67, 77.7)));
-    TEST_DONE();
 }
 
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }
