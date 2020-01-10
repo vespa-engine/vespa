@@ -17,6 +17,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- TODO: Remove when we no longer support JDK 8 clients -->
+    <maven.compiler.release>8</maven.compiler.release>
   </properties>
 
   <dependencies>
