@@ -6,7 +6,6 @@ import ai.vespa.hosted.api.Signatures;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
@@ -18,6 +17,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
@@ -66,6 +66,8 @@ import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
+import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -97,7 +99,6 @@ import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -1329,7 +1330,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(userId),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"User user.new-user is not allowed to launch services in Athenz domain domain1. Please reach out to the domain admin.\"}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"User user.new-user is not allowed to launch service domain1.service. Please reach out to the domain admin.\"}",
                               400);
 
         createTenantAndApplication();
@@ -1356,7 +1357,68 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(entity)
                                       .userIdentity(userId),
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.new-user. This may take about 15 minutes the first time.\",\"run\":1}");
+
     }
+
+    @Test
+    // Deploy to sandbox tenant launching a service from another domain.
+    public void developers_can_deploy_when_privileged() {
+        // Create an athenz domain where the developer is not yet authorized
+        UserId tenantAdmin = new UserId("tenant-admin");
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, tenantAdmin);
+        allowLaunchOfService(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"));
+
+        // Create the sandbox tenant and authorize the developer
+        UserId developer = new UserId("developer");
+        AthenzDomain sandboxDomain = new AthenzDomain("sandbox");
+        createAthenzDomainWithAdmin(sandboxDomain, developer);
+        AthenzTenantSpec tenantSpec = new AthenzTenantSpec(TenantName.from("sandbox"),
+                sandboxDomain,
+                new Property("vespa"),
+                Optional.empty());
+        AthenzCredentials credentials = new AthenzCredentials(
+                new AthenzPrincipal(new AthenzUser(developer.id())), sandboxDomain, OKTA_IT, OKTA_AT);
+        tester.controller().tenants().create(tenantSpec, credentials);
+        tester.controller().applications().createApplication(TenantAndApplicationId.from("sandbox", "myapp"), Optional.of(credentials));
+
+        // Create an application package referencing the service from the other domain
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
+                .build();
+
+        // deploy the application to a dev zone. Should fail since the developer is not authorized to launch the service
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
+        tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
+                        .data(entity)
+                        .userIdentity(developer),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"User user.developer is not allowed to launch service domain1.service. Please reach out to the domain admin.\"}",
+                400);
+
+        // Allow developer launch privilege to domain1.service. Deployment now completes.
+        AthenzDbMock.Domain domainMock = tester.athenzClientFactory().getSetup().getOrCreateDomain(ATHENZ_TENANT_DOMAIN);
+        domainMock.withPolicy("user." + developer.id(), "launch", "service.service");
+
+
+        tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
+                        .data(entity)
+                        .userIdentity(developer),
+                "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":1}",
+                200);
+
+        // To add temporary support allowing tenant admins to launch services
+        UserId developer2 = new UserId("developer2");
+        // to be able to deploy to sandbox tenant
+        tester.athenzClientFactory().getSetup().getOrCreateDomain(sandboxDomain).tenantAdmin(new AthenzUser(developer2.id()));
+        tester.athenzClientFactory().getSetup().getOrCreateDomain(ATHENZ_TENANT_DOMAIN).tenantAdmin(new AthenzUser(developer2.id()));
+        tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
+                        .data(entity)
+                        .userIdentity(developer2),
+                "{\"message\":\"Deployment started in run 2 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":2}",
+                200);
+
+    }
+
+
 
     @Test
     public void applicationWithRoutingPolicy() {
@@ -1450,9 +1512,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
      */
     private void allowLaunchOfService(com.yahoo.vespa.athenz.api.AthenzService service) {
         AthenzDbMock.Domain domainMock = tester.athenzClientFactory().getSetup().getOrCreateDomain(service.getDomain());
-        domainMock.services.put(service.getName(), new AthenzDbMock.Service(true));
+        domainMock.withPolicy(tester.controller().zoneRegistry().accessControlDomain().value()+".provider.*","launch", "service." + service.getName());
     }
-
 
     /**
      * In production this happens outside hosted Vespa, so there is no API for it and we need to reach down into the
