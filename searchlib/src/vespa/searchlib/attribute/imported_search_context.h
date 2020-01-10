@@ -38,6 +38,7 @@ class ImportedSearchContext : public ISearchContext {
     TargetLids                                      _targetLids;
     PostingListMerger<int32_t>                      _merger;
     bool                                            _fetchPostingsDone;
+    SearchContextParams                             _params;
 
     uint32_t getTargetLid(uint32_t lid) const {
         return _targetLids[lid];

@@ -3,7 +3,6 @@
 #include "imported_attribute_vector.h"
 #include "imported_attribute_vector_read_guard.h"
 #include "imported_search_context.h"
-#include <vespa/vespalib/util/exceptions.h>
 
 namespace search::attribute {
 

@@ -44,9 +44,9 @@ ImportedSearchContext::ImportedSearchContext(
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
       _targetLids(_reference_attribute.getTargetLids()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
-      _fetchPostingsDone(false)
+      _fetchPostingsDone(false),
+      _params(params)
 {
-
 }
 
 ImportedSearchContext::~ImportedSearchContext() = default;
@@ -73,6 +73,13 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
         }
     } else if (_merger.hasBitVector()) {
         return BitVectorIterator::create(_merger.getBitVector(), _merger.getDocIdLimit(), *matchData, strict);
+    }
+    if (_params.useBitVector()) {
+        if (!strict) {
+            return std::make_unique<FilterAttributeIteratorT<ImportedSearchContext>>(*this, matchData);
+        } else {
+            return std::make_unique<FilterAttributeIteratorStrict<ImportedSearchContext>>(*this, matchData);
+        }
     }
     if (!strict) {
         return std::make_unique<AttributeIteratorT<ImportedSearchContext>>(*this, matchData);

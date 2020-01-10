@@ -112,14 +112,17 @@ private:
     bool _invert;
     bool _valid;
     bool valid() const override { return _valid; }
-    int32_t onFind(DocId , int32_t , int32_t & ) const override {
-        assert(false);
-        return -1;
+    int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override final {
+        if ((elemId == 0) && _bv.testBit(docId)) {
+            weight = 1;
+            return 0;
+        }
+        weight = 0;
+        return  -1;
     }
 
-    int32_t onFind(DocId , int32_t ) const override {
-        assert(false);
-        return -1;
+    int32_t onFind(DocId docId, int32_t elemId) const override final {
+        return ((elemId == 0) && _bv.testBit(docId)) ? 0 : -1;
     }
 
 public:
