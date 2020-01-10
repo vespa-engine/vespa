@@ -23,6 +23,7 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
 
+import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -413,7 +414,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             } else {
                 clientBuilder = HttpClientBuilder.create();
                 if (connectionParams.getSslContext() != null) {
-                    clientBuilder.setSslcontext(connectionParams.getSslContext());
+                    setSslContext(clientBuilder, connectionParams.getSslContext());
                 } else {
                     SslContextBuilder builder = new SslContextBuilder();
                     if (connectionParams.getPrivateKey() != null && connectionParams.getCertificate() != null) {
@@ -422,7 +423,7 @@ class ApacheGatewayConnection implements GatewayConnection {
                     if (connectionParams.getCaCertificates() != null) {
                         builder.withTrustStore(connectionParams.getCaCertificates());
                     }
-                    clientBuilder.setSslcontext(builder.build());
+                    setSslContext(clientBuilder, builder.build());
                 }
                 if (connectionParams.getHostnameVerifier() != null) {
                     clientBuilder.setSSLHostnameVerifier(connectionParams.getHostnameVerifier());
@@ -452,6 +453,12 @@ class ApacheGatewayConnection implements GatewayConnection {
             );
             return clientBuilder.build();
         }
+    }
+
+    // Note: Using deprecated setSslcontext() to allow httpclient 4.4 on classpath (e.g unexpected Maven dependency resolution for test classpath)
+    @SuppressWarnings("deprecation")
+    private static void setSslContext(HttpClientBuilder builder, SSLContext sslContext) {
+        builder.setSslcontext(sslContext);
     }
 
 }
