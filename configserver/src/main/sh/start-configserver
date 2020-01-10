@@ -121,6 +121,7 @@ fixlimits
 checkjava
 
 ZOOKEEPER_LOG_FILE="${VESPA_HOME}/logs/vespa/zookeeper.configserver.log"
+rm -f $ZOOKEEPER_LOG_FILE*lck
 
 # common setup
 export VESPA_LOG_TARGET=file:${VESPA_HOME}/logs/vespa/vespa.log
