@@ -127,7 +127,11 @@ public class ZmsClientMock implements ZmsClient {
             return false;
         } else {
             AthenzDbMock.Domain domain = getDomainOrThrow(resource.getDomain(), false);
-            return domain.allows(identity, action, resource.getEntityName());
+            return domain.policies.stream()
+                    .anyMatch(policy ->
+                            policy.principalMatches(identity) &&
+                            policy.actionMatches(action) &&
+                            policy.resourceMatches(resource.getEntityName()));
         }
     }
 

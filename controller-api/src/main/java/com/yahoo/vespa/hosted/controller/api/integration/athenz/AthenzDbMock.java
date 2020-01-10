@@ -70,14 +70,6 @@ public class AthenzDbMock {
             return this;
         }
 
-        public boolean allows(AthenzIdentity identity, String action, String resource) {
-            return policies.stream()
-                    .anyMatch(policy ->
-                            policy.principalMatches(identity) &&
-                            policy.actionMatches(action) &&
-                            policy.resourceMatches(resource));
-        }
-
         /**
          * Simulates establishing Vespa tenancy in Athens.
          */
