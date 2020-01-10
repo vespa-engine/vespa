@@ -130,13 +130,11 @@ public class TensorTestCase {
         assertEquals("Mapped vector",          42, (int)dotProduct(vector(Type.mapped), vectors(Type.mapped, 2)));
         assertEquals("Indexed unbound vector", 42, (int)dotProduct(vector(3, Type.indexedUnbound), vectors(5, Type.indexedUnbound, 2)));
         assertEquals("Indexed unbound vector", 42, (int)dotProduct(vector(5, Type.indexedUnbound), vectors(3, Type.indexedUnbound, 2)));
-        assertEquals("Indexed bound vector",   42, (int)dotProduct(vector(3, Type.indexedBound), vectors(5, Type.indexedBound, 2)));
-        assertEquals("Indexed bound vector",   42, (int)dotProduct(vector(5, Type.indexedBound), vectors(3, Type.indexedBound, 2)));
+        assertEquals("Indexed bound vector",   42, (int)dotProduct(vector(3, Type.indexedBound), vectors(3, Type.indexedBound, 2)));
         assertEquals("Mapped matrix",          42, (int)dotProduct(vector(Type.mapped), matrix(Type.mapped, 2)));
         assertEquals("Indexed unbound matrix", 42, (int)dotProduct(vector(3, Type.indexedUnbound), matrix(5, Type.indexedUnbound, 2)));
         assertEquals("Indexed unbound matrix", 42, (int)dotProduct(vector(5, Type.indexedUnbound), matrix(3, Type.indexedUnbound, 2)));
-        assertEquals("Indexed bound matrix",   42, (int)dotProduct(vector(3, Type.indexedBound), matrix(5, Type.indexedBound, 2)));
-        assertEquals("Indexed bound matrix",   42, (int)dotProduct(vector(5, Type.indexedBound), matrix(3, Type.indexedBound, 2)));
+        assertEquals("Indexed bound matrix",   42, (int)dotProduct(vector(3, Type.indexedBound), matrix(3, Type.indexedBound, 2)));
         assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
         assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
         assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.mapped), matrix(Type.indexedUnbound, 2)));
