@@ -167,7 +167,8 @@
       "public static java.util.Timer getTaskRunner()",
       "public static void clearHandlers()",
       "public static void initVespaLogging(java.lang.String)",
-      "public static com.yahoo.log.VespaLogHandler getLogHandler()"
+      "public static com.yahoo.log.VespaLogHandler getLogHandler()",
+      "public static void cleanup()"
     ],
     "fields": []
   },

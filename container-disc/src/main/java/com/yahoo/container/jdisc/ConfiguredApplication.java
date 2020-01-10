@@ -367,6 +367,7 @@ public final class ConfiguredApplication implements Application {
         Container.get().shutdown();
 
         unregisterInSlobrok();
+        LogSetup.cleanup();
         log.info("Stop: Finished");
     }
 
