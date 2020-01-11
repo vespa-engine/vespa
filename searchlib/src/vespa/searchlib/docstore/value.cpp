@@ -46,7 +46,7 @@ namespace {
 
 vespalib::alloc::Alloc
 compact(size_t sz, vespalib::alloc::Alloc buf) {
-    if (sz <= (buf.size() << 2)) {
+    if (vespalib::roundUp2inN(sz) < vespalib::roundUp2inN(buf.size())) {
         vespalib::alloc::Alloc shrunk = buf.create(sz);
         memcpy(shrunk.get(), buf.get(), sz);
         return shrunk;
