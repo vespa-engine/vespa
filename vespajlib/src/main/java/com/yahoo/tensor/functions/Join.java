@@ -48,12 +48,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
 
     /** Returns the type resulting from applying Join to the two given types */
     public static TensorType outputType(TensorType a, TensorType b) {
-        try {
-            return new TensorType.Builder(false, a, b).build();
-        }
-        catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Can not join " + a + " and " + b, e);
-        }
+        return new TensorType.Builder(a, b).build();
     }
 
     public DoubleBinaryOperator combinator() { return combinator; }
@@ -80,14 +75,14 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return outputType(argumentA.type(context), argumentB.type(context));
+        return new TensorType.Builder(argumentA.type(context), argumentB.type(context)).build();
     }
 
     @Override
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
-        TensorType joinedType = outputType(a.type(), b.type());
+        TensorType joinedType = new TensorType.Builder(a.type(), b.type()).build();
         return evaluate(a, b, joinedType, combinator);
     }
 

@@ -26,6 +26,7 @@ public class TensorOptimizerTestCase {
         assertWillOptimize("d0[3]", "d0[3]");
         assertWillOptimize("d0[1]", "d0[1]", "d0");
         assertWillOptimize("d0[2]", "d0[2]", "d0");
+        assertWillOptimize("d0[1]", "d0[3]", "d0");
         assertWillOptimize("d0[3]", "d0[3]", "d0");
         assertWillOptimize("d0[3]", "d0[3],d1[2]", "d0");
         assertWillOptimize("d0[3],d1[2]", "d0[3]", "d0");
@@ -33,10 +34,10 @@ public class TensorOptimizerTestCase {
         assertWillOptimize("d0[2],d1[3]", "d1[3]", "d1");
         assertWillOptimize("d0[2],d2[2]", "d1[3],d2[2]", "d2");
         assertWillOptimize("d1[2],d2[2]", "d0[3],d2[2]", "d2");
-        assertWillOptimize("d0[1],d2[4]", "d1[3],d2[4]", "d2");
-        assertWillOptimize("d0[2],d2[4]", "d1[3],d2[4]", "d2");
-        assertWillOptimize("d0[2],d1[3]", "d0[2],d1[3]");
-        assertWillOptimize("d0[2],d1[3]", "d0[2],d1[3]", "d0,d1");
+        assertWillOptimize("d0[1],d2[2]", "d1[3],d2[4]", "d2");
+        assertWillOptimize("d0[2],d2[2]", "d1[3],d2[4]", "d2");
+        assertWillOptimize("d0[1],d1[2]", "d0[2],d1[3]");
+        assertWillOptimize("d0[1],d1[2]", "d0[2],d1[3]", "d0,d1");
         assertWillOptimize("d2[3],d3[4]", "d1[2],d2[3],d3[4]", "d2,d3");
         assertWillOptimize("d0[1],d2[3],d3[4]", "d1[2],d2[3],d3[4]", "d2,d3");
         assertWillOptimize("d0[1],d1[2],d2[3]", "d2[3],d3[4],d4[5]", "d2");

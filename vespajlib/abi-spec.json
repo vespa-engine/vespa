@@ -1278,7 +1278,6 @@
       "public void <init>()",
       "public void <init>(com.yahoo.tensor.TensorType$Value)",
       "public varargs void <init>(com.yahoo.tensor.TensorType[])",
-      "public varargs void <init>(boolean, com.yahoo.tensor.TensorType[])",
       "public void <init>(java.lang.Iterable)",
       "public void <init>(com.yahoo.tensor.TensorType$Value, java.lang.Iterable)",
       "public int rank()",
