@@ -42,6 +42,19 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len) {
     set(std::move(buf), len, CompressionConfig());
 }
 
+namespace {
+
+vespalib::alloc::Alloc
+compact(size_t sz, vespalib::alloc::Alloc buf) {
+    if (sz <= (buf.size() << 2)) {
+        vespalib::alloc::Alloc shrunk = buf.create(sz);
+        memcpy(shrunk.get(), buf.get(), sz);
+        return shrunk;
+    }
+    return buf;
+}
+
+}
 void
 Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression) {
     assert(len < std::numeric_limits<uint32_t>::max());
@@ -50,20 +63,16 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &com
     vespalib::ConstBufferRef input(buf.getData(), len);
     CompressionConfig::Type type = compress(compression, input, compressed, true);
     _compressedSize = compressed.getDataLen();
+    _compression = type;
+    _uncompressedSize = len;
+    _uncompressedCrc = XXH64(input.c_str(), input.size(), 0);
+    _buf = std::make_shared<Alloc>(compact(_compressedSize,
+            (buf.getData() == compressed.getData()) ? buf.stealBuffer() : compressed.stealBuffer()));
 
-    if (buf.getData() == compressed.getData()) {
-        // Uncompressed so we can just steal the underlying buffer.
-        _buf = std::make_shared<Alloc>(buf.stealBuffer());
-    } else {
-        _buf = std::make_shared<Alloc>(compressed.stealBuffer());
-    }
     assert(((type == CompressionConfig::NONE) &&
             (len == ssize_t(_compressedSize))) ||
            ((type != CompressionConfig::NONE) &&
             (len > ssize_t(_compressedSize))));
-    _compression = type;
-    _uncompressedSize = len;
-    _uncompressedCrc = XXH64(input.c_str(), input.size(), 0);
 }
 
 Value::Result
