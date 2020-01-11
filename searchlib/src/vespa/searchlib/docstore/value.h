@@ -42,6 +42,7 @@ public:
     Result decompressed() const;
 
     size_t size() const { return _compressedSize; }
+    size_t capacity() const { return _buf ? _buf->size() : 0; }
     bool empty() const { return size() == 0; }
     operator const void *() const { return get(); }
     const void *get() const;
