@@ -142,6 +142,15 @@ TEST("require that Value can store zstd compressed data") {
     verifyValue(S1, v);
 }
 
+TEST("require that Value is shrunk to fit compressed data") {
+    Value v = createValue(S1, CompressionConfig::ZSTD);
+    EXPECT_EQUAL(CompressionConfig::ZSTD, v.getCompression());
+    EXPECT_EQUAL(128u, v.size());
+    EXPECT_EQUAL(128u, v.capacity());
+    EXPECT_EQUAL(297u, v.getUncompressedSize());
+    verifyValue(S1, v);
+}
+
 TEST("require that Value can detect if output not equal to input") {
     Value v = createValue(S1, CompressionConfig::NONE);
     const_cast<uint8_t *>(static_cast<const uint8_t *>(v.get()))[8] ^= 0xff;
