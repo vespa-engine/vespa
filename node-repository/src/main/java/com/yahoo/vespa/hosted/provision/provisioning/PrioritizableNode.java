@@ -36,13 +36,20 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** This node does not exist in the node repository yet */
     final boolean isNewNode;
 
-    PrioritizableNode(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode) {
+    /** This node can be resized to the new NodeResources */
+    final boolean isResizable;
+
+    PrioritizableNode(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
+        if (isResizeable && isNewNode)
+            throw new IllegalArgumentException("A new node cannot be resizable");
+
         this.node = node;
         this.freeParentCapacity = freeParentCapacity;
         this.parent = parent;
         this.violatesSpares = violatesSpares;
         this.isSurplusNode = isSurplusNode;
         this.isNewNode = isNewNode;
+        this.isResizable = isResizeable;
     }
 
     /**
@@ -139,6 +146,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         private boolean violatesSpares;
         private boolean isSurplusNode;
         private boolean isNewNode;
+        private boolean isResizable;
 
         Builder(Node node) {
             this.node = node;
@@ -170,9 +178,14 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
             isNewNode = newNode;
             return this;
         }
+
+        Builder resizable(boolean resizable) {
+            isResizable = resizable;
+            return this;
+        }
         
         PrioritizableNode build() {
-            return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode);
+            return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
         }
     }
 
