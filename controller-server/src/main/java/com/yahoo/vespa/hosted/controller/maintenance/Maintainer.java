@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -33,15 +34,13 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     private final JobControl jobControl;
     private final ScheduledExecutorService service;
     private final String name;
-
-    /** The systems in which this maintainer should run */
-    private final Set<SystemName> activeSystems;
+    private final Set<SystemName> permittedSystems;
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl) {
         this(controller, interval, jobControl, null, EnumSet.allOf(SystemName.class));
     }
 
-    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> activeSystems) {
+    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> permittedSystems) {
         if (interval.isNegative() || interval.isZero())
             throw new IllegalArgumentException("Interval must be positive, but was " + interval);
 
@@ -49,7 +48,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
         this.name = name;
-        this.activeSystems = Set.copyOf(activeSystems);
+        this.permittedSystems = ImmutableSet.copyOf(permittedSystems);
 
         service = new ScheduledThreadPoolExecutor(1);
         long delay = staggeredDelay(controller.curator().cluster(), controller.hostname(), controller.clock().instant(), interval);
@@ -62,7 +61,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
-            if ( ! activeSystems.contains(controller.system())) {
+            if ( ! permittedSystems.contains(controller.system())) {
                 return;
             }
             if (jobControl.isActive(name())) {

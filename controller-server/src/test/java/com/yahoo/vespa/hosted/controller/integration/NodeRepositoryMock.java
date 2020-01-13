@@ -145,14 +145,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public void upgrade(ZoneId zone, NodeType type, Version version) {
-        this.targetVersions.compute(zone, (ignored, targetVersions) -> {
-            if (targetVersions == null) {
-                targetVersions = TargetVersions.EMPTY;
-            }
-            return targetVersions.withVespaVersion(type, version);
-        });
-        // Bump wanted version of each node. This is done by InfrastructureProvisioner in a real node repository.
-        nodeRepository.getOrDefault(zone, Map.of()).values()
+        nodeRepository.getOrDefault(zone, Collections.emptyMap()).values()
                       .stream()
                       .filter(node -> node.type() == type)
                       .map(node -> new Node.Builder(node).wantedVersion(version).build())
@@ -167,12 +160,6 @@ public class NodeRepositoryMock implements NodeRepository {
             }
             return targetVersions.withOsVersion(type, version);
         });
-        // Bump wanted version of each node. This is done by OsUpgradeActivator in a real node repository.
-        nodeRepository.getOrDefault(zone, Map.of()).values()
-                      .stream()
-                      .filter(node -> node.type() == type)
-                      .map(node -> new Node.Builder(node).wantedOsVersion(version).build())
-                      .forEach(node -> putByHostname(zone, node));
     }
 
     @Override

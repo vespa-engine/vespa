@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -34,9 +35,16 @@ public class OsUpgraderTest {
     private static final ZoneApi zone4 = ZoneApiMock.newBuilder().withId("prod.us-east-3").build();
     private static final ZoneApi zone5 = ZoneApiMock.newBuilder().withId("prod.us-north-1").withCloud("other").build();
 
-    private final ControllerTester tester = new ControllerTester();
-    private final OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
-                                                                                    new JobControl(tester.controller().curator()));
+    private ControllerTester tester;
+    private OsVersionStatusUpdater statusUpdater;
+
+    @Before
+    public void before() {
+        tester = new ControllerTester();
+        statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
+                                                   new JobControl(tester.controller().curator()));
+    }
+
     @Test
     public void upgrade_os() {
         OsUpgrader osUpgrader = osUpgrader(
