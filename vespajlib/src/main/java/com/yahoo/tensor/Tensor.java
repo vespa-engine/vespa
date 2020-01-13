@@ -516,9 +516,10 @@ public interface Tensor {
         default Builder cell(Cell cell, double value) {
             return cell(cell.getKey(), value);
         }
-        default Builder cell(Cell cell, float value) {
-            return cell(cell.getKey(), value);
-        }
+        default Builder cell(Cell cell, float value) { return cell(cell.getKey(), value); }
+
+        /** Adds the given cell to this tensor */
+        default Builder cell(Cell cell) { return cell(cell.getKey(), cell.getValue()); }
 
         Tensor build();
 
