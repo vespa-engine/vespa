@@ -98,7 +98,7 @@ public class TensorReader {
         expectCompositeEnd(buffer.currentToken());
     }
 
-    private static void readTensorBlocks(TokenBuffer buffer, Tensor.Builder builder) {
+    static void readTensorBlocks(TokenBuffer buffer, Tensor.Builder builder) {
         if ( ! (builder instanceof MixedTensor.BoundBuilder))
             throw new IllegalArgumentException("The 'blocks' field can only be used with mixed tensors with bound dimensions. " +
                                                "Use 'cells' or 'values' instead");

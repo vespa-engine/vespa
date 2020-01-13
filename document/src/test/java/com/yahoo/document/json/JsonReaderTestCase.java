@@ -1378,13 +1378,13 @@ public class JsonReaderTestCase {
 
     @Test
     public void testAssignUpdateOfEmptySparseTensor() {
-        assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithSparseTensor("{}"));
+        assertTensorAssignUpdateSparseField("tensor(x{},y{}):{}", createAssignUpdateWithSparseTensor("{}"));
     }
 
     @Test
     public void testAssignUpdateOfEmptyDenseTensor() {
         try {
-            assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithTensor("{}", "dense_unbound_tensor"));
+            assertTensorAssignUpdateSparseField("tensor(x{},y{}):{}", createAssignUpdateWithTensor("{}", "dense_unbound_tensor"));
         }
         catch (IllegalArgumentException e) {
             assertEquals("An indexed tensor must have a value",
@@ -1402,8 +1402,8 @@ public class JsonReaderTestCase {
 
     @Test
     public void testAssignUpdateOfTensorWithCells() {
-        assertTensorAssignUpdate("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                createAssignUpdateWithSparseTensor(inputJson("{",
+        assertTensorAssignUpdateSparseField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
+                                            createAssignUpdateWithSparseTensor(inputJson("{",
                         "  'cells': [",
                         "    { 'address': { 'x': 'a', 'y': 'b' },",
                         "      'value': 2.0 },",
@@ -1411,6 +1411,15 @@ public class JsonReaderTestCase {
                         "      'value': 3.0 }",
                         "  ]",
                         "}")));
+    }
+
+    @Test
+    public void testAssignUpdateOfTensorDenseShortForm() {
+        assertTensorAssignUpdateDenseField("tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]",
+                                            createAssignUpdateWithTensor(inputJson("{",
+                                                                        "  'values': [1,2,3,4,5,6]",
+                                                                        "}"),
+                                                              "dense_tensor"));
     }
 
     @Test
@@ -1485,6 +1494,24 @@ public class JsonReaderTestCase {
                         "  'operation': 'replace',",
                         "  'cells': [",
                         "    { 'address': { 'x': 'a', 'y': '0' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_with_replace_operation_mixed_block_short_form_array() {
+        assertTensorModifyUpdate("tensor(x{},y[3]):{a:[1,2,3]}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
+                                 inputJson("{",
+                                           "  'operation': 'replace',",
+                                           "  'blocks': [",
+                                           "    { 'address': { 'x': 'a' }, 'values': [1,2,3] } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_with_replace_operation_mixed_block_short_form_map() {
+        assertTensorModifyUpdate("tensor(x{},y[3]):{a:[1,2,3]}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
+                                 inputJson("{",
+                                           "  'operation': 'replace',",
+                                           "  'blocks': {",
+                                           "    'a': [1,2,3] } }"));
     }
 
     @Test
@@ -1830,10 +1857,18 @@ public class JsonReaderTestCase {
         assertEquals(1, update.getFieldUpdate(tensorFieldName).size());
     }
 
-    private static void assertTensorAssignUpdate(String expectedTensor, DocumentUpdate update) {
+    private static void assertTensorAssignUpdateSparseField(String expectedTensor, DocumentUpdate update) {
         assertEquals("testtensor", update.getId().getDocType());
         assertEquals(TENSOR_DOC_ID, update.getId().toString());
-        AssignValueUpdate assignUpdate = (AssignValueUpdate) getTensorField(update).getValueUpdate(0);
+        AssignValueUpdate assignUpdate = (AssignValueUpdate) getTensorField(update, "sparse_tensor").getValueUpdate(0);
+        TensorFieldValue fieldValue = (TensorFieldValue) assignUpdate.getValue();
+        assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
+    }
+
+    private static void assertTensorAssignUpdateDenseField(String expectedTensor, DocumentUpdate update) {
+        assertEquals("testtensor", update.getId().getDocType());
+        assertEquals(TENSOR_DOC_ID, update.getId().toString());
+        AssignValueUpdate assignUpdate = (AssignValueUpdate) getTensorField(update, "dense_tensor").getValueUpdate(0);
         TensorFieldValue fieldValue = (TensorFieldValue) assignUpdate.getValue();
         assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
     }
@@ -1895,7 +1930,11 @@ public class JsonReaderTestCase {
     }
 
     private static FieldUpdate getTensorField(DocumentUpdate update) {
-        FieldUpdate fieldUpdate = update.getFieldUpdate("sparse_tensor");
+        return getTensorField(update, "sparse_tensor");
+    }
+
+    private static FieldUpdate getTensorField(DocumentUpdate update, String fieldName) {
+        FieldUpdate fieldUpdate = update.getFieldUpdate(fieldName);
         assertEquals(1, fieldUpdate.size());
         return fieldUpdate;
     }
