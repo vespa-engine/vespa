@@ -51,7 +51,7 @@ public class RankingExpressionTypeResolver extends Processor {
                 resolveTypesIn(profile, validate);
             }
             catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("In " + search + ", " + profile, e);
+                throw new IllegalArgumentException("In " + (search != null ? search + ", " : "") + profile, e);
             }
         }
     }
