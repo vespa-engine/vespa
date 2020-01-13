@@ -15,9 +15,10 @@ import java.util.function.DoubleBinaryOperator;
 /*
  *  An update for the subset of the cells in a tensor.
  *
- *  The cells to update are contained in a sparse tensor (has only mapped dimensions).
+ *  The cells to update are contained as entries of the sparse dimension(s) of the tensor.
  */
 public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
+
     protected Operation operation;
     protected TensorFieldValue tensor;
 
@@ -29,8 +30,8 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
     }
 
     private void verifyCompatibleType(TensorType type) {
-        if (type.dimensions().stream().anyMatch(dim -> dim.isIndexed()) ) {
-            throw new IllegalArgumentException("Tensor type '" + type + "' is not compatible as it contains some indexed dimensions");
+        if (type.rank() > 0 && type.dimensions().stream().noneMatch(dim -> dim.isMapped()) ) {
+            throw new IllegalArgumentException("Tensor type '" + type + "' is not compatible as it has no mapped dimensions");
         }
     }
 

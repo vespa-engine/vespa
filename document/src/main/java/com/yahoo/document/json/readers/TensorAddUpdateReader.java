@@ -13,7 +13,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStar
 import static com.yahoo.document.json.readers.TensorReader.fillTensor;
 
 /**
- * Class used to read an add update for a tensor field.
+ * Reader of an "add" update of a tensor field.
  */
 public class TensorAddUpdateReader {
 
@@ -38,8 +38,8 @@ public class TensorAddUpdateReader {
         TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
         if (tensorType.dimensions().stream().allMatch(TensorType.Dimension::isIndexed)) {
             throw new IllegalArgumentException("An add update can only be applied to tensors " +
-                    "with at least one sparse dimension. Field '" + field.getName() +
-                    "' has unsupported tensor type '" + tensorType + "'");
+                                               "with at least one sparse dimension. Field '" + field.getName() +
+                                               "' has unsupported tensor type '" + tensorType + "'");
         }
     }
 

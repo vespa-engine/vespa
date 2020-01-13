@@ -14,11 +14,13 @@ import com.yahoo.tensor.TensorType;
 import java.util.Iterator;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
+import static com.yahoo.document.json.readers.TensorReader.TENSOR_BLOCKS;
 import static com.yahoo.document.json.readers.TensorReader.TENSOR_CELLS;
+import static com.yahoo.document.json.readers.TensorReader.readTensorBlocks;
 import static com.yahoo.document.json.readers.TensorReader.readTensorCells;
 
 /**
- * Class used to read a modify update for a tensor field.
+ * Reader of a "modify" update of a tensor field.
  */
 public class TensorModifyUpdateReader {
 
@@ -30,7 +32,7 @@ public class TensorModifyUpdateReader {
 
     public static TensorModifyUpdate createModifyUpdate(TokenBuffer buffer, Field field) {
         expectFieldIsOfTypeTensor(field);
-        expectTensorTypeHasNoneIndexedUnboundDimensions(field);
+        expectTensorTypeHasNoIndexedUnboundDimensions(field);
         expectObjectStart(buffer.currentToken());
 
         ModifyUpdateResult result = createModifyUpdateResult(buffer, field);
@@ -41,18 +43,19 @@ public class TensorModifyUpdateReader {
     }
 
     private static void expectFieldIsOfTypeTensor(Field field) {
-        if (!(field.getDataType() instanceof TensorDataType)) {
+        if ( ! (field.getDataType() instanceof TensorDataType)) {
             throw new IllegalArgumentException("A modify update can only be applied to tensor fields. " +
-                    "Field '" + field.getName() + "' is of type '" + field.getDataType().getName() + "'");
+                                               "Field '" + field.getName() + "' is of type '" +
+                                               field.getDataType().getName() + "'");
         }
     }
 
-    private static void expectTensorTypeHasNoneIndexedUnboundDimensions(Field field) {
+    private static void expectTensorTypeHasNoIndexedUnboundDimensions(Field field) {
         TensorType tensorType = ((TensorDataType)field.getDataType()).getTensorType();
         if (tensorType.dimensions().stream()
                 .anyMatch(dim -> dim.type().equals(TensorType.Dimension.Type.indexedUnbound))) {
-            throw new IllegalArgumentException("A modify update cannot be applied to tensor types with indexed unbound dimensions. "
-                    + "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
+            throw new IllegalArgumentException("A modify update cannot be applied to tensor types with indexed unbound dimensions. " +
+                                               "Field '" + field.getName() + "' has unsupported tensor type '" + tensorType + "'");
         }
     }
 
@@ -83,7 +86,10 @@ public class TensorModifyUpdateReader {
                     result.operation = createOperation(buffer, field.getName());
                     break;
                 case TENSOR_CELLS:
-                    result.tensor = createTensor(buffer, field);
+                    result.tensor = createTensorFromCells(buffer, field);
+                    break;
+                case TENSOR_BLOCKS:
+                    result.tensor = createTensorFromBlocks(buffer, field);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown JSON string '" + buffer.currentName() + "' in modify update for field '" + field.getName() + "'");
@@ -106,7 +112,7 @@ public class TensorModifyUpdateReader {
         }
     }
 
-    private static TensorFieldValue createTensor(TokenBuffer buffer, Field field) {
+    private static TensorFieldValue createTensorFromCells(TokenBuffer buffer, Field field) {
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
         TensorType originalType = tensorDataType.getTensorType();
         TensorType convertedType = TensorModifyUpdate.convertDimensionsToMapped(originalType);
@@ -116,6 +122,19 @@ public class TensorModifyUpdateReader {
         Tensor tensor = tensorBuilder.build();
 
         validateBounds(tensor, originalType);
+
+        return new TensorFieldValue(tensor);
+    }
+
+    private static TensorFieldValue createTensorFromBlocks(TokenBuffer buffer, Field field) {
+        TensorDataType tensorDataType = (TensorDataType)field.getDataType();
+        TensorType type = tensorDataType.getTensorType();
+
+        Tensor.Builder tensorBuilder = Tensor.Builder.of(type);
+        readTensorBlocks(buffer, tensorBuilder);
+        Tensor tensor = tensorBuilder.build();
+
+        validateBounds(tensor, type);
 
         return new TensorFieldValue(tensor);
     }
@@ -135,7 +154,7 @@ public class TensorModifyUpdateReader {
                     long bound = dim.size().get();  // size is non-optional for indexed bound
                     if (label >= bound) {
                         throw new IndexOutOfBoundsException("Dimension '" + originalType.dimensions().get(i).name() +
-                                "' has label '" + label + "' but type is " + originalType.toString());
+                                                            "' has label '" + label + "' but type is " + originalType.toString());
                     }
                 }
             }
