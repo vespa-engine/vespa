@@ -49,6 +49,8 @@ private:
     LogDataStore             & _ds;
     const IBucketizer        & _bucketizer;
     uint64_t                   _writeCount;
+    vespalib::duration         _maxBucketGuardDuration;
+    vespalib::steady_time      _lastSample;
     vespalib::Lock             _lock;
     vespalib::MemoryDataStore  _backingMemory;
     std::vector<StoreByBucket> _tmpStore;
