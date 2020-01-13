@@ -132,11 +132,18 @@ public class TensorModifyUpdateReader {
 
         Tensor.Builder tensorBuilder = Tensor.Builder.of(type);
         readTensorBlocks(buffer, tensorBuilder);
-        Tensor tensor = tensorBuilder.build();
-
+        Tensor tensor = convertToSparse(tensorBuilder.build());
         validateBounds(tensor, type);
 
         return new TensorFieldValue(tensor);
+    }
+
+    private static Tensor convertToSparse(Tensor tensor) {
+        if (tensor.type().dimensions().stream().noneMatch(dimension -> dimension.isIndexed())) return tensor;
+        Tensor.Builder b = Tensor.Builder.of(TensorModifyUpdate.convertDimensionsToMapped(tensor.type()));
+        for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); )
+            b.cell(i.next());
+        return b.build();
     }
 
     /** Only validate if original type has indexed bound dimensions */
@@ -144,8 +151,8 @@ public class TensorModifyUpdateReader {
         if (originalType.dimensions().stream().noneMatch(d -> d instanceof TensorType.IndexedBoundDimension)) {
             return;
         }
-        for (Iterator<Tensor.Cell> iter = convertedTensor.cellIterator(); iter.hasNext(); ) {
-            Tensor.Cell cell = iter.next();
+        for (Iterator<Tensor.Cell> cellIterator = convertedTensor.cellIterator(); cellIterator.hasNext(); ) {
+            Tensor.Cell cell = cellIterator.next();
             TensorAddress address = cell.getKey();
             for (int i = 0; i < address.size(); ++i) {
                 TensorType.Dimension dim = originalType.dimensions().get(i);

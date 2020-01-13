@@ -1498,7 +1498,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_modify_update_with_replace_operation_mixed_block_short_form_array() {
-        assertTensorModifyUpdate("tensor(x{},y[3]):{a:[1,2,3]}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
+        assertTensorModifyUpdate("{{x:a,y:0}:1,{x:a,y:1}:2,{x:a,y:2}:3}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
                                  inputJson("{",
                                            "  'operation': 'replace',",
                                            "  'blocks': [",
@@ -1506,8 +1506,18 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_with_replace_operation_mixed_block_short_form_must_specify_full_subspace() {
+        illegalTensorModifyUpdate("Error in 'mixed_tensor': At {x:a}: Expected 3 values, but got 2",
+                                   "mixed_tensor",
+                                  inputJson("{",
+                                            "  'operation': 'replace',",
+                                            "  'blocks': {",
+                                            "    'a': [2,3] } }"));
+    }
+
+    @Test
     public void tensor_modify_update_with_replace_operation_mixed_block_short_form_map() {
-        assertTensorModifyUpdate("tensor(x{},y[3]):{a:[1,2,3]}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
+        assertTensorModifyUpdate("{{x:a,y:0}:1,{x:a,y:1}:2,{x:a,y:2}:3}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
                                  inputJson("{",
                                            "  'operation': 'replace',",
                                            "  'blocks': {",

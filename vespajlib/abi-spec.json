@@ -1107,6 +1107,7 @@
       "public varargs abstract com.yahoo.tensor.Tensor$Builder cell(float, long[])",
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell, double)",
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell, float)",
+      "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell)",
       "public abstract com.yahoo.tensor.Tensor build()"
     ],
     "fields": []

@@ -253,8 +253,12 @@ public class MixedTensor implements Tensor {
         }
 
         public Tensor.Builder block(TensorAddress sparsePart, double[] values) {
+            int denseSubspaceSize = (int)denseSubspaceSize();
+            if (values.length < denseSubspaceSize)
+                throw new IllegalArgumentException("Block should have " + denseSubspaceSize +
+                                                   " values, but has only " + values.length);
             double[] denseSubspace = denseSubspace(sparsePart);
-            System.arraycopy(values, 0, denseSubspace, 0, (int)denseSubspaceSize());
+            System.arraycopy(values, 0, denseSubspace, 0, denseSubspaceSize);
             return this;
         }
 

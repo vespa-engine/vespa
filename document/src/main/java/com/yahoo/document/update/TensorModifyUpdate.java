@@ -30,7 +30,7 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
     }
 
     private void verifyCompatibleType(TensorType type) {
-        if (type.rank() > 0 && type.dimensions().stream().noneMatch(dim -> dim.isMapped()) ) {
+        if (type.dimensions().stream().anyMatch(dim -> dim.isIndexed()) ) {
             throw new IllegalArgumentException("Tensor type '" + type + "' is not compatible as it has no mapped dimensions");
         }
     }

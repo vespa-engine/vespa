@@ -111,12 +111,15 @@ public class TensorReader {
         }
         else if (buffer.currentToken() == JsonToken.START_OBJECT) {
             int initNesting = buffer.nesting();
-            for (buffer.next(); buffer.nesting() >= initNesting; buffer.next())
-                mixedBuilder.block(asAddress(buffer.currentName(), builder.type().mappedSubtype()),
-                                   readValues(buffer, (int)mixedBuilder.denseSubspaceSize()));
+            for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
+                TensorAddress mappedAddress = asAddress(buffer.currentName(), builder.type().mappedSubtype());
+                mixedBuilder.block(mappedAddress,
+                                   readValues(buffer, (int) mixedBuilder.denseSubspaceSize(), mappedAddress, mixedBuilder.type()));
+            }
         }
         else {
-            throw new IllegalArgumentException("Expected 'blocks' to contain an array or an object, but got " + buffer.currentToken());
+            throw new IllegalArgumentException("Expected 'blocks' to contain an array or an object, but got " +
+                                               buffer.currentToken());
         }
 
         expectCompositeEnd(buffer.currentToken());
@@ -134,7 +137,7 @@ public class TensorReader {
             if (TensorReader.TENSOR_ADDRESS.equals(currentName))
                 address = readAddress(buffer, mixedBuilder.type().mappedSubtype());
             else if (TensorReader.TENSOR_VALUES.equals(currentName))
-                values = readValues(buffer, (int)mixedBuilder.denseSubspaceSize());
+                values = readValues(buffer, (int)mixedBuilder.denseSubspaceSize(), address, mixedBuilder.type());
         }
         expectObjectEnd(buffer.currentToken());
         if (address == null)
@@ -154,7 +157,16 @@ public class TensorReader {
         return builder.build();
     }
 
-    private static double[] readValues(TokenBuffer buffer, int size) {
+    /**
+     * Reads values for a tensor subspace block
+     *
+     * @param buffer the buffer containing the values
+     * @param size the expected number of values
+     * @param address the address for the block for error reporting, or null if not known
+     * @param type the type of the tensor we are reading
+     * @return the values read
+     */
+    private static double[] readValues(TokenBuffer buffer, int size, TensorAddress address, TensorType type) {
         expectArrayStart(buffer.currentToken());
 
         int index = 0;
@@ -162,6 +174,9 @@ public class TensorReader {
         double[] values = new double[size];
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next())
             values[index++] = readDouble(buffer);
+        if (index != size)
+            throw new IllegalArgumentException((address != null ? "At " + address.toString(type) + ": " : "") +
+                                               "Expected " + size + " values, but got " + index);
         expectCompositeEnd(buffer.currentToken());
         return values;
     }
