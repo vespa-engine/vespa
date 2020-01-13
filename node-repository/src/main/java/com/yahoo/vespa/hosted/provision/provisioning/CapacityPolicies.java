@@ -23,11 +23,15 @@ public class CapacityPolicies {
 
     public CapacityPolicies(Zone zone) {
         this.zone = zone;
-        this.isUsingAdvertisedResources = zone.region().value().contains("aws-");
+        this.isUsingAdvertisedResources = zone.cloud().value().equals("aws");
     }
 
     public int decideSize(Capacity capacity, ClusterSpec.Type clusterType) {
         int requestedNodes = ensureRedundancy(capacity.nodeCount(), clusterType, capacity.canFail());
+
+        if (this.zone.system().isPublic() && requestedNodes > 5)
+            throw new IllegalArgumentException(requestedNodes + " exceeds your quota. Please contact Vespa support");
+
         if (capacity.isRequired()) return requestedNodes;
 
         switch(zone.environment()) {
