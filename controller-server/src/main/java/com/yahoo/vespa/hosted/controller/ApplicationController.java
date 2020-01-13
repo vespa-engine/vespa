@@ -98,7 +98,6 @@ import java.util.stream.Stream;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static java.util.Comparator.naturalOrder;
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -917,36 +916,84 @@ public class ApplicationController {
      * @param applicationPackage application package
      * @param deployer principal initiating the deployment, possibly empty
      */
-    public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
+    public void verifyApplicationIdentityConfiguration(TenantName tenantName, Optional<InstanceName> instanceName, Optional<ZoneId> zoneId, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
+        Optional<AthenzDomain> identityDomain = getIdentityDomain(applicationPackage);
+        if(identityDomain.isEmpty()) {
+            // If there is no domain configured in deployment.xml there is nothing to do.
+            return;
+        }
+
+        // Verify that the system supports launching services.
+        // Consider adding a capability to the system.
+        if(! (accessControl instanceof AthenzFacade)) {
+            throw new IllegalArgumentException("Athenz domain and service specified in deployment.xml, but not supported by system.");
+        }
+
+        // Verify that the config server is allowed to launch the service specified
         verifyAllowedLaunchAthenzService(applicationPackage.deploymentSpec());
 
-        Tenant tenant = controller.tenants().require(tenantName);
-        Stream.concat(applicationPackage.deploymentSpec().athenzDomain().stream(),
-                      applicationPackage.deploymentSpec().instances().stream()
-                                        .flatMap(spec -> spec.athenzDomain().stream()))
-              .distinct()
-              .forEach(identityDomain -> {
-                  deployer.filter(AthenzPrincipal.class::isInstance)
-                          .map(AthenzPrincipal.class::cast)
-                          .map(AthenzPrincipal::getIdentity)
-                          .filter(AthenzUser.class::isInstance)
-                          .ifPresentOrElse(user -> {
-                                               if ( ! ((AthenzFacade) accessControl).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
-                                                   throw new IllegalArgumentException("User " + user.getFullName() + " is not allowed to launch " +
-                                                                                      "services in Athenz domain " + identityDomain.value() + ". " +
-                                                                                      "Please reach out to the domain admin.");
-                                           },
-                                           () -> {
-                                               if (tenant.type() != Tenant.Type.athenz)
-                                                   throw new IllegalArgumentException("Athenz domain defined in deployment.xml, but no " +
-                                                                                      "Athenz domain for tenant " + tenantName.value());
+        // If a user principal is initiating the request, verify that the user is allowed to launch the service.
+        // Either the user is member of the domain admin role, or is given the "launch" privilege on the service.
+        Optional<AthenzUser> athenzUser = getUser(deployer);
+        if (athenzUser.isPresent()) {
+            // We only need to validate the root and instance in deployment.xml. Not possible to add dev or perf tags to deployment.xml
+            var zone = zoneId.orElseThrow(() -> new IllegalArgumentException("Unable to evaluate access, no zone provided in deployment"));
+            var serviceToLaunch = instanceName
+                    .flatMap(instance -> applicationPackage.deploymentSpec().instance(instance))
+                    .map(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))
+                    .orElse(applicationPackage.deploymentSpec().athenzService())
+                    .map(service -> new AthenzService(identityDomain.get(), service.value()));
 
-                                               AthenzDomain tenantDomain = ((AthenzTenant) tenant).domain();
-                                               if ( ! Objects.equals(tenantDomain.getName(), identityDomain.value()))
-                                                   throw new IllegalArgumentException("Athenz domain in deployment.xml: [" + identityDomain.value() + "] " +
-                                                                                      "must match tenant domain: [" + tenantDomain.getName() + "]");
-                                           });
-              });
+            if(serviceToLaunch.isPresent()) {
+                if (
+                        ! ((AthenzFacade) accessControl).canLaunch(athenzUser.get(), serviceToLaunch.get()) && // launch privilege
+                        ! ((AthenzFacade) accessControl).hasTenantAdminAccess(athenzUser.get(), identityDomain.get()) // tenant admin
+                ) {
+                    throw new IllegalArgumentException("User " + athenzUser.get().getFullName() + " is not allowed to launch " +
+                                                       "service " + serviceToLaunch.get().getFullName() + ". " +
+                                                       "Please reach out to the domain admin.");
+                }
+            } else {
+                // This is a rare edge case where deployment.xml specifies athenz-service on each step, but not on the root.
+                // It is undefined which service should be launched, so handle this as an error.
+                throw new IllegalArgumentException("Athenz domain configured, but no service defined for deployment to " + zone.value());
+            }
+        } else {
+            // If this is a deployment pipeline, verify that the domain in deployment.xml is the same as the tenant domain. Access control is already validated before this step.
+            Tenant tenant = controller.tenants().require(tenantName);
+            AthenzDomain tenantDomain = ((AthenzTenant) tenant).domain();
+            if ( ! Objects.equals(tenantDomain, identityDomain.get()))
+                throw new IllegalArgumentException("Athenz domain in deployment.xml: [" + identityDomain.get().getName() + "] " +
+                                                   "must match tenant domain: [" + tenantDomain.getName() + "]");
+        }
+    }
+
+    /*
+     * Get the AthenzUser from this principal or Optional.empty if this does not represent a user.
+     */
+    private Optional<AthenzUser> getUser(Optional<Principal> deployer) {
+        return deployer
+                .filter(AthenzPrincipal.class::isInstance)
+                .map(AthenzPrincipal.class::cast)
+                .map(AthenzPrincipal::getIdentity)
+                .filter(AthenzUser.class::isInstance)
+                .map(AthenzUser.class::cast);
+    }
+
+    private Optional<AthenzDomain> getIdentityDomain(ApplicationPackage applicationPackage) {
+        List<AthenzDomain> domains = Stream.concat(applicationPackage.deploymentSpec().athenzDomain().stream(),
+                applicationPackage.deploymentSpec().instances().stream()
+                        .flatMap(spec -> spec.athenzDomain().stream()))
+                .distinct()
+                .map(domain -> new AthenzDomain(domain.value()))
+                .collect(toList());
+
+
+        // We cannot have more than one domain, does not make sense that the domains are different ...
+        if(domains.size() > 1) {
+            throw new IllegalArgumentException(String.format("Multiple athenz-domain configured in deployment.xml (%s), can only have one.", domains.toString()));
+        }
+        return domains.stream().findAny();
     }
 
     /*
