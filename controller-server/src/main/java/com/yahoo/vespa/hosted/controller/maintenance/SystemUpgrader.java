@@ -30,12 +30,8 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
-        // TODO(mpolden): Simplify this by comparing with version from NodeRepository#targetVersionsOf instead
-        if (minVersion(zone, application, Node::wantedVersion).map(target::isAfter)
-                                                              .orElse(true)) {
-            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
-            controller().applications().deploy(application, zone.getId(), target);
-        }
+        log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
+        controller().applications().deploy(application, zone.getId(), target);
     }
 
     @Override
@@ -44,8 +40,8 @@ public class SystemUpgrader extends InfrastructureUpgrader {
         // Skip application convergence check if there are no nodes belonging to the application in the zone
         if (minVersion.isEmpty()) return true;
 
-        return     minVersion.get().equals(target)
-                && application.configConvergedIn(zone.getId(), controller(), Optional.of(target));
+        return minVersion.get().equals(target) &&
+               application.configConvergedIn(zone.getId(), controller(), Optional.of(target));
     }
 
     @Override
@@ -59,6 +55,28 @@ public class SystemUpgrader extends InfrastructureUpgrader {
                            .filter(vespaVersion -> !vespaVersion.isSystemVersion())
                            .filter(vespaVersion -> vespaVersion.confidence() != VespaVersion.Confidence.broken)
                            .map(VespaVersion::versionNumber);
+    }
+
+    @Override
+    protected boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone) {
+        if (application.hasApplicationPackage()) {
+            // For applications with package we do not have a zone-wide version target. This means that we must check
+            // the wanted version of each node.
+            return minVersion(zone, application, Node::wantedVersion)
+                    // Upgrade if target is after any wanted version
+                    .map(target::isAfter)
+                    // Skip upgrade if there are no nodes allocated. This is overloaded to mean that the zone is not
+                    // expected to have a deployment of this application.
+                    // TODO(mpolden): Once all zones are either directly routed or not: Change this to
+                    //                always deploy proxy app and wait for convergence in zones that are not directly
+                    //                routed.
+                    .orElse(false);
+        }
+        return controller().serviceRegistry().configServer().nodeRepository()
+                           .targetVersionsOf(zone.getId())
+                           .vespaVersion(application.nodeType())
+                           .map(target::isAfter)                              // Upgrade if target is after current
+                           .orElse(true);                                     // Upgrade if target is unset
     }
 
     /** Returns whether node in application should be upgraded by this */
