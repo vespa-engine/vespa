@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.maintenance.ReservationExpirer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -255,31 +254,6 @@ public class ProvisioningTest {
                      4 + 4, tester.getNodes(application1, Node.State.active).retired().type(ClusterSpec.Type.content).resources(small).size());
         assertEquals("No large content nodes are retired",
                      0, tester.getNodes(application1, Node.State.active).retired().resources(large).size());
-    }
-
-    // TODO: Enable when this feature is re-enabled
-    @Ignore
-    @Test
-    public void application_deployment_with_inplace_downsize() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-
-        ApplicationId application1 = tester.makeApplicationId();
-
-        tester.makeReadyNodes(14, "d-2-2-2", NodeType.host);
-
-        // deploy
-        SystemState state1 = prepare(application1, 2, 2, 4, 4, new NodeResources(2, 2, 2, 2), tester);
-        tester.activate(application1, state1.allHosts);
-
-        // redeploy with smaller docker flavor - causes in-place flavor change
-        SystemState state2 = prepare(application1, 2, 2, 4, 4, new NodeResources(1, 1, 1, 0.3), tester);
-        tester.activate(application1, state2.allHosts);
-
-        assertEquals(12, tester.getNodes(application1, Node.State.active).size());
-        for (Node node : tester.getNodes(application1, Node.State.active))
-            assertEquals("Node changed flavor in place", "dockerSmall", node.flavor().name());
-        assertEquals("No nodes are retired",
-                     0, tester.getNodes(application1, Node.State.active).retired().size());
     }
 
     @Test
