@@ -276,17 +276,25 @@ public class SystemUpgraderTest {
 
     @Test
     public void does_not_deploy_proxy_app_in_zones_without_proxy() {
-        List<SystemApplication> applications = List.of(
-                SystemApplication.configServerHost, SystemApplication.configServer, SystemApplication.tenantHost);
+        var applications = List.of(SystemApplication.configServerHost, SystemApplication.configServer,
+                                   SystemApplication.tenantHost);
         tester.configServer().bootstrap(List.of(zone1.getId()), applications);
         tester.configServer().disallowConvergenceCheck(SystemApplication.proxy.id());
+        var systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
-        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
-
-        Version version1 = Version.fromString("6.5");
-        tester.upgradeSystem(version1);
+        // System begins upgrade
+        var version1 = Version.fromString("6.5");
+        tester.upgradeController(version1);
         systemUpgrader.maintain();
-        assertCurrentVersion(applications, version1, zone1);
+        assertWantedVersion(applications, version1, zone1);
+        assertWantedVersion(SystemApplication.proxy, Version.emptyVersion, zone1);
+
+        // System completes upgrade. Wanted version is not raised for proxy as it's is never deployed
+        completeUpgrade(applications, version1, zone1);
+        systemUpgrader.maintain();
+        assertWantedVersion(SystemApplication.proxy, Version.emptyVersion, zone1);
+        tester.computeVersionStatus();
+        assertEquals(version1, tester.controller().systemVersion());
     }
 
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */
@@ -357,7 +365,7 @@ public class SystemUpgraderTest {
                                ZoneApi first, ZoneApi... rest) {
         Stream.concat(Stream.of(first), Stream.of(rest)).forEach(zone -> {
             for (Node node : listNodes(zone, application)) {
-                assertEquals(application + " version", version, versionField.apply(node));
+                assertEquals("Version of " + application.id() + " in " + zone.getId(), version, versionField.apply(node));
             }
         });
     }

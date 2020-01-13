@@ -40,8 +40,8 @@ public class SystemUpgrader extends InfrastructureUpgrader {
         // Skip application convergence check if there are no nodes belonging to the application in the zone
         if (minVersion.isEmpty()) return true;
 
-        return     minVersion.get().equals(target)
-                && application.configConvergedIn(zone.getId(), controller(), Optional.of(target));
+        return minVersion.get().equals(target) &&
+               application.configConvergedIn(zone.getId(), controller(), Optional.of(target));
     }
 
     @Override
@@ -63,8 +63,14 @@ public class SystemUpgrader extends InfrastructureUpgrader {
             // For applications with package we do not have a zone-wide version target. This means that we must check
             // the wanted version of each node.
             return minVersion(zone, application, Node::wantedVersion)
-                    .map(target::isAfter)                                     // Upgrade if target is after any wanted version
-                    .orElse(true);                                            // Upgrade if there are no nodes allocated
+                    // Upgrade if target is after any wanted version
+                    .map(target::isAfter)
+                    // Skip upgrade if there are no nodes allocated. This is overloaded to mean that the zone is not
+                    // expected to have a deployment of this application.
+                    // TODO(mpolden): Once all zones are either directly routed or not: Change this to
+                    //                always deploy proxy app and wait for convergence in zones that are not directly
+                    //                routed.
+                    .orElse(false);
         }
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getId())
