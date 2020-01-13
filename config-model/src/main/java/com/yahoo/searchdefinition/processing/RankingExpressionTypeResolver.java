@@ -11,7 +11,6 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
