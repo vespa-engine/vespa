@@ -321,8 +321,6 @@ class NodeAllocation {
         }
         
         for (PrioritizableNode node : nodes) {
-            node.node = requestedNodes.assignRequestedFlavor(node.node);
-
             // Set whether the node is exclusive
             Allocation allocation = node.node.allocation().get();
             node.node = node.node.with(allocation.with(allocation.membership()

@@ -54,13 +54,6 @@ public interface NodeSpec {
     /** Returns a specification of a fraction of all the nodes of this. It is assumed the argument is a valid divisor. */
     NodeSpec fraction(int divisor);
 
-    /**
-     * Assigns the flavor requested by this to the given node and returns it,
-     * if one is requested and it is allowed to change.
-     * Otherwise, the node is returned unchanged.
-     */
-    Node assignRequestedFlavor(Node node);
-
     /** Returns the resources requested by this or empty if none are explicitly requested */
     Optional<NodeResources> resources();
 
@@ -101,14 +94,10 @@ public interface NodeSpec {
         @Override
         public boolean isCompatible(Flavor flavor, NodeFlavors flavors) {
             if (flavor.isDocker()) { // Docker nodes can satisfy a request for parts of their resources
-                if (flavor.resources().compatibleWith(requestedNodeResources))
-                    return true;
+                return flavor.resources().compatibleWith(requestedNodeResources);
+            } else { // Other nodes must be matched exactly
+                return requestedNodeResources.equals(flavor.resources());
             }
-            else { // Other nodes must be matched exactly
-                if (requestedNodeResources.equals(flavor.resources()))
-                    return true;
-            }
-            return requestedFlavorCanBeAchievedByResizing(flavor);
         }
 
         @Override
@@ -146,14 +135,6 @@ public interface NodeSpec {
 
         @Override
         public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }
-
-        /** Docker nodes can be downsized in place */
-        private boolean requestedFlavorCanBeAchievedByResizing(Flavor flavor) {
-            // TODO: Enable this when we can do it safely
-            // Then also re-enable ProvisioningTest.application_deployment_with_inplace_downsize()
-            // return flavor.isDocker() && requestedFlavor.isDocker() && flavor.isLargerThan(requestedFlavor);
-            return false;
-        }
 
     }
 
@@ -199,9 +180,6 @@ public interface NodeSpec {
 
         @Override
         public NodeSpec fraction(int divisor) { return this; }
-
-        @Override
-        public Node assignRequestedFlavor(Node node) { return node; }
 
         @Override
         public Optional<NodeResources> resources() { return Optional.empty(); }
