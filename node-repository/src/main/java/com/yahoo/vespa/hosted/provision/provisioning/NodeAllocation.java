@@ -4,8 +4,9 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -110,18 +111,18 @@ class NodeAllocation {
                 if (requestedNodes.considerRetiring()) {
                     boolean wantToRetireNode = false;
                     if (violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
-                    if ( ! hasCompatibleFlavor(offered)) wantToRetireNode = true;
+                    if ( ! hasCompatibleFlavor(node)) wantToRetireNode = true;
                     if (offered.status().wantToRetire()) wantToRetireNode = true;
                     if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname()))
                         wantToRetireNode = true;
-                    if (( ! saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered))
-                        accepted.add(acceptNode(node, wantToRetireNode));
+                    if (( ! saturated() && hasCompatibleFlavor(node)) || acceptToRetire(node))
+                        accepted.add(acceptNode(node, wantToRetireNode, node.isResizable));
                 }
                 else {
-                    accepted.add(acceptNode(node, false));
+                    accepted.add(acceptNode(node, false, false));
                 }
             }
-            else if ( ! saturated() && hasCompatibleFlavor(offered)) {
+            else if ( ! saturated() && hasCompatibleFlavor(node)) {
                 if ( violatesParentHostPolicy(this.nodes, offered)) {
                     ++rejectedWithClashingParentHost;
                     continue;
@@ -141,7 +142,7 @@ class NodeAllocation {
                                                         ClusterMembership.from(cluster, highestIndex.add(1)),
                                                         requestedNodes.resources().orElse(node.node.flavor().resources()),
                                                         clock.instant());
-                accepted.add(acceptNode(node, false));
+                accepted.add(acceptNode(node, false, false));
             }
         }
 
@@ -209,25 +210,32 @@ class NodeAllocation {
      * initialized. (In the other case, where a container node is not desired because we have enough nodes we
      * do want to remove it immediately to get immediate feedback on how the size reduction works out.)
      */
-    private boolean acceptToRetire(Node node) {
-        if (node.state() != Node.State.active) return false;
-        if (! node.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
+    private boolean acceptToRetire(PrioritizableNode node) {
+        if (node.node.state() != Node.State.active) return false;
+        if (! node.node.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
 
         return cluster.type().isContent() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleFlavor(node));
     }
 
-    private boolean hasCompatibleFlavor(Node node) {
-        return requestedNodes.isCompatible(node.flavor(), flavors);
+    private boolean hasCompatibleFlavor(PrioritizableNode node) {
+        return requestedNodes.isCompatible(node.node.flavor(), flavors) || node.isResizable;
     }
 
-    private Node acceptNode(PrioritizableNode prioritizableNode, boolean wantToRetire) {
+    private Node acceptNode(PrioritizableNode prioritizableNode, boolean wantToRetire, boolean resize) {
         Node node = prioritizableNode.node;
 
         if (node.allocation().isPresent()) // Record the currently requested resources
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.flavor().resources())));
 
         if (! wantToRetire) {
+            if (resize) {
+                NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
+                node = node.with(new Flavor(requestedNodes.resources().get()
+                        .with(hostResources.diskSpeed())
+                        .with(hostResources.storageType())));
+            }
+
             if (node.state() != Node.State.active) // reactivated node - make sure its not retired
                 node = node.unretire();
 
@@ -313,7 +321,7 @@ class NodeAllocation {
         }
         else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
             for (PrioritizableNode node : byIncreasingIndex(nodes)) {
-                if ( node.node.allocation().get().membership().retired() && hasCompatibleFlavor(node.node)) {
+                if ( node.node.allocation().get().membership().retired() && hasCompatibleFlavor(node)) {
                     node.node = node.node.unretire();
                     if (++deltaRetiredCount == 0) break;
                 }

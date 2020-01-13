@@ -45,6 +45,8 @@ public class NodePrioritizer {
     private final NameResolver nameResolver;
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
+    private final boolean isTopologyChange;
+    private final int currentClusterSize;
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
@@ -58,6 +60,18 @@ public class NodePrioritizer {
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
 
         NodeList nodesInCluster = allNodes.owner(appId).type(clusterSpec.type()).cluster(clusterSpec.id());
+        long currentGroups = nodesInCluster.state(Node.State.active).stream()
+                .flatMap(node -> node.allocation()
+                        .flatMap(alloc -> alloc.membership().cluster().group().map(ClusterSpec.Group::index))
+                        .stream())
+                .distinct()
+                .count();
+        this.isTopologyChange = currentGroups != wantedGroups;
+
+        this.currentClusterSize = (int) nodesInCluster.state(Node.State.active).stream()
+                .map(node -> node.allocation().flatMap(alloc -> alloc.membership().cluster().group()))
+                .filter(clusterSpec.group()::equals)
+                .count();
 
         this.isAllocatingForReplacement = isReplacement(
                 nodesInCluster.size(),
@@ -195,10 +209,15 @@ public class NodePrioritizer {
                 .newNode(isNewNode);
 
         allNodes.parentOf(node).ifPresent(parent -> {
-            builder.parent(parent).freeParentCapacity(capacity.freeCapacityOf(parent, false));
-            if (spareHosts.contains(parent)) {
+            NodeResources parentCapacity = capacity.freeCapacityOf(parent, false);
+            builder.parent(parent).freeParentCapacity(parentCapacity);
+
+            if (!isNewNode)
+                builder.resizable(requestedNodes.canResize(
+                        node.flavor().resources(), parentCapacity, isTopologyChange, currentClusterSize));
+
+            if (spareHosts.contains(parent))
                 builder.violatesSpares(true);
-            }
         });
 
         return builder.build();

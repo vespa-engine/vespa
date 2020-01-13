@@ -5,7 +5,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -56,6 +55,15 @@ public interface NodeSpec {
 
     /** Returns the resources requested by this or empty if none are explicitly requested */
     Optional<NodeResources> resources();
+
+    /**
+     * Returns true if a node with given current resources and current spare host resources can be resized
+     * in-place to resources in this spec.
+     */
+    default boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
+                              boolean hasTopologyChange, int currentClusterSize) {
+        return false;
+    }
 
     static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail) {
         return new CountNodeSpec(nodeCount, resources, exclusive, canFail);
@@ -126,11 +134,17 @@ public interface NodeSpec {
         }
 
         @Override
-        public Node assignRequestedFlavor(Node node) {
-            // Docker nodes can change flavor in place - disabled - see below
-            // if (requestedFlavorCanBeAchievedByResizing(node.flavor()))
-            //    return node.with(requestedFlavor);
-            return node;
+        public boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
+                                 boolean hasTopologyChange, int currentClusterSize) {
+            // Never allow in-place resize when also changing topology or decreasing cluster size
+            if (hasTopologyChange || count < currentClusterSize) return false;
+
+            // Do not allow increasing cluster size and decreasing node resources at the same time
+            if (count > currentClusterSize && !requestedNodeResources.satisfies(currentNodeResources.justNumbers()))
+                return false;
+
+            // Otherwise, allowed as long as the host can satisfy the new requested resources
+            return currentSpareHostResources.add(currentNodeResources.justNumbers()).satisfies(requestedNodeResources);
         }
 
         @Override
