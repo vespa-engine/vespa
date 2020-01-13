@@ -31,7 +31,6 @@ using vespalib::compression::CompressionConfig;
 using search::DocumentStore;
 using search::IDocumentStore;
 using search::LogDocumentStore;
-using search::LogDataStore;
 using search::WriteableFileChunk;
 using vespalib::makeLambdaTask;
 
@@ -83,14 +82,14 @@ ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
 SummaryManager::SummarySetup::
 SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, const SummaryConfig & summaryCfg,
              const SummarymapConfig & summarymapCfg, const JuniperrcConfig & juniperCfg,
-             const search::IAttributeManager::SP &attributeMgr, const search::IDocumentStore::SP & docStore,
-             const std::shared_ptr<const DocumentTypeRepo> &repo)
+             search::IAttributeManager::SP attributeMgr, search::IDocumentStore::SP docStore,
+             std::shared_ptr<const DocumentTypeRepo> repo)
     : _docsumWriter(),
       _wordFolder(std::make_unique<Fast_NormalizeWordFolder>()),
       _juniperProps(juniperCfg),
       _juniperConfig(),
-      _attributeMgr(attributeMgr),
-      _docStore(docStore),
+      _attributeMgr(std::move(attributeMgr)),
+      _docStore(std::move(docStore)),
       _fieldCacheRepo(),
       _repo(repo),
       _markupFields()
@@ -151,7 +150,7 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDoc
                                const search::GrowStrategy & growStrategy, const vespalib::string &baseDir,
                                const DocTypeName &docTypeName, const TuneFileSummary &tuneFileSummary,
                                const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,
-                               const search::IBucketizer::SP & bucketizer)
+                               search::IBucketizer::SP bucketizer)
     : _baseDir(baseDir),
       _docTypeName(docTypeName),
       _docStore(),
@@ -159,7 +158,7 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDoc
       _currentSerial(0u)
 {
     _docStore = std::make_shared<LogDocumentStore>(executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
-                                                   fileHeaderContext, tlSyncer, bucketizer);
+                                                   fileHeaderContext, tlSyncer, std::move(bucketizer));
 }
 
 SummaryManager::~SummaryManager() = default;

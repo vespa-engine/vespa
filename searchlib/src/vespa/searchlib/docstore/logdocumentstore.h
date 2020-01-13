@@ -47,8 +47,8 @@ public:
     LogDocumentStore(vespalib::ThreadExecutor & executor, const vespalib::string & baseDir, const Config & config,
                      const GrowStrategy & growStrategy, const TuneFileSummary &tuneFileSummary,
                      const common::FileHeaderContext &fileHeaderContext,
-                     transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer);
-    ~LogDocumentStore();
+                     transactionlog::SyncProxy &tlSyncer, IBucketizer::SP bucketizer);
+    ~LogDocumentStore() override;
     void reconfigure(const Config & config);
 private:
     void compact(uint64_t syncToken) override       { _backingStore.compact(syncToken); }

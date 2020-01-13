@@ -20,10 +20,10 @@ LogDocumentStore::LogDocumentStore(vespalib::ThreadExecutor & executor,
                                    const TuneFileSummary & tuneFileSummary,
                                    const FileHeaderContext &fileHeaderContext,
                                    transactionlog::SyncProxy &tlSyncer,
-                                   const IBucketizer::SP & bucketizer)
+                                   IBucketizer::SP bucketizer)
     : DocumentStore(config, _backingStore),
       _backingStore(executor, baseDir, config.getLogConfig(), growStrategy,
-                    tuneFileSummary, fileHeaderContext, tlSyncer, bucketizer)
+                    tuneFileSummary, fileHeaderContext, tlSyncer, std::move(bucketizer))
 {}
 
 LogDocumentStore::~LogDocumentStore() = default;

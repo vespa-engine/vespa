@@ -87,7 +87,7 @@ public:
     LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config & config,
                  const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                  const search::common::FileHeaderContext &fileHeaderContext,
-                 transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer, bool readOnly = false);
+                 transactionlog::SyncProxy &tlSyncer, IBucketizer::SP bucketizer, bool readOnly = false);
 
     ~LogDataStore() override;
 

@@ -40,9 +40,9 @@ public:
                      const vespa::config::search::SummaryConfig & summaryCfg,
                      const vespa::config::search::SummarymapConfig & summarymapCfg,
                      const vespa::config::search::summary::JuniperrcConfig & juniperCfg,
-                     const search::IAttributeManager::SP &attributeMgr,
-                     const search::IDocumentStore::SP & docStore,
-                     const std::shared_ptr<const document::DocumentTypeRepo> &repo);
+                     search::IAttributeManager::SP attributeMgr,
+                     search::IDocumentStore::SP docStore,
+                     std::shared_ptr<const document::DocumentTypeRepo> repo);
 
         search::docsummary::IDocsumWriter & getDocsumWriter() const override { return *_docsumWriter; }
         search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
@@ -71,8 +71,8 @@ public:
                    const search::TuneFileSummary &tuneFileSummary,
                    const search::common::FileHeaderContext &fileHeaderContext,
                    search::transactionlog::SyncProxy &tlSyncer,
-                   const std::shared_ptr<search::IBucketizer> & bucketizer);
-    ~SummaryManager();
+                   std::shared_ptr<search::IBucketizer> bucketizer);
+    ~SummaryManager() override;
 
     void putDocument(uint64_t syncToken, search::DocumentIdT lid, const document::Document & doc);
     void putDocument(uint64_t syncToken, search::DocumentIdT lid, const vespalib::nbostream & doc);
