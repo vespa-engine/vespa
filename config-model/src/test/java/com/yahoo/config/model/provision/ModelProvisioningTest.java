@@ -194,14 +194,25 @@ public class ModelProvisioningTest {
                 "     </documents>" +
                 "     <nodes count='2'/>" +
                 "   </content>" +
+                "  <content version='1.0'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(3);
+        tester.addHosts(5);
         VespaModel model = tester.createModel(xmlWithNodes, true);
 
         assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
         assertEquals("Nodes in container1", 1, model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Nodes in cluster without ID", 2, model.getContentClusters().get("content").getRootGroup().getNodes().size());
         assertEquals("Heap size for container", 60, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+        assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Type.content, model);
+        assertProvisioned(1, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
+        assertProvisioned(2, ClusterSpec.Id.from("content"), ClusterSpec.Type.content, model);
     }
 
     @Test
@@ -250,10 +261,8 @@ public class ModelProvisioningTest {
         assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
         assertEquals("Heap size is lowered with combined clusters", 
                      17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
-        assertEquals(2, model.hostSystem().getHosts().stream()
-                             .filter(hostResource -> hostResource.spec().membership().get().cluster().type() == ClusterSpec.Type.combined)
-                             .count());
-
+        assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
+        assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Type.combined, model);
     }
 
     @Test
@@ -1768,6 +1777,14 @@ public class ModelProvisioningTest {
         LogdConfig logdConfig = new LogdConfig(logdConfigBuilder);
         // Logd should use logserver (forward logs to it)
         assertTrue(logdConfig.logserver().use());
+    }
+
+    private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
+        assertEquals("Nodes in cluster " + id + " with type " + type, nodeCount,
+                     model.hostSystem().getHosts().stream()
+                          .map(h -> h.spec().membership().get().cluster())
+                          .filter(spec -> spec.id().equals(id) && spec.type().equals(type))
+                          .count());
     }
 
 }
