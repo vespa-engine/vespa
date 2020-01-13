@@ -59,7 +59,7 @@ public class GroupPreparer {
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount) {
+                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount, int wantedGroups) {
         boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                 .value();
@@ -72,7 +72,7 @@ public class GroupPreparer {
                 // Create a prioritized set of nodes
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
-                                                                  spareCount, nodeRepository.nameResolver(),
+                                                                  spareCount, wantedGroups, nodeRepository.nameResolver(),
                                                                   hostResourcesCalculator);
 
                 prioritizer.addApplicationNodes();

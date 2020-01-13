@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for an application.
@@ -61,7 +60,7 @@ class Preparer {
             ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));
             List<Node> accepted = groupPreparer.prepare(application, clusterGroup,
                                                         requestedNodes.fraction(wantedGroups), surplusNodes,
-                                                        highestIndex, spareCount);
+                                                        highestIndex, spareCount, wantedGroups);
             replace(acceptedNodes, accepted);
         }
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());
