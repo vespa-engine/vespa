@@ -50,7 +50,7 @@ public class RankingExpressionTypeResolver extends Processor {
                 resolveTypesIn(profile, validate);
             }
             catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("In " + search + ", " + profile, e);
+                throw new IllegalArgumentException("In " + (search != null ? search + ", " : "") + profile, e);
             }
         }
     }
@@ -63,10 +63,19 @@ public class RankingExpressionTypeResolver extends Processor {
     private void resolveTypesIn(RankProfile profile, boolean validate) {
         MapEvaluationTypeContext context = profile.typeContext(queryProfiles);
         for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : profile.getFunctions().entrySet()) {
-            if (hasUntypedArguments(function.getValue().function())) continue;
-            TensorType type = resolveType(function.getValue().function().getBody(),
-                                          "function '" + function.getKey() + "'",
-                                          context);
+            ExpressionFunction expressionFunction = function.getValue().function();
+            if (hasUntypedArguments(expressionFunction)) continue;
+
+            // Add any missing inputs for type resolution
+            for (String argument : expressionFunction.arguments()) {
+                Reference ref = Reference.fromIdentifier(argument);
+                if (context.getType(ref).equals(TensorType.empty)) {
+                    context.setType(ref, expressionFunction.argumentTypes().get(argument));
+                }
+            }
+            context.forgetResolvedTypes();
+
+            TensorType type = resolveType(expressionFunction.getBody(), "function '" + function.getKey() + "'", context);
             function.getValue().setReturnType(type);
         }
 
