@@ -85,7 +85,7 @@ PersistenceMessageTrackerImpl::receiveReply(
 void
 PersistenceMessageTrackerImpl::revert(
         MessageSender& sender,
-        const std::vector<BucketNodePair> revertNodes)
+        const std::vector<BucketNodePair>& revertNodes)
 {
     if (_revertTimestamp != 0) {
         // Since we're reverting, all received bucket info is voided.

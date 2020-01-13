@@ -54,7 +54,7 @@ public:
 
     typedef std::pair<document::Bucket, uint16_t> BucketNodePair;
 
-    void revert(MessageSender& sender, const std::vector<BucketNodePair> revertNodes);
+    void revert(MessageSender& sender, const std::vector<BucketNodePair>& revertNodes);
 
     /**
        Sends a set of messages that are permissible for early return.
