@@ -33,7 +33,7 @@ public:
 
     // Note: lifetime of result must be handled by caller.
     SummaryManagerInitializer(const search::GrowStrategy &grow,
-                              const vespalib::string baseDir,
+                              const vespalib::string & baseDir,
                               const vespalib::string &subDbName,
                               const DocTypeName &docTypeName,
                               vespalib::ThreadExecutor & summaryExecutor,

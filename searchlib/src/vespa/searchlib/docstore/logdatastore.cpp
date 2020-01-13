@@ -53,7 +53,7 @@ LogDataStore::Config::operator == (const Config & rhs) const {
 LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config &config,
                            const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                            const FileHeaderContext &fileHeaderContext, transactionlog::SyncProxy &tlSyncer,
-                           const IBucketizer::SP & bucketizer, bool readOnly)
+                           IBucketizer::SP bucketizer, bool readOnly)
     : IDataStore(dirName),
       _config(config),
       _tune(tune),
@@ -70,7 +70,7 @@ LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::s
       _executor(executor),
       _initFlushSyncToken(0),
       _tlSyncer(tlSyncer),
-      _bucketizer(bucketizer),
+      _bucketizer(std::move(bucketizer)),
       _currentlyCompacting(),
       _compactLidSpaceGeneration()
 {
@@ -182,7 +182,7 @@ LogDataStore::write(uint64_t serialNum, uint32_t lid, const void * buffer, size_
 void
 LogDataStore::write(LockGuard guard, FileId destinationFileId, uint32_t lid, const void * buffer, size_t len)
 {
-    WriteableFileChunk & destination = static_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
+    auto & destination = static_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
     write(std::move(guard), destination, destination.getSerialNum(), lid, buffer, len);
 }
 
@@ -474,10 +474,10 @@ void LogDataStore::compactFile(FileId fileId)
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
         size_t numSignificantBucketBits = computeNumberOfSignificantBucketIdBits(*_bucketizer, fc->getFileId());
-        compacter.reset(new BucketCompacter(numSignificantBucketBits, _config.compactCompression(), *this, _executor,
-                                            *_bucketizer, fc->getFileId(), destinationFileId));
+        compacter = std::make_unique<BucketCompacter>(numSignificantBucketBits, _config.compactCompression(), *this, _executor,
+                                            *_bucketizer, fc->getFileId(), destinationFileId);
     } else {
-        compacter.reset(new docstore::Compacter(*this));
+        compacter = std::make_unique<docstore::Compacter>(*this);
     }
 
     fc->appendTo(_executor, *this, *compacter, fc->getNumChunks(), nullptr);
@@ -486,7 +486,7 @@ void LogDataStore::compactFile(FileId fileId)
         flushActiveAndWait(0);
     } else {
         LockGuard guard(_updateLock);
-        WriteableFileChunk & compactTo = dynamic_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
+        auto & compactTo = dynamic_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
         flushFileAndWait(std::move(guard), compactTo, 0);
         compactTo.freeze();
     }
@@ -515,7 +515,7 @@ void LogDataStore::compactFile(FileId fileId)
          * Wait for requireSpace() and flush() methods to leave chunk
          * alone.
          */
-        std::this_thread::sleep_for(1s);;
+        std::this_thread::sleep_for(1s);
     }
     toDie->erase();
     LockGuard guard(_updateLock);

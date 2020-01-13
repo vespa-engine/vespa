@@ -104,7 +104,7 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
     }
 }
 
-FileChunk::~FileChunk() { }
+FileChunk::~FileChunk() = default;
 
 void
 FileChunk::addNumBuckets(size_t numBucketsInChunk)
@@ -255,20 +255,20 @@ FileChunk::enableRead()
 {
     if (_tune._randRead.getWantDirectIO()) {
         LOG(debug, "enableRead(): DirectIORandRead: file='%s'", _dataFileName.c_str());
-        _file.reset(new DirectIORandRead(_dataFileName));
+        _file = std::make_unique<DirectIORandRead>(_dataFileName);
     } else if (_tune._randRead.getWantMemoryMap()) {
         const int mmapFlags(_tune._randRead.getMemoryMapFlags());
         const int fadviseOptions(_tune._randRead.getAdvise());
         if (frozen()) {
             LOG(debug, "enableRead(): MMapRandRead: file='%s'", _dataFileName.c_str());
-            _file.reset(new MMapRandRead(_dataFileName, mmapFlags, fadviseOptions));
+            _file = std::make_unique<MMapRandRead>(_dataFileName, mmapFlags, fadviseOptions);
         } else {
             LOG(debug, "enableRead(): MMapRandReadDynamic: file='%s'", _dataFileName.c_str());
-            _file.reset(new MMapRandReadDynamic(_dataFileName, mmapFlags, fadviseOptions));
+            _file = std::make_unique<MMapRandReadDynamic>(_dataFileName, mmapFlags, fadviseOptions);
         }
     } else {
         LOG(debug, "enableRead(): NormalRandRead: file='%s'", _dataFileName.c_str());
-        _file.reset(new NormalRandRead(_dataFileName));
+        _file = std::make_unique<NormalRandRead>(_dataFileName);
     }
     _dataHeaderLen = readDataHeader(*_file);
     if (_dataHeaderLen == 0u) {
@@ -326,7 +326,7 @@ appendChunks(FixedParams * args, Chunk::UP chunk)
             }
         }
     }
-    if (args->visitorProgress != NULL) {
+    if (args->visitorProgress != nullptr) {
         args->visitorProgress->updateProgress();
     }
 }
@@ -554,7 +554,6 @@ FileChunk::isIdxFileEmpty(const vespalib::string & name)
     } else {
         throw SummaryException("Failed opening idx file readonly ", idxFile, VESPA_STRLOC);
     }
-    return false;
 }
 
 void
