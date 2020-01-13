@@ -15,7 +15,7 @@ import java.util.function.DoubleBinaryOperator;
 /*
  *  An update for the subset of the cells in a tensor.
  *
- *  The cells to update are contained in a sparse tensor (has only mapped dimensions).
+ *  The cells to update are contained as entries of the sparse dimension(s) of the tensor.
  */
 public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
 
