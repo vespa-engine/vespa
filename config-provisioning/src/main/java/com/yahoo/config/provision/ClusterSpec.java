@@ -90,8 +90,10 @@ public final class ClusterSpec {
      * are ignored.
      */
     public boolean satisfies(ClusterSpec other) {
-        return other.id.equals(this.id) &&
-               other.type.equals(this.type);
+        if ( ! other.id.equals(this.id)) return false; // ID mismatch
+        // TODO(mpolden): Remove this after January 2019, once all nodes in combined clusters have type combined.
+        if (other.type.isContent() || this.type.isContent()) return other.type.isContent() == this.type.isContent();
+        return other.type.equals(this.type);
     }
 
     /** A cluster type */
