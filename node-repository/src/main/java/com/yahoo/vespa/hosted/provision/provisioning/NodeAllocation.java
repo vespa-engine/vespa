@@ -155,7 +155,7 @@ class NodeAllocation {
     }
 
     private boolean checkForClashingParentHost() {
-        return zone.system() == SystemName.main && zone.environment().isProduction();
+        return zone.system() == SystemName.main && zone.environment().isProduction() &&  ! application.instance().isTester();
     }
 
     private boolean offeredNodeHasParentHostnameAlreadyAccepted(Collection<PrioritizableNode> accepted, Node offered) {
