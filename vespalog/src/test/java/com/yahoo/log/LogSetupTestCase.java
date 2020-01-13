@@ -9,6 +9,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -80,7 +81,7 @@ public class LogSetupTestCase {
     public void testSetup() throws IOException {
         try {
             final File zookeeperLogFile = folder.newFile("zookeeper.log");
-            System.setProperty("zookeeperlogfile", zookeeperLogFile.getAbsolutePath());
+            System.setProperty("zookeeper_log_file_prefix", zookeeperLogFile.getAbsolutePath());
             LogSetup.initVespaLogging("TST");
             Logger.getLogger("").log(VespaLogHandlerTestCase.record2);
             Logger.getLogger("").log(VespaLogHandlerTestCase.record1);
@@ -125,12 +126,13 @@ public class LogSetupTestCase {
 
     @Test
     public void testZooKeeperFilter() throws IOException {
-        final File file = folder.newFile("zookeeper.log");
+        final File file = folder.newFile("zookeeper");
         LogSetup.ZooKeeperFilter filter = new LogSetup.ZooKeeperFilter(file.getAbsolutePath());
         assertThat(filter.isLoggable(zookeeperLogRecord), is(false));
         //assertThat(filter.isLoggable(zookeeperLogRecordError), is(true));
         assertThat(filter.isLoggable(notzookeeperLogRecord), is(true));
-        String[] lines = VespaLogHandlerTestCase.readFile(file.getAbsolutePath());
+        File actualLogFile = new File(file.getParent(), "zookeeper.0.log"); // Real file name will have .0.log appended
+        String[] lines = VespaLogHandlerTestCase.readFile(actualLogFile.getAbsolutePath());
         assertThat(lines.length, is(1));
         assertEquals(zookeeperLogRecordString, lines[0]);
     }
