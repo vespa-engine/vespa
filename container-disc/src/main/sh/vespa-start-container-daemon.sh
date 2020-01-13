@@ -22,8 +22,8 @@ cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 DISCRIMINATOR=`echo ${VESPA_CONFIG_ID} | md5sum | cut -d' ' -f1`
 CONTAINER_HOME="${VESPA_HOME}/var/jdisc_container/${DISCRIMINATOR}/"
 
-ZOOKEEPER_LOG_FILE="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}.log"
-rm -f $ZOOKEEPER_LOG_FILE*lck
+ZOOKEEPER_LOG_FILE_PREFIX="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}"
+rm -f ZOOKEEPER_LOG_FILE_PREFIX*lck
 
 # common setup
 export VESPA_LOG_TARGET=file:${VESPA_HOME}/logs/vespa/vespa.log
@@ -226,7 +226,7 @@ exec $numactlcmd $envcmd java \
         -Djdisc.logger.tag="${VESPA_CONFIG_ID}" \
         -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger \
         -Dvespa.log.control.dir="${VESPA_LOG_CONTROL_DIR}" \
-        -Dzookeeperlogfile="${ZOOKEEPER_LOG_FILE}" \
+        -Dzookeeper_log_file_prefix="${ZOOKEEPER_LOG_FILE_PREFIX}" \
         -Dfile.encoding=UTF-8 \
         -cp "$CP" \
         "$@" \

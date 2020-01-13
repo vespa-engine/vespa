@@ -147,7 +147,7 @@ public class LogSetup {
         }
         Logger.getLogger("").setLevel(Level.ALL);
         logHandler = new VespaLogHandler(getLogTargetFromString(target), new VespaLevelControllerRepo(logCtlFn, lev, app), service, app);
-        String zookeeperLogFile = System.getProperty("zookeeperlogfile");
+        String zookeeperLogFile = System.getProperty("zookeeper_log_file_prefix");
         if (zookeeperLogFile != null) {
             zooKeeperFilter = new ZooKeeperFilter(zookeeperLogFile);
             logHandler.setFilter(zooKeeperFilter);
@@ -168,28 +168,32 @@ public class LogSetup {
 
     /**
      * Class that has an isLoggable methods that handles log records that
-     * start with "org.apache.zookeeper." in
-     * a special way (writing them to the logfile specified in the system property
-     * zookeeperlogfile, "/tmp/zookeeper.log" if not set) and returning false.
+     * start with "org.apache.zookeeper." or "org.apache.curator"
+     * (writing them to a log file with the prefix specified in the system property
+     * zookeeper_log_file_prefix) and returning false.
      * For other log records, isLoggable returns true
      */
     static class ZooKeeperFilter implements Filter {
 
+        private static final int FILE_SIZE = 10*1024*1024; // Max 10 Mb per log file
+        private static final int maxFilesCount = 10; // Keep at most 10 log files
+
         private FileHandler fileHandler;
 
-        ZooKeeperFilter(String logFile) {
+        ZooKeeperFilter(String logFilePrefix) {
+            String logFilePattern = logFilePrefix + ".%g.log";
             try {
-                fileHandler = new FileHandler(logFile, true);
+                fileHandler = new FileHandler(logFilePattern, FILE_SIZE, maxFilesCount, true);
                 fileHandler.setFormatter(new VespaFormatter());
             } catch (IOException e) {
-                System.out.println("Not able to create " + logFile);
+                System.out.println("Not able to create " + logFilePattern);
                 fileHandler = null;
             }
         }
 
         /**
          * Return true if loggable (ordinary log record), returns false if this filter
-         * logs it itself
+         * logs the log record itself
          *
          * @param record a #{@link LogRecord}
          * @return true if loggable, false otherwise
