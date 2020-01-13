@@ -1448,6 +1448,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         controller.applications().verifyApplicationIdentityConfiguration(id.tenant(),
+                                                                         Optional.of(id.instance()),
+                                                                         Optional.of(type.zone(controller.system())),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
 
@@ -1557,6 +1559,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  deployOptions.field("deployCurrentVersion").asBool());
 
         applicationPackage.ifPresent(aPackage -> controller.applications().verifyApplicationIdentityConfiguration(applicationId.tenant(),
+                                                                                                                  Optional.of(applicationId.instance()),
+                                                                                                                  Optional.of(zone),
                                                                                                                   aPackage,
                                                                                                                   Optional.of(requireUserPrincipal(request))));
 
@@ -1960,6 +1964,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
+                                                                         Optional.empty(),
+                                                                         Optional.empty(),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
 

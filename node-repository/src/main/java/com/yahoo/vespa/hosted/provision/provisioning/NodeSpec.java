@@ -5,7 +5,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -54,15 +53,17 @@ public interface NodeSpec {
     /** Returns a specification of a fraction of all the nodes of this. It is assumed the argument is a valid divisor. */
     NodeSpec fraction(int divisor);
 
-    /**
-     * Assigns the flavor requested by this to the given node and returns it,
-     * if one is requested and it is allowed to change.
-     * Otherwise, the node is returned unchanged.
-     */
-    Node assignRequestedFlavor(Node node);
-
     /** Returns the resources requested by this or empty if none are explicitly requested */
     Optional<NodeResources> resources();
+
+    /**
+     * Returns true if a node with given current resources and current spare host resources can be resized
+     * in-place to resources in this spec.
+     */
+    default boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
+                              boolean hasTopologyChange, int currentClusterSize) {
+        return false;
+    }
 
     static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail) {
         return new CountNodeSpec(nodeCount, resources, exclusive, canFail);
@@ -80,7 +81,7 @@ public interface NodeSpec {
         private final boolean exclusive;
         private final boolean canFail;
 
-        CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail) {
+        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail) {
             this.count = count;
             this.requestedNodeResources = Objects.requireNonNull(resources, "Resources must be specified");
             this.exclusive = exclusive;
@@ -101,14 +102,10 @@ public interface NodeSpec {
         @Override
         public boolean isCompatible(Flavor flavor, NodeFlavors flavors) {
             if (flavor.isDocker()) { // Docker nodes can satisfy a request for parts of their resources
-                if (flavor.resources().compatibleWith(requestedNodeResources))
-                    return true;
+                return flavor.resources().compatibleWith(requestedNodeResources);
+            } else { // Other nodes must be matched exactly
+                return requestedNodeResources.equals(flavor.resources());
             }
-            else { // Other nodes must be matched exactly
-                if (requestedNodeResources.equals(flavor.resources()))
-                    return true;
-            }
-            return requestedFlavorCanBeAchievedByResizing(flavor);
         }
 
         @Override
@@ -137,23 +134,21 @@ public interface NodeSpec {
         }
 
         @Override
-        public Node assignRequestedFlavor(Node node) {
-            // Docker nodes can change flavor in place - disabled - see below
-            // if (requestedFlavorCanBeAchievedByResizing(node.flavor()))
-            //    return node.with(requestedFlavor);
-            return node;
+        public boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
+                                 boolean hasTopologyChange, int currentClusterSize) {
+            // Never allow in-place resize when also changing topology or decreasing cluster size
+            if (hasTopologyChange || count < currentClusterSize) return false;
+
+            // Do not allow increasing cluster size and decreasing node resources at the same time
+            if (count > currentClusterSize && !requestedNodeResources.satisfies(currentNodeResources.justNumbers()))
+                return false;
+
+            // Otherwise, allowed as long as the host can satisfy the new requested resources
+            return currentSpareHostResources.add(currentNodeResources.justNumbers()).satisfies(requestedNodeResources);
         }
 
         @Override
         public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }
-
-        /** Docker nodes can be downsized in place */
-        private boolean requestedFlavorCanBeAchievedByResizing(Flavor flavor) {
-            // TODO: Enable this when we can do it safely
-            // Then also re-enable ProvisioningTest.application_deployment_with_inplace_downsize()
-            // return flavor.isDocker() && requestedFlavor.isDocker() && flavor.isLargerThan(requestedFlavor);
-            return false;
-        }
 
     }
 
@@ -199,9 +194,6 @@ public interface NodeSpec {
 
         @Override
         public NodeSpec fraction(int divisor) { return this; }
-
-        @Override
-        public Node assignRequestedFlavor(Node node) { return node; }
 
         @Override
         public Optional<NodeResources> resources() { return Optional.empty(); }

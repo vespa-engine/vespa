@@ -27,17 +27,17 @@ public class PrioritizableNodeTest {
     @Test
     public void test_order() {
         List<PrioritizableNode> expected = List.of(
-                new PrioritizableNode(node("01", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), false, true, false),
-                new PrioritizableNode(node("02", Node.State.active), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false),
-                new PrioritizableNode(node("03", Node.State.inactive), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false),
-                new PrioritizableNode(node("04", Node.State.reserved), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false),
-                new PrioritizableNode(node("05", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.active)), true, false, true),
-                new PrioritizableNode(node("06", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.ready)), true, false, true),
-                new PrioritizableNode(node("07", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.provisioned)), true, false, true),
-                new PrioritizableNode(node("08", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.failed)), true, false, true),
-                new PrioritizableNode(node("09", Node.State.ready), new NodeResources(1, 1, 1, 1), Optional.empty(), true, false, true),
-                new PrioritizableNode(node("10", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, true),
-                new PrioritizableNode(node("11", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, true)
+                new PrioritizableNode(node("01", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), false, true, false, false),
+                new PrioritizableNode(node("02", Node.State.active), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
+                new PrioritizableNode(node("03", Node.State.inactive), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
+                new PrioritizableNode(node("04", Node.State.reserved), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
+                new PrioritizableNode(node("05", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.active)), true, false, true, false),
+                new PrioritizableNode(node("06", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.ready)), true, false, true, false),
+                new PrioritizableNode(node("07", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.provisioned)), true, false, true, false),
+                new PrioritizableNode(node("08", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.failed)), true, false, true, false),
+                new PrioritizableNode(node("09", Node.State.ready), new NodeResources(1, 1, 1, 1), Optional.empty(), true, false, true, false),
+                new PrioritizableNode(node("10", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, true, false),
+                new PrioritizableNode(node("11", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, true, false)
         );
         assertOrder(expected);
     }
@@ -136,15 +136,6 @@ public class PrioritizableNodeTest {
                              Status.initial(), Node.State.ready, Optional.empty(), History.empty(), NodeType.tenant, new Reports(), Optional.empty());
         Node parent = new Node(hostname + "parent", new IP.Config(Set.of("::1"), Set.of()), hostname, Optional.empty(), new Flavor(totalHostResources),
                                Status.initial(), Node.State.ready, Optional.empty(), History.empty(), NodeType.host, new Reports(), Optional.empty());
-        return new PrioritizableNode(node, totalHostResources.subtract(allocatedHostResources), Optional.of(parent), false, false, true);
+        return new PrioritizableNode(node, totalHostResources.subtract(allocatedHostResources), Optional.of(parent), false, false, true, false);
     }
-
-    private void printSkew(List<PrioritizableNode> nodes) {
-        for (var node : nodes)
-            System.out.println("Skew of " + node.node.id() +
-                               ": diff: " + (node.skewWithThis()-node.skewWithoutThis()) +
-                               ", with: " + node.skewWithThis() +
-                               ", without: " + node.skewWithoutThis());
-    }
-
 }

@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * @author bjorncs
@@ -41,6 +42,7 @@ public class AthenzDbMock {
         public final Set<AthenzIdentity> tenantAdmins = new HashSet<>();
         public final Map<ApplicationId, Application> applications = new HashMap<>();
         public final Map<String, Service> services = new HashMap<>();
+        public final List<Policy> policies = new ArrayList<>();
         public boolean isVespaTenant = false;
 
         public Domain(AthenzDomain name) {
@@ -49,6 +51,7 @@ public class AthenzDbMock {
 
         public Domain admin(AthenzIdentity identity) {
             admins.add(identity);
+            policies.add(new Policy(identity.getFullName(), ".*", ".*"));
             return this;
         }
 
@@ -59,6 +62,11 @@ public class AthenzDbMock {
 
         public Domain deleteTenantAdmin(AthenzIdentity identity) {
             tenantAdmins.remove(identity);
+            return this;
+        }
+
+        public Domain withPolicy(String principalRegex, String operation, String resource) {
+            policies.add(new Policy(principalRegex, operation, resource));
             return this;
         }
 
@@ -93,6 +101,30 @@ public class AthenzDbMock {
 
         public Service(boolean allowLaunch) {
             this.allowLaunch = allowLaunch;
+        }
+    }
+
+    public static class Policy {
+        private final Pattern principal;
+        private final Pattern action;
+        private final Pattern resource;
+
+        public Policy(String principal, String action, String resource) {
+            this.principal = Pattern.compile(principal);
+            this.action = Pattern.compile(action);
+            this.resource = Pattern.compile(resource);
+        }
+
+        public boolean principalMatches(AthenzIdentity athenzIdentity) {
+            return this.principal.matcher(athenzIdentity.getFullName()).matches();
+        }
+
+        public boolean actionMatches(String operation) {
+            return this.action.matcher(operation).matches();
+        }
+
+        public boolean resourceMatches(String resource) {
+            return this.resource.matcher(resource).matches();
         }
     }
 }

@@ -9,7 +9,6 @@ import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -20,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
@@ -252,9 +250,6 @@ public class MetricsReporterTest {
             assertEquals(0, getNodesFailingUpgrade());
 
             // 1/3 nodes upgrade within timeout
-            assertEquals("Wanted version is raised for all nodes", version,
-                         tester.configServer().nodeRepository().list(zone1.getId(), SystemApplication.configServer.id()).stream()
-                               .map(Node::wantedVersion).min(Comparator.naturalOrder()).get());
             tester.configServer().setVersion(SystemApplication.configServer.id(), zone1.getId(), version, 1);
             tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
             tester.computeVersionStatus();
@@ -308,9 +303,6 @@ public class MetricsReporterTest {
             assertEquals(0, getNodesFailingOsUpgrade());
 
             // 2/6 nodes upgrade within timeout
-            assertEquals("Wanted OS version is raised for all nodes", version,
-                         tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.tenantHost.id()).stream()
-                               .map(Node::wantedOsVersion).min(Comparator.naturalOrder()).get());
             tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version, 2);
             tester.clock().advance(Duration.ofMinutes(30 * 3 /* time allowance * node count */).plus(Duration.ofSeconds(1)));
             statusUpdater.maintain();

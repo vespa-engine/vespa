@@ -23,6 +23,19 @@ testSwap(T & a, T & b)
     EXPECT_EQUAL(tmpB, a.get());
 }
 
+TEST("test roundUp2inN") {
+    EXPECT_EQUAL(0u, roundUp2inN(0));
+    EXPECT_EQUAL(2u, roundUp2inN(1));
+    EXPECT_EQUAL(2u, roundUp2inN(2));
+    EXPECT_EQUAL(4u, roundUp2inN(3));
+    EXPECT_EQUAL(4u, roundUp2inN(4));
+    EXPECT_EQUAL(8u, roundUp2inN(5));
+    EXPECT_EQUAL(8u, roundUp2inN(6));
+    EXPECT_EQUAL(8u, roundUp2inN(7));
+    EXPECT_EQUAL(8u, roundUp2inN(8));
+    EXPECT_EQUAL(16u, roundUp2inN(9));
+}
+
 TEST("test basics") {
     {
         Alloc h = Alloc::allocHeap(100);

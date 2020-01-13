@@ -111,7 +111,7 @@ public class ZmsClientMock implements ZmsClient {
             if (resource.getEntityName().startsWith("service.hosting.tenant.")) {
                 AthenzDomain tenantDomainName = getTenantDomain(resource);
                 AthenzDbMock.Domain tenantDomain = getDomainOrThrow(tenantDomainName, true);
-                if (tenantDomain.admins.contains(identity)) {
+                if (tenantDomain.admins.contains(identity) || tenantDomain.tenantAdmins.contains(identity)) {
                     return true;
                 }
                 if (resource.getEntityName().contains(".res_group.")) {
@@ -125,14 +125,14 @@ public class ZmsClientMock implements ZmsClient {
                 return false;
             }
             return false;
-        } else if ("launch".equals(action)){
+        } else {
             AthenzDbMock.Domain domain = getDomainOrThrow(resource.getDomain(), false);
-            String serviceName = resource.getEntityName().replace("service.","");
-            if(!domain.services.containsKey(serviceName)) return false;
-            AthenzDbMock.Service service = domain.services.get(serviceName);
-            return service.allowLaunch;
+            return domain.policies.stream()
+                    .anyMatch(policy ->
+                            policy.principalMatches(identity) &&
+                            policy.actionMatches(action) &&
+                            policy.resourceMatches(resource.getEntityName()));
         }
-        return false;
     }
 
     @Override

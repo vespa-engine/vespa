@@ -38,6 +38,10 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
+        if (!application.isEligibleForOsUpgrades()) return;
+        var existingTarget = targetVersion(zone, application);
+        if (existingTarget.isPresent() && existingTarget.get().equals(target)) return;
+
         log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(), target, zone.getId(), zone.getCloudName()));
         controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getId(), application.nodeType(), target);
     }
@@ -61,24 +65,20 @@ public class OsUpgrader extends InfrastructureUpgrader {
                            .map(OsVersion::version);
     }
 
-    @Override
-    protected boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone) {
-        if (!application.shouldUpgradeOs()) return false;                      // Never upgrade
-        return controller().serviceRegistry().configServer().nodeRepository()
-                           .targetVersionsOf(zone.getId())
-                           .osVersion(application.nodeType())
-                           .map(target::isAfter)                               // Upgrade if target is after current
-                           .orElse(true);                                      // Upgrade if target is unset
-    }
-
     private Version currentVersion(ZoneApi zone, SystemApplication application, Version defaultVersion) {
         return minVersion(zone, application, Node::currentOsVersion).orElse(defaultVersion);
+    }
+
+    private Optional<Version> targetVersion(ZoneApi zone, SystemApplication application) {
+        return controller().serviceRegistry().configServer().nodeRepository()
+                           .targetVersionsOf(zone.getId())
+                           .osVersion(application.nodeType());
     }
 
     /** Returns whether node in application should be upgraded by this */
     public static boolean eligibleForUpgrade(Node node, SystemApplication application) {
         return upgradableNodeStates.contains(node.state()) &&
-               application.shouldUpgradeOs();
+               application.isEligibleForOsUpgrades();
     }
 
     private static String name(CloudName cloud) {

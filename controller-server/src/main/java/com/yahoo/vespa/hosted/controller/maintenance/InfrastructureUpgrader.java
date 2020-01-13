@@ -49,12 +49,10 @@ public abstract class InfrastructureUpgrader extends Maintainer {
                     converged &= upgradeAll(target, applications, zone);
                 } catch (UnreachableNodeRepositoryException e) {
                     converged = false;
-                    log.warning(String.format("%s: Failed to communicate with node repository in %s, continuing with next parallel zone: %s",
-                                              this, zone, Exceptions.toMessageString(e)));
+                    log.warning(String.format("%s: Failed to communicate with node repository in %s, continuing with next parallel zone: %s", this, zone, Exceptions.toMessageString(e)));
                 } catch (Exception e) {
                     converged = false;
-                    log.warning(String.format("%s: Failed to upgrade zone: %s, continuing with next parallel zone: %s",
-                                              this, zone, Exceptions.toMessageString(e)));
+                    log.warning(String.format("%s: Failed to upgrade zone: %s, continuing with next parallel zone: %s", this, zone, Exceptions.toMessageString(e)));
                 }
             }
             if (!converged) {
@@ -68,10 +66,13 @@ public abstract class InfrastructureUpgrader extends Maintainer {
         boolean converged = true;
         for (SystemApplication application : applications) {
             if (convergedOn(target, application.dependencies(), zone)) {
-                if (shouldUpgrade(target, application, zone)) {
+                boolean currentAppConverged = convergedOn(target, application, zone);
+                // In dynamically provisioned zones there may be no tenant hosts at the time of upgrade, so we
+                // should always set the target version.
+                if (application == SystemApplication.tenantHost || !currentAppConverged) {
                     upgrade(target, application, zone);
                 }
-                converged &= convergedOn(target, application, zone);
+                converged &= currentAppConverged;
             }
         }
         return converged;
@@ -80,9 +81,6 @@ public abstract class InfrastructureUpgrader extends Maintainer {
     private boolean convergedOn(Version target, List<SystemApplication> applications, ZoneApi zone) {
         return applications.stream().allMatch(application -> convergedOn(target, application, zone));
     }
-
-    /** Returns whether application in zone should be told to upgrade to given target */
-    protected abstract boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone);
 
     /** Upgrade component to target version. Implementation should be idempotent */
     protected abstract void upgrade(Version target, SystemApplication application, ZoneApi zone);
@@ -96,7 +94,7 @@ public abstract class InfrastructureUpgrader extends Maintainer {
     /** Returns whether the upgrader should require given node to upgrade */
     protected abstract boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone);
 
-    /** Find the minimum value of a version field in a zone by comparing all nodes */
+    /** Find the minimum value of a version field in a zone */
     protected final Optional<Version> minVersion(ZoneApi zone, SystemApplication application, Function<Node, Version> versionField) {
         try {
             return controller().serviceRegistry().configServer()

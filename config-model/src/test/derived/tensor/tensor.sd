@@ -11,7 +11,7 @@ search tensor {
     field f3 type tensor<double>(x{}) {
       indexing: attribute | summary
     }
-    field f4 type tensor(x[10],y[10]) {
+    field f4 type tensor(x[10],y[20]) {
       indexing: attribute | summary
     }
     field f5 type tensor<float>(x[10]) {
@@ -33,7 +33,7 @@ search tensor {
   rank-profile profile2 {
 
     first-phase {
-      expression: sum(matmul(attribute(f4), diag(x[10],y[10],z[3]), x))
+      expression: sum(matmul(attribute(f4), diag(x[2],y[2],z[3]), x))
     }
   
   }

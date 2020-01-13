@@ -32,7 +32,7 @@ public class TensorModifyUpdateTest {
     @Test
     public void use_of_incompatible_tensor_type_throws() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Tensor type 'tensor(x[3])' is not compatible as it contains some indexed dimensions");
+        exception.expectMessage("Tensor type 'tensor(x[3])' is not compatible as it has no mapped dimensions");
         new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE,
                 new TensorFieldValue(Tensor.from("tensor(x[3])", "{{x:1}:3}")));
     }

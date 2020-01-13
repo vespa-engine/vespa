@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -60,7 +59,7 @@ public class GroupPreparer {
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount) {
+                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount, int wantedGroups) {
         boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                 .value();
@@ -73,7 +72,7 @@ public class GroupPreparer {
                 // Create a prioritized set of nodes
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
-                                                                  spareCount, nodeRepository.nameResolver(),
+                                                                  spareCount, wantedGroups, nodeRepository.nameResolver(),
                                                                   hostResourcesCalculator);
 
                 prioritizer.addApplicationNodes();
@@ -104,8 +103,8 @@ public class GroupPreparer {
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
                     List<PrioritizableNode> nodes = provisionedHosts.stream()
                             .map(provisionedHost -> new PrioritizableNode.Builder(provisionedHost.generateNode())
-                                    .withParent(provisionedHost.generateHost())
-                                    .withNewNode(true)
+                                    .parent(provisionedHost.generateHost())
+                                    .newNode(true)
                                     .build())
                             .collect(Collectors.toList());
                     allocation.offer(nodes);
