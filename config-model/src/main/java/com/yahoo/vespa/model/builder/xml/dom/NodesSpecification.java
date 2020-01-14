@@ -292,7 +292,7 @@ public class NodesSpecification {
         var contentClusterId = content.get().getAttribute("id");
         if (contentClusterId.isEmpty()) return false;
         for (var rootChild : XML.getChildren(services.get())) {
-            if (!"container".equals(rootChild.getTagName())) continue; // Only container can reference content
+            if ( ! "container".equals(rootChild.getTagName()) && ! "jdisk".equals(rootChild.getTagName())) continue; // Only container can reference content
             var nodes = XML.getChild(rootChild, "nodes");
             if (nodes == null) continue;
             if (!contentClusterId.equals(nodes.getAttribute("of"))) continue;
