@@ -100,8 +100,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
 
-    private static final String TAG_NAME = "container";
-    private static final String DEPRECATED_TAG_NAME = "jdisc";
+    private static final String CONTAINER_TAG = "container";
+    private static final String DEPRECATED_CONTAINER_TAG = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     public enum Networking { disable, enable }
@@ -114,7 +114,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected DeployLogger log;
 
     public static final List<ConfigModelId> configModelIds =  
-            ImmutableList.of(ConfigModelId.fromName(TAG_NAME), ConfigModelId.fromName(DEPRECATED_TAG_NAME));
+            ImmutableList.of(ConfigModelId.fromName(CONTAINER_TAG), ConfigModelId.fromName(DEPRECATED_CONTAINER_TAG));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
@@ -445,8 +445,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void checkTagName(Element spec, DeployLogger logger) {
-        if (spec.getTagName().equals(DEPRECATED_TAG_NAME)) {
-            logger.log(WARNING, "'" + DEPRECATED_TAG_NAME + "' is deprecated as tag name. Use '" + TAG_NAME + "' instead.");
+        if (spec.getTagName().equals(DEPRECATED_CONTAINER_TAG)) {
+            logger.log(WARNING, "'" + DEPRECATED_CONTAINER_TAG + "' is deprecated as tag name. Use '" + CONTAINER_TAG + "' instead.");
         }
     }
 
@@ -891,10 +891,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         ));
     }
 
-
-    /**
-     * Disallow renderers named "XmlRenderer" or "JsonRenderer"
-     */
+    /** Disallow renderers named "XmlRenderer" or "JsonRenderer" */
     private static void validateRendererElement(Element element) {
         String idAttr = element.getAttribute("id");
 
@@ -902,4 +899,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             throw new IllegalArgumentException(String.format("Renderer id %s is reserved for internal use", idAttr));
         }
     }
+
+    public static boolean isContainerTag(Element element) {
+        return CONTAINER_TAG.equals(element.getTagName()) || DEPRECATED_CONTAINER_TAG.equals(element.getTagName());
+    }
+
 }
