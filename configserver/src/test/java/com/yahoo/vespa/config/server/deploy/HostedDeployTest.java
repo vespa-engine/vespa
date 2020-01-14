@@ -13,7 +13,6 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
-import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -41,7 +40,7 @@ import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingModelFactory;
-import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
+import static com.yahoo.vespa.config.server.deploy.DeployTester.createModelFactory;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -63,7 +62,7 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeployWithVersion() throws IOException {
-        CountingModelFactory modelFactory = createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
+        CountingModelFactory modelFactory = createModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
         DeployTester tester = new DeployTester(List.of(modelFactory), createConfigserverConfig());
         tester.deployApp("src/test/apps/hosted/", "4.5.6");
 
@@ -75,7 +74,7 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeploy() throws IOException {
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), createConfigserverConfig());
+        DeployTester tester = new DeployTester(createConfigserverConfig());
         ApplicationId appId = tester.applicationId();
         tester.deployApp("src/test/apps/hosted/");
         assertFalse(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
@@ -88,9 +87,9 @@ public class HostedDeployTest {
 
     @Test
     public void testDeployMultipleVersions() throws IOException {
-        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.1.0")),
-                                                    createHostedModelFactory(Version.fromString("6.2.0")),
-                                                    createHostedModelFactory(Version.fromString("7.0.0")));
+        List<ModelFactory> modelFactories = List.of(createModelFactory(Version.fromString("6.1.0")),
+                                                    createModelFactory(Version.fromString("6.2.0")),
+                                                    createModelFactory(Version.fromString("7.0.0")));
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig());
         tester.deployApp("src/test/apps/hosted/", "6.2.0");
         assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
@@ -107,12 +106,12 @@ public class HostedDeployTest {
                                    createHost("host3"), // Use a host with no version as well
                                    createHost("host4", "6.1.0"));
 
-        CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"));
-        CountingModelFactory factory610 = createHostedModelFactory(Version.fromString("6.1.0"));
-        CountingModelFactory factory620 = createHostedModelFactory(Version.fromString("6.2.0"));
-        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"));
-        CountingModelFactory factory710 = createHostedModelFactory(Version.fromString("7.1.0"));
-        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"));
+        CountingModelFactory factory600 = createModelFactory(Version.fromString("6.0.0"));
+        CountingModelFactory factory610 = createModelFactory(Version.fromString("6.1.0"));
+        CountingModelFactory factory620 = createModelFactory(Version.fromString("6.2.0"));
+        CountingModelFactory factory700 = createModelFactory(Version.fromString("7.0.0"));
+        CountingModelFactory factory710 = createModelFactory(Version.fromString("7.1.0"));
+        CountingModelFactory factory720 = createModelFactory(Version.fromString("7.2.0"));
         List<ModelFactory> modelFactories = List.of(factory600, factory610, factory620,
                                                     factory700, factory710, factory720);
 
@@ -138,10 +137,10 @@ public class HostedDeployTest {
     public void testCreateOnlyNeededModelVersionsNewNodes() throws IOException {
         List<Host> hosts = List.of(createHost("host1"), createHost("host2"), createHost("host3"), createHost("host4"));
 
-        CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"));
-        CountingModelFactory factory610 = createHostedModelFactory(Version.fromString("6.1.0"));
-        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"));
-        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"));
+        CountingModelFactory factory600 = createModelFactory(Version.fromString("6.0.0"));
+        CountingModelFactory factory610 = createModelFactory(Version.fromString("6.1.0"));
+        CountingModelFactory factory700 = createModelFactory(Version.fromString("7.0.0"));
+        CountingModelFactory factory720 = createModelFactory(Version.fromString("7.2.0"));
         List<ModelFactory> modelFactories = List.of(factory600, factory610, factory700, factory720);
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
@@ -163,9 +162,9 @@ public class HostedDeployTest {
         List<Host> hosts = List.of(createHost("host1", "7.0.0"), createHost("host2", "7.0.0"),
                                    createHost("host3", "7.0.0"), createHost("host4", "7.0.0"));
 
-        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"), devZone);
-        CountingModelFactory factory710 = createHostedModelFactory(Version.fromString("7.1.0"), devZone);
-        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"), devZone);
+        CountingModelFactory factory700 = createModelFactory(Version.fromString("7.0.0"), devZone);
+        CountingModelFactory factory710 = createModelFactory(Version.fromString("7.1.0"), devZone);
+        CountingModelFactory factory720 = createModelFactory(Version.fromString("7.2.0"), devZone);
         List<ModelFactory> modelFactories = List.of(factory700, factory710, factory720);
 
         DeployTester tester = createTester(hosts, modelFactories, devZone);
@@ -190,7 +189,7 @@ public class HostedDeployTest {
                                    createHost("host3", "7.0.0"), createHost("host4", "7.0.0"));
 
         ModelFactory factory700 = createFailingModelFactory(Version.fromString("7.0.0"));
-        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"), devZone);
+        CountingModelFactory factory720 = createModelFactory(Version.fromString("7.2.0"), devZone);
         List<ModelFactory> modelFactories = List.of(factory700, factory720);
 
         DeployTester tester = createTester(hosts, modelFactories, devZone, Clock.systemUTC());
@@ -237,8 +236,8 @@ public class HostedDeployTest {
                                    createHost("host3", newestOnOldMajorVersion),
                                    createHost("host4", newestOnOldMajorVersion));
 
-        CountingModelFactory factory1 = createHostedModelFactory(Version.fromString(oldestVersion));
-        CountingModelFactory factory2 = createHostedModelFactory(Version.fromString(newestOnOldMajorVersion));
+        CountingModelFactory factory1 = createModelFactory(Version.fromString(oldestVersion));
+        CountingModelFactory factory2 = createModelFactory(Version.fromString(newestOnOldMajorVersion));
         ModelFactory factory3 = createFailingModelFactory(Version.fromString(newestOnNewMajorVersion));
         List<ModelFactory> modelFactories = List.of(factory1, factory2, factory3);
 
@@ -262,7 +261,7 @@ public class HostedDeployTest {
                                    createHost("host3", "7.0.0"));
 
         List<ModelFactory> modelFactories = List.of(createFailingModelFactory(Version.fromString("7.0.0")),
-                                                    createHostedModelFactory(Version.fromString("7.1.0")));
+                                                    createModelFactory(Version.fromString("7.1.0")));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         tester.deployApp("src/test/apps/hosted/", "7.1.0");
@@ -275,8 +274,8 @@ public class HostedDeployTest {
      **/
     @Test
     public void testCreateOnlyNeededModelVersionsWhenNoHostsAllocated() throws IOException {
-        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"));
-        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"));
+        CountingModelFactory factory700 = createModelFactory(Version.fromString("7.0.0"));
+        CountingModelFactory factory720 = createModelFactory(Version.fromString("7.2.0"));
         List<ModelFactory> modelFactories = List.of(factory700, factory720);
 
         DeployTester tester = createTester(List.of(createHost("host1")), modelFactories, prodZone);
@@ -290,9 +289,9 @@ public class HostedDeployTest {
         // Provisioner does not reuse hosts, so need twice as many hosts as app requires
         List<Host> hosts = IntStream.rangeClosed(1, 8).mapToObj(i -> createHost("host" + i, "6.0.0")).collect(Collectors.toList());
 
-        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.0.0")),
-                                                    createHostedModelFactory(Version.fromString("6.1.0")),
-                                                    createHostedModelFactory(Version.fromString("6.2.0")));
+        List<ModelFactory> modelFactories = List.of(createModelFactory(Version.fromString("6.0.0")),
+                                                    createModelFactory(Version.fromString("6.1.0")),
+                                                    createModelFactory(Version.fromString("6.2.0")));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone, Clock.systemUTC());
         ApplicationId applicationId = tester.applicationId();
@@ -310,7 +309,7 @@ public class HostedDeployTest {
     public void testRedeployAfterExpiredValidationOverride() throws IOException {
         // Old version of model fails, but application disables loading old models until 2016-10-10, so deployment works
         ManualClock clock = new ManualClock("2016-10-09T00:00:00");
-        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(clock),
+        List<ModelFactory> modelFactories = List.of(createModelFactory(clock),
                                                     createFailingModelFactory(Version.fromString("1.0.0"))); // older than default
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig());
         tester.deployApp("src/test/apps/validationOverride/", clock.instant());
@@ -404,7 +403,7 @@ public class HostedDeployTest {
         private final ConfigChangeAction action;
 
         ConfigChangeActionsModelFactory(Version vespaVersion, ConfigChangeAction action) {
-            super(HostedConfigModelRegistry.create(), vespaVersion);
+            super(vespaVersion);
             this.action = action;
         }
 

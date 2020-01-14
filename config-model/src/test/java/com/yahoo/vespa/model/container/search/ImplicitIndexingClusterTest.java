@@ -24,9 +24,7 @@ public class ImplicitIndexingClusterTest {
                 "  <container version=\"1.0\" id=\"jdisc\">\n" + //
                 "    <search />\n" + //
                 "    <nodes count=\"1\" />\n" + //
-                "    <http>\n" + //
-                "      <server id=\"bar\" port=\"4080\" />\n" + //
-                "    </http>\n" + //
+                ACCESS_CONTROL_XML + //
                 "  </container>\n" + //
                 "  <content id=\"music\" version=\"1.0\">\n" + //
                 "    <redundancy>1</redundancy>\n" + //
@@ -43,6 +41,13 @@ public class ImplicitIndexingClusterTest {
         assertNotNull("Docproc not added to jdisc", jdisc.getDocproc());
         assertNotNull("Indexing chain not added to jdisc", jdisc.getDocprocChains().allChains().getComponent("indexing"));
     }
+
+    private final String ACCESS_CONTROL_XML = "<http>\n" +//
+            "  <filtering>\n" +//
+            "    <access-control domain=\"foo\" />\n" +//
+            "  </filtering>\n" +//
+            "  <server id=\"bar\" port=\"4080\" />\n" +//
+            "</http>\n";
 
     private static VespaModel buildMultiTenantVespaModel(String servicesXml) {
         ModelContext.Properties properties = new TestProperties().setMultitenant(true).setHostedVespa(true);

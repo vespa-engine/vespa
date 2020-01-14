@@ -44,7 +44,6 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.INITIALIZE_ONLY;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_FILE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_PROGRAMMATICALLY;
-import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -62,7 +61,7 @@ public class ConfigServerBootstrapTest {
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig, provisioner);
+        DeployTester tester = new DeployTester(configserverConfig, provisioner);
         tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
@@ -95,7 +94,7 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig, provisioner);
+        DeployTester tester = new DeployTester(configserverConfig, provisioner);
         tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
@@ -120,7 +119,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig);
+        DeployTester tester = new DeployTester(configserverConfig);
         tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
