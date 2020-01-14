@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,7 +31,6 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
-// TODO: Handle shutdown of executors
 public class FileReferenceDownloader {
 
     private final static Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
@@ -194,7 +194,11 @@ public class FileReferenceDownloader {
         return connectionPool;
     }
 
-    public Duration getDownloadTimeout() {
-        return downloadTimeout;
+    public void close() {
+        try {
+            downloadExecutor.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.interrupted(); // Ignore and continue shutdown.
+        }
     }
 }

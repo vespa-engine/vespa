@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,6 +52,11 @@ public class FileDownloaderTest {
             e.printStackTrace();
             fail(e.getMessage());
         }
+    }
+
+    @After
+    public void teardown() {
+        fileDownloader.close();
     }
 
     @Test

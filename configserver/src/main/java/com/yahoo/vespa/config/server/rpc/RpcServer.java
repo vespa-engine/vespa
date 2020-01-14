@@ -202,6 +202,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             Thread.interrupted(); // Ignore and continue shutdown.
         }
         delayedConfigResponses.stop();
+        fileServer.close();
         supervisor.transport().shutdown().join();
         isRunning = false;
     }
