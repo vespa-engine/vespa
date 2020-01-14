@@ -33,6 +33,7 @@
 
     <properties>
         <vespaversion>${project.version}</vespaversion>
+        <test-framework.version>${project.version}</test-framework.version>
         <target_jdk_version>11</target_jdk_version>
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
@@ -93,7 +94,7 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>tenant-cd</artifactId>
-            <version>${vespaversion}</version>
+            <version>${test-framework.version}</version>
             <scope>test</scope>
 	    <exclusions>
 		    <exclusion>
