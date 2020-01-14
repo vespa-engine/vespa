@@ -72,7 +72,7 @@ void VespaDocumentDeserializer::readDocument(Document &value) {
     LOG(spam, "content_code is %u", content_code);
     const DocumentType *type = readDocType(value.getType());
     if (type) {
-        Document newDoc(*type, value.getId(), true);
+        Document newDoc(*type, std::move(value.getId()));
         value.swap(newDoc);
     }
     value.setRepo(_repo.getDocumentTypeRepo());

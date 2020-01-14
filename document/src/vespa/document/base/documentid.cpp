@@ -37,6 +37,10 @@ DocumentId::DocumentId(const IdString& id)
 {
 }
 
+DocumentId::DocumentId(const DocumentId & rhs) = default;
+DocumentId & DocumentId::operator = (const DocumentId & rhs) = default;
+DocumentId::~DocumentId() = default;
+
 vespalib::string
 DocumentId::toString() const {
     return _id->toString();
