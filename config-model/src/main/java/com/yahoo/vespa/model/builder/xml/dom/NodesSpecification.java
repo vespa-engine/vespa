@@ -11,11 +11,13 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.
@@ -289,7 +291,7 @@ public class NodesSpecification {
         var contentClusterId = content.get().getAttribute("id");
         if (contentClusterId.isEmpty()) return false;
         for (var rootChild : XML.getChildren(services.get())) {
-            if ( ! "container".equals(rootChild.getTagName()) && ! "jdisc".equals(rootChild.getTagName())) continue; // Only container can reference content
+            if ( ! ContainerModelBuilder.isContainerTag(rootChild)) continue;
             var nodes = XML.getChild(rootChild, "nodes");
             if (nodes == null) continue;
             if (!contentClusterId.equals(nodes.getAttribute("of"))) continue;

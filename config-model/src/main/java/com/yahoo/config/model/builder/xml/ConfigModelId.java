@@ -7,7 +7,6 @@ import com.yahoo.component.Version;
  * A {@link ConfigModelId} describes an element handled by a {@link ConfigModelBuilder}.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ConfigModelId implements Comparable<ConfigModelId> {
 
