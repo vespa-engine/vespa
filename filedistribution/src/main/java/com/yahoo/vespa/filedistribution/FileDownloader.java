@@ -142,4 +142,8 @@ public class FileDownloader {
     public FileReferenceDownloader fileReferenceDownloader() {
         return fileReferenceDownloader;
     }
+
+    public void close() {
+        fileReferenceDownloader.close();
+    }
 }

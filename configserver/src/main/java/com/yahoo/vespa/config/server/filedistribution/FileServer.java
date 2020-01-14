@@ -195,6 +195,10 @@ public class FileServer {
         return downloader;
     }
 
+    public void close() {
+        downloader.close();
+    }
+
     // Connection pool with all config servers except this one (might be an empty pool if there is only one config server)
     private static ConnectionPool createConnectionPool(ConfigserverConfig configserverConfig) {
         List<String> configServers = ConfigServerSpec.fromConfig(configserverConfig)
