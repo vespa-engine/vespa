@@ -135,7 +135,6 @@ class JobControllerApiHandlerHelper {
                 Deployment deployment = instance.deployments().get(zone);
                 if (deployment != null)
                     deploymentToSlime(deploymentsObject.setObject(zone.region().value()),
-                                      instance,
                                       change,
                                       pendingProduction,
                                       running,
@@ -240,7 +239,7 @@ class JobControllerApiHandlerHelper {
             lastApplicationObject.setString("pending", "Waiting for current deployment to complete");
     }
 
-    private static void deploymentToSlime(Cursor deploymentObject, Instance instance, Change change,
+    private static void deploymentToSlime(Cursor deploymentObject, Change change,
                                           Map<JobType, Versions> pendingProduction, Map<JobType, Run> running,
                                           JobType type, JobStatus jobStatus, Deployment deployment) {
         deploymentObject.setLong("at", deployment.at().toEpochMilli());

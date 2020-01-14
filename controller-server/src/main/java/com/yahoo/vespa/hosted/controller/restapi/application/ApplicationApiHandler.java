@@ -954,6 +954,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 if (!instance.rotations().isEmpty()) {
                     toSlime(instance.rotations(), instance.rotationStatus(), deployment, deploymentObject);
                 }
+
+
             }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
@@ -968,6 +970,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                            request.getUri()).toString());
             }
         }
+        // Add dummy values for not-yet-existent prod deployments.
+        status.jobSteps().keySet().stream()
+              .filter(job -> job.application().instance().equals(instance.name()))
+              .filter(job -> job.type().isProduction() && job.type().isDeployment())
+              .map(job -> job.type().zone(controller.system()))
+              .filter(zone -> ! instance.deployments().containsKey(zone))
+              .forEach(zone -> {
+                    Cursor deploymentObject = instancesArray.addObject();
+                    deploymentObject.setString("environment", zone.environment().value());
+                    deploymentObject.setString("region", zone.region().value());
+              });
 
         // TODO jonmv: Remove when clients are updated
         application.deployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", KeyUtils.toPem(key)));

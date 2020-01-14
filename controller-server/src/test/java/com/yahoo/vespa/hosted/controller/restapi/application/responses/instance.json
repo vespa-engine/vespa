@@ -270,6 +270,14 @@
       "region": "us-central-1",
       "instance": "instance1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1"
+    },
+    {
+      "environment": "prod",
+      "region": "us-east-3"
+    },
+    {
+      "environment": "prod",
+      "region": "us-west-1"
     }
   ],
   "pemDeployKeys": [],

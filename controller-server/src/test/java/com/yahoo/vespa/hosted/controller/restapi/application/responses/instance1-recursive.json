@@ -248,7 +248,15 @@
   "rotationId": "rotation-id-1",
   "instances": [
     @include(dev-us-east-1.json),
-    @include(prod-us-central-1.json)
+    @include(prod-us-central-1.json),
+    {
+      "environment": "prod",
+      "region": "us-east-3"
+    },
+    {
+      "environment": "prod",
+      "region": "us-west-1"
+    }
   ],
   "pemDeployKeys": [],
   "metrics": {
