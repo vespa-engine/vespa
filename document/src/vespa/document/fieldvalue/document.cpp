@@ -65,19 +65,7 @@ Document::Document()
 
 Document::Document(const Document& other) = default;
 
-Document::Document(const DataType &type, const DocumentId& documentId)
-    : StructuredFieldValue(verifyDocumentType(&type)),
-      _id(documentId),
-      _fields(getType().getFieldsType()),
-      _lastModified(0)
-{
-    _fields.setDocumentType(getType());
-    if (documentId.hasDocType() && documentId.getDocType() != type.getName()) {
-        throwTypeMismatch(type.getName(), documentId.getDocType());
-    }
-}
-
-Document::Document(const DataType &type, DocumentId && documentId)
+Document::Document(const DataType &type, DocumentId documentId)
     : StructuredFieldValue(verifyDocumentType(&type)),
       _id(std::move(documentId)),
       _fields(getType().getFieldsType()),

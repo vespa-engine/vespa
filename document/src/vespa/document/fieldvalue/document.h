@@ -39,8 +39,7 @@ public:
 
     Document();
     Document(const Document&);
-    Document(const DataType &, const DocumentId&);
-    Document(const DataType &, DocumentId &&);
+    Document(const DataType &, DocumentId id);
     Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, const DataType *anticipatedType = nullptr);
     Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream, const DataType *anticipatedType = nullptr);
     /**
