@@ -952,7 +952,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     toSlime(instance.rotationStatus().of(instance.rotations().get(0).rotationId(), deployment),
                             deploymentObject);
                 }
-                if (!instance.rotations().isEmpty()) {
+                if ( ! recurseOverDeployments(request) && ! instance.rotations().isEmpty()) { // TODO jonmv: clean up when clients have converged.
                     toSlime(instance.rotations(), instance.rotationStatus(), deployment, deploymentObject);
                 }
 
@@ -1074,9 +1074,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
-        controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId())).projectId()
-                  .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
+        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
+        application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
+
+        Instance instance = application.instances().get(deploymentId.applicationId().instance());
+        if (instance != null && ! instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
+            toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);
 
         Cursor activity = response.setObject("activity");
         deployment.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried",
