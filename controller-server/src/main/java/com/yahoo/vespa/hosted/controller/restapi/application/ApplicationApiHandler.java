@@ -51,6 +51,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -955,7 +956,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     toSlime(instance.rotations(), instance.rotationStatus(), deployment, deploymentObject);
                 }
 
+                JobType.from(controller.system(), deployment.zone())
+                       .map(type -> new JobId(instance.id(), type))
+                       .map(status.jobSteps()::get)
+                       .ifPresent(stepStatus -> {
+                           deploymentObject.setString("platform", deployment.version().toFullString());
+                           toSlime(deployment.applicationVersion(), deploymentObject.setObject("applicationVersion"));
+                           if ( ! status.jobsToRun().containsKey(stepStatus.job().get()))
+                               deploymentObject.setString("status", "complete");
+                           else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(false))
+                               deploymentObject.setString("status", "pending");
+                           else deploymentObject.setString("status", "running");
 
+                       });
             }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
