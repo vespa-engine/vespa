@@ -226,9 +226,9 @@ Document::print(std::ostream& out, bool verbose,
                 const std::string& indent) const
 {
     if (!verbose) {
-        out << "Document(" << getId() << ", " << getType() << ")";
+        out << "Document(" << getId().toString() << ", " << getType() << ")";
     } else {
-        out << "Document(" << getId() << "\n" << indent << "  ";
+        out << "Document(" << getId().toString() << "\n" << indent << "  ";
         getType().print(out, true, indent + "  ");
         for (const_iterator it = begin(); it != end(); ++it) {
             out << "\n" << indent << "  " << it.field().getName() << ": ";

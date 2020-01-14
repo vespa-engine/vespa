@@ -56,12 +56,12 @@ public:
 
     void process(spi::DocEntry& e) override {
         ost << "  Timestamp: " << e.getTimestamp() << ", ";
-        if (e.getDocument() != 0) {
-            ost << "Doc(" << e.getDocument()->getId() << ")"
+        if (e.getDocument() != nullptr) {
+            ost << "Doc(" << e.getDocument()->getId().toString() << ")"
                 << ", " << e.getDocument()->getId().getGlobalId().toString()
                 << ", size: " << e.getPersistedDocumentSize();
-        } else if (e.getDocumentId() != 0) {
-            ost << *e.getDocumentId()
+        } else if (e.getDocumentId() != nullptr) {
+            ost << e.getDocumentId()->toString()
                 << ", " << e.getDocumentId()->getGlobalId().toString();
         } else {
             ost << "metadata only";

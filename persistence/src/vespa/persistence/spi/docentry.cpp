@@ -90,9 +90,9 @@ DocEntry::toString() const
     std::ostringstream out;
     out << "DocEntry(" << _timestamp << ", " << _metaFlags << ", ";
     if (_documentId.get() != 0) {
-        out << *_documentId;
+        out << _documentId->toString();
     } else if (_document.get()) {
-        out << "Doc(" << _document->getId() << ")";
+        out << "Doc(" << _document->getId().toString() << ")";
     } else {
         out << "metadata only";
     }
@@ -111,9 +111,9 @@ DocEntry::prettyPrint(std::ostream& out) const
     out << "DocEntry(Timestamp: " << _timestamp
         << ", size " << getPersistedDocumentSize() << ", ";
     if (_documentId.get() != 0) {
-        out << *_documentId;
+        out << _documentId->toString();
     } else if (_document.get()) {
-        out << "Doc(" << _document->getId() << ")";
+        out << "Doc(" << _document->getId().toString() << ")";
     } else {
         out << "metadata only";
     }

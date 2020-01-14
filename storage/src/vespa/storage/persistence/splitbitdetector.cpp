@@ -91,7 +91,7 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
         for (uint32_t i=0; i<_firstDocs.size(); ++i) {
             out << "\n" << _firstDocs[i].timestamp << ' '
                 << _firstDocs[i].bucketId << ' '
-                << _firstDocs[i].docId;
+                << _firstDocs[i].docId.toString();
         }
     }
 
@@ -109,7 +109,7 @@ BucketVisitor::BucketVisitor(const document::BucketIdFactory& factory)
         _splitMask = (_splitMask << 1) | 1;
     }
 }
-BucketVisitor::~BucketVisitor() { }
+BucketVisitor::~BucketVisitor() = default;
 
 bool
 smallerThanSizeLimit(uint32_t minCount,

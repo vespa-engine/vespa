@@ -122,7 +122,7 @@ TEST_F("clone()ing creates new instance with same ID and type", Fixture) {
     ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
 
     std::unique_ptr<ReferenceFieldValue> cloned(src.clone());
-    ASSERT_TRUE(cloned.get() != nullptr);
+    ASSERT_TRUE(cloned);
     ASSERT_TRUE(cloned->hasValidDocumentId());
     EXPECT_EQUAL(src.getDocumentId(), cloned->getDocumentId());
     EXPECT_EQUAL(src.getDataType(), cloned->getDataType());
@@ -133,7 +133,7 @@ TEST_F("Can clone() value without document ID", Fixture) {
     ReferenceFieldValue src(f.refType);
 
     std::unique_ptr<ReferenceFieldValue> cloned(src.clone());
-    ASSERT_TRUE(cloned.get() != nullptr);
+    ASSERT_TRUE(cloned);
     EXPECT_FALSE(cloned->hasValidDocumentId());
     EXPECT_EQUAL(src.getDataType(), cloned->getDataType());
     EXPECT_TRUE(cloned->hasChanged());
