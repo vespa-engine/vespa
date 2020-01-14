@@ -2,15 +2,6 @@
   "bcpStatus": {
     "rotationStatus": "IN"
   },
-  "endpointStatus": [
-    {
-      "endpointId": "default",
-      "rotationId": "rotation-id-1",
-      "clusterId": "foo",
-      "status": "IN",
-      "lastUpdated": "(ignore)"
-    }
-  ],
   "platform": "6.1.0",
   "applicationVersion": {
     "buildNumber": 1,
@@ -41,6 +32,15 @@
   "gitRepository": "repository1",
   "gitBranch": "master",
   "gitCommit": "commit1",
+  "endpointStatus": [
+    {
+      "endpointId": "default",
+      "rotationId": "rotation-id-1",
+      "clusterId": "foo",
+      "status": "IN",
+      "lastUpdated": "(ignore)"
+    }
+  ],
   "activity": {
     "lastQueried": 1527848130000,
     "lastWritten": 1527848130000,
