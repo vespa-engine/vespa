@@ -36,6 +36,8 @@ public:
     typedef std::shared_ptr<Document> SP;
 
     static constexpr uint16_t getNewestSerializationVersion() { return 8; }
+    static const DataType & verifyDocumentType(const DataType *type);
+    static void verifyIdAndType(const DocumentId & id, const DataType *type);
 
     Document();
     Document(const Document&);
@@ -54,11 +56,10 @@ public:
 
     Document& operator=(const Document&);
 
-    void swap(Document & rhs);
-
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
 
+    void setType(const DataType & type) override;
     const DocumentType& getType() const;
     const DocumentId& getId() const { return _id; }
     DocumentId & getId() { return _id; }

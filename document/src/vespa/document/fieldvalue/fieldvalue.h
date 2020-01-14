@@ -47,7 +47,7 @@ public:
 
     DECLARE_IDENTIFIABLE_ABSTRACT(FieldValue);
 
-    FieldValue() {}
+    FieldValue() = default;
 
     /**
      * Visit this fieldvalue for double dispatch.

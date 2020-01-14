@@ -116,6 +116,7 @@ MMapLimitAndAlignment::MMapLimitAndAlignment(size_t mmapLimit, size_t alignment)
 }
 
 namespace alloc {
+namespace {
 
 class HeapAllocator : public MemoryAllocator {
 public:
@@ -179,8 +180,6 @@ private:
 };
 
 
-namespace {
-
 struct MMapLimitAndAlignmentHash {
     std::size_t operator ()(MMapLimitAndAlignment key) const { return key.hash(); }
 };
@@ -239,8 +238,6 @@ alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(4096);
 alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
 alloc::MMapAllocator _G_mmapAllocatorDefault;
 
-}
-
 MemoryAllocator &
 HeapAllocator::getDefault() {
     return _G_heapAllocatorDefault;
@@ -270,7 +267,8 @@ AutoAllocator::getDefault() {
     return *_G_availableAutoAllocators.second;
 }
 
-MemoryAllocator & AutoAllocator::getAllocator(size_t mmapLimit, size_t alignment) {
+MemoryAllocator &
+AutoAllocator::getAllocator(size_t mmapLimit, size_t alignment) {
     return getAutoAllocator(_G_availableAutoAllocators.first, mmapLimit, alignment);
 }
 
@@ -450,6 +448,9 @@ AutoAllocator::free(PtrAndSize alloc) const {
         return HeapAllocator::sfree(alloc);
     }
 }
+
+}
+
 
 Alloc
 Alloc::allocHeap(size_t sz)

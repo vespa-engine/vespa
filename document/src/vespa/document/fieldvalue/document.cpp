@@ -42,7 +42,10 @@ void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) 
                                    VESPA_STRLOC);
 }
 
-const DataType &verifyDocumentType(const DataType *type) {
+}  // namespace
+
+const DataType &
+Document::verifyDocumentType(const DataType *type) {
     if (!type) {
         documentTypeError("null");
     } else if ( ! type->getClass().inherits(DocumentType::classId)) {
@@ -50,7 +53,20 @@ const DataType &verifyDocumentType(const DataType *type) {
     }
     return *type;
 }
-}  // namespace
+
+void
+Document::verifyIdAndType(const DocumentId & id, const DataType *type) {
+    verifyDocumentType(type);
+    if (id.hasDocType() && (id.getDocType() != type->getName())) {
+        throwTypeMismatch(type->getName(), id.getDocType());
+    }
+}
+
+void
+Document::setType(const DataType & type) {
+    StructuredFieldValue::setType(type);
+    _fields.setType(getType().getFieldsType());
+}
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(Document, StructuredFieldValue);
 
@@ -128,15 +144,6 @@ Document::Document(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer&
 }
 
 Document::~Document() = default;
-
-void
-Document::swap(Document & rhs)
-{
-    StructuredFieldValue::swap(rhs);
-    _fields.swap(rhs._fields);
-    _id.swap(rhs._id);
-    std::swap(_lastModified, rhs._lastModified);
-}
 
 const DocumentType&
 Document::getType() const {

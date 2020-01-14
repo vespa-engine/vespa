@@ -32,16 +32,19 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructFieldValue, StructuredFieldValue);
 
 StructFieldValue::StructFieldValue(const DataType &type)
     : StructuredFieldValue(type),
-      _repo(NULL),
-      _doc_type(NULL),
+      _repo(nullptr),
+      _doc_type(nullptr),
       _version(Document::getNewestSerializationVersion()),
       _hasChanged(true)
 {
 }
 
-StructFieldValue::~StructFieldValue() { }
+StructFieldValue::StructFieldValue(const StructFieldValue & rhs) = default;
+StructFieldValue & StructFieldValue::operator = (const StructFieldValue & rhs) = default;
 
-StructFieldValue::Chunks::~Chunks() { }
+StructFieldValue::~StructFieldValue() = default;
+
+StructFieldValue::Chunks::~Chunks() = default;
 
 void
 StructFieldValue::Chunks::push_back(SerializableArray::UP item) {
@@ -54,24 +57,6 @@ StructFieldValue::Chunks::clear() {
     _chunks[0].reset();
     _chunks[1].reset();
     _sz = 0;
-}
-
-void
-StructFieldValue::Chunks::swap(Chunks & rhs) {
-    _chunks[0].swap(rhs._chunks[0]);
-    _chunks[1].swap(rhs._chunks[1]);
-    std::swap(_sz, rhs._sz);
-}
-
-void
-StructFieldValue::swap(StructFieldValue & rhs)
-{
-    StructuredFieldValue::swap(rhs);
-    std::swap(_chunks, rhs._chunks);
-    std::swap(_hasChanged, rhs._hasChanged);
-    std::swap(_repo, rhs._repo);
-    std::swap(_doc_type, rhs._doc_type);
-    std::swap(_version, _version);
 }
 
 const StructDataType &

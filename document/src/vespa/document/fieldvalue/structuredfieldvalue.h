@@ -44,13 +44,13 @@ class StructuredFieldValue : public FieldValue
     VESPA_DLL_LOCAL void returnValue(const Field & field, FieldValue::UP value) const;
 
 protected:
-    StructuredFieldValue(const DataType &type);
+    VESPA_DLL_LOCAL StructuredFieldValue(const DataType &type);
     StructuredFieldValue(const StructuredFieldValue&);
     StructuredFieldValue& operator=(const StructuredFieldValue&);
-    void swap(StructuredFieldValue & rhs) { std::swap(_type, rhs._type); }
+    ~StructuredFieldValue() override;
 
     /** Called from Document when deserializing alters type. */
-    virtual void setType(const DataType& type);
+    virtual void setType(const DataType& type) { _type = &type; }
     const DataType &getType() const { return *_type; }
 
     struct StructuredIterator {
@@ -77,10 +77,10 @@ protected:
         }
 
         bool operator==(const Iterator& other) const {
-            if (_field == 0 && other._field == 0)
+            if (_field == nullptr && other._field == nullptr)
                // both at end()
                return true;
-            if (_field == 0 || other._field == 0)
+            if (_field == nullptr || other._field == nullptr)
                 // one at end()
                 return false;
             return (*_field == *other._field);
@@ -105,9 +105,8 @@ protected:
     onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(StructuredFieldValue);
-    ~StructuredFieldValue();
 
-    virtual StructuredFieldValue* clone() const override = 0;
+    StructuredFieldValue* clone() const override = 0;
     const DataType *getDataType() const override { return _type; }
 
     /** Wrapper for DataType's hasField() function. */

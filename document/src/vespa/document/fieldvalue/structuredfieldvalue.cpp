@@ -41,12 +41,8 @@ StructuredFieldValue::StructuredFieldValue(const DataType &type)
 {
 }
 
-StructuredFieldValue::~StructuredFieldValue() {}
+StructuredFieldValue::~StructuredFieldValue() = default;
 
-void StructuredFieldValue::setType(const DataType& type)
-{
-    _type = &type;
-}
 
 StructuredFieldValue&
 StructuredFieldValue::operator=(const StructuredFieldValue& other)
@@ -61,7 +57,8 @@ StructuredFieldValue::operator=(const StructuredFieldValue& other)
     return *this;
 }
 
-void StructuredFieldValue::setFieldValue(const Field & field, const FieldValue & value)
+void
+StructuredFieldValue::setFieldValue(const Field & field, const FieldValue & value)
 {
     if (!field.getDataType().isValueType(value) &&
         !value.getDataType()->isA(field.getDataType()))
