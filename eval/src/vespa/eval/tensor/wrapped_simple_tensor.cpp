@@ -76,6 +76,12 @@ WrappedSimpleTensor::join(join_fun_t, const Tensor &) const
 }
 
 Tensor::UP
+WrappedSimpleTensor::merge(join_fun_t, const Tensor &) const
+{
+    LOG_ABORT("should not be reached");
+}
+
+Tensor::UP
 WrappedSimpleTensor::reduce(join_fun_t, const std::vector<vespalib::string> &) const
 {
     LOG_ABORT("should not be reached");

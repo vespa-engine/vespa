@@ -101,6 +101,10 @@ void op_tensor_join(State &state, uint64_t param) {
     state.pop_pop_push(state.engine.join(state.peek(1), state.peek(0), to_join_fun(param), state.stash));
 }
 
+void op_tensor_merge(State &state, uint64_t param) {
+    state.pop_pop_push(state.engine.merge(state.peek(1), state.peek(0), to_join_fun(param), state.stash));
+}
+
 using ReduceParams = std::pair<Aggr,std::vector<vespalib::string>>;
 void op_tensor_reduce(State &state, uint64_t param) {
     const ReduceParams &params = unwrap_param<ReduceParams>(param);
@@ -324,6 +328,21 @@ Join::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
+Merge::compile_self(Stash &) const
+{
+    return Instruction(op_tensor_merge, to_param(_function));
+}
+
+void
+Merge::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Super::visit_self(visitor);
+    ::visit(visitor, "function", _function);
+}
+
+//-----------------------------------------------------------------------------
+
+Instruction
 Concat::compile_self(Stash &) const
 {
     return Instruction(op_tensor_concat, wrap_param<vespalib::string>(_dimension));
@@ -469,6 +488,11 @@ const Node &map(const Node &child, map_fun_t function, Stash &stash) {
 const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash) {
     ValueType result_type = ValueType::join(lhs.result_type(), rhs.result_type());
     return stash.create<Join>(result_type, lhs, rhs, function);
+}
+
+const Node &merge(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash) {
+    ValueType result_type = ValueType::merge(lhs.result_type(), rhs.result_type());
+    return stash.create<Merge>(result_type, lhs, rhs, function);
 }
 
 const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash) {

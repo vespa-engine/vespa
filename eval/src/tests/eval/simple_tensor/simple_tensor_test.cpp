@@ -106,6 +106,30 @@ TEST("require that simple tensors can be multiplied with each other") {
     EXPECT_EQUAL(to_spec(*expect), to_spec(unwrap(result2)));
 }
 
+TEST("require that simple tensors can be merged") {
+    auto lhs = SimpleTensor::create(
+            TensorSpec("tensor(x{},y{})")
+            .add({{"x","1"},{"y","1"}}, 1)
+            .add({{"x","2"},{"y","1"}}, 3)
+            .add({{"x","1"},{"y","2"}}, 5));
+    auto rhs = SimpleTensor::create(
+            TensorSpec("tensor(x{},y{})")
+            .add({{"x","1"},{"y","2"}}, 7)
+            .add({{"x","2"},{"y","2"}}, 11)
+            .add({{"x","1"},{"y","1"}}, 13));
+    auto expect = SimpleTensor::create(
+            TensorSpec("tensor(x{},y{})")
+            .add({{"x","2"},{"y","1"}}, 3)
+            .add({{"x","1"},{"y","2"}}, 7)
+            .add({{"x","2"},{"y","2"}}, 11)
+            .add({{"x","1"},{"y","1"}}, 13));
+    auto result = SimpleTensor::merge(*lhs, *rhs, [](double, double b){ return b; });
+    EXPECT_EQUAL(to_spec(*expect), to_spec(*result));
+    Stash stash;
+    const Value &result2 = SimpleTensorEngine::ref().merge(*lhs, *rhs, [](double, double b){ return b; }, stash);
+    EXPECT_EQUAL(to_spec(*expect), to_spec(unwrap(result2)));
+}
+
 TEST("require that simple tensors support dimension reduction") {
     auto tensor = SimpleTensor::create(
             TensorSpec("tensor(x[3],y[2])")

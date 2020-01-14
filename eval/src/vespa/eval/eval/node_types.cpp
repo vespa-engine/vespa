@@ -97,6 +97,10 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     }
     void visit(const TensorMap &node) override { resolve_op1(node); }
     void visit(const TensorJoin &node) override { resolve_op2(node); }
+    void visit(const TensorMerge &node) override {
+        bind(ValueType::merge(type(node.get_child(0)),
+                              type(node.get_child(1))), node);
+    }
     void visit(const TensorReduce &node) override {
         const ValueType &child = type(node.get_child(0));
         bind(child.reduce(node.dimensions()), node);

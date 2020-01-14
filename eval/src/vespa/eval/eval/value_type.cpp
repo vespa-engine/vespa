@@ -289,6 +289,20 @@ ValueType::join(const ValueType &lhs, const ValueType &rhs)
     return tensor_type(std::move(result.dimensions), unify(lhs._cell_type, rhs._cell_type));
 }
 
+ValueType
+ValueType::merge(const ValueType &lhs, const ValueType &rhs)
+{
+    if ((lhs.type() != rhs.type()) ||
+        (lhs.dimensions() != rhs.dimensions()))
+    {
+        return error_type();
+    }
+    if (lhs.dimensions().empty()) {
+        return lhs;
+    }
+    return tensor_type(lhs.dimensions(), unify(lhs._cell_type, rhs._cell_type));
+}
+
 CellType
 ValueType::unify_cell_types(const ValueType &a, const ValueType &b) {
     if (a.is_double()) {

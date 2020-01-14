@@ -5,6 +5,10 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/tensor_engine.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/node_types.h>
+#include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/simple_tensor_engine.h>
 
 namespace vespalib {
 namespace eval {
@@ -290,6 +294,24 @@ TensorSpec spec(const vespalib::string &type,
         spec.add(cell.first, cell.second);
     }
     return spec;
+}
+
+TensorSpec spec(const vespalib::string &value_expr) {
+    if (value_expr == "error") {
+        return TensorSpec("error");
+    }
+    const auto &engine = SimpleTensorEngine::ref();
+    auto fun = Function::parse(value_expr);
+    ASSERT_TRUE(!fun->has_error());
+    ASSERT_EQUAL(fun->num_params(), 0u);
+    NodeTypes types(*fun, {});
+    ASSERT_TRUE(!types.get_type(fun->root()).is_error());
+    InterpretedFunction ifun(engine, *fun, types);
+    InterpretedFunction::Context ctx(ifun);
+    SimpleObjectParams params({});
+    auto result = engine.to_spec(ifun.eval(ctx, params));
+    ASSERT_TRUE(!result.cells().empty());
+    return result;
 }
 
 } // namespace vespalib::eval::test

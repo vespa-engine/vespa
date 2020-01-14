@@ -195,6 +195,28 @@ TEST("require that join resolves correct type") {
     TEST_DO(verify_op2("join(%s,%s,f(x,y)(x+y))"));
 }
 
+TEST("require that merge resolves to the appropriate type") {
+    const char *pattern = "merge(%s,%s,f(x,y)(x+y))";
+    TEST_DO(verify(strfmt(pattern, "error", "error"), "error"));
+    TEST_DO(verify(strfmt(pattern, "double", "error"), "error"));
+    TEST_DO(verify(strfmt(pattern, "error", "double"), "error"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "error"), "error"));
+    TEST_DO(verify(strfmt(pattern, "error", "tensor(x{})"), "error"));
+    TEST_DO(verify(strfmt(pattern, "double", "double"), "double"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "double"), "error"));
+    TEST_DO(verify(strfmt(pattern, "double", "tensor(x{})"), "error"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x{})"), "tensor(x{})"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(y{})"), "error"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor(x[5])"), "tensor(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x[3])", "tensor(x[5])"), "error"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor(x[3])"), "error"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x[5])"), "error"));
+    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor<float>(x[5])"), "tensor(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "error"));
+}
+
 TEST("require that lambda tensor resolves correct type") {
     TEST_DO(verify("tensor(x[5])(1.0)", "tensor(x[5])"));
     TEST_DO(verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])"));

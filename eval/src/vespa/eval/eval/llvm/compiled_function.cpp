@@ -128,6 +128,7 @@ CompiledFunction::detect_issues(const Function &function)
         void close(const nodes::Node &node) override {
             if (nodes::check_type<nodes::TensorMap,
                                   nodes::TensorJoin,
+                                  nodes::TensorMerge,
                                   nodes::TensorReduce,
                                   nodes::TensorRename,
                                   nodes::TensorConcat,

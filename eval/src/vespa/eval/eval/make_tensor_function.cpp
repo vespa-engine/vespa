@@ -77,6 +77,14 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::join(a, b, function, stash);
     }
 
+    void make_merge(const Node &, join_fun_t function) {
+        assert(stack.size() >= 2);
+        const auto &b = stack.back();
+        stack.pop_back();
+        const auto &a = stack.back();
+        stack.back() = tensor_function::merge(a, b, function, stash);
+    }
+
     void make_concat(const Node &, const vespalib::string &dimension) {
         assert(stack.size() >= 2);
         const auto &b = stack.back();
@@ -196,6 +204,10 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
             const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
             make_join(node, token.get()->get().get_function<2>());
         }
+    }
+    void visit(const TensorMerge &node) override {
+        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
+        make_merge(node, token.get()->get().get_function<2>());
     }
     void visit(const TensorReduce &node) override {
         make_reduce(node, node.aggr(), node.dimensions());

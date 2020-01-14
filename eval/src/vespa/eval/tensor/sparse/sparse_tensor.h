@@ -44,6 +44,7 @@ public:
     double as_double() const override;
     Tensor::UP apply(const CellFunction &func) const override;
     Tensor::UP join(join_fun_t function, const Tensor &arg) const override;
+    Tensor::UP merge(join_fun_t function, const Tensor &arg) const override;
     Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const override;
     std::unique_ptr<Tensor> modify(join_fun_t op, const CellValues &cellValues) const override;
     std::unique_ptr<Tensor> add(const Tensor &arg) const override;

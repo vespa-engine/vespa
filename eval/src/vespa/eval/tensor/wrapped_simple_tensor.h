@@ -37,6 +37,7 @@ public:
     // functions below should not be used for this implementation
     Tensor::UP apply(const CellFunction &) const override;
     Tensor::UP join(join_fun_t, const Tensor &) const override;
+    Tensor::UP merge(join_fun_t, const Tensor &) const override;
     Tensor::UP reduce(join_fun_t, const std::vector<vespalib::string> &) const override;
     std::unique_ptr<Tensor> modify(join_fun_t, const CellValues &) const override;
     std::unique_ptr<Tensor> add(const Tensor &arg) const override;

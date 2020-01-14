@@ -33,6 +33,7 @@ public:
     virtual ~Tensor() {}
     virtual Tensor::UP apply(const CellFunction &func) const = 0;
     virtual Tensor::UP join(join_fun_t function, const Tensor &arg) const = 0;
+    virtual Tensor::UP merge(join_fun_t function, const Tensor &arg) const = 0;
     virtual Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const = 0;
 
     /*

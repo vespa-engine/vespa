@@ -8,6 +8,7 @@
 #include "sparse_tensor_modify.h"
 #include "sparse_tensor_reduce.hpp"
 #include "sparse_tensor_remove.h"
+#include "direct_sparse_tensor_builder.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/tensor_address_builder.h>
@@ -172,6 +173,30 @@ SparseTensor::join(join_fun_t function, const Tensor &arg) const
         }
     }
     return sparse::apply(*this, *rhs, function);
+}
+
+Tensor::UP
+SparseTensor::merge(join_fun_t function, const Tensor &arg) const
+{
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
+    assert(rhs && (fast_type().dimensions() == rhs->fast_type().dimensions()));
+    DirectSparseTensorBuilder builder(eval::ValueType::merge(fast_type(), rhs->fast_type()));
+    builder.reserve(cells().size() + rhs->cells().size());
+    for (const auto &cell: cells()) {
+        auto pos = rhs->cells().find(cell.first);
+        if (pos == rhs->cells().end()) {
+            builder.insertCell(cell.first, cell.second);
+        } else {
+            builder.insertCell(cell.first, function(cell.second, pos->second));
+        }
+    }
+    for (const auto &cell: rhs->cells()) {
+        auto pos = cells().find(cell.first);
+        if (pos == cells().end()) {
+            builder.insertCell(cell.first, cell.second);
+        }
+    }
+    return builder.build();
 }
 
 Tensor::UP

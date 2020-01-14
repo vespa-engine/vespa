@@ -829,6 +829,32 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_tensor_merge(const vespalib::string &type_base, const vespalib::string &a_str,
+                           const vespalib::string &b_str, const vespalib::string &expect_str)
+    {
+        vespalib::string expr = "merge(a,b,f(x,y)(2*x+y))";
+        for (bool a_float: {false, true}) {
+            for (bool b_float: {false, true}) {
+                bool both_float = a_float && b_float;
+                vespalib::string a_expr = make_string("tensor%s(%s):%s", a_float ? "<float>" : "", type_base.c_str(), a_str.c_str());
+                vespalib::string b_expr = make_string("tensor%s(%s):%s", b_float ? "<float>" : "", type_base.c_str(), b_str.c_str());
+                vespalib::string expect_expr = make_string("tensor%s(%s):%s", both_float ? "<float>" : "", type_base.c_str(), expect_str.c_str());
+                TensorSpec a = spec(a_expr);
+                TensorSpec b = spec(b_expr);
+                TensorSpec expect = spec(expect_expr);
+                TEST_DO(verify_result(Expr_TT(expr).eval(engine, a, b), expect));
+            }
+        }
+    }
+
+    void test_tensor_merge() {
+        TEST_DO(test_tensor_merge("x[3]", "[1,2,3]", "[4,5,6]", "[6,9,12]"));
+        TEST_DO(test_tensor_merge("x{}", "{a:1,b:2,c:3}", "{b:4,c:5,d:6}", "{a:1,b:8,c:11,d:6}"));
+        TEST_DO(test_tensor_merge("x{},y[2]", "{a:[1,2],b:[3,4]}", "{b:[5,6],c:[6,7]}", "{a:[1,2],b:[11,14],c:[6,7]}"));
+    }
+
+    //-------------------------------------------------------------------------
+
     void verify_encode_decode(const TensorSpec &spec,
                               const TensorEngine &encode_engine,
                               const TensorEngine &decode_engine)
@@ -913,6 +939,7 @@ struct TestContext {
         TEST_DO(test_tensor_lambda());
         TEST_DO(test_tensor_create());
         TEST_DO(test_tensor_peek());
+        TEST_DO(test_tensor_merge());
         TEST_DO(test_binary_format());
     }
 };

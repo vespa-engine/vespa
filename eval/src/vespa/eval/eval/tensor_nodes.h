@@ -76,6 +76,38 @@ public:
     }
 };
 
+class TensorMerge : public Node {
+private:
+    Node_UP _lhs;
+    Node_UP _rhs;
+    std::shared_ptr<Function const> _lambda;
+public:
+    TensorMerge(Node_UP lhs, Node_UP rhs, std::shared_ptr<Function const> lambda)
+        : _lhs(std::move(lhs)), _rhs(std::move(rhs)), _lambda(std::move(lambda)) {}
+    const Function &lambda() const { return *_lambda; }
+    vespalib::string dump(DumpContext &ctx) const override {
+        vespalib::string str;
+        str += "join(";
+        str += _lhs->dump(ctx);
+        str += ",";
+        str += _rhs->dump(ctx);
+        str += ",";
+        str += _lambda->dump_as_lambda();
+        str += ")";
+        return str;
+    }
+    void accept(NodeVisitor &visitor) const override ;
+    size_t num_children() const override { return 2; }
+    const Node &get_child(size_t idx) const override {
+        assert(idx < 2);
+        return (idx == 0) ? *_lhs : *_rhs;
+    }
+    void detach_children(NodeHandler &handler) override {
+        handler.handle(std::move(_lhs));
+        handler.handle(std::move(_rhs));
+    }
+};
+
 class TensorReduce : public Node {
 private:
     Node_UP _child;
