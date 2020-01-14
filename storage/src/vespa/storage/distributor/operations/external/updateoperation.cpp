@@ -2,6 +2,7 @@
 
 #include "updateoperation.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
@@ -12,10 +13,9 @@
 
 LOG_SETUP(".distributor.callback.doc.update");
 
-
-using namespace storage::distributor;
-using namespace storage;
 using document::BucketSpace;
+
+namespace storage::distributor {
 
 UpdateOperation::UpdateOperation(DistributorComponent& manager,
                                  DistributorBucketSpace &bucketSpace,
@@ -26,6 +26,8 @@ UpdateOperation::UpdateOperation(DistributorComponent& manager,
                        manager, msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(msg),
+      _new_timestamp(_msg->getTimestamp()),
+      _is_auto_create_update(_msg->getUpdate()->getCreateIfNonExistent()),
       _manager(manager),
       _bucketSpace(bucketSpace),
       _newestTimestampLocation(),
@@ -83,6 +85,7 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
                                       "No buckets found for given document update"));
         return;
     }
+
     // An UpdateOperation should only be started iff all replicas are consistent
     // with each other, so sampling a single replica should be equal to sampling them all.
     assert(entries[0].getBucketInfo().getNodeCount() > 0); // Empty buckets are not allowed
@@ -92,22 +95,22 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
     // bucket sub-tree, but there is nothing here at all which will fail the
     // update if we cannot satisfy a desired replication level (not even for
     // n-of-m operations).
-    for (uint32_t j = 0; j < entries.size(); ++j) {
-        LOG(spam, "Found bucket %s", entries[j].toString().c_str());
+    for (const auto& entry : entries) {
+        LOG(spam, "Found bucket %s", entry.toString().c_str());
 
-        const std::vector<uint16_t>& nodes = entries[j]->getNodes();
+        const std::vector<uint16_t>& nodes = entry->getNodes();
 
         std::vector<MessageTracker::ToSend> messages;
 
-        for (uint32_t i = 0; i < nodes.size(); i++) {
-            std::shared_ptr<api::UpdateCommand> command(
-                    new api::UpdateCommand(document::Bucket(_msg->getBucket().getBucketSpace(), entries[j].getBucketId()),
-                            _msg->getUpdate(),
-                            _msg->getTimestamp()));
+        for (uint16_t node : nodes) {
+            auto command = std::make_shared<api::UpdateCommand>(
+                    document::Bucket(_msg->getBucket().getBucketSpace(), entry.getBucketId()),
+                    _msg->getUpdate(),
+                    _msg->getTimestamp());
             copyMessageSettings(*_msg, *command);
             command->setOldTimestamp(_msg->getOldTimestamp());
             command->setCondition(_msg->getCondition());
-            messages.push_back(MessageTracker::ToSend(command, nodes[i]));
+            messages.emplace_back(std::move(command), node);
         }
 
         _tracker.queueMessageBatch(messages);
@@ -128,7 +131,8 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
 
         if (node != (uint16_t)-1) {
             if (reply.getResult().getResult() == api::ReturnCode::OK) {
-                _results.emplace_back(reply.getBucketId(), reply.getBucketInfo(), reply.getOldTimestamp(), node);
+                _results.emplace_back(reply.getBucketId(), reply.getBucketInfo(),
+                                      adjusted_received_old_timestamp(reply.getOldTimestamp()), node);
             }
 
             if (_tracker.getReply().get()) {
@@ -179,9 +183,25 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
     }
 }
 
-
 void
 UpdateOperation::onClose(DistributorMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
+}
+
+// The backend behavior of "create-if-missing" updates is to return the timestamp of the
+// _new_ update operation if the document was created from scratch. The two-phase update
+// operation logic auto-detects unexpected inconsistencies and tries to reconcile
+// replicas by forcing document versions to that assumed most likely to preserve the history
+// of the document. Normally this is the highest updated timestamp, so to avoid newly created
+// replicas from overwriting updates that actually updated existing document versions, treat
+// a received timestamp == new timestamp as if it were actually a timestamp of zero.
+// This mirrors the received timestamp for regular updates that do not find a matching document.
+api::Timestamp UpdateOperation::adjusted_received_old_timestamp(api::Timestamp old_ts_from_node) const {
+    if (!_is_auto_create_update) {
+        return old_ts_from_node;
+    }
+    return (old_ts_from_node != _new_timestamp) ? old_ts_from_node : api::Timestamp(0);
+}
+
 }

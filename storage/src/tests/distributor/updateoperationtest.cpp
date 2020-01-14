@@ -14,8 +14,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace document;
-using namespace storage;
-using namespace storage::distributor;
 using namespace storage::api;
 using namespace std;
 using namespace storage::lib;
@@ -24,6 +22,8 @@ using config::ConfigGetter;
 using config::FileSpec;
 using vespalib::string;
 using document::test::makeDocumentBucket;
+
+namespace storage::distributor {
 
 struct UpdateOperationTest : Test, DistributorTestUtil {
     std::shared_ptr<const DocumentTypeRepo> _repo;
@@ -46,17 +46,18 @@ struct UpdateOperationTest : Test, DistributorTestUtil {
                         const api::ReturnCode& result = api::ReturnCode());
 
     std::shared_ptr<UpdateOperation>
-    sendUpdate(const std::string& bucketState);
+    sendUpdate(const std::string& bucketState, bool create_if_missing = false);
 
     document::BucketId _bId;
 };
 
 std::shared_ptr<UpdateOperation>
-UpdateOperationTest::sendUpdate(const std::string& bucketState)
+UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_missing)
 {
     auto update = std::make_shared<document::DocumentUpdate>(
             *_repo, *_html_type,
             document::DocumentId("id:ns:" + _html_type->getName() + "::1"));
+    update->setCreateIfNonExistent(create_if_missing);
 
     _bId = getExternalOperationHandler().getBucketId(update->getId());
 
@@ -69,7 +70,6 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState)
             handler, getDistributorBucketSpace(), msg,
             getDistributor().getMetrics().updates[msg->getLoadType()]);
 }
-
 
 void
 UpdateOperationTest::replyToMessage(UpdateOperation& callback, DistributorMessageSenderStub& sender, uint32_t index,
@@ -183,3 +183,63 @@ TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
     EXPECT_EQ(1, metrics.failures.test_and_set_failed.getValue());
 }
 
+// Create-if-missing updates have a rather finicky behavior in the backend, wherein they'll
+// set the timestamp of the previous document to that of the _new_ document timestamp if
+// the update ended up creating a document from scratch. This particular behavior confuses
+// the "after the fact" timestamp consistency checks, since it will seem like the document
+// that was created from scratch is a better candidate to force convergence towards rather
+// than the ones that actually updated an existing document.
+// We therefore detect this case specially and treat the received timestamps as if the
+// document updated had a timestamp of zero.
+// An alternative approach to this is to change the backend behavior by sending timestamps
+// of zero in this case, but this would cause complications during rolling upgrades that would
+// need explicit workaround logic anyway.
+TEST_F(UpdateOperationTest, create_if_missing_update_sentinel_timestamp_is_treated_as_zero_timestamp) {
+    setupDistributor(2, 2, "distributor:1 storage:2");
+    std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3", true));
+    DistributorMessageSenderStub sender;
+    cb->start(sender, framework::MilliSecTime(0));
+
+    ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
+
+    // For these tests, it's deterministic that the newly assigned timestamp
+    // is 100. Reply that we updated this timestamp on all nodes, implying
+    // that the document was auto-created.
+    replyToMessage(*cb, sender, 0, 100);
+    replyToMessage(*cb, sender, 1, 100);
+
+    ASSERT_EQ("UpdateReply(id:ns:text/html::1, BucketId(0x0000000000000000), "
+              "timestamp 100, timestamp of updated doc: 0) ReturnCode(NONE)",
+              sender.getLastReply(true));
+
+    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    EXPECT_EQ(0, metrics.diverging_timestamp_updates.getValue());
+}
+
+TEST_F(UpdateOperationTest, inconsistent_create_if_missing_updates_picks_largest_non_auto_created_replica) {
+    setupDistributor(2, 3, "distributor:1 storage:3");
+    std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3,2=1/2/3", true));
+    DistributorMessageSenderStub sender;
+    cb->start(sender, framework::MilliSecTime(0));
+
+    ASSERT_EQ("Update => 0,Update => 1,Update => 2", sender.getCommands(true));
+    replyToMessage(*cb, sender, 0, 100); // Newly created
+    replyToMessage(*cb, sender, 2, 80); // Too old and dusty; should not be picked.
+    replyToMessage(*cb, sender, 1, 90); // Should be picked
+
+    ASSERT_EQ("UpdateReply(id:ns:text/html::1, BucketId(0x0000000000000000), "
+              "timestamp 100, timestamp of updated doc: 90 Was inconsistent "
+              "(best node 1)) ReturnCode(NONE)",
+              sender.getLastReply(true));
+
+    auto newest = cb->getNewestTimestampLocation();
+    EXPECT_NE(newest.first, BucketId());
+    EXPECT_EQ(newest.second, 1);
+
+    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    // Implementation detail: since we get diverging results from nodes 2 and 1, these are
+    // counted as separate diverging updates.
+    EXPECT_EQ(2, metrics.diverging_timestamp_updates.getValue());
+}
+
+}

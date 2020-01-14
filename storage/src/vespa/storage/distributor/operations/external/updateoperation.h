@@ -43,6 +43,8 @@ private:
     PersistenceMessageTrackerImpl _trackerInstance;
     PersistenceMessageTracker& _tracker;
     std::shared_ptr<api::UpdateCommand> _msg;
+    const api::Timestamp _new_timestamp;
+    const bool _is_auto_create_update;
 
     DistributorComponent& _manager;
     DistributorBucketSpace &_bucketSpace;
@@ -64,6 +66,8 @@ private:
 
     std::vector<PreviousDocumentVersion> _results;
     UpdateMetricSet& _metrics;
+
+    api::Timestamp adjusted_received_old_timestamp(api::Timestamp old_ts_from_node) const;
 };
 
 }
