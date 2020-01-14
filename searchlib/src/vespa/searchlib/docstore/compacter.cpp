@@ -78,7 +78,7 @@ BucketCompacter::close()
         chunkCount += store.getChunkCount();
     }
     LOG(info, "Have read %ld lids and placed them in %ld buckets. Temporary compressed in %ld chunks."
-              " Max bucket guard held for %ld us, and last before close for %ld us",
+              " Max bucket guard held for %" PRId64 " us, and last before close for %" PRId64 " us",
               lidCount1, bucketCount, chunkCount, vespalib::count_us(_maxBucketGuardDuration), vespalib::count_us(lastBucketGuardDuration));
 
     for (StoreByBucket & store : _tmpStore) {
