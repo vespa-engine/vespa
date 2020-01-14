@@ -19,7 +19,7 @@ import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterC
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
-import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
+import com.yahoo.vespa.model.application.validation.first.AccessControlValidator;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -57,7 +57,6 @@ public class Validation {
         new RankingConstantsValidator().validate(model, deployState);
         new SecretStoreValidator().validate(model, deployState);
         new TlsSecretsValidator().validate(model, deployState);
-        new AccessControlFilterValidator().validate(model, deployState);
 
         List<ConfigChangeAction> result = Collections.emptyList();
         if (deployState.getProperties().isFirstTimeDeployment()) {
@@ -92,7 +91,7 @@ public class Validation {
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
-        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
+        new AccessControlValidator().validate(model, deployState);
     }
 
 }

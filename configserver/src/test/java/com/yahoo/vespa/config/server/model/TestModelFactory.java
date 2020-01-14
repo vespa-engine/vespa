@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.model;
 
-import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -19,11 +18,6 @@ public class TestModelFactory extends VespaModelFactory {
 
     public TestModelFactory(Version vespaVersion) {
         super(new NullConfigModelRegistry());
-        this.vespaVersion = vespaVersion;
-    }
-
-    public TestModelFactory(ConfigModelRegistry registry, Version vespaVersion) {
-        super(registry);
         this.vespaVersion = vespaVersion;
     }
 
