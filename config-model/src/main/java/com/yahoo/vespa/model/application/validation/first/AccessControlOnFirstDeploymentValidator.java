@@ -23,7 +23,7 @@ import static com.yahoo.vespa.model.container.http.AccessControl.isBuiltinGetOnl
  *
  * @author gjoranv
  */
-public class AccessControlValidator extends Validator {
+public class AccessControlOnFirstDeploymentValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {

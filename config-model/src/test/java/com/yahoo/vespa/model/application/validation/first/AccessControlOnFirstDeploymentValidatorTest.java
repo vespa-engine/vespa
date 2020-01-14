@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author gjoranv
  */
-public class AccessControlValidatorTest  {
+public class AccessControlOnFirstDeploymentValidatorTest {
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
@@ -57,7 +57,7 @@ public class AccessControlValidatorTest  {
         DeployState deployState = deployState(servicesXml(true, true));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     @Test
@@ -65,7 +65,7 @@ public class AccessControlValidatorTest  {
         DeployState deployState = deployState(servicesXml(false, false));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class AccessControlValidatorTest  {
         DeployState deployState = deployState(servicesXml);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     @Test
@@ -88,7 +88,7 @@ public class AccessControlValidatorTest  {
         DeployState deployState = deployState(servicesXml(true, false));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     @Test
@@ -105,7 +105,7 @@ public class AccessControlValidatorTest  {
         DeployState deployState = deployState(servicesXml);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     @Test
@@ -120,7 +120,7 @@ public class AccessControlValidatorTest  {
         DeployState deployState = deployState(servicesXml);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     @Test
@@ -133,7 +133,7 @@ public class AccessControlValidatorTest  {
         DeployState deployState = deployState(servicesXml);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     @Test
@@ -143,7 +143,7 @@ public class AccessControlValidatorTest  {
                                               LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant());
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new AccessControlValidator().validate(model, deployState);
+        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     private static DeployState deployState(String servicesXml) {
