@@ -49,7 +49,7 @@ public class FilterBindingsTest extends DomBuilderTest {
                 "</http>");
         Http http = buildHttp(xml);
 
-        Binding binding = first(http.bindings);
+        Binding binding = first(http.getBindings());
         assertThat(binding.filterId().getName(), is("my-request-chain"));
         assertThat(binding.binding(), is(MY_CHAIN_BINDING));
 
@@ -69,7 +69,7 @@ public class FilterBindingsTest extends DomBuilderTest {
                 "</http>");
         Http http = buildHttp(xml);
 
-        Binding binding = first(http.bindings);
+        Binding binding = first(http.getBindings());
         assertThat(binding.filterId().getName(), is("my-response-chain"));
         assertThat(binding.binding(), is(MY_CHAIN_BINDING));
 

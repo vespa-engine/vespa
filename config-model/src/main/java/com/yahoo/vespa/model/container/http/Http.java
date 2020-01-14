@@ -21,7 +21,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
 
     private FilterChains filterChains;
     private JettyHttpServer httpServer;
-    public final List<Binding> bindings;
+    private List<Binding> bindings;
     private final Optional<AccessControl> accessControl;
 
     public Http(List<Binding> bindings) {
@@ -36,6 +36,10 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
 
     public void setFilterChains(FilterChains filterChains) {
         this.filterChains = filterChains;
+    }
+
+    public void setBindings(List<Binding> bindings) {
+        this.bindings = Collections.unmodifiableList(bindings);
     }
 
     public FilterChains getFilterChains() {
