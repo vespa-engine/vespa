@@ -34,7 +34,6 @@ public final class AccessControl {
             ContainerCluster.APPLICATION_STATUS_HANDLER_CLASS,
             ContainerCluster.BINDINGS_OVERVIEW_HANDLER_CLASS,
             ContainerCluster.STATE_HANDLER_CLASS,
-            ContainerCluster.STATISTICS_HANDLER_CLASS,
             ContainerCluster.LOG_HANDLER_CLASS
     );
 
