@@ -7,8 +7,6 @@ import java.util.Set;
 
 /**
  * The hosts allocated to an application.
- * This can be serialized to/from JSON.
- * This is immutable.
  *
  * @author Ulf Lilleengen
  * @author bratseth

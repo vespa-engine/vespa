@@ -84,7 +84,7 @@ import static com.yahoo.text.StringUtilities.quote;
  * <p>
  * The root ConfigProducer node for all Vespa systems (there is currently only one).
  * The main class for building the Vespa model.
- * </p>
+ * <p>
  * The vespa model starts in an unfrozen state, where children can be added freely,
  * but no structure dependent information can be used.
  * When frozen, structure dependent information(such as config id and controller) are

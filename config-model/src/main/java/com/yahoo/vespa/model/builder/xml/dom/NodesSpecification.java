@@ -44,9 +44,7 @@ public class NodesSpecification {
     
     private final boolean exclusive;
 
-    /**
-     * Whether this requires running container and content processes co-located on the same node.
-     */
+    /** Whether this requires running container and content processes co-located on the same node. */
     private final boolean combined;
 
     /** The resources each node should have, or empty to use the default */
@@ -175,9 +173,8 @@ public class NodesSpecification {
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
                                                           DeployLogger logger) {
-        if (combined) {
+        if (combined)
             clusterType = ClusterSpec.Type.combined;
-        }
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive);
         return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
     }

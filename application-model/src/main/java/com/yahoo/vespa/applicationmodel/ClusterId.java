@@ -9,6 +9,7 @@ import java.util.Objects;
  * @author bjorncs
  */
 public class ClusterId {
+
     public static final ClusterId CONFIG_SERVER = new ClusterId("zone-config-servers");
 
     private final String id;
