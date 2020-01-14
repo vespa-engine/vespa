@@ -5,7 +5,6 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <limits>
 #include <cerrno>
 
 using vespalib::string;
@@ -29,12 +28,6 @@ const string &
 IdString::getTypeName(Type t)
 {
     return _G_typeName[t];
-}
-
-string
-IdString::getSchemeName() const
-{
-    return getTypeName(getType());
 }
 
 const string &
@@ -72,11 +65,6 @@ union TwoByte {
 union FourByte {
     char     asChar[4];
     uint32_t as32;
-};
-
-union EightByte {
-    char     asChar[8];
-    uint64_t as64;
 };
 
 const FourByte _G_null = {{'n', 'u', 'l', 'l'}};
@@ -128,7 +116,7 @@ fmemchr(const char * s, const char * e)
         }
         s++;
     }
-    return NULL;
+    return nullptr;
 }
 
 }  // namespace
@@ -141,7 +129,7 @@ IdString::Offsets::Offsets(uint32_t maxComponents, uint32_t namespaceOffset, str
     const char * s(id.data() + namespaceOffset);
     const char * e(id.data() + id.size());
     for(s=fmemchr(s, e);
-        (s != NULL) && (index < maxComponents);
+        (s != nullptr) && (index < maxComponents);
         s = fmemchr(s+1, e))
     {
         _offsets[index++] = s - id.data() + 1;
@@ -158,6 +146,8 @@ IdString::IdString(uint32_t maxComponents, uint32_t namespaceOffset, stringref r
     _rawId(rawId)
 {
 }
+
+IdString::~IdString() = default;
 
 void
 IdString::validate() const
@@ -205,7 +195,7 @@ union LocationUnion {
 };
 
 uint64_t parseNumber(stringref number) {
-    char* errPos = NULL;
+    char* errPos = nullptr;
     errno = 0;
     uint64_t n = strtoul(number.data(), &errPos, 10);
     if (*errPos) {
