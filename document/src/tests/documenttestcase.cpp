@@ -28,6 +28,7 @@ using namespace fieldvalue;
 
 TEST(DocumentTest, testSizeOf)
 {
+    EXPECT_EQ(24ul, sizeof(DocumentId));
     EXPECT_EQ(128ul, sizeof(Document));
     EXPECT_EQ(72ul, sizeof(StructFieldValue));
     EXPECT_EQ(24ul, sizeof(StructuredFieldValue));

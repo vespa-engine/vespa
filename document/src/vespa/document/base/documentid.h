@@ -35,7 +35,6 @@ public:
 
     DocumentId();
     DocumentId(vespalib::nbostream & os);
-    explicit DocumentId(const IdString& id);
     DocumentId(DocumentId && rhs) = default;
     DocumentId & operator = (DocumentId && rhs) = default;
     DocumentId(const DocumentId & rhs);

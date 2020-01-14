@@ -27,12 +27,6 @@ DocumentId::DocumentId(vespalib::nbostream & is)
     is.adjustReadPos(strlen(is.peek()) + 1);
 }
 
-DocumentId::DocumentId(const IdString& id)
-    : _globalId(),
-      _id(id.clone())
-{
-}
-
 DocumentId::DocumentId(const DocumentId & rhs) = default;
 DocumentId & DocumentId::operator = (const DocumentId & rhs) = default;
 DocumentId::~DocumentId() = default;
@@ -42,7 +36,8 @@ DocumentId::toString() const {
     return _id->toString();
 }
 
-void DocumentId::set(vespalib::stringref id) {
+void
+DocumentId::set(vespalib::stringref id) {
     _id.reset(IdString::createIdString(id).release());
     _globalId.first = false;
 }
