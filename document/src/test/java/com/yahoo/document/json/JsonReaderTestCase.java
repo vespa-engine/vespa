@@ -1488,6 +1488,16 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_on_sparse_tensor_with_single_dimension_short_form() {
+        assertTensorModifyUpdate("{{x:a}:2.0, {x:c}: 3.0}",  TensorModifyUpdate.Operation.REPLACE, "sparse_single_dimension_tensor",
+                                 inputJson("{",
+                                           "  'operation': 'replace',",
+                                           "  'cells': {",
+                                           "    'a': 2.0,",
+                                           "    'c': 3.0 }}"));
+    }
+
+    @Test
     public void tensor_modify_update_with_replace_operation_mixed() {
         assertTensorModifyUpdate("{{x:a,y:0}:2.0}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
                 inputJson("{",
