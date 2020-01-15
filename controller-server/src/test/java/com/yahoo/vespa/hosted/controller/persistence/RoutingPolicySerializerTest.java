@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.ImmutableSet;
@@ -52,7 +52,7 @@ public class RoutingPolicySerializerTest {
             assertEquals(expected.canonicalName(), actual.canonicalName());
             assertEquals(expected.dnsZone(), actual.dnsZone());
             assertEquals(expected.endpoints(), actual.endpoints());
-            assertEquals(expected.active(), actual.active());
+            assertEquals(expected.loadBalancerActive(), actual.loadBalancerActive());
         }
     }
 
@@ -62,7 +62,7 @@ public class RoutingPolicySerializerTest {
                    "\"canonicalName\":\"lb-0\"," +
                    "\"dnsZone\":\"dns-zone-id\",\"rotations\":[]}]}";
         var serialized = serializer.fromSlime(ApplicationId.defaultId(), SlimeUtils.jsonToSlime(json));
-        assertTrue(serialized.iterator().next().active());
+        assertTrue(serialized.iterator().next().loadBalancerActive());
 
     }
 

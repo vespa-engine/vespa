@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -38,8 +37,6 @@ import java.util.stream.Collectors;
  * @author mpolden
  */
 public class RoutingPolicies {
-
-    private static final Logger LOGGER = Logger.getLogger(RoutingPolicies.class.getName());
 
     private final Controller controller;
     private final CuratorDb db;

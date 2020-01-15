@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.Signatures;
@@ -925,7 +925,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Per-cluster rotations
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
         for (RoutingPolicy policy : routingPolicies) {
-            if (!policy.active()) continue;
+            if (!policy.loadBalancerActive()) continue;
             policy.rotationEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
@@ -1038,7 +1038,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Add endpoint(s) defined by routing policies
         var endpointArray = response.setArray("endpoints");
         for (var policy : controller.applications().routingPolicies().get(deploymentId)) {
-            if (!policy.active()) continue;
+            if (!policy.loadBalancerActive()) continue;
             Cursor endpointObject = endpointArray.addObject();
             Endpoint endpoint = policy.endpointIn(controller.system());
             endpointObject.setString("cluster", policy.cluster().value());

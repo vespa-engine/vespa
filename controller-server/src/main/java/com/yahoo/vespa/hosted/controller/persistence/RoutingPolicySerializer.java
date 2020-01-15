@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -35,7 +35,7 @@ public class RoutingPolicySerializer {
     private static final String zoneField = "zone";
     private static final String dnsZoneField = "dnsZone";
     private static final String rotationsField = "rotations";
-    private static final String activeField = "active";
+    private static final String loadBalancerActiveField = "active";
 
     public Slime toSlime(Set<RoutingPolicy> routingPolicies) {
         var slime = new Slime();
@@ -51,7 +51,7 @@ public class RoutingPolicySerializer {
             policy.endpoints().forEach(endpointId -> {
                 rotationArray.addString(endpointId.id());
             });
-            policyObject.setBool(activeField, policy.active());
+            policyObject.setBool(loadBalancerActiveField, policy.loadBalancerActive());
         });
         return slime;
     }
@@ -63,7 +63,7 @@ public class RoutingPolicySerializer {
         field.traverse((ArrayTraverser) (i, inspect) -> {
             var endpointIds = new LinkedHashSet<EndpointId>();
             inspect.field(rotationsField).traverse((ArrayTraverser) (j, endpointId) -> endpointIds.add(EndpointId.of(endpointId.asString())));
-            var activeFieldInspector = inspect.field(activeField);
+            var activeFieldInspector = inspect.field(loadBalancerActiveField);
             // TODO(mpolden): Remove field presence check after January 2020
             boolean active = !activeFieldInspector.valid() || activeFieldInspector.asBool();
             policies.add(new RoutingPolicy(owner,
