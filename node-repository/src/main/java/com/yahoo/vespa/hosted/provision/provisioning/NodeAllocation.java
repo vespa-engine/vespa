@@ -20,6 +20,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -339,7 +340,9 @@ class NodeAllocation {
     }
 
     List<Node> reservableNodes() {
-        return nodesFilter(n -> n.node.state() == Node.State.inactive || n.node.state() == Node.State.ready);
+        // Include already reserved nodes to extend reservation period and to potentially update their cluster spec.
+        EnumSet<Node.State> reservableStates = EnumSet.of(Node.State.inactive, Node.State.ready, Node.State.reserved);
+        return nodesFilter(n -> !n.isNewNode && reservableStates.contains(n.node.state()));
     }
 
     List<Node> surplusNodes() {

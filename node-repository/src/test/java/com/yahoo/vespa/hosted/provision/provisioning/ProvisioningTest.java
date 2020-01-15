@@ -625,6 +625,23 @@ public class ProvisioningTest {
         tester.activate(application, state.allHosts);
     }
 
+    @Test
+    public void cluster_spec_update_for_already_reserved_nodes() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+        ApplicationId application = tester.makeApplicationId();
+        Version version1 = Version.fromString("6.42");
+        Version version2 = Version.fromString("6.43");
+        tester.makeReadyNodes(2, defaultResources);
+
+        prepare(application, 1, 0, 1, 0, true, defaultResources, version1, tester);
+        tester.getNodes(application, Node.State.reserved).forEach(node ->
+                assertEquals(version1, node.allocation().get().membership().cluster().vespaVersion()));
+
+        prepare(application, 1, 0, 1, 0, true, defaultResources, version2, tester);
+        tester.getNodes(application, Node.State.reserved).forEach(node ->
+                assertEquals(version2, node.allocation().get().membership().cluster().vespaVersion()));
+    }
+
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
                                 int content1Size, NodeResources flavor, ProvisioningTester tester) {
         return prepare(application, container0Size, container1Size, content0Size, content1Size, flavor,
