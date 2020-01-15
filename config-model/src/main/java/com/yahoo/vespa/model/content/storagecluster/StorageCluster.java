@@ -80,7 +80,8 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
         ContentCluster.getMetricBuilder("fleetcontroller", builder).
                 addedmetrics("vds.datastored.alldisks.docs").
                 addedmetrics("vds.datastored.alldisks.bytes").
-                addedmetrics("vds.datastored.alldisks.buckets");
+                addedmetrics("vds.datastored.alldisks.buckets").
+                addedmetrics("vds.datastored.bucket_space.buckets_total");
 
         ContentCluster.getMetricBuilder("log", builder).
                 addedmetrics("vds.filestor.alldisks.allthreads.put.sum").

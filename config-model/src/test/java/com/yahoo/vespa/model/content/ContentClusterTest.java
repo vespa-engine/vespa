@@ -659,10 +659,11 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(6, config.consumer().size());
 
         assertEquals("fleetcontroller", config.consumer(4).name());
-        assertEquals(3, config.consumer(4).addedmetrics().size());
+        assertEquals(4, config.consumer(4).addedmetrics().size());
         assertEquals("vds.datastored.alldisks.docs", config.consumer(4).addedmetrics(0));
         assertEquals("vds.datastored.alldisks.bytes", config.consumer(4).addedmetrics(1));
         assertEquals("vds.datastored.alldisks.buckets", config.consumer(4).addedmetrics(2));
+        assertEquals("vds.datastored.bucket_space.buckets_total", config.consumer(4).addedmetrics(3));
     }
 
     public MetricsmanagerConfig.Consumer getConsumer(String consumer, MetricsmanagerConfig config) {
@@ -723,7 +724,8 @@ public class ContentClusterTest extends ContentBaseTest {
             expected =
                     "[vds.datastored.alldisks.docs\n" +
                     "vds.datastored.alldisks.bytes\n" +
-                    "vds.datastored.alldisks.buckets]";
+                    "vds.datastored.alldisks.buckets\n" +
+                    "vds.datastored.bucket_space.buckets_total]";
             actual = getConsumer("fleetcontroller", config).addedmetrics().toString().replaceAll(", ", "\n");
             assertEquals(expected, actual);
         }

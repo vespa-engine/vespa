@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
@@ -74,6 +75,9 @@ public class OsVersionsTest {
         tester.makeReadyNodes(totalNodes, "default", NodeType.host);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().nodeType(NodeType.host);
 
+        // Some nodes have reported current version
+        setCurrentVersion(hostNodes.get().asList().subList(0, 2), Version.fromString("7.0"));
+
         // Set target
         var version1 = Version.fromString("7.1");
         versions.setTarget(NodeType.host, version1, false);
@@ -84,6 +88,10 @@ public class OsVersionsTest {
             versions.setActive(NodeType.host, true);
             var nodesUpgrading = hostNodes.get().changingOsVersion();
             assertEquals("Target is changed for a subset of nodes", maxActiveUpgrades, nodesUpgrading.size());
+            assertEquals("Wanted version is set for nodes upgrading", version1,
+                         nodesUpgrading.stream()
+                                       .map(node -> node.status().osVersion().wanted().get())
+                                       .min(Comparator.naturalOrder()).get());
             completeUpgradeOf(nodesUpgrading.asList());
         }
 
@@ -92,6 +100,16 @@ public class OsVersionsTest {
         assertEquals(version1, hostNodes.get().stream()
                                         .map(n -> n.status().osVersion().current().get())
                                         .min(Comparator.naturalOrder()).get());
+    }
+
+    private void setCurrentVersion(List<Node> nodes, Version currentVersion) {
+        for (var node : nodes) {
+            try (var lock = tester.nodeRepository().lock(node)) {
+                node = tester.nodeRepository().getNode(node.hostname()).get();
+                node = node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(Optional.of(currentVersion))));
+                tester.nodeRepository().write(node, lock);
+            }
+        }
     }
 
     private void completeUpgradeOf(List<Node> nodes) {

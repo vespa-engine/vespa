@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static java.util.Collections.emptyList;
@@ -112,15 +113,19 @@ public class YamasJsonUtil {
                                 Map.Entry::getValue));
         }
 
-        if (packet.consumers().isEmpty()) model.routing = null;
-        else model.routing = ImmutableMap.of(YAMAS_ROUTING, toYamasJsonNamespaces(packet.consumers()));
+        YamasJsonModel.YamasJsonNamespace namespaces = toYamasJsonNamespaces(packet.consumers());
+        if (namespaces.namespaces.isEmpty()) model.routing = null;
+        else model.routing = ImmutableMap.of(YAMAS_ROUTING, namespaces);
 
         return model;
     }
 
     private static YamasJsonModel.YamasJsonNamespace toYamasJsonNamespaces(Collection<ConsumerId> consumers) {
         YamasJsonModel.YamasJsonNamespace namespaces =  new YamasJsonModel.YamasJsonNamespace();
-        namespaces.namespaces = consumers.stream().map(consumer -> consumer.id).collect(Collectors.toList());
+        namespaces.namespaces = consumers.stream()
+                .filter(consumerId -> consumerId != DEFAULT_PUBLIC_CONSUMER_ID)
+                .map(consumer -> consumer.id)
+                .collect(Collectors.toList());
         return namespaces;
     }
 

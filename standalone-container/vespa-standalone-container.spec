@@ -75,7 +75,7 @@ cp zookeeper-server/zookeeper-server-common/target/zookeeper-server-common-jar-w
 cp zookeeper-server/zookeeper-server-3.4/target/zookeeper-server-3.4-jar-with-dependencies.jar "$jars_dir"
 cp zookeeper-server/zookeeper-server-3.5/target/zookeeper-server-3.5-jar-with-dependencies.jar "$jars_dir"
 # Symlink to default version
-ln -s zookeeper-server-3.4-jar-with-dependencies.jar "$jars_dir"/zookeeper-server-jar-with-dependencies.jar
+ln -s zookeeper-server-3.5-jar-with-dependencies.jar "$jars_dir"/zookeeper-server-jar-with-dependencies.jar
 
 declare -a libexec_files=(
   standalone-container/src/main/sh/standalone-container.sh
