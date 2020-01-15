@@ -10,19 +10,19 @@ namespace document {
 
 DocumentId::DocumentId()
     : _globalId(),
-      _id(new NullIdString())
+      _id()
 {
 }
 
 DocumentId::DocumentId(vespalib::stringref id)
     : _globalId(),
-      _id(IdString::createIdString(id.data(), id.size()).release())
+      _id(id)
 {
 }
 
 DocumentId::DocumentId(vespalib::nbostream & is)
     : _globalId(),
-      _id(IdString::createIdString(is.peek(), strlen(is.peek())).release())
+      _id({is.peek(), strlen(is.peek())})
 {
     is.adjustReadPos(strlen(is.peek()) + 1);
 }
@@ -33,30 +33,30 @@ DocumentId::~DocumentId() = default;
 
 vespalib::string
 DocumentId::toString() const {
-    return _id->toString();
+    return _id.toString();
 }
 
 void
 DocumentId::set(vespalib::stringref id) {
-    _id.reset(IdString::createIdString(id).release());
+    _id = IdString(id);
     _globalId.first = false;
 }
 
 size_t
 DocumentId::getSerializedSize() const
 {
-    return _id->toString().size() + 1;
+    return _id.toString().size() + 1;
 }
 
 void
 DocumentId::calculateGlobalId() const
 {
-    vespalib::string id(_id->toString());
+    vespalib::string id(_id.toString());
 
     unsigned char key[16];
     fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()), id.size(), key);
 
-    IdString::LocationType location(_id->getLocation());
+    IdString::LocationType location(_id.getLocation());
     memcpy(key, &location, 4);
 
     _globalId.first = true;

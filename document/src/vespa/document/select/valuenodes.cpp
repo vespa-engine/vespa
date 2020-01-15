@@ -494,7 +494,7 @@ IdValueNode::getValue(const DocumentId& id) const
     case NS:
         value = id.getScheme().getNamespace(); break;
     case SCHEME:
-        value = id.getScheme().getTypeName(id.getScheme().getType());
+        value = "id";
         break;
     case TYPE:
         if (id.getScheme().hasDocType()) {
@@ -563,7 +563,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
         out << "Resolved id.namespace to value\"" << value << "\".\n";
         break;
     case SCHEME:
-        value = id.getScheme().getTypeName(id.getScheme().getType());
+        value = "id";
         out << "Resolved id.scheme to value\"" << value << "\".\n";
         break;
     case TYPE:
@@ -586,8 +586,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
     case GROUP:
         if (id.getScheme().hasGroup()) {
             value = id.getScheme().getGroup();
-            out << "Resolved group of doc (type " << id.getScheme().getType()
-                << ") to \"" << value << "\".\n";
+            out << "Resolved group of doc (type id) to \"" << value << "\".\n";
         } else {
             out << "Can't resolve group of doc \"" << id << "\".\n";
             return std::make_unique<InvalidValue>();
@@ -600,8 +599,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
     case USER:
         if (id.getScheme().hasNumber()) {
             auto result = std::make_unique<IntegerValue>(id.getScheme().getNumber(), false);
-            out << "Resolved user of doc type " << id.getScheme().getType()
-                << " to " << *result << ".\n";
+            out << "Resolved user of doc type 'id' to " << *result << ".\n";
             return result;
         } else {
             out << "Could not resolve user of doc " << id << ".\n";

@@ -15,8 +15,7 @@
 
 #include <persistence/spi/types.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 enum DocumentMetaFlags {
     NONE             = 0x0,
@@ -88,13 +87,9 @@ public:
     }
 
     vespalib::string toString() const;
-    void prettyPrint(std::ostream& out) const;
     bool operator==(const DocEntry& entry) const;
 };
 
 std::ostream & operator << (std::ostream & os, const DocEntry & r);
 
-} // spi
-} // storage
-
-
+}

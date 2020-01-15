@@ -46,18 +46,10 @@ CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
                     _groupCount[idString.getGroup()]++;
                 }
 
-                switch (idString.getType()) {
-                case document::IdString::ID:
-                    if (_doScheme) {
-                        _schemeCount["id"]++;
-                    }
-                    break;
-                case document::IdString::NULLID:
-                    if (_doScheme) {
-                        _schemeCount["null"]++;
-                    }
-                    break;
+                if (_doScheme) {
+                    _schemeCount["id"]++;
                 }
+
             }
         }
     }

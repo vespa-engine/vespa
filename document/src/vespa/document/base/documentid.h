@@ -60,12 +60,12 @@ public:
     */
     vespalib::string toString() const;
 
-    bool operator==(const DocumentId& other) const { return *_id == *other._id; }
-    bool operator!=(const DocumentId& other) const { return ! (*_id == *other._id); }
+    bool operator==(const DocumentId& other) const { return _id == other._id; }
+    bool operator!=(const DocumentId& other) const { return ! (_id == other._id); }
 
-    const IdString& getScheme() const { return *_id; }
-    bool hasDocType() const { return _id->hasDocType(); }
-    vespalib::string getDocType() const { return _id->getDocType(); }
+    const IdString& getScheme() const { return _id; }
+    bool hasDocType() const { return _id.hasDocType(); }
+    vespalib::string getDocType() const { return _id.getDocType(); }
 
     const GlobalId& getGlobalId() const {
         if (!_globalId.first) { calculateGlobalId(); }
@@ -75,7 +75,7 @@ public:
     size_t getSerializedSize() const;
 private:
     mutable std::pair<bool, GlobalId> _globalId;
-    vespalib::CloneablePtr<IdString> _id;
+    IdString _id;
 
     void calculateGlobalId() const;
 };

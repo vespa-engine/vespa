@@ -17,43 +17,28 @@ VESPA_IMPLEMENT_EXCEPTION(IdParseException, vespalib::Exception);
 
 namespace {
 
-string _G_typeName[2] = {
-    "id",
-    "null"
-};
-
-}
-
-const string &
-IdString::getTypeName(Type t)
-{
-    return _G_typeName[t];
-}
-
-const string &
-IdString::toString() const
-{
-    return _rawId;
-}
-
-namespace {
-
 void reportError(const char* part) __attribute__((noinline));
 void reportTooShortDocId(const char * id, size_t sz) __attribute__((noinline));
 void reportNoSchemeSeparator(const char * id) __attribute__((noinline));
+void reportNoId(const char * id) __attribute__((noinline));
 
-void reportError(const char* part)
-{
+void
+reportError(const char* part) {
     throw IdParseException(make_string("Unparseable id: No %s separator ':' found", part), VESPA_STRLOC);
 }
 
-void reportNoSchemeSeparator(const char * id)
-{
+void
+reportNoSchemeSeparator(const char * id) {
     throw IdParseException(make_string("Unparseable id '%s': No scheme separator ':' found", id), VESPA_STRLOC);
 }
 
-void reportTooShortDocId(const char * id, size_t sz)
-{
+void
+reportNoId(const char * id){
+    throw IdParseException(make_string("Unparseable id '%s': No 'id:' found", id), VESPA_STRLOC);
+}
+
+void
+reportTooShortDocId(const char * id, size_t sz) {
     throw IdParseException( make_string( "Unparseable id '%s': It is too short(%li) " "to make any sense", id, sz), VESPA_STRLOC);
 }
 
@@ -73,8 +58,6 @@ const TwoByte _G_id = {{'i', 'd'}};
 typedef char v16qi __attribute__ ((__vector_size__(16)));
 
 v16qi _G_zero  = { ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':' };
-
-//const char * fmemchr_stdc(const char * s, const char * e) __attribute__((noinline));
 
 inline const char *
 fmemchr(const char * s, const char * e)
@@ -119,64 +102,14 @@ fmemchr(const char * s, const char * e)
     return nullptr;
 }
 
-}  // namespace
-
-
-IdString::Offsets::Offsets(uint32_t maxComponents, uint32_t namespaceOffset, stringref id)
-{
-    _offsets[0] = namespaceOffset;
-    size_t index(1);
-    const char * s(id.data() + namespaceOffset);
-    const char * e(id.data() + id.size());
-    for(s=fmemchr(s, e);
-        (s != nullptr) && (index < maxComponents);
-        s = fmemchr(s+1, e))
-    {
-        _offsets[index++] = s - id.data() + 1;
-    }
-    _numComponents = index;
-    for (;index < VESPA_NELEMS(_offsets); index++) {
-        _offsets[index] = id.size() + 1; // 1 is added due to the implicitt accounting for ':'
-    }
-    _offsets[maxComponents] = id.size() + 1; // 1 is added due to the implicitt accounting for ':'
-}
-
-IdString::IdString(uint32_t maxComponents, uint32_t namespaceOffset, stringref rawId) :
-    _offsets(maxComponents, namespaceOffset, rawId),
-    _rawId(rawId)
-{
-}
-
-IdString::~IdString() = default;
-
 void
-IdString::validate() const
-{
-    if (_offsets.numComponents() < 2) {
-        reportError("namespace");
-    }
-}
-
-void
-IdIdString::validate() const
-{
-    IdString::validate();
-    if (getNumComponents() < 3) {
-        reportError("document type");
-    }
-    if (getNumComponents() < 4) {
-        reportError("key/value-pairs");
-    }
-}
-
-IdString::UP
-IdString::createIdString(const char * id, size_t sz_)
+verifyIdString(const char * id, size_t sz_)
 {
     if (sz_ > 4) {
         if (_G_id.as16 == *reinterpret_cast<const uint16_t *>(id) && id[2] == ':') {
-            return std::make_unique<IdIdString>(stringref(id, sz_));
+            return;
         } else if ((sz_ == 6) && (_G_null.as32 == *reinterpret_cast<const uint32_t *>(id)) && (id[4] == ':') && (id[5] == ':')) {
-            return std::make_unique<NullIdString>();
+            reportNoId(id);
         } else if (sz_ > 8) {
             reportNoSchemeSeparator(id);
         } else {
@@ -185,10 +118,28 @@ IdString::createIdString(const char * id, size_t sz_)
     } else {
         reportTooShortDocId(id, 5);
     }
-    return IdString::UP();
 }
 
-namespace {
+void
+validate(uint16_t numComponents)
+{
+    if (numComponents < 2) {
+        reportError("namespace");
+    }
+    if (numComponents < 3) {
+        reportError("document type");
+    }
+    if (numComponents < 4) {
+        reportError("key/value-pairs");
+    }
+}
+
+
+constexpr uint32_t NAMESPACE_OFFSET = 3;
+constexpr uint32_t MAX_COMPONENTS = 4;
+
+const vespalib::stringref DEFAULT_ID("id::::");
+
 union LocationUnion {
     uint8_t _key[16];
     IdString::LocationType _location[2];
@@ -219,6 +170,35 @@ void setLocation(IdString::LocationType &loc, IdString::LocationType val,
 
 }  // namespace
 
+const IdString::Offsets IdString::Offsets::DefaultID(DEFAULT_ID);
+
+IdString::Offsets::Offsets(stringref id)
+    : _offsets()
+{
+    compute(id);
+}
+
+uint16_t
+IdString::Offsets::compute(stringref id)
+{
+    _offsets[0] = NAMESPACE_OFFSET;
+    size_t index(1);
+    const char * s(id.data() + NAMESPACE_OFFSET);
+    const char * e(id.data() + id.size());
+    for(s=fmemchr(s, e);
+        (s != nullptr) && (index < MAX_COMPONENTS);
+        s = fmemchr(s+1, e))
+    {
+        _offsets[index++] = s - id.data() + 1;
+    }
+    uint16_t numComponents = index;
+    for (;index < VESPA_NELEMS(_offsets); index++) {
+        _offsets[index] = id.size() + 1; // 1 is added due to the implicitt accounting for ':'
+    }
+    _offsets[MAX_COMPONENTS] = id.size() + 1; // 1 is added due to the implicitt accounting for ':'
+    return numComponents;
+}
+
 IdString::LocationType
 IdString::makeLocation(stringref s) {
     LocationUnion location;
@@ -226,14 +206,26 @@ IdString::makeLocation(stringref s) {
     return location._location[0];
 }
 
-IdIdString::IdIdString(stringref id)
-    : IdString(4, 3, id),
+IdString::IdString()
+    : _rawId(DEFAULT_ID),
       _location(0),
+      _offsets(Offsets::DefaultID),
+      _groupOffset(0),
+      _has_number(false)
+{
+}
+
+IdString::IdString(stringref id)
+    : _rawId(id),
+      _location(0),
+      _offsets(),
       _groupOffset(0),
       _has_number(false)
 {
     // TODO(magnarn): Require that keys are lexicographically ordered.
-    validate();
+    verifyIdString(id.data(), id.size());
+    validate(_offsets.compute(id));
+
 
     stringref key_values(getComponent(2));
     char key(0);

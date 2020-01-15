@@ -50,7 +50,6 @@ using namespace document::select;
                                   _buckets.begin(), _buckets.end(),
                                   back_inserter(result));
             _buckets.swap(result);
-            return;
         }
 
         void visitOrBranch(const document::select::Or& node) override {
@@ -85,22 +84,21 @@ using namespace document::select;
                 if (!val) return;
                 vespalib::string docId(val->getValue());
                 if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(docId)) {
-                    IdString::UP id(IdString::createIdString(docId));
-                    _buckets.push_back(BucketId(58, id->getLocation()));
+                    _buckets.emplace_back(58, IdString(docId).getLocation());
                     _unknown = false;
                 }
             } else if (node.getType() == IdValueNode::USER) {
                 auto val = dynamic_cast<const IntegerValueNode*>(&valnode);
                 if (!val) return;
-                IdIdString id(vespalib::make_string("id::test:n=%" PRIu64 ":", val->getValue()));
-                _buckets.push_back(BucketId(32, id.getNumber()));
+                IdString id(vespalib::make_string("id::test:n=%" PRIu64 ":", val->getValue()));
+                _buckets.emplace_back(32, id.getNumber());
                 _unknown = false;
             } else if (node.getType() == IdValueNode::GROUP) {
                 auto val = dynamic_cast<const StringValueNode*>(&valnode);
                 if (!val) return;
                 vespalib::string group(val->getValue());
                 if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(group)) {
-                    _buckets.push_back(BucketId(32, IdString::makeLocation(group)));
+                    _buckets.emplace_back(32, IdString::makeLocation(group));
                     _unknown = false;
                 }
             } else if (node.getType() == IdValueNode::GID) {
@@ -109,7 +107,7 @@ using namespace document::select;
                 vespalib::string gid(val->getValue());
                 if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(gid)) {
                     BucketId bid = document::GlobalId::parse(gid).convertToBucketId();
-                    _buckets.push_back(BucketId(32, bid.getRawId()));
+                    _buckets.emplace_back(32, bid.getRawId());
                     _unknown = false;
                 }
             } else if (node.getType() == IdValueNode::BUCKET) {

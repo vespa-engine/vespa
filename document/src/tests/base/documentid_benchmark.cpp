@@ -10,12 +10,12 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage %s <docid> <count>\n", argv[0]);
     }
     vespalib::string s(argv[1]);
-    uint64_t n = strtoul(argv[2], NULL, 0);
+    uint64_t n = strtoul(argv[2], nullptr, 0);
     printf("Creating documentid '%s' %" PRIu64 " times\n", s.c_str(), n);
-    printf("sizeof(IdString)=%ld,  sizeof(IdIdString)=%ld\n", sizeof(IdString), sizeof(IdIdString));
+    printf("sizeof(IdString)=%ld,  sizeof(IdIdString)=%ld\n", sizeof(IdString), sizeof(IdString));
     for (uint64_t i=0; i < n; i++) {
-        IdString::UP id = IdString::createIdString(s);
-        id.reset();
+        IdString id(s);
+        (void) id;
     }
     return 0;
 }
