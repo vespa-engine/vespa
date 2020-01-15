@@ -120,6 +120,7 @@ public interface NodeRepository {
             case "admin": return Node.ClusterType.admin;
             case "content": return Node.ClusterType.content;
             case "container": return Node.ClusterType.container;
+            case "combined": return Node.ClusterType.combined;
         }
         return Node.ClusterType.unknown;
     }
@@ -175,10 +176,6 @@ public interface NodeRepository {
         return (allowedDown == null)
                 ? Node.ServiceState.unorchestrated
                 : allowedDown ? Node.ServiceState.allowedDown : Node.ServiceState.expectedUp;
-    }
-
-    private static boolean toBoolean(Boolean b) {
-        return b == null ? false : b;
     }
 
     private static double toDouble(Double d) {

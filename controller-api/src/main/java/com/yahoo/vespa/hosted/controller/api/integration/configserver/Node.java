@@ -187,6 +187,7 @@ public class Node {
         admin,
         container,
         content,
+        combined,
         unknown
     }
 

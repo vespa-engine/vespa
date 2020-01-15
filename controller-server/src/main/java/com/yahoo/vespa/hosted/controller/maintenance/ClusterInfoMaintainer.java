@@ -4,12 +4,11 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
@@ -39,10 +38,6 @@ public class ClusterInfoMaintainer extends Maintainer {
         super(controller, duration, jobControl);
         this.controller = controller;
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
-    }
-
-    private static String clusterId(NodeRepositoryNode node) {
-        return node.getMembership().clusterid;
     }
 
     private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(List<Node> nodes) {
