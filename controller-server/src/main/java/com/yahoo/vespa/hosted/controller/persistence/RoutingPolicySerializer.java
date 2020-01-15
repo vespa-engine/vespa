@@ -9,6 +9,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -43,8 +44,8 @@ public class RoutingPolicySerializer {
         var policyArray = root.setArray(routingPoliciesField);
         routingPolicies.forEach(policy -> {
             var policyObject = policyArray.addObject();
-            policyObject.setString(clusterField, policy.cluster().value());
-            policyObject.setString(zoneField, policy.zone().value());
+            policyObject.setString(clusterField, policy.id().cluster().value());
+            policyObject.setString(zoneField, policy.id().zone().value());
             policyObject.setString(canonicalNameField, policy.canonicalName().value());
             policy.dnsZone().ifPresent(dnsZone -> policyObject.setString(dnsZoneField, dnsZone));
             var rotationArray = policyObject.setArray(rotationsField);
@@ -63,9 +64,9 @@ public class RoutingPolicySerializer {
         field.traverse((ArrayTraverser) (i, inspect) -> {
             var endpointIds = new LinkedHashSet<EndpointId>();
             inspect.field(rotationsField).traverse((ArrayTraverser) (j, endpointId) -> endpointIds.add(EndpointId.of(endpointId.asString())));
-            policies.add(new RoutingPolicy(owner,
-                                           ClusterSpec.Id.from(inspect.field(clusterField).asString()),
-                                           ZoneId.from(inspect.field(zoneField).asString()),
+            policies.add(new RoutingPolicy(new RoutingPolicyId(owner,
+                                                               ClusterSpec.Id.from(inspect.field(clusterField).asString()),
+                                                               ZoneId.from(inspect.field(zoneField).asString())),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
                                            Serializers.optionalString(inspect.field(dnsZoneField)),
                                            endpointIds,

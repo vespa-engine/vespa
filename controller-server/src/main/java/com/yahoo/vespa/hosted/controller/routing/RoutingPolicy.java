@@ -3,10 +3,8 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -17,47 +15,32 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Represents the DNS routing policy for a load balancer. A routing policy is uniquely identified by its owner, cluster
- * and zone.
+ * Represents the DNS routing policy for a load balancer.
  *
  * @author mortent
  * @author mpolden
  */
 public class RoutingPolicy {
 
-    private final ApplicationId owner;
-    private final ClusterSpec.Id cluster;
-    private final ZoneId zone;
+    private final RoutingPolicyId id;
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
     private final Set<EndpointId> endpoints;
     private final boolean loadBalancerActive;
 
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingPolicy(ApplicationId owner, ClusterSpec.Id cluster, ZoneId zone, HostName canonicalName,
+    public RoutingPolicy(RoutingPolicyId id, HostName canonicalName,
                          Optional<String> dnsZone, Set<EndpointId> endpoints, boolean loadBalancerActive) {
-        this.owner = Objects.requireNonNull(owner, "owner must be non-null");
-        this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
-        this.zone = Objects.requireNonNull(zone, "zone must be non-null");
+        this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.endpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(endpoints, "endpoints must be non-null"));
         this.loadBalancerActive = loadBalancerActive;
     }
 
-    /** The application owning this */
-    public ApplicationId owner() {
-        return owner;
-    }
-
-    /** The zone this applies to */
-    public ZoneId zone() {
-        return zone;
-    }
-
-    /** The cluster this applies to */
-    public ClusterSpec.Id cluster() {
-        return cluster;
+    /** The ID of this */
+    public RoutingPolicyId id() {
+        return id;
     }
 
     /** The canonical name for this (rhs of a CNAME or ALIAS record) */
@@ -82,12 +65,12 @@ public class RoutingPolicy {
 
     /** Returns the endpoint of this */
     public Endpoint endpointIn(SystemName system) {
-        return Endpoint.of(owner).target(cluster, zone).on(Port.tls()).directRouting().in(system);
+        return Endpoint.of(id.owner()).target(id.cluster(), id.zone()).on(Port.tls()).directRouting().in(system);
     }
 
     /** Returns global endpoints which this is a member of */
     public EndpointList globalEndpointsIn(SystemName system) {
-        return EndpointList.of(endpoints.stream().map(endpointId -> globalEndpointOf(owner, endpointId, system)));
+        return EndpointList.of(endpoints.stream().map(endpointId -> globalEndpointOf(id.owner(), endpointId, system)));
     }
 
     @Override
@@ -95,21 +78,19 @@ public class RoutingPolicy {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RoutingPolicy that = (RoutingPolicy) o;
-        return owner.equals(that.owner) &&
-               cluster.equals(that.cluster) &&
-               zone.equals(that.zone);
+        return id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, cluster, zone);
+        return Objects.hash(id);
     }
 
     @Override
     public String toString() {
         return String.format("%s [rotations: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
-                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), cluster, owner.toShortString(),
-                             zone.value());
+                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
+                             id.zone().value());
     }
 
     /** Creates a global endpoint for given application */

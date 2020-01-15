@@ -62,7 +62,7 @@ public class RoutingPolicies {
     /** Read all known routing policies for given deployment */
     public Set<RoutingPolicy> get(ApplicationId application, ZoneId zone) {
         return db.readRoutingPolicies(application).stream()
-                 .filter(policy -> policy.zone().equals(zone))
+                 .filter(policy -> policy.id().zone().equals(zone))
                  .collect(Collectors.toUnmodifiableSet());
     }
 
@@ -95,7 +95,7 @@ public class RoutingPolicies {
                                                  .filter(policy -> policy.dnsZone().isPresent())
                                                  .map(policy -> new AliasTarget(policy.canonicalName(),
                                                                                 policy.dnsZone().get(),
-                                                                                policy.zone()))
+                                                                                policy.id().zone()))
                                                  .collect(Collectors.toSet());
             controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), targets, Priority.normal);
         }
@@ -119,7 +119,8 @@ public class RoutingPolicies {
     /** Create a policy for given load balancer and register a CNAME for it */
     private RoutingPolicy createPolicy(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer,
                                        Set<EndpointId> endpointIds) {
-        var routingPolicy = new RoutingPolicy(application, loadBalancer.cluster(), zone, loadBalancer.hostname(),
+        var routingPolicy = new RoutingPolicy(new RoutingPolicyId(application, loadBalancer.cluster(), zone),
+                                              loadBalancer.hostname(),
                                               loadBalancer.dnsZone(), endpointIds, isActive(loadBalancer));
         var name = RecordName.from(routingPolicy.endpointIn(controller.system()).dnsName());
         var data = RecordData.fqdn(loadBalancer.hostname().value());
@@ -136,7 +137,7 @@ public class RoutingPolicies {
                                                     .collect(Collectors.toSet());
         // Remove active load balancers and irrelevant zones from candidates
         removalCandidates.removeIf(policy -> activeLoadBalancers.contains(policy.canonicalName()) ||
-                                             !policy.zone().equals(loadBalancers.zone));
+                                             !policy.id().zone().equals(loadBalancers.zone));
         for (var policy : removalCandidates) {
             var dnsName = policy.endpointIn(controller.system()).dnsName();
             controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(dnsName), Priority.normal);
@@ -173,7 +174,7 @@ public class RoutingPolicies {
         var routingTable = new LinkedHashMap<RoutingId, List<RoutingPolicy>>();
         for (var policy : routingPolicies) {
             for (var rotation : policy.endpoints()) {
-                var id = new RoutingId(policy.owner(), rotation);
+                var id = new RoutingId(policy.id().owner(), rotation);
                 routingTable.putIfAbsent(id, new ArrayList<>());
                 routingTable.get(id).add(policy);
             }

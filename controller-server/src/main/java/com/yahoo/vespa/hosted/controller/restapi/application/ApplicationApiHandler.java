@@ -1041,7 +1041,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             if (!policy.loadBalancerActive()) continue;
             Cursor endpointObject = endpointArray.addObject();
             Endpoint endpoint = policy.endpointIn(controller.system());
-            endpointObject.setString("cluster", policy.cluster().value());
+            endpointObject.setString("cluster", policy.id().cluster().value());
             endpointObject.setBool("tls", endpoint.tls());
             endpointObject.setString("url", endpoint.url().toString());
         }

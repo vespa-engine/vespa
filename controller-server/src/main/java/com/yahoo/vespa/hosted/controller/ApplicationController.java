@@ -688,7 +688,7 @@ public class ApplicationController {
         }
         return routingPolicies.get(id).stream()
                               .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
-                              .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
+                              .collect(Collectors.toUnmodifiableMap(policy -> policy.id().cluster(),
                                                                     policy -> policy.endpointIn(controller.system()).url()));
     }
 

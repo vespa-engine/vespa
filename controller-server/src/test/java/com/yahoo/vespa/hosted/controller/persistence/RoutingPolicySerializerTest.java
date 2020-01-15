@@ -8,6 +8,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -27,15 +28,15 @@ public class RoutingPolicySerializerTest {
     public void serialization() {
         var owner = ApplicationId.defaultId();
         var endpoints = Set.of(EndpointId.of("r1"), EndpointId.of("r2"));
-        var policies = ImmutableSet.of(new RoutingPolicy(owner,
-                                                         ClusterSpec.Id.from("my-cluster1"),
-                                                         ZoneId.from("prod", "us-north-1"),
+        var policies = ImmutableSet.of(new RoutingPolicy(new RoutingPolicyId(owner,
+                                                                             ClusterSpec.Id.from("my-cluster1"),
+                                                                             ZoneId.from("prod", "us-north-1")),
                                                          HostName.from("long-and-ugly-name"),
                                                          Optional.of("zone1"),
                                                          endpoints, true),
-                                       new RoutingPolicy(owner,
-                                                         ClusterSpec.Id.from("my-cluster2"),
-                                                         ZoneId.from("prod", "us-north-2"),
+                                       new RoutingPolicy(new RoutingPolicyId(owner,
+                                                                             ClusterSpec.Id.from("my-cluster2"),
+                                                                             ZoneId.from("prod", "us-north-2")),
                                                          HostName.from("long-and-ugly-name-2"),
                                                          Optional.empty(),
                                                          endpoints, false));
@@ -44,9 +45,7 @@ public class RoutingPolicySerializerTest {
         for (Iterator<RoutingPolicy> it1 = policies.iterator(), it2 = serialized.iterator(); it1.hasNext();) {
             var expected = it1.next();
             var actual = it2.next();
-            assertEquals(expected.owner(), actual.owner());
-            assertEquals(expected.cluster(), actual.cluster());
-            assertEquals(expected.zone(), actual.zone());
+            assertEquals(expected.id(), actual.id());
             assertEquals(expected.canonicalName(), actual.canonicalName());
             assertEquals(expected.dnsZone(), actual.dnsZone());
             assertEquals(expected.endpoints(), actual.endpoints());

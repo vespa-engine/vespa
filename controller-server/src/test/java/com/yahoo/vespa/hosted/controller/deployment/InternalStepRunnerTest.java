@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
@@ -24,8 +24,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,9 +51,9 @@ import java.util.concurrent.Future;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -209,15 +210,15 @@ public class InternalStepRunnerTest {
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
 
-        tester.controller().curator().writeRoutingPolicies(app.instanceId(), Set.of(new RoutingPolicy(app.instanceId(),
-                                                                                                      ClusterSpec.Id.from("default"),
-                                                                                                      JobType.systemTest.zone(system()),
+        tester.controller().curator().writeRoutingPolicies(app.instanceId(), Set.of(new RoutingPolicy(new RoutingPolicyId(app.instanceId(),
+                                                                                                                          ClusterSpec.Id.from("default"),
+                                                                                                                          JobType.systemTest.zone(system())),
                                                                                                       HostName.from("host"),
                                                                                                       Optional.empty(),
                                                                                                       emptySet(), true)));
-        tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Set.of(new RoutingPolicy(app.testerId().id(),
-                                                                                                         ClusterSpec.Id.from("default"),
-                                                                                                         JobType.systemTest.zone(system()),
+        tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Set.of(new RoutingPolicy(new RoutingPolicyId(app.testerId().id(),
+                                                                                                                             ClusterSpec.Id.from("default"),
+                                                                                                                             JobType.systemTest.zone(system())),
                                                                                                          HostName.from("host"),
                                                                                                          Optional.empty(),
                                                                                                          emptySet(), true)));
