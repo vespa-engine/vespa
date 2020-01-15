@@ -139,7 +139,12 @@ public class DeploymentSpecXmlReader {
         // Values where the parent may provide a default
         DeploymentSpec.UpgradePolicy upgradePolicy = readUpgradePolicy(instanceTag, parentTag);
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceTag, parentTag);
-        Optional<AthenzService> athenzService = mostSpecificAttribute(instanceTag, athenzServiceAttribute).map(AthenzService::from);
+        Optional<AthenzDomain> athenzDomain = stringAttribute(athenzDomainAttribute, instanceTag)
+                                                        .or(() -> stringAttribute(athenzDomainAttribute, parentTag))
+                                                        .map(AthenzDomain::from);
+        Optional<AthenzService> athenzService = stringAttribute(athenzServiceAttribute, instanceTag)
+                                                        .or(() -> stringAttribute(athenzServiceAttribute, parentTag))
+                                                        .map(AthenzService::from);
         Notifications notifications = readNotifications(instanceTag, parentTag);
 
         // Values where there is no default
@@ -156,6 +161,7 @@ public class DeploymentSpecXmlReader {
                                                              upgradePolicy,
                                                              changeBlockers,
                                                              globalServiceId.asOptional(),
+                                                             athenzDomain,
                                                              athenzService,
                                                              notifications,
                                                              endpoints))
@@ -173,8 +179,11 @@ public class DeploymentSpecXmlReader {
     // Consume the given tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
     @SuppressWarnings("fallthrough")
     private List<Step> readNonInstanceSteps(Element stepTag, MutableOptional<String> globalServiceId, Element parentTag) {
-        Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
-        Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
+        Optional<AthenzService> athenzService = stringAttribute(athenzServiceAttribute, stepTag)
+                                                        .or(() -> stringAttribute(athenzServiceAttribute, parentTag))
+                                                        .map(AthenzService::from);
+        Optional<String> testerFlavor = stringAttribute(testerFlavorAttribute, stepTag)
+                                                .or(() -> stringAttribute(testerFlavorAttribute, parentTag));
 
         if (prodTag.equals(stepTag.getTagName()))
             globalServiceId.set(readGlobalServiceId(stepTag));
@@ -340,7 +349,7 @@ public class DeploymentSpecXmlReader {
     /**
      * Returns the given attribute as a string, or Optional.empty if it is not present or empty
      */
-    private static Optional<String> stringAttribute(String attributeName, Element tag) {
+    private Optional<String> stringAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
         return Optional.ofNullable(value).filter(s -> !s.equals(""));
     }
@@ -416,14 +425,6 @@ public class DeploymentSpecXmlReader {
                || root.getAttributes().getLength() == 1 && root.hasAttribute("version");
     }
 
-    /** Returns the given attribute from the given tag or its closest ancestor with the attribute. */
-    private static Optional<String> mostSpecificAttribute(Element tag, String attributeName) {
-        return Stream.iterate(tag, Objects::nonNull, Node::getParentNode)
-                     .filter(Element.class::isInstance)
-                     .map(Element.class::cast)
-                     .flatMap(element -> stringAttribute(attributeName, element).stream())
-                     .findFirst();
-    }
 
     private static class MutableOptional<T> {
 

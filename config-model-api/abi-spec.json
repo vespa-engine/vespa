@@ -194,7 +194,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
       "public com.yahoo.config.provision.InstanceName name()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public java.util.List changeBlocker()",
