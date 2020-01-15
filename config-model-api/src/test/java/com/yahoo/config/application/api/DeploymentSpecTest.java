@@ -805,6 +805,7 @@ public class DeploymentSpecTest {
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals("domain", spec.requireInstance("instance1").athenzDomain().get().value());
         assertEquals("service", spec.athenzService().get().value());
         assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
                                                                                 RegionName.from("us-west-1")).get().value());
@@ -829,6 +830,7 @@ public class DeploymentSpecTest {
         assertEquals("domain", spec.athenzDomain().get().value());
         assertEquals("service", spec.athenzService().get().value());
 
+        assertEquals("domain", spec.requireInstance("instance1").athenzDomain().get().value());
         assertEquals("prod-service", spec.requireInstance("instance1").athenzService(Environment.prod,
                                                                                      RegionName.from("us-central-1")).get().value());
         assertEquals("prod-service", spec.requireInstance("instance1").athenzService(Environment.prod,
@@ -863,6 +865,7 @@ public class DeploymentSpecTest {
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals("domain", spec.requireInstance("instance1").athenzDomain().get().value());
         assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
                                                                                 RegionName.from("us-west-1")).get().value());
         assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
@@ -874,8 +877,8 @@ public class DeploymentSpecTest {
     @Test
     public void athenz_config_is_read_from_instance() {
         StringReader r = new StringReader(
-                "<deployment athenz-domain='domain'>" +
-                "   <instance id='default' athenz-service='service'>" +
+                "<deployment>" +
+                "   <instance id='default' athenz-domain='domain' athenz-service='service'>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
@@ -883,16 +886,17 @@ public class DeploymentSpecTest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals(Optional.empty(), spec.athenzDomain());
         assertEquals(Optional.empty(), spec.athenzService());
-        assertEquals("service", spec.requireInstance("default").athenzService(Environment.prod, RegionName.from("us-west-1")).get().value());
+        assertEquals(spec.requireInstance("default").athenzDomain().get().value(), "domain");
+        assertEquals(spec.requireInstance("default").athenzService(Environment.prod, RegionName.from("us-west-1")).get().value(), "service");
     }
 
     @Test
     public void athenz_service_is_overridden_from_environment() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
-                "   <instance id='default' athenz-service='service'>" +
+                "   <instance id='default' athenz-domain='domain' athenz-service='service'>" +
                 "      <test/>" +
                 "      <prod athenz-service='prod-service'>" +
                 "         <region active='true'>us-west-1</region>" +
@@ -901,6 +905,7 @@ public class DeploymentSpecTest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(spec.requireInstance("default").athenzDomain().get().value(), "domain");
         assertEquals("prod-service",
                      spec.requireInstance("default").athenzService(Environment.prod,
                                                                    RegionName.from("us-west-1")).get().value());
@@ -909,8 +914,8 @@ public class DeploymentSpecTest {
     @Test(expected = IllegalArgumentException.class)
     public void it_fails_when_athenz_service_is_not_defined() {
         StringReader r = new StringReader(
-                "<deployment athenz-domain='domain'>" +
-                "   <instance id='default'>" +
+                "<deployment>" +
+                "   <instance id='default' athenz-domain='domain'>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +

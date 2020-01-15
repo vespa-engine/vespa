@@ -62,7 +62,6 @@ public class DeploymentSpec {
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
-        validateAthenz();
     }
 
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
@@ -89,35 +88,6 @@ public class DeploymentSpec {
             previous = strictest;
         }
     }
-
-    /**
-     * Throw an IllegalArgumentException if Athenz configuration violates:
-     * domain not configured -> no zone can configure service
-     * domain configured -> all zones must configure service
-     */
-    private void validateAthenz() {
-        // If athenz domain is not set, athenz service cannot be set on any level
-        if (athenzDomain.isEmpty()) {
-            for (DeploymentInstanceSpec instance : instances()) {
-                for (DeploymentSpec.DeclaredZone zone : instance.zones()) {
-                    if (zone.athenzService().isPresent()) {
-                        throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
-                    }
-                }
-            }
-            // if athenz domain is not set, athenz service must be set implicitly or directly on all zones.
-        }
-        else if (athenzService.isEmpty()) {
-            for (DeploymentInstanceSpec instance : instances()) {
-                for (DeploymentSpec.DeclaredZone zone : instance.zones()) {
-                    if (zone.athenzService().isEmpty()) {
-                        throw new IllegalArgumentException("Athenz domain is configured, but Athenz service not configured for zone: " + zone);
-                    }
-                }
-            }
-        }
-    }
-
 
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
