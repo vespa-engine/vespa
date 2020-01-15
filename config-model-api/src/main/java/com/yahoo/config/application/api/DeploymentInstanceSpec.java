@@ -29,7 +29,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final DeploymentSpec.UpgradePolicy upgradePolicy;
     private final List<DeploymentSpec.ChangeBlocker> changeBlockers;
     private final Optional<String> globalServiceId;
-    private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
@@ -39,7 +38,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   DeploymentSpec.UpgradePolicy upgradePolicy,
                                   List<DeploymentSpec.ChangeBlocker> changeBlockers,
                                   Optional<String> globalServiceId,
-                                  Optional<AthenzDomain> athenzDomain,
                                   Optional<AthenzService> athenzService,
                                   Notifications notifications,
                                   List<Endpoint> endpoints) {
@@ -48,13 +46,11 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.upgradePolicy = upgradePolicy;
         this.changeBlockers = changeBlockers;
         this.globalServiceId = globalServiceId;
-        this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
         this.notifications = notifications;
         this.endpoints = List.copyOf(validateEndpoints(endpoints, steps()));
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(steps(), globalServiceId, this.endpoints);
-        validateAthenz();
     }
 
     public InstanceName name() { return name; }
@@ -137,29 +133,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         }
     }
 
-    /**
-     * Throw an IllegalArgumentException if Athenz configuration violates:
-     * domain not configured -> no zone can configure service
-     * domain configured -> all zones must configure service
-     */
-    private void validateAthenz() {
-        // If athenz domain is not set, athenz service cannot be set on any level
-        if (athenzDomain.isEmpty()) {
-            for (DeploymentSpec.DeclaredZone zone : zones()) {
-                if (zone.athenzService().isPresent()) {
-                    throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
-                }
-            }
-            // if athenz domain is not set, athenz service must be set implicitly or directly on all zones.
-        } else if (athenzService.isEmpty()) {
-            for (DeploymentSpec.DeclaredZone zone : zones()) {
-                if (zone.athenzService().isEmpty()) {
-                    throw new IllegalArgumentException("Athenz domain is configured, but Athenz service not configured for zone: " + zone);
-                }
-            }
-        }
-    }
-
     /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
     public DeploymentSpec.UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
@@ -182,9 +155,10 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     /** Returns the athenz domain if configured */
-    public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
+    // TODO jonmv: Remove when 7.162 is older than the oldest deployed version.
+    public Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
-    /** Returns the athenz service for environment/region if configured */
+    /** Returns the athenz service for environment/region if configured, defaulting to that of the instance */
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
         return zones().stream()
                       .filter(zone -> zone.concerns(environment, Optional.of(region)))
@@ -213,7 +187,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                upgradePolicy == other.upgradePolicy &&
                changeBlockers.equals(other.changeBlockers) &&
                steps().equals(other.steps()) &&
-               athenzDomain.equals(other.athenzDomain) &&
                athenzService.equals(other.athenzService) &&
                notifications.equals(other.notifications) &&
                endpoints.equals(other.endpoints);
@@ -221,7 +194,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalServiceId, upgradePolicy, changeBlockers, steps(), athenzDomain, athenzService, notifications, endpoints);
+        return Objects.hash(globalServiceId, upgradePolicy, changeBlockers, steps(), athenzService, notifications, endpoints);
     }
 
     @Override
