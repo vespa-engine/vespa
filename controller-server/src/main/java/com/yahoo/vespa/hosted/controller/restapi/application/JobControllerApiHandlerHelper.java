@@ -193,15 +193,14 @@ class JobControllerApiHandlerHelper {
         lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
         long completed = productionJobs.stream()
                                        .filter(type -> ! type.isTest())
-                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change, instance, type, status.get(type)))
+                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change.withoutPlatform().withoutPin().with(lastPlatform), instance, type, status.get(type)))
                                        .count();
         long total = productionJobs.stream().filter(type -> ! type.isTest()).count();
         if (Optional.of(lastPlatform).equals(change.platform()))
             lastPlatformObject.setString("deploying", completed + " of " + total + " complete");
         else if (completed == total)
             lastPlatformObject.setString("completed", completed + " of " + total + " complete");
-        else if ( ! application.deploymentSpec().instances().stream()
-                               .allMatch(spec -> spec.canUpgradeAt(controller.clock().instant()))) {
+        else if ( ! application.deploymentSpec().requireInstance(instance.name()).canUpgradeAt(controller.clock().instant())) {
             lastPlatformObject.setString("blocked", application.deploymentSpec().instances().stream()
                                                                .flatMap(spec -> spec.changeBlocker().stream())
                                                                .filter(blocker -> blocker.blocksVersions())
@@ -221,7 +220,7 @@ class JobControllerApiHandlerHelper {
         lastApplicationObject.setLong("at", lastApplication.buildTime().get().toEpochMilli());
         long completed = productionJobs.stream()
                                        .filter(type -> ! type.isTest())
-                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change, instance, type, status.get(type)))
+                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change.withoutApplication().with(lastApplication), instance, type, status.get(type)))
                                        .count();
         long total = productionJobs.stream().filter(type -> ! type.isTest()).count();
         if (Optional.of(lastApplication).equals(change.application()))
