@@ -151,3 +151,4 @@ vespa_define_module(
 )
 
 vespa_install_script(src/apps/vespa-remove-indexes/vespa-remove-index.sh vespa-remove-index bin)
+install(DIRECTORY DESTINATION logs/vespa/search)
