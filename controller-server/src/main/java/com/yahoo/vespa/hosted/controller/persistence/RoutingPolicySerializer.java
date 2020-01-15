@@ -8,7 +8,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;

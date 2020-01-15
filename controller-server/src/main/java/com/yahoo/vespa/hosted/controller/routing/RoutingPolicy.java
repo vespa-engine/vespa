@@ -1,5 +1,5 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.application;
+package com.yahoo.vespa.hosted.controller.routing;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.ApplicationId;
@@ -7,7 +7,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 
 import java.util.Objects;
 import java.util.Optional;
