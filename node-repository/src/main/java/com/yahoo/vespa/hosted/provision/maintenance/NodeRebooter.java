@@ -41,7 +41,7 @@ public class NodeRebooter extends Maintainer {
 
     @Override
     protected void maintain() {
-        // Reboot candidates: Nodes in long-term states, where we know can safely orchestrate a reboot
+        // Reboot candidates: Nodes in long-term states, where we know we can safely orchestrate a reboot
         List<Node> nodesToReboot = nodeRepository().getNodes(Node.State.active, Node.State.ready).stream()
                 .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 .filter(this::shouldReboot)

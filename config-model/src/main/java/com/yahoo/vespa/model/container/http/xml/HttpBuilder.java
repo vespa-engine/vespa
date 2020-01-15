@@ -8,7 +8,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.Container;
@@ -20,7 +19,6 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.Binding;
 import org.w3c.dom.Element;
 
-import javax.management.loading.MLetMBean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
