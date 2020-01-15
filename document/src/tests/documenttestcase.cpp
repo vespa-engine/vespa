@@ -931,7 +931,7 @@ TEST(DocumentTest, testGetURIFromSerialized)
         std::unique_ptr<ByteBuffer> serialized = doc.serialize();
         serialized->flip();
 
-        Document doc2(test_repo.getTypeRepo(), *serialized, false, NULL);
+        Document doc2(test_repo.getTypeRepo(), *serialized);
         EXPECT_EQ(vespalib::string("id:ns:testdoctype1::1"), doc2.getId().toString());
         EXPECT_EQ(vespalib::string("testdoctype1"), doc2.getType().getName());
     }
@@ -1054,7 +1054,8 @@ TEST(DocumentTest, testSplitSerialization)
     EXPECT_TRUE(!headerDoc.hasValue("content"));
 
     buf.setPos(0);
-    Document fullDoc(testDocMan.getTypeRepo(), buf, buf2);
+    Document fullDoc;
+    fullDoc.deserialize(testDocMan.getTypeRepo(), buf, buf2);
     EXPECT_TRUE(fullDoc.hasValue("headerval"));
     EXPECT_TRUE(fullDoc.hasValue("content"));
 

@@ -27,10 +27,11 @@ private:
     DocumentId _id;
     StructFieldValue _fields;
 
-        // To avoid having to return another container object out of docblocks
-        // the meta data has been added to document. This will not be serialized
-        // with the document and really doesn't belong here!
+    // To avoid having to return another container object out of docblocks
+    // the meta data has been added to document. This will not be serialized
+    // with the document and really doesn't belong here!
     int64_t _lastModified;
+
 public:
     typedef std::unique_ptr<Document> UP;
     typedef std::shared_ptr<Document> SP;
@@ -42,13 +43,8 @@ public:
     Document();
     Document(const Document&);
     Document(const DataType &, DocumentId id);
-    Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, const DataType *anticipatedType = nullptr);
-    Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream, const DataType *anticipatedType = nullptr);
-    /**
-       Constructor to deserialize only document and type from a buffer. Only relevant if includeContent is false.
-    */
-    Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, bool includeContent, const DataType *anticipatedType);
-    Document(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer& body, const DataType *anticipatedType = nullptr);
+    Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
+    Document(const DocumentTypeRepo& repo, ByteBuffer& buffer);
     ~Document() override;
 
     void setRepo(const DocumentTypeRepo & repo);
@@ -146,9 +142,7 @@ private:
     StructuredIterator::UP getIterator(const Field* first) const override;
 
     static void deserializeDocHeader(ByteBuffer& buffer, DocumentId& id);
-    static const DocumentType *deserializeDocHeaderAndType(
-            const DocumentTypeRepo& repo, ByteBuffer& buffer,
-            DocumentId& id, const DocumentType * docType);
+    static const DocumentType *deserializeDocHeaderAndType(const DocumentTypeRepo& repo, ByteBuffer& buffer, DocumentId& id);
 };
 
 }  // document

@@ -32,6 +32,7 @@
 
 namespace document {
 
+class ByteBuffer;
 class Document;
 class VespaDocumentSerializer;
 /**

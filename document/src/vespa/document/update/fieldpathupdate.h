@@ -7,7 +7,6 @@
 
 namespace document {
 
-class ByteBuffer;
 class DocumentTypeRepo;
 class Field;
 class FieldValue;
@@ -35,7 +34,7 @@ public:
     using SP = std::shared_ptr<FieldPathUpdate>;
     using CP = vespalib::CloneablePtr<FieldPathUpdate>;
 
-    ~FieldPathUpdate();
+    ~FieldPathUpdate() override;
 
     enum FieldPathUpdateType {
         Add    = IDENTIFIABLE_CLASSID(AddFieldPathUpdate),

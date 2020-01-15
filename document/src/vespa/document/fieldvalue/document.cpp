@@ -93,8 +93,8 @@ Document::Document(const DataType &type, DocumentId documentId)
     }
 }
 
-Document::Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, const DataType *anticipatedType)
-    : StructuredFieldValue(anticipatedType ?  verifyDocumentType(anticipatedType) : *DataType::DOCUMENT),
+Document::Document(const DocumentTypeRepo& repo, ByteBuffer& buffer)
+    : StructuredFieldValue(*DataType::DOCUMENT),
       _id(),
       _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
       _lastModified(0)
@@ -107,40 +107,13 @@ void Document::setRepo(const DocumentTypeRepo& repo)
     _fields.setRepo(repo);
 }
 
-Document::Document(const DocumentTypeRepo& repo, vespalib::nbostream & is, const DataType *anticipatedType)
-    : StructuredFieldValue(anticipatedType ?  verifyDocumentType(anticipatedType) : *DataType::DOCUMENT),
+Document::Document(const DocumentTypeRepo& repo, vespalib::nbostream & is)
+    : StructuredFieldValue(*DataType::DOCUMENT),
       _id(),
       _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
       _lastModified(0)
 {
     deserialize(repo, is);
-}
-
-Document::Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, bool includeContent, const DataType *anticipatedType)
-    : StructuredFieldValue(anticipatedType ?  verifyDocumentType(anticipatedType) : *DataType::DOCUMENT),
-      _id(),
-      _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
-      _lastModified(0)
-{
-    if (!includeContent) {
-        const DocumentType *newDocType = deserializeDocHeaderAndType(repo, buffer, _id, static_cast<const DocumentType*>(anticipatedType));
-        if (newDocType) {
-            setType(*newDocType);
-        }
-    } else {
-        deserialize(repo, buffer);
-    }
-}
-
-
-Document::Document(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer& body, const DataType *anticipatedType)
-    : StructuredFieldValue(anticipatedType ?  verifyDocumentType(anticipatedType) : *DataType::DOCUMENT),
-      _id(),
-      _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
-      _lastModified(0)
-{
-    deserializeHeader(repo, header);
-    deserializeBody(repo, body);
 }
 
 Document::~Document() = default;
@@ -188,7 +161,7 @@ Document::getDocTypeFromSerialized(const DocumentTypeRepo& repo, ByteBuffer& buf
     int position = buf.getPos();
     DocumentId retVal;
 
-    const DocumentType *docType(deserializeDocHeaderAndType(repo, buf, retVal, nullptr));
+    const DocumentType *docType(deserializeDocHeaderAndType(repo, buf, retVal));
     buf.setPos(position);
 
     return docType;
@@ -275,9 +248,7 @@ Document::calculateChecksum() const
 }
 
 const DocumentType *
-Document::deserializeDocHeaderAndType(
-        const DocumentTypeRepo& repo, ByteBuffer& buffer, DocumentId& id,
-        const DocumentType * docType)
+Document::deserializeDocHeaderAndType(const DocumentTypeRepo& repo, ByteBuffer& buffer, DocumentId& id)
 {
     deserializeDocHeader(buffer, id);
 
@@ -289,11 +260,9 @@ Document::deserializeDocHeaderAndType(
     }
     const DocumentType *docTypeNew = nullptr;
 
-    if (! ((docType != nullptr) && (docType->getName() == docTypeName))) {
-        docTypeNew = repo.getDocumentType(docTypeName);
-        if (!docTypeNew) {
-            throw DocumentTypeNotFoundException(docTypeName, VESPA_STRLOC);
-        }
+    docTypeNew = repo.getDocumentType(docTypeName);
+    if (!docTypeNew) {
+        throw DocumentTypeNotFoundException(docTypeName, VESPA_STRLOC);
     }
     return docTypeNew;
 }
