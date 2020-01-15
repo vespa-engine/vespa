@@ -32,7 +32,6 @@ PrimitiveStep =
 
 Instance = element instance {
    attribute id { xsd:string } &
-   attribute athenz-domain { xsd:string }? &
    attribute athenz-service { xsd:string }? &
    StepExceptInstance
 }
