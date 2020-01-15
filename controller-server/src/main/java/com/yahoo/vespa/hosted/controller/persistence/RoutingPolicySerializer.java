@@ -63,15 +63,13 @@ public class RoutingPolicySerializer {
         field.traverse((ArrayTraverser) (i, inspect) -> {
             var endpointIds = new LinkedHashSet<EndpointId>();
             inspect.field(rotationsField).traverse((ArrayTraverser) (j, endpointId) -> endpointIds.add(EndpointId.of(endpointId.asString())));
-            var activeFieldInspector = inspect.field(loadBalancerActiveField);
-            // TODO(mpolden): Remove field presence check after January 2020
-            boolean active = !activeFieldInspector.valid() || activeFieldInspector.asBool();
             policies.add(new RoutingPolicy(owner,
                                            ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                            ZoneId.from(inspect.field(zoneField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
                                            Serializers.optionalString(inspect.field(dnsZoneField)),
-                                           endpointIds, active));
+                                           endpointIds,
+                                           inspect.field(loadBalancerActiveField).asBool()));
         });
         return Collections.unmodifiableSet(policies);
     }

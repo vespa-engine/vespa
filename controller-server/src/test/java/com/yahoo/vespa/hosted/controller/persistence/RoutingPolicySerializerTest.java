@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Test;
@@ -16,7 +15,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author mortent
@@ -54,16 +52,6 @@ public class RoutingPolicySerializerTest {
             assertEquals(expected.endpoints(), actual.endpoints());
             assertEquals(expected.loadBalancerActive(), actual.loadBalancerActive());
         }
-    }
-
-    @Test
-    public void legacy_serialization() {
-        var json = "{\"routingPolicies\":[{\"cluster\":\"default\",\"zone\":\"prod.us-north-1\"," +
-                   "\"canonicalName\":\"lb-0\"," +
-                   "\"dnsZone\":\"dns-zone-id\",\"rotations\":[]}]}";
-        var serialized = serializer.fromSlime(ApplicationId.defaultId(), SlimeUtils.jsonToSlime(json));
-        assertTrue(serialized.iterator().next().loadBalancerActive());
-
     }
 
 }
