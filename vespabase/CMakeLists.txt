@@ -2,6 +2,7 @@
 vespa_install_script(src/start-cbinaries.sh vespa-get-config bin)
 vespa_install_script(src/start-cbinaries.sh vespa-verify-ranksetup bin)
 vespa_install_script(src/start-cbinaries.sh vespa-config-status bin)
+vespa_install_script(src/start-cbinaries.sh vespa-configproxy-cmd bin)
 vespa_install_script(src/start-cbinaries.sh vespa-doclocator bin)
 vespa_install_script(src/start-cbinaries.sh vespa-model-inspect bin)
 vespa_install_script(src/start-cbinaries.sh vespa-proton-cmd bin)

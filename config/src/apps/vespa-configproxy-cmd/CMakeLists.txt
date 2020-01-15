@@ -4,7 +4,7 @@ vespa_add_executable(config_configproxy-cmd_app
     main.cpp
     methods.cpp
     proxycmd.cpp
-    OUTPUT_NAME vespa-configproxy-cmd
+    OUTPUT_NAME vespa-configproxy-cmd-bin
     INSTALL bin
     DEPENDS
 )
