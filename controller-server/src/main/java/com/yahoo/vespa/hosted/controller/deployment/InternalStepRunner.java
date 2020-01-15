@@ -665,7 +665,7 @@ public class InternalStepRunner implements StepRunner {
                                                          DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
         byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
         byte[] deploymentXml = deploymentXml(id.tester(),
-                                             spec.requireInstance(id.application().instance()).athenzDomain(),
+                                             spec.athenzDomain(),
                                              spec.requireInstance(id.application().instance()).athenzService(zone.environment(), zone.region()));
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
