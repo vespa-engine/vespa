@@ -871,9 +871,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                      String athenzDnsSuffix,
                                      Zone zone,
                                      DeploymentSpec spec) {
-        spec.instance(app.getApplicationId().instance())
-            .flatMap(instanceSpec -> instanceSpec.athenzDomain())
-            .or(() -> spec.athenzDomain())
+        spec.athenzDomain()
             .ifPresent(domain -> {
                 AthenzService service = spec.instance(app.getApplicationId().instance())
                                             .flatMap(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))

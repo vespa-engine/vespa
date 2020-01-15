@@ -917,7 +917,8 @@ public class ApplicationController {
      * @param deployer principal initiating the deployment, possibly empty
      */
     public void verifyApplicationIdentityConfiguration(TenantName tenantName, Optional<InstanceName> instanceName, Optional<ZoneId> zoneId, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
-        Optional<AthenzDomain> identityDomain = getIdentityDomain(applicationPackage);
+        Optional<AthenzDomain> identityDomain = applicationPackage.deploymentSpec().athenzDomain()
+                                                                  .map(domain -> new AthenzDomain(domain.value()));
         if(identityDomain.isEmpty()) {
             // If there is no domain configured in deployment.xml there is nothing to do.
             return;
@@ -940,8 +941,8 @@ public class ApplicationController {
             var zone = zoneId.orElseThrow(() -> new IllegalArgumentException("Unable to evaluate access, no zone provided in deployment"));
             var serviceToLaunch = instanceName
                     .flatMap(instance -> applicationPackage.deploymentSpec().instance(instance))
-                    .map(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))
-                    .orElse(applicationPackage.deploymentSpec().athenzService())
+                    .flatMap(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))
+                    .or(() -> applicationPackage.deploymentSpec().athenzService())
                     .map(service -> new AthenzService(identityDomain.get(), service.value()));
 
             if(serviceToLaunch.isPresent()) {
@@ -980,35 +981,17 @@ public class ApplicationController {
                 .map(AthenzUser.class::cast);
     }
 
-    private Optional<AthenzDomain> getIdentityDomain(ApplicationPackage applicationPackage) {
-        List<AthenzDomain> domains = Stream.concat(applicationPackage.deploymentSpec().athenzDomain().stream(),
-                applicationPackage.deploymentSpec().instances().stream()
-                        .flatMap(spec -> spec.athenzDomain().stream()))
-                .distinct()
-                .map(domain -> new AthenzDomain(domain.value()))
-                .collect(toList());
-
-
-        // We cannot have more than one domain, does not make sense that the domains are different ...
-        if(domains.size() > 1) {
-            throw new IllegalArgumentException(String.format("Multiple athenz-domain configured in deployment.xml (%s), can only have one.", domains.toString()));
-        }
-        return domains.stream().findAny();
-    }
-
     /*
      * Verifies that the configured athenz service (if any) can be launched.
      */
     private void verifyAllowedLaunchAthenzService(DeploymentSpec deploymentSpec) {
-        controller.zoneRegistry().zones().reachable().ids().forEach(zone -> {
-            AthenzIdentity configServerAthenzIdentity = controller.zoneRegistry().getConfigServerHttpsIdentity(zone);
-            deploymentSpec.athenzDomain().ifPresent(domain -> {
+        deploymentSpec.athenzDomain().ifPresent(domain -> {
+            controller.zoneRegistry().zones().reachable().ids().forEach(zone -> {
+                AthenzIdentity configServerAthenzIdentity = controller.zoneRegistry().getConfigServerHttpsIdentity(zone);
                 deploymentSpec.athenzService().ifPresent(service -> {
                     verifyAthenzServiceCanBeLaunchedBy(configServerAthenzIdentity, new AthenzService(domain.value(), service.value()));
                 });
-            });
-            deploymentSpec.instances().forEach(spec -> {
-                spec.athenzDomain().ifPresent(domain -> {
+                deploymentSpec.instances().forEach(spec -> {
                     spec.athenzService(zone.environment(), zone.region()).ifPresent(service -> {
                         verifyAthenzServiceCanBeLaunchedBy(configServerAthenzIdentity, new AthenzService(domain.value(), service.value()));
                     });
