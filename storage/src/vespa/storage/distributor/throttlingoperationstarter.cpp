@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "throttlingoperationstarter.h"
+#include <cassert>
 
 namespace storage::distributor {
 
@@ -10,8 +11,7 @@ ThrottlingOperationStarter::ThrottlingOperation::~ThrottlingOperation()
 }
 
 bool
-ThrottlingOperationStarter::canStart(uint32_t currentOperationCount,
-                                    Priority priority) const
+ThrottlingOperationStarter::canStart(uint32_t currentOperationCount, Priority priority) const
 {
     uint32_t variablePending(_maxPending - _minPending);
     uint32_t maxPendingForPri(_minPending + variablePending*((255.0 - priority) / 255.0));

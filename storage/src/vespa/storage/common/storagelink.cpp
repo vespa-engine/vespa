@@ -4,6 +4,7 @@
 #include "bucketmessages.h"
 #include <vespa/vespalib/util/backtrace.h>
 #include <sstream>
+#include <cassert>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".application.link");

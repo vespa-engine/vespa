@@ -12,14 +12,6 @@
 #include <sstream>
 #include <arpa/inet.h>
 
-#define LOG_DEBUG1(a)
-// Enable this macros instead to see what bytebuffer calls come
-//#define LOG_DEBUG1(a) std::cerr << "ByteBuffer(" << ((void*) this) << " " << a << ")\n";
-
-#define LOG_DEBUG2(a,b) LOG_DEBUG1(vespalib::make_string(a,b));
-#define LOG_DEBUG3(a,b,c) LOG_DEBUG1(vespalib::make_string(a,b,c));
-#define LOG_DEBUG4(a,b,c,d) LOG_DEBUG1(vespalib::make_string(a,b,c,d));
-
 using vespalib::alloc::Alloc;
 
 namespace document {
@@ -46,15 +38,13 @@ InputOutOfRangeException::InputOutOfRangeException(
 }
 
 ByteBuffer::ByteBuffer() :
-      _buffer(NULL),
+      _buffer(nullptr),
       _len(0),
       _pos(0),
       _limit(0),
-      _bufHolder(NULL),
       _ownedBuffer()
 {
-    set(NULL, 0);
-    LOG_DEBUG1("Created empty bytebuffer");
+    set(nullptr, 0);
 }
 
 ByteBuffer::ByteBuffer(size_t len) :
@@ -63,11 +53,10 @@ ByteBuffer::ByteBuffer(size_t len) :
 }
 
 ByteBuffer::ByteBuffer(const char* buffer, size_t len) :
-      _buffer(NULL),
+      _buffer(nullptr),
       _len(0),
       _pos(0),
       _limit(0),
-      _bufHolder(NULL),
       _ownedBuffer()
 {
     set(buffer, len);
@@ -78,22 +67,8 @@ ByteBuffer::ByteBuffer(Alloc buffer, size_t len) :
       _len(len),
       _pos(0),
       _limit(len),
-      _bufHolder(NULL),
       _ownedBuffer(std::move(buffer))
 {
-}
-
-ByteBuffer::ByteBuffer(BufferHolder* buf, size_t pos, size_t len, size_t limit) :
-      _buffer(NULL),
-      _len(0),
-      _pos(0),
-      _limit(0),
-      _bufHolder(NULL),
-      _ownedBuffer()
-{
-    set(buf, pos, len, limit);
-    LOG_DEBUG3("Created copy of byte buffer of length %" PRIu64 " with "
-               "limit %" PRIu64 ".", len, limit);
 }
 
 ByteBuffer::ByteBuffer(const ByteBuffer& bb) :
@@ -101,10 +76,8 @@ ByteBuffer::ByteBuffer(const ByteBuffer& bb) :
       _len(0),
       _pos(0),
       _limit(0),
-      _bufHolder(NULL),
       _ownedBuffer()
 {
-    LOG_DEBUG1("Created empty byte buffer to assign to.");
     *this = bb;
 }
 
@@ -121,97 +94,15 @@ ByteBuffer& ByteBuffer::operator=(const ByteBuffer & org)
         _len = org._len;
         _pos = org._pos;
         _limit = org._limit;
-        LOG_DEBUG4("Assignment created new buffer of size %" PRIu64 " at pos "
-                   "%" PRIu64 " with limit %" PRIu64 ".",
-                   _len, _pos, _limit);
     }
     return *this;
 }
 
-void
-ByteBuffer::set(BufferHolder* buf, size_t pos, size_t len, size_t limit)
-{
-    cleanUp();
-    _bufHolder = buf;
-    _bufHolder->addRef();
-    _buffer = static_cast<char *>(_bufHolder->_buffer.get());
-    _pos=pos;
-    _len=len;
-    _limit=limit;
-    LOG_DEBUG4("set() created new buffer of size %" PRIu64 " at pos "
-               "%" PRIu64 " with limit %" PRIu64 ".",
-               _len, _pos, _limit);
-}
-
-ByteBuffer::~ByteBuffer()
-{
-    if (_bufHolder) {
-        _bufHolder->subRef();
-    }
-}
-
-std::unique_ptr<ByteBuffer>
-ByteBuffer::sliceCopy() const
-{
-    ByteBuffer* buf = new ByteBuffer;
-    buf->sliceFrom(*this, _pos, _limit);
-
-    LOG_DEBUG3("Created slice at pos %" PRIu64 " with limit %" PRIu64 ".",
-               _pos, _limit);
-    return std::unique_ptr<ByteBuffer>(buf);
-}
+ByteBuffer::~ByteBuffer() = default;
 
 void ByteBuffer::throwOutOfBounds(size_t want, size_t has)
 {
-    LOG_DEBUG1("Throwing out of bounds exception");
     throw BufferOutOfBoundsException(want, has, VESPA_STRLOC);
-}
-
-void
-ByteBuffer::sliceFrom(const ByteBuffer& buf, size_t from, size_t to) // throw (BufferOutOfBoundsException)
-{
-    LOG_DEBUG3("Created slice from buffer from %" PRIu64 " to %" PRIu64 ".",
-               from, to);
-    if (from > buf._len) {
-        throwOutOfBounds(from, buf._len);
-    } else if (to > buf._len) {
-        throwOutOfBounds(to, buf._len);
-    } else if (to < from) {
-        throwOutOfBounds(to, from);
-    } else {
-
-        if (!buf._buffer) {
-            clear();
-            return;
-        }
-
-        // Slicing from someone that doesn't own their buffer, must make own copy.
-        if (( buf._ownedBuffer.get() == NULL ) && (buf._bufHolder == NULL)) {
-            cleanUp();
-            Alloc::alloc(to-from + 1).swap(_ownedBuffer);
-            _buffer = static_cast<char *>(_ownedBuffer.get());
-            memcpy(_buffer, buf._buffer + from, to-from);
-            _buffer[to-from] = 0;
-            _pos = 0;
-            _len = _limit = to-from;
-            return;
-        }
-
-        // Slicing from someone that owns, but hasn't made a reference counter yet.
-        if (!buf._bufHolder) {
-            buf._bufHolder=new BufferHolder(std::move(const_cast<Alloc &>(buf._ownedBuffer)));
-        }
-
-        // Slicing from refcounter.
-        cleanUp();
-
-        _bufHolder = buf._bufHolder;
-        _bufHolder->addRef();
-        _buffer = static_cast<char *>(_bufHolder->_buffer.get());
-        _pos=from;
-        _len=to;
-        _limit=to;
-    }
 }
 
 ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, size_t len)
@@ -222,15 +113,13 @@ ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, size_t len)
         static_cast<char *>(newBuf.get())[len] = 0;
         return new ByteBuffer(std::move(newBuf), len);
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
 void
 ByteBuffer::setPos(size_t pos) // throw (BufferOutOfBoundsException)
 {
-    LOG_DEBUG3("Setting pos to be %" PRIu64 ", limit is %" PRIu64 ".",
-               pos, _limit);
     if (pos>_limit) {
         throwOutOfBounds(pos, _limit);
     } else {
@@ -241,7 +130,6 @@ ByteBuffer::setPos(size_t pos) // throw (BufferOutOfBoundsException)
 void
 ByteBuffer::setLimit(size_t limit) // throw (BufferOutOfBoundsException)
 {
-    LOG_DEBUG3("Setting limit to %" PRIu64 ", (size is %" PRIu64 ").", limit, _len);
     if (limit>_len) {
         throwOutOfBounds(limit, _len);
     } else {
@@ -249,29 +137,8 @@ ByteBuffer::setLimit(size_t limit) // throw (BufferOutOfBoundsException)
     }
 }
 
-
-ByteBuffer::BufferHolder::BufferHolder(Alloc buffer)
-    : _buffer(std::move(buffer))
-{
-}
-
-ByteBuffer::BufferHolder::~BufferHolder() = default;
-void ByteBuffer::dump() const
-{
-    fprintf(stderr, "ByteBuffer: Length %lu, Pos %lu, Limit %lu\n",
-            _len, _pos, _limit);
-    for (size_t i=0; i<_len; i++) {
-        if (_buffer[i]>32 && _buffer[i]<126) {
-            fprintf(stderr, "%c", _buffer[i]);
-        } else {
-            fprintf(stderr, "[%d]",_buffer[i]);
-        }
-    }
-}
-
 void ByteBuffer::incPos(size_t pos)
 {
-    LOG_DEBUG2("incPos(%" PRIu64 ")", pos);
     if (_pos + pos > _limit) {
         throwOutOfBounds(_pos + pos, _limit);
     } else {
@@ -283,7 +150,6 @@ void ByteBuffer::incPos(size_t pos)
 }
 
 void ByteBuffer::getNumeric(uint8_t & v) {
-    LOG_DEBUG2("getNumeric8(%d)", (int) v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -293,7 +159,6 @@ void ByteBuffer::getNumeric(uint8_t & v) {
 }
 
 void ByteBuffer::putNumeric(uint8_t v) {
-    LOG_DEBUG2("putNumeric8(%d)", (int) v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -330,7 +195,6 @@ size_t ByteBuffer::forceValgrindPos2Lim() const
 
 
 void ByteBuffer::getNumericNetwork(int16_t & v) {
-    LOG_DEBUG2("getNumericNetwork16(%d)", (int) v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -340,18 +204,7 @@ void ByteBuffer::getNumericNetwork(int16_t & v) {
     }
 }
 
-void ByteBuffer::getNumeric(int16_t & v) {
-    LOG_DEBUG2("getNumeric16(%d)", (int) v);
-    if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
-        throwOutOfBounds(getRemaining(), sizeof(v));
-    } else {
-        v = *(int16_t *) (void *) getBufferAtPos();
-        incPosNoCheck(sizeof(v));
-    }
-}
-
 void ByteBuffer::putNumericNetwork(int16_t v) {
-    LOG_DEBUG2("putNumericNetwork16(%d)", (int) v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -361,18 +214,7 @@ void ByteBuffer::putNumericNetwork(int16_t v) {
     }
 }
 
-void ByteBuffer::putNumeric(int16_t v) {
-    LOG_DEBUG2("putNumeric16(%d)", (int) v);
-    if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
-        throwOutOfBounds(getRemaining(), sizeof(v));
-    } else {
-        *(int16_t *) (void *) getBufferAtPos() = v;
-        incPosNoCheck(sizeof(v));
-    }
-}
-
 void ByteBuffer::getNumericNetwork(int32_t & v) {
-    LOG_DEBUG2("getNumericNetwork32(%d)", (int) v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -383,7 +225,6 @@ void ByteBuffer::getNumericNetwork(int32_t & v) {
 }
 
 void ByteBuffer::getNumeric(int32_t & v) {
-    LOG_DEBUG2("getNumeric32(%d)", (int) v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -394,7 +235,6 @@ void ByteBuffer::getNumeric(int32_t & v) {
 
 
 void ByteBuffer::putNumericNetwork(int32_t v) {
-    LOG_DEBUG2("putNumericNetwork32(%d)", (int) v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -405,7 +245,6 @@ void ByteBuffer::putNumericNetwork(int32_t v) {
 }
 
 void ByteBuffer::putNumeric(int32_t v) {
-    LOG_DEBUG2("putNumeric32(%d)", (int) v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -414,17 +253,7 @@ void ByteBuffer::putNumeric(int32_t v) {
     }
 }
 
-void ByteBuffer::getNumericNetwork(float & v) {
-    LOG_DEBUG2("getNumericNetworkFloat(%f)", v);
-    // XXX depends on sizeof(float) == sizeof(uint32_t) == 4
-    // and endianness same for float and ints
-    int32_t val;
-    getIntNetwork(val);
-    memcpy(&v, &val, sizeof(v));
-}
-
 void ByteBuffer::getNumeric(float & v) {
-    LOG_DEBUG2("getNumericFloat(%f)", v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -433,26 +262,7 @@ void ByteBuffer::getNumeric(float & v) {
     }
 }
 
-void ByteBuffer::putNumericNetwork(float v) {
-    LOG_DEBUG2("putNumericNetworkFloat(%f)", v);
-    // XXX depends on sizeof(float) == sizeof(int32_t) == 4
-    // and endianness same for float and ints
-    int32_t val;
-    memcpy(&val, &v, sizeof(val));
-    putIntNetwork(val);
-}
-
-void ByteBuffer::putNumeric(float v) {
-    LOG_DEBUG2("putNumericFloat(%f)", v);
-    if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
-        throwOutOfBounds(getRemaining(), sizeof(v));
-    } else {
-        *(float *) (void *) getBufferAtPos() = v;
-        incPosNoCheck(sizeof(v));
-    }
-}
 void ByteBuffer::getNumeric(int64_t& v) {
-    LOG_DEBUG2("getNumeric64(%" PRId64 ")", v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -460,17 +270,8 @@ void ByteBuffer::getNumeric(int64_t& v) {
         incPosNoCheck(sizeof(v));
     }
 }
-void ByteBuffer::putNumeric(int64_t v) {
-    LOG_DEBUG2("putNumeric64(%" PRId64 ")", v);
-    if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
-        throwOutOfBounds(getRemaining(), sizeof(v));
-    } else {
-        *(int64_t *) (void *) getBufferAtPos() = v;
-        incPosNoCheck(sizeof(v));
-    }
-}
+
 void ByteBuffer::getNumeric(double& v) {
-    LOG_DEBUG2("getNumericDouble(%f)", v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -479,7 +280,6 @@ void ByteBuffer::getNumeric(double& v) {
     }
 }
 void ByteBuffer::putNumeric(double v) {
-    LOG_DEBUG2("putNumericDouble(%f)", v);
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
@@ -489,24 +289,19 @@ void ByteBuffer::putNumeric(double v) {
 }
 
 void ByteBuffer::getNumericNetwork(double & v) {
-    LOG_DEBUG2("getNumericNetworkDouble(%f)", v);
     getDoubleLongNetwork(v);
 }
 void ByteBuffer::putNumericNetwork(int64_t v) {
-    LOG_DEBUG2("putNumericNetwork64(%" PRId64 ")", v);
     putDoubleLongNetwork(v);
 }
 void ByteBuffer::putNumericNetwork(double v) {
-    LOG_DEBUG2("putNumericNetworkDouble(%f)", v);
     putDoubleLongNetwork(v);
 }
 void ByteBuffer::getNumericNetwork(int64_t & v) {
-    LOG_DEBUG2("getNumericNetwork64(%" PRId64 ")", v);
     getDoubleLongNetwork(v);
 }
 
 void ByteBuffer::putInt2_4_8Bytes(int64_t number, size_t len) {
-    LOG_DEBUG3("putInt2_4_8(%" PRId64 ", %" PRIu64 ")", number, len);
     if (number < 0ll) {
         throw InputOutOfRangeException(vespalib::make_string(
                     "Cannot encode negative number."), VESPA_STRLOC);
@@ -542,7 +337,6 @@ void ByteBuffer::putInt2_4_8Bytes(int64_t number, size_t len) {
 }
 
 void ByteBuffer::getInt2_4_8Bytes(int64_t & v) {
-    LOG_DEBUG2("getInt2_4_8(%" PRId64 ")", v);
     if (getRemaining() >= 2) {
         uint8_t flagByte = peekByte();
 
@@ -588,7 +382,6 @@ size_t ByteBuffer::getSerializedSize2_4_8Bytes(int64_t number) {
 }
 
 void ByteBuffer::putInt1_2_4Bytes(int32_t number) {
-    LOG_DEBUG2("putInt1_2_4Bytes(%i)", number);
     if (number < 0) {
         throw InputOutOfRangeException(vespalib::make_string(
                     "Cannot encode negative number."), VESPA_STRLOC);
@@ -607,7 +400,6 @@ void ByteBuffer::putInt1_2_4Bytes(int32_t number) {
 }
 
 void ByteBuffer::getInt1_2_4Bytes(int32_t & v) {
-    LOG_DEBUG2("getInt1_2_4Bytes(%i)", v);
     if (getRemaining() >= 1) {
         unsigned char flagByte = peekByte();
 
@@ -650,7 +442,6 @@ size_t ByteBuffer::getSerializedSize1_2_4Bytes(int32_t number) {
     }
 }
 void ByteBuffer::putInt1_4Bytes(int32_t number) {
-    LOG_DEBUG2("putInt1_4Bytes(%i)", number);
     if (number < 0) {
         throw InputOutOfRangeException(vespalib::make_string(
                     "Cannot encode negative number."), VESPA_STRLOC);
@@ -666,7 +457,6 @@ void ByteBuffer::putInt1_4Bytes(int32_t number) {
     }
 }
 void ByteBuffer::getInt1_4Bytes(int32_t & v) {
-    LOG_DEBUG2("getInt1_4Bytes(%i)", v);
     if (getRemaining() >= 1) {
         unsigned char flagByte = peekByte();
 
@@ -700,13 +490,11 @@ size_t ByteBuffer::getSerializedSize1_4Bytes(int32_t number) {
 }
 void ByteBuffer::getBytes(void *buffer, size_t count)
 {
-    LOG_DEBUG3("getBytes(%p, %" PRIu64 ")", buffer, count);
     const char *v = getBufferAtPos();
     incPos(count);
     memcpy(buffer, v, count);
 }
 void ByteBuffer::putBytes(const void *buf, size_t count) {
-    LOG_DEBUG3("putBytes(%p, %" PRIu64 ")", buf, count);
     if (__builtin_expect(getRemaining() < count, 0)) {
         throwOutOfBounds(getRemaining(), sizeof(count));
     } else {
@@ -721,8 +509,6 @@ std::string ByteBuffer::toString() {
 }
 
 void ByteBuffer::swap(ByteBuffer& other) {
-    LOG_DEBUG2("swap(%p)", &other);
-    std::swap(_bufHolder, other._bufHolder);
     std::swap(_buffer, other._buffer);
     std::swap(_len, other._len);
     std::swap(_pos, other._pos);
@@ -730,14 +516,8 @@ void ByteBuffer::swap(ByteBuffer& other) {
 }
 
 void ByteBuffer::cleanUp() {
-    LOG_DEBUG1("cleanUp()");
-    if (_bufHolder) {
-        _bufHolder->subRef();
-        _bufHolder = NULL;
-    } else {
-        Alloc().swap(_ownedBuffer);
-    }
-    _buffer = NULL;
+    Alloc().swap(_ownedBuffer);
+    _buffer = nullptr;
 }
 
 } // document

@@ -81,13 +81,11 @@ StructFieldValue::lazyDeserialize(const FixedTypeRepo &repo,
     _doc_type = &repo.getDocumentType();
     _version = version;
 
-    _chunks.push_back(std::make_unique<SerializableArray>());
-    _chunks.back().assign(fm, std::move(buffer), comp_type, uncompressed_length);
+    _chunks.push_back(std::make_unique<SerializableArray>(std::move(fm), std::move(buffer), comp_type, uncompressed_length));
     _hasChanged = false;
 }
 
-bool StructFieldValue::serializeField(int field_id, uint16_t version,
-                                      FieldValueWriter &writer) const {
+bool StructFieldValue::serializeField(int field_id, uint16_t version, FieldValueWriter &writer) const {
     if (version == _version) {
         for (int i = _chunks.size() - 1; i >= 0; --i) {
             vespalib::ConstBufferRef buf = _chunks[i].get(field_id);

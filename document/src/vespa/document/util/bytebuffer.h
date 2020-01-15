@@ -15,7 +15,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/referencecounter.h>
 
 namespace document {
 
@@ -31,6 +30,8 @@ public:
 
     ByteBuffer(const ByteBuffer &);
     ByteBuffer& operator=(const ByteBuffer &);
+    ByteBuffer(ByteBuffer &&) = default;
+    ByteBuffer& operator=(ByteBuffer &&) = default;
 
     ~ByteBuffer();
 
@@ -66,7 +67,7 @@ public:
     }
 
     /** Clear this buffer, and set free the underlying BufferHolder. */
-    void reset() { set(NULL, 0); }
+    void reset() { set(nullptr, 0); }
 
     /**
      * Creates a ByteBuffer object from another buffer. allocates
@@ -75,29 +76,16 @@ public:
      * @param buffer The buffer to copy.
      * @param len The length of the buffer.
      *
-     *  @return Returns a newly created bytebuffer object, or NULL
-     *  if buffer was NULL, or len was <=0.
+     *  @return Returns a newly created bytebuffer object, or nullptr
+     *  if buffer was nullptr, or len was <=0.
      */
     static ByteBuffer* copyBuffer(const char* buffer, size_t len);
-
-    std::unique_ptr<ByteBuffer> sliceCopy() const;
-
-    /**
-     * @throws BufferOutOfBoundsException If faulty range is given.
-     */
-    void sliceFrom(const ByteBuffer& buf, size_t from, size_t to);
 
     /** @return Returns the buffer pointed to by this object (at position 0) */
     char* getBuffer() const { return _buffer; }
 
     /** @return Returns the length of the buffer pointed to by this object. */
     size_t getLength() const { return _len; }
-
-    /**
-     * Adjust the length of the buffer. Only sane to shorten it, as you do not
-     * know what is ahead.
-     */
-    void setLength(size_t len) { _len = len; }
 
     /** @return Returns a pointer to the current position in the buffer. */
     char* getBufferAtPos() const { return _buffer + _pos; }
@@ -169,26 +157,19 @@ public:
         _limit=_len;
     }
 
-    void getNumericNetwork(uint8_t & v) { getNumeric(v); }
     void getNumeric(uint8_t & v);
-    void putNumericNetwork(uint8_t v) { putNumeric(v); }
     void putNumeric(uint8_t v);
     void getNumericNetwork(int16_t & v);
-    void getNumeric(int16_t & v);
     void putNumericNetwork(int16_t v);
-    void putNumeric(int16_t v);
     void getNumericNetwork(int32_t & v);
     void getNumeric(int32_t & v);
     void putNumericNetwork(int32_t v);
     void putNumeric(int32_t v);
-    void getNumericNetwork(float & v);
     void getNumeric(float & v);
-    void putNumericNetwork(float v);
-    void putNumeric(float v);
+
     void getNumericNetwork(int64_t & v);
     void getNumeric(int64_t& v);
     void putNumericNetwork(int64_t v);
-    void putNumeric(int64_t v);
     void getNumericNetwork(double & v);
     void getNumeric(double& v);
     void putNumericNetwork(double v);
@@ -197,21 +178,15 @@ public:
     void getByte(uint8_t & v)         { getNumeric(v); }
     void putByte(uint8_t v)           { putNumeric(v); }
     void getShortNetwork(int16_t & v) { getNumericNetwork(v); }
-    void getShort(int16_t & v)        { getNumeric(v); }
     void putShortNetwork(int16_t v)   { putNumericNetwork(v); }
-    void putShort(int16_t v)          { putNumeric(v); }
     void getIntNetwork(int32_t & v)   { getNumericNetwork(v); }
     void getInt(int32_t & v)          { getNumeric(v); }
     void putIntNetwork(int32_t v)     { putNumericNetwork(v); }
     void putInt(int32_t v)            { putNumeric(v); }
-    void getFloatNetwork(float & v)   { getNumericNetwork(v); }
     void getFloat(float & v)          { getNumeric(v); }
-    void putFloatNetwork(float v)     { putNumericNetwork(v); }
-    void putFloat(float v)            { putNumeric(v); }
     void getLongNetwork(int64_t & v)  { getNumericNetwork(v); }
     void getLong(int64_t& v)          { getNumeric(v); }
     void putLongNetwork(int64_t v)    { putNumericNetwork(v); }
-    void putLong(int64_t v)           { putNumeric(v); }
     void getDoubleNetwork(double & v) { getNumericNetwork(v); }
     void getDouble(double& v)         { getNumeric(v); }
     void putDoubleNetwork(double v)   { putNumericNetwork(v); }
@@ -343,7 +318,6 @@ public:
      *         reached
     */
     void getChar(char & val) { unsigned char t;getByte(t); val=t; }
-    void putChar(char val)   { putByte(static_cast<unsigned char>(val)); }
 
     /**
      *  Reads the given number of bytes into the given pointer, and updates the
@@ -365,39 +339,16 @@ public:
      */
     void putBytes(const void *buf, size_t count);
 
-    /** Debug */
-    void dump() const;
-
-    class BufferHolder : public vespalib::ReferenceCounter
-    {
-    private:
-        BufferHolder(const BufferHolder &);
-        BufferHolder& operator=(const BufferHolder &);
-
-    public:
-        BufferHolder(vespalib::alloc::Alloc buffer);
-        virtual ~BufferHolder();
-
-        vespalib::alloc::Alloc _buffer;
-    };
-
-    ByteBuffer(BufferHolder* buf, size_t pos, size_t len, size_t limit);
-
-    void set(BufferHolder* buf, size_t pos, size_t len, size_t limit);
-
 private:
     char * _buffer;
     size_t _len;
     size_t _pos;
     size_t _limit;
-    mutable BufferHolder   * _bufHolder;
     vespalib::alloc::Alloc _ownedBuffer;
 public:
 
     std::string toString();
-
     void swap(ByteBuffer& other);
-
     void cleanUp();
 };
 

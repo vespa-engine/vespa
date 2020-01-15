@@ -34,6 +34,22 @@ SerializableArray::SerializableArray()
 {
 }
 
+SerializableArray::SerializableArray(EntryMap entries, ByteBuffer::UP buffer,
+                                     CompressionConfig::Type comp_type,uint32_t uncompressed_length)
+    : _entries(std::move(entries)),
+      _owned(),
+      _serializedCompression(comp_type)
+{
+
+    if (CompressionConfig::isCompressed(_serializedCompression)) {
+        _compSerData = std::move(buffer);
+        _uncompressedLength = uncompressed_length;
+    } else {
+        _uncompressedLength = buffer->getRemaining();
+        _uncompSerData = std::move(buffer);
+    }
+}
+
 serializablearray::BufferMap & ensure(std::unique_ptr<serializablearray::BufferMap> & owned) {
     if (!owned) {
         owned = std::make_unique<serializablearray::BufferMap>();
@@ -45,8 +61,8 @@ SerializableArray::SerializableArray(const SerializableArray& other)
     : Cloneable(),
       _entries(other._entries),
       _owned(),
-      _uncompSerData(other._uncompSerData.get() ? new ByteBuffer(*other._uncompSerData) : NULL),
-      _compSerData(other._compSerData.get() ? new ByteBuffer(*other._compSerData) : NULL),
+      _uncompSerData(other._uncompSerData.get() ? new ByteBuffer(*other._uncompSerData) : nullptr),
+      _compSerData(other._compSerData.get() ? new ByteBuffer(*other._compSerData) : nullptr),
       _serializedCompression(other._serializedCompression),
       _uncompressedLength(other._uncompressedLength)
 {
@@ -86,9 +102,7 @@ void SerializableArray::clear()
     _uncompressedLength = 0;
 }
 
-SerializableArray::~SerializableArray()
-{
-}
+SerializableArray::~SerializableArray() = default;
 
 void
 SerializableArray::invalidate()
@@ -102,7 +116,7 @@ SerializableArray::set(int id, ByteBuffer::UP buffer)
     maybeDecompress();
     Entry e(id, buffer->getRemaining(), buffer->getBuffer());
     ensure(_owned)[id] = std::move(buffer);
-    EntryMap::iterator it = find(id);
+    auto it = find(id);
     if (it == _entries.end()) {
         _entries.push_back(e);
     } else {
@@ -139,7 +153,7 @@ SerializableArray::get(int id) const
 {
     vespalib::ConstBufferRef buf;
     if ( !maybeDecompressAndCatch() ) {
-        EntryMap::const_iterator found = find(id);
+        auto found = find(id);
 
         if (found != _entries.end()) {
             const Entry& entry = *found;
@@ -168,7 +182,7 @@ void
 SerializableArray::clear(int id)
 {
     maybeDecompress();
-    EntryMap::iterator it = find(id);
+    auto it  = find(id);
     if (it != _entries.end()) {
         _entries.erase(it);
         if (_owned) {
@@ -218,24 +232,6 @@ SerializableArray::deCompress() // throw (DeserializeException)
         newSerialization->setLimit(_uncompressedLength);
         _uncompSerData = std::move(newSerialization);
         LOG_ASSERT(_uncompressedLength == _uncompSerData->getRemaining());
-    }
-}
-
-void SerializableArray::assign(EntryMap & entries,
-                               ByteBuffer::UP buffer,
-                               CompressionConfig::Type comp_type,
-                               uint32_t uncompressed_length)
-{
-    _serializedCompression = comp_type;
-
-    _entries.clear();
-    _entries.swap(entries);
-    if (CompressionConfig::isCompressed(_serializedCompression)) {
-        _compSerData.reset(buffer.release());
-        _uncompressedLength = uncompressed_length;
-    } else {
-        _uncompressedLength = buffer->getRemaining();
-        _uncompSerData.reset(buffer.release());
     }
 }
 

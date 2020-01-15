@@ -110,7 +110,9 @@ public:
     using CompressionInfo = vespalib::compression::CompressionInfo;
 
     SerializableArray();
-    virtual ~SerializableArray();
+    SerializableArray(EntryMap entries, ByteBufferUP buffer,
+                      CompressionConfig::Type comp_type, uint32_t uncompressed_length);
+    ~SerializableArray() override;
 
     void swap(SerializableArray& other);
 
@@ -140,9 +142,6 @@ public:
     /** @return Returns true if the given ID is Set in the array. */
     bool has(int id) const;
 
-    /** @return Number of elements in array */
-    bool hasAnyElems() const { return !_entries.empty(); }
-
     /**
      * clears an attribute.
      *
@@ -155,16 +154,6 @@ public:
 
     CompressionConfig::Type getCompression() const { return _serializedCompression; }
     CompressionInfo getCompressionInfo() const;
-
-    /**
-     * Sets the serialized data that is the basis for this object's
-     * content. This is used by deserialization. Any existing entries
-     * are cleared.
-     */
-    void assign(EntryMap &entries,
-                ByteBufferUP buffer,
-                CompressionConfig::Type comp_type,
-                uint32_t uncompressed_length);
 
     bool empty() const { return _entries.empty(); }
 

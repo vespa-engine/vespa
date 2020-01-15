@@ -2,6 +2,7 @@
 #include "simplemaintenancescanner.h"
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <ostream>
+#include <cassert>
 
 namespace storage::distributor {
 
@@ -16,10 +17,10 @@ SimpleMaintenanceScanner::SimpleMaintenanceScanner(BucketPriorityDatabase& bucke
 {
 }
 
-SimpleMaintenanceScanner::~SimpleMaintenanceScanner() {}
+SimpleMaintenanceScanner::~SimpleMaintenanceScanner() = default;
 
-SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats() {}
-SimpleMaintenanceScanner::PendingMaintenanceStats::~PendingMaintenanceStats() {}
+SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats() = default;
+SimpleMaintenanceScanner::PendingMaintenanceStats::~PendingMaintenanceStats() = default;
 SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats(const PendingMaintenanceStats &) = default;
 SimpleMaintenanceScanner::PendingMaintenanceStats &
 SimpleMaintenanceScanner::PendingMaintenanceStats::operator = (const PendingMaintenanceStats &) = default;
