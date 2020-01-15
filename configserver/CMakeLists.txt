@@ -8,6 +8,7 @@ vespa_install_script(src/main/sh/stop-configserver libexec/vespa)
 
 install(DIRECTORY src/main/resources/logd DESTINATION conf)
 install(DIRECTORY src/main/resources/configserver-app DESTINATION conf)
+install(DIRECTORY DESTINATION conf/configserver)
 
 install(DIRECTORY DESTINATION conf/configserver-app/components)
 install(DIRECTORY DESTINATION conf/configserver-app/config-models)
@@ -21,3 +22,6 @@ install_symlink(lib/jars/application-model-jar-with-dependencies.jar conf/config
 install_symlink(lib/jars/node-repository-jar-with-dependencies.jar conf/configserver-app/components/node-repository.jar)
 install_symlink(lib/jars/zookeeper-server-jar-with-dependencies.jar conf/configserver-app/components/zookeeper-server.jar)
 install_symlink(conf/configserver-app/components lib/jars/config-models)
+install(DIRECTORY DESTINATION conf/zookeeper)
+install(DIRECTORY DESTINATION var/zookeeper)
+install(DIRECTORY DESTINATION logs/vespa/configserver)
