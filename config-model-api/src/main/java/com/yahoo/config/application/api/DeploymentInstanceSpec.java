@@ -155,7 +155,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     /** Returns the athenz domain if configured */
-    // TODO jonmv: Remove when the commit with this comment is deployed on all config servers.
+    // TODO jonmv: Remove when 7.162 is older than the oldest deployed version.
     public Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
     /** Returns the athenz service for environment/region if configured, defaulting to that of the instance */
