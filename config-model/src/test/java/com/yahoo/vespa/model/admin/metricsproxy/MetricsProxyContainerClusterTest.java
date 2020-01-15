@@ -139,10 +139,11 @@ public class MetricsProxyContainerClusterTest {
     }
 
     @Test
-    public void default_public_consumer_is_not_set_up_for_hosted() {
+    public void vespa_consumer_and_default_public_consumer_is_set_up_for_hosted() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), hosted);
-        assertEquals(1, config.consumer().size());
+        assertEquals(2, config.consumer().size());
         assertEquals(config.consumer(0).name(), VESPA_CONSUMER_ID);
+        assertEquals(config.consumer(1).name(), DEFAULT_PUBLIC_CONSUMER_ID);
     }
 
     @Test
@@ -207,7 +208,7 @@ public class MetricsProxyContainerClusterTest {
         );
         VespaModel hostedModel = getModel(services, hosted);
         ConsumersConfig config = consumersConfigFromModel(hostedModel);
-        assertEquals(1, config.consumer().size());
+        assertEquals(2, config.consumer().size());
 
         // All default metrics are retained
         ConsumersConfig.Consumer vespaConsumer = config.consumer(0);
