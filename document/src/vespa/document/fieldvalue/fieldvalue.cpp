@@ -36,21 +36,15 @@ void FieldValue::serialize(nbostream &stream) const {
 }
 
 void FieldValue::serialize(ByteBuffer& buffer) const {
-    nbostream stream;
-    serialize(stream);
+    nbostream stream = serialize();
     buffer.putBytes(stream.peek(), stream.size());
 }
 
-std::unique_ptr<ByteBuffer> FieldValue::serialize() const {
+nbostream
+FieldValue::serialize() const {
     nbostream stream;
     serialize(stream);
-
-    nbostream::Buffer buf;
-    stream.swap(buf);
-    size_t sz = buf.size();
-    auto bb = std::make_unique<ByteBuffer>(nbostream::Buffer::stealAlloc(std::move(buf)), sz);
-    bb->setPos(sz);
-    return bb;
+    return stream;
 }
 
 size_t

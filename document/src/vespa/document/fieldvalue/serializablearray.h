@@ -26,7 +26,6 @@
 
 namespace document {
 
-class SerializableArrayIterator;
 class ByteBuffer;
 
 namespace serializablearray {

@@ -39,7 +39,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
     LOG(debug, "Visitor %s handling block of %zu documents.",
                _id.c_str(), entries.size());
 
-    documentapi::DocumentListMessage* cmd = NULL;
+    documentapi::DocumentListMessage* cmd = nullptr;
 
     {
         CommandMap::iterator iter = _activeCommands.find(bid);
@@ -71,7 +71,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
             }
         }
 
-        hitCounter.addHit(doc->getId(), doc->serialize()->getLength());
+        hitCounter.addHit(doc->getId(), doc->getSerializedSize());
 
         int64_t timestamp = doc->getLastModified();
         cmd->getDocuments().push_back(documentapi::DocumentListMessage::Entry(

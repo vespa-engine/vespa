@@ -16,9 +16,8 @@ namespace document {
 
 namespace {
 template <typename T>
-void deserialize(const ByteBuffer &buffer, T &value) {
+void deserialize(nbostream & stream, T &value) {
     uint16_t version = Document::getNewestSerializationVersion();
-    nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
     DocumentTypeRepo repo;
     VespaDocumentDeserializer deserializer(repo, stream, version);
     deserializer.read(value);
@@ -94,26 +93,25 @@ TEST(WeightedSetFieldValueTest, testWeightedSet)
     EXPECT_EQ(6, value.get(IntFieldValue(3)));
 
         // Serialize & equality
-    std::unique_ptr<ByteBuffer> buffer(value.serialize());
-    buffer->flip();
+    nbostream buffer(value.serialize());
     WeightedSetFieldValue value2(type);
     EXPECT_TRUE(value != value2);
-    deserialize(*buffer, value2);
+    deserialize(buffer, value2);
     EXPECT_EQ(value, value2);
 
         // Various ways of removing
     {
             // By value
-        buffer->setPos(0);
-        deserialize(*buffer, value2);
+        buffer.rp(0);
+        deserialize(buffer, value2);
         EXPECT_EQ(size_t(3), value2.size());
         EXPECT_TRUE(value2.remove(IntFieldValue(1)));
         EXPECT_TRUE(!value2.contains(IntFieldValue(1)));
         EXPECT_EQ(size_t(2), value2.size());
 
             // Clearing all
-        buffer->setPos(0);
-        deserialize(*buffer, value2);
+        buffer.rp(0);
+        deserialize(buffer, value2);
         value2.clear();
         EXPECT_TRUE(!value2.contains(IntFieldValue(1)));
         EXPECT_EQ(size_t(0), value2.size());

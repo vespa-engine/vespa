@@ -15,9 +15,8 @@ namespace document {
 
 namespace {
 template <typename T>
-void deserialize(const ByteBuffer &buffer, T &value) {
+void deserialize(nbostream & stream, T &value) {
     uint16_t version = Document::getNewestSerializationVersion();
-    nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
     DocumentTypeRepo repo;
     VespaDocumentDeserializer deserializer(repo, stream, version);
     deserializer.read(value);
@@ -53,40 +52,39 @@ TEST(ArrayFieldValueTest, testArray)
     EXPECT_EQ(IntFieldValue(3), (IntFieldValue&) value[2]);
 
         // Serialize & equality
-    std::unique_ptr<ByteBuffer> buffer(value.serialize());
-    buffer->flip();
+    nbostream stream(value.serialize());
     ArrayFieldValue value2(type);
     EXPECT_TRUE(value != value2);
-    deserialize(*buffer, value2);
+    deserialize(stream, value2);
     EXPECT_EQ(value, value2);
 
         // Various ways of removing
     {
             // By index
-        buffer->setPos(0);
-        deserialize(*buffer, value2);
+        stream.rp(0);
+        deserialize(stream, value2);
         value2.remove(1);
         EXPECT_TRUE(!value2.contains(IntFieldValue(2)));
         EXPECT_EQ(size_t(2), value2.size());
 
             // By value
-        buffer->setPos(0);
-        deserialize(*buffer, value2);
+        stream.rp(0);
+        deserialize(stream, value2);
         EXPECT_TRUE(value2.remove(IntFieldValue(1)));
         EXPECT_TRUE(!value2.contains(IntFieldValue(1)));
         EXPECT_EQ(size_t(2), value2.size());
 
             // By value with multiple present
-        buffer->setPos(0);
-        deserialize(*buffer, value2);
+        stream.rp(0);
+        deserialize(stream, value2);
         value2.add(IntFieldValue(1));
         EXPECT_TRUE(value2.remove(IntFieldValue(1)));
         EXPECT_TRUE(!value2.contains(IntFieldValue(1)));
         EXPECT_EQ(size_t(2), value2.size());
 
             // Clearing all
-        buffer->setPos(0);
-        deserialize(*buffer, value2);
+        stream.rp(0);
+        deserialize(stream, value2);
         value2.clear();
         EXPECT_TRUE(!value2.contains(IntFieldValue(1)));
         EXPECT_EQ(size_t(0), value2.size());

@@ -337,7 +337,7 @@ int getTotalSerializedSize(const std::vector<document::Document::SP>& docs)
 {
     int total = 0;
     for (size_t i = 0; i < docs.size(); ++i) {
-        total += int(docs[i]->serialize()->getLength());
+        total += int(docs[i]->getSerializedSize());
     }
     return total;
 }

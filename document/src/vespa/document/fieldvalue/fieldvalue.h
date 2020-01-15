@@ -74,7 +74,7 @@ public:
 
     void serialize(vespalib::nbostream &stream) const;
     void serialize(ByteBuffer& buffer) const;
-    std::unique_ptr<ByteBuffer> serialize() const;
+    vespalib::nbostream serialize() const;
 
     /**
      * Compares this fieldvalue with another fieldvalue.
