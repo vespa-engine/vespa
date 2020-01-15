@@ -6,7 +6,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -19,7 +18,6 @@ import static org.junit.Assert.assertNotNull;
  * @author ollivir
  */
 public class ImplicitIndexingClusterTest {
-
     @Test
     public void existing_jdisc_is_used_as_indexing_cluster_when_multitenant() {
         final String servicesXml = "<services version=\"1.0\">\n" + //
@@ -27,7 +25,7 @@ public class ImplicitIndexingClusterTest {
                 "    <search />\n" + //
                 "    <nodes count=\"1\" />\n" + //
                 "    <http>\n" + //
-                "      <server id=\"bar\" port=\"" + Defaults.getDefaults().vespaWebServicePort() + "\" />\n" + //
+                "      <server id=\"bar\" port=\"4080\" />\n" + //
                 "    </http>\n" + //
                 "  </container>\n" + //
                 "  <content id=\"music\" version=\"1.0\">\n" + //

@@ -234,7 +234,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0' jetty='true'>",
                 "    <http>",
-                "        <server port='8080' id='ssl'>",
+                "        <server port='9000' id='ssl'>",
                 "            <ssl>",
                 "                <private-key-file>/foo/key</private-key-file>",
                 "                <certificate-file>/foo/cert</certificate-file>",

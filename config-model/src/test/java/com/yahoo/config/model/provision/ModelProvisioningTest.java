@@ -1297,7 +1297,6 @@ public class ModelProvisioningTest {
         assertEquals(1, model.getRoot().hostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
     }
-
     @Test
     public void testThatStandaloneSyntaxWorksOnHostedVespa() {
         String services =
@@ -1312,28 +1311,6 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(services, true);
         assertEquals(1, model.getHosts().size());
         assertEquals(1, model.getContainerClusters().size());
-    }
-
-    @Test
-    public void testThatStandaloneSyntaxOnHostedVespaRequiresDefaultPort() {
-        try {
-            String services =
-                    "<?xml version='1.0' encoding='utf-8' ?>" +
-                    "<container id='foo' version='1.0'>" +
-                    "  <http>" +
-                    "    <server id='server1' port='8095' />" +
-                    "  </http>" +
-                    "</container>";
-            VespaModelTester tester = new VespaModelTester();
-            tester.addHosts(1);
-            VespaModel model = tester.createModel(services, true);
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            // Success
-            assertEquals("Illegal port 8095 in http server 'server1': Port must be set to " +
-                         getDefaults().vespaWebServicePort(), e.getMessage());
-        }
     }
 
     @Test

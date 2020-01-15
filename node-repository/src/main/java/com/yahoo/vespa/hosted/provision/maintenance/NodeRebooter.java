@@ -41,7 +41,7 @@ public class NodeRebooter extends Maintainer {
 
     @Override
     protected void maintain() {
-        // Reboot candidates: Nodes in long-term states, where we know we can safely orchestrate a reboot
+        // Reboot candidates: Nodes in long-term states, which we know can safely orchestrate a reboot
         List<Node> nodesToReboot = nodeRepository().getNodes(Node.State.active, Node.State.ready).stream()
                 .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 .filter(this::shouldReboot)
@@ -66,11 +66,13 @@ public class NodeRebooter extends Maintainer {
         if (overdue.isEmpty()) // should never happen as all !docker-container should have provisioned timestamp
             return random.nextDouble() < interval().getSeconds() / (double) rebootInterval.getSeconds();
 
-        if (overdue.get().isNegative()) return false;
+        if (overdue.get().isNegative())
+            return false;
 
         // Use a probability such that each maintain() schedules the same number of reboots,
         // as long as 0 <= overdue <= rebootInterval, with the last maintain() in that interval
         // naturally scheduling the remaining with probability 1.
+
         int configServers = nodeRepository().database().cluster().size();
         long secondsRemaining = Math.max(0, rebootInterval.getSeconds() - overdue.get().getSeconds());
         double runsRemaining = configServers * secondsRemaining / (double) interval().getSeconds();

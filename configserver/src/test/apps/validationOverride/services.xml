@@ -4,7 +4,7 @@
         <filtering>
             <access-control domain="foo" write="true" />
         </filtering>
-        <server id="foo"/>
+        <server id="foo" port="4080" />
     </http>
     <search/>
     <nodes count="2"/>

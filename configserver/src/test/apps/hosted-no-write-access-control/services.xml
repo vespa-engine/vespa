@@ -8,7 +8,7 @@
 
   <container version="1.0">
     <http>
-      <server id="foo"/>
+      <server id="foo" port="4080" />
     </http>
     <search/>
     <nodes count='1'/>
