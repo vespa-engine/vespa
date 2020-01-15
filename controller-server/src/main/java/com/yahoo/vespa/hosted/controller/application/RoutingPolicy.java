@@ -82,9 +82,9 @@ public class RoutingPolicy {
         return Endpoint.of(owner).target(cluster, zone).on(Port.tls()).directRouting().in(system);
     }
 
-    /** Returns rotation endpoints of this */
-    public EndpointList rotationEndpointsIn(SystemName system) {
-        return EndpointList.of(endpoints.stream().map(endpointId -> endpointOf(owner, endpointId, system)));
+    /** Returns global endpoints which this is a member of */
+    public EndpointList globalEndpointsIn(SystemName system) {
+        return EndpointList.of(endpoints.stream().map(endpointId -> globalEndpointOf(owner, endpointId, system)));
     }
 
     @Override
@@ -109,8 +109,8 @@ public class RoutingPolicy {
                              zone.value());
     }
 
-    /** Returns the endpoint of given rotation */
-    public static Endpoint endpointOf(ApplicationId application, EndpointId endpointId, SystemName system) {
+    /** Creates a global endpoint for given application */
+    public static Endpoint globalEndpointOf(ApplicationId application, EndpointId endpointId, SystemName system) {
         return Endpoint.of(application).named(endpointId).on(Port.tls()).directRouting().in(system);
     }
 

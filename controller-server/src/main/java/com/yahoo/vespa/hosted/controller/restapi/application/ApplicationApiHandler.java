@@ -800,7 +800,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Per-cluster endpoints. These are backed by load balancers.
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
         for (var policy : routingPolicies) {
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
+            policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
                   .forEach(globalEndpointUrls::add);
@@ -926,7 +926,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
         for (RoutingPolicy policy : routingPolicies) {
             if (!policy.loadBalancerActive()) continue;
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
+            policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
                   .forEach(globalRotationsArray::addString);

@@ -90,8 +90,8 @@ public class RoutingPolicies {
 
         // Create DNS record for each routing ID
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
-            Endpoint endpoint = RoutingPolicy.endpointOf(routeEntry.getKey().application(), routeEntry.getKey().endpointId(),
-                                                         controller.system());
+            Endpoint endpoint = RoutingPolicy.globalEndpointOf(routeEntry.getKey().application(), routeEntry.getKey().endpointId(),
+                                                               controller.system());
             Set<AliasTarget> targets = routeEntry.getValue()
                                                  .stream()
                                                  .filter(policy -> policy.dnsZone().isPresent())
@@ -154,7 +154,7 @@ public class RoutingPolicies {
         var activeRoutingIds = routingIdsFrom(loadBalancers);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
-            var endpoint = RoutingPolicy.endpointOf(id.application(), id.endpointId(), controller.system());
+            var endpoint = RoutingPolicy.globalEndpointOf(id.application(), id.endpointId(), controller.system());
             controller.nameServiceForwarder().removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()), Priority.normal);
         }
     }
