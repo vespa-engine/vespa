@@ -20,6 +20,7 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.Binding;
 import org.w3c.dom.Element;
 
+import javax.management.loading.MLetMBean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -127,7 +128,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
     }
 
-    static int readPort(Element spec, boolean isHosted, DeployLogger deployLogger) {
+    static int readPort(Element spec, boolean isHosted) {
         String portString = spec.getAttribute("port");
 
         int port = Integer.parseInt(portString);
@@ -135,12 +136,10 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             throw new IllegalArgumentException(String.format("Invalid port %d.", port));
 
         int legalPortInHostedVespa = Container.BASEPORT;
-        if (isHosted && port != legalPortInHostedVespa) {
-            deployLogger.log(LogLevel.WARNING,
-                    String.format("Trying to set port to %d for http server with id %s. You cannot set port to anything else than %s",
-                            port, spec.getAttribute("id"), legalPortInHostedVespa));
-        }
-
+        if (isHosted && port != legalPortInHostedVespa)
+            throw new IllegalArgumentException("Illegal port " + port + " in http server '" +
+                                               spec.getAttribute("id") + "'" +
+                                               ": Port must be set to " + legalPortInHostedVespa);
         return port;
     }
 }

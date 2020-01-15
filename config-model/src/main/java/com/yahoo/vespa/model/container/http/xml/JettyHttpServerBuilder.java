@@ -11,10 +11,10 @@ import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import org.w3c.dom.Element;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.17.0
+ * @author Einar M R Rosenvinge
  */
 public class JettyHttpServerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<JettyHttpServer> {
+
     @Override
     protected JettyHttpServer doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element http) {
         JettyHttpServer jettyHttpServer = new JettyHttpServer(new ComponentId("jdisc-jetty"));
@@ -25,4 +25,5 @@ public class JettyHttpServerBuilder extends VespaDomBuilder.DomConfigProducerBui
 
         return jettyHttpServer;
     }
+
 }

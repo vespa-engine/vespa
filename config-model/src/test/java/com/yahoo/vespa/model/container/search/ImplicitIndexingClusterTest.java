@@ -6,6 +6,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -42,11 +43,12 @@ public class ImplicitIndexingClusterTest {
         assertNotNull("Indexing chain not added to jdisc", jdisc.getDocprocChains().allChains().getComponent("indexing"));
     }
 
-    private final String ACCESS_CONTROL_XML = "<http>\n" +//
+    private final String ACCESS_CONTROL_XML =
+            "<http>\n" +//
             "  <filtering>\n" +//
             "    <access-control domain=\"foo\" />\n" +//
             "  </filtering>\n" +//
-            "  <server id=\"bar\" port=\"4080\" />\n" +//
+            "  <server id=\"bar\" port=\"" + Defaults.getDefaults().vespaWebServicePort() + "\" />\n" +
             "</http>\n";
 
     private static VespaModel buildMultiTenantVespaModel(String servicesXml) {
