@@ -35,7 +35,7 @@ public class OsVersion {
 
     /** Returns whether this node is currently changing its version */
     public boolean changing() {
-        return !current.equals(wanted);
+        return wanted.isPresent() && !current.equals(wanted);
     }
 
     /** Returns whether current version matches given version */
