@@ -266,18 +266,6 @@
           "lastUpdated":"(ignore)"
         }
       ],
-      "platform": "6.1.0",
-      "applicationVersion": {
-        "buildNumber": 1,
-        "hash": "1.0.1-commit1", "source": {
-          "gitRepository": "repository1",
-          "gitBranch": "master",
-          "gitCommit": "commit1"
-        },
-        "sourceUrl": "repository1/tree/commit1",
-        "commit": "commit1"
-      },
-      "status": "complete",
       "environment": "prod",
       "region": "us-central-1",
       "instance": "instance1",

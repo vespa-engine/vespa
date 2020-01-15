@@ -956,19 +956,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     toSlime(instance.rotations(), instance.rotationStatus(), deployment, deploymentObject);
                 }
 
-                JobType.from(controller.system(), deployment.zone())
-                       .map(type -> new JobId(instance.id(), type))
-                       .map(status.jobSteps()::get)
-                       .ifPresent(stepStatus -> {
-                           deploymentObject.setString("platform", deployment.version().toFullString());
-                           toSlime(deployment.applicationVersion(), deploymentObject.setObject("applicationVersion"));
-                           if ( ! status.jobsToRun().containsKey(stepStatus.job().get()))
-                               deploymentObject.setString("status", "complete");
-                           else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(false))
-                               deploymentObject.setString("status", "pending");
-                           else deploymentObject.setString("status", "running");
-
-                       });
             }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
@@ -1075,12 +1062,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
+        DeploymentStatus status = controller.jobController().deploymentStatus(application);
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
         Instance instance = application.instances().get(deploymentId.applicationId().instance());
-        if (instance != null && ! instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
-            toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);
+        if (instance != null) {
+            if (!instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
+                toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);
+
+            JobType.from(controller.system(), deployment.zone())
+                   .map(type -> new JobId(instance.id(), type))
+                   .map(status.jobSteps()::get)
+                   .ifPresent(stepStatus -> {
+                       response.setString("platform", deployment.version().toFullString());
+                       toSlime(deployment.applicationVersion(), response.setObject("applicationVersion"));
+                       if (!status.jobsToRun().containsKey(stepStatus.job().get()))
+                           response.setString("status", "complete");
+                       else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(false))
+                           response.setString("status", "pending");
+                       else response.setString("status", "running");
+                   });
+        }
 
         Cursor activity = response.setObject("activity");
         deployment.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried",
