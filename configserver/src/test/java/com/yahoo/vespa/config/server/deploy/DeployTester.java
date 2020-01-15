@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.deploy;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
@@ -13,6 +14,7 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
+import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
@@ -99,6 +101,10 @@ public class DeployTester {
         this(modelFactories, configserverConfig, clock, Zone.defaultZone());
     }
 
+    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, HostProvisioner hostProvisioner) {
+        this(modelFactories, configserverConfig, Clock.systemUTC(), hostProvisioner);
+    }
+
     public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, HostProvisioner provisioner) {
         this(modelFactories, configserverConfig, clock, Zone.defaultZone(), provisioner);
     }
@@ -164,6 +170,26 @@ public class DeployTester {
     /** Create a model factory which always fails validation */
     public static ModelFactory createFailingModelFactory(Version version) { return new FailingModelFactory(version); }
 
+
+    public static CountingModelFactory createHostedModelFactory(Version version, Clock clock) {
+        return new CountingModelFactory(HostedConfigModelRegistry.create(), version, clock, Zone.defaultZone());
+    }
+
+    public static CountingModelFactory createHostedModelFactory(Version version, Zone zone) {
+        return new CountingModelFactory(HostedConfigModelRegistry.create(), version, Clock.systemUTC(), zone);
+    }
+
+    public static CountingModelFactory createHostedModelFactory(Version version) {
+        return new CountingModelFactory(HostedConfigModelRegistry.create(), version, Clock.systemUTC(), Zone.defaultZone());
+    }
+
+    public static CountingModelFactory createHostedModelFactory(Clock clock) {
+        return new CountingModelFactory(HostedConfigModelRegistry.create(), clock);
+    }
+
+    public static CountingModelFactory createHostedModelFactory() {
+        return new CountingModelFactory(HostedConfigModelRegistry.create(), Clock.systemUTC());
+    }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
@@ -318,6 +344,14 @@ public class DeployTester {
 
         public CountingModelFactory(Version version, Clock clock, Zone zone) {
             this.wrapped = new VespaModelFactory(version, new NullConfigModelRegistry(), clock, zone);
+        }
+
+        public CountingModelFactory(ConfigModelRegistry registry, Clock clock) {
+            this.wrapped = new VespaModelFactory(registry, clock);
+        }
+
+        public CountingModelFactory(ConfigModelRegistry registry, Version version, Clock clock, Zone zone) {
+            this.wrapped = new VespaModelFactory(version, registry, clock, zone);
         }
 
         /** Returns the number of models created successfully by this instance */
