@@ -9,6 +9,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -128,6 +129,8 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
     static int readPort(Element spec, boolean isHosted) {
         String portString = spec.getAttribute("port");
+        if (portString == null || portString.isEmpty())
+            return Defaults.getDefaults().vespaWebServicePort();
 
         int port = Integer.parseInt(portString);
         if (port < 0)

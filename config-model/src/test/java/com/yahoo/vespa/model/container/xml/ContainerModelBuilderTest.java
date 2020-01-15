@@ -134,6 +134,20 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    public void omitting_http_server_port_gives_default() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                "  <http>",
+                "    <server id='foo'/>",
+                "  </http>",
+                nodesXml,
+                "</container>" );
+        createModel(root, clusterElem);
+        AbstractService container = (AbstractService)root.getProducer("container/container.0");
+        assertEquals(Defaults.getDefaults().vespaWebServicePort(), container.getRelativePort(0));
+    }
+
+    @Test
     public void fail_if_http_port_is_not_default_in_hosted_vespa() throws Exception {
         try {
             String servicesXml =
