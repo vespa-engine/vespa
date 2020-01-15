@@ -64,7 +64,7 @@ Filtering = element filtering {
 }
 
 HttpServer =  element server {
-    attribute port { xsd:nonNegativeInteger }? &
+    attribute port { xsd:nonNegativeInteger } &
     ComponentId &
     (Ssl | SslProvider)? &
     GenericConfig*

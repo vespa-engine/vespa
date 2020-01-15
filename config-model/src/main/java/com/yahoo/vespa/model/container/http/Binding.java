@@ -10,7 +10,6 @@ import java.util.logging.Level;
  * @author bjorncs
  */
 public class Binding {
-
     private final ComponentSpecification filterId;
     private final String binding;
 
@@ -21,9 +20,10 @@ public class Binding {
 
     public static Binding create(ComponentSpecification filterId, String binding, DeployLogger logger) {
         if (binding.startsWith("https://")) {
-            logger.log(Level.WARNING, String.format("For binding '%s' on '%s': 'https' bindings are deprecated, " +
-                                                    "use 'http' instead to bind to both http and https traffic.",
-                                                    binding, filterId));
+            logger.log(Level.WARNING, String.format(
+                    "For binding '%s' on '%s': 'https' bindings are deprecated, " +
+                            "use 'http' instead to bind to both http and https traffic.",
+                    binding, filterId));
         }
         return new Binding(filterId, binding);
     }
@@ -35,5 +35,4 @@ public class Binding {
     public String binding() {
         return binding;
     }
-
 }
