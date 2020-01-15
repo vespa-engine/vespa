@@ -112,7 +112,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final String APPLICATION_STATUS_HANDLER_CLASS = "com.yahoo.container.handler.observability.ApplicationStatusHandler";
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
     public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
-    public static final String STATISTICS_HANDLER_CLASS = "com.yahoo.container.config.StatisticsRequestHandler";
     public static final String LOG_HANDLER_CLASS = com.yahoo.container.handler.LogHandler.class.getName();
     public static final String DEFAULT_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.DefaultLinguisticsProvider";
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
