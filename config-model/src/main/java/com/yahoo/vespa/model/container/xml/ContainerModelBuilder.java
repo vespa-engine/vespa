@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.TlsSecrets;
@@ -188,7 +189,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
 
-        addHttp(deployState, spec, cluster);
+        addHttp(deployState, spec, cluster, context.getApplicationType());
 
         addAccessLogs(deployState, cluster, spec);
         addRoutingAliases(cluster, spec, deployState.zone().environment());
@@ -310,12 +311,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
 
-    private void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+    private void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ApplicationType applicationType) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
-        if (deployState.isHosted()) {
+        if (deployState.isHosted() && applicationType == ApplicationType.DEFAULT) {
             addAdditionalHostedConnector(deployState, cluster);
         }
     }
