@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -174,6 +175,8 @@ public class NodeAdminStateUpdater {
                             aclByHostname.getOrDefault(hostname, Acl.EMPTY)))
                     .collect(Collectors.toSet());
             nodeAdmin.refreshContainersToRun(nodeAgentContexts);
+        } catch (ConvergenceException e) {
+            log.log(LogLevel.WARNING, "Failed to update which containers should be running: " + Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
             log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
         }
