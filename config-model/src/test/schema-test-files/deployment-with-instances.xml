@@ -39,7 +39,7 @@
             <test/>
             <staging/>
         </instance>
-        <instance id="four" athenz-service='four-service' athenz-domain='my-domain'>
+        <instance id="four" athenz-service='four-service'>
             <upgrade policy='conservative'/>
             <block-change days="mon,tue,wed" hours="14,15"/>
             <prod>
