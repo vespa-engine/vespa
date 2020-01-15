@@ -115,9 +115,6 @@ public class GroupPreparer {
                                                      " in " + application.toShortString() +
                                                      outOfCapacityDetails(allocation));
 
-                // Extend reservation for already reserved nodes
-                nodeRepository.reserve(nodeRepository.getNodes(application, Node.State.reserved));
-
                 // Carry out and return allocation
                 nodeRepository.reserve(allocation.reservableNodes());
                 nodeRepository.addDockerNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
