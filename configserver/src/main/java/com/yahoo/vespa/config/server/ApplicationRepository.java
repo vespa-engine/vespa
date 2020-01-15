@@ -759,12 +759,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private String getLogServerURI(ApplicationId applicationId, Optional<String> hostname) {
         // Allow to get logs from a given hostname if the application is under the hosted-vespa tenant.
         // We make no validation that the hostname is actually allocated to the given application since
-        // most applications under hosted-vespa are not known to the model and its OK for a user to get
+        // most applications under hosted-vespa are not known to the model and it's OK for a user to get
         // logs for any host if they are authorized for the hosted-vespa tenant.
         if (hostname.isPresent()) {
             if (HOSTED_VESPA_TENANT.equals(applicationId.tenant()))
                 return "http://" + hostname.get() + ":8080/logs";
-            else throw new IllegalArgumentException("Only hostname paramater unsupported for application " + applicationId);
+            else
+                throw new IllegalArgumentException("Using hostname parameter when getting logs is not supported for application "
+                                                   + applicationId);
         }
 
         Application application = getApplication(applicationId);
@@ -773,7 +775,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         HostInfo logServerHostInfo = hostInfos.stream()
                 .filter(host -> host.getServices().stream()
                         .anyMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HostInfo for LogServer"));
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find host info for logserver"));
 
         ServiceInfo serviceInfo = logServerHostInfo.getServices().stream().filter(service -> List.of(LOGSERVER_CONTAINER.serviceName, CONTAINER.serviceName).contains(service.getServiceType()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
@@ -782,11 +784,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private int servicePort(ServiceInfo serviceInfo) {
-        int port = serviceInfo.getPorts().stream()
+        return serviceInfo.getPorts().stream()
                 .filter(portInfo -> portInfo.getTags().stream().anyMatch(tag -> tag.equalsIgnoreCase("http")))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
                 .getPort();
-        return port;
     }
 
     public Slime createDeployLog() {
