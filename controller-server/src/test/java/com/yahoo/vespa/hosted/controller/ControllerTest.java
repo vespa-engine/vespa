@@ -117,6 +117,18 @@ public class ControllerTest {
 
         assertEquals(4, context.instanceJobs().size());
 
+        // Instance with uppercase characters is not allowed.
+        applicationPackage = new ApplicationPackageBuilder()
+                .instances("hellO")
+                .build();
+        try {
+            context.submit(applicationPackage);
+            fail("Expected exception due to illegal deployment spec.");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Invalid id 'hellO'. Tenant, application and instance names must start with a letter, may contain no more than 20 characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.", e.getMessage());
+        }
+
         // Production zone for which there is no JobType is not allowed.
         applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)

@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 public abstract class Identifier {
 
     protected static final String strictPatternExplanation =
-            "New tenant or application names must start with a letter, may contain no more than 20 " +
+            "Tenant, application and instance names must start with a letter, may contain no more than 20 " +
             "characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.";
     protected static final Pattern strictPattern = Pattern.compile("^(?=.{1,20}$)[a-z](-?[a-z0-9]+)*$");
     private static final Pattern serializedIdentifierPattern = Pattern.compile("[a-zA-Z0-9_-]+");
@@ -95,7 +95,7 @@ public abstract class Identifier {
     }
 
     public static void throwInvalidId(String id, String explanation) {
-        throw new IllegalArgumentException(String.format("Invalid id: %s. %s", id, explanation));
+        throw new IllegalArgumentException(String.format("Invalid id '%s'. %s", id, explanation));
     }
 
 }

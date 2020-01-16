@@ -156,7 +156,7 @@ public class ApplicationController {
                     else
                         for (InstanceName instance : application.get().deploymentSpec().instanceNames())
                             if ( ! application.get().instances().keySet().contains(instance))
-                                application = application.withNewInstance(instance);
+                                application = withNewInstance(application, id.instance(instance));
                     store(application);
                 });
                 count++;
@@ -316,7 +316,7 @@ public class ApplicationController {
         });
     }
 
-    private LockedApplication withNewInstance(LockedApplication application, ApplicationId id) {
+    public LockedApplication withNewInstance(LockedApplication application, ApplicationId id) {
         if (id.instance().isTester())
             throw new IllegalArgumentException("'" + id + "' is a tester application!");
         InstanceId.validate(id.instance().value());
