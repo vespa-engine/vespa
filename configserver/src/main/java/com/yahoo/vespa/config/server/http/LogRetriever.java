@@ -4,13 +4,10 @@ package com.yahoo.vespa.config.server.http;
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.Header;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -28,28 +25,6 @@ public class LogRetriever {
         } catch (IOException e) {
             logger.warning("Failed to get logs: " + Exceptions.toMessageString(e));
             return HttpErrorResponse.internalServerError(Exceptions.toMessageString(e));
-        }
-    }
-
-    private static class ProxyResponse extends HttpResponse {
-
-        private final org.apache.http.HttpResponse clientResponse;
-
-        private ProxyResponse(org.apache.http.HttpResponse clientResponse) {
-            super(clientResponse.getStatusLine().getStatusCode());
-            this.clientResponse = clientResponse;
-        }
-
-        @Override
-        public String getContentType() {
-            return Optional.ofNullable(clientResponse.getFirstHeader("Content-Type"))
-                    .map(Header::getValue)
-                    .orElseGet(super::getContentType);
-        }
-
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            clientResponse.getEntity().writeTo(outputStream);
         }
     }
 
