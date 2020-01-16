@@ -14,13 +14,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Tests that verify the health of production deployments of Vespa applications.
  *
- * These tests are typically run some time after deployment to a production zone, to ensure
- * the deployment is still healthy and working as expected. When these tests fail, deployment
- * of the tested change is halted until it succeeds, or is superseded by a remedying change.
- *
- * A typical production test is to verify that a set of metrics, measured by the Vespa
- * deployment itself, are within specified parameters, or that some higher-level measure
- * of quality, such as engagement among end users of the application, is as expected.
+ * Test classes annotated with this annotation are run during declared production tests.
+ * See <a href="https://cloud.vespa.ai/automated-deployments.html#production-tests">Vespa cloud documentation</a>.
  *
  * @author jonmv
  */
@@ -28,10 +23,4 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @IntegrationTest
 @Tag("production")
-public @interface ProductionTest {
-
-    // Want to verify metrics (Vespa).
-    // Want to verify external metrics (YAMAS, other).
-    // May want to verify search gives expected results.
-
-}
+public @interface ProductionTest { }
