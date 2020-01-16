@@ -46,7 +46,6 @@ import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.content.ReservedDocumentTypeNameValidator;
 import com.yahoo.vespa.model.content.StorageGroup;
 import com.yahoo.vespa.model.content.StorageNode;
-import com.yahoo.vespa.model.content.TuningDispatch;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
@@ -172,30 +171,18 @@ public class ContentCluster extends AbstractConfigProducer implements
             Double queryTimeout = search.getQueryTimeout();
             if (queryTimeout != null) {
                 Preconditions.checkState(index.getQueryTimeout() == null,
-                        "You may not specify query-timeout in both proton and content.");
+                                         "In " + index + ": You may not specify query-timeout in both proton and content.");
                 index.setQueryTimeout(queryTimeout);
             }
             Double visibilityDelay = search.getVisibilityDelay();
-            if (visibilityDelay != null) {
+            if (visibilityDelay != null)
                 index.setVisibilityDelay(visibilityDelay);
-            }
             index.setSearchCoverage(DomSearchCoverageBuilder.build(element));
             index.setDispatchSpec(DomDispatchBuilder.build(element));
 
-            // TODO: This should be cleaned up to avoid having to change code in 100 places
-            // every time we add a dispatch option.
-            TuningDispatch tuningDispatch = DomTuningDispatchBuilder.build(element, logger);
-            Integer maxHitsPerPartition = tuningDispatch.getMaxHitsPerPartition();
-
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
-            if (index.getTuning().dispatch == null)
-                index.getTuning().dispatch = new Tuning.Dispatch();
-            if (maxHitsPerPartition != null)
-                index.getTuning().dispatch.maxHitsPerPartition = maxHitsPerPartition;
-            index.getTuning().dispatch.minGroupCoverage = tuningDispatch.getMinGroupCoverage();
-            index.getTuning().dispatch.minActiveDocsCoverage = tuningDispatch.getMinActiveDocsCoverage();
-            index.getTuning().dispatch.policy = tuningDispatch.getDispatchPolicy();
+            index.getTuning().dispatch = DomTuningDispatchBuilder.build(element, logger);
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
@@ -650,7 +637,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         super.validate();
         if (search.usesHierarchicDistribution() && !isHosted) {
             // validate manually configured groups
-            new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.policy).validate();
+            new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.dispatchPolicy()).validate();
         }
         new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
         new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments);
