@@ -90,9 +90,9 @@ DocEntry::toString() const
     std::ostringstream out;
     out << "DocEntry(" << _timestamp << ", " << _metaFlags << ", ";
     if (_documentId.get() != 0) {
-        out << _documentId->toString();
+        out << *_documentId;
     } else if (_document.get()) {
-        out << "Doc(" << _document->getId().toString() << ")";
+        out << "Doc(" << _document->getId() << ")";
     } else {
         out << "metadata only";
     }
@@ -110,10 +110,10 @@ DocEntry::prettyPrint(std::ostream& out) const
 
     out << "DocEntry(Timestamp: " << _timestamp
         << ", size " << getPersistedDocumentSize() << ", ";
-    if (_documentId.get() != 0) {
-        out << _documentId->toString();
+    if (_documentId) {
+        out << *_documentId;
     } else if (_document.get()) {
-        out << "Doc(" << _document->getId().toString() << ")";
+        out << "Doc(" << _document->getId() << ")";
     } else {
         out << "metadata only";
     }
@@ -135,8 +135,8 @@ DocEntry::operator==(const DocEntry& entry) const {
         return false;
     }
 
-    if (_documentId.get()) {
-        if (!entry._documentId.get()) {
+    if (_documentId) {
+        if (!entry._documentId) {
             return false;
         }
 
@@ -144,13 +144,13 @@ DocEntry::operator==(const DocEntry& entry) const {
             return false;
         }
     } else {
-        if (entry._documentId.get()) {
+        if (entry._documentId) {
             return false;
         }
     }
 
-    if (_document.get()) {
-        if (!entry._document.get()) {
+    if (_document) {
+        if (!entry._document) {
             return false;
         }
 
@@ -158,7 +158,7 @@ DocEntry::operator==(const DocEntry& entry) const {
             return false;
         }
     } else {
-        if (entry._document.get()) {
+        if (entry._document) {
             return false;
         }
     }

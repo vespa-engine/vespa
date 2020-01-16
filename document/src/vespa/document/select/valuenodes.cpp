@@ -571,7 +571,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
             value = id.getScheme().getDocType();
             out << "Resolved id.type to value\"" << value << "\".\n";
         } else {
-            out << "Could not resolve type of doc " << id.toString() << ".\n";
+            out << "Could not resolve type of doc " << id << ".\n";
             return std::make_unique<InvalidValue>();
         }
         break;
@@ -589,7 +589,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
             out << "Resolved group of doc (type " << id.getScheme().getType()
                 << ") to \"" << value << "\".\n";
         } else {
-            out << "Can't resolve group of doc \"" << id.toString() << "\".\n";
+            out << "Can't resolve group of doc \"" << id << "\".\n";
             return std::make_unique<InvalidValue>();
         }
         break;
@@ -604,7 +604,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
                 << " to " << *result << ".\n";
             return result;
         } else {
-            out << "Could not resolve user of doc " << id.toString() << ".\n";
+            out << "Could not resolve user of doc " << id << ".\n";
             return std::make_unique<InvalidValue>();
         }
     }

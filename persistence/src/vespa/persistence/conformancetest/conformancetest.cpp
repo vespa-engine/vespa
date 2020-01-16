@@ -405,7 +405,7 @@ TEST_F(ConformanceTest, testBasics)
                     timeDoc2 = result.getEntries()[i]->getTimestamp();
                 }
             } else {
-                FAIL() << "Unknown document " << did->toString();
+                FAIL() << "Unknown document " << *did;
             }
         }
 

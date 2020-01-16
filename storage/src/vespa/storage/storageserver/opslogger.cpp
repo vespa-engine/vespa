@@ -76,7 +76,7 @@ OpsLogger::onPutReply(const std::shared_ptr<api::PutReply>& msg)
     if (_targetFile == nullptr) return false;
     std::ostringstream ost;
     ost << _component.getClock().getTimeInSeconds().getTime()
-        << "\tPUT\t" << msg->getDocumentId().toString() << "\t"
+        << "\tPUT\t" << msg->getDocumentId() << "\t"
         << msg->getResult().toString() << "\n";
     {
         vespalib::LockGuard lock(_lock);
@@ -93,7 +93,7 @@ OpsLogger::onUpdateReply(const std::shared_ptr<api::UpdateReply>& msg)
     if (_targetFile == nullptr) return false;
     std::ostringstream ost;
     ost << _component.getClock().getTimeInSeconds().getTime()
-        << "\tUPDATE\t" << msg->getDocumentId().toString() << "\t"
+        << "\tUPDATE\t" << msg->getDocumentId() << "\t"
         << msg->getResult().toString() << "\n";
     {
         vespalib::LockGuard lock(_lock);
@@ -110,7 +110,7 @@ OpsLogger::onRemoveReply(const std::shared_ptr<api::RemoveReply>& msg)
     if (_targetFile == nullptr) return false;
     std::ostringstream ost;
     ost << _component.getClock().getTimeInSeconds().getTime()
-        << "\tREMOVE\t" << msg->getDocumentId().toString() << "\t"
+        << "\tREMOVE\t" << msg->getDocumentId() << "\t"
         << msg->getResult().toString() << "\n";
     {
         vespalib::LockGuard lock(_lock);
@@ -127,7 +127,7 @@ OpsLogger::onGetReply(const std::shared_ptr<api::GetReply>& msg)
     if (_targetFile == nullptr) return false;
     std::ostringstream ost;
     ost << _component.getClock().getTimeInSeconds().getTime()
-        << "\tGET\t" << msg->getDocumentId().toString() << "\t"
+        << "\tGET\t" << msg->getDocumentId() << "\t"
         << msg->getResult().toString() << "\n";
     {
         vespalib::LockGuard lock(_lock);

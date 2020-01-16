@@ -58,7 +58,7 @@ PutCommand::getSummary() const
 void
 PutCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "Put(" << getBucketId() << ", " << _doc->getId().toString()
+    out << "Put(" << getBucketId() << ", " << _doc->getId()
         << ", timestamp " << _timestamp << ", size "
         << _doc->serialize()->getLength() << ")";
     if (verbose) {
@@ -85,7 +85,7 @@ void
 PutReply::print(std::ostream& out, bool verbose,
                 const std::string& indent) const
 {
-    out << "PutReply(" << _docId.toString() << ", " << getBucketId() << ", timestamp " << _timestamp;
+    out << "PutReply(" << _docId << ", " << getBucketId() << ", timestamp " << _timestamp;
 
     if (hasBeenRemapped()) {
         out << " (was remapped)";
@@ -132,7 +132,7 @@ UpdateCommand::getSummary() const {
 void
 UpdateCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "Update(" << getBucketId() << ", " << _update->getId().toString() << ", timestamp " << _timestamp;
+    out << "Update(" << getBucketId() << ", " << _update->getId() << ", timestamp " << _timestamp;
     if (_oldTimestamp != 0) {
         out << ", old timestamp " << _oldTimestamp;
     }
@@ -160,7 +160,7 @@ void
 UpdateReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "UpdateReply("
-        << _docId.toString() << ", " << getBucketId() << ", timestamp "
+        << _docId << ", " << getBucketId() << ", timestamp "
         << _timestamp << ", timestamp of updated doc: " << _oldTimestamp;
 
     if (_consistentNode != (uint16_t)-1) {
@@ -200,7 +200,7 @@ GetCommand::getSummary() const
 void
 GetCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "Get(" << getBucketId() << ", " << _docId.toString() << ")";
+    out << "Get(" << getBucketId() << ", " << _docId << ")";
     if (verbose) {
         out << " : ";
         BucketCommand::print(out, verbose, indent);
@@ -226,7 +226,7 @@ GetReply::~GetReply() = default;
 void
 GetReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "GetReply(" << getBucketId() << ", " << _docId.toString() << ", timestamp " << _lastModifiedTime << ")";
+    out << "GetReply(" << getBucketId() << ", " << _docId << ", timestamp " << _lastModifiedTime << ")";
     if (verbose) {
         out << " : ";
         BucketReply::print(out, verbose, indent);
@@ -253,7 +253,7 @@ RemoveCommand::getSummary() const {
 void
 RemoveCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "Remove(" << getBucketId() << ", " << _docId.toString() << ", timestamp " << _timestamp << ")";
+    out << "Remove(" << getBucketId() << ", " << _docId << ", timestamp " << _timestamp << ")";
     if (verbose) {
         out << " : ";
         BucketInfoCommand::print(out, verbose, indent);
@@ -273,7 +273,7 @@ RemoveReply::~RemoveReply() = default;
 void
 RemoveReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "RemoveReply(" << getBucketId() << ", " << _docId.toString() << ", timestamp " << _timestamp;
+    out << "RemoveReply(" << getBucketId() << ", " << _docId << ", timestamp " << _timestamp;
     if (_oldTimestamp != 0) {
         out << ", removed doc from " << _oldTimestamp;
     } else {
