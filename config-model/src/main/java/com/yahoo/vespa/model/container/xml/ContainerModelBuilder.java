@@ -10,8 +10,10 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -187,7 +189,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
 
-        addHttp(deployState, spec, cluster);
+        addHttp(deployState, spec, cluster, context.getApplicationType());
 
         addAccessLogs(deployState, cluster, spec);
         addRoutingAliases(cluster, spec, deployState.zone().environment());
@@ -309,22 +311,38 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
 
-    private void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+    private void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ApplicationType applicationType) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
-        // If the deployment contains certificate/private key reference, setup TLS port
-        if (deployState.tlsSecrets().isPresent()) {
-            addTlsPort(deployState, cluster);
+        if (deployState.isHosted() && applicationType == ApplicationType.DEFAULT) {
+            addAdditionalHostedConnector(deployState, cluster);
         }
     }
 
-    private void addTlsPort(DeployState deployState, ApplicationContainerCluster cluster) {
-        boolean authorizeClient = deployState.zone().system().isPublic();
-        if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
-            throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/security-model#data-plane");
+    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
+        addImplicitHttpIfNotPresent(cluster);
+        JettyHttpServer server = cluster.getHttp().getHttpServer();
+        String serverName = server.getComponentId().getName();
+
+        // If the deployment contains certificate/private key reference, setup TLS port
+        if (deployState.tlsSecrets().isPresent()) {
+            boolean authorizeClient = deployState.zone().system().isPublic();
+            if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
+                throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/security-model#data-plane");
+            }
+            TlsSecrets tlsSecrets = deployState.tlsSecrets().get();
+            HostedSslConnectorFactory connectorFactory = authorizeClient
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, tlsSecrets, deployState.tlsClientAuthority().get())
+                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, tlsSecrets);
+            server.addConnector(connectorFactory);
+        } else {
+            server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName));
         }
+    }
+
+    private static void addImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
         if(cluster.getHttp() == null) {
             Http http = new Http(Collections.emptyList());
             http.setFilterChains(new FilterChains(cluster));
@@ -335,12 +353,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.getHttp().setHttpServer(defaultHttpServer);
             defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
         }
-        JettyHttpServer server = cluster.getHttp().getHttpServer();
-        String serverName = server.getComponentId().getName();
-        HostedSslConnectorFactory connectorFactory = authorizeClient
-                ? new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get(), deployState.tlsClientAuthority().get(), true)
-                : new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get());
-        server.addConnector(connectorFactory);
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
