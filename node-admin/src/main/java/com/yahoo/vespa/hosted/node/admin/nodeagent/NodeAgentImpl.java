@@ -197,6 +197,8 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.createContainer(context, containerData, getContainerResources(context));
         dockerOperations.startContainer(context);
 
+        currentRebootGeneration = context.node().wantedRebootGeneration();
+        currentRestartGeneration = context.node().wantedRestartGeneration();
         hasStartedServices = true; // Automatically started with the container
         hasResumedNode = false;
         context.log(logger, "Container successfully started, new containerState is " + containerState);
@@ -322,7 +324,6 @@ public class NodeAgentImpl implements NodeAgent {
 
         storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
         dockerOperations.removeContainer(context, existingContainer);
-        currentRebootGeneration = context.node().wantedRebootGeneration();
         containerState = ABSENT;
         context.log(logger, "Container successfully removed, new containerState is " + containerState);
     }

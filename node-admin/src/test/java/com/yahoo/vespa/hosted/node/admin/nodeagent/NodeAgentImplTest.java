@@ -264,7 +264,7 @@ public class NodeAgentImplTest {
                 .state(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
-                .wantedRestartGeneration(1).currentRestartGeneration(1);
+                .wantedRestartGeneration(2).currentRestartGeneration(1);
 
         NodeAgentContext firstContext = createContext(specBuilder.build());
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -278,11 +278,12 @@ public class NodeAgentImplTest {
         ContainerResources resourcesAfterThird = ContainerResources.from(0, 2, 20);
         mockGetContainer(dockerImage, resourcesAfterThird, true);
 
-        InOrder inOrder = inOrder(orchestrator, dockerOperations);
+        InOrder inOrder = inOrder(orchestrator, dockerOperations, nodeRepository);
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(dockerOperations).removeContainer(eq(secondContext), any());
         inOrder.verify(dockerOperations, never()).updateContainer(any(), any());
         inOrder.verify(dockerOperations, never()).restartVespa(any());
+        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withRestartGeneration(2)));
 
         nodeAgent.doConverge(secondContext);
         inOrder.verify(orchestrator).resume(any(String.class));
