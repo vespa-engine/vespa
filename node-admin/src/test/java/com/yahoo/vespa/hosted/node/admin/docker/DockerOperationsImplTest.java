@@ -2,9 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.system.ProcessExecuter;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -14,10 +13,10 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -25,7 +24,6 @@ import java.util.OptionalLong;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -36,10 +34,10 @@ import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
     private final Docker docker = mock(Docker.class);
-    private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
+    private final TestTerminal terminal = new TestTerminal();
     private final IPAddresses ipAddresses = new IPAddressesMock();
     private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
-            docker, processExecuter, ipAddresses);
+            docker, terminal, ipAddresses, new InMemoryFlagSource());
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() {
@@ -74,12 +72,11 @@ public class DockerOperationsImplTest {
     }
 
     @Test
-    public void runsCommandInNetworkNamespace() throws IOException {
+    public void runsCommandInNetworkNamespace() {
         NodeAgentContext context = new NodeAgentContextImpl.Builder("container-42.domain.tld").build();
         makeContainer("container-42", Container.State.RUNNING, 42);
 
-        when(processExecuter.exec(aryEq(new String[]{"nsenter", "--net=/proc/42/ns/net", "--", "iptables", "-nvL"})))
-                .thenReturn(new Pair<>(0, ""));
+        terminal.expectCommand("nsenter --net=/proc/42/ns/net -- iptables -nvL 2>&1");
 
         dockerOperations.executeCommandInNetworkNamespace(context, "iptables", "-nvL");
     }

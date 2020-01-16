@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -9,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Before;
 import org.junit.Test;
@@ -251,13 +251,13 @@ public class AclMaintainerTest {
         doAnswer(invoc -> {
             String path = invoc.getArgument(2);
             writtenFileContents.add(new UnixPath(path).readUtf8File());
-            return new ProcessResult(0, "", "");
+            return new CommandResult(null, 0, "");
         }).when(dockerOperations).executeCommandInNetworkNamespace(any(), endsWith("-restore"), any());
     }
 
-    private void whenListRules(NodeAgentContext context, String table, IPVersion ipVersion, String result) {
+    private void whenListRules(NodeAgentContext context, String table, IPVersion ipVersion, String output) {
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(context), eq(ipVersion.iptablesCmd()), eq("-S"), eq("-t"), eq(table)))
-                .thenReturn(new ProcessResult(0, result, ""));
+                .thenReturn(new CommandResult(null, 0, output));
     }
 }

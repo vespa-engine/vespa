@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.time.Duration;
 import java.util.List;
@@ -31,7 +32,8 @@ public interface DockerOperations {
 
     ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, Long timeoutSeconds, String... command);
 
-    ProcessResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command);
+    /** Executes a command in inside containers network namespace, throws on non-zero exit code */
+    CommandResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command);
 
 
     /** Resume node. Resuming a node means that it is ready to take on traffic. */

@@ -2,24 +2,27 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.system.ProcessExecuter;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
-import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
-import java.io.IOException;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,8 +32,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
@@ -47,24 +50,20 @@ public class DockerOperationsImpl implements DockerOperations {
     private static final InetAddress IPV4_NPT_PREFIX = InetAddresses.forString("172.17.0.0");
 
     private final Docker docker;
-    private final ProcessExecuter processExecuter;
+    private final Terminal terminal;
     private final IPAddresses ipAddresses;
+    private final BooleanFlag failStartingNodeOnIpMismatch;
 
-    public DockerOperationsImpl(Docker docker) {
-        this(docker, new ProcessExecuter(), new IPAddressesImpl());
-    }
-
-    public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter, IPAddresses ipAddresses) {
+    public DockerOperationsImpl(Docker docker, Terminal terminal, IPAddresses ipAddresses, FlagSource flagSource) {
         this.docker = docker;
-        this.processExecuter = processExecuter;
+        this.terminal = terminal;
         this.ipAddresses = ipAddresses;
+        this.failStartingNodeOnIpMismatch = Flags.FAIL_STARTING_NODE_ON_IP_MISMATCH.bindTo(flagSource);
     }
 
     @Override
     public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
         context.log(logger, "Creating container");
-
-        Optional<Inet6Address> ipV6Address = ipAddresses.getIPv6Address(context.node().hostname());
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 context.node().wantedDockerImage().get(), context.containerName())
@@ -94,23 +93,29 @@ public class DockerOperationsImpl implements DockerOperations {
         command.withNetworkMode(networking.getDockerNetworkMode());
 
         if (networking == DockerNetworking.NPT) {
-            Optional<InetAddress> ipV6Local = ipV6Address.map(ip -> IPAddresses.prefixTranslate(ip, IPV6_NPT_PREFIX, 8));
+            Optional<? extends InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().hostname());
+            Optional<? extends InetAddress> ipV6Local = ipAddresses.getIPv6Address(context.node().hostname());
+
+            if (failStartingNodeOnIpMismatch.value()) {
+                assertEqualIpAddresses(context.hostname(), ipV4Local, context.node().ipAddresses(), IPVersion.IPv4);
+                assertEqualIpAddresses(context.hostname(), ipV4Local, context.node().ipAddresses(), IPVersion.IPv6);
+            }
+
+            if (ipV4Local.isEmpty() && ipV6Local.isEmpty()) {
+                throw new ConvergenceException("Container " + context.node().hostname() + " with " + networking +
+                        " networking must have at least 1 IP address, but found none");
+            }
+
+            ipV6Local = ipV6Local.map(ip -> IPAddresses.prefixTranslate(ip, IPV6_NPT_PREFIX, 8));
             ipV6Local.ifPresent(command::withIpAddress);
 
-            // IPv4 - Only present for some containers
-            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().hostname())
-                    .map(ipV4Address -> IPAddresses.prefixTranslate(ipV4Address, IPV4_NPT_PREFIX, 2));
+            ipV4Local = ipV4Local.map(ip -> IPAddresses.prefixTranslate(ip, IPV4_NPT_PREFIX, 2));
             ipV4Local.ifPresent(command::withIpAddress);
 
-            if (ipV4Local.isEmpty() && ipV6Address.isEmpty()) {
-                throw new IllegalArgumentException("Container " + context.node().hostname() + " with " +
-                                                   networking + " networking must have at least 1 IP address, " +
-                                                   "but found none");
-            }
             addEtcHosts(containerData, context.node().hostname(), ipV4Local, ipV6Local);
         } else if (networking == DockerNetworking.LOCAL) {
             var ipv4Address = ipAddresses.getIPv4Address(context.node().hostname())
-                                         .orElseThrow(() -> new IllegalArgumentException("No IPv4 address could be resolved from '" + context.node().hostname()+ "'"));
+                                         .orElseThrow(() -> new IllegalArgumentException("No IPv4 address could be resolved from '" + context.hostname()+ "'"));
             command.withIpAddress(ipv4Address);
         }
 
@@ -120,10 +125,24 @@ public class DockerOperationsImpl implements DockerOperations {
         command.create();
     }
 
+    private static void assertEqualIpAddresses(HostName hostName, Optional<? extends InetAddress> resolvedAddress,
+                                               Set<String> nrAddresses, IPVersion ipVersion) {
+        Optional<InetAddress> nrAddress = nrAddresses.stream()
+                .map(InetAddresses::forString)
+                .filter(ipVersion::match)
+                .findFirst();
+        if (resolvedAddress.equals(nrAddress)) return;
+
+        throw new ConvergenceException(String.format(
+                "IP address (%s) resolved from %s  does not match IP address (%s) in node-repo",
+                resolvedAddress.map(InetAddresses::toAddrString).orElse("[none]"), hostName,
+                nrAddress.map(InetAddresses::toAddrString).orElse("[none]")));
+    }
+
     void addEtcHosts(ContainerData containerData,
                      String hostname,
-                     Optional<InetAddress> ipV4Local,
-                     Optional<InetAddress> ipV6Local) {
+                     Optional<? extends InetAddress> ipV4Local,
+                     Optional<? extends InetAddress> ipV6Local) {
         // The default /etc/hosts in a Docker container contains one entry for the host,
         // mapping the hostname to the Docker-assigned IPv4 address.
         //
@@ -193,31 +212,17 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public ProcessResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command) {
+    public CommandResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command) {
         int containerPid = docker.getContainer(context.containerName())
                 .filter(container -> container.state.isRunning())
                 .orElseThrow(() -> new RuntimeException(
                         "Found no running container named " + context.containerName().asString()))
                 .pid;
 
-        String[] wrappedCommand = Stream.concat(Stream.of("nsenter",
-                                                          String.format("--net=/proc/%d/ns/net", containerPid),
-                                                          "--"),
-                                                Stream.of(command))
-                                        .toArray(String[]::new);
-
-        try {
-            Pair<Integer, String> result = processExecuter.exec(wrappedCommand);
-            if (result.getFirst() != 0) {
-                throw new RuntimeException(String.format(
-                        "Failed to execute %s in network namespace for %s (PID = %d), exit code: %d, output: %s",
-                        Arrays.toString(wrappedCommand), context.containerName().asString(), containerPid, result.getFirst(), result.getSecond()));
-            }
-            return new ProcessResult(0, result.getSecond(), "");
-        } catch (IOException e) {
-            throw new RuntimeException(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
-                    Arrays.toString(wrappedCommand), context.containerName().asString(), containerPid), e);
-        }
+        return terminal.newCommandLine(context)
+                .add("nsenter", String.format("--net=/proc/%d/ns/net", containerPid), "--")
+                .add(command)
+                .executeSilently();
     }
 
     @Override

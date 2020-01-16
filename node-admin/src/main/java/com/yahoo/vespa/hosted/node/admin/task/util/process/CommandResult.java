@@ -20,7 +20,7 @@ public class CommandResult {
     private final int exitCode;
     private final String output;
 
-    CommandResult(CommandLine commandLine, int exitCode, String output) {
+    public CommandResult(CommandLine commandLine, int exitCode, String output) {
         this.commandLine = commandLine;
         this.exitCode = exitCode;
         this.output = output;
