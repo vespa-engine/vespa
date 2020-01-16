@@ -184,7 +184,7 @@ class GetCommand : public BucketInfoCommand {
     document::DocumentId _docId;
     Timestamp _beforeTimestamp;
     vespalib::string _fieldSet;
-
+    InternalReadConsistency _internal_read_consistency;
 public:
     GetCommand(const document::Bucket &bucket, const document::DocumentId&,
                vespalib::stringref fieldSet, Timestamp before = MAX_TIMESTAMP);
@@ -194,6 +194,12 @@ public:
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
     void setFieldSet(vespalib::stringref fieldSet) { _fieldSet = fieldSet; }
+    InternalReadConsistency internal_read_consistency() const noexcept {
+        return _internal_read_consistency;
+    }
+    void set_internal_read_consistency(InternalReadConsistency consistency) noexcept {
+        _internal_read_consistency = consistency;
+    }
 
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

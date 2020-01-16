@@ -295,6 +295,28 @@ TEST_P(StorageProtocolTest, get) {
     EXPECT_NO_FATAL_FAILURE(assert_bucket_info_reply_fields_propagated(*reply2));
 }
 
+TEST_P(StorageProtocolTest, get_internal_read_consistency_is_strong_by_default) {
+    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar,vekterli", 123);
+    EXPECT_EQ(cmd->internal_read_consistency(), InternalReadConsistency::Strong);
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ(cmd2->internal_read_consistency(), InternalReadConsistency::Strong);
+}
+
+TEST_P(StorageProtocolTest, can_set_internal_read_consistency_on_get_commands) {
+    // Only supported on protocol version 7+. Will default to Strong on older versions, which is what we want.
+    if (GetParam().getMajor() < 7) {
+        return;
+    }
+    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar,vekterli", 123);
+    cmd->set_internal_read_consistency(InternalReadConsistency::Weak);
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ(cmd2->internal_read_consistency(), InternalReadConsistency::Weak);
+
+    cmd->set_internal_read_consistency(InternalReadConsistency::Strong);
+    cmd2 = copyCommand(cmd);
+    EXPECT_EQ(cmd2->internal_read_consistency(), InternalReadConsistency::Strong);
+}
+
 TEST_P(StorageProtocolTest, remove) {
     auto cmd = std::make_shared<RemoveCommand>(_bucket, _testDocId, 159);
     auto cmd2 = copyCommand(cmd);

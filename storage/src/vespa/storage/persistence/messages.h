@@ -25,7 +25,7 @@ public:
     GetIterCommand(const document::Bucket &bucket,
                    const spi::IteratorId iteratorId,
                    uint32_t maxByteSize);
-    ~GetIterCommand();
+    ~GetIterCommand() override;
 
     std::unique_ptr<api::StorageReply> makeReply() override;
 

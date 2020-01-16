@@ -180,7 +180,8 @@ GetCommand::GetCommand(const document::Bucket &bucket, const document::DocumentI
     : BucketInfoCommand(MessageType::GET, bucket),
       _docId(docId),
       _beforeTimestamp(before),
-      _fieldSet(fieldSet)
+      _fieldSet(fieldSet),
+      _internal_read_consistency(InternalReadConsistency::Strong)
 {
 }
 
