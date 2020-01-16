@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.content;
 /**
  * @author Simon Thoresen Hult
  */
-public class TuningDispatch {
+public class DispatchTuning {
 
     private final Integer maxHitsPerPartition;
     public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE};
@@ -12,7 +12,7 @@ public class TuningDispatch {
     private final Double minGroupCoverage;
     private final Double minActiveDocsCoverage;
 
-    private TuningDispatch(Builder builder) {
+    private DispatchTuning(Builder builder) {
         maxHitsPerPartition = builder.maxHitsPerPartition;
         dispatchPolicy = builder.dispatchPolicy;
         minGroupCoverage = builder.minGroupCoverage;
@@ -34,8 +34,8 @@ public class TuningDispatch {
         private Double minGroupCoverage;
         private Double minActiveDocsCoverage;
 
-        public TuningDispatch build() {
-            return new TuningDispatch(this);
+        public DispatchTuning build() {
+            return new DispatchTuning(this);
         }
 
         public Builder setMaxHitsPerPartition(Integer maxHitsPerPartition) {

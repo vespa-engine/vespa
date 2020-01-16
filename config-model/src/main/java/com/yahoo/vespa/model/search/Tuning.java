@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.model.content.TuningDispatch;
+import com.yahoo.vespa.model.content.DispatchTuning;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -18,7 +18,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
     public static class Dispatch {
 
         public Integer maxHitsPerPartition = null;
-        public TuningDispatch.DispatchPolicy policy = null;
+        public DispatchTuning.DispatchPolicy policy = null;
         public Double minGroupCoverage = null;
         public Double minActiveDocsCoverage = null;
     }

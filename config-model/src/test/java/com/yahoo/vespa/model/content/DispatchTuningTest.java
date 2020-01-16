@@ -10,11 +10,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Simon Thoresen Hult
  */
-public class TuningDispatchTest {
+public class DispatchTuningTest {
 
     @Test
     public void requireThatAccessorWork() {
-        TuningDispatch dispatch = new TuningDispatch.Builder()
+        DispatchTuning dispatch = new DispatchTuning.Builder()
                 .setMaxHitsPerPartition(69)
                 .setDispatchPolicy("round-robin")
                 .setMinGroupCoverage(7.5)
@@ -23,32 +23,35 @@ public class TuningDispatchTest {
         assertEquals(69, dispatch.getMaxHitsPerPartition().intValue());
         assertEquals(7.5, dispatch.getMinGroupCoverage().doubleValue(), 0.0);
         assertEquals(12.5, dispatch.getMinActiveDocsCoverage().doubleValue(), 0.0);
-        assertTrue(TuningDispatch.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
+        assertTrue(DispatchTuning.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
     }
     @Test
     public void requireThatRandomDispatchWork() {
-        TuningDispatch dispatch = new TuningDispatch.Builder()
+        DispatchTuning dispatch = new DispatchTuning.Builder()
                 .setDispatchPolicy("random")
                 .build();
-        assertTrue(TuningDispatch.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
+        assertTrue(DispatchTuning.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
         assertNull(dispatch.getMinGroupCoverage());
         assertNull(dispatch.getMinActiveDocsCoverage());
     }
 
     @Test
     public void requireThatWeightedDispatchWork() {
-        TuningDispatch dispatch = new TuningDispatch.Builder()
+        DispatchTuning dispatch = new DispatchTuning.Builder()
                 .setDispatchPolicy("adaptive")
                 .build();
-        assertTrue(TuningDispatch.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
+        assertTrue(DispatchTuning.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
         assertNull(dispatch.getMinGroupCoverage());
         assertNull(dispatch.getMinActiveDocsCoverage());
     }
 
     @Test
     public void requireThatDefaultsAreNull() {
-        TuningDispatch dispatch = new TuningDispatch.Builder().build();
+        DispatchTuning dispatch = new DispatchTuning.Builder().build();
         assertNull(dispatch.getMaxHitsPerPartition());
         assertNull(dispatch.getDispatchPolicy());
+        assertNull(dispatch.getMinActiveDocsCoverage());
+        assertNull(dispatch.getMinGroupCoverage());
     }
+
 }

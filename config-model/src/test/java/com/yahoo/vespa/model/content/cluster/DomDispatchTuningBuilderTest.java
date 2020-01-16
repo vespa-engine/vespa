@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.cluster;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import com.yahoo.vespa.model.content.TuningDispatch;
+import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
@@ -18,18 +17,18 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Simon Thoresen Hult
  */
-public class DomTuningDispatchBuilderTest {
+public class DomDispatchTuningBuilderTest {
 
     @Test
     public void requireThatDefaultsAreNull() throws Exception {
-        TuningDispatch dispatch = newTuningDispatch(
+        DispatchTuning dispatch = newTuningDispatch(
                 "<content/>");
         assertNull(dispatch.getMaxHitsPerPartition());
     }
 
     @Test
     public void requireThatEmptyTuningIsSafe() throws Exception {
-        TuningDispatch dispatch = newTuningDispatch(
+        DispatchTuning dispatch = newTuningDispatch(
                 "<content>" +
                 "  <tuning/>" +
                 "</content>");
@@ -38,7 +37,7 @@ public class DomTuningDispatchBuilderTest {
 
     @Test
     public void requireThatEmptydispatchIsSafe() throws Exception {
-        TuningDispatch dispatch = newTuningDispatch(
+        DispatchTuning dispatch = newTuningDispatch(
                 "<content>" +
                 "  <tuning>" +
                 "    <dispatch/>" +
@@ -52,7 +51,7 @@ public class DomTuningDispatchBuilderTest {
 
     @Test
     public void requireThatTuningDispatchCanBeBuilt() throws Exception {
-        TuningDispatch dispatch = newTuningDispatch(
+        DispatchTuning dispatch = newTuningDispatch(
                 "<content>" +
                 "  <tuning>" +
                 "    <dispatch>" +
@@ -68,7 +67,7 @@ public class DomTuningDispatchBuilderTest {
     }
     @Test
     public void requireThatTuningDispatchPolicyRoundRobin() throws Exception {
-        TuningDispatch dispatch = newTuningDispatch(
+        DispatchTuning dispatch = newTuningDispatch(
                 "<content>" +
                         "  <tuning>" +
                         "    <dispatch>" +
@@ -76,11 +75,11 @@ public class DomTuningDispatchBuilderTest {
                         "    </dispatch>" +
                         "  </tuning>" +
                         "</content>");
-        assertTrue(TuningDispatch.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
+        assertTrue(DispatchTuning.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
     }
     @Test
     public void requireThatTuningDispatchPolicyRandom() throws Exception {
-        TuningDispatch dispatch = newTuningDispatch(
+        DispatchTuning dispatch = newTuningDispatch(
                 "<content>" +
                         "  <tuning>" +
                         "    <dispatch>" +
@@ -88,10 +87,10 @@ public class DomTuningDispatchBuilderTest {
                         "    </dispatch>" +
                         "  </tuning>" +
                         "</content>");
-        assertTrue(TuningDispatch.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
+        assertTrue(DispatchTuning.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
     }
 
-    private static TuningDispatch newTuningDispatch(String xml) throws Exception {
+    private static DispatchTuning newTuningDispatch(String xml) throws Exception {
         return DomTuningDispatchBuilder.build(
                 new ModelElement(DocumentBuilderFactory.newInstance()
                                                        .newDocumentBuilder()

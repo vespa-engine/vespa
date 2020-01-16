@@ -46,7 +46,7 @@ import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.content.ReservedDocumentTypeNameValidator;
 import com.yahoo.vespa.model.content.StorageGroup;
 import com.yahoo.vespa.model.content.StorageNode;
-import com.yahoo.vespa.model.content.TuningDispatch;
+import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
@@ -184,8 +184,8 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             // TODO: This should be cleaned up to avoid having to change code in 100 places
             // every time we add a dispatch option.
-            TuningDispatch tuningDispatch = DomTuningDispatchBuilder.build(element, logger);
-            Integer maxHitsPerPartition = tuningDispatch.getMaxHitsPerPartition();
+            DispatchTuning dispatchTuning = DomTuningDispatchBuilder.build(element, logger);
+            Integer maxHitsPerPartition = dispatchTuning.getMaxHitsPerPartition();
 
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
@@ -193,9 +193,9 @@ public class ContentCluster extends AbstractConfigProducer implements
                 index.getTuning().dispatch = new Tuning.Dispatch();
             if (maxHitsPerPartition != null)
                 index.getTuning().dispatch.maxHitsPerPartition = maxHitsPerPartition;
-            index.getTuning().dispatch.minGroupCoverage = tuningDispatch.getMinGroupCoverage();
-            index.getTuning().dispatch.minActiveDocsCoverage = tuningDispatch.getMinActiveDocsCoverage();
-            index.getTuning().dispatch.policy = tuningDispatch.getDispatchPolicy();
+            index.getTuning().dispatch.minGroupCoverage = dispatchTuning.getMinGroupCoverage();
+            index.getTuning().dispatch.minActiveDocsCoverage = dispatchTuning.getMinActiveDocsCoverage();
+            index.getTuning().dispatch.policy = dispatchTuning.getDispatchPolicy();
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
