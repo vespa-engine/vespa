@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.zpe;
 
 import com.yahoo.athenz.zpe.AuthZpeClient;
+import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.ZToken;
@@ -34,6 +35,16 @@ public class DefaultZpe implements Zpe {
         StringBuilder returnedMatchedRole = new StringBuilder();
         AuthZpeClient.AccessCheckStatus rawResult =
                 AuthZpeClient.allowAccess(roleCertificate, resourceName.toResourceNameString(), action, returnedMatchedRole);
+        return createResult(returnedMatchedRole, rawResult, resourceName);
+    }
+
+    @Override
+    public AuthorizationResult checkAccessAllowed(
+            AthenzAccessToken accessToken, X509Certificate identityCertificate, AthenzResourceName resourceName, String action) {
+        StringBuilder returnedMatchedRole = new StringBuilder();
+        AuthZpeClient.AccessCheckStatus rawResult =
+                AuthZpeClient.allowAccess(
+                        accessToken.value(), identityCertificate, /*certHash*/null, resourceName.toResourceNameString(), action, returnedMatchedRole);
         return createResult(returnedMatchedRole, rawResult, resourceName);
     }
 

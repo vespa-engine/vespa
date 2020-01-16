@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.filter.security.athenz;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.ZToken;
@@ -89,6 +90,11 @@ public class AthenzAuthorizationFilterTest {
         public AuthorizationResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action) {
             return new AuthorizationResult(Type.ALLOW, new AthenzRole(resourceName.getDomain(), "rolename"));
         }
+
+        @Override
+        public AuthorizationResult checkAccessAllowed(AthenzAccessToken accessToken, X509Certificate identityCertificate, AthenzResourceName resourceName, String action) {
+            return new AuthorizationResult(Type.ALLOW, new AthenzRole(resourceName.getDomain(), "rolename"));
+        }
     }
 
     static class DenyingZpe implements Zpe {
@@ -99,6 +105,11 @@ public class AthenzAuthorizationFilterTest {
 
         @Override
         public AuthorizationResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action) {
+            return new AuthorizationResult(Type.DENY);
+        }
+
+        @Override
+        public AuthorizationResult checkAccessAllowed(AthenzAccessToken accessToken, X509Certificate identityCertificate, AthenzResourceName resourceName, String action) {
             return new AuthorizationResult(Type.DENY);
         }
     }
