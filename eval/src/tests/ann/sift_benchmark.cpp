@@ -276,6 +276,14 @@ TEST("require that Annoy via NNS api mostly works") {
 }
 #endif
 
+#if 1
+TEST("require that HNSW via NNS api mostly works") {
+    DocVectorAdapter adapter;
+    std::unique_ptr<NNS_API> nns = make_hnsw_nns(NUM_DIMS, adapter);
+    benchmark_nns("HNSW", *nns, { 100, 200 });
+}
+#endif
+
 
 int main(int argc, char **argv) {
     TEST_MASTER.init(__FILE__);
