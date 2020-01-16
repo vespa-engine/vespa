@@ -28,18 +28,18 @@ public class Lock implements Mutex {
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) throws UncheckedTimeoutException {
-        boolean acquired;
+        boolean acquired = false;
         try {
-            lock.tryLock(timeout.toMillis(), TimeUnit.MILLISECONDS);
             acquired = mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            lock.tryLock(); // Should be available to only this thread, while holding the above mutex.
         }
         catch (Exception e) {
-            if (lock.isHeldByCurrentThread()) lock.unlock();
+            if (acquired) release();
             throw new RuntimeException("Exception acquiring lock '" + lockPath + "'", e);
         }
 
-        if ( ! acquired) {
-            if (lock.isHeldByCurrentThread()) lock.unlock();
+        if ( ! lock.isHeldByCurrentThread()) {
+            if (acquired) release();
             throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
                                                 " to acquire lock '" + lockPath + "'");
         }
@@ -48,8 +48,16 @@ public class Lock implements Mutex {
     @Override
     public void close() {
         try {
-            mutex.release();
             lock.unlock();
+        }
+        finally {
+            release();
+        }
+    }
+
+    private void release() {
+        try {
+            mutex.release();
         }
         catch (Exception e) {
             throw new RuntimeException("Exception releasing lock '" + lockPath + "'");
