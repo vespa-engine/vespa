@@ -45,10 +45,6 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         return Double.parseDouble(e.getFirstChild().getNodeValue());
     }
 
-    private void handleDispatch(Element spec, Tuning t) {
-        t.dispatch = new DispatchTuning.Builder().build();
-    }
-
     private void handleSearchNode(Element spec, Tuning t) {
         t.searchNode = new Tuning.SearchNode();
         for (Element e : XML.getChildren(spec)) {

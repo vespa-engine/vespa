@@ -9,6 +9,8 @@ package com.yahoo.vespa.model.content;
  */
 public class DispatchTuning {
 
+    public static final DispatchTuning empty = new DispatchTuning.Builder().build();
+
     private final Integer maxHitsPerPartition;
     public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE};
     private final DispatchPolicy dispatchPolicy;

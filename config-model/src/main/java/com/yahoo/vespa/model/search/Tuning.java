@@ -382,7 +382,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
         }
     }
 
-    public DispatchTuning dispatch;
+    public DispatchTuning dispatch = DispatchTuning.empty;
     public SearchNode searchNode;
 
     public Tuning(AbstractConfigProducer parent) {
