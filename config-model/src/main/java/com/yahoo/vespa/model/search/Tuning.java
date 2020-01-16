@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.model.content.TuningDispatch;
+import com.yahoo.vespa.model.content.DispatchTuning;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -14,14 +14,6 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * @author geirst
  */
 public class Tuning extends AbstractConfigProducer implements ProtonConfig.Producer {
-
-    public static class Dispatch {
-
-        public Integer maxHitsPerPartition = null;
-        public TuningDispatch.DispatchPolicy policy = null;
-        public Double minGroupCoverage = null;
-        public Double minActiveDocsCoverage = null;
-    }
 
     public static class SearchNode implements ProtonConfig.Producer {
 
@@ -390,7 +382,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
         }
     }
 
-    public Dispatch dispatch;
+    public DispatchTuning dispatch = DispatchTuning.empty;
     public SearchNode searchNode;
 
     public Tuning(AbstractConfigProducer parent) {
