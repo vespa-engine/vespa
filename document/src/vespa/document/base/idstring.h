@@ -12,11 +12,10 @@ namespace document {
  * \class document::IdString
  * \ingroup base
  *
- * \brief New scheme for documents with no forced distribution.
+ * \brief Scheme for document id.
  *
- * By using this scheme, documents will be evenly distributed within VDS,
- * as the location of a doc identifier is a hash of the entire URI.
- * This scheme also contains the DocumentType.
+ * Document id with a scheme that both supports uniform hash based distribution,
+ * and location based distribution based on numeric id or textual group..
  */
 class IdString {
 public:
