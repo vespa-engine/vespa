@@ -266,7 +266,9 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     private Tuning tuning;
 
-    public void setTuning(Tuning tuning) { this.tuning = tuning; }
+    public void setTuning(Tuning t) {
+        tuning = t;
+    }
 
     private void setResourceLimits(ResourceLimits resourceLimits) {
         this.resourceLimits = Optional.of(resourceLimits);

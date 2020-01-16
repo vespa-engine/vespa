@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
@@ -19,8 +18,11 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
     protected Tuning doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
         Tuning tuning = new Tuning(parent);
         for (Element e : XML.getChildren(spec)) {
-            if (equals("searchnode", e))
+            if (equals("dispatch", e)) {
+                handleDispatch(e, tuning);
+            } else if (equals("searchnode", e)) {
                 handleSearchNode(e, tuning);
+            }
         }
         return tuning;
     }
@@ -43,6 +45,15 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
 
     private static Double asDouble(Element e) {
         return Double.parseDouble(e.getFirstChild().getNodeValue());
+    }
+
+    private void handleDispatch(Element spec, Tuning t) {
+        t.dispatch = new Tuning.Dispatch();
+        for (Element e : XML.getChildren(spec)) {
+            if (equals("max-hits-per-partition", e)) {
+                t.dispatch.maxHitsPerPartition = asInt(e);
+            }
+        }
     }
 
     private void handleSearchNode(Element spec, Tuning t) {
