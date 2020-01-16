@@ -182,20 +182,9 @@ public class ContentCluster extends AbstractConfigProducer implements
             index.setSearchCoverage(DomSearchCoverageBuilder.build(element));
             index.setDispatchSpec(DomDispatchBuilder.build(element));
 
-            // TODO: This should be cleaned up to avoid having to change code in 100 places
-            // every time we add a dispatch option.
-            DispatchTuning dispatchTuning = DomTuningDispatchBuilder.build(element, logger);
-            Integer maxHitsPerPartition = dispatchTuning.getMaxHitsPerPartition();
-
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
-            if (index.getTuning().dispatch == null)
-                index.getTuning().dispatch = new Tuning.Dispatch();
-            if (maxHitsPerPartition != null)
-                index.getTuning().dispatch.maxHitsPerPartition = maxHitsPerPartition;
-            index.getTuning().dispatch.minGroupCoverage = dispatchTuning.getMinGroupCoverage();
-            index.getTuning().dispatch.minActiveDocsCoverage = dispatchTuning.getMinActiveDocsCoverage();
-            index.getTuning().dispatch.policy = dispatchTuning.getDispatchPolicy();
+            index.getTuning().dispatch = DomTuningDispatchBuilder.build(element, logger);
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
@@ -650,7 +639,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         super.validate();
         if (search.usesHierarchicDistribution() && !isHosted) {
             // validate manually configured groups
-            new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.policy).validate();
+            new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.getDispatchPolicy()).validate();
         }
         new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
         new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments);

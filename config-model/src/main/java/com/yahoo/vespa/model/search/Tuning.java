@@ -15,14 +15,6 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public class Tuning extends AbstractConfigProducer implements ProtonConfig.Producer {
 
-    public static class Dispatch {
-
-        public Integer maxHitsPerPartition = null;
-        public DispatchTuning.DispatchPolicy policy = null;
-        public Double minGroupCoverage = null;
-        public Double minActiveDocsCoverage = null;
-    }
-
     public static class SearchNode implements ProtonConfig.Producer {
 
         public enum IoType {
@@ -390,7 +382,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
         }
     }
 
-    public Dispatch dispatch;
+    public DispatchTuning dispatch;
     public SearchNode searchNode;
 
     public Tuning(AbstractConfigProducer parent) {

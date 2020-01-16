@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.search.Tuning;
 import org.junit.Test;
 import org.w3c.dom.Element;
@@ -54,22 +55,9 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
     @Test
     public void requireThatEmptyDispatchIsSafe() {
         Tuning tuning = newTuning("<tuning><dispatch/></tuning>");
-        Tuning.Dispatch dispatch = tuning.dispatch;
+        DispatchTuning dispatch = tuning.dispatch;
         assertNotNull(dispatch);
-        assertNull(dispatch.maxHitsPerPartition);
-    }
-
-    @Test
-    public void requireThatDispatchSettingsAreParsed() {
-        Tuning tuning = createTuning(parse("<tuning>" +
-                                           "  <dispatch>" +
-                                           "    <max-hits-per-partition>69</max-hits-per-partition>" +
-                                           "  </dispatch>" +
-                                           "</tuning>"));
-        Tuning.Dispatch dispatch = tuning.dispatch;
-        assertNotNull(dispatch);
-        assertNotNull(dispatch.maxHitsPerPartition);
-        assertEquals(69, dispatch.maxHitsPerPartition.intValue());
+        assertNull(dispatch.getMaxHitsPerPartition());
     }
 
     @Test
