@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,13 +25,22 @@ import java.util.stream.Collectors;
  */
 public class BufferedLogStore {
 
-    static final int chunkSize = 1 << 13;
+    private static final int defaultChunkSize = 1 << 13; // 8kb per node stored in ZK.
+    private static final int defaultMaxLogSize = 1 << 16; // 64Mb max per run.
 
+    private final int chunkSize;
+    private final int maxLogSize;
     private final CuratorDb buffer;
     private final RunDataStore store;
     private final LogSerializer logSerializer = new LogSerializer();
 
     public BufferedLogStore(CuratorDb buffer, RunDataStore store) {
+        this(defaultChunkSize, defaultMaxLogSize, buffer, store);
+    }
+
+    BufferedLogStore(int chunkSize, int maxLogSize, CuratorDb buffer, RunDataStore store) {
+        this.chunkSize = chunkSize;
+        this.maxLogSize = maxLogSize;
         this.buffer = buffer;
         this.store = store;
     }
@@ -44,17 +54,32 @@ public class BufferedLogStore {
         // The id of a chunk is the id of the first entry in it.
         long lastEntryId = buffer.readLastLogEntryId(id, type).orElse(-1L);
         long lastChunkId = buffer.getLogChunkIds(id, type).max().orElse(0);
+        long numberOfChunks = Math.max(1, buffer.getLogChunkIds(id, type).count());
+        if (numberOfChunks > maxLogSize / chunkSize)
+            return; // Max size exceeded — store no more.
+
         byte[] emptyChunk = "[]".getBytes();
         byte[] lastChunk = buffer.readLog(id, type, lastChunkId).orElse(emptyChunk);
-        if (lastChunk.length > chunkSize) {
-            lastChunkId = lastEntryId + 1;
-            lastChunk = emptyChunk;
-        }
+
+        long sizeLowerBound = lastChunk.length;
         Map<Step, List<LogEntry>> log = logSerializer.fromJson(lastChunk, -1);
         List<LogEntry> stepEntries = log.computeIfAbsent(step, __ -> new ArrayList<>());
-        for (LogEntry entry : entries)
+        for (LogEntry entry : entries) {
+            if (sizeLowerBound > chunkSize) {
+                buffer.writeLastLogEntryId(id, type, lastEntryId);
+                buffer.writeLog(id, type, lastChunkId, logSerializer.toJson(log));
+                lastChunkId = lastEntryId + 1;
+                if (++numberOfChunks > maxLogSize / chunkSize) {
+                    log = Map.of(step, List.of(new LogEntry(++lastEntryId, entry.at(), LogEntry.Type.warning, "Max log size of " + (maxLogSize >> 20) + "Mb exceeded; further entries are discarded.")));
+                    break;
+                }
+                log = new HashMap<>();
+                log.put(step, stepEntries = new ArrayList<>());
+                sizeLowerBound = 2;
+            }
             stepEntries.add(new LogEntry(++lastEntryId, entry.at(), entry.type(), entry.message()));
-
+            sizeLowerBound += entry.message().length();
+        }
         buffer.writeLastLogEntryId(id, type, lastEntryId);
         buffer.writeLog(id, type, lastChunkId, logSerializer.toJson(log));
     }
