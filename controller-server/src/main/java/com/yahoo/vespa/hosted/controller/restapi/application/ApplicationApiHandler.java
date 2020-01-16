@@ -51,6 +51,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -951,10 +952,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     toSlime(instance.rotationStatus().of(instance.rotations().get(0).rotationId(), deployment),
                             deploymentObject);
                 }
-                if (!instance.rotations().isEmpty()) {
+                if ( ! recurseOverDeployments(request) && ! instance.rotations().isEmpty()) { // TODO jonmv: clean up when clients have converged.
                     toSlime(instance.rotations(), instance.rotationStatus(), deployment, deploymentObject);
                 }
-
 
             }
 
@@ -1061,9 +1061,29 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
-        controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId())).projectId()
-                  .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
+        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
+        DeploymentStatus status = controller.jobController().deploymentStatus(application);
+        application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
+
+        Instance instance = application.instances().get(deploymentId.applicationId().instance());
+        if (instance != null) {
+            if (!instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
+                toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);
+
+            JobType.from(controller.system(), deployment.zone())
+                   .map(type -> new JobId(instance.id(), type))
+                   .map(status.jobSteps()::get)
+                   .ifPresent(stepStatus -> {
+                       response.setString("platform", deployment.version().toFullString());
+                       toSlime(deployment.applicationVersion(), response.setObject("applicationVersion"));
+                       if (!status.jobsToRun().containsKey(stepStatus.job().get()))
+                           response.setString("status", "complete");
+                       else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(false))
+                           response.setString("status", "pending");
+                       else response.setString("status", "running");
+                   });
+        }
 
         Cursor activity = response.setObject("activity");
         deployment.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried",
