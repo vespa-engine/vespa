@@ -26,6 +26,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintai
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -207,9 +209,9 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Container> removeContainerIfNeededUpdateContainerState(
             NodeAgentContext context, Optional<Container> existingContainer) {
         if (existingContainer.isPresent()) {
-            Optional<String> reason = shouldRemoveContainer(context, existingContainer.get());
-            if (reason.isPresent()) {
-                removeContainer(context, existingContainer.get(), reason.get(), false);
+            List<String> reasons = shouldRemoveContainer(context, existingContainer.get());
+            if (!reasons.isEmpty()) {
+                removeContainer(context, existingContainer.get(), reasons, false);
                 return Optional.empty();
             }
 
@@ -257,7 +259,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void stopForHostSuspension(NodeAgentContext context) {
-        getContainer(context).ifPresent(container -> removeContainer(context, container, "suspending host", true));
+        getContainer(context).ifPresent(container -> removeContainer(context, container, List.of("Suspending host"), true));
     }
 
     public void suspend(NodeAgentContext context) {
@@ -275,37 +277,40 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private Optional<String> shouldRemoveContainer(NodeAgentContext context, Container existingContainer) {
+    private List<String> shouldRemoveContainer(NodeAgentContext context, Container existingContainer) {
         final NodeState nodeState = context.node().state();
-        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned) {
-            return Optional.of("Node in state " + nodeState + ", container should no longer be running");
-        }
+        List<String> reasons = new ArrayList<>();
+        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned)
+            reasons.add("Node in state " + nodeState + ", container should no longer be running");
+
         if (context.node().wantedDockerImage().isPresent() &&
                 !context.node().wantedDockerImage().get().equals(existingContainer.image)) {
-            return Optional.of("The node is supposed to run a new Docker image: "
+            reasons.add("The node is supposed to run a new Docker image: "
                     + existingContainer.image.asString() + " -> " + context.node().wantedDockerImage().get().asString());
         }
-        if (!existingContainer.state.isRunning()) {
-            return Optional.of("Container no longer running");
-        }
+
+        if (!existingContainer.state.isRunning())
+            reasons.add("Container no longer running");
 
         if (currentRebootGeneration < context.node().wantedRebootGeneration()) {
-            return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
+            reasons.add(String.format("Container reboot wanted. Current: %d, Wanted: %d",
                     currentRebootGeneration, context.node().wantedRebootGeneration()));
         }
 
         ContainerResources wantedContainerResources = getContainerResources(context);
         if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
-            return Optional.of("Container should be running with different memory allocation, wanted: " +
+            reasons.add("Container should be running with different memory allocation, wanted: " +
                     wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
         }
 
-        if (containerState == STARTING) return Optional.of("Container failed to start");
-        return Optional.empty();
+        if (containerState == STARTING)
+            reasons.add("Container failed to start");
+
+        return reasons;
     }
 
-    private void removeContainer(NodeAgentContext context, Container existingContainer, String reason, boolean alreadySuspended) {
-        context.log(logger, "Will remove container: " + reason);
+    private void removeContainer(NodeAgentContext context, Container existingContainer, List<String> reasons, boolean alreadySuspended) {
+        context.log(logger, "Will remove container: " + (reasons.size() == 1 ? reasons.get(0) : "\n" + String.join("\n", reasons)));
 
         if (existingContainer.state.isRunning()) {
             if (!alreadySuspended) {
