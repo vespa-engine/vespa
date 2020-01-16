@@ -190,6 +190,12 @@ public class Flags {
             "Takes effect on config server restart",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag FAIL_STARTING_NODE_ON_IP_MISMATCH = defineFeatureFlag(
+            "fail-starting-node-on-ip-mismatch", false,
+            "Whether node-admin should refuse to start container when there is an IP mismatch between the DNS and node-repository",
+            "Takes effect on next node creation (f.ex. node reboot or vespa version upgrade)",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

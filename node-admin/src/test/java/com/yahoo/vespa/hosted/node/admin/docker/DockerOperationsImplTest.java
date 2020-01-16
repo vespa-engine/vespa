@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.system.ProcessExecuter;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -37,7 +37,7 @@ public class DockerOperationsImplTest {
     private final TestTerminal terminal = new TestTerminal();
     private final IPAddresses ipAddresses = new IPAddressesMock();
     private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
-            docker, terminal, ipAddresses);
+            docker, terminal, ipAddresses, new InMemoryFlagSource());
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() {

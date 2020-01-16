@@ -87,7 +87,7 @@ public class DockerTester implements AutoCloseable {
         nodeRepository.updateNodeRepositoryNode(hostSpec);
 
         FileSystem fileSystem = TestFileSystem.create();
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, terminal, ipAddresses);
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, terminal, ipAddresses, flagSource);
 
         Metrics metrics = new Metrics();
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) -> new NodeAgentImpl(
