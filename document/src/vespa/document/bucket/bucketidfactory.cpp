@@ -42,29 +42,15 @@ BucketIdFactory::getBucketId(const DocumentId& id) const
 {
     uint64_t location = id.getScheme().getLocation();
     assert(GlobalId::LENGTH >= sizeof(uint64_t) + 4u);
-    uint64_t gid = reinterpret_cast<const uint64_t&>(
-            *(id.getGlobalId().get() + 4));
+    uint64_t gid;
+    memcpy(&gid, id.getGlobalId().get() + 4, sizeof(gid));
 
-    std::pair<int16_t, int64_t> gidOverride(
-            id.getScheme().getGidBitsOverride());
-
-    if (gidOverride.first > 0) {
-        return BucketId(_locationBits + _gidBits,
-            _initialCount
-            | (gidOverride.second << _locationBits)
-            | ((_gidMask << gidOverride.first) & gid)
-            | (_locationMask & location));
-    } else {
-        return BucketId(_locationBits + _gidBits,
-            _initialCount
-            | (_gidMask & gid)
-            | (_locationMask & location));
-    }
+    return BucketId(_locationBits + _gidBits,
+        _initialCount | (_gidMask & gid) | (_locationMask & location));
 }
 
 void
-BucketIdFactory::print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
+BucketIdFactory::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "BucketIdFactory("
         << _locationBits << " location bits, "
@@ -72,12 +58,9 @@ BucketIdFactory::print(std::ostream& out, bool verbose,
         << _countBits << " count bits";
     if (verbose) {
         out << std::hex;
-        out << ",\n" << indent << "                location mask: "
-            << _locationMask;
-        out << ",\n" << indent << "                gid mask: "
-            << _gidMask;
-        out << ",\n" << indent << "                initial count: "
-            << _initialCount;
+        out << ",\n" << indent << "                location mask: " << _locationMask;
+        out << ",\n" << indent << "                gid mask: " << _gidMask;
+        out << ",\n" << indent << "                initial count: " << _initialCount;
         out << std::dec;
     }
     out << ")";

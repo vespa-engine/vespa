@@ -48,21 +48,21 @@ DocumentTest::testStorageDocument()
 
     EXPECT_EQUAL(std::string("foo"), sdoc.getField(0)->getAsString());
     EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
-    EXPECT_TRUE(sdoc.getField(2) == NULL);
+    EXPECT_TRUE(sdoc.getField(2) == nullptr);
     // test caching
     EXPECT_EQUAL(std::string("foo"), sdoc.getField(0)->getAsString());
     EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
-    EXPECT_TRUE(sdoc.getField(2) == NULL);
+    EXPECT_TRUE(sdoc.getField(2) == nullptr);
 
     // set new values
     EXPECT_TRUE(sdoc.setField(0, FieldValue::UP(new StringFieldValue("baz"))));
     EXPECT_EQUAL(std::string("baz"), sdoc.getField(0)->getAsString());
     EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
-    EXPECT_TRUE(sdoc.getField(2) == NULL);
+    EXPECT_TRUE(sdoc.getField(2) == nullptr);
     EXPECT_TRUE(sdoc.setField(1, FieldValue::UP(new StringFieldValue("qux"))));
     EXPECT_EQUAL(std::string("baz"), sdoc.getField(0)->getAsString());
     EXPECT_EQUAL(std::string("qux"), sdoc.getField(1)->getAsString());
-    EXPECT_TRUE(sdoc.getField(2) == NULL);
+    EXPECT_TRUE(sdoc.getField(2) == nullptr);
     EXPECT_TRUE(sdoc.setField(2, FieldValue::UP(new StringFieldValue("quux"))));
     EXPECT_EQUAL(std::string("baz"), sdoc.getField(0)->getAsString());
     EXPECT_EQUAL(std::string("qux"), sdoc.getField(1)->getAsString());
@@ -72,7 +72,7 @@ DocumentTest::testStorageDocument()
 
     SharedFieldPathMap fim;
     StorageDocument s2(std::make_unique<document::Document>(), fim, 0);
-    EXPECT_EQUAL(vespalib::string("null::"), s2.docDoc().getId().toString());
+    EXPECT_EQUAL(IdString().toString(), s2.docDoc().getId().toString());
 }
 
 void DocumentTest::testStringFieldIdTMap()

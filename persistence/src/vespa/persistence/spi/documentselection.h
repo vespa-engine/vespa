@@ -10,8 +10,7 @@
 
 #include <persistence/spi/types.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 class DocumentSelection
 {
@@ -28,5 +27,3 @@ class DocumentSelection
 };
 
 }
-}
-

@@ -145,7 +145,7 @@ TEST("require that toString() on derived classes are meaningful")
     MyStreamHandler stream_handler;
     DocumentIdT doc_id_limit = 15;
     DocumentId doc_id("id:ns:foo:::bar");
-    DocumentUpdate::SP update(new DocumentUpdate(repo, *DataType::DOCUMENT, doc_id));
+    auto update = std::make_shared<DocumentUpdate>(repo, *DataType::DOCUMENT, doc_id);
 
     EXPECT_EQUAL("DeleteBucket(BucketId(0x0000000000000000), serialNum=0)",
                  DeleteBucketOperation().toString());
@@ -167,7 +167,7 @@ TEST("require that toString() on derived classes are meaningful")
     EXPECT_EQUAL("Move(NULL, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  MoveOperation().toString());
-    EXPECT_EQUAL("Move(null::, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=1, lid=0), "
+    EXPECT_EQUAL("Move(id::::, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=1, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  MoveOperation(bucket_id1, timestamp, doc,
                                db_doc_id, sub_db_id).toString());
@@ -188,11 +188,11 @@ TEST("require that toString() on derived classes are meaningful")
     EXPECT_EQUAL("Put(NULL, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  PutOperation().toString());
-    EXPECT_EQUAL("Put(null::, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "
+    EXPECT_EQUAL("Put(id::::, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  PutOperation(bucket_id1, timestamp, doc).toString());
 
-    EXPECT_EQUAL("Remove(null::, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
+    EXPECT_EQUAL("Remove(id::::, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  RemoveOperation().toString());
     EXPECT_EQUAL("Remove(id:ns:foo:::bar, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "

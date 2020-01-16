@@ -14,10 +14,8 @@ const string ns = "namespace";
 const string ns_id = "namespaceid";
 const string type = "my_type";
 
-void checkId(const string &id, IdString::Type t,
-             const string &ns_str, const string local_id) {
+void checkId(const string &id, const string &ns_str, const string local_id) {
     DocumentId doc_id(id);
-    EXPECT_EQUAL(t, doc_id.getScheme().getType());
     EXPECT_EQUAL(ns_str, doc_id.getScheme().getNamespace());
     EXPECT_EQUAL(local_id, doc_id.getScheme().getNamespaceSpecific());
     EXPECT_EQUAL(id, doc_id.getScheme().toString());
@@ -44,21 +42,21 @@ void checkType(const string &id, const string &doc_type) {
 
 TEST("require that id id can be parsed") {
     const string id = "id:" + ns + ":" + type + "::" + ns_id;
-    checkId(id, IdString::ID, ns, ns_id);
+    checkId(id, ns, ns_id);
     checkType(id, type);
 }
 
 TEST("require that we allow ':' in namespace specific part") {
     const string nss=":a:b:c:";
     string id="id:" + ns + ":" + type + "::" + nss;
-    checkId(id, IdString::ID, ns, nss);
+    checkId(id, ns, nss);
     checkType(id, type);
 }
 
 TEST("require that id id can specify location") {
     DocumentId id("id:ns:type:n=12345:foo");
     EXPECT_EQUAL(12345u, id.getScheme().getLocation());
-    EXPECT_EQUAL(12345u, getAs<IdIdString>(id).getNumber());
+    EXPECT_EQUAL(12345u, getAs<IdString>(id).getNumber());
 }
 
 TEST("require that id id's n key must be a 64-bit number") {
@@ -76,7 +74,7 @@ TEST("require that id id can specify group") {
     EXPECT_EQUAL(id1.getScheme().getLocation(), id2.getScheme().getLocation());
     EXPECT_NOT_EQUAL(id1.getScheme().getLocation(),
                      id3.getScheme().getLocation());
-    EXPECT_EQUAL("mygroup", getAs<IdIdString>(id1).getGroup());
+    EXPECT_EQUAL("mygroup", getAs<IdString>(id1).getGroup());
 }
 
 TEST("require that id id location is specified by local id only by default") {
@@ -89,15 +87,15 @@ TEST("require that id id location is specified by local id only by default") {
 
 TEST("require that local id can be empty") {
     const string id = "id:" + ns + ":type:n=1234:";
-    checkId(id, IdString::ID, ns, "");
-    checkUser<IdIdString>(id, 1234);
+    checkId(id, ns, "");
+    checkUser<IdString>(id, 1234);
 }
 
 TEST("require that document ids can be assigned") {
     DocumentId id1("id:" + ns + ":type:n=1234:");
     DocumentId id2 = id1;
-    checkId(id2.toString(), IdString::ID, ns, "");
-    checkUser<IdIdString>(id2.toString(), 1234);
+    checkId(id2.toString(), ns, "");
+    checkUser<IdString>(id2.toString(), 1234);
 }
 
 TEST("require that illegal ids fail") {

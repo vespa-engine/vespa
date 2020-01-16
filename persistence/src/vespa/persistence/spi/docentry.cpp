@@ -5,8 +5,7 @@
 #include <sstream>
 #include <cassert>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 DocEntry::DocEntry(Timestamp t, int metaFlags, DocumentUP doc)
     : _timestamp(t),
@@ -47,17 +46,17 @@ DocEntry::DocEntry(Timestamp t, int metaFlags)
       _document()
 { }
 
-DocEntry::~DocEntry() { }
+DocEntry::~DocEntry() = default;
 
 DocEntry* 
 DocEntry::clone() const {
     DocEntry* ret;
-    if (_documentId.get() != 0) {
+    if (_documentId) {
         ret = new DocEntry(_timestamp, _metaFlags, *_documentId);
         ret->setPersistedDocumentSize(_persistedDocumentSize);
-    } else if (_document.get()) {
+    } else if (_document) {
         ret = new DocEntry(_timestamp, _metaFlags,
-                           DocumentUP(new Document(*_document)),
+                           std::make_unique<Document>(*_document),
                            _persistedDocumentSize);
     } else {
         ret = new DocEntry(_timestamp, _metaFlags);
@@ -68,8 +67,7 @@ DocEntry::clone() const {
 
 const DocumentId*
 DocEntry::getDocumentId() const {
-    return (_document.get() != 0 ? &_document->getId()
-                                 : _documentId.get());
+    return (_document ? &_document->getId() : _documentId.get());
 }
 
 DocumentUP
@@ -89,7 +87,7 @@ DocEntry::toString() const
 {
     std::ostringstream out;
     out << "DocEntry(" << _timestamp << ", " << _metaFlags << ", ";
-    if (_documentId.get() != 0) {
+    if (_documentId) {
         out << *_documentId;
     } else if (_document.get()) {
         out << "Doc(" << _document->getId() << ")";
@@ -98,26 +96,6 @@ DocEntry::toString() const
     }
     out << ")";
     return out.str();
-}
-
-void
-DocEntry::prettyPrint(std::ostream& out) const
-{
-    std::string flags;
-    if (_metaFlags == REMOVE_ENTRY) {
-        flags = " (remove)";
-    }
-
-    out << "DocEntry(Timestamp: " << _timestamp
-        << ", size " << getPersistedDocumentSize() << ", ";
-    if (_documentId) {
-        out << *_documentId;
-    } else if (_document.get()) {
-        out << "Doc(" << _document->getId() << ")";
-    } else {
-        out << "metadata only";
-    }
-    out << flags << ")";
 }
 
 std::ostream &
@@ -169,7 +147,4 @@ DocEntry::operator==(const DocEntry& entry) const {
     return true;
 }
 
-} // spi
-} // storage
-
-
+}

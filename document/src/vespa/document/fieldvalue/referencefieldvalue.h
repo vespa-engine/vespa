@@ -36,7 +36,7 @@ public:
     ReferenceFieldValue(const ReferenceDataType& dataType,
                         const DocumentId& documentId);
 
-    ~ReferenceFieldValue();
+    ~ReferenceFieldValue() override;
 
     ReferenceFieldValue(const ReferenceFieldValue&) = default;
     ReferenceFieldValue& operator=(const ReferenceFieldValue&) = default;
