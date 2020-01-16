@@ -307,12 +307,12 @@ public class IndexedSearchCluster extends SearchCluster
         if (useAdaptiveDispatch)
             builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
 
-        if (tuning.dispatch.minActiveDocsCoverage != null)
-            builder.minActivedocsPercentage(tuning.dispatch.minActiveDocsCoverage);
-        if (tuning.dispatch.minGroupCoverage != null)
-            builder.minGroupCoverage(tuning.dispatch.minGroupCoverage);
-        if (tuning.dispatch.policy != null) {
-            switch (tuning.dispatch.policy) {
+        if (tuning.dispatch.minActiveDocsCoverage() != null)
+            builder.minActivedocsPercentage(tuning.dispatch.minActiveDocsCoverage());
+        if (tuning.dispatch.minGroupCoverage() != null)
+            builder.minGroupCoverage(tuning.dispatch.minGroupCoverage());
+        if (tuning.dispatch.dispatchPolicy() != null) {
+            switch (tuning.dispatch.dispatchPolicy()) {
                 case ADAPTIVE:
                     builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
                     break;
@@ -321,8 +321,8 @@ public class IndexedSearchCluster extends SearchCluster
                     break;
             }
         }
-        if (tuning.dispatch.maxHitsPerPartition != null)
-            builder.maxHitsPerNode(tuning.dispatch.maxHitsPerPartition);
+        if (tuning.dispatch.maxHitsPerPartition() != null)
+            builder.maxHitsPerNode(tuning.dispatch.maxHitsPerPartition());
 
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.searchableCopies(rootDispatch.getSearchableCopies());
