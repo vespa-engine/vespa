@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
@@ -16,12 +15,10 @@ import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -88,13 +85,9 @@ public class AclMaintainer {
     }
 
     private Supplier<List<String>> listTable(NodeAgentContext context, String table, IPVersion ipVersion) {
-        return () -> {
-            ProcessResult currentRulesResult =
-                    dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-S", "-t", table);
-            return Arrays.stream(currentRulesResult.getOutput().split("\n"))
-                    .map(String::trim)
-                    .collect(Collectors.toList());
-        };
+        return () -> dockerOperations
+                .executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-S", "-t", table)
+                .mapEachLine(String::trim);
     }
 
     private Consumer<List<String>> restoreTable(NodeAgentContext context, String table, IPVersion ipVersion, boolean flush) {

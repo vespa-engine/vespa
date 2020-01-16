@@ -1,10 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
@@ -21,6 +19,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TerminalImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestChildProcess2;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -33,7 +33,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -75,8 +74,7 @@ public class DockerTester implements AutoCloseable {
         ipAddresses.addAddress(HOST_HOSTNAME.value(), "f000::");
         for (int i = 1; i < 4; i++) ipAddresses.addAddress("host" + i + ".test.yahoo.com", "f000::" + i);
 
-        ProcessExecuter processExecuter = mock(ProcessExecuter.class);
-        uncheck(() -> when(processExecuter.exec(any(String[].class))).thenReturn(new Pair<>(0, "")));
+        TerminalImpl terminal = new TerminalImpl(command -> new TestChildProcess2(0, ""));
 
         NodeSpec hostSpec = new NodeSpec.Builder()
                 .hostname(HOST_HOSTNAME.value())
@@ -89,7 +87,7 @@ public class DockerTester implements AutoCloseable {
         nodeRepository.updateNodeRepositoryNode(hostSpec);
 
         FileSystem fileSystem = TestFileSystem.create();
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, processExecuter, ipAddresses);
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, terminal, ipAddresses);
 
         Metrics metrics = new Metrics();
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) -> new NodeAgentImpl(

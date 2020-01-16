@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
@@ -16,9 +15,10 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembers
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
-import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
-import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
@@ -47,16 +46,12 @@ public class DockerOperationsImpl implements DockerOperations {
     private static final InetAddress IPV4_NPT_PREFIX = InetAddresses.forString("172.17.0.0");
 
     private final Docker docker;
-    private final ProcessExecuter processExecuter;
+    private final Terminal terminal;
     private final IPAddresses ipAddresses;
 
-    public DockerOperationsImpl(Docker docker) {
-        this(docker, new ProcessExecuter(), new IPAddressesImpl());
-    }
-
-    public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter, IPAddresses ipAddresses) {
+    public DockerOperationsImpl(Docker docker, Terminal terminal, IPAddresses ipAddresses) {
         this.docker = docker;
-        this.processExecuter = processExecuter;
+        this.terminal = terminal;
         this.ipAddresses = ipAddresses;
     }
 
@@ -193,31 +188,17 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public ProcessResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command) {
+    public CommandResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command) {
         int containerPid = docker.getContainer(context.containerName())
                 .filter(container -> container.state.isRunning())
                 .orElseThrow(() -> new RuntimeException(
                         "Found no running container named " + context.containerName().asString()))
                 .pid;
 
-        String[] wrappedCommand = Stream.concat(Stream.of("nsenter",
-                                                          String.format("--net=/proc/%d/ns/net", containerPid),
-                                                          "--"),
-                                                Stream.of(command))
-                                        .toArray(String[]::new);
-
-        try {
-            Pair<Integer, String> result = processExecuter.exec(wrappedCommand);
-            if (result.getFirst() != 0) {
-                throw new RuntimeException(String.format(
-                        "Failed to execute %s in network namespace for %s (PID = %d), exit code: %d, output: %s",
-                        Arrays.toString(wrappedCommand), context.containerName().asString(), containerPid, result.getFirst(), result.getSecond()));
-            }
-            return new ProcessResult(0, result.getSecond(), "");
-        } catch (IOException e) {
-            throw new RuntimeException(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
-                    Arrays.toString(wrappedCommand), context.containerName().asString(), containerPid), e);
-        }
+        return terminal.newCommandLine(context)
+                .add("nsenter", String.format("--net=/proc/%d/ns/net", containerPid), "--")
+                .add(command)
+                .executeSilently();
     }
 
     @Override
