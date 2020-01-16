@@ -26,6 +26,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintai
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -197,6 +199,8 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.createContainer(context, containerData, getContainerResources(context));
         dockerOperations.startContainer(context);
 
+        currentRebootGeneration = context.node().wantedRebootGeneration();
+        currentRestartGeneration = context.node().wantedRestartGeneration();
         hasStartedServices = true; // Automatically started with the container
         hasResumedNode = false;
         context.log(logger, "Container successfully started, new containerState is " + containerState);
@@ -205,15 +209,17 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Container> removeContainerIfNeededUpdateContainerState(
             NodeAgentContext context, Optional<Container> existingContainer) {
         if (existingContainer.isPresent()) {
-            Optional<String> reason = shouldRemoveContainer(context, existingContainer.get());
-            if (reason.isPresent()) {
-                removeContainer(context, existingContainer.get(), reason.get(), false);
+            List<String> reasons = shouldRemoveContainer(context, existingContainer.get());
+            if (!reasons.isEmpty()) {
+                removeContainer(context, existingContainer.get(), reasons, false);
                 return Optional.empty();
             }
 
             shouldRestartServices(context, existingContainer.get()).ifPresent(restartReason -> {
                 context.log(logger, "Will restart services: " + restartReason);
-                restartServices(context, existingContainer.get());
+                orchestratorSuspendNode(context);
+
+                dockerOperations.restartVespa(context);
                 currentRestartGeneration = context.node().wantedRestartGeneration();
             });
         }
@@ -223,7 +229,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Optional<String> shouldRestartServices( NodeAgentContext context, Container existingContainer) {
         NodeSpec node = context.node();
-        if (node.wantedRestartGeneration().isEmpty()) return Optional.empty();
+        if (!existingContainer.state.isRunning() || node.state() != NodeState.active) return Optional.empty();
 
         // Restart generation is only optional because it does not exist for unallocated nodes
         if (currentRestartGeneration.get() < node.wantedRestartGeneration().get()) {
@@ -231,23 +237,7 @@ public class NodeAgentImpl implements NodeAgent {
                     + currentRestartGeneration.get() + " -> " + node.wantedRestartGeneration().get());
         }
 
-        // Restart services if wanted memory changes (searchnode and container needs to be restarted to pick up changes)
-        ContainerResources wantedContainerResources = getContainerResources(context);
-        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
-            return Optional.of("Container should be running with different memory allocation, wanted: " +
-                                       wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
-        }
-
         return Optional.empty();
-    }
-
-    private void restartServices(NodeAgentContext context, Container existingContainer) {
-        if (existingContainer.state.isRunning() && context.node().state() == NodeState.active) {
-            context.log(logger, "Restarting services");
-            // Since we are restarting the services we need to suspend the node.
-            orchestratorSuspendNode(context);
-            dockerOperations.restartVespa(context);
-        }
     }
 
     private void stopServicesIfNeeded(NodeAgentContext context) {
@@ -268,7 +258,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void stopForHostSuspension(NodeAgentContext context) {
-        getContainer(context).ifPresent(container -> removeContainer(context, container, "suspending host", true));
+        getContainer(context).ifPresent(container -> removeContainer(context, container, List.of("Suspending host"), true));
     }
 
     public void suspend(NodeAgentContext context) {
@@ -286,31 +276,40 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private Optional<String> shouldRemoveContainer(NodeAgentContext context, Container existingContainer) {
+    private List<String> shouldRemoveContainer(NodeAgentContext context, Container existingContainer) {
         final NodeState nodeState = context.node().state();
-        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned) {
-            return Optional.of("Node in state " + nodeState + ", container should no longer be running");
-        }
+        List<String> reasons = new ArrayList<>();
+        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned)
+            reasons.add("Node in state " + nodeState + ", container should no longer be running");
+
         if (context.node().wantedDockerImage().isPresent() &&
                 !context.node().wantedDockerImage().get().equals(existingContainer.image)) {
-            return Optional.of("The node is supposed to run a new Docker image: "
+            reasons.add("The node is supposed to run a new Docker image: "
                     + existingContainer.image.asString() + " -> " + context.node().wantedDockerImage().get().asString());
         }
-        if (!existingContainer.state.isRunning()) {
-            return Optional.of("Container no longer running");
-        }
+
+        if (!existingContainer.state.isRunning())
+            reasons.add("Container no longer running");
 
         if (currentRebootGeneration < context.node().wantedRebootGeneration()) {
-            return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
+            reasons.add(String.format("Container reboot wanted. Current: %d, Wanted: %d",
                     currentRebootGeneration, context.node().wantedRebootGeneration()));
         }
 
-        if (containerState == STARTING) return Optional.of("Container failed to start");
-        return Optional.empty();
+        ContainerResources wantedContainerResources = getContainerResources(context);
+        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
+            reasons.add("Container should be running with different memory allocation, wanted: " +
+                    wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
+        }
+
+        if (containerState == STARTING)
+            reasons.add("Container failed to start");
+
+        return reasons;
     }
 
-    private void removeContainer(NodeAgentContext context, Container existingContainer, String reason, boolean alreadySuspended) {
-        context.log(logger, "Will remove container: " + reason);
+    private void removeContainer(NodeAgentContext context, Container existingContainer, List<String> reasons, boolean alreadySuspended) {
+        context.log(logger, "Will remove container: " + String.join(", ", reasons));
 
         if (existingContainer.state.isRunning()) {
             if (!alreadySuspended) {
@@ -329,7 +328,6 @@ public class NodeAgentImpl implements NodeAgent {
 
         storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
         dockerOperations.removeContainer(context, existingContainer);
-        currentRebootGeneration = context.node().wantedRebootGeneration();
         containerState = ABSENT;
         context.log(logger, "Container successfully removed, new containerState is " + containerState);
     }
@@ -343,7 +341,8 @@ public class NodeAgentImpl implements NodeAgent {
 
         orchestratorSuspendNode(context);
 
-        dockerOperations.updateContainer(context, wantedContainerResources);
+        // Only update CPU resources
+        dockerOperations.updateContainer(context, wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {

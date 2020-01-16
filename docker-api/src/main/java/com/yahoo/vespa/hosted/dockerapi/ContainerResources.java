@@ -120,4 +120,8 @@ public class ContainerResources {
     public String toString() {
         return toStringCpu() + ", " + toStringMemory();
     }
+
+    public ContainerResources withMemoryBytes(long memoryBytes) {
+        return new ContainerResources(cpus, cpuShares, memoryBytes);
+    }
 }
