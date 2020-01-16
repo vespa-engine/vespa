@@ -190,6 +190,13 @@ public class Flags {
             "Takes effect on config server restart",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag USE_4443_UPSTREAM = defineFeatureFlag(
+            "use-4443-upstream", false,
+            "Use port 4443 for nginx upstream",
+            "Takes effect when routing container asks for new config",
+            APPLICATION_ID);
+
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

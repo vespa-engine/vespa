@@ -7,6 +7,7 @@ namespace=cloud.config
 # Active rotation given as flag 'active' for a prod region in deployment.xml
 # Default true for now (since code in config-model to set it is not ready yet), should have no default value
 tenants{}.applications{}.activeRotation                         bool default=true
+tenants{}.applications{}.use4443Upstream                        bool default=false
 
 tenants{}.applications{}.hosts{}.hostname                       string default="(unknownhostname)"
 tenants{}.applications{}.hosts{}.services{}.type                string default="(noservicetype)"
