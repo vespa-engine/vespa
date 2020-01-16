@@ -1,11 +1,13 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package ai.vespa.metricsproxy.http.application;
+package ai.vespa.metricsproxy.http.metrics;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.http.ErrorResponse;
 import ai.vespa.metricsproxy.http.HttpHandlerBase;
 import ai.vespa.metricsproxy.http.JsonResponse;
+import ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever;
+import ai.vespa.metricsproxy.http.application.Node;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.google.inject.Inject;
@@ -32,18 +34,18 @@ import static java.util.stream.Collectors.toList;
  *
  * @author gjoranv
  */
-public class ApplicationMetricsHandler extends HttpHandlerBase {
+public class MetricsV2Handler extends HttpHandlerBase {
 
-    public static final String V1_PATH = "/applicationmetrics/v1";
-    static final String VALUES_PATH = V1_PATH + "/values";
+    public static final String V2_PATH = "/metrics/v2";
+    static final String VALUES_PATH = V2_PATH + "/values";
 
     private final ApplicationMetricsRetriever metricsRetriever;
     private final MetricsConsumers metricsConsumers;
 
     @Inject
-    public ApplicationMetricsHandler(Executor executor,
-                                     ApplicationMetricsRetriever metricsRetriever,
-                                     MetricsConsumers metricsConsumers) {
+    public MetricsV2Handler(Executor executor,
+                            ApplicationMetricsRetriever metricsRetriever,
+                            MetricsConsumers metricsConsumers) {
         super(executor);
         this.metricsRetriever = metricsRetriever;
         this.metricsConsumers = metricsConsumers;
@@ -51,7 +53,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     @Override
     public Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer) {
-        if (apiPath.matches(V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(VALUES_PATH)));
+        if (apiPath.matches(V2_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(VALUES_PATH)));
         if (apiPath.matches(VALUES_PATH)) return Optional.of(applicationMetricsResponse(consumer));
         return Optional.empty();
     }

@@ -2,8 +2,8 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
-import ai.vespa.metricsproxy.http.MetricsHandler;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
+import ai.vespa.metricsproxy.http.metrics.MetricsHandler;
 import com.yahoo.config.provision.ClusterMembership;
 
 import java.util.List;

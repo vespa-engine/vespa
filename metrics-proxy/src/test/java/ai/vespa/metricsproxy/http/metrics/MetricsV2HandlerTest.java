@@ -1,8 +1,10 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.metricsproxy.http.application;
+package ai.vespa.metricsproxy.http.metrics;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
+import ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever;
+import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.metric.model.json.GenericApplicationModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
@@ -23,8 +25,6 @@ import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
-import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.V1_PATH;
-import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.VALUES_PATH;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -41,11 +41,11 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 @SuppressWarnings("UnstableApiUsage")
-public class ApplicationMetricsHandlerTest {
+public class MetricsV2HandlerTest {
 
     private static final String URI_BASE = "http://localhost";
-    private static final String APP_METRICS_V1_URI = URI_BASE + V1_PATH;
-    private static final String APP_METRICS_VALUES_URI = URI_BASE + VALUES_PATH;
+    private static final String APP_METRICS_V1_URI = URI_BASE + MetricsV2Handler.V2_PATH;
+    private static final String APP_METRICS_VALUES_URI = URI_BASE + MetricsV2Handler.VALUES_PATH;
 
     private static final String TEST_FILE = "generic-sample.json";
     private static final String RESPONSE = getFileContents(TEST_FILE);
@@ -70,9 +70,9 @@ public class ApplicationMetricsHandlerTest {
         ApplicationMetricsRetriever applicationMetricsRetriever = new ApplicationMetricsRetriever(
                 nodesConfig(MOCK_METRICS_PATH));
 
-        ApplicationMetricsHandler handler = new ApplicationMetricsHandler(Executors.newSingleThreadExecutor(),
-                                                                          applicationMetricsRetriever,
-                                                                          getMetricsConsumers());
+        MetricsV2Handler handler = new MetricsV2Handler(Executors.newSingleThreadExecutor(),
+                                                        applicationMetricsRetriever,
+                                                        getMetricsConsumers());
         testDriver = new RequestHandlerTestDriver(handler);
     }
 

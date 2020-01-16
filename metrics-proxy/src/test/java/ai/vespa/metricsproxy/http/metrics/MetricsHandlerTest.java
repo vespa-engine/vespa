@@ -1,6 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.metricsproxy.http;
+package ai.vespa.metricsproxy.http.metrics;
 
+import ai.vespa.metricsproxy.http.HttpHandlerTestBase;
+import ai.vespa.metricsproxy.http.metrics.MetricsHandler;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
@@ -17,8 +19,8 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.core.VespaMetrics.INSTANCE_DIMENSION_ID;
-import static ai.vespa.metricsproxy.http.MetricsHandler.V1_PATH;
-import static ai.vespa.metricsproxy.http.MetricsHandler.VALUES_PATH;
+import static ai.vespa.metricsproxy.http.metrics.MetricsHandler.V1_PATH;
+import static ai.vespa.metricsproxy.http.metrics.MetricsHandler.VALUES_PATH;
 import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static ai.vespa.metricsproxy.service.DummyService.METRIC_1;

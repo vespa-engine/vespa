@@ -6,9 +6,9 @@
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
-import ai.vespa.metricsproxy.http.MetricsHandler;
-import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
+import ai.vespa.metricsproxy.http.metrics.MetricsHandler;
+import ai.vespa.metricsproxy.http.metrics.MetricsV2Handler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -125,7 +125,7 @@ public class MetricsProxyContainerClusterTest {
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(MetricsHandler.class.getName())));
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(PrometheusHandler.class.getName())));
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(YamasHandler.class.getName())));
-        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(ApplicationMetricsHandler.class.getName())));
+        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(MetricsV2Handler.class.getName())));
     }
 
     @Test

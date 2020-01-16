@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.application;
 
+import ai.vespa.metricsproxy.http.metrics.MetricsV2Handler;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
@@ -27,7 +28,7 @@ import static java.util.Collections.emptyList;
  * Upon failure to retrieve metrics, an empty snapshot is cached.
  *
  * This class assumes that the consumer id is a valid and existing one, which is already
- * ensured by the {@link ApplicationMetricsHandler}.
+ * ensured by the {@link MetricsV2Handler}.
  *
  * @author gjoranv
  */

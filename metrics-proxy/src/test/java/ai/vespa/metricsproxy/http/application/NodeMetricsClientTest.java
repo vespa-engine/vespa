@@ -1,7 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.application;
 
-import ai.vespa.metricsproxy.http.MetricsHandler;
+import ai.vespa.metricsproxy.http.metrics.MetricsHandler;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.yahoo.test.ManualClock;

@@ -7,10 +7,10 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.core.VespaMetrics;
-import ai.vespa.metricsproxy.http.MetricsHandler;
-import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
-import ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
+import ai.vespa.metricsproxy.http.metrics.MetricsHandler;
+import ai.vespa.metricsproxy.http.metrics.MetricsV2Handler;
+import ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
@@ -117,7 +117,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addHttpHandler(PrometheusHandler.class, PrometheusHandler.V1_PATH);
         addHttpHandler(YamasHandler.class, YamasHandler.V1_PATH);
 
-        addHttpHandler(ApplicationMetricsHandler.class, ApplicationMetricsHandler.V1_PATH);
+        addHttpHandler(MetricsV2Handler.class, MetricsV2Handler.V2_PATH);
         addMetricsProxyComponent(ApplicationMetricsRetriever.class);
     }
 
