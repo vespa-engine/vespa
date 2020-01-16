@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.Status;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -216,14 +217,14 @@ public class InternalStepRunnerTest {
         tester.controller().curator().writeRoutingPolicies(app.instanceId(), Map.of(id1, new RoutingPolicy(id1,
                                                                                                            HostName.from("host"),
                                                                                                            Optional.empty(),
-                                                                                                           emptySet(), true)));
+                                                                                                           emptySet(), new Status(true))));
         var id2 = new RoutingPolicyId(app.testerId().id(),
                                       ClusterSpec.Id.from("default"),
                                       JobType.systemTest.zone(system()));
         tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Map.of(id2, new RoutingPolicy(id2,
                                                                                                               HostName.from("host"),
                                                                                                               Optional.empty(),
-                                                                                                              emptySet(), true)));
+                                                                                                              emptySet(), new Status(true))));
         tester.runner().run();;
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));

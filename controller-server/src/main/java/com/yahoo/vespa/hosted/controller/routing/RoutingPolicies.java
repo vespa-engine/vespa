@@ -118,7 +118,7 @@ public class RoutingPolicies {
                                        Set<EndpointId> endpointIds) {
         var routingPolicy = new RoutingPolicy(new RoutingPolicyId(application, loadBalancer.cluster(), zone),
                                               loadBalancer.hostname(),
-                                              loadBalancer.dnsZone(), endpointIds, isActive(loadBalancer));
+                                              loadBalancer.dnsZone(), endpointIds, new Status(isActive(loadBalancer)));
         var name = RecordName.from(routingPolicy.endpointIn(controller.system()).dnsName());
         var data = RecordData.fqdn(loadBalancer.hostname().value());
         controller.nameServiceForwarder().createCname(name, data, Priority.normal);

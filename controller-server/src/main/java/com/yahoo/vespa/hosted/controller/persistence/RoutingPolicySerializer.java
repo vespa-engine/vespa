@@ -10,12 +10,12 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.Status;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Serializer and deserializer for a {@link RoutingPolicy}.
@@ -54,7 +54,7 @@ public class RoutingPolicySerializer {
             policy.endpoints().forEach(endpointId -> {
                 rotationArray.addString(endpointId.id());
             });
-            policyObject.setBool(loadBalancerActiveField, policy.loadBalancerActive());
+            policyObject.setBool(loadBalancerActiveField, policy.status().loadBalancerActive());
         });
         return slime;
     }
@@ -73,7 +73,7 @@ public class RoutingPolicySerializer {
                                                HostName.from(inspect.field(canonicalNameField).asString()),
                                                Serializers.optionalString(inspect.field(dnsZoneField)),
                                                endpointIds,
-                                               inspect.field(loadBalancerActiveField).asBool()));
+                                               new Status(inspect.field(loadBalancerActiveField).asBool())));
         });
         return Collections.unmodifiableMap(policies);
     }

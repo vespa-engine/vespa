@@ -26,16 +26,16 @@ public class RoutingPolicy {
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
     private final Set<EndpointId> endpoints;
-    private final boolean loadBalancerActive;
+    private final Status status;
 
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingPolicy(RoutingPolicyId id, HostName canonicalName,
-                         Optional<String> dnsZone, Set<EndpointId> endpoints, boolean loadBalancerActive) {
+    public RoutingPolicy(RoutingPolicyId id, HostName canonicalName, Optional<String> dnsZone, Set<EndpointId> endpoints,
+                         Status status) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.endpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(endpoints, "endpoints must be non-null"));
-        this.loadBalancerActive = loadBalancerActive;
+        this.status = Objects.requireNonNull(status, "status must be non-null");
     }
 
     /** The ID of this */
@@ -58,9 +58,9 @@ public class RoutingPolicy {
         return endpoints;
     }
 
-    /** Returns whether the load balancer for this is active in node repository */
-    public boolean loadBalancerActive() {
-        return loadBalancerActive;
+    /** Returns the status of this */
+    public Status status() {
+        return status;
     }
 
     /** Returns the endpoint of this */

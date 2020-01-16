@@ -67,6 +67,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.Status;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -1438,11 +1439,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
         var policies = Map.of(id1, new RoutingPolicy(id1,
                                                      HostName.from("lb-0-canonical-name"),
-                                                     Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")), true),
+                                                     Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")), new Status(true)),
                               // Inactive policy is not included
                               id2, new RoutingPolicy(id2,
                                                      HostName.from("lb-1-canonical-name"),
-                                                     Optional.of("dns-zone-1"), Set.of(), false));
+                                                     Optional.of("dns-zone-1"), Set.of(), new Status(false)));
         tester.controller().curator().writeRoutingPolicies(app.instanceId(), policies);
 
         // GET application

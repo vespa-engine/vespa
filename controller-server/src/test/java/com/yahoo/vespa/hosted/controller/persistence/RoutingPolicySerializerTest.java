@@ -9,6 +9,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.Status;
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -37,11 +38,11 @@ public class RoutingPolicySerializerTest {
         var policies = ImmutableMap.of(id1, new RoutingPolicy(id1,
                                                          HostName.from("long-and-ugly-name"),
                                                          Optional.of("zone1"),
-                                                         endpoints, true),
+                                                         endpoints, new Status(true)),
                                        id2, new RoutingPolicy(id2,
                                                          HostName.from("long-and-ugly-name-2"),
                                                          Optional.empty(),
-                                                         endpoints, false));
+                                                         endpoints, new Status(false)));
         var serialized = serializer.fromSlime(owner, serializer.toSlime(policies));
         assertEquals(policies.size(), serialized.size());
         for (Iterator<RoutingPolicy> it1 = policies.values().iterator(), it2 = serialized.values().iterator(); it1.hasNext();) {
@@ -51,7 +52,7 @@ public class RoutingPolicySerializerTest {
             assertEquals(expected.canonicalName(), actual.canonicalName());
             assertEquals(expected.dnsZone(), actual.dnsZone());
             assertEquals(expected.endpoints(), actual.endpoints());
-            assertEquals(expected.loadBalancerActive(), actual.loadBalancerActive());
+            assertEquals(expected.status(), actual.status());
         }
     }
 
