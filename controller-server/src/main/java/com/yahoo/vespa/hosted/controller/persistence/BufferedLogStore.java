@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class BufferedLogStore {
 
     private static final int defaultChunkSize = 1 << 13; // 8kb per node stored in ZK.
-    private static final int defaultMaxLogSize = 1 << 16; // 64Mb max per run.
+    private static final int defaultMaxLogSize = 1 << 26; // 64Mb max per run.
 
     private final int chunkSize;
     private final int maxLogSize;
