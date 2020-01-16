@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
@@ -25,9 +24,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
-import com.yahoo.vespa.hosted.controller.routing.Status;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,7 +40,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -58,7 +53,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.inst
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -210,21 +204,8 @@ public class InternalStepRunnerTest {
         tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
-
-        var id1 = new RoutingPolicyId(app.instanceId(),
-                                      ClusterSpec.Id.from("default"),
-                                      JobType.systemTest.zone(system()));
-        tester.controller().curator().writeRoutingPolicies(app.instanceId(), Map.of(id1, new RoutingPolicy(id1,
-                                                                                                           HostName.from("host"),
-                                                                                                           Optional.empty(),
-                                                                                                           emptySet(), new Status(true))));
-        var id2 = new RoutingPolicyId(app.testerId().id(),
-                                      ClusterSpec.Id.from("default"),
-                                      JobType.systemTest.zone(system()));
-        tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Map.of(id2, new RoutingPolicy(id2,
-                                                                                                              HostName.from("host"),
-                                                                                                              Optional.empty(),
-                                                                                                              emptySet(), new Status(true))));
+        app.addRoutingPolicy(JobType.systemTest.zone(system()), true);
+        app.addTesterRoutingPolicy(JobType.systemTest.zone(system()), true);
         tester.runner().run();;
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));

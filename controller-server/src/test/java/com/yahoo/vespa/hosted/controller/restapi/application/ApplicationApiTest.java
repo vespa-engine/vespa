@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -52,7 +51,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -65,9 +63,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
-import com.yahoo.vespa.hosted.controller.routing.Status;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -1431,20 +1426,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
         app.submit(applicationPackage).deploy();
-        var id1 = new RoutingPolicyId(app.instanceId(),
-                                      ClusterSpec.Id.from("default"),
-                                      ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
-        var id2 = new RoutingPolicyId(app.instanceId(),
-                                      ClusterSpec.Id.from("deleted-cluster"),
-                                      ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
-        var policies = Map.of(id1, new RoutingPolicy(id1,
-                                                     HostName.from("lb-0-canonical-name"),
-                                                     Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")), new Status(true)),
-                              // Inactive policy is not included
-                              id2, new RoutingPolicy(id2,
-                                                     HostName.from("lb-1-canonical-name"),
-                                                     Optional.of("dns-zone-1"), Set.of(), new Status(false)));
-        tester.controller().curator().writeRoutingPolicies(app.instanceId(), policies);
+        app.addRoutingPolicy(ZoneId.from(Environment.prod, RegionName.from("us-west-1")), true);
+        app.addRoutingPolicy(ZoneId.from(Environment.prod, RegionName.from("us-west-1")), false);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
