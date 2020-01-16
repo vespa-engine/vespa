@@ -213,7 +213,10 @@ public class NodeAgentImpl implements NodeAgent {
 
             shouldRestartServices(context, existingContainer.get()).ifPresent(restartReason -> {
                 context.log(logger, "Will restart services: " + restartReason);
-                restartServices(context, existingContainer.get());
+                orchestratorSuspendNode(context);
+
+                dockerOperations.restartVespa(context);
+                context.log(logger, "Restarted services");
                 currentRestartGeneration = context.node().wantedRestartGeneration();
             });
         }
@@ -223,7 +226,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Optional<String> shouldRestartServices( NodeAgentContext context, Container existingContainer) {
         NodeSpec node = context.node();
-        if (node.wantedRestartGeneration().isEmpty()) return Optional.empty();
+        if (!existingContainer.state.isRunning() || node.state() != NodeState.active) return Optional.empty();
 
         // Restart generation is only optional because it does not exist for unallocated nodes
         if (currentRestartGeneration.get() < node.wantedRestartGeneration().get()) {
@@ -231,23 +234,7 @@ public class NodeAgentImpl implements NodeAgent {
                     + currentRestartGeneration.get() + " -> " + node.wantedRestartGeneration().get());
         }
 
-        // Restart services if wanted memory changes (searchnode and container needs to be restarted to pick up changes)
-        ContainerResources wantedContainerResources = getContainerResources(context);
-        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
-            return Optional.of("Container should be running with different memory allocation, wanted: " +
-                                       wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
-        }
-
         return Optional.empty();
-    }
-
-    private void restartServices(NodeAgentContext context, Container existingContainer) {
-        if (existingContainer.state.isRunning() && context.node().state() == NodeState.active) {
-            context.log(logger, "Restarting services");
-            // Since we are restarting the services we need to suspend the node.
-            orchestratorSuspendNode(context);
-            dockerOperations.restartVespa(context);
-        }
     }
 
     private void stopServicesIfNeeded(NodeAgentContext context) {
@@ -305,6 +292,12 @@ public class NodeAgentImpl implements NodeAgent {
                     currentRebootGeneration, context.node().wantedRebootGeneration()));
         }
 
+        ContainerResources wantedContainerResources = getContainerResources(context);
+        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
+            return Optional.of("Container should be running with different memory allocation, wanted: " +
+                    wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
+        }
+
         if (containerState == STARTING) return Optional.of("Container failed to start");
         return Optional.empty();
     }
@@ -343,7 +336,8 @@ public class NodeAgentImpl implements NodeAgent {
 
         orchestratorSuspendNode(context);
 
-        dockerOperations.updateContainer(context, wantedContainerResources);
+        // Only update CPU resources
+        dockerOperations.updateContainer(context, wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {

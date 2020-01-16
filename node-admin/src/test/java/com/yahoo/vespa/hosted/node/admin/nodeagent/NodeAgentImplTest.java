@@ -259,7 +259,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void vespaIsRestartedIfMemoryChanged() {
+    public void containerIsRecreatedIfMemoryChanged() {
         NodeSpec.Builder specBuilder = nodeBuilder
                 .state(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
@@ -280,9 +280,9 @@ public class NodeAgentImplTest {
 
         InOrder inOrder = inOrder(orchestrator, dockerOperations);
         inOrder.verify(orchestrator).resume(any(String.class));
-        inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
+        inOrder.verify(dockerOperations).removeContainer(eq(secondContext), any());
         inOrder.verify(dockerOperations, never()).updateContainer(any(), any());
-        inOrder.verify(dockerOperations).restartVespa(eq(secondContext));
+        inOrder.verify(dockerOperations, never()).restartVespa(any());
 
         nodeAgent.doConverge(secondContext);
         inOrder.verify(orchestrator).resume(any(String.class));
