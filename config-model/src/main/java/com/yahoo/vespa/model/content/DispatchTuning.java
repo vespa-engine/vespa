@@ -2,6 +2,9 @@
 package com.yahoo.vespa.model.content;
 
 /**
+ * Tuning of dispatching to content nodes, see the
+ * <a href="https://docs.vespa.ai/documentation/reference/services-content.html#dispatch-tuning">dispatch tuning documentation</a>.
+ *
  * @author Simon Thoresen Hult
  */
 public class DispatchTuning {
@@ -19,13 +22,17 @@ public class DispatchTuning {
         minActiveDocsCoverage = builder.minActiveDocsCoverage;
     }
 
-    public Integer getMaxHitsPerPartition() {
-        return maxHitsPerPartition;
-    }
+    /** Returns the max number of hits to fetch from each partition, or null to fetch all */
+    public Integer maxHitsPerPartition() { return maxHitsPerPartition; }
 
-    public DispatchPolicy getDispatchPolicy() { return dispatchPolicy; }
-    public Double getMinGroupCoverage() { return minGroupCoverage; }
-    public Double getMinActiveDocsCoverage() { return minActiveDocsCoverage; }
+    /** Returns the policy used to select which group to dispatch a query to */
+    public DispatchPolicy dispatchPolicy() { return dispatchPolicy; }
+
+    /** Returns the percentage of nodes in a group which must be up for that group to receive queries */
+    public Double minGroupCoverage() { return minGroupCoverage; }
+
+    /** Returns the percentage of documents which must be available in a group for that group to receive queries */
+    public Double minActiveDocsCoverage() { return minActiveDocsCoverage; }
 
     public static class Builder {
 
