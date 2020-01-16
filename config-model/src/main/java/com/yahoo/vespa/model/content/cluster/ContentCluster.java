@@ -171,13 +171,12 @@ public class ContentCluster extends AbstractConfigProducer implements
             Double queryTimeout = search.getQueryTimeout();
             if (queryTimeout != null) {
                 Preconditions.checkState(index.getQueryTimeout() == null,
-                        "You may not specify query-timeout in both proton and content.");
+                                         "In " + index + ": You may not specify query-timeout in both proton and content.");
                 index.setQueryTimeout(queryTimeout);
             }
             Double visibilityDelay = search.getVisibilityDelay();
-            if (visibilityDelay != null) {
+            if (visibilityDelay != null)
                 index.setVisibilityDelay(visibilityDelay);
-            }
             index.setSearchCoverage(DomSearchCoverageBuilder.build(element));
             index.setDispatchSpec(DomDispatchBuilder.build(element));
 

@@ -86,6 +86,9 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     public abstract void getConfig(RankProfilesConfig.Builder builder);
     public abstract void getConfig(AttributesConfig.Builder builder);
 
+    @Override
+    public String toString() { return "search-capable cluster '" + clusterName + "'"; }
+
     public static final class IndexingMode {
 
         public static final IndexingMode REALTIME  = new IndexingMode("REALTIME");
