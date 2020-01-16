@@ -1430,17 +1430,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
         app.submit(applicationPackage).deploy();
-        Set<RoutingPolicy> policies = Set.of(new RoutingPolicy(new RoutingPolicyId(app.instanceId(),
-                                                                                   ClusterSpec.Id.from("default"),
-                                                                                   ZoneId.from(Environment.prod, RegionName.from("us-west-1"))),
-                                                               HostName.from("lb-0-canonical-name"),
-                                                               Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")), true),
-                                           // Inactive policy is not included
-                                           new RoutingPolicy(new RoutingPolicyId(app.instanceId(),
-                                                                                 ClusterSpec.Id.from("deleted-cluster"),
-                                                                                 ZoneId.from(Environment.prod, RegionName.from("us-west-1"))),
-                                                             HostName.from("lb-1-canonical-name"),
-                                                             Optional.of("dns-zone-1"), Set.of(), false));
+        var id1 = new RoutingPolicyId(app.instanceId(),
+                                      ClusterSpec.Id.from("default"),
+                                      ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
+        var id2 = new RoutingPolicyId(app.instanceId(),
+                                      ClusterSpec.Id.from("deleted-cluster"),
+                                      ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
+        var policies = Map.of(id1, new RoutingPolicy(id1,
+                                                     HostName.from("lb-0-canonical-name"),
+                                                     Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")), true),
+                              // Inactive policy is not included
+                              id2, new RoutingPolicy(id2,
+                                                     HostName.from("lb-1-canonical-name"),
+                                                     Optional.of("dns-zone-1"), Set.of(), false));
         tester.controller().curator().writeRoutingPolicies(app.instanceId(), policies);
 
         // GET application

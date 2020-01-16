@@ -68,7 +68,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
@@ -798,7 +797,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .forEach(globalEndpointUrls::add);
 
         // Per-cluster endpoints. These are backed by load balancers.
-        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
+        var routingPolicies = controller.applications().routingPolicies().get(instance.id()).values();
         for (var policy : routingPolicies) {
             policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
@@ -923,8 +922,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
 
         // Per-cluster rotations
-        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
-        for (RoutingPolicy policy : routingPolicies) {
+        var routingPolicies = controller.applications().routingPolicies().get(instance.id()).values();
+        for (var policy : routingPolicies) {
             if (!policy.loadBalancerActive()) continue;
             policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
@@ -1037,7 +1036,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add endpoint(s) defined by routing policies
         var endpointArray = response.setArray("endpoints");
-        for (var policy : controller.applications().routingPolicies().get(deploymentId)) {
+        for (var policy : controller.applications().routingPolicies().get(deploymentId).values()) {
             if (!policy.loadBalancerActive()) continue;
             Cursor endpointObject = endpointArray.addObject();
             Endpoint endpoint = policy.endpointIn(controller.system());

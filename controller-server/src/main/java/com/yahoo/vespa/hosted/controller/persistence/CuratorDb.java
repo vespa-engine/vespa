@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
@@ -484,19 +485,19 @@ public class CuratorDb {
 
     // -------------- Routing policies ----------------------------------------
 
-    public void writeRoutingPolicies(ApplicationId application, Set<RoutingPolicy> policies) {
+    public void writeRoutingPolicies(ApplicationId application, Map<RoutingPolicyId, RoutingPolicy> policies) {
         curator.set(routingPolicyPath(application), asJson(routingPolicySerializer.toSlime(policies)));
     }
 
-    public Map<ApplicationId, Set<RoutingPolicy>> readRoutingPolicies() {
+    public Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> readRoutingPolicies() {
         return curator.getChildren(routingPoliciesRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
                       .collect(Collectors.toUnmodifiableMap(Function.identity(), this::readRoutingPolicies));
     }
 
-    public Set<RoutingPolicy> readRoutingPolicies(ApplicationId application) {
+    public Map<RoutingPolicyId, RoutingPolicy> readRoutingPolicies(ApplicationId application) {
         return readSlime(routingPolicyPath(application)).map(slime -> routingPolicySerializer.fromSlime(application, slime))
-                                                        .orElseGet(Collections::emptySet);
+                                                        .orElseGet(Map::of);
     }
 
     // -------------- Application web certificates ----------------------------

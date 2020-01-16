@@ -43,8 +43,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -210,18 +210,20 @@ public class InternalStepRunnerTest {
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
 
-        tester.controller().curator().writeRoutingPolicies(app.instanceId(), Set.of(new RoutingPolicy(new RoutingPolicyId(app.instanceId(),
-                                                                                                                          ClusterSpec.Id.from("default"),
-                                                                                                                          JobType.systemTest.zone(system())),
-                                                                                                      HostName.from("host"),
-                                                                                                      Optional.empty(),
-                                                                                                      emptySet(), true)));
-        tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Set.of(new RoutingPolicy(new RoutingPolicyId(app.testerId().id(),
-                                                                                                                             ClusterSpec.Id.from("default"),
-                                                                                                                             JobType.systemTest.zone(system())),
-                                                                                                         HostName.from("host"),
-                                                                                                         Optional.empty(),
-                                                                                                         emptySet(), true)));
+        var id1 = new RoutingPolicyId(app.instanceId(),
+                                      ClusterSpec.Id.from("default"),
+                                      JobType.systemTest.zone(system()));
+        tester.controller().curator().writeRoutingPolicies(app.instanceId(), Map.of(id1, new RoutingPolicy(id1,
+                                                                                                           HostName.from("host"),
+                                                                                                           Optional.empty(),
+                                                                                                           emptySet(), true)));
+        var id2 = new RoutingPolicyId(app.testerId().id(),
+                                      ClusterSpec.Id.from("default"),
+                                      JobType.systemTest.zone(system()));
+        tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Map.of(id2, new RoutingPolicy(id2,
+                                                                                                              HostName.from("host"),
+                                                                                                              Optional.empty(),
+                                                                                                              emptySet(), true)));
         tester.runner().run();;
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));

@@ -686,7 +686,7 @@ public class ApplicationController {
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + id, e);
         }
-        return routingPolicies.get(id).stream()
+        return routingPolicies.get(id).values().stream()
                               .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
                               .collect(Collectors.toUnmodifiableMap(policy -> policy.id().cluster(),
                                                                     policy -> policy.endpointIn(controller.system()).url()));

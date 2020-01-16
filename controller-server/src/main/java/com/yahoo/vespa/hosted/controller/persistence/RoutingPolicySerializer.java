@@ -12,7 +12,9 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -38,11 +40,11 @@ public class RoutingPolicySerializer {
     private static final String rotationsField = "rotations";
     private static final String loadBalancerActiveField = "active";
 
-    public Slime toSlime(Set<RoutingPolicy> routingPolicies) {
+    public Slime toSlime(Map<RoutingPolicyId, RoutingPolicy> routingPolicies) {
         var slime = new Slime();
         var root = slime.setObject();
         var policyArray = root.setArray(routingPoliciesField);
-        routingPolicies.forEach(policy -> {
+        routingPolicies.values().forEach(policy -> {
             var policyObject = policyArray.addObject();
             policyObject.setString(clusterField, policy.id().cluster().value());
             policyObject.setString(zoneField, policy.id().zone().value());
@@ -57,22 +59,23 @@ public class RoutingPolicySerializer {
         return slime;
     }
 
-    public Set<RoutingPolicy> fromSlime(ApplicationId owner, Slime slime) {
-        var policies = new LinkedHashSet<RoutingPolicy>();
+    public Map<RoutingPolicyId, RoutingPolicy> fromSlime(ApplicationId owner, Slime slime) {
+        var policies = new LinkedHashMap<RoutingPolicyId, RoutingPolicy>();
         var root = slime.get();
         var field = root.field(routingPoliciesField);
         field.traverse((ArrayTraverser) (i, inspect) -> {
             var endpointIds = new LinkedHashSet<EndpointId>();
             inspect.field(rotationsField).traverse((ArrayTraverser) (j, endpointId) -> endpointIds.add(EndpointId.of(endpointId.asString())));
-            policies.add(new RoutingPolicy(new RoutingPolicyId(owner,
-                                                               ClusterSpec.Id.from(inspect.field(clusterField).asString()),
-                                                               ZoneId.from(inspect.field(zoneField).asString())),
-                                           HostName.from(inspect.field(canonicalNameField).asString()),
-                                           Serializers.optionalString(inspect.field(dnsZoneField)),
-                                           endpointIds,
-                                           inspect.field(loadBalancerActiveField).asBool()));
+            var id = new RoutingPolicyId(owner,
+                                         ClusterSpec.Id.from(inspect.field(clusterField).asString()),
+                                         ZoneId.from(inspect.field(zoneField).asString()));
+            policies.put(id, new RoutingPolicy(id,
+                                               HostName.from(inspect.field(canonicalNameField).asString()),
+                                               Serializers.optionalString(inspect.field(dnsZoneField)),
+                                               endpointIds,
+                                               inspect.field(loadBalancerActiveField).asBool()));
         });
-        return Collections.unmodifiableSet(policies);
+        return Collections.unmodifiableMap(policies);
     }
 
 }

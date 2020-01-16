@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +132,7 @@ public class RoutingPoliciesTest {
         assertEquals("DNS records are removed", List.of(), tester.aliasDataOf(endpoint1));
         assertEquals("DNS records are removed", List.of(), tester.aliasDataOf(endpoint2));
         assertEquals("DNS records are removed", List.of(), tester.aliasDataOf(endpoint3));
-        Set<RoutingPolicy> policies = tester.policiesOf(context1.instanceId());
+        var policies = tester.policiesOf(context1.instanceId());
         assertEquals(clustersPerZone * numberOfDeployments, policies.size());
         assertTrue("Rotation membership is removed from all policies",
                    policies.stream().allMatch(policy -> policy.endpoints().isEmpty()));
@@ -390,8 +391,8 @@ public class RoutingPoliciesTest {
             }
         }
 
-        private Set<RoutingPolicy> policiesOf(ApplicationId instance) {
-            return tester.controller().curator().readRoutingPolicies(instance);
+        private Collection<RoutingPolicy> policiesOf(ApplicationId instance) {
+            return tester.controller().curator().readRoutingPolicies(instance).values();
         }
 
         private Set<String> recordNames() {
