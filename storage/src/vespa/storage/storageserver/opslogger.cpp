@@ -14,7 +14,7 @@ OpsLogger::OpsLogger(StorageComponentRegister& compReg,
     : StorageLink("Operations logger"),
       _lock(),
       _fileName(),
-      _targetFile(0),
+      _targetFile(nullptr),
       _component(compReg, "opslogger"),
       _configFetcher(configUri.getContext())
 {
@@ -46,9 +46,9 @@ OpsLogger::configure(std::unique_ptr<vespa::config::content::core::StorOpslogger
         // If no change in state, ignore
     if (config->targetfile == _fileName) return;
         // If a change we need to close old handle if open
-    if (_targetFile != 0) {
+    if (_targetFile != nullptr) {
         fclose(_targetFile);
-        _targetFile = 0;
+        _targetFile = nullptr;
     }
         // Set up the new operations log file
     _fileName = config->targetfile;
@@ -73,14 +73,14 @@ OpsLogger::print(std::ostream& out, bool verbose,
 bool
 OpsLogger::onPutReply(const std::shared_ptr<api::PutReply>& msg)
 {
-    if (_targetFile == 0) return false;
+    if (_targetFile == nullptr) return false;
     std::ostringstream ost;
     ost << _component.getClock().getTimeInSeconds().getTime()
         << "\tPUT\t" << msg->getDocumentId() << "\t"
         << msg->getResult().toString() << "\n";
     {
         vespalib::LockGuard lock(_lock);
-        if (_targetFile == 0) return false;
+        if (_targetFile == nullptr) return false;
         fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
         fflush(_targetFile);
     }
@@ -90,14 +90,14 @@ OpsLogger::onPutReply(const std::shared_ptr<api::PutReply>& msg)
 bool
 OpsLogger::onUpdateReply(const std::shared_ptr<api::UpdateReply>& msg)
 {
-    if (_targetFile == 0) return false;
+    if (_targetFile == nullptr) return false;
     std::ostringstream ost;
     ost << _component.getClock().getTimeInSeconds().getTime()
         << "\tUPDATE\t" << msg->getDocumentId() << "\t"
         << msg->getResult().toString() << "\n";
     {
         vespalib::LockGuard lock(_lock);
-        if (_targetFile == 0) return false;
+        if (_targetFile == nullptr) return false;
         fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
         fflush(_targetFile);
     }
@@ -107,14 +107,14 @@ OpsLogger::onUpdateReply(const std::shared_ptr<api::UpdateReply>& msg)
 bool
 OpsLogger::onRemoveReply(const std::shared_ptr<api::RemoveReply>& msg)
 {
-    if (_targetFile == 0) return false;
+    if (_targetFile == nullptr) return false;
     std::ostringstream ost;
     ost << _component.getClock().getTimeInSeconds().getTime()
         << "\tREMOVE\t" << msg->getDocumentId() << "\t"
         << msg->getResult().toString() << "\n";
     {
         vespalib::LockGuard lock(_lock);
-        if (_targetFile == 0) return false;
+        if (_targetFile == nullptr) return false;
         fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
         fflush(_targetFile);
     }
@@ -124,14 +124,14 @@ OpsLogger::onRemoveReply(const std::shared_ptr<api::RemoveReply>& msg)
 bool
 OpsLogger::onGetReply(const std::shared_ptr<api::GetReply>& msg)
 {
-    if (_targetFile == 0) return false;
+    if (_targetFile == nullptr) return false;
     std::ostringstream ost;
     ost << _component.getClock().getTimeInSeconds().getTime()
         << "\tGET\t" << msg->getDocumentId() << "\t"
         << msg->getResult().toString() << "\n";
     {
         vespalib::LockGuard lock(_lock);
-        if (_targetFile == 0) return false;
+        if (_targetFile == nullptr) return false;
         fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
         fflush(_targetFile);
     }

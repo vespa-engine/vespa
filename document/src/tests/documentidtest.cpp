@@ -44,16 +44,8 @@ TEST(DocumentIdTest, generateJavaComplianceFile)
 TEST(DocumentIdTest, testOutput)
 {
     DocumentId id("id:ns:news::crawler:http://www.yahoo.com");
-
-    std::ostringstream ost;
-    ost << id;
-    std::string expected("id:ns:news::crawler:http://www.yahoo.com");
-    EXPECT_EQ(expected, ost.str());
-
-    EXPECT_EQ(vespalib::string(expected), id.toString());
-
-    expected = "DocumentId(id = id:ns:news::crawler:http://www.yahoo.com, gid(0xa516a5abd7c7fa26944b72f7))";
-    EXPECT_EQ(expected, static_cast<Printable&>(id).toString(true));
+    vespalib::string expected("id:ns:news::crawler:http://www.yahoo.com");
+    EXPECT_EQ(expected, id.toString());
 }
 
 namespace {

@@ -3,7 +3,6 @@
 #include "document.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
@@ -43,7 +42,10 @@ void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) 
                                    VESPA_STRLOC);
 }
 
-const DataType &verifyDocumentType(const DataType *type) {
+}  // namespace
+
+const DataType &
+Document::verifyDocumentType(const DataType *type) {
     if (!type) {
         documentTypeError("null");
     } else if ( ! type->getClass().inherits(DocumentType::classId)) {
@@ -51,7 +53,20 @@ const DataType &verifyDocumentType(const DataType *type) {
     }
     return *type;
 }
-}  // namespace
+
+void
+Document::verifyIdAndType(const DocumentId & id, const DataType *type) {
+    verifyDocumentType(type);
+    if (id.hasDocType() && (id.getDocType() != type->getName())) {
+        throwTypeMismatch(type->getName(), id.getDocType());
+    }
+}
+
+void
+Document::setType(const DataType & type) {
+    StructuredFieldValue::setType(type);
+    _fields.setType(getType().getFieldsType());
+}
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(Document, StructuredFieldValue);
 
@@ -64,38 +79,18 @@ Document::Document()
     _fields.setDocumentType(getType());
 }
 
-Document::Document(const Document& other)
-    : StructuredFieldValue(other),
-      _id(other._id),
-      _fields(other._fields),
-      _lastModified(other._lastModified)
-{
-}
+Document::Document(const Document& other) = default;
 
-Document::Document(const DataType &type, const DocumentId& documentId)
+Document::Document(const DataType &type, DocumentId documentId)
     : StructuredFieldValue(verifyDocumentType(&type)),
-      _id(documentId),
+      _id(std::move(documentId)),
       _fields(getType().getFieldsType()),
       _lastModified(0)
 {
     _fields.setDocumentType(getType());
-    if (documentId.hasDocType() && documentId.getDocType() != type.getName()) {
-        throwTypeMismatch(type.getName(), documentId.getDocType());
+    if (_id.hasDocType() && (_id.getDocType() != type.getName())) {
+        throwTypeMismatch(type.getName(), _id.getDocType());
     }
-}
-
-Document::Document(const DataType &type, DocumentId& documentId, bool iWillAllowSwap)
-    : StructuredFieldValue(verifyDocumentType(&type)),
-      _id(),
-      _fields(getType().getFieldsType()),
-      _lastModified(0)
-{
-    (void) iWillAllowSwap;
-    _fields.setDocumentType(getType());
-    if (documentId.hasDocType() && (documentId.getDocType() != type.getName())) {
-        throwTypeMismatch(type.getName(), documentId.getDocType());
-    }
-    _id.swap(documentId);
 }
 
 Document::Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, const DataType *anticipatedType)
@@ -148,31 +143,14 @@ Document::Document(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer&
     deserializeBody(repo, body);
 }
 
-Document::~Document() {
-}
-
-void
-Document::swap(Document & rhs)
-{
-    StructuredFieldValue::swap(rhs);
-    _fields.swap(rhs._fields);
-    _id.swap(rhs._id);
-    std::swap(_lastModified, rhs._lastModified);
-}
+Document::~Document() = default;
 
 const DocumentType&
 Document::getType() const {
     return static_cast<const DocumentType &>(StructuredFieldValue::getType());
 }
 
-Document& Document::operator=(const Document& doc)
-{
-    StructuredFieldValue::operator=(doc);
-    _id = doc._id;
-    _fields = doc._fields;
-    _lastModified = doc._lastModified;
-    return *this;
-}
+Document& Document::operator=(const Document& doc) = default;
 
 void
 Document::clear()
@@ -210,7 +188,7 @@ Document::getDocTypeFromSerialized(const DocumentTypeRepo& repo, ByteBuffer& buf
     int position = buf.getPos();
     DocumentId retVal;
 
-    const DocumentType *docType(deserializeDocHeaderAndType(repo, buf, retVal, NULL));
+    const DocumentType *docType(deserializeDocHeaderAndType(repo, buf, retVal, nullptr));
     buf.setPos(position);
 
     return docType;
@@ -221,7 +199,7 @@ Document::assign(const FieldValue& value)
 {
     /// \todo TODO (was warning):  This type checking doesnt work with the way assign is used.
 //    if (*value.getDataType() == *_type) {
-    const Document& other(dynamic_cast<const Document&>(value));
+    auto & other(dynamic_cast<const Document&>(value));
     return operator=(other);
 //    }
 //    return FieldValue::assign(value); // Generates exception
@@ -234,7 +212,7 @@ Document::compare(const FieldValue& other) const
     if (diff != 0) {
         return diff;
     }
-    const Document& doc(static_cast<const Document&>(other));
+    auto & doc(static_cast<const Document&>(other));
     vespalib::string id1 = _id.toString();
     vespalib::string id2 = doc._id.toString();
     if (id1 != id2) {
@@ -309,9 +287,9 @@ Document::deserializeDocHeaderAndType(
         int16_t docTypeVersion;  // version not supported anymore
         buffer.getShortNetwork(docTypeVersion);
     }
-    const DocumentType *docTypeNew = 0;
+    const DocumentType *docTypeNew = nullptr;
 
-    if (! ((docType != NULL) && (docType->getName() == docTypeName))) {
+    if (! ((docType != nullptr) && (docType->getName() == docTypeName))) {
         docTypeNew = repo.getDocumentType(docTypeName);
         if (!docTypeNew) {
             throw DocumentTypeNotFoundException(docTypeName, VESPA_STRLOC);

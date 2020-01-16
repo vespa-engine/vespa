@@ -37,7 +37,6 @@ public:
         size_t size() const { return _sz; }
         bool empty() const { return _sz == 0; }
         VESPA_DLL_LOCAL void clear();
-        VESPA_DLL_LOCAL void swap(Chunks & rhs);
     private:
         SerializableArray::CP _chunks[2];
         size_t _sz;
@@ -56,8 +55,9 @@ public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
 
     StructFieldValue(const DataType &type);
-    ~StructFieldValue();
-    void swap(StructFieldValue & rhs);
+    StructFieldValue(const StructFieldValue & rhs);
+    StructFieldValue & operator = (const StructFieldValue & rhs);
+    ~StructFieldValue() override;
 
     void setRepo(const DocumentTypeRepo & repo) { _repo = & repo; }
     const DocumentTypeRepo * getRepo() const { return _repo; }

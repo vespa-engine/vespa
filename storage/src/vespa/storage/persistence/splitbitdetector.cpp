@@ -109,7 +109,7 @@ BucketVisitor::BucketVisitor(const document::BucketIdFactory& factory)
         _splitMask = (_splitMask << 1) | 1;
     }
 }
-BucketVisitor::~BucketVisitor() { }
+BucketVisitor::~BucketVisitor() = default;
 
 bool
 smallerThanSizeLimit(uint32_t minCount,

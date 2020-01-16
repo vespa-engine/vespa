@@ -28,7 +28,7 @@ public:
     static IdString::UP createIdString(const char *id, size_t sz);
     static LocationType makeLocation(vespalib::stringref s);
 
-    ~IdString() {}
+    ~IdString();
     IdString* clone() const override = 0;
 
     virtual Type        getType() const = 0;
@@ -50,7 +50,6 @@ public:
 
 protected:
     IdString(uint32_t maxComponents, uint32_t namespaceOffset, vespalib::stringref rawId);
-    virtual vespalib::string getSchemeName() const;
     size_t offset(size_t index) const { return _offsets[index]; }
     size_t size(size_t index) const { return _offsets[index+1] - _offsets[index] - 1; }
     vespalib::stringref getComponent(size_t index) const { return vespalib::stringref(_rawId.c_str() + offset(index), size(index)); }

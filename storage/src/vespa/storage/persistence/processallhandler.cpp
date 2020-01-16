@@ -56,11 +56,11 @@ public:
 
     void process(spi::DocEntry& e) override {
         ost << "  Timestamp: " << e.getTimestamp() << ", ";
-        if (e.getDocument() != 0) {
+        if (e.getDocument() != nullptr) {
             ost << "Doc(" << e.getDocument()->getId() << ")"
                 << ", " << e.getDocument()->getId().getGlobalId().toString()
                 << ", size: " << e.getPersistedDocumentSize();
-        } else if (e.getDocumentId() != 0) {
+        } else if (e.getDocumentId() != nullptr) {
             ost << *e.getDocumentId()
                 << ", " << e.getDocumentId()->getGlobalId().toString();
         } else {

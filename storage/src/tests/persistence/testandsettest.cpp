@@ -294,9 +294,9 @@ std::string TestAndSetTest::expectedDocEntryString(
 
     ss << "DocEntry(" << timestamp << ", " << removeFlag << ", ";
     if (removeFlag == spi::REMOVE_ENTRY) {
-        ss << docId.toString() << ")\n";
+        ss << docId << ")\n";
     } else {
-       ss << "Doc(" << docId.toString() << "))\n";
+       ss << "Doc(" << docId << "))\n";
     }
 
     return ss.str();

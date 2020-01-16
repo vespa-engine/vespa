@@ -21,7 +21,6 @@
 
 #include "idstring.h"
 #include "globalid.h"
-#include <vespa/document/util/printable.h>
 
 namespace vespalib { class nbostream; }
 
@@ -29,14 +28,18 @@ namespace document {
 
 class DocumentType;
 
-class DocumentId : public Printable
+class DocumentId
 {
 public:
     typedef std::unique_ptr<DocumentId> UP;
 
     DocumentId();
     DocumentId(vespalib::nbostream & os);
-    explicit DocumentId(const IdString& id);
+    DocumentId(DocumentId && rhs) = default;
+    DocumentId & operator = (DocumentId && rhs) = default;
+    DocumentId(const DocumentId & rhs);
+    DocumentId & operator = (const DocumentId & rhs);
+    ~DocumentId();
     /**
      * Parse the given document identifier given as string, and create an
      * identifier object from it.
@@ -57,8 +60,6 @@ public:
     */
     vespalib::string toString() const;
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
     bool operator==(const DocumentId& other) const { return *_id == *other._id; }
     bool operator!=(const DocumentId& other) const { return ! (*_id == *other._id); }
 
@@ -71,15 +72,15 @@ public:
         return _globalId.second;
     }
 
-    DocumentId* clone() const { return new DocumentId(*this); }
-    virtual size_t getSerializedSize() const;
-    void swap(DocumentId & rhs);
+    size_t getSerializedSize() const;
 private:
     mutable std::pair<bool, GlobalId> _globalId;
     vespalib::CloneablePtr<IdString> _id;
 
     void calculateGlobalId() const;
 };
+
+std::ostream & operator << (std::ostream & os, const DocumentId & id);
 
 } // document
 

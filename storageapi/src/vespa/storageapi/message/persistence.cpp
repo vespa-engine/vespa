@@ -31,7 +31,7 @@ PutCommand::PutCommand(const document::Bucket &bucket, const DocumentSP& doc, Ti
       _timestamp(time),
       _updateTimestamp(0)
 {
-    if (_doc.get() == 0) {
+    if ( !_doc ) {
         throw vespalib::IllegalArgumentException("Cannot put a null document", VESPA_STRLOC);
     }
 }
@@ -85,7 +85,7 @@ void
 PutReply::print(std::ostream& out, bool verbose,
                 const std::string& indent) const
 {
-    out << "PutReply(" << _docId.toString() << ", " << getBucketId() << ", timestamp " << _timestamp;
+    out << "PutReply(" << _docId << ", " << getBucketId() << ", timestamp " << _timestamp;
 
     if (hasBeenRemapped()) {
         out << " (was remapped)";
@@ -104,7 +104,7 @@ UpdateCommand::UpdateCommand(const document::Bucket &bucket, const document::Doc
       _timestamp(time),
       _oldTimestamp(0)
 {
-    if (_update.get() == 0) {
+    if ( ! _update) {
         throw vespalib::IllegalArgumentException("Cannot update a null update", VESPA_STRLOC);
     }
 }
@@ -160,7 +160,7 @@ void
 UpdateReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "UpdateReply("
-        << _docId.toString() << ", " << getBucketId() << ", timestamp "
+        << _docId << ", " << getBucketId() << ", timestamp "
         << _timestamp << ", timestamp of updated doc: " << _oldTimestamp;
 
     if (_consistentNode != (uint16_t)-1) {
@@ -300,8 +300,8 @@ RevertCommand::print(std::ostream& out, bool verbose, const std::string& indent)
     out << "Revert(" << getBucketId();
     if (verbose) {
         out << ",";
-        for (uint32_t i=0; i<_tokens.size(); ++i) {
-            out << "\n" << indent << "  " << _tokens[i];
+        for (Timestamp token : _tokens) {
+            out << "\n" << indent << "  " << token;
         }
     }
     out << ")";

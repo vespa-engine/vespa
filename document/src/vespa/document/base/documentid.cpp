@@ -9,66 +9,43 @@ using vespalib::nbostream;
 namespace document {
 
 DocumentId::DocumentId()
-    : Printable(),
-      _globalId(),
+    : _globalId(),
       _id(new NullIdString())
 {
 }
 
 DocumentId::DocumentId(vespalib::stringref id)
-    : Printable(),
-      _globalId(),
+    : _globalId(),
       _id(IdString::createIdString(id.data(), id.size()).release())
 {
 }
 
 DocumentId::DocumentId(vespalib::nbostream & is)
-    : Printable(),
-      _globalId(),
+    : _globalId(),
       _id(IdString::createIdString(is.peek(), strlen(is.peek())).release())
 {
     is.adjustReadPos(strlen(is.peek()) + 1);
 }
 
-DocumentId::DocumentId(const IdString& id)
-    : Printable(),
-      _globalId(),
-      _id(id.clone())
-{
-}
+DocumentId::DocumentId(const DocumentId & rhs) = default;
+DocumentId & DocumentId::operator = (const DocumentId & rhs) = default;
+DocumentId::~DocumentId() = default;
 
 vespalib::string
 DocumentId::toString() const {
     return _id->toString();
 }
 
-void DocumentId::set(vespalib::stringref id) {
+void
+DocumentId::set(vespalib::stringref id) {
     _id.reset(IdString::createIdString(id).release());
     _globalId.first = false;
-}
-
-void
-DocumentId::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
-    (void) indent;
-    if (verbose) {
-        out << "DocumentId(id = ";
-    }
-    out << _id->toString().c_str();
-    if (verbose) {
-        out << ", " << getGlobalId().toString() << ")";
-    }
 }
 
 size_t
 DocumentId::getSerializedSize() const
 {
     return _id->toString().size() + 1;
-}
-
-void DocumentId::swap(DocumentId & rhs) {
-    _id.swap(rhs._id);
-    std::swap(_globalId, rhs._globalId);
 }
 
 void
@@ -86,5 +63,9 @@ DocumentId::calculateGlobalId() const
     _globalId.second.set(key);
 }
 
+std::ostream &
+operator << (std::ostream & os, const DocumentId & id) {
+    return os << id.toString();
+}
 
 } // document

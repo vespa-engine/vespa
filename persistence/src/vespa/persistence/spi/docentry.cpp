@@ -110,7 +110,7 @@ DocEntry::prettyPrint(std::ostream& out) const
 
     out << "DocEntry(Timestamp: " << _timestamp
         << ", size " << getPersistedDocumentSize() << ", ";
-    if (_documentId.get() != 0) {
+    if (_documentId) {
         out << *_documentId;
     } else if (_document.get()) {
         out << "Doc(" << _document->getId() << ")";
@@ -135,8 +135,8 @@ DocEntry::operator==(const DocEntry& entry) const {
         return false;
     }
 
-    if (_documentId.get()) {
-        if (!entry._documentId.get()) {
+    if (_documentId) {
+        if (!entry._documentId) {
             return false;
         }
 
@@ -144,13 +144,13 @@ DocEntry::operator==(const DocEntry& entry) const {
             return false;
         }
     } else {
-        if (entry._documentId.get()) {
+        if (entry._documentId) {
             return false;
         }
     }
 
-    if (_document.get()) {
-        if (!entry._document.get()) {
+    if (_document) {
+        if (!entry._document) {
             return false;
         }
 
@@ -158,7 +158,7 @@ DocEntry::operator==(const DocEntry& entry) const {
             return false;
         }
     } else {
-        if (entry._document.get()) {
+        if (entry._document) {
             return false;
         }
     }
