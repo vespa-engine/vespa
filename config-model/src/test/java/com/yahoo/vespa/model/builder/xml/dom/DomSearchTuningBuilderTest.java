@@ -53,14 +53,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatEmptyDispatchIsSafe() {
-        Tuning tuning = newTuning("<tuning><dispatch/></tuning>");
-        DispatchTuning dispatch = tuning.dispatch;
-        assertNotNull(dispatch);
-        assertNull(dispatch.getMaxHitsPerPartition());
-    }
-
-    @Test
     public void requireThatWeCanParseRequestThreadsTag() {
         Tuning t = createTuning(parseXml("<requestthreads>",
                 "<search>123</search>",

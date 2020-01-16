@@ -19,11 +19,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
     protected Tuning doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
         Tuning tuning = new Tuning(parent);
         for (Element e : XML.getChildren(spec)) {
-            if (equals("dispatch", e)) {
-                handleDispatch(e, tuning);
-            } else if (equals("searchnode", e)) {
+            if (equals("searchnode", e))
                 handleSearchNode(e, tuning);
-            }
         }
         return tuning;
     }
