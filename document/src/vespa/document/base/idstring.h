@@ -26,7 +26,7 @@ public:
     IdString();
 
     vespalib::stringref getNamespace() const { return getComponent(0); }
-    bool hasDocType() const { return size(1 != 0); }
+    bool hasDocType() const { return size(1) != 0; }
     vespalib::stringref getDocType() const  { return getComponent(1); }
     LocationType getLocation() const  { return _location; }
     bool hasNumber() const  { return _has_number; }
@@ -44,7 +44,7 @@ public:
 
 private:
     size_t offset(size_t index) const { return _offsets[index]; }
-    size_t size(size_t index) const { return std::max(0, _offsets[index+1] - _offsets[index] - 1); }
+    size_t size(size_t index) const { return std::max(0, int(_offsets[index+1]) - int(_offsets[index]) - 1); }
     vespalib::stringref getComponent(size_t index) const { return vespalib::stringref(_rawId.c_str() + offset(index), size(index)); }
     const vespalib::string & getRawId() const { return _rawId; }
 
@@ -55,8 +55,9 @@ private:
         uint16_t operator [] (size_t i) const { return _offsets[i]; }
         static const Offsets DefaultID;
     private:
+        static constexpr uint32_t MAX_COMPONENTS = 4;
         Offsets(vespalib::stringref id);
-        uint16_t _offsets[5];
+        uint16_t _offsets[MAX_COMPONENTS + 1];
     };
 
     vespalib::string _rawId;
@@ -64,7 +65,6 @@ private:
     Offsets          _offsets;
     uint16_t         _groupOffset;
     bool             _has_number;
-
 };
 
 } // document

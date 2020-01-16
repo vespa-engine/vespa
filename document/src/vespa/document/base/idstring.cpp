@@ -136,7 +136,6 @@ validate(uint16_t numComponents)
 
 
 constexpr uint32_t NAMESPACE_OFFSET = 3;
-constexpr uint32_t MAX_COMPONENTS = 4;
 
 const vespalib::stringref DEFAULT_ID("id::::");
 
@@ -225,7 +224,6 @@ IdString::IdString(stringref id)
     // TODO(magnarn): Require that keys are lexicographically ordered.
     verifyIdString(id.data(), id.size());
     validate(_offsets.compute(id));
-
 
     stringref key_values(getComponent(2));
     char key(0);
