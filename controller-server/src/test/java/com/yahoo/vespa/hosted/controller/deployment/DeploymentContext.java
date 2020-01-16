@@ -24,14 +24,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
-import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
-import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -49,7 +46,6 @@ import java.util.Set;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -231,6 +227,7 @@ public class DeploymentContext {
     public DeploymentContext outOfCapacity(JobType type) {
         return failDeployment(type,
                               new ConfigServerException(URI.create("https://config.server"),
+                                                        "Failed to deploy application",
                                                         "Out of capacity",
                                                         ConfigServerException.ErrorCode.OUT_OF_CAPACITY,
                                                         new RuntimeException("Out of capacity from test code")));

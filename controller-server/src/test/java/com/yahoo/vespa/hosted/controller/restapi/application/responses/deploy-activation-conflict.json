@@ -1,4 +1,4 @@
 {
   "error-code":"ACTIVATION_CONFLICT",
-  "message":"Failed to activate application"
+  "message":"Failed to activate application: Activation conflict"
 }

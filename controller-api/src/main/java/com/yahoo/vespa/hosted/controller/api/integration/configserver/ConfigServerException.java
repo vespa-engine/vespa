@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import java.net.URI;
+import java.util.Objects;
 
 /**
  * @author Tony Vaagenes
@@ -10,11 +11,13 @@ public class ConfigServerException extends RuntimeException {
 
     private final URI serverUri;
     private final ErrorCode errorCode;
+    private final String serverMessage;
 
-    public ConfigServerException(URI serverUri, String message, ErrorCode errorCode, Throwable cause) {
-        super(message, cause);
-        this.serverUri = serverUri;
-        this.errorCode = errorCode;
+    public ConfigServerException(URI serverUri, String context, String serverMessage, ErrorCode errorCode, Throwable cause) {
+        super(context + ": " + serverMessage, cause);
+        this.serverUri = Objects.requireNonNull(serverUri);
+        this.errorCode = Objects.requireNonNull(errorCode);
+        this.serverMessage = Objects.requireNonNull(serverMessage);
     }
 
     public ErrorCode getErrorCode() {
@@ -23,6 +26,10 @@ public class ConfigServerException extends RuntimeException {
 
     public URI getServerUri() {
         return serverUri;
+    }
+
+    public String getServerMessage() {
+        return serverMessage;
     }
 
     // TODO: Copied from Vespa. Expose these in Vespa and use them here

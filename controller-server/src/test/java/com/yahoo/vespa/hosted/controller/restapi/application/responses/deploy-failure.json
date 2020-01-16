@@ -1,4 +1,4 @@
 {
   "error-code":"INVALID_APPLICATION_PACKAGE",
-  "message":"Failed to prepare application"
+  "message":"Failed to prepare application: invalid application package"
 }

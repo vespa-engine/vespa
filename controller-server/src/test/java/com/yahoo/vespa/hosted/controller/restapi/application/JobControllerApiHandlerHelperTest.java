@@ -76,7 +76,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.triggerJobs();
 
         // us-east-3 eats the deployment failure and fails before deployment, while us-west-1 fails after.
-        tester.configServer().throwOnNextPrepare(new ConfigServerException(URI.create("url"), "ERROR!", INVALID_APPLICATION_PACKAGE, null));
+        tester.configServer().throwOnNextPrepare(new ConfigServerException(URI.create("url"), "Failed to deploy application", "ERROR!", INVALID_APPLICATION_PACKAGE, null));
         tester.runner().run();
         assertEquals(deploymentFailed, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
 
