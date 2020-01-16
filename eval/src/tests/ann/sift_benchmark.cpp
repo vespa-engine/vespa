@@ -10,7 +10,7 @@
 #include <chrono>
 
 #define NUM_DIMS 128
-#define NUM_DOCS 250000
+#define NUM_DOCS 1000000
 #define NUM_Q 1000
 
 #include "doc_vector_access.h"
