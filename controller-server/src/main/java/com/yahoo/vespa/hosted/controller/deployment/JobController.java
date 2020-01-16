@@ -430,7 +430,7 @@ public class JobController {
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
-                application = application.withNewInstance(id.instance());
+                application = controller.applications().withNewInstance(application, id);
 
             controller.applications().store(application);
         });
