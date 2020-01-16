@@ -15,12 +15,12 @@ public class IndexedHierarchicDistributionValidator {
     private final String clusterName;
     private final StorageGroup rootGroup;
     private final Redundancy redundancy;
-    private final DispatchTuning.DispatchPolicy dispatchPolicy;
+    private final TuningDispatch.DispatchPolicy dispatchPolicy;
 
     public IndexedHierarchicDistributionValidator(String clusterName,
                                                   StorageGroup rootGroup,
                                                   Redundancy redundancy,
-                                                  DispatchTuning.DispatchPolicy dispatchPolicy) {
+                                                  TuningDispatch.DispatchPolicy dispatchPolicy) {
         this.clusterName = clusterName;
         this.rootGroup = rootGroup;
         this.redundancy = redundancy;
@@ -46,7 +46,7 @@ public class IndexedHierarchicDistributionValidator {
     }
 
     private void validateThatLeafGroupsHasEqualNumberOfNodes() {
-        if (dispatchPolicy != DispatchTuning.DispatchPolicy.ROUNDROBIN) return;
+        if (dispatchPolicy != TuningDispatch.DispatchPolicy.ROUNDROBIN) return;
 
         StorageGroup previousGroup = null;
         for (StorageGroup group : rootGroup.getSubgroups()) {
