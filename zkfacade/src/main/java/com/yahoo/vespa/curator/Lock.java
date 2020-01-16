@@ -34,8 +34,11 @@ public class Lock implements Mutex {
                                                     " to acquire lock '" + lockPath + "'");
             if ( ! lock.tryLock()) { // Should be available to only this thread, while holding the above mutex.
                 release();
-                throw new IllegalStateException("InterProcessMutex acquired, but guarded lock held by someone else");
+                throw new IllegalStateException("InterProcessMutex acquired, but guarded lock held by someone else, for lock '" + lockPath + "'");
             }
+        }
+        catch (UncheckedTimeoutException | IllegalStateException e) {
+            throw e;
         }
         catch (Exception e) {
             throw new RuntimeException("Exception acquiring lock '" + lockPath + "'", e);
