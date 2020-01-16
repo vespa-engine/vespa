@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.network;
 
 import com.google.common.net.InetAddresses;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 
+import java.io.UncheckedIOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -51,7 +53,7 @@ public interface IPAddresses {
     /**
      * Get the IPv6 address for the host if any.
      *
-     * @throws RuntimeException if multiple addresses are found
+     * @throws ConvergenceException if multiple addresses are found
      */
     default Optional<Inet6Address> getIPv6Address(String hostname) {
         List<Inet6Address> ipv6addresses = Stream.of(getAddresses(hostname))
@@ -65,7 +67,7 @@ public interface IPAddresses {
         if (ipv6addresses.size() <= 1) return ipv6addresses.stream().findFirst();
 
         String addresses = ipv6addresses.stream().map(InetAddresses::toAddrString).collect(Collectors.joining(","));
-        throw new RuntimeException(
+        throw new ConvergenceException(
                 String.format(
                         "Multiple IPv6 addresses found: %s. Perhaps a missing DNS entry or multiple AAAA records in DNS?",
                         addresses));
@@ -74,7 +76,7 @@ public interface IPAddresses {
     /**
      * Get the IPv4 address for the host if any.
      *
-     * @throws RuntimeException if multiple site-local addresses are found
+     * @throws ConvergenceException if multiple site-local addresses are found
      */
     default Optional<Inet4Address> getIPv4Address(String hostname) {
         List<Inet4Address> ipv4Addresses = Stream.of(getAddresses(hostname))
@@ -92,7 +94,7 @@ public interface IPAddresses {
         if (siteLocalIPv4Addresses.size() == 1) return Optional.of(siteLocalIPv4Addresses.get(0));
 
         String addresses = ipv4Addresses.stream().map(InetAddresses::toAddrString).collect(Collectors.joining(","));
-        throw new RuntimeException(
+        throw new ConvergenceException(
                 String.format(
                         "Multiple IPv4 addresses found: %s. Perhaps a missing DNS entry or multiple A records in DNS?",
                         addresses));
@@ -111,6 +113,7 @@ public interface IPAddresses {
      * @param prefix            The prefix address
      * @param subnetSizeInBytes in bits - e.g a /64 subnet equals 8 bytes
      * @return The translated address
+     * @throws ConvergenceException if
      */
     static InetAddress prefixTranslate(InetAddress address, InetAddress prefix, int subnetSizeInBytes) {
         return prefixTranslate(address.getAddress(), prefix.getAddress(), subnetSizeInBytes);
@@ -121,7 +124,7 @@ public interface IPAddresses {
         try {
             return InetAddress.getByAddress(address);
         } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }
