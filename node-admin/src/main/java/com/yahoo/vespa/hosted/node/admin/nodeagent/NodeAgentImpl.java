@@ -220,7 +220,6 @@ public class NodeAgentImpl implements NodeAgent {
                 orchestratorSuspendNode(context);
 
                 dockerOperations.restartVespa(context);
-                context.log(logger, "Restarted services");
                 currentRestartGeneration = context.node().wantedRestartGeneration();
             });
         }
@@ -310,7 +309,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void removeContainer(NodeAgentContext context, Container existingContainer, List<String> reasons, boolean alreadySuspended) {
-        context.log(logger, "Will remove container: " + (reasons.size() == 1 ? reasons.get(0) : "\n" + String.join("\n", reasons)));
+        context.log(logger, "Will remove container: " + String.join(", ", reasons));
 
         if (existingContainer.state.isRunning()) {
             if (!alreadySuspended) {
