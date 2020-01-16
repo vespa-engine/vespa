@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.content.cluster;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.vespa.model.content.TuningDispatch;
+import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
 import java.util.logging.Level;
@@ -12,8 +12,8 @@ import java.util.logging.Level;
  */
 public class DomTuningDispatchBuilder {
 
-    public static TuningDispatch build(ModelElement contentXml, DeployLogger logger) {
-        TuningDispatch.Builder builder = new TuningDispatch.Builder();
+    public static DispatchTuning build(ModelElement contentXml, DeployLogger logger) {
+        DispatchTuning.Builder builder = new DispatchTuning.Builder();
         ModelElement tuningElement = contentXml.child("tuning");
         if (tuningElement == null) {
             return builder.build();
