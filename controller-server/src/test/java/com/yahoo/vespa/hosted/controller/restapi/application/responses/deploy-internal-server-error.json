@@ -1,4 +1,4 @@
 {
   "error-code":"INTERNAL_SERVER_ERROR",
-  "message":"Internal server error"
+  "message":"Failed to deploy application: Internal server error"
 }

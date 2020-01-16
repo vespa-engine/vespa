@@ -1,4 +1,4 @@
 {
   "error-code":"OUT_OF_CAPACITY",
-  "message":"Failed to prepare application"
+  "message":"Failed to prepare application: Out of capacity"
 }

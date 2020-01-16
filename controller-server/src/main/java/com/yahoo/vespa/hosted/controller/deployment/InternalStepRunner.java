@@ -244,18 +244,19 @@ public class InternalStepRunner implements StepRunner {
                 case ACTIVATION_CONFLICT:
                 case APPLICATION_LOCK_FAILURE:
                 case CERTIFICATE_NOT_READY:
-                case LOAD_BALANCER_NOT_READY:
-                    logger.log("Deployment failed with transient error " + e.getErrorCode() + ", will retry: " + e.getMessage());
+                    logger.log("Deployment failed with possibly transient error " + e.getErrorCode() +
+                            ", will retry: " + e.getMessage());
                     return Optional.empty();
+                case LOAD_BALANCER_NOT_READY:
                 case PARENT_HOST_NOT_READY:
-                    logger.log(e.getMessage());
+                    logger.log(e.getServerMessage());
                     return Optional.empty();
                 case OUT_OF_CAPACITY:
-                    logger.log("Deployment failed: Out of capacity: " + e.getMessage());
+                    logger.log(e.getServerMessage());
                     return Optional.of(outOfCapacity);
                 case INVALID_APPLICATION_PACKAGE:
                 case BAD_REQUEST:
-                    logger.log("Deployment failed: " + e.getMessage());
+                    logger.log(e.getMessage());
                     return Optional.of(deploymentFailed);
             }
 

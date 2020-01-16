@@ -4,7 +4,7 @@
       {
         "at": 1000,
         "type": "info",
-        "message": "Deployment failed: ERROR!"
+        "message": "Failed to deploy application: ERROR!"
       }
     ],
     "deactivateTester": [
