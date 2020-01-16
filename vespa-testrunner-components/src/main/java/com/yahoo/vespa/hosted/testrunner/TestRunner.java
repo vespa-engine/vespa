@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.log.LogLevel.ERROR;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -161,7 +162,10 @@ public class TestRunner {
             in.lines().forEach(line -> {
                 fileStream.println(line);
                 logFormatter.print(line);
-                LogRecord record = new LogRecord(HTML, logBuffer.toString());
+                String message = logBuffer.toString(UTF_8);
+                if (message.length() > 1 << 13)
+                    message = message.substring(0, 1 << 13) + " ... (this log entry was truncated due to size)";
+                LogRecord record = new LogRecord(HTML, message);
                 log.put(record.getSequenceNumber(), record);
                 logBuffer.reset();
             });
