@@ -704,7 +704,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate,
+    static byte[] servicesXml(AthenzDomain domain, boolean systemUsesAthenz, boolean useTesterCertificate,
                               NodeResources resources) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
@@ -726,7 +726,7 @@ public class InternalStepRunner implements StepRunner {
                 "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
                 "                <artifactsPath>artifacts</artifactsPath>\n" +
                 "                <surefireMemoryMb>" + testMemoryMb + "</surefireMemoryMb>\n" +
-                "                <useAthenzCredentials>" + useAthenzCredentials + "</useAthenzCredentials>\n" +
+                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
                 "                <useTesterCertificate>" + useTesterCertificate + "</useTesterCertificate>\n" +
                 "            </config>\n" +
                 "        </component>\n" +
@@ -756,11 +756,13 @@ public class InternalStepRunner implements StepRunner {
                 "                </ssl>\n" +
                 "            </server>\n" +
                 "            <filtering>\n" +
+                (systemUsesAthenz ?
                 "                <access-control domain='" + domain.value() + "'>\n" + // Set up dummy access control to pass validation :/
                 "                    <exclude>\n" +
                 "                        <binding>http://*/tester/v1/*</binding>\n" +
                 "                    </exclude>\n" +
-                "                </access-control>\n" +
+                "                </access-control>\n"
+                : "") +
                 "                <request-chain id=\"testrunner-api\">\n" +
                 "                    <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle=\"jdisc-security-filters\">\n" +
                 "                        <config name=\"jdisc.http.filter.security.athenz.athenz-authorization-filter\">\n" +
