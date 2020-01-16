@@ -23,7 +23,7 @@ public class DomDispatchTuningBuilderTest {
     public void requireThatDefaultsAreNull() throws Exception {
         DispatchTuning dispatch = newTuningDispatch(
                 "<content/>");
-        assertNull(dispatch.maxHitsPerPartition());
+        assertNull(dispatch.getMaxHitsPerPartition());
     }
 
     @Test
@@ -32,7 +32,7 @@ public class DomDispatchTuningBuilderTest {
                 "<content>" +
                 "  <tuning/>" +
                 "</content>");
-        assertNull(dispatch.maxHitsPerPartition());
+        assertNull(dispatch.getMaxHitsPerPartition());
     }
 
     @Test
@@ -43,10 +43,10 @@ public class DomDispatchTuningBuilderTest {
                 "    <dispatch/>" +
                 "  </tuning>" +
                 "</content>");
-        assertNull(dispatch.maxHitsPerPartition());
-        assertNull(dispatch.minGroupCoverage());
-        assertNull(dispatch.minActiveDocsCoverage());
-        assertNull(dispatch.dispatchPolicy());
+        assertNull(dispatch.getMaxHitsPerPartition());
+        assertNull(dispatch.getMinGroupCoverage());
+        assertNull(dispatch.getMinActiveDocsCoverage());
+        assertNull(dispatch.getDispatchPolicy());
     }
 
     @Test
@@ -61,9 +61,9 @@ public class DomDispatchTuningBuilderTest {
                 "    </dispatch>" +
                 "  </tuning>" +
                 "</content>");
-        assertEquals(69, dispatch.maxHitsPerPartition().intValue());
-        assertEquals(7.5, dispatch.minGroupCoverage().doubleValue(), 0.0);
-        assertEquals(12.5, dispatch.minActiveDocsCoverage().doubleValue(), 0.0);
+        assertEquals(69, dispatch.getMaxHitsPerPartition().intValue());
+        assertEquals(7.5, dispatch.getMinGroupCoverage().doubleValue(), 0.0);
+        assertEquals(12.5, dispatch.getMinActiveDocsCoverage().doubleValue(), 0.0);
     }
     @Test
     public void requireThatTuningDispatchPolicyRoundRobin() throws Exception {
@@ -75,7 +75,7 @@ public class DomDispatchTuningBuilderTest {
                         "    </dispatch>" +
                         "  </tuning>" +
                         "</content>");
-        assertTrue(DispatchTuning.DispatchPolicy.ROUNDROBIN == dispatch.dispatchPolicy());
+        assertTrue(DispatchTuning.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
     }
     @Test
     public void requireThatTuningDispatchPolicyRandom() throws Exception {
@@ -87,7 +87,7 @@ public class DomDispatchTuningBuilderTest {
                         "    </dispatch>" +
                         "  </tuning>" +
                         "</content>");
-        assertTrue(DispatchTuning.DispatchPolicy.ADAPTIVE == dispatch.dispatchPolicy());
+        assertTrue(DispatchTuning.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
     }
 
     private static DispatchTuning newTuningDispatch(String xml) throws Exception {

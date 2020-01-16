@@ -11,9 +11,10 @@ public class DispatchTuning {
 
     public static final DispatchTuning empty = new DispatchTuning.Builder().build();
 
-    private final Integer maxHitsPerPartition;
     public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE};
-    private final DispatchPolicy dispatchPolicy;
+
+    private final Integer maxHitsPerPartition;
+    private DispatchPolicy dispatchPolicy;
     private final Double minGroupCoverage;
     private final Double minActiveDocsCoverage;
 
@@ -25,16 +26,19 @@ public class DispatchTuning {
     }
 
     /** Returns the max number of hits to fetch from each partition, or null to fetch all */
-    public Integer maxHitsPerPartition() { return maxHitsPerPartition; }
+    public Integer getMaxHitsPerPartition() { return maxHitsPerPartition; }
 
     /** Returns the policy used to select which group to dispatch a query to */
-    public DispatchPolicy dispatchPolicy() { return dispatchPolicy; }
+    public DispatchPolicy getDispatchPolicy() { return dispatchPolicy; }
+
+    @SuppressWarnings("unused")
+    public void setDispatchPolicy(DispatchPolicy dispatchPolicy) { this.dispatchPolicy = dispatchPolicy; }
 
     /** Returns the percentage of nodes in a group which must be up for that group to receive queries */
-    public Double minGroupCoverage() { return minGroupCoverage; }
+    public Double getMinGroupCoverage() { return minGroupCoverage; }
 
     /** Returns the percentage of documents which must be available in a group for that group to receive queries */
-    public Double minActiveDocsCoverage() { return minActiveDocsCoverage; }
+    public Double getMinActiveDocsCoverage() { return minActiveDocsCoverage; }
 
     public static class Builder {
 
