@@ -56,7 +56,7 @@ public class Validation {
         new DeploymentSpecValidator().validate(model, deployState);
         new RankingConstantsValidator().validate(model, deployState);
         new SecretStoreValidator().validate(model, deployState);
-        new TlsSecretsValidator().validate(model, deployState);
+        new EndpointCertificateSecretsValidator().validate(model, deployState);
         new AccessControlFilterValidator().validate(model, deployState);
 
         List<ConfigChangeAction> result = Collections.emptyList();

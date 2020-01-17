@@ -55,7 +55,7 @@ public interface ModelContext {
         default boolean useDedicatedNodeForLogserver() { return true; }
         boolean useAdaptiveDispatch();
         // TODO: Remove temporary default implementation
-        default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
+        default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
         double defaultTermwiseLimit();
     }
 

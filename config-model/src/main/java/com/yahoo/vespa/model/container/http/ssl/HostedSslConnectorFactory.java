@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http.ssl;
 
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
@@ -23,15 +23,15 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     /**
      * Create connector factory that uses a certificate provided by the config-model / configserver.
      */
-    public static HostedSslConnectorFactory withProvidedCertificate(String serverName, TlsSecrets tlsSecrets) {
-        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, tlsSecrets, /*tlsCaCertificates*/null), false);
+    public static HostedSslConnectorFactory withProvidedCertificate(String serverName, EndpointCertificateSecrets endpointCertificateSecrets) {
+        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, /*tlsCaCertificates*/null), false);
     }
 
     /**
      * Create connector factory that uses a certificate provided by the config-model / configserver and a truststore configured by the application.
      */
-    public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(String serverName, TlsSecrets tlsSecrets, String tlsCaCertificates) {
-        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, tlsSecrets, tlsCaCertificates), true);
+    public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates) {
+        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, tlsCaCertificates), true);
     }
 
     /**
@@ -47,11 +47,11 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     }
 
     private static ConfiguredDirectSslProvider createConfiguredDirectSslProvider(
-            String serverName, TlsSecrets tlsSecrets, String tlsCaCertificates) {
+            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates) {
         return new ConfiguredDirectSslProvider(
                 serverName,
-                tlsSecrets.key(),
-                tlsSecrets.certificate(),
+                endpointCertificateSecrets.key(),
+                endpointCertificateSecrets.certificate(),
                 /*caCertificatePath*/null,
                 tlsCaCertificates,
                 ClientAuth.Enum.WANT_AUTH);

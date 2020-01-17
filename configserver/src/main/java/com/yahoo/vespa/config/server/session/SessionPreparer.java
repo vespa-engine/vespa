@@ -12,8 +12,9 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -33,7 +34,9 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
-import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import org.xml.sax.SAXException;
@@ -113,7 +116,7 @@ public class SessionPreparer {
             preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
-                preparation.writeTlsZK();
+                preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
                 preparation.distribute();
             }
@@ -142,8 +145,10 @@ public class SessionPreparer {
         final ContainerEndpointsCache containerEndpoints;
         final Set<ContainerEndpoint> endpointsSet;
         final ModelContext.Properties properties;
-        private final TlsSecretsKeys tlsSecretsKeys;
-        private final Optional<TlsSecrets> tlsSecrets;
+        private final EndpointCertificateMetadataStore endpointCertificateMetadataStore;
+        private final EndpointCertificateRetriever endpointCertificateRetriever;
+        private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
+        private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
 
         private ApplicationPackage applicationPackage;
         private List<PreparedModelsBuilder.PreparedModelResult> modelResultList;
@@ -162,8 +167,16 @@ public class SessionPreparer {
             this.applicationId = params.getApplicationId();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
-            this.tlsSecretsKeys = new TlsSecretsKeys(curator, tenantPath, secretStore);
-            this.tlsSecrets = tlsSecretsKeys.getTlsSecrets(params.tlsSecretsKeyName(), applicationId);
+            this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
+            this.endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
+
+            this.endpointCertificateMetadata = params.endpointCertificateMetadata()
+                    .or(() -> params.tlsSecretsKeyName().map(EndpointCertificateMetadataSerializer::fromString));
+
+            endpointCertificateSecrets = endpointCertificateMetadata
+                    .or(() -> endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId))
+                    .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
+
             this.endpointsSet = getEndpoints(params.containerEndpoints());
 
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
@@ -178,7 +191,7 @@ public class SessionPreparer {
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
                                                               context.getFlagSource(),
-                                                              tlsSecrets);
+                                                              endpointCertificateSecrets);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
@@ -233,9 +246,10 @@ public class SessionPreparer {
             checkTimeout("write state to zookeeper");
         }
 
-        void writeTlsZK() {
-            tlsSecretsKeys.writeTlsSecretsKeyToZooKeeper(applicationId, params.tlsSecretsKeyName().orElse(null));
-            checkTimeout("write tlsSecretsKey to zookeeper");
+        void writeEndpointCertificateMetadataZK() {
+            endpointCertificateMetadata.ifPresent(metadata ->
+                    endpointCertificateMetadataStore.writeEndpointCertificateMetadata(applicationId, metadata));
+            checkTimeout("write endpoint certificate metadata to zookeeper");
         }
 
         void writeContainerEndpointsZK() {

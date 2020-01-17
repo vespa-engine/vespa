@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -37,7 +37,8 @@ import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
-import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -236,10 +237,30 @@ public class SessionPreparerTest {
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
         // Read from zk and verify cert and key are available
-        Optional<TlsSecrets> tlsSecrets = new TlsSecretsKeys(curator, tenantPath, secretStore).readTlsSecretsKeyFromZookeeper(applicationId);
-        assertTrue(tlsSecrets.isPresent());
-        assertEquals("KEY", tlsSecrets.get().key());
-        assertEquals("CERT", tlsSecrets.get().certificate());
+        Optional<EndpointCertificateSecrets> endpointCertificateSecrets = new EndpointCertificateMetadataStore(curator, tenantPath)
+                .readEndpointCertificateMetadata(applicationId)
+                .flatMap(p -> new EndpointCertificateRetriever(secretStore).readEndpointCertificateSecrets(p));
+        assertTrue(endpointCertificateSecrets.isPresent());
+        assertEquals("KEY", endpointCertificateSecrets.get().key());
+        assertEquals("CERT", endpointCertificateSecrets.get().certificate());
+    }
+
+    @Test
+    public void require_that_endpoint_certificate_metadata_is_written() throws IOException {
+        var applicationId = applicationId("test");
+        var params = new PrepareParams.Builder().applicationId(applicationId).endpointCertificateMetadata("{\"keyName\": \"vespa.tlskeys.tenant1--app1-key\", \"certName\":\"vespa.tlskeys.tenant1--app1-cert\", \"version\": 7}").build();
+        secretStore.put("vespa.tlskeys.tenant1--app1-cert", 7, "CERT");
+        secretStore.put("vespa.tlskeys.tenant1--app1-key", 7, "KEY");
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+
+        // Read from zk and verify cert and key are available
+        Optional<EndpointCertificateSecrets> endpointCertificateSecrets = new EndpointCertificateMetadataStore(curator, tenantPath)
+                .readEndpointCertificateMetadata(applicationId)
+                .flatMap(p -> new EndpointCertificateRetriever(secretStore).readEndpointCertificateSecrets(p));
+
+        assertTrue(endpointCertificateSecrets.isPresent());
+        assertEquals("CERT", endpointCertificateSecrets.get().certificate());
+        assertEquals("KEY", endpointCertificateSecrets.get().key());
     }
 
     @Test(expected = CertificateNotReadyException.class)
