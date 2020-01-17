@@ -30,10 +30,9 @@ public class CapacityPolicies {
     public int decideSize(Capacity capacity, ClusterSpec.Type clusterType, ApplicationId application) {
         int requestedNodes = capacity.nodeCount();
 
-        ensureRedundancy(requestedNodes, clusterType, capacity.canFail());
+        if (application.instance().isTester()) return 1;
 
-        if ( ! hasQuota(application, requestedNodes))
-            throw new IllegalArgumentException(requestedNodes + " exceeds your quota. Please contact Vespa support");
+        ensureRedundancy(requestedNodes, clusterType, capacity.canFail());
 
         if (capacity.isRequired()) return requestedNodes;
 
@@ -62,13 +61,6 @@ public class CapacityPolicies {
             resources = resources.withVcpu(0.1);
 
         return resources;
-    }
-
-    private boolean hasQuota(ApplicationId application, int requestedNodes) {
-        if ( ! this.zone.system().isPublic()) return true; // no quota management
-
-        if ("yj".equals(application.tenant().value())) return requestedNodes <= 60;
-        return requestedNodes <= 5;
     }
 
     private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {

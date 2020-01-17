@@ -66,7 +66,7 @@ public final class Capacity {
 
     @Override
     public String toString() {
-        return nodeCount + " nodes " + (nodeResources.isPresent() ? "of flavor " + nodeResources.get() : "(default flavor)" );
+        return nodeCount + " nodes " + (nodeResources.isPresent() ? nodeResources.get() : "with default resources" );
     }
 
     /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
@@ -85,12 +85,6 @@ public final class Capacity {
 
     public static Capacity fromCount(int nodeCount, Optional<NodeResources> resources, boolean required, boolean canFail) {
         return new Capacity(nodeCount, resources, required, canFail, NodeType.tenant);
-    }
-
-    // TODO: Remove after September 2019
-    @Deprecated
-    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required, boolean canFail) {
-        return new Capacity(nodeCount, flavor.map(NodeResources::fromLegacyName), required, canFail, NodeType.tenant);
     }
 
     /** Creates this from a node type */

@@ -3,17 +3,20 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -30,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -434,6 +438,35 @@ public class ProvisioningTest {
         catch (OutOfCapacityException e) {
             assertTrue(e.getMessage().startsWith("Could not satisfy request"));
         }
+    }
+
+    @Test
+    public void out_of_quota() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.Public,
+                                                                                   Environment.prod,
+                                                                                   RegionName.from("us-east"))).build();
+
+        tester.makeReadyNodes(13, defaultResources);
+        ApplicationId application = tester.makeApplicationId();
+        try {
+            prepare(application, 2, 2, 6, 3, defaultResources, tester);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("6 nodes [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42 exceeds your quota. Please contact Vespa support.",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    public void no_out_of_quota_outside_public() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.main,
+                                                                                   Environment.prod,
+                                                                                   RegionName.from("us-east"))).build();
+
+        tester.makeReadyNodes(13, defaultResources);
+        ApplicationId application = tester.makeApplicationId();
+        prepare(application, 2, 2, 6, 3, defaultResources, tester);
     }
 
     @Test
