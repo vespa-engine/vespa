@@ -26,7 +26,6 @@ public:
 
 }
 
-SerializableArray::Statistics SerializableArray::_stats;
 
 SerializableArray::SerializableArray()
     : _serializedCompression(CompressionConfig::NONE),

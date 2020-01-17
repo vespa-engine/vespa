@@ -35,25 +35,6 @@ namespace serializablearray {
 class SerializableArray : public vespalib::Cloneable
 {
 public:
-        // Counts set during serialization, in order to provide metrics for how
-        // often we use cached version, and how often we compress.
-    struct Statistics {
-        uint64_t _usedCachedSerializationCount;
-        uint64_t _compressedDocumentCount;
-        uint64_t _compressionDidntHelpCount;
-        uint64_t _uncompressableCount;
-        uint64_t _serializedUncompressed;
-        uint64_t _inputWronglySerialized;
-
-        Statistics()
-            : _usedCachedSerializationCount(0),
-              _compressedDocumentCount(0),
-              _compressionDidntHelpCount(0),
-              _uncompressableCount(0),
-              _serializedUncompressed(0),
-              _inputWronglySerialized(0) {}
-    };
-
     /**
      * Contains the id of a field, the size and a buffer reference that is either
      * a relative offset to a common buffer, or the buffer itself it it is not.
@@ -97,12 +78,6 @@ public:
     static const uint32_t ReservedId = 100;
     static const uint32_t ReservedIdUpper = 128;
 
-
-private:
-    static Statistics _stats;
-
-public:
-    static Statistics& getStatistics() { return _stats; }
     using CP = vespalib::CloneablePtr<SerializableArray>;
     using UP = std::unique_ptr<SerializableArray>;
     using ByteBufferUP = std::unique_ptr<ByteBuffer>;

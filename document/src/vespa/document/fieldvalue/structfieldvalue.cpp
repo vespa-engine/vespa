@@ -48,15 +48,14 @@ StructFieldValue::Chunks::~Chunks() = default;
 
 void
 StructFieldValue::Chunks::push_back(SerializableArray::UP item) {
-    assert(_sz < 2);
-    _chunks[_sz++].reset(item.release());
+    assert(size() < 2);
+    _chunks[size()] = std::move(item);
 }
 
 void
 StructFieldValue::Chunks::clear() {
     _chunks[0].reset();
     _chunks[1].reset();
-    _sz = 0;
 }
 
 const StructDataType &
@@ -182,8 +181,8 @@ StructFieldValue::getFieldValue(const Field& field) const
             nbostream stream(buf.c_str(), buf.size());
             FieldValue::UP value(field.getDataType().createFieldValue());
             if ((_repo == nullptr) && (_doc_type != nullptr)) {
-                std::unique_ptr<const DocumentTypeRepo> tmpRepo(new DocumentTypeRepo(*_doc_type));
-                createFV(*value, *tmpRepo, stream, *_doc_type, _version);
+                DocumentTypeRepo tmpRepo(*_doc_type);
+                createFV(*value, tmpRepo, stream, *_doc_type, _version);
             } else {
                 createFV(*value, *_repo, stream, *_doc_type, _version);
             }
@@ -262,7 +261,7 @@ StructFieldValue::setFieldValue(const Field& field, FieldValue::UP value)
         _chunks.push_back(std::make_unique<SerializableArray>());
     }
 
-    _chunks.back().set(fieldId, std::move(serialized));
+    _chunks[0].set(fieldId, std::move(serialized));
 
     _hasChanged = true;
 }

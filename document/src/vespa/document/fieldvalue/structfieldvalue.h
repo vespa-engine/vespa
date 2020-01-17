@@ -27,19 +27,16 @@ class StructFieldValue : public StructuredFieldValue
 public:
     class Chunks {
     public:
-        Chunks() : _sz(0) { }
+        Chunks() { }
         ~Chunks();
         SerializableArray & operator [] (size_t i) { return *_chunks[i]; }
         const SerializableArray & operator [] (size_t i) const { return *_chunks[i]; }
         VESPA_DLL_LOCAL void push_back(SerializableArray::UP item);
-        SerializableArray & back() { return *_chunks[_sz-1]; }
-        const SerializableArray & back() const { return *_chunks[_sz-1]; }
-        size_t size() const { return _sz; }
-        bool empty() const { return _sz == 0; }
+        size_t size() const { return _chunks[1] ? 2 : _chunks[0] ? 1 : 0; }
+        bool empty() const { return !_chunks[0]; }
         VESPA_DLL_LOCAL void clear();
     private:
         SerializableArray::CP _chunks[2];
-        size_t _sz;
     };
 private:
     Chunks   _chunks;

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocman.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/repo/configbuilder.h>
@@ -9,6 +8,9 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/growablebytebuffer.h>
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/util/bytebuffer.h>
@@ -28,10 +30,15 @@ using namespace fieldvalue;
 
 TEST(DocumentTest, testSizeOf)
 {
+    EXPECT_EQ(24u, sizeof(std::vector<char>));
+    EXPECT_EQ(24u, sizeof(vespalib::alloc::Alloc));
+    EXPECT_EQ(56u, sizeof(ByteBuffer));
+    EXPECT_EQ(32u, sizeof(vespalib::GrowableByteBuffer));
+    EXPECT_EQ(56u, sizeof(ByteBuffer));
     EXPECT_EQ(88ul, sizeof(IdString));
     EXPECT_EQ(104ul, sizeof(DocumentId));
-    EXPECT_EQ(208ul, sizeof(Document));
-    EXPECT_EQ(72ul, sizeof(StructFieldValue));
+    EXPECT_EQ(200ul, sizeof(Document));
+    EXPECT_EQ(64ul, sizeof(StructFieldValue));
     EXPECT_EQ(24ul, sizeof(StructuredFieldValue));
     EXPECT_EQ(64ul, sizeof(SerializableArray));
 }
@@ -63,7 +70,7 @@ TEST(DocumentTest, testFieldPath)
 class Handler : public fieldvalue::IteratorHandler {
 public:
     Handler();
-    ~Handler();
+    ~Handler() override;
     const std::string & getResult() const { return _result; }
 private:
     void onPrimitive(uint32_t, const Content&) override {
