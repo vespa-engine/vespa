@@ -134,14 +134,9 @@ public class TestRunner {
         ProcessBuilder builder = testBuilder.apply(testProfile);
         {
             LogRecord record = new LogRecord(Level.INFO,
-                                             String.format("Starting %s. Artifacts directory: %s Config file: %s\n" +
-                                                                   "Command to run: %s\n" +
-                                                                   "Environment:\n%s",
+                                             String.format("Starting %s. Artifacts directory: %s Config file: %s\nCommand to run: %s\n",
                                                            testProfile.name(), artifactsPath, configFile,
-                                                           String.join(" ", builder.command()),
-                                                           System.getenv().entrySet().stream()
-                                                                 .map(entry -> entry.getKey() + ": " + entry.getValue())
-                                                                 .collect(Collectors.joining("\n"))));
+                                                           String.join(" ", builder.command())));
             log.put(record.getSequenceNumber(), record);
             logger.log(record);
             log.put(record.getSequenceNumber(), record);

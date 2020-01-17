@@ -18,6 +18,8 @@
       "installTester": "unfinished",
       "deactivateTester": "failed",
       "copyVespaLogs": "succeeded",
+      "startStagingSetup": "succeeded",
+      "endStagingSetup": "unfinished",
       "startTests": "succeeded",
       "endTests": "unfinished",
       "report": "failed"

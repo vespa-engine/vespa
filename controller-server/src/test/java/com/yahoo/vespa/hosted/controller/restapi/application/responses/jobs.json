@@ -17,7 +17,7 @@
         "sourceUrl": "repository1/tree/commit1",
         "commit": "commit1"
       },
-      "at": "(ignore)",
+      "at": 1000,
       "deploying": "0 of 3 complete"
     }
   },
@@ -59,8 +59,8 @@
           },
           "steps": {
             "deployTester": "unfinished",
-            "deployReal": "unfinished",
             "installTester": "unfinished",
+            "deployReal": "unfinished",
             "installReal": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
@@ -91,8 +91,8 @@
           },
           "steps": {
             "deployTester": "succeeded",
-            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "deployReal": "succeeded",
             "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
@@ -131,10 +131,12 @@
           },
           "steps": {
             "deployTester": "unfinished",
+            "installTester": "unfinished",
             "deployInitialReal": "unfinished",
             "installInitialReal": "unfinished",
+            "startStagingSetup": "unfinished",
+            "endStagingSetup": "unfinished",
             "deployReal": "unfinished",
-            "installTester": "unfinished",
             "installReal": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
@@ -165,10 +167,12 @@
           },
           "steps": {
             "deployTester": "succeeded",
+            "installTester": "succeeded",
             "deployInitialReal": "succeeded",
             "installInitialReal": "succeeded",
+            "startStagingSetup": "succeeded",
+            "endStagingSetup": "succeeded",
             "deployReal": "succeeded",
-            "installTester": "succeeded",
             "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
@@ -227,8 +231,8 @@
           },
           "steps": {
             "deployTester": "succeeded",
-            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "deployReal": "succeeded",
             "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
@@ -265,8 +269,8 @@
           },
           "steps": {
             "deployTester": "unfinished",
-            "deployReal": "unfinished",
             "installTester": "unfinished",
+            "deployReal": "unfinished",
             "installReal": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
@@ -299,8 +303,8 @@
           },
           "steps": {
             "deployTester": "unfinished",
-            "deployReal": "unfinished",
             "installTester": "unfinished",
+            "deployReal": "unfinished",
             "installReal": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
@@ -342,4 +346,3 @@
     }
   }
 }
-

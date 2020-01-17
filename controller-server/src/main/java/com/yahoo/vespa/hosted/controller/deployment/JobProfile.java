@@ -13,11 +13,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.startStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 
 /**
@@ -39,11 +41,13 @@ public enum JobProfile {
                           report)),
 
     stagingTest(EnumSet.of(deployInitialReal,
-                           installInitialReal,
-                           deployReal,
-                           installReal,
                            deployTester,
                            installTester,
+                           installInitialReal,
+                           startStagingSetup,
+                           endStagingSetup,
+                           deployReal,
+                           installReal,
                            startTests,
                            endTests),
                 EnumSet.of(copyVespaLogs,

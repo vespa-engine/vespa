@@ -133,8 +133,8 @@ public class JobRunnerTest {
 
         outcomes.put(deployTester, running);
         runner.maintain();
-        assertEquals(List.of(deployReal), run.get().readySteps());
-        assertStepsWithStartTime(run.get(), deployTester, deployReal);
+        assertEquals(List.of(installTester, deployReal), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), installTester, deployTester, deployReal);
 
         outcomes.put(deployReal, running);
         runner.maintain();

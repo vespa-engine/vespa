@@ -16,7 +16,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Tests which run against a fully operational Vespa deployment to verify its behaviour.
  *
- * Examples of integration test types are {@link SystemTest}, {@link StagingTest} and {@link ProductionTest}.
+ * Examples of integration test types are {@link SystemTest}, {@link StagingSetup}, {@link StagingTest}, and {@link ProductionTest}.
  *
  * @author jonmv
  */

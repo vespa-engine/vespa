@@ -2,7 +2,6 @@
 package ai.vespa.hosted.cd;
 
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -12,15 +11,16 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Tests that verify the health of production deployments of Vespa applications.
+ * Setup for tests that assert continuity of behaviour for Vespa application deployments, through upgrades.
  *
- * Test classes annotated with this annotation are run during declared production tests.
- * See <a href="https://cloud.vespa.ai/automated-deployments.html#production-tests">Vespa cloud documentation</a>.
+ * Test classes annotated with this annotation are run in the first phase of automated staging tests,
+ * to make the initial deployment similar to a production one.
+ * See <a href="https://cloud.vespa.ai/automated-deployments.html#staging-tests">Vespa cloud documentation</a>.
  *
  * @author jonmv
  */
 @Target({TYPE, ANNOTATION_TYPE})
 @Retention(RUNTIME)
 @IntegrationTest
-@Tag("production")
-public @interface ProductionTest { }
+@Tag("staging-setup")
+public @interface StagingSetup { }

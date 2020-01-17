@@ -28,17 +28,23 @@ public enum Step {
     /** Download test-jar and assemble and deploy tester application. */
     deployTester,
 
+    /** See that tester is done deploying, and is ready to serve. */
+    installTester(deployTester),
+
     /** Download and deploy the initial real application, for staging tests. */
     deployInitialReal(deployTester),
 
     /** See that the real application has had its nodes converge to the initial state. */
     installInitialReal(deployInitialReal),
 
-    /** Download and deploy real application, restarting services if required. */
-    deployReal(deployTester, installInitialReal),
+    /** Ask the tester to run its staging setup. */
+    startStagingSetup(installInitialReal, installTester),
 
-    /** See that tester is done deploying, and is ready to serve. */
-    installTester(deployReal, deployTester),
+    /** See that the staging setup is done. */
+    endStagingSetup(startStagingSetup),
+
+    /** Download and deploy real application, restarting services if required. */
+    deployReal(endStagingSetup, deployTester),
 
     /** See that real application has had its nodes converge to the wanted version and generation. */
     installReal(deployReal),

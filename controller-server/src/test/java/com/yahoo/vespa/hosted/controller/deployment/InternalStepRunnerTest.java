@@ -101,14 +101,6 @@ public class InternalStepRunnerTest {
 
     @Test
     public void refeedRequirementBlocksDeployment() {
-        RunId id = app.newRun(JobType.stagingTest);
-
-        tester.setEndpoints(app.testerId().id(), JobType.stagingTest.zone(system()));
-        tester.runner().run();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.installInitialReal));
-
-        tester.setEndpoints(app.instanceId(), JobType.stagingTest.zone(system()));
-        tester.configServer().convergeServices(app.instanceId(), JobType.stagingTest.zone(system()));
         tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.emptyList(),
                                                                              singletonList(new RefeedAction("Refeed",
                                                                                                             false,
@@ -116,9 +108,8 @@ public class InternalStepRunnerTest {
                                                                                                             "cluster",
                                                                                                             Collections.emptyList(),
                                                                                                             singletonList("Refeed it!")))));
-        tester.runner().run();
-
-        assertEquals(failed, tester.jobs().run(id).get().stepStatuses().get(Step.deployReal));
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
     }
 
     @Test
@@ -179,7 +170,7 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    public void installationFailsIfDeploymentExpires() {
+    public void startingTestsFailsIfDeploymentExpires() {
         app.newRun(JobType.systemTest);
         tester.runner().run();
         tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
@@ -188,8 +179,10 @@ public class InternalStepRunnerTest {
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
 
         tester.applications().deactivate(app.instanceId(), JobType.systemTest.zone(system()));
+        tester.setEndpoints(app.testerId().id(), JobType.systemTest.zone(system()));
+        tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
         tester.runner().run();
-        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.startTests));
         assertTrue(tester.jobs().last(app.instanceId(), JobType.systemTest).get().hasEnded());
         assertTrue(tester.jobs().last(app.instanceId(), JobType.systemTest).get().hasFailed());
     }

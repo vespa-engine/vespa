@@ -24,79 +24,7 @@
         "message": "foo"
       }
     ],
-    "deployReal": [
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Deploying platform version 6.1 and application version 1.0.1-commit1 ..."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "No services requiring restart."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Deployment successful."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "foo"
-      }
-    ],
     "installTester": [
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Checking installation of tester container ..."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "                  host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated  6.1                                                      "
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Wanted config generation is 2"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "                  host-tenant1:application1:instance1-t-test.us-east-1:   container on port   43 has config generation 1"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Installation of tester not yet complete."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Checking installation of tester container ..."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "                  host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated  6.1                                                      "
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Wanted config generation is 2"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "                  host-tenant1:application1:instance1-t-test.us-east-1:   container on port   43 has config generation 1"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Installation of tester not yet complete."
-      },
       {
         "at": "(ignore)",
         "type": "info",
@@ -253,7 +181,129 @@
         "message": "Tester container successfully installed!"
       }
     ],
+    "deployReal": [
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Deploying platform version 6.1 and application version 1.0.1-commit1 ..."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "No services requiring restart."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Deployment successful."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "foo"
+      }
+    ],
     "installReal": [
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Checking installation of 6.1 and 1.0.1-commit1 ..."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "                    host-tenant1:application1:instance1-test.us-east-1: unorchestrated  6.1                                                      "
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Wanted config generation is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "                    host-tenant1:application1:instance1-test.us-east-1:   container on port   43 has config generation 1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Installation not yet complete."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Checking installation of 6.1 and 1.0.1-commit1 ..."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "                    host-tenant1:application1:instance1-test.us-east-1: unorchestrated  6.1                                                      "
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Wanted config generation is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "                    host-tenant1:application1:instance1-test.us-east-1:   container on port   43 has config generation 1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Installation not yet complete."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Checking installation of 6.1 and 1.0.1-commit1 ..."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "                    host-tenant1:application1:instance1-test.us-east-1: unorchestrated  6.1                                                      "
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Wanted config generation is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "                    host-tenant1:application1:instance1-test.us-east-1:   container on port   43 has config generation 1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Installation not yet complete."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Checking installation of 6.1 and 1.0.1-commit1 ..."
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "                    host-tenant1:application1:instance1-test.us-east-1: unorchestrated  6.1                                                      "
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Wanted config generation is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "                    host-tenant1:application1:instance1-test.us-east-1:   container on port   43 has config generation 1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "Installation not yet complete."
+      },
       {
         "at": "(ignore)",
         "type": "info",
@@ -399,17 +449,17 @@
       }
     ]
   },
-  "lastId": 75,
+  "lastId": 85,
   "steps": {
     "deployTester": {
       "status": "succeeded",
       "startMillis": "(ignore)"
     },
-    "deployReal": {
+    "installTester": {
       "status": "succeeded",
       "startMillis": "(ignore)"
     },
-    "installTester": {
+    "deployReal": {
       "status": "succeeded",
       "startMillis": "(ignore)"
     },
@@ -443,4 +493,3 @@
     }
   }
 }
-
