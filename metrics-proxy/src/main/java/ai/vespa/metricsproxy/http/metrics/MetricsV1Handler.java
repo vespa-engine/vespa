@@ -26,9 +26,11 @@ import static com.yahoo.jdisc.Response.Status.OK;
 /**
  * Http handler for the metrics/v1 rest api.
  *
+ * TODO Vespa 8: Remove the v1 api.
+ *
  * @author gjoranv
  */
-public class MetricsHandler extends HttpHandlerBase {
+public class MetricsV1Handler extends HttpHandlerBase {
 
     public static final String V1_PATH = "/metrics/v1";
     public static final String VALUES_PATH = V1_PATH + "/values";
@@ -36,10 +38,10 @@ public class MetricsHandler extends HttpHandlerBase {
     private final ValuesFetcher valuesFetcher;
 
     @Inject
-    public MetricsHandler(Executor executor,
-                          MetricsManager metricsManager,
-                          VespaServices vespaServices,
-                          MetricsConsumers metricsConsumers) {
+    public MetricsV1Handler(Executor executor,
+                            MetricsManager metricsManager,
+                            VespaServices vespaServices,
+                            MetricsConsumers metricsConsumers) {
         super(executor);
         valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
     }

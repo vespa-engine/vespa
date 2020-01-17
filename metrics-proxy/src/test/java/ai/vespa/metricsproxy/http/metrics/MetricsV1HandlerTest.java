@@ -2,7 +2,6 @@
 package ai.vespa.metricsproxy.http.metrics;
 
 import ai.vespa.metricsproxy.http.HttpHandlerTestBase;
-import ai.vespa.metricsproxy.http.metrics.MetricsHandler;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
@@ -19,8 +18,8 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.core.VespaMetrics.INSTANCE_DIMENSION_ID;
-import static ai.vespa.metricsproxy.http.metrics.MetricsHandler.V1_PATH;
-import static ai.vespa.metricsproxy.http.metrics.MetricsHandler.VALUES_PATH;
+import static ai.vespa.metricsproxy.http.metrics.MetricsV1Handler.V1_PATH;
+import static ai.vespa.metricsproxy.http.metrics.MetricsV1Handler.VALUES_PATH;
 import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static ai.vespa.metricsproxy.service.DummyService.METRIC_1;
@@ -35,17 +34,17 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MetricsHandlerTest extends HttpHandlerTestBase {
+public class MetricsV1HandlerTest extends HttpHandlerTestBase {
 
     private static final String V1_URI = URI_BASE + V1_PATH;
     private static final String VALUES_URI = URI_BASE + VALUES_PATH;
 
     @BeforeClass
     public static void setup() {
-        MetricsHandler handler = new MetricsHandler(Executors.newSingleThreadExecutor(),
-                                                    getMetricsManager(),
-                                                    vespaServices,
-                                                    getMetricsConsumers());
+        MetricsV1Handler handler = new MetricsV1Handler(Executors.newSingleThreadExecutor(),
+                                                        getMetricsManager(),
+                                                        vespaServices,
+                                                        getMetricsConsumers());
         testDriver = new RequestHandlerTestDriver(handler);
     }
 
