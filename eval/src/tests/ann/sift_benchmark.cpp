@@ -19,6 +19,7 @@
 #include "for-sift-top-k.h"
 
 std::vector<TopK> bruteforceResults;
+std::vector<float> tmp_v(NUM_DIMS);
 
 struct PointVector {
     float v[NUM_DIMS];
@@ -26,11 +27,17 @@ struct PointVector {
     operator ConstArr() const { return ConstArr(v, NUM_DIMS); }
 };
 
-static PointVector *generatedQueries =
-    (PointVector *) malloc(NUM_Q * sizeof(PointVector));
+static PointVector *aligned_alloc(size_t num) {
+    char *mem = (char *)malloc(num * sizeof(PointVector) + 512);
+    mem += 512;
+    size_t val = (size_t)mem;
+    size_t unalign = val % 512;
+    mem -= unalign;
+    return (PointVector *)mem;
+}
 
-static PointVector *generatedDocs =
-    (PointVector *) malloc(NUM_DOCS * sizeof(PointVector));
+static PointVector *generatedQueries = aligned_alloc(NUM_Q);
+static PointVector *generatedDocs = aligned_alloc(NUM_DOCS);
 
 struct DocVectorAdapter : public DocVectorAccess<float>
 {
@@ -42,7 +49,7 @@ struct DocVectorAdapter : public DocVectorAccess<float>
 
 double computeDistance(const PointVector &query, uint32_t docid) {
     const PointVector &docvector = generatedDocs[docid];
-    return l2distCalc.l2sq_dist(query, docvector);
+    return l2distCalc.l2sq_dist(query, docvector, tmp_v);
 }
 
 void read_queries(std::string fn) {
@@ -137,7 +144,6 @@ public:
 TopK bruteforce_nns(const PointVector &query) {
     TopK result;
     BfHitHeap heap(result.K);
-    std::vector<float> tmp_v(NUM_DIMS);
     for (uint32_t docid = 0; docid < NUM_DOCS; ++docid) {
         const PointVector &docvector = generatedDocs[docid];
         double d = l2distCalc.l2sq_dist(query, docvector, tmp_v);
@@ -173,6 +179,7 @@ void verifyBF(uint32_t qid) {
 
 TEST("require that brute force works") {
     TimePoint bef = std::chrono::steady_clock::now();
+    bruteforceResults.reserve(NUM_Q);
     for (uint32_t cnt = 0; cnt < NUM_Q; ++cnt) {
         const PointVector &query = generatedQueries[cnt];
         bruteforceResults.emplace_back(bruteforce_nns(query));
@@ -193,7 +200,7 @@ TopK find_with_nns(uint32_t sk, NNS_API &nns, uint32_t qid) {
     vespalib::ConstArrayRef<float> query(qv.v, NUM_DIMS);
     auto rv = nns.topK(result.K, query, sk);
     for (size_t i = 0; i < result.K; ++i) {
-        result.hits[i] = Hit(rv[i].docid, rv[i].sqDistance);
+        result.hits[i] = Hit(rv[i].docid, rv[i].sq.distance);
     }
     return result;
 }
@@ -207,6 +214,10 @@ void verify_nns_quality(uint32_t sk, NNS_API &nns, uint32_t qid) {
     double c_factor = 1.0;
     for (size_t i = 0; i < result.K; ++i) {
         double factor = (result.hits[i].distance / perfect.hits[i].distance);
+        if (factor < 0.99 || factor > 25) {
+            fprintf(stderr, "hit[%zu] got distance %.3f, expected %.3f\n",
+                    i, result.hits[i].distance, perfect.hits[i].distance);
+        }
         sum_error += factor;
         c_factor = std::max(c_factor, factor);
     }
@@ -223,57 +234,56 @@ void verify_nns_quality(uint32_t sk, NNS_API &nns, uint32_t qid) {
     }
 }
 
-TEST("require that Locality Sensitive Hashing mostly works") {
+void benchmark_nns(const char *name, NNS_API &nns, std::vector<uint32_t> sk_list) {
+    fprintf(stderr, "trying %s indexing...\n", name);
     TimePoint bef = std::chrono::steady_clock::now();
+    for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+        nns.addDoc(i);
+    }
+    fprintf(stderr, "added %u documents...\n", NUM_DOCS);
+    find_with_nns(1, nns, 0);
+    TimePoint aft = std::chrono::steady_clock::now();
+    fprintf(stderr, "build %s index: %.3f ms\n", name, to_ms(aft - bef));
+
+    for (uint32_t search_k : sk_list) {
+        bef = std::chrono::steady_clock::now();
+        for (int cnt = 0; cnt < NUM_Q; ++cnt) {
+            find_with_nns(search_k, nns, cnt);
+        }
+        aft = std::chrono::steady_clock::now();
+        fprintf(stderr, "timing for %s search_k=%u: %.3f ms = %.3f ms/q\n",
+                name, search_k, to_ms(aft - bef), to_ms(aft - bef)/NUM_Q);
+        for (int cnt = 0; cnt < NUM_Q; ++cnt) {
+            verify_nns_quality(search_k, nns, cnt);
+        }
+    }
+}
+
+
+#if 1
+TEST("require that Locality Sensitive Hashing mostly works") {
     DocVectorAdapter adapter;
     std::unique_ptr<NNS_API> nns = make_rplsh_nns(NUM_DIMS, adapter);
-    for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-        nns->addDoc(i);
-    }
-    fprintf(stderr, "added %u documents...\n", NUM_DOCS);
-    TimePoint aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "build RPLSH index: %.3f ms\n", to_ms(aft - bef));
-
-    for (uint32_t search_k : { 200, 1000 }) {
-        bef = std::chrono::steady_clock::now();
-        for (int cnt = 0; cnt < NUM_Q; ++cnt) {
-            find_with_nns(search_k, *nns, cnt);
-        }
-        aft = std::chrono::steady_clock::now();
-        fprintf(stderr, "timing for RPLSH search_k=%u: %.3f ms = %.3f ms per query\n",
-                search_k, to_ms(aft - bef), to_ms(aft - bef)/NUM_Q);
-        for (int cnt = 0; cnt < NUM_Q; ++cnt) {
-            verify_nns_quality(search_k, *nns, cnt);
-        }
-    }
+    benchmark_nns("RPLSH", *nns, { 200, 1000 });
 }
+#endif
 
-TEST("require that Indexing via NNS api mostly works") {
-    fprintf(stderr, "trying indexing...\n");
-    TimePoint bef = std::chrono::steady_clock::now();
+#if 1
+TEST("require that Annoy via NNS api mostly works") {
     DocVectorAdapter adapter;
     std::unique_ptr<NNS_API> nns = make_annoy_nns(NUM_DIMS, adapter);
-    for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-        nns->addDoc(i);
-    }
-    fprintf(stderr, "added %u documents...\n", NUM_DOCS);
-    nns->topK(1, adapter.get(0), 1);
-    TimePoint aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "build annoy index: %.3f ms\n", to_ms(aft - bef));
-
-    for (uint32_t search_k : { 10000, 20000 }) {
-        bef = std::chrono::steady_clock::now();
-        for (int cnt = 0; cnt < NUM_Q; ++cnt) {
-            find_with_nns(search_k, *nns, cnt);
-        }
-        aft = std::chrono::steady_clock::now();
-        fprintf(stderr, "timing for index search_k=%u: %.3f ms = %.3f ms per query\n",
-                search_k, to_ms(aft - bef), to_ms(aft - bef)/NUM_Q);
-        for (int cnt = 0; cnt < NUM_Q; ++cnt) {
-            verify_nns_quality(search_k, *nns, cnt);
-        }
-    }
+    benchmark_nns("Annoy", *nns, { 8000, 10000 });
 }
+#endif
+
+#if 1
+TEST("require that HNSW via NNS api mostly works") {
+    DocVectorAdapter adapter;
+    std::unique_ptr<NNS_API> nns = make_hnsw_nns(NUM_DIMS, adapter);
+    benchmark_nns("HNSW", *nns, { 100, 200 });
+}
+#endif
+
 
 int main(int argc, char **argv) {
     TEST_MASTER.init(__FILE__);

@@ -231,7 +231,7 @@ RpLshNns::topK(uint32_t k, Vector vector, uint32_t search_k)
     std::vector<LshHit> best = heap.bestLshHits();
     size_t numHits = std::min((size_t)k, best.size());
     for (size_t i = 0; i < numHits; ++i) {
-        result.emplace_back(best[i].docid, best[i].distance);
+        result.emplace_back(best[i].docid, SqDist(best[i].distance));
     }
     return result;
 }
