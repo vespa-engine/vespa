@@ -41,7 +41,7 @@ sub findhome {
     }
 
     # Try the ROOT env variable
-    $ROOT = $ENV{'ROOT'};
+    my $ROOT = $ENV{'ROOT'};
     return $ROOT if is_vespa_home($ROOT);
 
     # Try the script location or current dir
@@ -77,10 +77,10 @@ BEGIN {
 }
 my $VESPA_HOME = $ENV{'VESPA_HOME'};
 
+use lib $VESPA_HOME . "/lib/perl5/site_perl";
+
 # END perl environment bootstrap section
 
-use lib $ENV{'VESPA_HOME'} . '/lib/perl5/site_perl';
-use lib $ENV{'VESPA_HOME'} . '/lib64/perl5/site_perl';
 use Yahoo::Vespa::Defaults;
 readConfFile();
 
