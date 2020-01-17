@@ -13,31 +13,27 @@ import java.util.Objects;
  */
 public class Node {
 
-    final String nodeId;
-    final String host;
-    final int port;
-    final String path;
+    public final String role;
+    public final String hostname;
+    private final int port;
+    private final String path;
 
     private final String metricsUriBase;
 
     public Node(MetricsNodesConfig.Node nodeConfig) {
-        this(nodeConfig.nodeId(), nodeConfig.hostname(), nodeConfig.metricsPort() , nodeConfig.metricsPath());
+        this(nodeConfig.role(), nodeConfig.hostname(), nodeConfig.metricsPort() , nodeConfig.metricsPath());
     }
 
-    public Node(String nodeId, String host, int port, String path) {
-        Objects.requireNonNull(nodeId, "Null configId is not allowed");
-        Objects.requireNonNull(host, "Null host is not allowed");
+    public Node(String role, String hostname, int port, String path) {
+        Objects.requireNonNull(role, "Null configId is not allowed");
+        Objects.requireNonNull(hostname, "Null hostname is not allowed");
         Objects.requireNonNull(path, "Null path is not allowed");
 
-        this.nodeId = nodeId;
-        this.host = host;
+        this.role = role;
+        this.hostname = hostname;
         this.port = port;
         this.path = path;
-        metricsUriBase = "http://" + host + ":" + port + path;
-    }
-
-    public String getName() {
-        return nodeId;
+        metricsUriBase = "http://" + hostname + ":" + port + path;
     }
 
     URI metricsUri(ConsumerId consumer) {
@@ -50,12 +46,13 @@ public class Node {
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
         return port == node.port &&
-                nodeId.equals(node.nodeId) &&
-                host.equals(node.host);
+                path.equals(node.path) &&
+                role.equals(node.role) &&
+                hostname.equals(node.hostname);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodeId, host, port);
+        return Objects.hash(role, hostname, port, path);
     }
 }

@@ -19,11 +19,11 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_ABSENT)
-@JsonPropertyOrder({ "name", "node", "services" })
+@JsonPropertyOrder({ "hostname", "node", "services" })
 public class GenericJsonModel {
 
-    @JsonProperty("name")
-    public String name;
+    @JsonProperty("hostname")
+    public String hostname;
 
     @JsonProperty("node")
     public GenericNode node;

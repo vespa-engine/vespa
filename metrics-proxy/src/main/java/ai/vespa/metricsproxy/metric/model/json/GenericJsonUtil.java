@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -72,7 +71,7 @@ public class GenericJsonUtil {
                     .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
                 jsonModel.node = new GenericNode(genericService.timestamp, genericService.metrics);
-                jsonModel.name = node == null ? null : node.getName();
+                jsonModel.hostname = node == null ? null : node.hostname;
             } else {
                 genericServices.add(genericService);
 

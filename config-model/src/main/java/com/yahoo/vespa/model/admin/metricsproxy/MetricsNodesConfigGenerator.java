@@ -22,7 +22,7 @@ public class MetricsNodesConfigGenerator {
 
     private static MetricsNodesConfig.Node.Builder toNodeBuilder(MetricsProxyContainer container) {
         var builder = new MetricsNodesConfig.Node.Builder()
-                .nodeId(container.getHost().getConfigId())
+                .role(container.getHost().getConfigId())
                 .hostname(container.getHostName())
                 .metricsPort(MetricsProxyContainer.BASEPORT)
                 .metricsPath(MetricsHandler.VALUES_PATH);
@@ -30,7 +30,7 @@ public class MetricsNodesConfigGenerator {
         if (container.isHostedVespa)
             container.getHostResource().spec().membership()
                     .map(ClusterMembership::stringValue)
-                    .ifPresent(builder::nodeId);
+                    .ifPresent(builder::role);
 
         return builder;
     }
