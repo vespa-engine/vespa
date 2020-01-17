@@ -97,7 +97,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         if (bindings.isEmpty()) return;
 
         if (filterChains == null)
-            throw new IllegalArgumentException("Null FilterChains is not allowed when there are filter bindings!");
+            throw new IllegalArgumentException("Null FilterChains are not allowed when there are filter bindings");
 
         ComponentRegistry<ChainedComponent<?>> filters = filterChains.componentsRegistry();
         ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();

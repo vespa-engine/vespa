@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -127,19 +128,18 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
     }
 
-    static int readPort(Element spec, boolean isHosted) {
-        String portString = spec.getAttribute("port");
-        if (portString == null || portString.isEmpty())
+    static int readPort(ModelElement spec, boolean isHosted) {
+        Integer port = spec.integerAttribute("port");
+        if (port == null)
             return Defaults.getDefaults().vespaWebServicePort();
 
-        int port = Integer.parseInt(portString);
         if (port < 0)
-            throw new IllegalArgumentException(String.format("Invalid port %d.", port));
+            throw new IllegalArgumentException("Invalid port " + port);
 
         int legalPortInHostedVespa = Container.BASEPORT;
-        if (isHosted && port != legalPortInHostedVespa)
+        if (isHosted && port != legalPortInHostedVespa && ! spec.booleanAttribute("required", false))
             throw new IllegalArgumentException("Illegal port " + port + " in http server '" +
-                                               spec.getAttribute("id") + "'" +
+                                               spec.stringAttribute("id") + "'" +
                                                ": Port must be set to " + legalPortInHostedVespa);
         return port;
     }
