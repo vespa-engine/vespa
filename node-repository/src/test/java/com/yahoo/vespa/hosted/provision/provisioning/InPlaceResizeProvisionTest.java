@@ -11,6 +11,8 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import org.junit.Test;
@@ -53,7 +55,11 @@ public class InPlaceResizeProvisionTest {
     private static final ClusterSpec container2 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container2"), Version.fromString("7.157.9"), false);
     private static final ClusterSpec content1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("content1"), Version.fromString("7.157.9"), false);
 
-    private final ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
+            .withBooleanFlag(Flags.ENABLE_IN_PLACE_RESIZE.id(), true);
+    private final ProvisioningTester tester = new ProvisioningTester.Builder()
+            .flagSource(flagSource)
+            .zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
     private final ApplicationId infraApp = tester.makeApplicationId();
     private final ApplicationId app = tester.makeApplicationId();
 
@@ -151,6 +157,18 @@ public class InPlaceResizeProvisionTest {
         });
         assertTrue("All initial nodes should still be allocated to the application", initialHostnames.isEmpty());
     }
+
+    @Test(expected = OutOfCapacityException.class)
+    public void no_in_place_resize_if_flag_not_set() {
+        flagSource.withBooleanFlag(Flags.ENABLE_IN_PLACE_RESIZE.id(), false);
+        addParentHosts(4, mediumResources.with(fast).with(local));
+
+        new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
+        assertClusterSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
+
+        new PrepareHelper(tester, app).prepare(container1, 4, 1, smallResources);
+    }
+
 
     @Test(expected = OutOfCapacityException.class)
     public void cannot_inplace_decrease_resources_while_increasing_cluster_size() {

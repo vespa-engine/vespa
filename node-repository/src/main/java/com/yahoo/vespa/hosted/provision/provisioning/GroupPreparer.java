@@ -31,6 +31,7 @@ public class GroupPreparer {
     private final Optional<HostProvisioner> hostProvisioner;
     private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabledFlag;
+    private final BooleanFlag enableInPlaceResize;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
     public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
@@ -39,6 +40,7 @@ public class GroupPreparer {
         this.hostProvisioner = hostProvisioner;
         this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabledFlag = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
+        this.enableInPlaceResize = Flags.ENABLE_IN_PLACE_RESIZE.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
 
@@ -63,6 +65,9 @@ public class GroupPreparer {
         boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                 .value();
+        boolean inPlaceResizeEnabled = enableInPlaceResize
+                .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                .value();
 
         try (Mutex lock = nodeRepository.lock(application)) {
 
@@ -73,7 +78,7 @@ public class GroupPreparer {
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
                                                                   spareCount, wantedGroups, nodeRepository.nameResolver(),
-                                                                  hostResourcesCalculator);
+                                                                  hostResourcesCalculator, inPlaceResizeEnabled);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
