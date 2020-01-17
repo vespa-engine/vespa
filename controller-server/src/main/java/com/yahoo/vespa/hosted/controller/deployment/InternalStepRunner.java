@@ -187,7 +187,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
-        Version platform = controller.jobController().run(id).get().versions().targetPlatform();
+        Version platform = controller.systemVersion();
         logger.log("Deploying the tester container on platform " + platform + " ...");
         return deploy(id.tester().id(),
                       id.type(),
@@ -312,7 +312,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
         Run run = controller.jobController().run(id).get();
-        Version platform = run.versions().targetPlatform();
+        Version platform = controller.systemVersion();
         logger.log("Checking installation of tester container ...");
         if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
             && servicesConverged(id.tester().id(), id.type(), platform, logger)) {

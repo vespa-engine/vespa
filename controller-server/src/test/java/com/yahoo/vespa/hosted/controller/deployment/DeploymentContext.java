@@ -506,7 +506,7 @@ public class DeploymentContext {
         ZoneId zone = zone(job);
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
-        configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), currentRun(job).versions().targetPlatform());
+        configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), tester.controller().systemVersion());
         runner.advance(currentRun(job));
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().convergeServices(TesterId.of(id.application()).id(), zone);
