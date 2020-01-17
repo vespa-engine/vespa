@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -26,10 +27,12 @@ public class CapacityPolicies {
         this.isUsingAdvertisedResources = zone.cloud().value().equals("aws");
     }
 
-    public int decideSize(Capacity capacity, ClusterSpec.Type clusterType) {
-        int requestedNodes = ensureRedundancy(capacity.nodeCount(), clusterType, capacity.canFail());
+    public int decideSize(Capacity capacity, ClusterSpec.Type clusterType, ApplicationId application) {
+        int requestedNodes = capacity.nodeCount();
 
-        if (this.zone.system().isPublic() && requestedNodes > 5)
+        ensureRedundancy(requestedNodes, clusterType, capacity.canFail());
+
+        if ( ! hasQuota(application, requestedNodes))
             throw new IllegalArgumentException(requestedNodes + " exceeds your quota. Please contact Vespa support");
 
         if (capacity.isRequired()) return requestedNodes;
@@ -59,6 +62,13 @@ public class CapacityPolicies {
             resources = resources.withVcpu(0.1);
 
         return resources;
+    }
+
+    private boolean hasQuota(ApplicationId application, int requestedNodes) {
+        if ( ! this.zone.system().isPublic()) return true; // no quota management
+
+        if ("yj".equals(application.tenant().value())) return requestedNodes <= 60;
+        return requestedNodes <= 5;
     }
 
     private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
@@ -106,13 +116,12 @@ public class CapacityPolicies {
      * @return the argument node count
      * @throws IllegalArgumentException if only one node is requested and we can fail
      */
-    private int ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType, boolean canFail) {
+    private void ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType, boolean canFail) {
         if (canFail &&
             nodeCount == 1 &&
             requiresRedundancy(clusterType) &&
             zone.environment().isProduction())
             throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
-        return nodeCount;
     }
 
     private static boolean requiresRedundancy(ClusterSpec.Type clusterType) {
