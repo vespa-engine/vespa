@@ -1,7 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.application;
 
-import ai.vespa.metricsproxy.http.MetricsHandler;
+import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.yahoo.test.ManualClock;
@@ -55,7 +55,7 @@ public class NodeMetricsClientTest {
 
     @BeforeClass
     public static void setupWireMock() {
-        node = new Node("id", "localhost", wireMockRule.port(), MetricsHandler.VALUES_PATH);
+        node = new Node("id", "localhost", wireMockRule.port(), MetricsV1Handler.VALUES_PATH);
         URI metricsUri = node.metricsUri(DEFAULT_PUBLIC_CONSUMER_ID);
         wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));

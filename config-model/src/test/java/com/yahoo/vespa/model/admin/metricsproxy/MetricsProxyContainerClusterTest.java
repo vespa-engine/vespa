@@ -6,7 +6,7 @@
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
-import ai.vespa.metricsproxy.http.MetricsHandler;
+import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
@@ -122,7 +122,7 @@ public class MetricsProxyContainerClusterTest {
         Collection<Handler<?>> handlers = model.getAdmin().getMetricsProxyCluster().getHandlers();
         Collection<ComponentSpecification> handlerClasses = handlers.stream().map(Component::getClassId).collect(toList());
 
-        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(MetricsHandler.class.getName())));
+        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(MetricsV1Handler.class.getName())));
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(PrometheusHandler.class.getName())));
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(YamasHandler.class.getName())));
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(ApplicationMetricsHandler.class.getName())));
@@ -310,7 +310,7 @@ public class MetricsProxyContainerClusterTest {
         assertTrue(node.nodeId().startsWith("container/foo/0/"));
         assertTrue(node.hostname().startsWith("node-1-3-9-"));
         assertEquals(MetricsProxyContainer.BASEPORT, node.metricsPort());
-        assertEquals(MetricsHandler.VALUES_PATH, node.metricsPath());
+        assertEquals(MetricsV1Handler.VALUES_PATH, node.metricsPath());
     }
 
     private static String servicesWithAdminOnly() {
