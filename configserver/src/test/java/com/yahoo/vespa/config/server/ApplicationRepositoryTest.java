@@ -144,11 +144,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogs() {
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          new MockLogRetriever(),
-                                                          clock);
+        applicationRepository = createApplicationRepository();
         deployApp(testAppLogServerWithContainer);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.empty(), "");
         assertEquals(200, response.getStatus());
@@ -156,11 +152,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogsForHostname() {
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          new MockLogRetriever(),
-                                                          clock);
+        applicationRepository = createApplicationRepository();
         ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
         HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
@@ -169,11 +161,7 @@ public class ApplicationRepositoryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void refuseToGetLogsFromHostnameNotInApplication() {
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          new MockLogRetriever(),
-                                                          clock);
+        applicationRepository = createApplicationRepository();
         deployApp(testAppLogServerWithContainer);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("host123.fake.yahoo.com"), "");
         assertEquals(200, response.getStatus());
@@ -327,6 +315,15 @@ public class ApplicationRepositoryTest {
 
         // There should be no expired remote sessions in the common case
         assertEquals(0, applicationRepository.deleteExpiredRemoteSessions(Duration.ofSeconds(0)));
+    }
+
+    private ApplicationRepository createApplicationRepository() {
+        return new ApplicationRepository(tenantRepository,
+                                         provisioner,
+                                         orchestrator,
+                                         new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                         new MockLogRetriever(),
+                                         clock);
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
