@@ -32,7 +32,7 @@ convertToCompatibleType(const TensorDataType &tensorType)
             list.emplace_back(dim.name);
         }
     }
-    return std::make_unique<const TensorDataType>(ValueType::tensor_type(std::move(list)));
+    return std::make_unique<const TensorDataType>(ValueType::tensor_type(std::move(list), tensorType.getTensorType().cell_type()));
 }
 
 }
