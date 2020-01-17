@@ -11,6 +11,7 @@ import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
@@ -46,32 +47,32 @@ public class ModelAmendingTestCase {
                                                                                       new ContainerModelAmenderBuilder(),
                                                                                       new ContentModelAmenderBuilder());
         String services =
-                                             "<services version='1.0'>" +
-                                             "    <admin version='4.0'/>" +
-                                             "    <container id='test1' version='1.0'>" +
-                                             "        <search/>" +
-                                             "        <nodes count='2'/>" +
-                                             "    </container>" +
-                                             "    <container id='test2' version='1.0'>" +
-                                             "        <http><server id='server1' port='19110'/></http>" +
-                                             "        <document-api/>" +
-                                             "        <nodes count='2'/>" +
-                                             "    </container>" +
-                                             "    <content id='test3' version='1.0'>" +
-                                             "        <redundancy>1</redundancy>" +
-                                             "        <documents>" +
-                                             "            <document mode='index' type='type1'/>" +
-                                             "        </documents>" +
-                                             "        <nodes count='2'/>" +
-                                             "    </content>" +
-                                             "    <content id='test4' version='1.0'>" +
-                                             "        <redundancy>1</redundancy>" +
-                                             "        <documents>" +
-                                             "            <document mode='index' type='type1'/>" +
-                                             "        </documents>" +
-                                             "        <nodes count='3'/>" +
-                                             "    </content>" +
-                                             "</services>";
+                "<services version='1.0'>" +
+                "    <admin version='4.0'/>" +
+                "    <container id='test1' version='1.0'>" +
+                "        <search/>" +
+                "        <nodes count='2'/>" +
+                "    </container>" +
+                "    <container id='test2' version='1.0'>" +
+                "        <http><server id='server1' port='" + Defaults.getDefaults().vespaWebServicePort() + "'/></http>" +
+                "        <document-api/>" +
+                "        <nodes count='2'/>" +
+                "    </container>" +
+                "    <content id='test3' version='1.0'>" +
+                "        <redundancy>1</redundancy>" +
+                "        <documents>" +
+                "            <document mode='index' type='type1'/>" +
+                "        </documents>" +
+                "        <nodes count='2'/>" +
+                "    </content>" +
+                "    <content id='test4' version='1.0'>" +
+                "        <redundancy>1</redundancy>" +
+                "        <documents>" +
+                "            <document mode='index' type='type1'/>" +
+                "        </documents>" +
+                "        <nodes count='3'/>" +
+                "    </content>" +
+                "</services>";
         VespaModelTester tester = new VespaModelTester(amendingModelRepo);
         tester.addHosts(10);
         VespaModel model = tester.createModel(services);
