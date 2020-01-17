@@ -187,6 +187,12 @@ struct DistributorTest : Test, DistributorTestUtil {
         configureDistributor(builder);
     }
 
+    void configure_use_weak_internal_read_consistency(bool use_weak) {
+        ConfigBuilder builder;
+        builder.useWeakInternalReadConsistencyForClientGets = use_weak;
+        configureDistributor(builder);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
@@ -1036,6 +1042,19 @@ TEST_F(DistributorTest, merge_disabling_config_is_propagated_to_internal_config)
 
     configure_merge_operations_disabled(false);
     EXPECT_FALSE(getConfig().merge_operations_disabled());
+}
+
+TEST_F(DistributorTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs) {
+    createLinks(true);
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_use_weak_internal_read_consistency(true);
+    EXPECT_TRUE(getConfig().use_weak_internal_read_consistency_for_client_gets());
+    EXPECT_TRUE(getExternalOperationHandler().use_weak_internal_read_consistency_for_gets());
+
+    configure_use_weak_internal_read_consistency(false);
+    EXPECT_FALSE(getConfig().use_weak_internal_read_consistency_for_client_gets());
+    EXPECT_FALSE(getExternalOperationHandler().use_weak_internal_read_consistency_for_gets());
 }
 
 TEST_F(DistributorTest, concurrent_reads_not_enabled_if_btree_db_is_not_enabled) {

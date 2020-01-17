@@ -164,6 +164,18 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd)
     return tracker;
 }
 
+namespace {
+
+spi::ReadConsistency api_read_consistency_to_spi(api::InternalReadConsistency consistency) noexcept {
+    switch (consistency) {
+    case api::InternalReadConsistency::Strong: return spi::ReadConsistency::STRONG;
+    case api::InternalReadConsistency::Weak:   return spi::ReadConsistency::WEAK;
+    default: abort();
+    }
+}
+
+}
+
 MessageTracker::UP
 PersistenceThread::handleGet(api::GetCommand& cmd)
 {
@@ -173,6 +185,8 @@ PersistenceThread::handleGet(api::GetCommand& cmd)
 
     document::FieldSetRepo repo;
     document::FieldSet::UP fieldSet = repo.parse(*_env._component.getTypeRepo(), cmd.getFieldSet());
+    // _context is reset per command, so it's safe to modify it like this.
+    _context.setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
     spi::GetResult result =
         _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), _context);
 

@@ -28,7 +28,8 @@ public:
                  const DistributorBucketSpace &bucketSpace,
                  std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                  std::shared_ptr<api::GetCommand> msg,
-                 PersistenceOperationMetricSet& metric);
+                 PersistenceOperationMetricSet& metric,
+                 api::InternalReadConsistency desired_read_consistency = api::InternalReadConsistency::Strong);
 
     void onClose(DistributorMessageSender& sender) override;
     void onStart(DistributorMessageSender& sender) override;
@@ -43,6 +44,10 @@ public:
 
     const std::vector<std::pair<document::BucketId, uint16_t>>& replicas_in_db() const noexcept {
         return _replicas_in_db;
+    }
+
+    api::InternalReadConsistency desired_read_consistency() const noexcept {
+        return _desired_read_consistency;
     }
 
 private:
@@ -94,6 +99,7 @@ private:
     PersistenceOperationMetricSet& _metric;
     framework::MilliSecTimer _operationTimer;
     std::vector<std::pair<document::BucketId, uint16_t>> _replicas_in_db;
+    api::InternalReadConsistency _desired_read_consistency;
     bool _has_replica_inconsistency;
 
     void sendReply(DistributorMessageSender& sender);

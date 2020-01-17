@@ -219,3 +219,12 @@ restart_with_fast_update_path_if_all_get_timestamps_are_consistent bool default=
 ## This is ONLY intended for system testing of certain transient edge cases and
 ## MUST NOT be set to true in a production environment.
 merge_operations_disabled bool default=false
+
+## If set, Get operations that are initiated by the client (i.e. _not_ Get operations
+## that are initiated by the distributor) will be forwarded to the backend with
+## a flag signalling that weak read consistency may be used. This allows the
+## backend to minimize internal locking. The downside is that it's not guaranteed
+## to observe the most recent writes to the document, nor to observe an atomically
+## consistent view of fields across document versions.
+## This is mostly useful in a system that is effectively read-only.
+use_weak_internal_read_consistency_for_client_gets bool default=false

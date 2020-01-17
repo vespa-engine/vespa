@@ -83,6 +83,7 @@ struct ExternalOperationHandlerTest : Test, DistributorTestUtil {
         close();
     }
 
+    void do_test_get_weak_consistency_is_propagated(bool use_weak);
 };
 
 TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
@@ -532,6 +533,32 @@ TEST_F(ExternalOperationHandlerTest, gets_are_busy_bounced_during_transition_per
             makeGetCommandForUser(non_owned_bucket.withoutCountBits())));
     EXPECT_EQ("ReturnCode(BUSY, Currently pending cluster state transition from version 123 to 321)",
               _sender.reply(0)->getResult().toString());
+}
+
+void ExternalOperationHandlerTest::do_test_get_weak_consistency_is_propagated(bool use_weak) {
+    createLinks();
+    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
+    // Explicitly only touch config in the case weak consistency is enabled to ensure the
+    // default is strong.
+    if (use_weak) {
+        getExternalOperationHandler().set_use_weak_internal_read_consistency_for_gets(true);
+    }
+    document::BucketId b(16, 1234);
+    Operation::SP op;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(
+            makeGetCommandForUser(b.withoutCountBits()), op));
+    auto& get_op = dynamic_cast<GetOperation&>(*op);
+    EXPECT_EQ(get_op.desired_read_consistency(),
+              (use_weak ? api::InternalReadConsistency::Weak
+                        : api::InternalReadConsistency::Strong));
+}
+
+TEST_F(ExternalOperationHandlerTest, gets_are_sent_with_strong_consistency_by_default) {
+    do_test_get_weak_consistency_is_propagated(false);
+}
+
+TEST_F(ExternalOperationHandlerTest, gets_are_sent_with_weak_consistency_if_config_enabled) {
+    do_test_get_weak_consistency_is_propagated(true);
 }
 
 // TODO support sequencing of RemoveLocation? It's a mutating operation, but supporting it with

@@ -1088,6 +1088,22 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_document_not_foun
     ASSERT_EQ("Put => 1,Put => 0", sender.getCommands(true, false, 2));
 }
 
+// The weak consistency config _only_ applies to Get operations initiated directly
+// by the client, not those indirectly initiated by the distributor in order to
+// fulfill update write-repairs.
+TEST_F(TwoPhaseUpdateOperationTest, update_gets_are_sent_with_strong_consistency_even_if_weak_consistency_configured) {
+    setupDistributor(2, 2, "storage:2 distributor:1");
+    getConfig().set_use_weak_internal_read_consistency_for_client_gets(true);
+
+    std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=2/3/4")); // Inconsistent replicas.
+    DistributorMessageSenderStub sender;
+    cb->start(sender, framework::MilliSecTime(0));
+
+    ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
+    auto& get_cmd = dynamic_cast<const api::GetCommand&>(*sender.command(0));
+    EXPECT_EQ(get_cmd.internal_read_consistency(), api::InternalReadConsistency::Strong);
+}
+
 // XXX currently differs in behavior from content nodes in that updates for
 // document IDs without explicit doctypes will _not_ be auto-failed on the
 // distributor.

@@ -66,6 +66,14 @@ public:
         return _concurrent_gets_enabled.load(std::memory_order_relaxed);
     }
 
+    void set_use_weak_internal_read_consistency_for_gets(bool use_weak) noexcept {
+        _use_weak_internal_read_consistency_for_gets.store(use_weak, std::memory_order_relaxed);
+    }
+
+    bool use_weak_internal_read_consistency_for_gets() const noexcept {
+        return _use_weak_internal_read_consistency_for_gets.load(std::memory_order_relaxed);
+    }
+
 private:
     std::unique_ptr<DirectDispatchSender> _direct_dispatch_sender;
     const MaintenanceOperationGenerator& _operationGenerator;
@@ -75,6 +83,7 @@ private:
     mutable std::mutex _non_main_thread_ops_mutex;
     OperationOwner _non_main_thread_ops_owner;
     std::atomic<bool> _concurrent_gets_enabled;
+    std::atomic<bool> _use_weak_internal_read_consistency_for_gets;
 
     template <typename Func>
     void bounce_or_invoke_read_only_op(api::StorageCommand& cmd,
@@ -102,6 +111,8 @@ private:
             const document::DocumentId& docId,
             PersistenceOperationMetricSet& persistenceMetrics) const;
     bool allowMutation(const SequencingHandle& handle) const;
+
+    api::InternalReadConsistency desired_get_read_consistency() const noexcept;
 
     DistributorMetricSet& getMetrics() { return getDistributor().getMetrics(); }
 };

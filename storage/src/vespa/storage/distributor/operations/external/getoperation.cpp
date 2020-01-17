@@ -48,7 +48,8 @@ GetOperation::GetOperation(DistributorComponent& manager,
                            const DistributorBucketSpace &bucketSpace,
                            std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                            std::shared_ptr<api::GetCommand> msg,
-                           PersistenceOperationMetricSet& metric)
+                           PersistenceOperationMetricSet& metric,
+                           api::InternalReadConsistency desired_read_consistency)
     : Operation(),
       _manager(manager),
       _bucketSpace(bucketSpace),
@@ -58,6 +59,7 @@ GetOperation::GetOperation(DistributorComponent& manager,
       _lastModified(),
       _metric(metric),
       _operationTimer(manager.getClock()),
+      _desired_read_consistency(desired_read_consistency),
       _has_replica_inconsistency(false)
 {
     assignTargetNodeGroups(*read_guard);
@@ -104,6 +106,7 @@ GetOperation::sendForChecksum(DistributorMessageSender& sender, const document::
         auto command = std::make_shared<api::GetCommand>(bucket, _msg->getDocumentId(),
                                                          _msg->getFieldSet(), _msg->getBeforeTimestamp());
         copyMessageSettings(*_msg, *command);
+        command->set_internal_read_consistency(_desired_read_consistency);
 
         LOG(spam, "Sending %s to node %d", command->toString(true).c_str(), res[best].copy.getNode());
 

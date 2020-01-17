@@ -51,12 +51,13 @@ struct GetOperationTest : Test, DistributorTestUtil {
         op.reset();
     }
 
-    void sendGet() {
+    void sendGet(api::InternalReadConsistency consistency = api::InternalReadConsistency::Strong) {
         auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), docId, "[all]");
         op = std::make_unique<GetOperation>(
                 getExternalOperationHandler(), getDistributorBucketSpace(),
                 getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
-                msg, getDistributor().getMetrics(). gets[msg->getLoadType()]);
+                msg, getDistributor().getMetrics(). gets[msg->getLoadType()],
+                consistency);
         op->start(_sender, framework::MilliSecTime(0));
     }
 
@@ -127,6 +128,8 @@ struct GetOperationTest : Test, DistributorTestUtil {
     void setClusterState(const std::string& clusterState) {
         enableDistributorClusterState(clusterState);
     }
+
+    void do_test_read_consistency_is_propagated(api::InternalReadConsistency consistency);
 };
 
 GetOperationTest::GetOperationTest() = default;
@@ -495,6 +498,25 @@ TEST_F(GetOperationTest, can_get_documents_when_all_replica_nodes_retired) {
     sendGet();
 
     EXPECT_EQ("Get => 0", _sender.getCommands(true));
+}
+
+void GetOperationTest::do_test_read_consistency_is_propagated(api::InternalReadConsistency consistency) {
+    setClusterState("distributor:1 storage:1");
+    addNodesToBucketDB(bucketId, "0=4");
+    sendGet(consistency);
+    ASSERT_TRUE(op);
+    EXPECT_EQ(dynamic_cast<GetOperation&>(*op).desired_read_consistency(), consistency);
+    ASSERT_EQ("Get => 0", _sender.getCommands(true));
+    auto& cmd = dynamic_cast<const api::GetCommand&>(*_sender.command(0));
+    EXPECT_EQ(cmd.internal_read_consistency(), consistency);
+}
+
+TEST_F(GetOperationTest, can_send_gets_with_strong_internal_read_consistency) {
+    do_test_read_consistency_is_propagated(api::InternalReadConsistency::Strong);
+}
+
+TEST_F(GetOperationTest, can_send_gets_with_weak_internal_read_consistency) {
+    do_test_read_consistency_is_propagated(api::InternalReadConsistency::Weak);
 }
 
 }

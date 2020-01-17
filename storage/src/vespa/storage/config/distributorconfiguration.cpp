@@ -41,6 +41,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _allowStaleReadsDuringClusterStateTransitions(false),
       _update_fast_path_restart_enabled(false),
       _merge_operations_disabled(false),
+      _use_weak_internal_read_consistency_for_client_gets(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 { }
 
@@ -153,6 +154,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _allowStaleReadsDuringClusterStateTransitions = config.allowStaleReadsDuringClusterStateTransitions;
     _update_fast_path_restart_enabled = config.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent;
     _merge_operations_disabled = config.mergeOperationsDisabled;
+    _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 
