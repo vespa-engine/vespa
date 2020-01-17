@@ -59,9 +59,14 @@ public class HostInfoTest {
         assertThat(metrics.get(3).getName(), equalTo("vds.datastored.bucket_space.buckets_total"));
         assertThat(hostInfo.getClusterStateVersionOrNull(), is(123));
 
-        Optional<Metrics.Value> value = hostInfo.getMetrics()
-                .getValueAt("vds.datastored.bucket_space.buckets_total", Map.of("bucketSpace", "default"));
-        assertThat(value.map(Metrics.Value::getLast), equalTo(Optional.of(129L)));
+        assertThat(hostInfo.getMetrics()
+                        .getValueAt("vds.datastored.bucket_space.buckets_total", Map.of("bucketSpace", "default"))
+                        .map(Metrics.Value::getLast),
+                equalTo(Optional.of(129L)));
+        assertThat(hostInfo.getMetrics()
+                        .getValueAt("vds.datastored.bucket_space.buckets_total", Map.of("bucketSpace", "global"))
+                        .map(Metrics.Value::getLast),
+                equalTo(Optional.of(0L)));
     }
 
     @Test

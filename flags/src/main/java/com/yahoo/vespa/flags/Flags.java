@@ -87,7 +87,7 @@ public class Flags {
             "use-bucket-space-metric", true,
             "Whether to use vds.datastored.bucket_space.buckets_total (true) instead of " +
             "vds.datastored.alldisks.buckets (false, legacy).",
-            "Takes efefct on the next deployment of the application",
+            "Takes effect on the next deployment of the application",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag INCLUDE_SIS_IN_TRUSTSTORE = defineFeatureFlag(
