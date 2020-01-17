@@ -22,14 +22,9 @@ class ByteBuffer
 {
 public:
     typedef std::unique_ptr<ByteBuffer> UP;
-    /**
-     * Creates a byte buffer with no underlying buffer.
-     * Use set() to set the buffer.
-     */
-    ByteBuffer();
 
     ByteBuffer(const ByteBuffer &);
-    ByteBuffer& operator=(const ByteBuffer &);
+    ByteBuffer& operator=(const ByteBuffer &) = delete;
     ByteBuffer(ByteBuffer &&) = default;
     ByteBuffer& operator=(ByteBuffer &&) = default;
 
@@ -55,21 +50,6 @@ public:
     ByteBuffer(vespalib::alloc::Alloc buffer, size_t len);
 
     /**
-     * Sets the buffer pointed to by this buffer. Allows for multiple
-     * usages of the same ByteBuffer.
-     */
-    void set(const char* buffer, size_t len) {
-        cleanUp();
-        _buffer = const_cast<char*>(buffer);
-        _len=len;
-        _limit=len;
-        _pos=0;
-    }
-
-    /** Clear this buffer, and set free the underlying BufferHolder. */
-    void reset() { set(nullptr, 0); }
-
-    /**
      * Creates a ByteBuffer object from another buffer. allocates
      * a new buffer of same size and copies the content.
      *
@@ -93,14 +73,11 @@ public:
     /** @return Returns the index of the current position in the buffer. */
     size_t getPos() const { return _pos; }
 
-    /** @return Returns the limit. */
-    size_t getLimit() const { return _limit; }
-
     /**
      * @return Returns the number of bytes remaining in the buffer - that is,
      *         getLimit()-getPos().
     */
-    size_t getRemaining() const { return _limit-_pos; }
+    size_t getRemaining() const { return _len -_pos; }
 
     /**
      * Changes the position in the buffer.
@@ -108,17 +85,6 @@ public:
      * @throws BufferOutOfBoundsException;
      */
     void setPos(size_t pos);
-
-    /**
-     * Sets the buffer limit.
-     *
-     * @param limit The new limit.
-     * @return True if the limit is legal (less than the length)
-     * @throws BufferOutOfBoundsException;
-     */
-    void setLimit(size_t limit);
-    size_t forceValgrindStart2Pos() const __attribute__ ((noinline));
-    size_t forceValgrindPos2Lim() const __attribute__ ((noinline));
 
     /**
      * Moves the position in the buffer.
@@ -134,9 +100,6 @@ public:
 
     void incPosNoCheck(size_t pos) {
         _pos += pos;
-#ifdef __FORCE_VALGRIND_ON_SERIALIZE__
-        forceValgrindStart2Pos();
-#endif
     }
 
     /**
@@ -144,7 +107,6 @@ public:
      * from a buffer you have written to
      */
     void flip() {
-        _limit = _pos;
         _pos = 0;
     }
 
@@ -154,7 +116,6 @@ public:
      */
     void clear() {
         _pos=0;
-        _limit=_len;
     }
 
     void getNumeric(uint8_t & v);
@@ -340,16 +301,10 @@ public:
     void putBytes(const void *buf, size_t count);
 
 private:
-    char * _buffer;
-    size_t _len;
-    size_t _pos;
-    size_t _limit;
+    char   * _buffer;
+    size_t   _len;
+    size_t   _pos;
     vespalib::alloc::Alloc _ownedBuffer;
-public:
-
-    std::string toString();
-    void swap(ByteBuffer& other);
-    void cleanUp();
 };
 
 } // document

@@ -12,7 +12,8 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(Deserializable, Serializable);
 VESPA_IMPLEMENT_EXCEPTION_SPINE(DeserializeException);
 VESPA_IMPLEMENT_EXCEPTION_SPINE(SerializeException);
 
-std::unique_ptr<ByteBuffer> Serializable::serialize() const
+std::unique_ptr<ByteBuffer>
+Serializable::serialize() const
 {
     size_t len = getSerializedSize();
     std::unique_ptr<ByteBuffer> retVal(new ByteBuffer(len));

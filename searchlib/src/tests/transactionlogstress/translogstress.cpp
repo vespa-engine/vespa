@@ -80,8 +80,8 @@ private:
 
 public:
     EntryGenerator(long baseSeed, const BufferGenerator & bufferGenerator) :
-        _rnd(), _baseSeed(baseSeed), _bufferGenerator(bufferGenerator), _buffers(NULL),
-        _lastGeneratedBuffer() {}
+        _rnd(), _baseSeed(baseSeed), _bufferGenerator(bufferGenerator), _buffers(nullptr),
+        _lastGeneratedBuffer(0) {}
     EntryGenerator(const EntryGenerator & rhs) :
         _rnd(), _baseSeed(rhs._baseSeed), _bufferGenerator(rhs._bufferGenerator),
         _buffers(rhs._buffers), _lastGeneratedBuffer(rhs._lastGeneratedBuffer) {}
@@ -122,7 +122,7 @@ EntryGenerator::getRandomEntry(SerialNum num)
         return Packet::Entry(num, 1024, ConstBufferRef(buffer.getBuffer(), buffer.getLength()));
     } else {
         _bufferGenerator.setSeed(_baseSeed + num);
-        _lastGeneratedBuffer = _bufferGenerator.getRandomBuffer();
+        _lastGeneratedBuffer = std::move(_bufferGenerator.getRandomBuffer());
         return Packet::Entry(num, 1024, ConstBufferRef(_lastGeneratedBuffer.getBuffer(), _lastGeneratedBuffer.getLength()));
     }
 }

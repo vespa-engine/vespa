@@ -26,7 +26,6 @@ public:
 
 }
 
-
 SerializableArray::SerializableArray()
     : _serializedCompression(CompressionConfig::NONE),
       _uncompressedLength(0)
@@ -218,7 +217,6 @@ SerializableArray::deCompress() // throw (DeserializeException)
                     VESPA_STRLOC);
         }
         assert(newSerialization->getBuffer() == unCompressed.getData());
-        newSerialization->setLimit(_uncompressedLength);
         _uncompSerData = std::move(newSerialization);
         LOG_ASSERT(_uncompressedLength == _uncompSerData->getRemaining());
     }

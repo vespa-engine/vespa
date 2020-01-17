@@ -32,9 +32,8 @@ TEST(DocumentTest, testSizeOf)
 {
     EXPECT_EQ(24u, sizeof(std::vector<char>));
     EXPECT_EQ(24u, sizeof(vespalib::alloc::Alloc));
-    EXPECT_EQ(56u, sizeof(ByteBuffer));
+    EXPECT_EQ(48u, sizeof(ByteBuffer));
     EXPECT_EQ(32u, sizeof(vespalib::GrowableByteBuffer));
-    EXPECT_EQ(56u, sizeof(ByteBuffer));
     EXPECT_EQ(88ul, sizeof(IdString));
     EXPECT_EQ(104ul, sizeof(DocumentId));
     EXPECT_EQ(200ul, sizeof(Document));

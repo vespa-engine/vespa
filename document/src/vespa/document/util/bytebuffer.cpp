@@ -37,65 +37,39 @@ InputOutOfRangeException::InputOutOfRangeException(
 {
 }
 
-ByteBuffer::ByteBuffer() :
-      _buffer(nullptr),
-      _len(0),
-      _pos(0),
-      _limit(0),
-      _ownedBuffer()
-{
-    set(nullptr, 0);
-}
-
 ByteBuffer::ByteBuffer(size_t len) :
     ByteBuffer(Alloc::alloc(len), len)
 {
 }
 
 ByteBuffer::ByteBuffer(const char* buffer, size_t len) :
-      _buffer(nullptr),
-      _len(0),
+      _buffer(const_cast<char *>(buffer)),
+      _len(len),
       _pos(0),
-      _limit(0),
       _ownedBuffer()
 {
-    set(buffer, len);
 }
 
 ByteBuffer::ByteBuffer(Alloc buffer, size_t len) :
       _buffer(static_cast<char *>(buffer.get())),
       _len(len),
       _pos(0),
-      _limit(len),
       _ownedBuffer(std::move(buffer))
 {
 }
 
-ByteBuffer::ByteBuffer(const ByteBuffer& bb) :
-      _buffer(0),
-      _len(0),
-      _pos(0),
-      _limit(0),
+ByteBuffer::ByteBuffer(const ByteBuffer& rhs) :
+      _buffer(nullptr),
+      _len(rhs._len),
+      _pos(rhs._pos),
       _ownedBuffer()
 {
-    *this = bb;
-}
-
-ByteBuffer& ByteBuffer::operator=(const ByteBuffer & org)
-{
-    if (this != & org) {
-        cleanUp();
-        if (org._len > 0 && org._buffer) {
-            Alloc::alloc(org._len + 1).swap(_ownedBuffer);
-            _buffer = static_cast<char *>(_ownedBuffer.get());
-            memcpy(_buffer,org._buffer,org._len);
-            _buffer[org._len] = 0;
-        }
-        _len = org._len;
-        _pos = org._pos;
-        _limit = org._limit;
+    if (rhs._len > 0 && rhs._buffer) {
+        Alloc::alloc(rhs._len + 1).swap(_ownedBuffer);
+        _buffer = static_cast<char *>(_ownedBuffer.get());
+        memcpy(_buffer, rhs._buffer, rhs._len);
+        _buffer[rhs._len] = 0;
     }
-    return *this;
 }
 
 ByteBuffer::~ByteBuffer() = default;
@@ -120,32 +94,19 @@ ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, size_t len)
 void
 ByteBuffer::setPos(size_t pos) // throw (BufferOutOfBoundsException)
 {
-    if (pos>_limit) {
-        throwOutOfBounds(pos, _limit);
+    if (pos > _len) {
+        throwOutOfBounds(pos, _len);
     } else {
         _pos=pos;
     }
 }
 
-void
-ByteBuffer::setLimit(size_t limit) // throw (BufferOutOfBoundsException)
-{
-    if (limit>_len) {
-        throwOutOfBounds(limit, _len);
-    } else {
-        _limit=limit;
-    }
-}
-
 void ByteBuffer::incPos(size_t pos)
 {
-    if (_pos + pos > _limit) {
-        throwOutOfBounds(_pos + pos, _limit);
+    if (_pos + pos > _len) {
+        throwOutOfBounds(_pos + pos, _len);
     } else {
         _pos+=pos;
-#ifdef __FORCE_VALGRIND_ON_SERIALIZE__
-        forceValgrindStart2Pos();
-#endif
     }
 }
 
@@ -166,33 +127,6 @@ void ByteBuffer::putNumeric(uint8_t v) {
         incPosNoCheck(sizeof(v));
     }
 }
-
-size_t ByteBuffer::forceValgrindStart2Pos() const
-{
-    size_t zeroCount(0);
-    if (_buffer) {
-        for(const char * c(_buffer), *e(c + _pos); c < e; c++) {
-            if (*c == 0) {
-                zeroCount++;
-            }
-        }
-    }
-    return zeroCount;
-}
-
-size_t ByteBuffer::forceValgrindPos2Lim() const
-{
-    size_t zeroCount(0);
-    if (_buffer) {
-        for(const char * c(getBufferAtPos()), *e(c + getRemaining()); c < e; c++) {
-            if (*c == 0) {
-                zeroCount++;
-            }
-        }
-    }
-    return zeroCount;
-}
-
 
 void ByteBuffer::getNumericNetwork(int16_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
@@ -501,23 +435,6 @@ void ByteBuffer::putBytes(const void *buf, size_t count) {
         memcpy(getBufferAtPos(), buf, count);
         incPosNoCheck(count);
     }
-}
-std::string ByteBuffer::toString() {
-    std::ostringstream ost;
-    StringUtil::printAsHex(ost, getBuffer(), getLength());
-    return ost.str();
-}
-
-void ByteBuffer::swap(ByteBuffer& other) {
-    std::swap(_buffer, other._buffer);
-    std::swap(_len, other._len);
-    std::swap(_pos, other._pos);
-    std::swap(_limit, other._limit);
-}
-
-void ByteBuffer::cleanUp() {
-    Alloc().swap(_ownedBuffer);
-    _buffer = nullptr;
 }
 
 } // document

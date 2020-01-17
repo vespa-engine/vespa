@@ -12,11 +12,10 @@
 
 #pragma once
 
+#include "bytebuffer.h"
+#include "identifiableid.h"
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/objects/identifiable.h>
-
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/document/util/identifiableid.h>
 
 namespace document {
 class DocumentTypeRepo;

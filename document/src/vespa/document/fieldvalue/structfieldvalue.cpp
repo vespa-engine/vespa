@@ -244,9 +244,7 @@ serializeDoc(const FieldValue & fv) {
     nbostream::Buffer buf;
     stream.swap(buf);
     size_t sz = buf.size();
-    auto bb = std::make_unique<ByteBuffer>(nbostream::Buffer::stealAlloc(std::move(buf)), sz);
-    bb->setPos(sz);
-    return bb;
+    return std::make_unique<ByteBuffer>(nbostream::Buffer::stealAlloc(std::move(buf)), sz);
 }
 
 }
@@ -256,7 +254,6 @@ StructFieldValue::setFieldValue(const Field& field, FieldValue::UP value)
     int fieldId = field.getId();
 
     std::unique_ptr<ByteBuffer> serialized = serializeDoc(*value);
-    serialized->flip();
     if (_chunks.empty()) {
         _chunks.push_back(std::make_unique<SerializableArray>());
     }

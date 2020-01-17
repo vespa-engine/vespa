@@ -63,14 +63,14 @@ class CallBackTest : public TransLogClient::Visitor::Callback
 private:
     virtual RPC::Result receive(const Packet & packet) override;
     virtual void eof()    override { _eof = true; }
-    typedef std::map<SerialNum, ByteBuffer> PacketMap;
+    typedef std::map<SerialNum, std::unique_ptr<ByteBuffer>> PacketMap;
     PacketMap _packetMap;
 public:
     CallBackTest() : _eof(false) { }
     size_t size() const { return _packetMap.size(); }
     bool hasSerial(SerialNum n) const { return (_packetMap.find(n) != _packetMap.end()); }
     void clear() {  _eof = false; _packetMap.clear(); }
-    const ByteBuffer & packet(SerialNum n) { return (_packetMap.find(n)->second); }
+    const ByteBuffer & packet(SerialNum n) { return *(_packetMap.find(n)->second); }
 
     bool      _eof;
 };
@@ -83,7 +83,7 @@ RPC::Result CallBackTest::receive(const Packet & p)
         Packet::Entry e;
         e.deserialize(h);
         LOG(info,"CallBackTest::receive (%zu, %zu, %zu)(%s)", h.rp(), h.size(), h.capacity(), myhex(e.data().c_str(), e.data().size()).c_str());
-        _packetMap[e.serial()] = ByteBuffer(e.data().c_str(), e.data().size());
+        _packetMap[e.serial()] = std::make_unique<ByteBuffer>(e.data().c_str(), e.data().size());
     }
     return RPC::OK;
 }
