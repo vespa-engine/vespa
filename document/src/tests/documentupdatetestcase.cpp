@@ -991,9 +991,24 @@ TEST(DocumentUpdateTest, tensor_remove_update_can_be_roundtrip_serialized)
     f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
 }
 
+
+TEST(DocumentUpdateTest, tensor_remove_update_on_float_tensor_can_be_roundtrip_serialized)
+{
+    TensorUpdateFixture f("sparse_float_tensor");
+    f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
+}
+
 TEST(DocumentUpdateTest, tensor_modify_update_can_be_roundtrip_serialized)
 {
     TensorUpdateFixture f;
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor()));
+}
+
+TEST(DocumentUpdateTest, tensor_modify_update_on_float_tensor_can_be_roundtrip_serialized)
+{
+    TensorUpdateFixture f("sparse_float_tensor");
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor()));
