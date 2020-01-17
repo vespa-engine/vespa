@@ -145,20 +145,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
                                  Orchestrator orchestrator,
-                                 LogRetriever logRetriever,
-                                 Clock clock) {
-        this(tenantRepository,
-             hostProvisioner,
-             orchestrator,
-             new ConfigserverConfig(new ConfigserverConfig.Builder()),
-             logRetriever,
-             clock);
-    }
-
-    // For testing
-    public ApplicationRepository(TenantRepository tenantRepository,
-                                 Provisioner hostProvisioner,
-                                 Orchestrator orchestrator,
                                  ConfigserverConfig configserverConfig,
                                  LogRetriever logRetriever,
                                  Clock clock) {

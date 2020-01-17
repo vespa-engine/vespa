@@ -75,6 +75,7 @@ public class ApplicationHandlerTest {
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           provisioner,
                                                           orchestrator,
+                                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                           new MockLogRetriever(),
                                                           Clock.systemUTC());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
