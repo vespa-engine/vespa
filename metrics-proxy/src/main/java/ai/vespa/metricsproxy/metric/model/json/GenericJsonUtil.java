@@ -56,6 +56,11 @@ public class GenericJsonUtil {
                 .collect(Collectors.groupingBy(packet -> packet.service, LinkedHashMap::new, toList()));
 
         var jsonModel = new GenericJsonModel();
+        if (node != null) {
+            jsonModel.hostname = node.hostname;
+            jsonModel.role = node.role;
+        }
+
         var genericServices = new ArrayList<GenericService>();
         packetsByService.forEach((serviceId, packets) -> {
             var genericMetricsList = packets.stream()
@@ -71,7 +76,6 @@ public class GenericJsonUtil {
                     .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
                 jsonModel.node = new GenericNode(genericService.timestamp, genericService.metrics);
-                jsonModel.hostname = node == null ? null : node.hostname;
             } else {
                 genericServices.add(genericService);
 

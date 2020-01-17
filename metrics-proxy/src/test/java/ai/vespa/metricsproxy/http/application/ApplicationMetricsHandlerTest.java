@@ -119,6 +119,7 @@ public class ApplicationMetricsHandlerTest {
         assertEquals(1, jsonModel.nodes.size());
         GenericJsonModel nodeModel = jsonModel.nodes.get(0);
         assertEquals(HOST, nodeModel.hostname);
+        assertEquals(MOCK_METRICS_PATH, nodeModel.role);
         assertEquals(2, nodeModel.node.metrics.size());
         assertEquals(16.222, nodeModel.node.metrics.get(0).values.get(CPU_METRIC), 0.0001d);
     }
