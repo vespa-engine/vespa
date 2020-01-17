@@ -187,7 +187,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
-        Version platform = controller.jobController().run(id).get().versions().targetPlatform();
+        Version platform = controller.systemVersion();
         logger.log("Deploying the tester container on platform " + platform + " ...");
         return deploy(id.tester().id(),
                       id.type(),
