@@ -2,7 +2,7 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
-import ai.vespa.metricsproxy.http.MetricsHandler;
+import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import com.yahoo.config.provision.ClusterMembership;
 
@@ -25,7 +25,7 @@ public class MetricsNodesConfigGenerator {
                 .nodeId(container.getHost().getConfigId())
                 .hostname(container.getHostName())
                 .metricsPort(MetricsProxyContainer.BASEPORT)
-                .metricsPath(MetricsHandler.VALUES_PATH);
+                .metricsPath(MetricsV1Handler.VALUES_PATH);
 
         if (container.isHostedVespa)
             container.getHostResource().spec().membership()

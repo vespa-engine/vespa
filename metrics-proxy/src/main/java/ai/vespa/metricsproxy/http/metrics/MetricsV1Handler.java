@@ -1,8 +1,12 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.metricsproxy.http;
+package ai.vespa.metricsproxy.http.metrics;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
+import ai.vespa.metricsproxy.http.ErrorResponse;
+import ai.vespa.metricsproxy.http.HttpHandlerBase;
+import ai.vespa.metricsproxy.http.JsonResponse;
+import ai.vespa.metricsproxy.http.ValuesFetcher;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
@@ -24,7 +28,7 @@ import static com.yahoo.jdisc.Response.Status.OK;
  *
  * @author gjoranv
  */
-public class MetricsHandler extends HttpHandlerBase {
+public class MetricsV1Handler extends HttpHandlerBase {
 
     public static final String V1_PATH = "/metrics/v1";
     public static final String VALUES_PATH = V1_PATH + "/values";
@@ -32,10 +36,10 @@ public class MetricsHandler extends HttpHandlerBase {
     private final ValuesFetcher valuesFetcher;
 
     @Inject
-    public MetricsHandler(Executor executor,
-                          MetricsManager metricsManager,
-                          VespaServices vespaServices,
-                          MetricsConsumers metricsConsumers) {
+    public MetricsV1Handler(Executor executor,
+                            MetricsManager metricsManager,
+                            VespaServices vespaServices,
+                            MetricsConsumers metricsConsumers) {
         super(executor);
         valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
     }
