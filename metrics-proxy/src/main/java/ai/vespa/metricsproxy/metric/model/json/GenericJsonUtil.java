@@ -42,7 +42,7 @@ public class GenericJsonUtil {
 
         var genericJsonModels = new ArrayList<GenericJsonModel>();
         metricsByNode.forEach(
-                (node, metrics) -> genericJsonModels.add(toGenericJsonModel(metrics, node.getName())));
+                (node, metrics) -> genericJsonModels.add(toGenericJsonModel(metrics, node)));
 
         applicationModel.nodes = genericJsonModels;
         return applicationModel;
@@ -52,7 +52,7 @@ public class GenericJsonUtil {
         return toGenericJsonModel(metricsPackets, null);
     }
 
-    public static GenericJsonModel toGenericJsonModel(List<MetricsPacket> metricsPackets, String nodeName) {
+    public static GenericJsonModel toGenericJsonModel(List<MetricsPacket> metricsPackets, Node node) {
         Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPackets.stream()
                 .collect(Collectors.groupingBy(packet -> packet.service, LinkedHashMap::new, toList()));
 
@@ -72,7 +72,7 @@ public class GenericJsonUtil {
                     .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
                 jsonModel.node = new GenericNode(genericService.timestamp, genericService.metrics);
-                jsonModel.name = nodeName;
+                jsonModel.name = node == null ? null : node.getName();
             } else {
                 genericServices.add(genericService);
 
