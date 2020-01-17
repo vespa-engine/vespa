@@ -98,7 +98,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
             if (failStartingNodeOnIpMismatch.value()) {
                 assertEqualIpAddresses(context.hostname(), ipV4Local, context.node().ipAddresses(), IPVersion.IPv4);
-                assertEqualIpAddresses(context.hostname(), ipV4Local, context.node().ipAddresses(), IPVersion.IPv6);
+                assertEqualIpAddresses(context.hostname(), ipV6Local, context.node().ipAddresses(), IPVersion.IPv6);
             }
 
             if (ipV4Local.isEmpty() && ipV6Local.isEmpty()) {
