@@ -264,7 +264,7 @@ public class VdsVisit {
                 .desc("Give the following parameter to the visitor.")
                 .build());
 
-        options.addOption("r", "visitremoves", false, "Include information of removed documents.");
+        options.addOption("r", "visitremoves", false, "Include information about removed documents.");
 
         options.addOption(Option.builder("c")
                 .longOpt("cluster")

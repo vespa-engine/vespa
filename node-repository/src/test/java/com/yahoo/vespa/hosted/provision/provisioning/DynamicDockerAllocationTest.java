@@ -403,7 +403,7 @@ public class DynamicDockerAllocationTest {
         ApplicationId application = tester.makeApplicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
 
-        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromNodeCount(2, Optional.of("d-2-8-50"), false, true), 1);
+        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromCount(2, Optional.of(NodeResources.fromLegacyName("d-2-8-50")), false, true), 1);
         tester.activate(application, hosts1);
 
         NodeResources resources = new NodeResources(1.5, 8, 50, 0.3);

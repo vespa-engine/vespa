@@ -89,7 +89,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeSpec requestedNodes;
         Optional<NodeResources> resources = requestedCapacity.nodeResources();
         if ( requestedCapacity.type() == NodeType.tenant) {
-            int nodeCount = application.instance().isTester() ? 1 : capacityPolicies.decideSize(requestedCapacity, cluster.type());
+            int nodeCount = capacityPolicies.decideSize(requestedCapacity, cluster.type(), application);
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
@@ -97,6 +97,11 @@ public class NodeRepositoryProvisioner implements Provisioner {
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = Math.min(wantedGroups, nodeCount); // cannot have more groups than nodes
             requestedNodes = NodeSpec.from(nodeCount, resources.get(), exclusive, requestedCapacity.canFail());
+
+            if ( ! hasQuota(application, nodeCount))
+                throw new IllegalArgumentException(requestedCapacity + " requested for " + cluster +
+                                                   (requestedCapacity.nodeCount() != nodeCount ? " resolved to " + nodeCount + " nodes" : "") +
+                                                   " exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
         }
         else {
             requestedNodes = NodeSpec.from(requestedCapacity.type());
@@ -121,6 +126,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public void remove(NestedTransaction transaction, ApplicationId application) {
         nodeRepository.deactivate(application, transaction);
         loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
+    }
+
+    private boolean hasQuota(ApplicationId application, int requestedNodes) {
+        if ( ! this.zone.system().isPublic()) return true; // no quota management
+
+        if (application.tenant().value().hashCode() == 3857) return requestedNodes <= 60;
+        return requestedNodes <= 5;
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes, Optional<NodeResources> requestedResources) {
