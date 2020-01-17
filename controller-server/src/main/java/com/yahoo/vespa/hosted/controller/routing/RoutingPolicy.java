@@ -63,6 +63,11 @@ public class RoutingPolicy {
         return status;
     }
 
+    /** Returns a copy of this with status set to given status */
+    public RoutingPolicy with(Status status) {
+        return new RoutingPolicy(id, canonicalName, dnsZone, endpoints, status);
+    }
+
     /** Returns the endpoint of this */
     public Endpoint endpointIn(SystemName system) {
         return Endpoint.of(id.owner()).target(id.cluster(), id.zone()).on(Port.tls()).directRouting().in(system);

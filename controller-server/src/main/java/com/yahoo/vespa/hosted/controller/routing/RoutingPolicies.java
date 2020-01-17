@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -20,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -73,67 +73,92 @@ public class RoutingPolicies {
      */
     public void refresh(ApplicationId application, DeploymentSpec deploymentSpec, ZoneId zone) {
         if (!controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) return;
-        var lbs = new AllocatedLoadBalancers(application, zone, controller.serviceRegistry().configServer().getLoadBalancers(application, zone),
-                                             deploymentSpec);
+        var loadBalancers = new AllocatedLoadBalancers(application, zone, controller.serviceRegistry().configServer()
+                                                                                    .getLoadBalancers(application, zone),
+                                                       deploymentSpec);
         try (var lock = db.lockRoutingPolicies()) {
-            removeObsoleteEndpointsFromDns(lbs, lock);
-            storePoliciesOf(lbs, lock);
-            removeObsoletePolicies(lbs, lock);
-            registerEndpointsInDns(lbs, lock);
+            removeGlobalDnsUnreferencedBy(loadBalancers, lock);
+            storePoliciesOf(loadBalancers, lock);
+            removePoliciesUnreferencedBy(loadBalancers, lock);
+            updateGlobalDnsOf(get(loadBalancers.application).values(), lock);
         }
     }
 
-    /** Create global endpoints for given route, if any */
-    private void registerEndpointsInDns(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
-        Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(get(loadBalancers.application).values());
+    /** Set the status of all global endpoints for given deployment */
+    public void setGlobalRoutingStatus(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
+        try (var lock = db.lockRoutingPolicies()) {
+            var policies = get(deployment.applicationId());
+            var newPolicies = new LinkedHashMap<>(policies);
+            for (var policy : policies.values()) {
+                if (!policy.id().zone().equals(deployment.zoneId())) continue; // Wrong zone
+                var newPolicy = policy.with(policy.status().with(GlobalRouting.status(status, agent,
+                                                                                      controller.clock().instant())));
+                newPolicies.put(policy.id(), newPolicy);
+            }
+            db.writeRoutingPolicies(deployment.applicationId(), newPolicies);
+            updateGlobalDnsOf(newPolicies.values(), lock);
+        }
+    }
 
+    /** Update global DNS record for given policies */
+    private void updateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, @SuppressWarnings("unused") Lock lock) {
         // Create DNS record for each routing ID
+        var routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
-            Endpoint endpoint = RoutingPolicy.globalEndpointOf(routeEntry.getKey().application(), routeEntry.getKey().endpointId(),
-                                                               controller.system());
-            Set<AliasTarget> targets = routeEntry.getValue()
-                                                 .stream()
-                                                 .filter(policy -> policy.dnsZone().isPresent())
-                                                 .map(policy -> new AliasTarget(policy.canonicalName(),
-                                                                                policy.dnsZone().get(),
-                                                                                policy.id().zone()))
-                                                 .collect(Collectors.toSet());
-            controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), targets, Priority.normal);
+            var targets = new LinkedHashSet<AliasTarget>();
+            var staleTargets = new LinkedHashSet<AliasTarget>();
+            for (var policy : routeEntry.getValue()) {
+                if (policy.dnsZone().isEmpty()) continue;
+                var target = new AliasTarget(policy.canonicalName(), policy.dnsZone().get(), policy.id().zone());
+                // Remove target if global routing status is set out
+                if (policy.status().globalRouting().status() == GlobalRouting.Status.out) {
+                    staleTargets.add(target);
+                } else {
+                    targets.add(target);
+                }
+            }
+            if (!targets.isEmpty()) {
+                var endpoint = RoutingPolicy.globalEndpointOf(routeEntry.getKey().application(),
+                                                              routeEntry.getKey().endpointId(), controller.system());
+                controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), targets, Priority.normal);
+            }
+            staleTargets.forEach(t -> controller.nameServiceForwarder().removeRecords(Record.Type.ALIAS, t.asData(), Priority.normal));
         }
     }
 
-    /** Store routing policies for given route. Returns the persisted policies. */
+    /** Store routing policies for given load balancers. Returns the persisted policies. */
     private void storePoliciesOf(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
         var policies = new LinkedHashMap<>(get(loadBalancers.application));
         for (LoadBalancer loadBalancer : loadBalancers.list) {
-            var endpointIds = loadBalancers.endpointIdsOf(loadBalancer);
-            var policy = createPolicy(loadBalancers.application, loadBalancers.zone, loadBalancer, endpointIds);
-            policies.put(policy.id(), policy);
+            var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), loadBalancers.zone);
+            var existingPolicy = policies.get(policyId);
+            var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.dnsZone(),
+                                              loadBalancers.endpointIdsOf(loadBalancer),
+                                              new Status(isActive(loadBalancer), GlobalRouting.DEFAULT_STATUS));
+            // Preserve global routing status for existing policy
+            if (existingPolicy != null) {
+                newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().globalRouting()));
+            }
+            updateZoneDnsOf(newPolicy);
+            policies.put(newPolicy.id(), newPolicy);
         }
         db.writeRoutingPolicies(loadBalancers.application, policies);
     }
 
-    /** Create a policy for given load balancer and register a CNAME for it */
-    private RoutingPolicy createPolicy(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer,
-                                       Set<EndpointId> endpointIds) {
-        var routingPolicy = new RoutingPolicy(new RoutingPolicyId(application, loadBalancer.cluster(), zone),
-                                              loadBalancer.hostname(),
-                                              loadBalancer.dnsZone(), endpointIds, new Status(isActive(loadBalancer)));
-        var name = RecordName.from(routingPolicy.endpointIn(controller.system()).dnsName());
-        var data = RecordData.fqdn(loadBalancer.hostname().value());
+    /** Update zone DNS record for given policy */
+    private void updateZoneDnsOf(RoutingPolicy policy) {
+        var name = RecordName.from(policy.endpointIn(controller.system()).dnsName());
+        var data = RecordData.fqdn(policy.canonicalName().value());
         controller.nameServiceForwarder().createCname(name, data, Priority.normal);
-        return routingPolicy;
     }
 
-    /** Remove obsolete policies for given route and their CNAME records */
-    private void removeObsoletePolicies(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+    /** Remove policies and zone DNS records unreferenced by given load balancers */
+    private void removePoliciesUnreferencedBy(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
         var policies = get(loadBalancers.application);
         var newPolicies = new LinkedHashMap<>(policies);
-        var activeLoadBalancers = loadBalancers.list.stream()
-                                                    .map(LoadBalancer::hostname)
-                                                    .collect(Collectors.toSet());
+        var activeLoadBalancers = loadBalancers.list.stream().map(LoadBalancer::hostname).collect(Collectors.toSet());
         for (var policy : policies.values()) {
-            // Skip active load balancers and irrelevant zones from candidates
+            // Leave active load balancers and irrelevant zones alone
             if (activeLoadBalancers.contains(policy.canonicalName()) ||
                 !policy.id().zone().equals(loadBalancers.zone)) continue;
 
@@ -144,10 +169,10 @@ public class RoutingPolicies {
         db.writeRoutingPolicies(loadBalancers.application, newPolicies);
     }
 
-    /** Remove unreferenced global endpoints for given route from DNS */
-    private void removeObsoleteEndpointsFromDns(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
-        var zonePolicies = get(loadBalancers.application, loadBalancers.zone);
-        var removalCandidates = routingTableFrom(zonePolicies.values()).keySet();
+    /** Remove unreferenced global endpoints from DNS */
+    private void removeGlobalDnsUnreferencedBy(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+        var zonePolicies = get(loadBalancers.application, loadBalancers.zone).values();
+        var removalCandidates = new HashSet<>(routingTableFrom(zonePolicies).keySet());
         var activeRoutingIds = routingIdsFrom(loadBalancers);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
@@ -171,13 +196,13 @@ public class RoutingPolicies {
     private static Map<RoutingId, List<RoutingPolicy>> routingTableFrom(Collection<RoutingPolicy> routingPolicies) {
         var routingTable = new LinkedHashMap<RoutingId, List<RoutingPolicy>>();
         for (var policy : routingPolicies) {
-            for (var rotation : policy.endpoints()) {
-                var id = new RoutingId(policy.id().owner(), rotation);
+            for (var endpoint : policy.endpoints()) {
+                var id = new RoutingId(policy.id().owner(), endpoint);
                 routingTable.putIfAbsent(id, new ArrayList<>());
                 routingTable.get(id).add(policy);
             }
         }
-        return routingTable;
+        return Collections.unmodifiableMap(routingTable);
     }
 
     private static boolean isActive(LoadBalancer loadBalancer) {

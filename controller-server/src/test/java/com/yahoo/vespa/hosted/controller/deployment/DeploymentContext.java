@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.Status;
@@ -64,8 +65,8 @@ import static org.junit.Assert.assertTrue;
  *
  * References to this should be acquired through {@link DeploymentTester#newDeploymentContext}.
  *
- * Tester code that is not specific to deployments should be added to either {@link ControllerTester} or
- * {@link DeploymentTester} instead of this class.
+ * Tester code that is not specific to a single application's deployment context should be added to either
+ * {@link ControllerTester} or {@link DeploymentTester} instead of this class.
  *
  * @author mpolden
  * @author jonmv
@@ -221,7 +222,7 @@ public class DeploymentContext {
         policies.put(id, new RoutingPolicy(id, HostName.from("lb-host"),
                                            Optional.empty(),
                                            Set.of(EndpointId.of("c0")),
-                                           new Status(active)));
+                                           new Status(active, GlobalRouting.DEFAULT_STATUS)));
         tester.controller().curator().writeRoutingPolicies(instance, policies);
         return this;
     }

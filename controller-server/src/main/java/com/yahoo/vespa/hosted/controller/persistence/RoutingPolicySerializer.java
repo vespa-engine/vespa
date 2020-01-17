@@ -6,12 +6,15 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.Status;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -39,6 +42,10 @@ public class RoutingPolicySerializer {
     private static final String dnsZoneField = "dnsZone";
     private static final String rotationsField = "rotations";
     private static final String loadBalancerActiveField = "active";
+    private static final String globalRoutingField = "globalRouting";
+    private static final String agentField = "agent";
+    private static final String changedAtField = "changedAt";
+    private static final String statusField = "status";
 
     public Slime toSlime(Map<RoutingPolicyId, RoutingPolicy> routingPolicies) {
         var slime = new Slime();
@@ -55,6 +62,10 @@ public class RoutingPolicySerializer {
                 rotationArray.addString(endpointId.id());
             });
             policyObject.setBool(loadBalancerActiveField, policy.status().loadBalancerActive());
+            var globalRoutingObject = policyObject.setObject(globalRoutingField);
+            globalRoutingObject.setString(statusField, policy.status().globalRouting().status().name());
+            globalRoutingObject.setString(agentField, policy.status().globalRouting().agent().name());
+            globalRoutingObject.setLong(changedAtField, policy.status().globalRouting().changedAt().toEpochMilli());
         });
         return slime;
     }
@@ -73,9 +84,18 @@ public class RoutingPolicySerializer {
                                                HostName.from(inspect.field(canonicalNameField).asString()),
                                                Serializers.optionalString(inspect.field(dnsZoneField)),
                                                endpointIds,
-                                               new Status(inspect.field(loadBalancerActiveField).asBool())));
+                                               new Status(inspect.field(loadBalancerActiveField).asBool(),
+                                                          globalRoutingFromSlime(inspect.field(globalRoutingField)))));
         });
         return Collections.unmodifiableMap(policies);
+    }
+
+    private GlobalRouting globalRoutingFromSlime(Inspector object) {
+        if (!object.valid()) return GlobalRouting.DEFAULT_STATUS;
+        var status = GlobalRouting.Status.valueOf(object.field(statusField).asString());
+        var agent = GlobalRouting.Agent.valueOf(object.field(agentField).asString());
+        var changedAt = Serializers.optionalInstant(object.field(changedAtField)).orElse(Instant.EPOCH);
+        return new GlobalRouting(status, agent, changedAt);
     }
 
 }
