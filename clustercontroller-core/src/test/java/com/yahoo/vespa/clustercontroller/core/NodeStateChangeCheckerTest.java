@@ -61,14 +61,14 @@ public class NodeStateChangeCheckerTest {
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
-        return new NodeStateChangeChecker(minStorageNodesUp, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
+        return new NodeStateChangeChecker(minStorageNodesUp, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo(), true);
     }
 
     private ContentCluster createCluster(Collection<ConfiguredNode> nodes) {
         Distribution distribution = mock(Distribution.class);
         Group group = new Group(2, "to");
         when(distribution.getRootGroup()).thenReturn(group);
-        return new ContentCluster("Clustername", nodes, distribution, minStorageNodesUp, 0.0);
+        return new ContentCluster("Clustername", nodes, distribution, minStorageNodesUp, 0.0, true);
     }
 
     private StorageNodeInfo createStorageNodeInfo(int index, State state) {
@@ -78,7 +78,7 @@ public class NodeStateChangeCheckerTest {
 
         String clusterName = "Clustername";
         Set<ConfiguredNode> configuredNodeIndexes = new HashSet<>();
-        ContentCluster cluster = new ContentCluster(clusterName, configuredNodeIndexes, distribution, minStorageNodesUp, 0.0);
+        ContentCluster cluster = new ContentCluster(clusterName, configuredNodeIndexes, distribution, minStorageNodesUp, 0.0, true);
 
         String rpcAddress = "";
         StorageNodeInfo storageNodeInfo = new StorageNodeInfo(cluster, index, false, rpcAddress, distribution);
@@ -136,7 +136,7 @@ public class NodeStateChangeCheckerTest {
     public void testUnknownStorageNode() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
+                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo(), true);
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -161,7 +161,7 @@ public class NodeStateChangeCheckerTest {
         ContentCluster cluster = createCluster(createNodes(4));
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
+                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo(), true);
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -549,12 +549,48 @@ public class NodeStateChangeCheckerTest {
                         "        \"dimensions\":\n" +
                         "        {\n" +
                         "        }\n" +
+                        "      },\n" +
+                        "      {\n" +
+                        "        \"name\":\"vds.datastored.bucket_space.buckets_total\",\n" +
+                        "        \"description\":\"Total number buckets present in the bucket space (ready + not ready)\",\n" +
+                        "        \"values\":\n" +
+                        "        {\n" +
+                        "          \"average\":0.0,\n" +
+                        "          \"sum\":0.0,\n" +
+                        "          \"count\":1,\n" +
+                        "          \"rate\":0.016666,\n" +
+                        "          \"min\":0,\n" +
+                        "          \"max\":0,\n" +
+                        "          \"last\":0\n" +
+                        "        },\n" +
+                        "        \"dimensions\":\n" +
+                        "        {\n" +
+                        "          \"bucketSpace\":\"global\"\n" +
+                        "        }\n" +
+                        "      },\n" +
+                        "      {\n" +
+                        "        \"name\":\"vds.datastored.bucket_space.buckets_total\",\n" +
+                        "        \"description\":\"Total number buckets present in the bucket space (ready + not ready)\",\n" +
+                        "        \"values\":\n" +
+                        "        {\n" +
+                        "          \"average\":129.0,\n" +
+                        "          \"sum\":129.0,\n" +
+                        "          \"count\":1,\n" +
+                        "          \"rate\":0.016666,\n" +
+                        "          \"min\":129,\n" +
+                        "          \"max\":129,\n" +
+                        "          \"last\":%d\n" +
+                        "        },\n" +
+                        "        \"dimensions\":\n" +
+                        "        {\n" +
+                        "          \"bucketSpace\":\"default\"\n" +
+                        "        }\n" +
                         "      }\n" +
                         "    ]\n" +
                         "  },\n" +
                         "  \"cluster-state-version\":%d\n" +
                         "}",
-                lastAlldisksBuckets, clusterStateVersion));
+                lastAlldisksBuckets, lastAlldisksBuckets, clusterStateVersion));
     }
 
     private List<ConfiguredNode> createNodes(int count) {

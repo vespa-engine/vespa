@@ -57,6 +57,7 @@ public interface ModelContext {
         // TODO: Remove temporary default implementation
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
         double defaultTermwiseLimit();
+        boolean useBucketSpaceMetric();
     }
 
 }

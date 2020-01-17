@@ -193,7 +193,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 options.nodes,
                 options.storageDistribution,
                 options.minStorageNodesUp,
-                options.minRatioOfStorageNodesUp);
+                options.minRatioOfStorageNodesUp, true);
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, log);
         Communicator communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),

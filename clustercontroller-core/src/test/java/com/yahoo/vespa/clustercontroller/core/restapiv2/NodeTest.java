@@ -121,7 +121,7 @@ public class NodeTest extends StateRestApiTest {
     public void testNodeNotSeenInSlobrok() throws Exception {
         setUp(true);
         ContentCluster old = music.context.cluster;
-        music.context.cluster = new ContentCluster(old.getName(), old.getConfiguredNodes().values(), old.getDistribution(), 0, 0.0);
+        music.context.cluster = new ContentCluster(old.getName(), old.getConfiguredNodes().values(), old.getDistribution(), 0, 0.0, true);
         NodeState currentState = new NodeState(NodeType.STORAGE, State.DOWN);
         currentState.setDescription("Not seen");
         music.context.currentConsolidatedState.setNodeState(new Node(NodeType.STORAGE, 1), currentState);

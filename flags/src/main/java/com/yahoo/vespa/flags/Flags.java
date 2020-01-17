@@ -83,6 +83,13 @@ public class Flags {
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_BUCKET_SPACE_METRIC = defineFeatureFlag(
+            "use-bucket-space-metric", true,
+            "Whether to use vds.datastored.bucket_space.buckets_total (true) instead of " +
+            "vds.datastored.alldisks.buckets (false, legacy).",
+            "Takes efefct on the next deployment of the application",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag INCLUDE_SIS_IN_TRUSTSTORE = defineFeatureFlag(
             "include-sis-in-truststore", false,
             "Whether to use the trust store backed by Athenz and (in public) Service Identity certificates in " +

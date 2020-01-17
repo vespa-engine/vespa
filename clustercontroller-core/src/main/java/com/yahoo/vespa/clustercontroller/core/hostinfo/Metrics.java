@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -25,21 +26,44 @@ public class Metrics {
         return Optional.empty();
     }
 
+    /**
+     * Get the metric value whose dimensions MUST MATCH the given dimensions map.
+     * To require the metric to NOT have a dimension key, set it's value to null.
+     */
+    public Optional<Value> getValueAt(String name, Map<String, String> dimensions) {
+        return metricsList.stream()
+                .filter(metric -> metric.name.equals(name))
+                .filter(metric -> dimensions.entrySet().stream()
+                        .allMatch(entry -> {
+                            String dimensionName = entry.getKey();
+                            Optional<String> requiredDimensionValue = Optional.ofNullable(entry.getValue());
+                            return metric.getDimensionValue(dimensionName).equals(requiredDimensionValue);
+                        }))
+                .map(Metric::getValue)
+                .findFirst();
+    }
+
     public List<Metric> getMetrics() { return Collections.unmodifiableList(metricsList); }
 
     public static class Metric {
         private final String name;
         private final Value value;
+        private final Map<String, String> dimensions;
 
         public Metric(
                 @JsonProperty("name") String name,
-                @JsonProperty("values") Value value) {
+                @JsonProperty("values") Value value,
+                @JsonProperty("dimensions") Map<String, String> dimensions) {
             this.name = name;
             this.value = value;
+            this.dimensions = dimensions;
         }
 
         public String getName() { return name; }
         public Value getValue() { return value; }
+        public Optional<String> getDimensionValue(String dimension) {
+            return Optional.ofNullable(dimensions.get(dimension));
+        }
     }
 
     public static class Value {

@@ -80,7 +80,7 @@ public class StateChangeHandlerTest {
         Distribution distribution = new Distribution(Distribution.getDefaultDistributionConfig(2, 100));
         this.config = config;
         for (int i=0; i<config.nodeCount; ++i) configuredNodes.add(new ConfiguredNode(i, false));
-        cluster = new ContentCluster("testcluster", configuredNodes, distribution, 0, 0.0);
+        cluster = new ContentCluster("testcluster", configuredNodes, distribution, 0, 0.0, true);
         nodeStateChangeHandler = new StateChangeHandler(clock, eventLog, null);
         params.minStorageNodesUp(1).minDistributorNodesUp(1)
                 .minRatioOfStorageNodesUp(0.0).minRatioOfDistributorNodesUp(0.0)

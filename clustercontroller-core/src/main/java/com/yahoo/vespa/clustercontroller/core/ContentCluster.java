@@ -22,6 +22,7 @@ public class ContentCluster {
     private final ClusterInfo clusterInfo = new ClusterInfo();
 
     private final Map<Node, Long> nodeStartTimestamps = new TreeMap<>();
+    private final boolean determineBucketsFromBucketSpaceMetric;
 
     private int slobrokGenerationCount = 0;
 
@@ -32,7 +33,9 @@ public class ContentCluster {
     private double minRatioOfStorageNodesUp;
 
     public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution,
-                          int minStorageNodesUp, double minRatioOfStorageNodesUp) {
+                          int minStorageNodesUp, double minRatioOfStorageNodesUp,
+                          boolean determineBucketsFromBucketSpaceMetric) {
+        this.determineBucketsFromBucketSpaceMetric = determineBucketsFromBucketSpaceMetric;
         if (configuredNodes == null) throw new IllegalArgumentException("Nodes must be set");
         this.clusterName = clusterName;
         this.distribution = distribution;
@@ -183,7 +186,8 @@ public class ContentCluster {
                 minStorageNodesUp,
                 minRatioOfStorageNodesUp,
                 distribution.getRedundancy(),
-                clusterInfo);
+                clusterInfo,
+                determineBucketsFromBucketSpaceMetric);
         return nodeStateChangeChecker.evaluateTransition(node, clusterState, condition, oldState, newState);
     }
 

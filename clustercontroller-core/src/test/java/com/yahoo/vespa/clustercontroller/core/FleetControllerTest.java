@@ -34,8 +34,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import static org.junit.Assert.fail;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,6 +46,8 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.junit.Assert.fail;
 
 /**
  * @author Håkon Humberset
@@ -157,7 +157,7 @@ public abstract class FleetControllerTest implements Waiter {
                 options.nodes,
                 options.storageDistribution,
                 options.minStorageNodesUp,
-                options.minRatioOfStorageNodesUp);
+                options.minRatioOfStorageNodesUp, true);
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, log);
         Communicator communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
