@@ -25,7 +25,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
     @Override
     protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element serverSpec) {
         String name = XmlHelper.getIdString(serverSpec);
-        int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted());
+        int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted(), deployState.getDeployLogger());
 
         SimpleComponent sslProviderComponent = getSslConfigComponents(name, serverSpec);
         return new ConnectorFactory(name, port, sslProviderComponent);
@@ -54,4 +54,5 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             return new DefaultSslProvider(serverName);
         }
     }
+
 }

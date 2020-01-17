@@ -47,6 +47,7 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.hamcrest.Matchers;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -148,6 +149,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    @Ignore // TODO: Enable when turning the port check on
     public void fail_if_http_port_is_not_default_in_hosted_vespa() throws Exception {
         try {
             String servicesXml =

@@ -24,6 +24,7 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 
@@ -128,7 +129,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
     }
 
-    static int readPort(ModelElement spec, boolean isHosted) {
+    static int readPort(ModelElement spec, boolean isHosted, DeployLogger logger) {
         Integer port = spec.integerAttribute("port");
         if (port == null)
             return Defaults.getDefaults().vespaWebServicePort();
@@ -137,10 +138,15 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             throw new IllegalArgumentException("Invalid port " + port);
 
         int legalPortInHostedVespa = Container.BASEPORT;
-        if (isHosted && port != legalPortInHostedVespa && ! spec.booleanAttribute("required", false))
-            throw new IllegalArgumentException("Illegal port " + port + " in http server '" +
-                                               spec.stringAttribute("id") + "'" +
-                                               ": Port must be set to " + legalPortInHostedVespa);
+        if (isHosted && port != legalPortInHostedVespa && ! spec.booleanAttribute("required", false)) {
+            // TODO: After January 2020:
+            // - Set required='true' for the http server on port 4443 in the tester services.xml in InternalStepRunner
+            // - Enable 2 currently ignored tests in this module
+            // - throw IllegalArgumentException here instead of warning
+            logger.log(Level.WARNING, "Illegal port " + port + " in http server '" +
+                                      spec.stringAttribute("id") + "'" +
+                                      ": Port must be set to " + legalPortInHostedVespa);
+        }
         return port;
     }
 }

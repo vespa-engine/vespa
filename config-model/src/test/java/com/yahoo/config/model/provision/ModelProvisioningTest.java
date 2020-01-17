@@ -1315,6 +1315,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    @Ignore // TODO: Enable when turning the port check on
     public void testThatStandaloneSyntaxOnHostedVespaRequiresDefaultPort() {
         try {
             String services =
