@@ -12,6 +12,7 @@ import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Zone;
@@ -289,11 +290,11 @@ public class MetricsProxyContainerClusterTest {
         ApplicationDimensionsConfig config = getApplicationDimensionsConfig(hostedModel);
 
         assertEquals(Zone.defaultZone().system().value(), config.dimensions(AppDimensionNames.SYSTEM));
-        assertEquals(zoneString(Zone.defaultZone()), config.dimensions(AppDimensionNames.ZONE));
+        assertEquals(zoneString(Zone.defaultZone()), config.dimensions(PublicDimensions.ZONE));
         assertEquals(MY_TENANT, config.dimensions(AppDimensionNames.TENANT));
         assertEquals(MY_APPLICATION, config.dimensions(AppDimensionNames.APPLICATION));
         assertEquals(MY_INSTANCE, config.dimensions(AppDimensionNames.INSTANCE));
-        assertEquals(MY_TENANT + "." + MY_APPLICATION + "." + MY_INSTANCE, config.dimensions(AppDimensionNames.APPLICATION_ID));
+        assertEquals(MY_TENANT + "." + MY_APPLICATION + "." + MY_INSTANCE, config.dimensions(PublicDimensions.APPLICATION_ID));
         assertEquals(MY_APPLICATION + "." + MY_INSTANCE, config.dimensions(AppDimensionNames.LEGACY_APPLICATION));
     }
 

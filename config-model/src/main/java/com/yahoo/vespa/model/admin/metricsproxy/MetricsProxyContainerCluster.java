@@ -16,6 +16,7 @@ import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcServer;
 import ai.vespa.metricsproxy.service.ConfigSentinelClient;
 import ai.vespa.metricsproxy.service.SystemPollerProvider;
@@ -47,12 +48,10 @@ import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.generateConsumers;
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.toConsumerBuilder;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.APPLICATION;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.APPLICATION_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.INSTANCE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.LEGACY_APPLICATION;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.TENANT;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.ZONE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.SYSTEM;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.TENANT;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.getDefaultPublicConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.getVespaMetricsConsumer;
@@ -79,8 +78,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     static final class AppDimensionNames {
         static final String SYSTEM = "system";
-        static final String ZONE = "zone";
-        static final String APPLICATION_ID = "applicationId";  // tenant.app.instance
         static final String TENANT = "tenantName";
         static final String APPLICATION = "applicationName";
         static final String INSTANCE = "instanceName";
@@ -208,8 +205,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private Map<String, String> applicationDimensions() {
         Map<String, String> dimensions = new LinkedHashMap<>();
         dimensions.put(SYSTEM, getZone().system().value());
-        dimensions.put(ZONE, zoneString(getZone()));
-        dimensions.put(APPLICATION_ID, serializeWithDots(applicationId));
+        dimensions.put(PublicDimensions.ZONE, zoneString(getZone()));
+        dimensions.put(PublicDimensions.APPLICATION_ID, serializeWithDots(applicationId));
         dimensions.put(TENANT, applicationId.tenant().value());
         dimensions.put(APPLICATION, applicationId.application().value());
         dimensions.put(INSTANCE, applicationId.instance().value());

@@ -3,6 +3,7 @@ package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.metric.model.json.GenericApplicationModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
@@ -19,6 +20,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
@@ -34,6 +36,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static com.yahoo.collections.CollectionUtil.first;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -135,6 +138,22 @@ public class ApplicationMetricsHandlerTest {
         assertEquals("searchnode", searchnode.name);
         assertEquals(1, searchnode.metrics.size());
         assertEquals(4, searchnode.metrics.get(0).values.get("queries.count"), 0.0001d);
+    }
+
+    @Test
+    public void metrics_processors_are_applied() {
+        GenericApplicationModel jsonModel = getResponseAsJsonModel(DEFAULT_PUBLIC_CONSUMER_ID.id);
+
+        GenericService searchnode = jsonModel.nodes.get(0).services.get(0);
+        Map<String, String> dimensions = searchnode.metrics.get(0).dimensions;
+        assertEquals(6, dimensions.size());
+        assertEquals("music.default", dimensions.get(PublicDimensions.APPLICATION_ID));
+        assertEquals("container/default", dimensions.get(PublicDimensions.CLUSTER_ID));
+        assertEquals("us-west", dimensions.get(PublicDimensions.ZONE));
+        assertEquals("search/", dimensions.get(PublicDimensions.API));
+        assertEquals("music", dimensions.get(PublicDimensions.DOCUMENT_TYPE));
+        assertEquals("qrserver0", dimensions.get(PublicDimensions.SERVICE_ID));
+        assertFalse(dimensions.containsKey("non-public"));
     }
 
     @Test

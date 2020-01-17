@@ -158,6 +158,22 @@ public class MetricsPacket {
             return this;
         }
 
+        /**
+         * Returns a modifiable copy of the dimension IDs of this builder, usually for use with {@link #retainDimensions(Collection)}.
+         */
+        public Set<DimensionId> getDimensionIds() {
+            return new LinkedHashSet<>(dimensions.keySet());
+        }
+
+        public String getDimensionValue(DimensionId id) {
+            return dimensions.get(id);
+        }
+
+        public Builder retainDimensions(Collection<DimensionId> idsToRetain) {
+            dimensions.keySet().retainAll(idsToRetain);
+            return this;
+        }
+
         public Builder addConsumers(Set<ConsumerId> extraConsumers) {
             if (extraConsumers != null) consumers.addAll(extraConsumers);
             return this;
