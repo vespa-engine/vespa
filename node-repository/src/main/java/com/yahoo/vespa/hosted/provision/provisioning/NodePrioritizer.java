@@ -46,11 +46,13 @@ public class NodePrioritizer {
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final boolean isTopologyChange;
+    private final boolean inPlaceResizeEnabled;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int spares, int wantedGroups, NameResolver nameResolver, HostResourcesCalculator hostResourcesCalculator) {
+                    int spares, int wantedGroups, NameResolver nameResolver, HostResourcesCalculator hostResourcesCalculator,
+                    boolean inPlaceResizeEnabled) {
         this.allNodes = allNodes;
         this.capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
@@ -58,6 +60,7 @@ public class NodePrioritizer {
         this.appId = appId;
         this.nameResolver = nameResolver;
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
+        this.inPlaceResizeEnabled = inPlaceResizeEnabled;
 
         NodeList nodesInCluster = allNodes.owner(appId).type(clusterSpec.type()).cluster(clusterSpec.id());
         long currentGroups = nodesInCluster.state(Node.State.active).stream()
@@ -213,7 +216,7 @@ public class NodePrioritizer {
             builder.parent(parent).freeParentCapacity(parentCapacity);
 
             if (!isNewNode)
-                builder.resizable(requestedNodes.canResize(
+                builder.resizable(inPlaceResizeEnabled && requestedNodes.canResize(
                         node.flavor().resources(), parentCapacity, isTopologyChange, currentClusterSize));
 
             if (spareHosts.contains(parent))
