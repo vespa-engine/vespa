@@ -143,7 +143,6 @@
       "public static com.yahoo.config.provision.Capacity fromCount(int, com.yahoo.config.provision.NodeResources)",
       "public static com.yahoo.config.provision.Capacity fromCount(int, com.yahoo.config.provision.NodeResources, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromCount(int, java.util.Optional, boolean, boolean)",
-      "public static com.yahoo.config.provision.Capacity fromNodeCount(int, java.util.Optional, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromRequiredNodeType(com.yahoo.config.provision.NodeType)"
     ],
     "fields": []
