@@ -62,7 +62,8 @@ ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
       _rejectFeedBeforeTimeReached(), // At epoch
       _non_main_thread_ops_mutex(),
       _non_main_thread_ops_owner(*_direct_dispatch_sender, getClock()),
-      _concurrent_gets_enabled(false)
+      _concurrent_gets_enabled(false),
+      _use_weak_internal_read_consistency_for_gets(false)
 {
 }
 
@@ -323,6 +324,12 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
     return true;
 }
 
+api::InternalReadConsistency ExternalOperationHandler::desired_get_read_consistency() const noexcept {
+    return (use_weak_internal_read_consistency_for_gets()
+            ? api::InternalReadConsistency::Weak
+            : api::InternalReadConsistency::Strong);
+}
+
 std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(const std::shared_ptr<api::GetCommand>& cmd) {
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
     auto& metrics = getMetrics().gets[cmd->getLoadType()];
@@ -342,7 +349,8 @@ std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(
     const auto* space_repo = snapshot.bucket_space_repo();
     assert(space_repo != nullptr);
     return std::make_shared<GetOperation>(*this, space_repo->get(bucket.getBucketSpace()),
-                                          snapshot.steal_read_guard(), cmd, metrics);
+                                          snapshot.steal_read_guard(), cmd, metrics,
+                                          desired_get_read_consistency());
 }
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)

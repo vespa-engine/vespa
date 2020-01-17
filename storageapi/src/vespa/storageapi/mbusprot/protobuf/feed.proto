@@ -61,6 +61,11 @@ message GetRequest {
     bytes  document_id      = 2;
     bytes  field_set        = 3;
     uint64 before_timestamp = 4;
+    enum InternalReadConsistency {
+        Strong = 0; // Default for a good reason.
+        Weak = 1;
+    }
+    InternalReadConsistency internal_read_consistency = 5;
 }
 
 message GetResponse {

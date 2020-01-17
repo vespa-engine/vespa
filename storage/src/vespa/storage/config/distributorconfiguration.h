@@ -228,6 +228,13 @@ public:
         _merge_operations_disabled = disabled;
     }
 
+    void set_use_weak_internal_read_consistency_for_client_gets(bool use_weak) noexcept {
+        _use_weak_internal_read_consistency_for_client_gets = use_weak;
+    }
+    bool use_weak_internal_read_consistency_for_client_gets() const noexcept {
+        return _use_weak_internal_read_consistency_for_client_gets;
+    }
+
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
@@ -273,6 +280,7 @@ private:
     bool _allowStaleReadsDuringClusterStateTransitions;
     bool _update_fast_path_restart_enabled;
     bool _merge_operations_disabled;
+    bool _use_weak_internal_read_consistency_for_client_gets;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     

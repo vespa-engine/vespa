@@ -316,8 +316,20 @@ enum class LockingRequirements : uint8_t {
 };
 
 const char* to_string(LockingRequirements req) noexcept;
-
 std::ostream& operator<<(std::ostream&, LockingRequirements);
+
+// This mirrors spi::ReadConsistency and has the same semantics, but is
+// decoupled to avoid extra cross-module dependencies.
+// Note that the name _internal_ read consistency is intentional to lessen
+// any ambiguities on whether this is consistency in a distributed systems
+// setting (i.e. linearizability) on internally in the persistence provider.
+enum class InternalReadConsistency : uint8_t {
+    Strong = 0,
+    Weak
+};
+
+const char* to_string(InternalReadConsistency consistency) noexcept;
+std::ostream& operator<<(std::ostream&, InternalReadConsistency);
 
 class StorageMessage : public vespalib::Printable
 {

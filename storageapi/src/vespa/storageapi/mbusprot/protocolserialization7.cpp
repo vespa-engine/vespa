@@ -530,6 +530,26 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeRemoveReply(const SCmd& cm
 // Get
 // -----------------------------------------------------------------
 
+namespace {
+
+protobuf::GetRequest_InternalReadConsistency read_consistency_to_protobuf(api::InternalReadConsistency consistency) {
+    switch (consistency) {
+    case api::InternalReadConsistency::Strong: return protobuf::GetRequest_InternalReadConsistency_Strong;
+    case api::InternalReadConsistency::Weak:   return protobuf::GetRequest_InternalReadConsistency_Weak;
+    default: return protobuf::GetRequest_InternalReadConsistency_Strong;
+    }
+}
+
+api::InternalReadConsistency read_consistency_from_protobuf(protobuf::GetRequest_InternalReadConsistency consistency) {
+    switch (consistency) {
+    case protobuf::GetRequest_InternalReadConsistency_Strong: return api::InternalReadConsistency::Strong;
+    case protobuf::GetRequest_InternalReadConsistency_Weak:   return api::InternalReadConsistency::Weak;
+    default: return api::InternalReadConsistency::Strong;
+    }
+}
+
+}
+
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetCommand& msg) const {
     encode_bucket_request<protobuf::GetRequest>(buf, msg, [&](auto& req) {
         auto doc_id = msg.getDocumentId().toString();
@@ -538,6 +558,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetCommand& msg) co
         if (!msg.getFieldSet().empty()) {
             req.set_field_set(msg.getFieldSet().data(), msg.getFieldSet().size());
         }
+        req.set_internal_read_consistency(read_consistency_to_protobuf(msg.internal_read_consistency()));
     });
 }
 
@@ -553,8 +574,10 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetReply& msg) cons
 api::StorageCommand::UP ProtocolSerialization7::onDecodeGetCommand(BBuf& buf) const {
     return decode_bucket_request<protobuf::GetRequest>(buf, [&](auto& req, auto& bucket) {
         document::DocumentId doc_id(vespalib::stringref(req.document_id().data(), req.document_id().size()));
-        return std::make_unique<api::GetCommand>(bucket, std::move(doc_id),
-                                                 req.field_set(), req.before_timestamp());
+        auto op = std::make_unique<api::GetCommand>(bucket, std::move(doc_id),
+                                                    req.field_set(), req.before_timestamp());
+        op->set_internal_read_consistency(read_consistency_from_protobuf(req.internal_read_consistency()));
+        return op;
     });
 }
 

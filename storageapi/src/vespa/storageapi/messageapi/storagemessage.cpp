@@ -302,16 +302,27 @@ StorageMessage::getSummary() const {
 
 const char* to_string(LockingRequirements req) noexcept {
     switch (req) {
-    case LockingRequirements::Exclusive:
-        return "Exclusive";
-    case LockingRequirements::Shared:
-        return "Shared";
+    case LockingRequirements::Exclusive: return "Exclusive";
+    case LockingRequirements::Shared:    return "Shared";
+    default: abort();
     }
-    assert(false);
 }
 
 std::ostream& operator<<(std::ostream& os, LockingRequirements req) {
     os << to_string(req);
+    return os;
+}
+
+const char* to_string(InternalReadConsistency consistency) noexcept {
+    switch (consistency) {
+    case InternalReadConsistency::Strong: return "Strong";
+    case InternalReadConsistency::Weak:   return "Weak";
+    default: abort();
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, InternalReadConsistency consistency) {
+    os << to_string(consistency);
     return os;
 }
 

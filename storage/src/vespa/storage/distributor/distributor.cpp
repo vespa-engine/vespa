@@ -849,6 +849,8 @@ Distributor::enableNextConfig()
     // Concurrent reads are only safe if the B-tree DB implementation is used.
     _externalOperationHandler.set_concurrent_gets_enabled(
             _use_btree_database && getConfig().allowStaleReadsDuringClusterStateTransitions());
+    _externalOperationHandler.set_use_weak_internal_read_consistency_for_gets(
+            getConfig().use_weak_internal_read_consistency_for_client_gets());
 }
 
 void
