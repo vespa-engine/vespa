@@ -1075,8 +1075,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                    .map(type -> new JobId(instance.id(), type))
                    .map(status.jobSteps()::get)
                    .ifPresent(stepStatus -> {
-                       response.setString("platform", deployment.version().toFullString());
-                       toSlime(deployment.applicationVersion(), response.setObject("applicationVersion"));
+                       JobControllerApiHandlerHelper.applicationVersionToSlime(
+                               response.setObject("applicationVersion"), deployment.applicationVersion());
                        if (!status.jobsToRun().containsKey(stepStatus.job().get()))
                            response.setString("status", "complete");
                        else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(false))

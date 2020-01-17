@@ -9,11 +9,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.MessageResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -35,8 +37,6 @@ import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
-import com.yahoo.restapi.MessageResponse;
-import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.net.URI;
@@ -404,7 +404,7 @@ class JobControllerApiHandlerHelper {
         versions.sourceApplication().ifPresent(version -> applicationVersionToSlime(runObject.setObject("currentApplication"), version));
     }
 
-    private static void applicationVersionToSlime(Cursor versionObject, ApplicationVersion version) {
+    static void applicationVersionToSlime(Cursor versionObject, ApplicationVersion version) {
         versionObject.setString("hash", version.id());
         if (version.isUnknown())
             return;
