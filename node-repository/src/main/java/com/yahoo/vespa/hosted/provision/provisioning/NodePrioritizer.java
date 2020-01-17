@@ -63,7 +63,8 @@ public class NodePrioritizer {
         this.inPlaceResizeEnabled = inPlaceResizeEnabled;
 
         NodeList nodesInCluster = allNodes.owner(appId).type(clusterSpec.type()).cluster(clusterSpec.id());
-        long currentGroups = nodesInCluster.state(Node.State.active).stream()
+        NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
+        long currentGroups = nonRetiredNodesInCluster.state(Node.State.active).stream()
                 .flatMap(node -> node.allocation()
                         .flatMap(alloc -> alloc.membership().cluster().group().map(ClusterSpec.Group::index))
                         .stream())
@@ -71,7 +72,7 @@ public class NodePrioritizer {
                 .count();
         this.isTopologyChange = currentGroups != wantedGroups;
 
-        this.currentClusterSize = (int) nodesInCluster.state(Node.State.active).stream()
+        this.currentClusterSize = (int) nonRetiredNodesInCluster.state(Node.State.active).stream()
                 .map(node -> node.allocation().flatMap(alloc -> alloc.membership().cluster().group()))
                 .filter(clusterSpec.group()::equals)
                 .count();
