@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -31,7 +32,7 @@ import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SEARCHDEF
  */
 public class ValidationTester {
 
-    private final int nodeCount;
+    private final HostProvisioner hostProvisioner;
 
     /** Creates a validation tester with 1 node available */
     public ValidationTester() {
@@ -40,7 +41,12 @@ public class ValidationTester {
 
     /** Creates a validation tester with a number of nodes available */
     public ValidationTester(int nodeCount) {
-        this.nodeCount = nodeCount;
+        this(new InMemoryProvisioner(nodeCount));
+    }
+
+    /** Creates a validation tester with a given host provisioner */
+    public ValidationTester(HostProvisioner hostProvisioner) {
+        this.hostProvisioner = hostProvisioner;
     }
 
     /**
@@ -70,7 +76,7 @@ public class ValidationTester {
                                                                             RegionName.defaultName()))
                                                              .applicationPackage(newApp)
                                                              .properties(new TestProperties().setHostedVespa(true))
-                                                             .modelHostProvisioner(new InMemoryProvisioner(nodeCount))
+                                                             .modelHostProvisioner(hostProvisioner)
                                                              .now(now);
         if (previousModel != null)
             deployStateBuilder.previousModel(previousModel);

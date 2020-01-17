@@ -17,10 +17,10 @@ import static org.junit.Assert.fail;
  */
 public class ContentClusterRemovalValidatorTest {
 
+    private final ValidationTester tester = new ValidationTester(2);
+
     @Test
     public void testContentRemovalValidation() {
-        ValidationTester tester = new ValidationTester();
-
         VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
         try {
             tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, null);
@@ -35,8 +35,6 @@ public class ContentClusterRemovalValidatorTest {
 
     @Test
     public void testOverridingContentRemovalValidation() {
-        ValidationTester tester = new ValidationTester();
-
         VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, removalOverride); // Allowed due to override
     }
