@@ -49,7 +49,8 @@ SerializableArray::SerializableArray(EntryMap entries, ByteBuffer::UP buffer,
     }
 }
 
-serializablearray::BufferMap & ensure(std::unique_ptr<serializablearray::BufferMap> & owned) {
+serializablearray::BufferMap &
+ensure(std::unique_ptr<serializablearray::BufferMap> & owned) {
     if (!owned) {
         owned = std::make_unique<serializablearray::BufferMap>();
     }
@@ -195,7 +196,7 @@ SerializableArray::deCompress() // throw (DeserializeException)
         _uncompSerData = std::move(_compSerData);
         LOG_ASSERT(_uncompressedLength == _uncompSerData->getRemaining());
     } else {
-        ByteBuffer::UP newSerialization(new ByteBuffer(_uncompressedLength));
+        auto newSerialization = std::make_unique<ByteBuffer>(_uncompressedLength);
         vespalib::DataBuffer unCompressed(newSerialization->getBuffer(), newSerialization->getLength());
         unCompressed.clear();
         try {

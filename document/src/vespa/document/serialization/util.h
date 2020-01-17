@@ -97,32 +97,5 @@ void putInt2_4_8Bytes(Output &out, uint64_t val) {
     }
 }
 
-inline uint32_t sizeOfInt1_4Bytes(uint32_t val) {
-    if (val < 0x80) {
-        return 1;
-    } else {
-        return 4;
-    }
-}
-
-inline uint32_t sizeOfInt1_2_4Bytes(uint32_t val) {
-    if (val < 0x80) {
-        return 1;
-    } else if (val < 0x4000) {
-        return 2;
-    } else {
-        return 4;
-    }
-}
-
-inline uint32_t sizeOfInt2_4_8Bytes(uint64_t val) {
-    if (val < 0x8000) {
-        return 2;
-    } else if (val < 0x40000000) {
-        return 4;
-    } else {
-        return 8;
-    }
-}
 }  // namespace document
 
