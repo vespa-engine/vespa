@@ -101,7 +101,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             if ( ! hasQuota(application, nodeCount))
                 throw new IllegalArgumentException(requestedCapacity + " requested for " + cluster +
                                                    (requestedCapacity.nodeCount() != nodeCount ? " resolved to " + nodeCount + " nodes" : "") +
-                                                   " exceeds your quota. Please contact Vespa support.");
+                                                   " exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
         }
         else {
             requestedNodes = NodeSpec.from(requestedCapacity.type());
