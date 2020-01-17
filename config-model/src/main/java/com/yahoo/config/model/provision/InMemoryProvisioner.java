@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -14,15 +15,16 @@ import com.yahoo.config.provision.ProvisionLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * In memory host provisioner for testing only.
@@ -58,26 +60,27 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     /** Creates this with a number of nodes with resources 1, 3, 9, 1 */
     public InMemoryProvisioner(int nodeCount) {
-        this(Collections.singletonMap(defaultResources,
-                                      createHostInstances(nodeCount)), true, 0);
+        this(nodeCount, defaultResources);
+    }
+
+    /** Creates this with a number of nodes with given resources */
+    public InMemoryProvisioner(int nodeCount, NodeResources resources) {
+        this(Map.of(resources, createHostInstances(nodeCount)), true, 0);
     }
 
     /** Creates this with a set of host names of the flavor 'default' */
     public InMemoryProvisioner(boolean failOnOutOfCapacity, String... hosts) {
-        this(Collections.singletonMap(defaultResources,
-                                      toHostInstances(hosts)), failOnOutOfCapacity, 0);
+        this(Map.of(defaultResources, toHostInstances(hosts)), failOnOutOfCapacity, 0);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        this(Collections.singletonMap(defaultResources,
-                                      hosts.asCollection()), failOnOutOfCapacity, 0, retiredHostNames);
+        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, 0, retiredHostNames);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
-        this(Collections.singletonMap(defaultResources,
-                                      hosts.asCollection()), failOnOutOfCapacity, startIndexForClusters, retiredHostNames);
+        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, startIndexForClusters, retiredHostNames);
     }
 
     public InMemoryProvisioner(Map<NodeResources, Collection<Host>> hosts, boolean failOnOutOfCapacity,
@@ -86,24 +89,16 @@ public class InMemoryProvisioner implements HostProvisioner {
         for (Map.Entry<NodeResources, Collection<Host>> hostsWithResources : hosts.entrySet())
             for (Host host : hostsWithResources.getValue())
                 freeNodes.put(hostsWithResources.getKey(), host);
-        this.retiredHostNames = new HashSet<>(Arrays.asList(retiredHostNames));
+        this.retiredHostNames = Set.of(retiredHostNames);
         this.startIndexForClusters = startIndexForClusters;
     }
 
     private static Collection<Host> toHostInstances(String[] hostnames) {
-        List<Host> hosts = new ArrayList<>();
-        for (String hostname : hostnames) {
-            hosts.add(new Host(hostname));
-        }
-        return hosts;
+        return Arrays.stream(hostnames).map(Host::new).collect(Collectors.toList());
     }
 
     private static Collection<Host> createHostInstances(int hostCount) {
-        List<Host> hosts = new ArrayList<>();
-        for (int i = 1; i <= hostCount; i++) {
-            hosts.add(new Host("host" + i));
-        }
-        return hosts;
+        return IntStream.range(1, hostCount + 1).mapToObj(i -> new Host("host" + i)).collect(Collectors.toList());
     }
 
     /** Returns the current allocations of this as a mutable map */
@@ -134,12 +129,10 @@ public class InMemoryProvisioner implements HostProvisioner {
         if (groups > capacity)
             groups = capacity;
 
-        NodeResources nodeResources = requestedCapacity.nodeResources().orElse(defaultResources);
-
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {
             allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(0))),
-                                                nodeResources,
+                                                requestedCapacity.nodeResources(),
                                                 capacity,
                                                 startIndexForClusters,
                                                 requestedCapacity.canFail()));
@@ -147,7 +140,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         else {
             for (int i = 0; i < groups; i++) {
                 allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(i))),
-                                                    nodeResources,
+                                                    requestedCapacity.nodeResources(),
                                                     capacity / groups,
                                                     allocation.size(),
                                                     requestedCapacity.canFail()));
@@ -169,21 +162,41 @@ public class InMemoryProvisioner implements HostProvisioner {
                             host.version());
     }
 
-    private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, NodeResources nodeResources, int nodesInGroup, int startIndex, boolean canFail) {
+    private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, Optional<NodeResources> requestedResources,
+                                             int nodesInGroup, int startIndex, boolean canFail) {
         List<HostSpec> allocation = allocations.getOrDefault(clusterGroup, new ArrayList<>());
         allocations.put(clusterGroup, allocation);
 
+        // Check if the current allocations are compatible with the new request
+        for (int i = allocation.size() - 1; i >= 0; i--) {
+            Optional<NodeResources> currentResources = allocation.get(0).flavor().map(Flavor::resources);
+            if (currentResources.isEmpty() || requestedResources.isEmpty()) continue;
+            if (!currentResources.get().compatibleWith(requestedResources.get())) {
+                HostSpec removed = allocation.remove(i);
+                freeNodes.put(currentResources.get(), new Host(removed.hostname())); // Return the node back to free pool
+            }
+        }
+
         int nextIndex = nextIndexInCluster.getOrDefault(new Pair<>(clusterGroup.type(), clusterGroup.id()), startIndex);
         while (allocation.size() < nodesInGroup) {
-            if (freeNodes.get(nodeResources).isEmpty()) {
+            // Find the smallest host that can fit the requested requested
+            Optional<NodeResources> hostResources = freeNodes.keySet().stream()
+                    .sorted(new MemoryDiskCpu())
+                    .filter(resources -> requestedResources.isEmpty() || resources.satisfies(requestedResources.get()))
+                    .findFirst();
+            if (hostResources.isEmpty()) {
                 if (canFail)
-                    throw new IllegalArgumentException("Insufficient capacity of for " + nodeResources);
+                    throw new IllegalArgumentException("Insufficient capacity of for " + requestedResources);
                 else
-                    break;
+                    break; // ¯\_(ツ)_/¯
             }
-            Host newHost = freeNodes.removeValue(nodeResources, 0);
+
+            Host newHost = freeNodes.removeValue(hostResources.get(), 0);
+            if (freeNodes.get(hostResources.get()).isEmpty()) freeNodes.removeAll(hostResources.get());
             ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
-            allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.of(membership), newHost.version()));
+            allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(),
+                    hostResources.map(Flavor::new), Optional.of(membership),
+                    newHost.version(), Optional.empty(), requestedResources));
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 
@@ -203,4 +216,17 @@ public class InMemoryProvisioner implements HostProvisioner {
         return count;
     }
 
+    private static class MemoryDiskCpu implements Comparator<NodeResources> {
+
+        @Override
+        public int compare(NodeResources a, NodeResources b) {
+            if (a.memoryGb() > b.memoryGb()) return 1;
+            if (a.memoryGb() < b.memoryGb()) return -1;
+            if (a.diskGb() > b.diskGb()) return 1;
+            if (a.diskGb() < b.diskGb()) return -1;
+            if (a.vcpu() > b.vcpu()) return 1;
+            if (a.vcpu() < b.vcpu()) return -1;
+            return 0;
+        }
+    }
 }
