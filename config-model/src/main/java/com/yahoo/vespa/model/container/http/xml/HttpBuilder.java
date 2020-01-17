@@ -8,8 +8,9 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -23,6 +24,7 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 
@@ -127,20 +129,24 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
     }
 
-    static int readPort(Element spec, boolean isHosted, DeployLogger deployLogger) {
-        String portString = spec.getAttribute("port");
+    static int readPort(ModelElement spec, boolean isHosted, DeployLogger logger) {
+        Integer port = spec.integerAttribute("port");
+        if (port == null)
+            return Defaults.getDefaults().vespaWebServicePort();
 
-        int port = Integer.parseInt(portString);
         if (port < 0)
-            throw new IllegalArgumentException(String.format("Invalid port %d.", port));
+            throw new IllegalArgumentException("Invalid port " + port);
 
         int legalPortInHostedVespa = Container.BASEPORT;
-        if (isHosted && port != legalPortInHostedVespa) {
-            deployLogger.log(LogLevel.WARNING,
-                    String.format("Trying to set port to %d for http server with id %s. You cannot set port to anything else than %s",
-                            port, spec.getAttribute("id"), legalPortInHostedVespa));
+        if (isHosted && port != legalPortInHostedVespa && ! spec.booleanAttribute("required", false)) {
+            // TODO: After January 2020:
+            // - Set required='true' for the http server on port 4443 in the tester services.xml in InternalStepRunner
+            // - Enable 2 currently ignored tests in this module
+            // - throw IllegalArgumentException here instead of warning
+            logger.log(Level.WARNING, "Illegal port " + port + " in http server '" +
+                                      spec.stringAttribute("id") + "'" +
+                                      ": Port must be set to " + legalPortInHostedVespa);
         }
-
         return port;
     }
 }

@@ -5,6 +5,7 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
@@ -24,7 +25,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
     @Override
     protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element serverSpec) {
         String name = XmlHelper.getIdString(serverSpec);
-        int port = HttpBuilder.readPort(serverSpec, deployState.isHosted(), deployState.getDeployLogger());
+        int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted(), deployState.getDeployLogger());
 
         SimpleComponent sslProviderComponent = getSslConfigComponents(name, serverSpec);
         return new ConnectorFactory(name, port, sslProviderComponent);
@@ -53,4 +54,5 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             return new DefaultSslProvider(serverName);
         }
     }
+
 }

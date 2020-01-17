@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Represents the http servers and filters of a Jdisc cluster.
+ * Represents the http servers and filters of a container cluster.
  *
  * @author Tony Vaagenes
  */
@@ -81,11 +81,10 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
 
     @Override
     public void getConfig(ServerConfig.Builder builder) {
-        for (final Binding binding : bindings) {
-            builder.filter(
-                    new ServerConfig.Filter.Builder()
-                            .id(binding.filterId().stringValue())
-                            .binding(binding.binding()));
+        for (Binding binding : bindings) {
+            builder.filter(new ServerConfig.Filter.Builder()
+                                   .id(binding.filterId().stringValue())
+                                   .binding(binding.binding()));
         }
     }
 
@@ -95,17 +94,17 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
     }
 
     void validate(Collection<Binding> bindings) {
-        if (!bindings.isEmpty()) {
-            if (filterChains == null)
-                throw new IllegalArgumentException("Null FilterChains is not allowed when there are filter bindings!");
+        if (bindings.isEmpty()) return;
 
-            ComponentRegistry<ChainedComponent<?>> filters = filterChains.componentsRegistry();
-            ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();
+        if (filterChains == null)
+            throw new IllegalArgumentException("Null FilterChains are not allowed when there are filter bindings");
 
-            for (Binding binding: bindings) {
-                if (filters.getComponent(binding.filterId()) == null && chains.getComponent(binding.filterId()) == null)
-                    throw new RuntimeException("Can't find filter " + binding.filterId() + " for binding " + binding.binding());
-            }
+        ComponentRegistry<ChainedComponent<?>> filters = filterChains.componentsRegistry();
+        ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();
+
+        for (Binding binding: bindings) {
+            if (filters.getComponent(binding.filterId()) == null && chains.getComponent(binding.filterId()) == null)
+                throw new RuntimeException("Can't find filter " + binding.filterId() + " for binding " + binding.binding());
         }
     }
 

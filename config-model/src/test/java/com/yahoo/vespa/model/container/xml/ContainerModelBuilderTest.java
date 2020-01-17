@@ -35,6 +35,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -46,6 +47,7 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.hamcrest.Matchers;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -133,29 +135,50 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void fail_if_http_port_is_not_4080_in_hosted_vespa() throws Exception {
-        String servicesXml =
-                "<services>" +
-                "<admin version='3.0'>" +
-                "    <nodes count='1'/>" +
-                "</admin>" +
-                "<container version='1.0'>" +
-                "  <http>" +
-                "    <server port='9000' id='foo' />" +
-                "  </http>" +
-                nodesXml +
-                "</container>" +
-                "</services>";
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
-        // Need to create VespaModel to make deploy properties have effect
-        final TestLogger logger = new TestLogger();
-        new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .applicationPackage(applicationPackage)
-                .deployLogger(logger)
-                .properties(new TestProperties().setHostedVespa(true))
-                .build());
-        assertFalse(logger.msgs.isEmpty());
-        assertThat(logger.msgs.get(0).getSecond(), containsString(String.format("You cannot set port to anything else than %d", Container.BASEPORT)));
+    public void omitting_http_server_port_gives_default() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                "  <http>",
+                "    <server id='foo'/>",
+                "  </http>",
+                nodesXml,
+                "</container>" );
+        createModel(root, clusterElem);
+        AbstractService container = (AbstractService)root.getProducer("container/container.0");
+        assertEquals(Defaults.getDefaults().vespaWebServicePort(), container.getRelativePort(0));
+    }
+
+    @Test
+    @Ignore // TODO: Enable when turning the port check on
+    public void fail_if_http_port_is_not_default_in_hosted_vespa() throws Exception {
+        try {
+            String servicesXml =
+                    "<services>" +
+                    "<admin version='3.0'>" +
+                    "    <nodes count='1'/>" +
+                    "</admin>" +
+                    "<container version='1.0'>" +
+                    "  <http>" +
+                    "    <server port='9000' id='foo' />" +
+                    "  </http>" +
+                    nodesXml +
+                    "</container>" +
+                    "</services>";
+            ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+            // Need to create VespaModel to make deploy properties have effect
+            TestLogger logger = new TestLogger();
+            new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                                                                  .applicationPackage(applicationPackage)
+                                                                  .deployLogger(logger)
+                                                                  .properties(new TestProperties().setHostedVespa(true))
+                                                                  .build());
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            // Success
+            assertEquals("Illegal port 9000 in http server 'foo': Port must be set to " + Defaults.getDefaults().vespaWebServicePort(),
+                         e.getMessage());
+        }
     }
 
     @Test
