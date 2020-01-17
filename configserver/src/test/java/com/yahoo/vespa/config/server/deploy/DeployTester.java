@@ -29,6 +29,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
@@ -135,7 +136,8 @@ public class DeployTester {
                                                           new OrchestratorMock(),
                                                           configserverConfig,
                                                           new LogRetriever(),
-                                                          clock);
+                                                          clock,
+                                                          new MockTesterClient());
     }
 
     public Tenant tenant() {

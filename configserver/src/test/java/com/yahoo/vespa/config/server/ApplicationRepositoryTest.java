@@ -323,7 +323,8 @@ public class ApplicationRepositoryTest {
                                          orchestrator,
                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                          new MockLogRetriever(),
-                                         clock);
+                                         clock,
+                                         new MockTesterClient());
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
