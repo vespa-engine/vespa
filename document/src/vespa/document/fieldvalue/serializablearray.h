@@ -89,8 +89,6 @@ public:
                       CompressionConfig::Type comp_type, uint32_t uncompressed_length);
     ~SerializableArray() override;
 
-    void swap(SerializableArray& other);
-
     /**
      * Stores a value in the array.
      *

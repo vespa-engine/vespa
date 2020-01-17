@@ -81,17 +81,6 @@ SerializableArray::SerializableArray(const SerializableArray& other)
     }
 }
 
-void
-SerializableArray::swap(SerializableArray& other)
-{
-    _entries.swap(other._entries);
-    _owned.swap(other._owned);
-    std::swap(_uncompSerData, other._uncompSerData);
-    std::swap(_compSerData, other._compSerData);
-    std::swap(_serializedCompression, other._serializedCompression);
-    std::swap(_uncompressedLength, other._uncompressedLength);
-}
-
 void SerializableArray::clear()
 {
     _entries.clear();
