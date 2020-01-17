@@ -23,10 +23,10 @@
   "gitRepository": "repository1",
   "gitBranch": "master",
   "gitCommit": "commit1",
-  "platform": "6.1.0",
   "applicationVersion": {
-    "buildNumber": 1,
-    "hash": "1.0.1-commit1", "source": {
+    "hash": "1.0.1-commit1",
+    "build": 1,
+    "source": {
       "gitRepository": "repository1",
       "gitBranch": "master",
       "gitCommit": "commit1"
