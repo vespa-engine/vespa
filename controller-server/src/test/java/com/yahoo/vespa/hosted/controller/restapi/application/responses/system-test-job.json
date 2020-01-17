@@ -18,8 +18,8 @@
     },
     "steps": {
       "deployTester": "succeeded",
-      "deployReal": "succeeded",
       "installTester": "succeeded",
+      "deployReal": "succeeded",
       "installReal": "succeeded",
       "startTests": "succeeded",
       "endTests": "succeeded",
@@ -53,8 +53,8 @@
     },
     "steps": {
       "deployTester": "unfinished",
-      "deployReal": "unfinished",
       "installTester": "unfinished",
+      "deployReal": "unfinished",
       "installReal": "unfinished",
       "startTests": "unfinished",
       "endTests": "unfinished",
@@ -67,4 +67,3 @@
     "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/2"
   }
 }
-

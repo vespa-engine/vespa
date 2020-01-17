@@ -87,7 +87,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
 
     private static String lastElement(String path) {
         if (path.endsWith("/"))
-            path = path.substring(0, path.length()-1);
+            path = path.substring(0, path.length() - 1);
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return path;
         return path.substring(lastSlash + 1, path.length());

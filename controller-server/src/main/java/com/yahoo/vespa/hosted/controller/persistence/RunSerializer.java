@@ -45,11 +45,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.startStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static java.util.Comparator.comparing;
 
@@ -239,6 +241,8 @@ class RunSerializer {
             case installTester      : return "installTester";
             case deactivateTester   : return "deactivateTester";
             case copyVespaLogs      : return "copyVespaLogs";
+            case startStagingSetup  : return "startStagingSetup";
+            case endStagingSetup    : return "endStagingSetup";
             case startTests         : return "startTests";
             case endTests           : return "endTests";
             case report             : return "report";
@@ -258,6 +262,8 @@ class RunSerializer {
             case "installTester"      : return installTester;
             case "deactivateTester"   : return deactivateTester;
             case "copyVespaLogs"      : return copyVespaLogs;
+            case "startStagingSetup"  : return startStagingSetup;
+            case "endStagingSetup"    : return endStagingSetup;
             case "startTests"         : return startTests;
             case "endTests"           : return endTests;
             case "report"             : return report;

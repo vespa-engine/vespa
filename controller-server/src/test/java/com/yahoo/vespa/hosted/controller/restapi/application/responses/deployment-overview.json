@@ -39,11 +39,11 @@
               "status": "unfinished"
             },
             {
-              "name": "deployReal",
+              "name": "installTester",
               "status": "unfinished"
             },
             {
-              "name": "installTester",
+              "name": "deployReal",
               "status": "unfinished"
             },
             {
@@ -97,11 +97,11 @@
               "status": "succeeded"
             },
             {
-              "name": "deployReal",
+              "name": "installTester",
               "status": "succeeded"
             },
             {
-              "name": "installTester",
+              "name": "deployReal",
               "status": "succeeded"
             },
             {
@@ -167,6 +167,10 @@
               "status": "unfinished"
             },
             {
+              "name": "installTester",
+              "status": "unfinished"
+            },
+            {
               "name": "deployInitialReal",
               "status": "unfinished"
             },
@@ -175,11 +179,15 @@
               "status": "unfinished"
             },
             {
-              "name": "deployReal",
+              "name": "startStagingSetup",
               "status": "unfinished"
             },
             {
-              "name": "installTester",
+              "name": "endStagingSetup",
+              "status": "unfinished"
+            },
+            {
+              "name": "deployReal",
               "status": "unfinished"
             },
             {
@@ -233,6 +241,10 @@
               "status": "succeeded"
             },
             {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
               "name": "deployInitialReal",
               "status": "succeeded"
             },
@@ -241,11 +253,15 @@
               "status": "succeeded"
             },
             {
-              "name": "deployReal",
+              "name": "startStagingSetup",
               "status": "succeeded"
             },
             {
-              "name": "installTester",
+              "name": "endStagingSetup",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
               "status": "succeeded"
             },
             {
@@ -326,11 +342,11 @@
               "status": "succeeded"
             },
             {
-              "name": "deployReal",
+              "name": "installTester",
               "status": "succeeded"
             },
             {
-              "name": "installTester",
+              "name": "deployReal",
               "status": "succeeded"
             },
             {
@@ -401,11 +417,11 @@
               "status": "unfinished"
             },
             {
-              "name": "deployReal",
+              "name": "installTester",
               "status": "unfinished"
             },
             {
-              "name": "installTester",
+              "name": "deployReal",
               "status": "unfinished"
             },
             {
@@ -477,11 +493,11 @@
               "status": "unfinished"
             },
             {
-              "name": "deployReal",
+              "name": "installTester",
               "status": "unfinished"
             },
             {
-              "name": "installTester",
+              "name": "deployReal",
               "status": "unfinished"
             },
             {

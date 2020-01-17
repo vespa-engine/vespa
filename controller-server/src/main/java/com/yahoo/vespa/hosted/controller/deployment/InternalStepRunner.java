@@ -73,6 +73,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
@@ -123,7 +124,9 @@ public class InternalStepRunner implements StepRunner {
                 case deployReal: return deployReal(id, logger);
                 case installTester: return installTester(id, logger);
                 case installReal: return installReal(id, logger);
-                case startTests: return startTests(id, logger);
+                case startStagingSetup: return startTests(id, true, logger);
+                case endStagingSetup: return endTests(id, logger);
+                case startTests: return startTests(id, false, logger);
                 case endTests: return endTests(id, logger);
                 case copyVespaLogs: return copyVespaLogs(id, logger);
                 case deactivateReal: return deactivateReal(id, logger);
@@ -308,13 +311,8 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
-        Optional<Deployment> deployment = deployment(id.application(), id.type());
-        if ( ! deployment.isPresent()) {
-            logger.log(WARNING, "Deployment expired before installation of tester was successful.");
-            return Optional.of(error);
-        }
-
-        Version platform = controller.jobController().run(id).get().versions().targetPlatform();
+        Run run = controller.jobController().run(id).get();
+        Version platform = run.versions().targetPlatform();
         logger.log("Checking installation of tester container ...");
         if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
             && servicesConverged(id.tester().id(), id.type(), platform, logger)) {
@@ -324,14 +322,14 @@ public class InternalStepRunner implements StepRunner {
                     return Optional.of(running);
                 }
             }
-            else if (timedOut(id, deployment.get(), endpointTimeout)) {
+            else if (run.stepInfo(installTester).get().startTime().get().plus(endpointTimeout).isBefore(controller.clock().instant())) {
                 logger.log(WARNING, "Tester failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
                 return Optional.of(error);
             }
         }
 
-        if (timedOut(id, deployment.get(), testerTimeout)) {
-            logger.log(WARNING, "Installation of tester failed to complete within " + testerTimeout.toMinutes() + " minutes of real deployment!");
+        if (run.stepInfo(installTester).get().startTime().get().plus(endpointTimeout).isBefore(controller.clock().instant())) {
+            logger.log(WARNING, "Installation of tester failed to complete within " + testerTimeout.toMinutes() + " minutes!");
             return Optional.of(error);
         }
 
@@ -427,11 +425,11 @@ public class InternalStepRunner implements StepRunner {
         return convergence.get().converged();
     }
 
-    private Optional<RunStatus> startTests(RunId id, DualLogger logger) {
+    private Optional<RunStatus> startTests(RunId id, boolean isSetup, DualLogger logger) {
         Optional<Deployment> deployment = deployment(id.application(), id.type());
         if (deployment.isEmpty()) {
             logger.log(INFO, "Deployment expired before tests could start.");
-            return Optional.of(aborted);
+            return Optional.of(error);
         }
 
         var deployments = controller.applications().requireInstance(id.application())
@@ -442,14 +440,14 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Attempting to find endpoints ...");
         var endpoints = controller.applications().clusterEndpoints(deployments);
-        if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(id, deployment.get(), endpointTimeout)) {
+        if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
         }
         logEndpoints(endpoints, logger);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isEmpty() && timedOut(id, deployment.get(), endpointTimeout)) {
+        if (testerEndpoint.isEmpty()) {
             logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
             return Optional.of(error);
         }
@@ -461,7 +459,7 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Starting tests ...");
         controller.jobController().cloud().startTests(testerEndpoint.get(),
-                                                      TesterCloud.Suite.of(id.type()),
+                                                      TesterCloud.Suite.of(id.type(), isSetup),
                                                       testConfigSerializer.configJson(id.application(),
                                                                                       id.type(),
                                                                                       true,
@@ -632,7 +630,7 @@ public class InternalStepRunner implements StepRunner {
     /**
      * Returns whether the time since deployment is more than the zone deployment expiry, or the given timeout.
      *
-     * We time out the job before the deployment expires, for zone where deployments are not persistent,
+     * We time out the job before the deployment expires, for zones where deployments are not persistent,
      * to be able to collect the Vespa log from the deployment. Thus, the lower of the zone's deployment expiry,
      * and the given default installation timeout, minus one minute, is used as a timeout threshold.
      */

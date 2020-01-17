@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -299,7 +300,6 @@ public class DeploymentContext {
             if (job.type().environment().isManuallyDeployed())
                 return this;
         }
-        doInstallTester(job);
         doTests(job);
         doTeardown(job);
         return this;
@@ -400,14 +400,17 @@ public class DeploymentContext {
                     jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type() == type));
     }
 
-    /** Deploys tester and real app, and completes initial staging installation first if needed. */
+    /** Deploys tester and real app, and completes tester and initial staging installation first if needed. */
     private void doDeploy(JobId job) {
         RunId id = currentRun(job).id();
         ZoneId zone = zone(job);
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
-        // First steps are always deployments.
+        // First step is always a deployment.
         runner.advance(currentRun(job));
+
+        if ( ! job.type().environment().isManuallyDeployed())
+            doInstallTester(job);
 
         if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
@@ -417,6 +420,17 @@ public class DeploymentContext {
             setEndpoints(zone);
             runner.advance(currentRun(job));
             assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
+
+            // All installation is complete and endpoints are ready, so setup may begin.
+            if (job.type().isDeployment())
+                assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
+            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
+            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.startStagingSetup));
+
+            assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endStagingSetup));
+            tester.cloud().set(TesterCloud.Status.SUCCESS);
+            runner.advance(currentRun(job));
+            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.endStagingSetup));
         }
     }
 

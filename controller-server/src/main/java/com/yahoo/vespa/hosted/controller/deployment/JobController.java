@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 import static com.google.common.collect.ImmutableList.copyOf;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -168,21 +169,24 @@ public class JobController {
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
     public void updateTestLog(RunId id) {
-            locked(id, run -> {
-                if ( ! run.readySteps().contains(endTests))
-                    return run;
+        locked(id, run -> {
+            Optional<Step> step = Stream.of(endStagingSetup, endTests)
+                                        .filter(run.readySteps()::contains)
+                                        .findAny();
+            if (step.isEmpty())
+                return run;
 
-                Optional<URI> testerEndpoint = testerEndpoint(id);
-                if ( ! testerEndpoint.isPresent())
-                    return run;
+            Optional<URI> testerEndpoint = testerEndpoint(id);
+            if ( ! testerEndpoint.isPresent())
+                return run;
 
-                List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
-                if (entries.isEmpty())
-                    return run;
+            List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
+            if (entries.isEmpty())
+                return run;
 
-                logs.append(id.application(), id.type(), endTests, entries);
-                return run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong());
-            });
+            logs.append(id.application(), id.type(), step.get(), entries);
+            return run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong());
+        });
     }
 
     /** Stores the given certificate as the tester certificate for this run, or throws if it's already set. */

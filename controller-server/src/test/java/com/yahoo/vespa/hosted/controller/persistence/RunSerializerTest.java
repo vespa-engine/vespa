@@ -35,11 +35,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.startStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
@@ -115,6 +117,8 @@ public class RunSerializerTest {
                         .put(installTester, new StepInfo(installTester, unfinished, Optional.of(Instant.ofEpochMilli(1196677940000L))))
                         .put(deactivateTester, new StepInfo(deactivateTester, failed, Optional.empty()))
                         .put(copyVespaLogs, new StepInfo(copyVespaLogs, succeeded, Optional.empty()))
+                        .put(startStagingSetup, new StepInfo(startStagingSetup, succeeded, Optional.empty()))
+                        .put(endStagingSetup, new StepInfo(endStagingSetup, unfinished, Optional.empty()))
                         .put(startTests, new StepInfo(startTests, succeeded, Optional.empty()))
                         .put(endTests, new StepInfo(endTests, unfinished, Optional.empty()))
                         .put(report, new StepInfo(report, failed, Optional.empty()))

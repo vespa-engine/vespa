@@ -56,13 +56,15 @@ public interface TesterCloud {
 
         system,
 
+        staging_setup,
+
         staging,
 
         production;
 
-        public static Suite of(JobType type) {
+        public static Suite of(JobType type, boolean isSetup) {
             if (type == JobType.systemTest) return system;
-            if (type == JobType.stagingTest) return  staging;
+            if (type == JobType.stagingTest) return isSetup ? staging_setup : staging;
             if (type.isProduction()) return production;
             throw new AssertionError("Unknown JobType '" + type + "'!");
         }
