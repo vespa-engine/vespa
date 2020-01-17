@@ -77,7 +77,7 @@ BEGIN {
 }
 my $VESPA_HOME = $ENV{'VESPA_HOME'};
 
-use lib $VESPA_HOME . "/lib/perl5/site_perl";
+use lib $ENV{'VESPA_HOME'} . "/lib/perl5/site_perl";
 
 # END perl environment bootstrap section
 
