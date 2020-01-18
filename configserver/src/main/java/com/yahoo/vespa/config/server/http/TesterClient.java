@@ -27,7 +27,7 @@ public class TesterClient {
         URI testerUri;
         try {
             testerUri = new URIBuilder()
-                    .setScheme("http")
+                    .setScheme("https")
                     .setHost(testerHostname)
                     .setPort(port)
                     .setPath("/tester/v1/status")
@@ -43,7 +43,7 @@ public class TesterClient {
         URI testerUri;
         try {
             testerUri = new URIBuilder()
-                    .setScheme("http")
+                    .setScheme("https")
                     .setHost(testerHostname)
                     .setPort(port)
                     .setPath("/tester/v1/log")
