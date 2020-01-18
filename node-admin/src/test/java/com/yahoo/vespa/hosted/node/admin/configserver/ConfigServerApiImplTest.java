@@ -20,7 +20,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
@@ -121,7 +120,7 @@ public class ConfigServerApiImplTest {
         params.setConnectionTimeout(Duration.ofSeconds(3));
 
         try {
-            TestPojo testPojo = configServerApi.get("/path", TestPojo.class, params);
+            configServerApi.get("/path", TestPojo.class, params);
             fail();
         } catch (ConnectionException e) {
             assertNotNull(e.getCause());
