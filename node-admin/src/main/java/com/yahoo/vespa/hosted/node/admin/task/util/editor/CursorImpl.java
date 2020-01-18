@@ -306,7 +306,7 @@ public class CursorImpl implements Cursor {
     @Override
     public boolean replaceMatch(Pattern pattern, Function<Match, String> replacer) {
         Optional<Match> match = moveForwardToStartOfMatch(pattern);
-        if (!match.isPresent()) {
+        if (match.isEmpty()) {
             return false;
         }
 

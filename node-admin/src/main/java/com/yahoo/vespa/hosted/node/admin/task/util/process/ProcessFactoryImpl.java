@@ -85,7 +85,7 @@ public class ProcessFactoryImpl implements ProcessFactory {
             return new ChildProcess2Impl(commandLine, process, outputFile, timer);
         } catch (RuntimeException | Error throwable) {
             try {
-                if ( ! commandLine.getOutputFile().isPresent())
+                if (commandLine.getOutputFile().isEmpty())
                     Files.delete(outputFile);
             } catch (IOException ioException) {
                 logger.log(LogLevel.WARNING, "Failed to delete temporary file at " +

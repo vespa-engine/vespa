@@ -428,7 +428,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
                 container = removeContainerIfNeededUpdateContainerState(context, container);
                 credentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-                if (! container.isPresent()) {
+                if (container.isEmpty()) {
                     containerState = STARTING;
                     startContainer(context);
                     containerState = UNKNOWN;
@@ -497,7 +497,7 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Container> getContainer(NodeAgentContext context) {
         if (containerState == ABSENT) return Optional.empty();
         Optional<Container> container = dockerOperations.getContainer(context);
-        if (! container.isPresent()) containerState = ABSENT;
+        if (container.isEmpty()) containerState = ABSENT;
         return container;
     }
 
