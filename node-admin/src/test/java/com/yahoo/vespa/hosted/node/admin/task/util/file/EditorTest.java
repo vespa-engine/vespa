@@ -1,5 +1,4 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -8,7 +7,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.file.FileSystem;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -62,8 +60,8 @@ public class EditorTest {
                 LineEdit.insertBefore("first"), // insert first, and keep the second line
                 LineEdit.replaceWith("third", "fourth"), // remove eight, and replace with third and fourth instead
                 LineEdit.none(), // Keep fifth
-                LineEdit.insert(Collections.singletonList("sixth"), // insert sixth before seventh
-                        Collections.singletonList("eight"))); // add eight after seventh
+                LineEdit.insert(List.of("sixth"), // insert sixth before seventh
+                        List.of("eight"))); // add eight after seventh
 
         Editor editor = new Editor(path.toPath(), lineEditor);
         TaskContext context = mock(TaskContext.class);

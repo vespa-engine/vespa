@@ -1,11 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
-import com.google.common.collect.ImmutableList;
-
 import javax.annotation.concurrent.Immutable;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit.Type.REPLACE;
@@ -18,17 +14,17 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit.Type.NON
 public class LineEdit {
     enum Type { NONE, REPLACE }
 
-    public static LineEdit none() { return insert(Collections.emptyList(), Collections.emptyList()); }
-    public static LineEdit remove() { return replaceWith(Collections.emptyList()); }
+    public static LineEdit none() { return insert(List.of(), List.of()); }
+    public static LineEdit remove() { return replaceWith(List.of()); }
 
-    public static LineEdit insertBefore(String... prepend) { return insertBefore(Arrays.asList(prepend)); }
-    public static LineEdit insertBefore(List<String> prepend) { return insert(prepend, Collections.emptyList()); }
-    public static LineEdit insertAfter(String... append) { return insertAfter(Arrays.asList(append)); }
-    public static LineEdit insertAfter(List<String> append) { return insert(Collections.emptyList(), append); }
+    public static LineEdit insertBefore(String... prepend) { return insertBefore(List.of(prepend)); }
+    public static LineEdit insertBefore(List<String> prepend) { return insert(prepend, List.of()); }
+    public static LineEdit insertAfter(String... append) { return insertAfter(List.of(append)); }
+    public static LineEdit insertAfter(List<String> append) { return insert(List.of(), append); }
     public static LineEdit insert(List<String> prepend, List<String> append) { return new LineEdit(NONE, prepend, append); }
 
-    public static LineEdit replaceWith(String... lines) { return replaceWith(Arrays.asList(lines)); }
-    public static LineEdit replaceWith(List<String> insertLines) { return new LineEdit(REPLACE, Collections.emptyList(), insertLines); }
+    public static LineEdit replaceWith(String... lines) { return replaceWith(List.of(lines)); }
+    public static LineEdit replaceWith(List<String> insertLines) { return new LineEdit(REPLACE, List.of(), insertLines); }
 
     private final Type type;
     private final List<String> prependLines;
@@ -36,8 +32,8 @@ public class LineEdit {
 
     private LineEdit(Type type, List<String> prependLines, List<String> appendLines) {
         this.type = type;
-        this.prependLines = ImmutableList.copyOf(prependLines);
-        this.appendLines = ImmutableList.copyOf(appendLines);
+        this.prependLines = List.copyOf(prependLines);
+        this.appendLines = List.copyOf(appendLines);
     }
 
     public Type getType() { return type; }

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -159,7 +158,7 @@ public class CoredumpHandler {
             Map<String, Object> metadata = coreCollector.collect(context, coredumpFilePathInContainer);
             metadata.putAll(nodeAttributesSupplier.get());
 
-            String metadataFields = objectMapper.writeValueAsString(ImmutableMap.of("fields", metadata));
+            String metadataFields = objectMapper.writeValueAsString(Map.of("fields", metadata));
             metadataPath.writeUtf8File(metadataFields);
             return metadataFields;
         } else {

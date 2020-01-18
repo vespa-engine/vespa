@@ -19,7 +19,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -157,7 +156,7 @@ public class FileFinderTest {
                 });
                 return paths;
             } catch (NoSuchFileException e) {
-                return Collections.emptyList();
+                return List.of();
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

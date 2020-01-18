@@ -6,7 +6,6 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -43,7 +42,7 @@ public class CommandLineTest {
         assertEquals(0, result.getExitCode());
         assertEquals("line1\nline2", result.getOutput());
         assertEquals("line1\nline2\n\n", result.getUntrimmedOutput());
-        assertEquals(Arrays.asList("line1", "line2"), result.getOutputLines());
+        assertEquals(List.of("line1", "line2"), result.getOutputLines());
         assertEquals(1, context.getSystemModificationLog().size());
         assertEquals("Executing command: foo bar 2>&1", context.getSystemModificationLog().get(0));
 

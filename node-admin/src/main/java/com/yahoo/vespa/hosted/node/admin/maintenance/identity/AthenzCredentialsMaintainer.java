@@ -44,10 +44,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-
-import static java.util.Collections.singleton;
 
 /**
  * A maintainer that is responsible for providing and refreshing Athenz credentials for a container.
@@ -103,7 +102,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         this.identityDocumentClient = new DefaultIdentityDocumentClient(
                 configServerInfo.getLoadBalancerEndpoint(),
                 hostIdentityProvider,
-                new AthenzIdentityVerifier(singleton(configserverIdentity)));
+                new AthenzIdentityVerifier(Set.of(configserverIdentity)));
         this.clock = clock;
         this.useInternalZts = useInternalZts;
     }
@@ -194,7 +193,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         // Set up a hostname verified for zts if this is configured to use the config server (internal zts) apis
         HostnameVerifier ztsHostNameVerifier = useInternalZts
-                ? new AthenzIdentityVerifier(singleton(configserverIdentity))
+                ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
                 : null;
         try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider, ztsHostNameVerifier)) {
             InstanceIdentity instanceIdentity =
@@ -223,7 +222,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         try {
             // Set up a hostname verified for zts if this is configured to use the config server (internal zts) apis
             HostnameVerifier ztsHostNameVerifier = useInternalZts
-                    ? new AthenzIdentityVerifier(singleton(configserverIdentity))
+                    ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
                     : null;
             try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentitySslContext, ztsHostNameVerifier)) {
                 InstanceIdentity instanceIdentity =

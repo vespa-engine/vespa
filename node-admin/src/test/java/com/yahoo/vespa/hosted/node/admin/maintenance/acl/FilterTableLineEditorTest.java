@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,7 +42,7 @@ public class FilterTableLineEditorTest {
         FilterTableLineEditor filterLineEditor = FilterTableLineEditor.from(acl, ipVersion);
         Editor editor = new Editor(
                 "nat-table",
-                () -> Arrays.asList(currentFilterTable.split("\n")),
+                () -> List.of(currentFilterTable.split("\n")),
                 result -> assertEquals(expectedRestoreFileContent, String.join("\n", result)),
                 filterLineEditor);
         editor.edit(m -> {});

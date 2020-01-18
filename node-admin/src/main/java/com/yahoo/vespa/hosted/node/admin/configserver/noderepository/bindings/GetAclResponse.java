@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,9 +28,9 @@ public class GetAclResponse {
     public GetAclResponse(@JsonProperty("trustedNodes") List<Node> trustedNodes,
                           @JsonProperty("trustedNetworks") List<Network> trustedNetworks,
                           @JsonProperty("trustedPorts") List<Port> trustedPorts) {
-        this.trustedNodes = trustedNodes == null ? Collections.emptyList() : trustedNodes;
-        this.trustedNetworks = trustedNetworks == null ? Collections.emptyList() : trustedNetworks;
-        this.trustedPorts = trustedPorts == null ? Collections.emptyList() : trustedPorts;
+        this.trustedNodes = trustedNodes == null ? List.of() : trustedNodes;
+        this.trustedNetworks = trustedNetworks == null ? List.of() : trustedNetworks;
+        this.trustedPorts = trustedPorts == null ? List.of() : trustedPorts;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

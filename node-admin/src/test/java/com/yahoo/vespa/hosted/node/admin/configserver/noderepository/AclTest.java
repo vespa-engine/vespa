@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,12 +19,12 @@ public class AclTest {
     private static final Acl aclCommon = new Acl(
             Set.of(1234, 453),
             testNodes("192.1.2.2", "fb00::1", "fe80::2", "fe80::3"),
-            Collections.emptySet());
+            Set.of());
 
     private static final Acl aclWithoutPorts = new Acl(
-            Collections.emptySet(),
+            Set.of(),
             testNodes("192.1.2.2", "fb00::1", "fe80::2"),
-            Collections.emptySet());
+            Set.of());
 
     @Test
     public void no_trusted_ports() {
@@ -80,7 +79,7 @@ public class AclTest {
         Acl aclCommonDifferentOrder = new Acl(
                 Set.of(453, 1234),
                 testNodes("fe80::2", "192.1.2.2", "fb00::1", "fe80::3"),
-                Collections.emptySet());
+                Set.of());
 
         for (IPVersion ipVersion: IPVersion.values()) {
             assertEquals(aclCommon.toRules(ipVersion), aclCommonDifferentOrder.toRules(ipVersion));

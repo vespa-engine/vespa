@@ -14,9 +14,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -139,7 +139,7 @@ public class FileFinder {
         try {
             // Only need to traverse as deep as we want to match, unless we want to match everything in directories
             // already matched
-            Files.walkFileTree(basePath, Collections.emptySet(), maxDepth, new SimpleFileVisitor<>() {
+            Files.walkFileTree(basePath, Set.of(), maxDepth, new SimpleFileVisitor<>() {
                 private final Stack<FileAttributes> matchingDirectoryStack = new Stack<>();
                 private int currentLevel = -1;
 

@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -67,7 +66,7 @@ public class CommandLine {
     }
 
     /** Add arguments to the command. The first argument in the first call to add() is the program. */
-    public CommandLine add(String... arguments) { return add(Arrays.asList(arguments)); }
+    public CommandLine add(String... arguments) { return add(List.of(arguments)); }
 
     /** Add arguments to the command. The first argument in the first call to add() is the program. */
     public CommandLine add(Collection<String> arguments) {

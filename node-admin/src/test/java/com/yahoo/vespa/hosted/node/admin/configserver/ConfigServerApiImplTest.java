@@ -19,7 +19,6 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,7 +53,7 @@ public class ConfigServerApiImplTest {
 
     private final String uri1 = "http://host1:666";
     private final String uri2 = "http://host2:666";
-    private final List<URI> configServers = Arrays.asList(URI.create(uri1), URI.create(uri2));
+    private final List<URI> configServers = List.of(URI.create(uri1), URI.create(uri2));
     private final StringBuilder mockLog = new StringBuilder();
 
     private ConfigServerApiImpl configServerApi;

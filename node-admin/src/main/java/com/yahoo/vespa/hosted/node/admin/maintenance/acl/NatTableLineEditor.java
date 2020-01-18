@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -45,7 +43,7 @@ class NatTableLineEditor implements LineEditor {
 
     @Override
     public List<String> onComplete() {
-        if (redirectExists) return new ArrayList<>();
-        return Collections.singletonList(redirectRule);
+        if (redirectExists) return List.of();
+        return List.of(redirectRule);
     }
 }

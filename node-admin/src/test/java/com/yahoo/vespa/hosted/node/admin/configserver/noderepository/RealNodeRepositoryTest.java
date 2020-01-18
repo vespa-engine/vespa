@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -67,7 +66,7 @@ public class RealNodeRepositoryTest {
                 int port = findRandomOpenPort();
                 container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
                 ConfigServerApi configServerApi = ConfigServerApiImpl.createForTesting(
-                        Collections.singletonList(URI.create("http://127.0.0.1:" + port)));
+                        List.of(URI.create("http://127.0.0.1:" + port)));
                 waitForJdiscContainerToServe(configServerApi);
                 return;
             } catch (RuntimeException e) {

@@ -1,5 +1,4 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
@@ -10,8 +9,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -56,11 +54,11 @@ public class MakeDirectoryTest {
                 .withGroup(group);
         assertTrue(makeDirectory.converge(context));
 
-        assertEquals(Arrays.asList(modifications), context.getSystemModificationLog());
+        assertEquals(List.of(modifications), context.getSystemModificationLog());
 
         context.clearSystemModificationLog();
         assertFalse(makeDirectory.converge(context));
-        assertEquals(Collections.emptyList(), context.getSystemModificationLog());
+        assertEquals(List.of(), context.getSystemModificationLog());
     }
 
     @Test
