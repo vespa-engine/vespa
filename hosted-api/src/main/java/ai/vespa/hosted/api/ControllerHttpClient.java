@@ -126,7 +126,7 @@ public abstract class ControllerHttpClient {
     /** Returns the Vespa version to compile against, for a hosted Vespa application. This is its lowest runtime version. */
     public String compileVersion(ApplicationId id) {
         return toInspector(send(request(HttpRequest.newBuilder(applicationPath(id.tenant(), id.application()))
-                                                   .timeout(Duration.ofSeconds(10)),
+                                                   .timeout(Duration.ofSeconds(20)),
                                         GET)))
                 .field("compileVersion").asString();
     }
