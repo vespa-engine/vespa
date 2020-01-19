@@ -8,7 +8,7 @@ package com.yahoo.vespa.hosted.testrunner;
 enum TestProfile {
 
     SYSTEM_TEST("system, com.yahoo.vespa.tenant.systemtest.base.SystemTest", true),
-    STAGING_SETUP_TEST("staging-setup, com.yahoo.vespa.tenant.systemtest.base.StagingTest", false),
+    STAGING_SETUP_TEST("staging-setup", false),
     STAGING_TEST("staging, com.yahoo.vespa.tenant.systemtest.base.StagingTest", true),
     PRODUCTION_TEST("production, com.yahoo.vespa.tenant.systemtest.base.ProductionTest", false);
 
