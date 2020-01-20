@@ -43,7 +43,8 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("UnstableApiUsage")
 public class ApplicationMetricsHandlerTest {
 
-    private static final String URI_BASE = "http://localhost";
+    private static final String HOST = "localhost";
+    private static final String URI_BASE = "http://" + HOST;
     private static final String APP_METRICS_V1_URI = URI_BASE + V1_PATH;
     private static final String APP_METRICS_VALUES_URI = URI_BASE + VALUES_PATH;
 
@@ -117,7 +118,8 @@ public class ApplicationMetricsHandlerTest {
 
         assertEquals(1, jsonModel.nodes.size());
         GenericJsonModel nodeModel = jsonModel.nodes.get(0);
-        assertEquals(MOCK_METRICS_PATH, nodeModel.name);
+        assertEquals(HOST, nodeModel.hostname);
+        assertEquals(MOCK_METRICS_PATH, nodeModel.role);
         assertEquals(2, nodeModel.node.metrics.size());
         assertEquals(16.222, nodeModel.node.metrics.get(0).values.get(CPU_METRIC), 0.0001d);
     }
@@ -171,7 +173,7 @@ public class ApplicationMetricsHandlerTest {
 
     private MetricsNodesConfig.Node.Builder nodeConfig(String path) {
         return new MetricsNodesConfig.Node.Builder()
-                .nodeId(path)
+                .role(path)
                 .hostname("localhost")
                 .metricsPath(path)
                 .metricsPort(port);

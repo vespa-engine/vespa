@@ -1,7 +1,8 @@
 {
   "nodes": [
     {
-      "name": "node0",
+      "hostname": "node0",
+      "role": "role0",
       "node": {
         "timestamp": 1234,
         "metrics": [
@@ -36,7 +37,8 @@
       ]
     },
     {
-      "name": "node1",
+      "hostname": "node1",
+      "role": "role1",
       "node": {
         "timestamp": 1234,
         "metrics": [

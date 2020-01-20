@@ -157,7 +157,7 @@ public class ApplicationMetricsRetrieverTest {
 
     private MetricsNodesConfig.Node.Builder nodeConfig(String path) {
         return new MetricsNodesConfig.Node.Builder()
-                .nodeId(path)
+                .role(path)
                 .hostname(HOST)
                 .metricsPath(path)
                 .metricsPort(port);

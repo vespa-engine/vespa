@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -42,7 +41,7 @@ public class GenericJsonUtil {
 
         var genericJsonModels = new ArrayList<GenericJsonModel>();
         metricsByNode.forEach(
-                (node, metrics) -> genericJsonModels.add(toGenericJsonModel(metrics, node.getName())));
+                (node, metrics) -> genericJsonModels.add(toGenericJsonModel(metrics, node)));
 
         applicationModel.nodes = genericJsonModels;
         return applicationModel;
@@ -52,11 +51,16 @@ public class GenericJsonUtil {
         return toGenericJsonModel(metricsPackets, null);
     }
 
-    public static GenericJsonModel toGenericJsonModel(List<MetricsPacket> metricsPackets, String nodeName) {
+    public static GenericJsonModel toGenericJsonModel(List<MetricsPacket> metricsPackets, Node node) {
         Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPackets.stream()
                 .collect(Collectors.groupingBy(packet -> packet.service, LinkedHashMap::new, toList()));
 
         var jsonModel = new GenericJsonModel();
+        if (node != null) {
+            jsonModel.hostname = node.hostname;
+            jsonModel.role = node.role;
+        }
+
         var genericServices = new ArrayList<GenericService>();
         packetsByService.forEach((serviceId, packets) -> {
             var genericMetricsList = packets.stream()
@@ -72,7 +76,6 @@ public class GenericJsonUtil {
                     .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
                 jsonModel.node = new GenericNode(genericService.timestamp, genericService.metrics);
-                jsonModel.name = nodeName;
             } else {
                 genericServices.add(genericService);
 
