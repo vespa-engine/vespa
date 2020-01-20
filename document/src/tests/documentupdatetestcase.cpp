@@ -95,7 +95,6 @@ readBufferFromFile(const vespalib::string &fileName)
 {
     auto file = std::fstream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
     auto size = file.tellg();
-    auto result = std::make_unique<ByteBuffer>(size);
     file.seekg(0);
     vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(size);
     file.read(static_cast<char *>(buf.get()), size);

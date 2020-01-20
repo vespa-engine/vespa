@@ -30,9 +30,6 @@ public:
 
     ~ByteBuffer();
 
-    /** Allocates buffer with len bytes. */
-    ByteBuffer(uint32_t len);
-
     /**
      * Create a buffer with the given content.
      *

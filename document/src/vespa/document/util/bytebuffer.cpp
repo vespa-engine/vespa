@@ -61,11 +61,6 @@ BufferOutOfBoundsException::BufferOutOfBoundsException(size_t pos, size_t len, c
 {
 }
 
-ByteBuffer::ByteBuffer(uint32_t len) :
-    ByteBuffer(Alloc::alloc(len), len)
-{
-}
-
 ByteBuffer::ByteBuffer(const char* buffer, uint32_t len) :
       _buffer(const_cast<char *>(buffer)),
       _len(len),

@@ -195,7 +195,7 @@ SerializableArray::deCompress() // throw (DeserializeException)
         _uncompSerData = std::move(_compSerData);
         LOG_ASSERT(_uncompressedLength == _uncompSerData->getRemaining());
     } else {
-        auto newSerialization = std::make_unique<ByteBuffer>(_uncompressedLength);
+        auto newSerialization = std::make_unique<ByteBuffer>(vespalib::alloc::Alloc::alloc(_uncompressedLength), _uncompressedLength);
         vespalib::DataBuffer unCompressed(newSerialization->getBuffer(), newSerialization->getLength());
         unCompressed.clear();
         try {
