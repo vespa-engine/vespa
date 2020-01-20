@@ -4,7 +4,7 @@ package com.yahoo.prelude;
 /**
  * A ping, typically to ask whether backend is alive.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class Ping {
 

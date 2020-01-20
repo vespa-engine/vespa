@@ -88,4 +88,5 @@ message MonitorReply {
     bool online = 1;
     int64 active_docs = 2;
     int32 distribution_key = 3;
+    bool is_blocking_writes = 4;
 }
