@@ -13,6 +13,7 @@ import java.util.Optional;
  * @author bratseth
  */
 interface Client {
+
     /** Creates a connection to a particular node in this */
     NodeConnection createConnection(String hostname, int port);
 
@@ -21,6 +22,7 @@ interface Client {
     }
 
     class ResponseOrError<T> {
+
         final Optional<T> response;
         final Optional<String> error;
 
@@ -93,6 +95,7 @@ interface Client {
     }
 
     class ProtobufResponse {
+
         private final byte compression;
         private final int uncompressedSize;
         private final byte[] compressedPayload;
@@ -114,6 +117,7 @@ interface Client {
         public byte[] compressedPayload() {
             return compressedPayload;
         }
+
     }
 
 }

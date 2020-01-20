@@ -58,8 +58,7 @@ public class RpcPing implements Callable<Pong> {
         var ping = SearchProtocol.MonitorRequest.newBuilder().build().toByteArray();
         double timeoutSeconds = ((double) clusterMonitor.getConfiguration().getRequestTimeout()) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compressor().compress(PING_COMPRESSION, ping);
-        connection.request(RPC_METHOD, compressionResult.type(), ping.length, compressionResult.data(), rsp -> queue.add(rsp),
-                timeoutSeconds);
+        connection.request(RPC_METHOD, compressionResult.type(), ping.length, compressionResult.data(), rsp -> queue.add(rsp), timeoutSeconds);
     }
 
     private Pong decodeReply(ProtobufResponse response) throws InvalidProtocolBufferException {
@@ -68,12 +67,12 @@ public class RpcPing implements Callable<Pong> {
         var reply = SearchProtocol.MonitorReply.parseFrom(responseBytes);
 
         if (reply.getDistributionKey() != node.key()) {
-            return new Pong(ErrorMessage.createBackendCommunicationError(
-                    "Expected pong from node id " + node.key() + ", response is from id " + reply.getDistributionKey()));
+            return new Pong(ErrorMessage.createBackendCommunicationError("Expected pong from node id " + node.key() +
+                                                                         ", response is from id " + reply.getDistributionKey()));
         } else if (!reply.getOnline()) {
             return new Pong(ErrorMessage.createBackendCommunicationError("Node id " + node.key() + " reports being offline"));
         } else {
-            return new Pong(reply.getActiveDocs());
+            return new Pong(reply.getActiveDocs(), reply.getIsBlockingWrites());
         }
     }
 
