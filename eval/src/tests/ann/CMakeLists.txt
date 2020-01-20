@@ -5,6 +5,18 @@ vespa_add_executable(eval_sift_benchmark_app
     sift_benchmark.cpp
     xp-annoy-nns.cpp
     xp-hnswlike-nns.cpp
+    xp-hnsw-wrap.cpp
+    xp-lsh-nns.cpp
+    DEPENDS
+    vespaeval
+)
+
+vespa_add_executable(eval_remove_bm_app
+    SOURCES
+    remove-bm.cpp
+    xp-annoy-nns.cpp
+    xp-hnswlike-nns.cpp
+    xp-hnsw-wrap.cpp
     xp-lsh-nns.cpp
     DEPENDS
     vespaeval

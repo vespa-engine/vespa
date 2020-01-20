@@ -15,7 +15,7 @@ public:
     HnswWrapNns(uint32_t numDims, const DocVectorAccess<float> &dva)
         : NNS(numDims, dva),
           _l2space(numDims),
-          _hnsw(&_l2space, 1000000, 16, 200)
+          _hnsw(&_l2space, 2500000, 16, 200)
     {
     }
 
@@ -32,7 +32,8 @@ public:
 
     std::vector<NnsHit> topK(uint32_t k, Vector vector, uint32_t search_k) override {
         std::vector<NnsHit> reversed;
-        auto priQ = _hnsw.searchKnn(vector.cbegin(), std::max(k, search_k));
+        _hnsw.setEf(search_k);
+        auto priQ = _hnsw.searchKnn(vector.cbegin(), k);
         while (! priQ.empty()) {
             auto pair = priQ.top();
             reversed.emplace_back(pair.second, SqDist(pair.first));
