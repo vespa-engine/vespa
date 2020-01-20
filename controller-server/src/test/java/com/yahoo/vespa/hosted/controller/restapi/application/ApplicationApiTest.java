@@ -523,6 +523,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"production-us-west-1 for tenant1.application1.instance1 paused for " + DeploymentTrigger.maxPause + "\"}");
 
+        // DELETE a pause of a production job
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1/pause", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"production-us-west-1 for tenant1.application1.instance1 resumed\"}");
+
         // POST a triggering to the same production job
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1", POST)
                                       .userIdentity(USER_ID),
