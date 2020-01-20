@@ -42,6 +42,7 @@ import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
+import com.yahoo.vespa.config.server.http.TesterClient;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.metrics.ApplicationMetricsRetriever;
@@ -107,6 +108,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final FileDistributionStatus fileDistributionStatus;
     private final Orchestrator orchestrator;
     private final LogRetriever logRetriever;
+    private final TesterClient testerClient;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -115,7 +117,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigConvergenceChecker configConvergenceChecker,
                                  HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
-                                 Orchestrator orchestrator) {
+                                 Orchestrator orchestrator,
+                                 TesterClient testerClient) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
@@ -125,7 +128,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              orchestrator,
              new LogRetriever(),
              new FileDistributionStatus(),
-             Clock.systemUTC());
+             Clock.systemUTC(),
+             testerClient);
     }
 
     // For testing
@@ -138,7 +142,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              orchestrator,
              new ConfigserverConfig(new ConfigserverConfig.Builder()),
              new LogRetriever(),
-             clock);
+             clock,
+             new TesterClient());
     }
 
     // For testing
@@ -147,7 +152,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Orchestrator orchestrator,
                                  ConfigserverConfig configserverConfig,
                                  LogRetriever logRetriever,
-                                 Clock clock) {
+                                 Clock clock,
+                                 TesterClient testerClient) {
         this(tenantRepository,
              Optional.of(hostProvisioner),
              Optional.empty(),
@@ -157,7 +163,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              orchestrator,
              logRetriever,
              new FileDistributionStatus(),
-             clock);
+             clock,
+             testerClient);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -169,7 +176,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   Orchestrator orchestrator,
                                   LogRetriever logRetriever,
                                   FileDistributionStatus fileDistributionStatus,
-                                  Clock clock) {
+                                  Clock clock,
+                                  TesterClient testerClient) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
         this.infraDeployer = infraDeployer;
@@ -180,6 +188,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.logRetriever = logRetriever;
         this.fileDistributionStatus = fileDistributionStatus;
         this.clock = clock;
+        this.testerClient = testerClient;
     }
 
     // ---------------- Deploying ----------------------------------------------------------------
@@ -521,6 +530,41 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public HttpResponse getLogs(ApplicationId applicationId, Optional<String> hostname, String apiParams) {
         String logServerURI = getLogServerURI(applicationId, hostname) + apiParams;
         return logRetriever.getLogs(logServerURI);
+    }
+
+
+    // ---------------- Methods to do call against tester containers in hosted ------------------------------
+
+    public HttpResponse getTesterStatus(ApplicationId applicationId) {
+        return testerClient.getStatus(getTesterHostname(applicationId), getTesterPort(applicationId));
+    }
+
+    public HttpResponse getTesterLog(ApplicationId applicationId, Long after) {
+        return testerClient.getLog(getTesterHostname(applicationId), getTesterPort(applicationId), after);
+    }
+
+    // TODO: Not implemented in TesterClient yet
+    public HttpResponse startTests(ApplicationId applicationId, String suite, String config) {
+        return testerClient.startTests(getTesterHostname(applicationId), suite, config);
+    }
+
+    private String getTesterHostname(ApplicationId applicationId) {
+        return getTesterServiceInfo(applicationId).getHostName();
+    }
+
+    private int getTesterPort(ApplicationId applicationId) {
+        ServiceInfo serviceInfo = getTesterServiceInfo(applicationId);
+        return serviceInfo.getPorts().stream().filter(portInfo -> portInfo.getTags().contains("http")).findFirst().get().getPort();
+    }
+
+    private ServiceInfo getTesterServiceInfo(ApplicationId applicationId) {
+        Application application = getApplication(applicationId);
+        return application.getModel().getHosts().stream()
+                .findFirst().orElseThrow(() -> new InternalServerException("Could not find any host for tester app " + applicationId.toFullString()))
+                .getServices().stream()
+                .filter(service -> CONTAINER.serviceName.equals(service.getServiceType()))
+                .findFirst()
+                .orElseThrow(() -> new InternalServerException("Could not find any tester container for tester app " + applicationId.toFullString()));
     }
 
     // ---------------- Session operations ----------------------------------------------------------------

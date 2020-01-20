@@ -46,6 +46,7 @@ public class ApplicationHandler extends HttpHandler {
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
             "http://*/application/v2/tenant/*/application/*")
             .map(UriPattern::new)
@@ -132,6 +133,23 @@ public class ApplicationHandler extends HttpHandler {
             return new ApplicationSuspendedResponse(applicationRepository.isSuspended(applicationId));
         }
 
+        if (isTesterRequest(request)) {
+            String testerCommand = getTesterCommandFromRequest(request);
+            switch (testerCommand) {
+                case "status":
+                    return applicationRepository.getTesterStatus(applicationId);
+                case "logs":
+                    Long after = Long.valueOf(request.getProperty("after"));
+                    return applicationRepository.getTesterLog(applicationId, after);
+                case "startTests":
+                    String suite = "foo"; // TODO
+                    String config = "bar"; // TODO
+                    return applicationRepository.startTests(applicationId, suite, config);
+                default:
+                    throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
+            }
+        }
+
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(applicationId));
     }
 
@@ -210,7 +228,17 @@ public class ApplicationHandler extends HttpHandler {
                 request.getUri().getPath().contains("/filedistributionstatus");
     }
 
+    private static boolean isTesterRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 8 &&
+               request.getUri().getPath().contains("/tester");
+    }
+
     private static String getHostNameFromRequest(HttpRequest req) {
+        BindingMatch<?> bm = getBindingMatch(req);
+        return bm.group(7);
+    }
+
+    private static String getTesterCommandFromRequest(HttpRequest req) {
         BindingMatch<?> bm = getBindingMatch(req);
         return bm.group(7);
     }

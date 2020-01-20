@@ -11,7 +11,8 @@ import java.util.Optional;
 /**
  * Proxies response back to client, keeps Content-Type header if it is present
  *
- * @author Ola Aunrønning
+ * @author olaa
+ * @author freva
  */
 class ProxyResponse extends HttpResponse {
 

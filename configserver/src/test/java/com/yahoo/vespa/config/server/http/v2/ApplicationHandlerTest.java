@@ -12,6 +12,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
+import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -77,7 +78,8 @@ public class ApplicationHandlerTest {
                                                           orchestrator,
                                                           new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                           new MockLogRetriever(),
-                                                          Clock.systemUTC());
+                                                          Clock.systemUTC(),
+                                                          new MockTesterClient());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                               tenantRepository,
                                                               Zone.defaultZone());
@@ -174,7 +176,8 @@ public class ApplicationHandlerTest {
                                                                                 new ConfigConvergenceChecker(stateApiFactory),
                                                                                 mockHttpProxy,
                                                                                 new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                                                                new OrchestratorMock());
+                                                                                new OrchestratorMock(),
+                                                                                new MockTesterClient());
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
@@ -219,6 +222,20 @@ public class ApplicationHandlerTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
         assertEquals("log line", baos.toString());
+    }
+
+    @Test
+    public void testTesterStatus() throws IOException {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/status";
+        ApplicationHandler mockHandler = createApplicationHandler();
+
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        assertEquals(200, response.getStatus());
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.render(baos);
+        assertEquals("OK", baos.toString());
     }
 
     private void assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {
