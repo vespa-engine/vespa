@@ -207,6 +207,11 @@ public class Flags {
             "Whether node-admin should refuse to start container when there is an IP mismatch between the DNS and node-repository",
             "Takes effect on next node creation (f.ex. node reboot or vespa version upgrade)");
 
+    public static final UnboundBooleanFlag USE_CONFIG_SERVER_FOR_TESTER_API_CALLS = defineFeatureFlag(
+            "use-config-server-for-tester-api-calls", false,
+            "Whether controller should send requests to tester API through config server (if false) or tester endpoint (if true)",
+            "Takes effect immediately",
+            ZONE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
