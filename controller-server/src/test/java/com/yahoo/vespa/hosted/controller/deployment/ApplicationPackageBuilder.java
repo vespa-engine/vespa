@@ -101,13 +101,19 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder region(RegionName regionName) {
-        return region(regionName.value());
+        return region(regionName, true);
     }
 
     public ApplicationPackageBuilder region(String regionName) {
-        environmentBody.append("      <region active='true'>");
-        environmentBody.append(regionName);
-        environmentBody.append("</region>\n");
+        return region(RegionName.from(regionName), true);
+    }
+
+    public ApplicationPackageBuilder region(RegionName regionName, boolean active) {
+        environmentBody.append("      <region active='")
+                       .append(active)
+                       .append("'>")
+                       .append(regionName.value())
+                       .append("</region>\n");
         return this;
     }
 

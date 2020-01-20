@@ -396,6 +396,28 @@ public class RoutingPoliciesTest {
         assertEquals(GlobalRouting.Status.in, policy1.status().globalRouting().status());
         assertEquals(GlobalRouting.Agent.tenant, policy1.status().globalRouting().agent());
         assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().globalRouting().changedAt());
+
+        // Deployment is set out through a new deployment.xml
+        var applicationPackage2 = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region(), false)
+                .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
+                .endpoint("r1", "c0", zone1.region().value(), zone2.region().value())
+                .build();
+        context.submit(applicationPackage2).deploy();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
+        tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1);
+
+        // ... back in
+        var applicationPackage3 = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
+                .endpoint("r1", "c0", zone1.region().value(), zone2.region().value())
+                .build();
+        context.submit(applicationPackage3).deploy();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+        tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1, zone2);
     }
 
     @Test

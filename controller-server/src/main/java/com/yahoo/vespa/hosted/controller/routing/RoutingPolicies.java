@@ -77,11 +77,12 @@ public class RoutingPolicies {
         var loadBalancers = new AllocatedLoadBalancers(application, zone, controller.serviceRegistry().configServer()
                                                                                     .getLoadBalancers(application, zone),
                                                        deploymentSpec);
+        var inactiveZones = inactiveZones(application, deploymentSpec);
         try (var lock = db.lockRoutingPolicies()) {
             removeGlobalDnsUnreferencedBy(loadBalancers, lock);
             storePoliciesOf(loadBalancers, lock);
             removePoliciesUnreferencedBy(loadBalancers, lock);
-            updateGlobalDnsOf(get(loadBalancers.application).values(), lock);
+            updateGlobalDnsOf(get(loadBalancers.application).values(), inactiveZones, lock);
         }
     }
 
@@ -92,7 +93,7 @@ public class RoutingPolicies {
                                                                                        controller.clock().instant())));
             var allPolicies = db.readRoutingPolicies();
             for (var applicationPolicies : allPolicies.values()) {
-                updateGlobalDnsOf(applicationPolicies.values(), lock);
+                updateGlobalDnsOf(applicationPolicies.values(), Set.of(), lock);
             }
         }
     }
@@ -109,12 +110,12 @@ public class RoutingPolicies {
                 newPolicies.put(policy.id(), newPolicy);
             }
             db.writeRoutingPolicies(deployment.applicationId(), newPolicies);
-            updateGlobalDnsOf(newPolicies.values(), lock);
+            updateGlobalDnsOf(newPolicies.values(), Set.of(), lock);
         }
     }
 
     /** Update global DNS record for given policies */
-    private void updateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, @SuppressWarnings("unused") Lock lock) {
+    private void updateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
         // Create DNS record for each routing ID
         var routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
@@ -124,8 +125,12 @@ public class RoutingPolicies {
                 if (policy.dnsZone().isEmpty()) continue;
                 var target = new AliasTarget(policy.canonicalName(), policy.dnsZone().get(), policy.id().zone());
                 var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
-                // Remove target if global routing status is set out, either on zone-level or policy-level
-                if (anyOut(zonePolicy.globalRouting(), policy.status().globalRouting())) {
+                // Remove target zone if global routing status is set out at:
+                // - zone level (ZoneRoutingPolicy)
+                // - deployment level (RoutingPolicy)
+                // - application package level (deployment.xml)
+                if (anyOut(zonePolicy.globalRouting(), policy.status().globalRouting()) ||
+                    inactiveZones.contains(policy.id().zone())) {
                     staleTargets.add(target);
                 } else {
                     targets.add(target);
@@ -267,6 +272,17 @@ public class RoutingPolicies {
                                .collect(Collectors.toSet());
         }
 
+    }
+
+    /** Returns zones where global routing is declared inactive for instance through deploymentSpec */
+    private static Set<ZoneId> inactiveZones(ApplicationId instance, DeploymentSpec deploymentSpec) {
+        var instanceSpec = deploymentSpec.instance(instance.instance());
+        if (instanceSpec.isEmpty()) return Set.of();
+        return instanceSpec.get().zones().stream()
+                           .filter(zone -> zone.environment().isProduction())
+                           .filter(zone -> !zone.active())
+                           .map(zone -> ZoneId.from(zone.environment(), zone.region().get()))
+                           .collect(Collectors.toUnmodifiableSet());
     }
 
 }
