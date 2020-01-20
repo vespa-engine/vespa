@@ -9,6 +9,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
@@ -70,6 +71,7 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
     private final MavenRepository mavenRepository;
+    private final Metric metric;
 
     /**
      * Creates a controller 
@@ -77,22 +79,15 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
      * @param curator the curator instance storing the persistent state of the controller.
      */
     @Inject
-    public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      AccessControl accessControl,
-                      FlagSource flagSource,
-                      MavenRepository mavenRepository,
-                      ServiceRegistry serviceRegistry) {
-        this(curator, rotationsConfig,
-             accessControl,
-             com.yahoo.net.HostName::getLocalhost, flagSource,
-             mavenRepository, serviceRegistry);
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl, FlagSource flagSource,
+                      MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric) {
+        this(curator, rotationsConfig, accessControl, com.yahoo.net.HostName::getLocalhost, flagSource,
+             mavenRepository, serviceRegistry, metric);
     }
 
-    public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      AccessControl accessControl,
-                      Supplier<String> hostnameSupplier,
-                      FlagSource flagSource, MavenRepository mavenRepository,
-                      ServiceRegistry serviceRegistry) {
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl,
+                      Supplier<String> hostnameSupplier, FlagSource flagSource, MavenRepository mavenRepository,
+                      ServiceRegistry serviceRegistry, Metric metric) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -101,7 +96,7 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         this.clock = Objects.requireNonNull(serviceRegistry.clock(), "Clock cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
-
+        this.metric = Objects.requireNonNull(metric, "Metric cannot be null");
 
         metrics = new ConfigServerMetrics(serviceRegistry.configServer());
         nameServiceForwarder = new NameServiceForwarder(curator);
@@ -263,6 +258,10 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
 
     public AuditLogger auditLogger() {
         return auditLogger;
+    }
+
+    public Metric metric() {
+        return metric;
     }
 
     private Set<CloudName> clouds() {

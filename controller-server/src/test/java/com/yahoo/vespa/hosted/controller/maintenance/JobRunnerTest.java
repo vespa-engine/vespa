@@ -11,12 +11,14 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
+import com.yahoo.vespa.hosted.controller.deployment.JobMetrics;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
+import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -43,6 +45,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -59,6 +62,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -348,7 +352,44 @@ public class JobRunnerTest {
         jobs.start(id, systemTest, versions);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));
         runner.run();
-        assertTrue(jobs.last(id, systemTest).get().status() == aborted);
+        assertSame(aborted, jobs.last(id, systemTest).get().status());
+    }
+
+    @Test
+    public void jobMetrics() {
+        DeploymentTester tester = new DeploymentTester();
+        JobController jobs = tester.controller().jobController();
+        Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
+                                         inThreadExecutor(), mappedRunner(outcomes));
+
+        TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
+        ApplicationId id = appId.defaultInstance();
+        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
+
+        for (RunStatus status : RunStatus.values()) {
+            if (status == success) continue; // Status not used for steps.
+            outcomes.put(deployTester, status);
+            jobs.start(id, systemTest, versions);
+            runner.run();
+            jobs.finish(jobs.last(id, systemTest).get().id());
+        }
+
+        Map<String, String> context = Map.of("tenant", "tenant",
+                                             "application", "real",
+                                             "instance", "default",
+                                             "job", "system-test",
+                                             "environment", "test",
+                                             "region", "us-east-1");
+        MetricsMock metric = ((MetricsMock) tester.controller().metric());
+        assertEquals(RunStatus.values().length - 1, metric.getMetric(context::equals, JobMetrics.start).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.abort).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.error).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.success).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.convergenceFailure).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.deploymentFailure).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.outOfCapacity).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.testFailure).get().intValue());
     }
 
     public static ExecutorService inThreadExecutor() {

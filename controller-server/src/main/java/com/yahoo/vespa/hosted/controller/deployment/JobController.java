@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -79,6 +80,7 @@ public class JobController {
     private final BufferedLogStore logs;
     private final TesterCloud cloud;
     private final Badges badges;
+    private final JobMetrics metric;
 
     private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
@@ -88,6 +90,7 @@ public class JobController {
         this.logs = new BufferedLogStore(curator, controller.serviceRegistry().runDataStore());
         this.cloud = controller.serviceRegistry().testerCloud();
         this.badges = new Badges(controller.zoneRegistry().badgeUrl());
+        this.metric = new JobMetrics(controller.metric(), controller.system());
     }
 
     public TesterCloud cloud() { return cloud; }
@@ -360,6 +363,7 @@ public class JobController {
                 }
             });
             logs.flush(id);
+            metric.jobFinished(run.id().job(), finishedRun.status());
             return finishedRun;
         });
     }
@@ -416,6 +420,7 @@ public class JobController {
 
                 RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
                 curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant()));
+                metric.jobStarted(newId.job());
             });
         });
     }
