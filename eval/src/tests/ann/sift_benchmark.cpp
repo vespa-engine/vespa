@@ -281,10 +281,17 @@ TEST("require that Annoy via NNS api mostly works") {
 TEST("require that HNSW via NNS api mostly works") {
     DocVectorAdapter adapter;
     std::unique_ptr<NNS_API> nns = make_hnsw_nns(NUM_DIMS, adapter);
-    benchmark_nns("HNSW", *nns, { 100, 200 });
+    benchmark_nns("HNSW-like", *nns, { 100, 150, 200 });
 }
 #endif
 
+#if 0
+TEST("require that HNSW wrapped api mostly works") {
+    DocVectorAdapter adapter;
+    std::unique_ptr<NNS_API> nns = make_hnsw_wrap(NUM_DIMS, adapter);
+    benchmark_nns("HNSW-wrap", *nns, { 100, 150, 200 });
+}
+#endif
 
 /**
  * Before running the benchmark the ANN_SIFT1M data set must be downloaded and extracted:
