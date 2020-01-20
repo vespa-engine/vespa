@@ -182,10 +182,10 @@ public class ClusteredConnectionTestCase {
 
         @Override
         public Pong ping(Ping ping,Connection connection) {
-            Pong pong = new Pong();
-            if (connection.getResponse() == null)
-                pong.addError(ErrorMessage.createBackendCommunicationError("No ping response from '" + connection + "'"));
-            return pong;
+            if (connection.getResponse() != null)
+                return new Pong();
+            else
+                return new Pong(ErrorMessage.createBackendCommunicationError("No ping response from '" + connection + "'"));
         }
 
     }

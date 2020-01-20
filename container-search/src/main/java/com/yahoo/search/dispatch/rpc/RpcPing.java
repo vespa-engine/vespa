@@ -18,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class RpcPing implements Callable<Pong> {
+
     private static final String RPC_METHOD = "vespa.searchprotocol.ping";
     private static final CompressionType PING_COMPRESSION = CompressionType.NONE;
 
@@ -75,4 +76,5 @@ public class RpcPing implements Callable<Pong> {
             return new Pong(reply.getActiveDocs());
         }
     }
+
 }

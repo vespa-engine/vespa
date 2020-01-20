@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 
 
 /**
- * <p>A set of terms which must be near each other to match.</p>
+ * A set of terms which must be near each other to match.
  *
  * @author bratseth
  * @author havardpe
@@ -18,7 +18,7 @@ public class NearItem extends CompositeItem {
     protected int distance;
 
     /** The default distance used if none is specified: 2 */
-    public static final int defaultDistance=2;
+    public static final int defaultDistance = 2;
 
     /** Creates a NEAR item with distance 2 */
     public NearItem() {
@@ -26,8 +26,7 @@ public class NearItem extends CompositeItem {
     }
 
     /**
-     * Creates a <i>near</i> item with a limit to the distance
-     * between the words.
+     * Creates a <i>near</i> item with a limit to the distance between the words.
      *
      * @param distance the number of word position which may separate
      *        the words for this near item to match
@@ -47,14 +46,17 @@ public class NearItem extends CompositeItem {
         return distance;
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.NEAR;
     }
 
+    @Override
     public String getName() {
         return "NEAR";
     }
 
+    @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer);
         IntegerCompressor.putCompressedPositiveNumber(distance, buffer);
@@ -67,6 +69,7 @@ public class NearItem extends CompositeItem {
     }
 
     /** Appends the heading of this string - <code>[getName()]([limit]) </code> */
+    @Override
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
         buffer.append("(");
@@ -75,6 +78,7 @@ public class NearItem extends CompositeItem {
         buffer.append(" ");
     }
 
+    @Override
     public int hashCode() {
         return super.hashCode() + 23* distance;
     }
@@ -83,10 +87,11 @@ public class NearItem extends CompositeItem {
      * Returns whether this item is of the same class and
      * contains the same state as the given item
      */
+    @Override
     public boolean equals(Object object) {
         if (!super.equals(object)) return false;
         NearItem other = (NearItem) object; // Ensured by superclass
-        if (this.distance !=other.distance) return false;
+        if (this.distance != other.distance) return false;
         return true;
     }
 

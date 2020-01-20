@@ -96,7 +96,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         future.cancel(true);
 
         if (pong.badResponse()) {
-            monitor.failed(p, pong.getError(0));
+            monitor.failed(p, pong.error().get());
             log(LogLevel.FINE, "Failed ping - ", pong);
         } else {
             monitor.responded(p);

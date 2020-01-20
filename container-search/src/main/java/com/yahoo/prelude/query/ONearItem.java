@@ -25,10 +25,12 @@ public class ONearItem extends NearItem {
         super(distance);
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.ONEAR;
     }
 
+    @Override
     public String getName() {
         return "ONEAR";
     }

@@ -56,11 +56,10 @@ public class ClusterSearcherTestCase {
 
         @Override
         public Pong ping(Ping ping, Execution execution) {
-            Pong pong = new Pong();
-            if (isBlocking()) {
-                pong.addError(ErrorMessage.createTimeout("Dummy timeout"));
-            }
-            return new Pong();
+            if (isBlocking())
+                return new Pong(ErrorMessage.createTimeout("Dummy timeout"));
+            else
+                return new Pong();
         }
 
         public boolean isBlocking() {

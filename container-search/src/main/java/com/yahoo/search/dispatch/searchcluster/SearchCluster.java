@@ -274,7 +274,7 @@ public class SearchCluster implements NodeManager<Node> {
         futurePong.cancel(true);
 
         if (pong.badResponse()) {
-            clusterMonitor.failed(node, pong.getError(0));
+            clusterMonitor.failed(node, pong.error().get());
         } else {
             if (pong.activeDocuments().isPresent()) {
                 node.setActiveDocuments(pong.activeDocuments().get());
