@@ -90,7 +90,6 @@ public:
 
     // Specialized serialization functions, Only used for testing legacy stuff
     void serializeHeader(vespalib::nbostream& stream) const;
-    void serializeBody(vespalib::nbostream& stream) const;
 
     void deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & os);
     /** Deserialize document contained in given bytebuffers. */
@@ -110,7 +109,6 @@ public:
 private:
     void deserializeHeader(const DocumentTypeRepo& repo, vespalib::nbostream & header);
     void deserializeBody(const DocumentTypeRepo& repo, vespalib::nbostream & body);
-    bool hasBodyField() const;
     bool hasFieldValue(const Field& field) const override { return _fields.hasValue(field); }
     void removeFieldValue(const Field& field) override { _fields.remove(field); }
     FieldValue::UP getFieldValue(const Field& field) const override { return _fields.getValue(field); }

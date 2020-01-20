@@ -879,15 +879,6 @@ TEST(DocumentTest, testGenerateSerializedFile)
     }
     close(fd);
 
-    vespalib::nbostream bBuf;
-    doc.serializeBody(bBuf);
-    fd = open((serializedDir+ "/serializecppsplit_body.dat").c_str(),
-              O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, bBuf.peek(), bBuf.size()) != (ssize_t)bBuf.size()) {
-        throw vespalib::Exception("write failed");
-    }
-    close(fd);
-
     CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
     const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
 
