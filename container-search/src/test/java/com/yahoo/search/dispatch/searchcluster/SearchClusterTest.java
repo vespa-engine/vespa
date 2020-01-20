@@ -44,7 +44,8 @@ public class SearchClusterTest {
         State(String clusterId, int nodesPerGroup, List<String> nodeNames) {
             this.clusterId = clusterId;
             this.nodesPerGroup = nodesPerGroup;
-            vipStatus = new VipStatus(new QrSearchersConfig.Builder().searchcluster(new QrSearchersConfig.Searchcluster.Builder().name(clusterId)).build(), new ClustersStatus());
+            vipStatus = new VipStatus(new QrSearchersConfig.Builder().searchcluster(new QrSearchersConfig.Searchcluster.Builder().name(clusterId)).build(),
+                                      new ClustersStatus());
             numDocsPerNode = new ArrayList<>(nodeNames.size());
             pingCounts = new ArrayList<>(nodeNames.size());
             List<Node> nodes = new ArrayList<>(nodeNames.size());
@@ -108,7 +109,9 @@ public class SearchClusterTest {
         }
 
         static class Factory implements PingFactory {
+
             static class Pinger implements Callable<Pong> {
+
                 private final AtomicInteger numDocs;
                 private final AtomicInteger pingCount;
                 Pinger(AtomicInteger numDocs, AtomicInteger pingCount) {
@@ -128,6 +131,7 @@ public class SearchClusterTest {
             private final List<AtomicInteger> activeDocs;
             private final List<AtomicInteger> pingCounts;
             private final int numPerGroup;
+
             Factory(int numPerGroup, List<AtomicInteger> activeDocs, List<AtomicInteger> pingCounts) {
                 this.numPerGroup = numPerGroup;
                 this.activeDocs = activeDocs;
@@ -140,17 +144,19 @@ public class SearchClusterTest {
                 return new Pinger(activeDocs.get(index), pingCounts.get(index));
             }
         }
+
     }
 
     @Test
     public void requireThatVipStatusIsDefaultDownButComesUpAfterPinging() {
-        State test = new State("cluster.1", 2, "a", "b");
-        assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
+        try (State test = new State("cluster.1", 2, "a", "b")) {
+            assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
 
-        assertFalse(test.vipStatus.isInRotation());
-        test.startMonitoring();
-        test.waitOneFullPingRound();
-        assertTrue(test.vipStatus.isInRotation());
+            assertFalse(test.vipStatus.isInRotation());
+            test.startMonitoring();
+            test.waitOneFullPingRound();
+            assertTrue(test.vipStatus.isInRotation());
+        }
     }
 
     @Test
