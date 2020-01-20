@@ -69,7 +69,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void addAttributeTypeToRankProfiles(String attributeName, String attributeType) {
-        for (RankProfile profile : rankProfileRegistry.all()) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
             profile.addAttributeType(attributeName, attributeType);
         }
     }

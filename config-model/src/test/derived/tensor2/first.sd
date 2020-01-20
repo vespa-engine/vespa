@@ -1,0 +1,8 @@
+search first {
+  document first {
+    field first_field type tensor(first[10]) {
+      indexing: summary | attribute
+    }
+  }
+}
+
