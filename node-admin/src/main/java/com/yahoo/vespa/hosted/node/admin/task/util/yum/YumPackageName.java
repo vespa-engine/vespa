@@ -244,10 +244,10 @@ public class YumPackageName {
 
     public boolean isSubsetOf(YumPackageName other) {
         return Objects.equals(name, other.name) &&
-                (!epoch.isPresent() || Objects.equals(epoch, other.epoch)) &&
-                (!version.isPresent() || Objects.equals(version, other.version)) &&
-                (!release.isPresent() || Objects.equals(release, other.release)) &&
-                (!architecture.isPresent() || Objects.equals(architecture, other.architecture));
+                (epoch.isEmpty() || Objects.equals(epoch, other.epoch)) &&
+                (version.isEmpty() || Objects.equals(version, other.version)) &&
+                (release.isEmpty() || Objects.equals(release, other.release)) &&
+                (architecture.isEmpty() || Objects.equals(architecture, other.architecture));
     }
 
     @Override

@@ -1,8 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -223,7 +222,7 @@ public class CursorImpl implements Cursor {
 
     @Override
     public Cursor writeLines(String... lines) {
-        return writeLines(Arrays.asList(lines));
+        return writeLines(List.of(lines));
     }
 
     @Override
@@ -307,7 +306,7 @@ public class CursorImpl implements Cursor {
     @Override
     public boolean replaceMatch(Pattern pattern, Function<Match, String> replacer) {
         Optional<Match> match = moveForwardToStartOfMatch(pattern);
-        if (!match.isPresent()) {
+        if (match.isEmpty()) {
             return false;
         }
 

@@ -77,7 +77,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                                                 HostnameVerifier hostnameVerifier,
                                                 HostName configServerHostname) {
         return new ConfigServerApiImpl(
-                Collections.singleton(info.getConfigServerUri(configServerHostname.value())),
+                List.of(info.getConfigServerUri(configServerHostname.value())),
                 hostnameVerifier,
                 provider);
     }

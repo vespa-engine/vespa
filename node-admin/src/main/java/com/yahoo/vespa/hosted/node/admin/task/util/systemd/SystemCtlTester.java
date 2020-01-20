@@ -15,7 +15,7 @@ public class SystemCtlTester extends SystemCtl {
 
     private final Set<String> runningUnits = new HashSet<>();
 
-    private TestTerminal terminal;
+    private final TestTerminal terminal;
 
     public SystemCtlTester(TestTerminal terminal) {
         super(terminal);

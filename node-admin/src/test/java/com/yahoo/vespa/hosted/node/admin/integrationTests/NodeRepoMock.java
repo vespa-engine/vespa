@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeReposit
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +45,7 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public Map<String, Acl> getAcls(String hostname) {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     @Override

@@ -15,8 +15,6 @@ import org.junit.Test;
 
 import java.nio.file.FileSystem;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -70,7 +68,7 @@ public class AclMaintainerTest {
         verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
         verifyNoMoreInteractions(dockerOperations);
 
-        List<String> expected = Arrays.asList(
+        List<String> expected = List.of(
                 // IPv4 filter table restore
                 "*filter\n" +
                 "-P INPUT ACCEPT\n" +
@@ -137,7 +135,7 @@ public class AclMaintainerTest {
         verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
         verifyNoMoreInteractions(dockerOperations);
 
-        List<String> expected = Arrays.asList(
+        List<String> expected = List.of(
                 // IPv4 filter table restore
                 "*filter\n" +
                 "-P INPUT ACCEPT\n" +
@@ -194,7 +192,7 @@ public class AclMaintainerTest {
         verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any()); //we don't have a ip4 address for the container so no redirect
         verifyNoMoreInteractions(dockerOperations);
 
-        List<String> expected = Collections.singletonList(
+        List<String> expected = List.of(
                 "*filter\n" +
                 "-P INPUT ACCEPT\n" +
                 "-P FORWARD ACCEPT\n" +

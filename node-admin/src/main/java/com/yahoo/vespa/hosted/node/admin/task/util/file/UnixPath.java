@@ -19,7 +19,6 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -217,7 +216,7 @@ public class UnixPath {
                     .map(UnixPath::new)
                     .collect(Collectors.toList());
         } catch (NoSuchFileException ignored) {
-            return Collections.emptyList();
+            return List.of();
         } catch (IOException e) {
             throw new RuntimeException("Failed to list contents of directory " + path.toAbsolutePath(), e);
         }

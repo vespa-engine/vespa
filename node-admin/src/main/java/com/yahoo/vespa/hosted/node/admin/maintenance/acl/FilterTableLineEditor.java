@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -16,10 +15,11 @@ import java.util.List;
  */
 class FilterTableLineEditor implements LineEditor {
 
-    private final LinkedList<String> wantedRules;
+    private final List<String> wantedRules;
+    private int position = 0;
 
     private FilterTableLineEditor(List<String> wantedRules) {
-        this.wantedRules = new LinkedList<>(wantedRules);
+        this.wantedRules = List.copyOf(wantedRules);
     }
 
     static FilterTableLineEditor from(Acl acl, IPVersion ipVersion) {
@@ -29,15 +29,33 @@ class FilterTableLineEditor implements LineEditor {
 
     @Override
     public LineEdit edit(String line) {
-        // We have already added all the lines we wanted, remove the remainer
-        if (wantedRules.isEmpty()) return LineEdit.remove();
+        int index = indexOf(wantedRules, line, position);
+        // Unwanted rule, remove
+        if (index < 0) return LineEdit.remove();
 
-        String wantedRule = wantedRules.pop();
-        return wantedRule.equals(line) ? LineEdit.none() : LineEdit.replaceWith(wantedRule);
+        // Wanted rule at the expected position, no diff
+        if (index == position) {
+            position++;
+            return LineEdit.none();
+        }
+
+        // Insert the rules between position and index before index
+        List<String> toInsert = wantedRules.subList(position, index);
+        position = ++index;
+        return LineEdit.insertBefore(toInsert);
     }
 
     @Override
     public List<String> onComplete() {
-        return this.wantedRules;
+        return wantedRules.subList(position, wantedRules.size());
+    }
+
+    private static <T> int indexOf(List<T> list, T value, int startPos) {
+        for (int i = startPos; i < list.size(); i++) {
+            if (value.equals(list.get(i)))
+                return i;
+        }
+
+        return -1;
     }
 }

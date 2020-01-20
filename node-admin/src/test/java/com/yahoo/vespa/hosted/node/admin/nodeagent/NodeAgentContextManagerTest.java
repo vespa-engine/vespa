@@ -117,7 +117,7 @@ public class NodeAgentContextManagerTest {
         return new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
     }
 
-    private class AsyncExecutor<T> {
+    private static class AsyncExecutor<T> {
         private final Object monitor = new Object();
         private final Thread thread;
         private volatile Optional<T> response = Optional.empty();

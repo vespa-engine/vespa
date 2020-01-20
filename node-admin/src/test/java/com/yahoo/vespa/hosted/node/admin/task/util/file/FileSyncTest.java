@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -71,7 +70,7 @@ public class FileSyncTest {
         fileData.getPermissions().ifPresent(permissions -> assertEquals(permissions, unixPath.getPermissions()));
 
         List<String> actualMods = taskContext.getSystemModificationLog();
-        List<String> expectedMods = Arrays.asList(systemModificationMessages);
+        List<String> expectedMods = List.of(systemModificationMessages);
         assertEquals(expectedMods, actualMods);
 
         UnixPath unixPath = new UnixPath(path);

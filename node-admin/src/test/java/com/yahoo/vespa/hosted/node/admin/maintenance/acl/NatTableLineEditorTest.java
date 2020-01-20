@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -88,7 +88,7 @@ public class NatTableLineEditorTest {
         NatTableLineEditor natLineEditor = NatTableLineEditor.from(redirectRule);
         Editor editor = new Editor(
                 "nat-table",
-                () -> Arrays.asList(currentNatTable.split("\n")),
+                () -> List.of(currentNatTable.split("\n")),
                 result -> assertEquals(expectedNatTable, String.join("\n", result)),
                 natLineEditor);
         editor.edit(m -> {});

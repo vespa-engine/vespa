@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.OptionalLong;
 
 import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.HOST_HOSTNAME;
@@ -40,7 +40,7 @@ public class RebootTest {
             } catch (RuntimeException ignored) { }
 
             tester.inOrder(tester.orchestrator).suspend(
-                    eq(HOST_HOSTNAME.value()), eq(Arrays.asList(hostname, HOST_HOSTNAME.value())));
+                    eq(HOST_HOSTNAME.value()), eq(List.of(hostname, HOST_HOSTNAME.value())));
             tester.inOrder(tester.docker).executeInContainerAsUser(
                     eq(new ContainerName("host1")), eq("root"), eq(OptionalLong.empty()), eq(NODE_PROGRAM), eq("stop"));
             assertTrue(tester.nodeAdmin.setFrozen(true));

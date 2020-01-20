@@ -8,7 +8,6 @@ import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -109,7 +108,7 @@ public class OrchestratorImplTest {
     @Test
     public void testBatchSuspendCall() {
         String parentHostName = "host1.test.yahoo.com";
-        List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
+        List<String> hostNames = List.of("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
 
         when(configServerApi.put(
                 eq("/orchestrator/v1/suspensions/hosts/host1.test.yahoo.com?hostname=a1.host1.test.yahoo.com&hostname=a2.host1.test.yahoo.com"),
@@ -124,7 +123,7 @@ public class OrchestratorImplTest {
     @Test(expected=OrchestratorException.class)
     public void testBatchSuspendCallWithFailureReason() {
         String parentHostName = "host1.test.yahoo.com";
-        List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
+        List<String> hostNames = List.of("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
         String failureReason = "Failed to suspend";
 
         when(configServerApi.put(
@@ -140,7 +139,7 @@ public class OrchestratorImplTest {
     @Test(expected=RuntimeException.class)
     public void testBatchSuspendCallWithSomeException() {
         String parentHostName = "host1.test.yahoo.com";
-        List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
+        List<String> hostNames = List.of("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
         String exceptionMessage = "Exception: Something crashed!";
 
         when(configServerApi.put(

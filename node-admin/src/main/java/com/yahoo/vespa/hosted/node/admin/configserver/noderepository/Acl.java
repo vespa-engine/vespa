@@ -61,9 +61,9 @@ public class Acl {
         rules.add("-A INPUT -p " + ipVersion.icmpProtocol() + " -j ACCEPT");
 
         // Allow trusted ports if any
-        String commaSeparatedPorts = trustedPorts.stream().map(i -> Integer.toString(i)).sorted().collect(Collectors.joining(","));
-        if (!commaSeparatedPorts.isEmpty()) {
-            rules.add("-A INPUT -p tcp -m multiport --dports " + commaSeparatedPorts + " -j ACCEPT");
+        if (!trustedPorts.isEmpty()) {
+            String ports = trustedPorts.stream().map(i -> Integer.toString(i)).sorted().collect(Collectors.joining(","));
+            rules.add("-A INPUT -p tcp -m multiport --dports " + ports + " -j ACCEPT");
         }
 
         // Allow traffic from trusted nodes

@@ -101,7 +101,7 @@ public class AttributeSync {
                                     Optional<String> wantedValue,
                                     Supplier<String> currentValueSupplier,
                                     Consumer<String> valueSetter) {
-        if (!wantedValue.isPresent()) {
+        if (wantedValue.isEmpty()) {
             return false;
         }
 

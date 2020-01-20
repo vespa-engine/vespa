@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.component;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,7 +26,7 @@ public class ConfigServerInfo {
         this.configServerHostnameToUriMapper = hostname -> URI.create(scheme + "://" + hostname + ":" + port);
         this.configServerURIs = configServerHostNames.stream()
                 .map(configServerHostnameToUriMapper)
-                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private static URI createLoadBalancerEndpoint(String loadBalancerHost, String scheme, int port) {

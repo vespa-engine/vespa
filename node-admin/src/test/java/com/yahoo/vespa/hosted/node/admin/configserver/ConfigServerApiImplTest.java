@@ -19,9 +19,7 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
@@ -54,7 +52,7 @@ public class ConfigServerApiImplTest {
 
     private final String uri1 = "http://host1:666";
     private final String uri2 = "http://host2:666";
-    private final List<URI> configServers = Arrays.asList(URI.create(uri1), URI.create(uri2));
+    private final List<URI> configServers = List.of(URI.create(uri1), URI.create(uri2));
     private final StringBuilder mockLog = new StringBuilder();
 
     private ConfigServerApiImpl configServerApi;
@@ -122,7 +120,7 @@ public class ConfigServerApiImplTest {
         params.setConnectionTimeout(Duration.ofSeconds(3));
 
         try {
-            TestPojo testPojo = configServerApi.get("/path", TestPojo.class, params);
+            configServerApi.get("/path", TestPojo.class, params);
             fail();
         } catch (ConnectionException e) {
             assertNotNull(e.getCause());

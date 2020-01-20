@@ -47,20 +47,19 @@ public class NodeAdminImpl implements NodeAdmin {
     private final Counter numberOfUnhandledExceptions;
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock) {
-        this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
+        this(nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
                 metrics, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
     }
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics,
                          Clock clock, Duration freezeTimeout, Duration spread) {
-        this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
+        this(nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
                 metrics, clock, freezeTimeout, spread);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
                   Metrics metrics, Clock clock, Duration freezeTimeout, Duration spread) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
-
         this.clock = clock;
         this.freezeTimeout = freezeTimeout;
         this.spread = spread;

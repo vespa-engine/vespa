@@ -82,7 +82,7 @@ public class CoreCollector {
         if (result.getExitStatus() != 0)
             throw new RuntimeException("Failed to read backtrace " + result + ", Command: " + Arrays.toString(command));
 
-        return Arrays.asList(result.getOutput().split("\n"));
+        return List.of(result.getOutput().split("\n"));
     }
 
     List<String> readJstack(NodeAgentContext context, Path coredumpPath, Path binPath) {
@@ -92,7 +92,7 @@ public class CoreCollector {
         if (result.getExitStatus() != 0)
             throw new RuntimeException("Failed to read jstack " + result + ", Command: " + Arrays.toString(command));
 
-        return Arrays.asList(result.getOutput().split("\n"));
+        return List.of(result.getOutput().split("\n"));
     }
 
     /**
