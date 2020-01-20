@@ -13,7 +13,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
 /**
  * Definitions of feature flags.
@@ -183,12 +182,6 @@ public class Flags {
             "disable-cm3", false,
             "Whether to disable CM3.", "Takes effect on next host admin tick",
             HOSTNAME);
-
-    public static final UnboundBooleanFlag MIGRATE_AWS_TARGET_GROUP_HEALTH_CHECKS = defineFeatureFlag(
-            "migrate-aws-health-checks", false,
-            "Migrate target group health checks to https",
-            "Takes effect on config server restart",
-            ZONE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
