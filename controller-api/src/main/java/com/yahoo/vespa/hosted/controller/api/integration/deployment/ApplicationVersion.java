@@ -51,7 +51,10 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         if (commit.isPresent() && commit.get().length() > 128)
             throw new IllegalArgumentException("Commit may not be longer than 128 characters");
 
-        sourceUrl.map(URI::create);
+        sourceUrl.map(URI::create).ifPresent(url -> {
+            if (url.getHost() == null || url.getScheme() == null)
+                throw new IllegalArgumentException("Source URL must include scheme and host");
+        });
 
         if (authorEmail.isPresent() && ! authorEmail.get().matches("[^@]+@[^@]+"))
             throw new IllegalArgumentException("Invalid author email '" + authorEmail.get() + "'.");
