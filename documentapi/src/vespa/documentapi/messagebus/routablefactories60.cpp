@@ -20,7 +20,7 @@ namespace documentapi {
 bool
 RoutableFactories60::DocumentMessageFactory::encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const
 {
-    const DocumentMessage &msg = static_cast<const DocumentMessage&>(obj);
+    const auto &msg = static_cast<const DocumentMessage&>(obj);
     out.putByte(msg.getPriority());
     out.putInt(msg.getLoadType().getId());
     return doEncode(msg, out);
@@ -93,7 +93,7 @@ RoutableFactories60::CreateVisitorMessageFactory::doDecode(document::ByteBuffer 
     msg->setVisitRemoves(decodeBoolean(buf));
     msg->setFieldSet(decodeString(buf));
     msg->setVisitInconsistentBuckets(decodeBoolean(buf));
-    msg->getParameters().deserialize(_repo, buf);
+    msg->getParameters().deserialize(buf);
     msg->setVisitorDispatcherVersion(50);
     decodeInt(buf); // Unused legacy visitor ordering
     msg->setMaxBucketsPerVisitor(decodeInt(buf));
@@ -105,7 +105,7 @@ RoutableFactories60::CreateVisitorMessageFactory::doDecode(document::ByteBuffer 
 bool
 RoutableFactories60::CreateVisitorMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const CreateVisitorMessage &msg = static_cast<const CreateVisitorMessage&>(obj);
+    const auto &msg = static_cast<const CreateVisitorMessage&>(obj);
 
     buf.putString(msg.getLibraryName());
     buf.putString(msg.getInstanceId());
@@ -126,10 +126,8 @@ RoutableFactories60::CreateVisitorMessageFactory::doEncode(const DocumentMessage
     buf.putString(msg.getFieldSet());
     buf.putBoolean(msg.visitInconsistentBuckets());
 
-    int len = msg.getParameters().getSerializedSize();
-    char *tmp = buf.allocate(len);
-    document::ByteBuffer dbuf(tmp, len);
-    msg.getParameters().serialize(dbuf);
+
+    msg.getParameters().serialize(buf);
 
     buf.putInt(0); // Unused legacy visitor ordering
     buf.putInt(msg.getMaxBucketsPerVisitor());
@@ -184,7 +182,7 @@ RoutableFactories60::CreateVisitorReplyFactory::doDecode(document::ByteBuffer &b
 bool
 RoutableFactories60::CreateVisitorReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const CreateVisitorReply &reply = static_cast<const CreateVisitorReply&>(obj);
+    const auto &reply = static_cast<const CreateVisitorReply&>(obj);
     buf.putLong(reply.getLastBucket().getRawId());
     buf.putInt(reply.getVisitorStatistics().getBucketsVisited());
     buf.putLong(reply.getVisitorStatistics().getDocumentsVisited());
@@ -209,19 +207,14 @@ RoutableFactories60::DestroyVisitorReplyFactory::doEncode(const DocumentReply &,
 }
 
 DocumentReply::UP
-RoutableFactories60::DocumentIgnoredReplyFactory::doDecode(document::ByteBuffer& buf) const
+RoutableFactories60::DocumentIgnoredReplyFactory::doDecode(document::ByteBuffer& ) const
 {
-    (void) buf;
-    return DocumentReply::UP(new DocumentIgnoredReply());
+    return std::make_unique<DocumentIgnoredReply>();
 }
 
 bool
-RoutableFactories60::DocumentIgnoredReplyFactory::doEncode(
-        const DocumentReply& obj,
-        vespalib::GrowableByteBuffer& buf) const
+RoutableFactories60::DocumentIgnoredReplyFactory::doEncode(const DocumentReply&, vespalib::GrowableByteBuffer& ) const
 {
-    (void) obj;
-    (void) buf;
     return true;
 }
 
@@ -243,15 +236,12 @@ RoutableFactories60::DocumentListMessageFactory::doDecode(document::ByteBuffer &
 bool
 RoutableFactories60::DocumentListMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const DocumentListMessage &msg = static_cast<const DocumentListMessage&>(obj);
+    const auto &msg = static_cast<const DocumentListMessage&>(obj);
 
     buf.putLong(msg.getBucketId().getRawId());
     buf.putInt(msg.getDocuments().size());
     for (const auto & document : msg.getDocuments()) {
-        int len = document.getSerializedSize();
-        char *tmp = buf.allocate(len);
-        document::ByteBuffer dbuf(tmp, len);
-        document.serialize(dbuf);
+        document.serialize(buf);
     }
 
     return true;
@@ -283,11 +273,7 @@ bool
 RoutableFactories60::DocumentSummaryMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
     const DocumentSummaryMessage &msg = static_cast<const DocumentSummaryMessage&>(obj);
-
-    int32_t len = msg.getSerializedSize();
-    char *tmp = buf.allocate(len);
-    document::ByteBuffer dbuf(tmp, len);
-    msg.serialize(dbuf);
+    msg.serialize(buf);
 
     return true;
 }
@@ -322,7 +308,7 @@ RoutableFactories60::EmptyBucketsMessageFactory::doDecode(document::ByteBuffer &
 bool
 RoutableFactories60::EmptyBucketsMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const EmptyBucketsMessage &msg = static_cast<const EmptyBucketsMessage&>(obj);
+    const auto &msg = static_cast<const EmptyBucketsMessage&>(obj);
 
     buf.putInt(msg.getBucketIds().size());
     for (const auto & bucketId : msg.getBucketIds()) {
@@ -367,7 +353,7 @@ RoutableFactories60::GetBucketListMessageFactory::doDecode(document::ByteBuffer 
 bool
 RoutableFactories60::GetBucketListMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const GetBucketListMessage &msg = static_cast<const GetBucketListMessage&>(obj);
+    const auto &msg = static_cast<const GetBucketListMessage&>(obj);
     buf.putLong(msg.getBucketId().getRawId());
     return encodeBucketSpace(msg.getBucketSpace(), buf);
 }
@@ -392,7 +378,7 @@ RoutableFactories60::GetBucketListReplyFactory::doDecode(document::ByteBuffer &b
 bool
 RoutableFactories60::GetBucketListReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const GetBucketListReply &reply = static_cast<const GetBucketListReply&>(obj);
+    const auto &reply = static_cast<const GetBucketListReply&>(obj);
 
     const std::vector<GetBucketListReply::BucketInfo> &buckets = reply.getBuckets();
     buf.putInt(buckets.size());
@@ -417,7 +403,7 @@ RoutableFactories60::GetBucketStateMessageFactory::doDecode(document::ByteBuffer
 bool
 RoutableFactories60::GetBucketStateMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const GetBucketStateMessage &msg = static_cast<const GetBucketStateMessage&>(obj);
+    const auto &msg = static_cast<const GetBucketStateMessage&>(obj);
     buf.putLong(msg.getBucketId().getRawId());
     return true;
 }
@@ -511,7 +497,7 @@ DocumentMessage::UP
 RoutableFactories60::MapVisitorMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
     auto msg = std::make_unique<MapVisitorMessage>();
-    msg->getData().deserialize(_repo, buf);
+    msg->getData().deserialize(buf);
     return msg;
 }
 
@@ -519,11 +505,7 @@ bool
 RoutableFactories60::MapVisitorMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
     const MapVisitorMessage &msg = static_cast<const MapVisitorMessage&>(obj);
-
-    int32_t len = msg.getData().getSerializedSize();
-    char *tmp = buf.allocate(len);
-    document::ByteBuffer dbuf(tmp, len);
-    msg.getData().serialize(dbuf);
+    msg.getData().serialize(buf);
 
     return true;
 }
@@ -660,12 +642,8 @@ RoutableFactories60::SearchResultMessageFactory::doDecode(document::ByteBuffer &
 bool
 RoutableFactories60::SearchResultMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const SearchResultMessage &msg = static_cast<const SearchResultMessage&>(obj);
-
-    int len = msg.getSerializedSize();
-    char *tmp = buf.allocate(len);
-    document::ByteBuffer dbuf(tmp, len);
-    msg.serialize(dbuf);
+    const auto & msg = static_cast<const SearchResultMessage&>(obj);
+    msg.serialize(buf);
 
     return true;
 }
@@ -683,13 +661,10 @@ RoutableFactories60::QueryResultMessageFactory::doDecode(document::ByteBuffer &b
 bool
 RoutableFactories60::QueryResultMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const QueryResultMessage &msg = static_cast<const QueryResultMessage&>(obj);
+    const auto &msg = static_cast<const QueryResultMessage&>(obj);
 
-    int len = msg.getSearchResult().getSerializedSize() + msg.getDocumentSummary().getSerializedSize();
-    char *tmp = buf.allocate(len);
-    document::ByteBuffer dbuf(tmp, len);
-    msg.getSearchResult().serialize(dbuf);
-    msg.getDocumentSummary().serialize(dbuf);
+    msg.getSearchResult().serialize(buf);
+    msg.getDocumentSummary().serialize(buf);
 
     return true;
 }
@@ -744,7 +719,7 @@ RoutableFactories60::StatBucketMessageFactory::doDecode(document::ByteBuffer &bu
 bool
 RoutableFactories60::StatBucketMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const StatBucketMessage &msg = static_cast<const StatBucketMessage&>(obj);
+    const auto &msg = static_cast<const StatBucketMessage&>(obj);
 
     buf.putLong(msg.getBucketId().getRawId());
     buf.putString(msg.getDocumentSelection());
@@ -762,7 +737,7 @@ RoutableFactories60::StatBucketReplyFactory::doDecode(document::ByteBuffer &buf)
 bool
 RoutableFactories60::StatBucketReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const StatBucketReply &reply = static_cast<const StatBucketReply&>(obj);
+    const auto &reply = static_cast<const StatBucketReply&>(obj);
     buf.putString(reply.getResults());
     return true;
 }
@@ -802,7 +777,7 @@ RoutableFactories60::UpdateDocumentMessageFactory::decodeInto(UpdateDocumentMess
 bool
 RoutableFactories60::UpdateDocumentMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const UpdateDocumentMessage &msg = static_cast<const UpdateDocumentMessage&>(obj);
+    const auto &msg = static_cast<const UpdateDocumentMessage&>(obj);
 
     vespalib::nbostream stream;
     msg.getDocumentUpdate().serializeHEAD(stream);
@@ -826,7 +801,7 @@ RoutableFactories60::UpdateDocumentReplyFactory::doDecode(document::ByteBuffer &
 bool
 RoutableFactories60::UpdateDocumentReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const UpdateDocumentReply &reply = static_cast<const UpdateDocumentReply&>(obj);
+    const auto &reply = static_cast<const UpdateDocumentReply&>(obj);
     buf.putBoolean(reply.getWasFound());
     buf.putLong(reply.getHighestModificationTimestamp());
     return true;
@@ -852,7 +827,7 @@ RoutableFactories60::VisitorInfoMessageFactory::doDecode(document::ByteBuffer &b
 bool
 RoutableFactories60::VisitorInfoMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const VisitorInfoMessage &msg = static_cast<const VisitorInfoMessage&>(obj);
+    const auto &msg = static_cast<const VisitorInfoMessage&>(obj);
 
     buf.putInt(msg.getFinishedBuckets().size());
     for (const auto & bucketId : msg.getFinishedBuckets()) {
@@ -887,7 +862,7 @@ RoutableFactories60::WrongDistributionReplyFactory::doDecode(document::ByteBuffe
 bool
 RoutableFactories60::WrongDistributionReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const WrongDistributionReply &reply = static_cast<const WrongDistributionReply&>(obj);
+    const auto &reply = static_cast<const WrongDistributionReply&>(obj);
     buf.putString(reply.getSystemState());
     return true;
 }

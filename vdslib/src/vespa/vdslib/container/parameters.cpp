@@ -1,20 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "parameters.hpp"
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <vespa/vespalib/util/growablebytebuffer.h>
 #include <ostream>
 
 using namespace vdslib;
 
 Parameters::Parameters() = default;
 
-Parameters::Parameters(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer)
+Parameters::Parameters(document::ByteBuffer& buffer)
     : _parameters()
 {
-    deserialize(repo, buffer);
+    deserialize(buffer);
 }
 
 Parameters::~Parameters() = default;
@@ -28,20 +30,19 @@ size_t Parameters::getSerializedSize() const
     return mysize;
 }
 
-void Parameters::onSerialize(document::ByteBuffer& buffer) const
+void Parameters::serialize(vespalib::GrowableByteBuffer& buffer) const
 {
-    buffer.putIntNetwork(_parameters.size());
+    buffer.putInt(_parameters.size());
     for (const auto & entry : _parameters) {
-        buffer.putIntNetwork(entry.first.size());
+        buffer.putInt(entry.first.size());
         buffer.putBytes(entry.first.c_str(), entry.first.size());
-        buffer.putIntNetwork(entry.second.size());
+        buffer.putInt(entry.second.size());
         buffer.putBytes(entry.second.c_str(), entry.second.size());
     }
 }
 
-void Parameters::onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer)
+void Parameters::deserialize(document::ByteBuffer& buffer)
 {
-    (void) repo;
     _parameters.clear();
     int32_t mysize;
     buffer.getIntNetwork(mysize);
@@ -88,11 +89,6 @@ Parameters::operator==(const Parameters &other) const
     return true;
 }
 
-Parameters* Parameters::clone() const
-{
-    return new Parameters(*this);
-}
-
 vespalib::stringref Parameters::get(vespalib::stringref id, vespalib::stringref def) const
 {
     ParametersMap::const_iterator it = _parameters.find(id);
@@ -130,7 +126,7 @@ void Parameters::print(std::ostream& out, bool verbose, const std::string& inden
     out << ")";
 }
 
-std::string Parameters::toString() const
+vespalib::string Parameters::toString() const
 {
     vespalib::string ret;
     for (const auto & entry : _parameters) {

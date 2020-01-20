@@ -14,12 +14,12 @@
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vespalib/util/array.h>
 #include <vespa/storageapi/defs.h>
 
 namespace document { class DocumentTypeRepo; }
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class CreateBucketCommand
@@ -482,5 +482,4 @@ public:
     DECLARE_STORAGEREPLY(SetBucketStateReply, onSetBucketStateReply)
 };
 
-} // api
-} // storage
+}

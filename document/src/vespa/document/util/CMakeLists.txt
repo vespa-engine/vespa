@@ -3,7 +3,7 @@ vespa_add_library(document_util OBJECT
     SOURCES
     bytebuffer.cpp
     printable.cpp
-    serializable.cpp
+    serializableexceptions.cpp
     stringutil.cpp
     DEPENDS
     AFTER

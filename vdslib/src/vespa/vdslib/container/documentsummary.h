@@ -2,9 +2,10 @@
 #pragma once
 
 #include <vespa/vespalib/util/memory.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vector>
 
+namespace document { class ByteBuffer; }
+namespace vespalib { class GrowableByteBuffer; }
 namespace vdslib {
 
 class DocumentSummary {
@@ -29,7 +30,7 @@ public:
     void sort();
 
     void deserialize(document::ByteBuffer& buf);
-    void serialize(document::ByteBuffer& buf) const;
+    void serialize(vespalib::GrowableByteBuffer& buf) const;
     uint32_t getSerializedSize() const;
 private:
     class Summary {

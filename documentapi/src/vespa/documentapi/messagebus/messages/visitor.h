@@ -52,7 +52,7 @@ public:
                          const string& instanceId,
                          const string& controlDestination,
                          const string& dataDestination);
-    ~CreateVisitorMessage();
+    ~CreateVisitorMessage() override;
 
     const string& getLibraryName() const { return _libName; }
     void setLibraryName(const string& value) { _libName = value; }
@@ -250,7 +250,7 @@ public:
         const document::Document::SP& getDocument() { return _document; }
         bool isRemoveEntry() { return _removeEntry; }
 
-        void serialize(document::ByteBuffer& buf) const;
+        void serialize(vespalib::GrowableByteBuffer& buf) const;
         uint32_t getSerializedSize() const;
     private:
         int64_t _timestamp;

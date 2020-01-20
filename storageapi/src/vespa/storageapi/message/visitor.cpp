@@ -65,7 +65,7 @@ CreateVisitorCommand::CreateVisitorCommand(const CreateVisitorCommand& o)
 {
 }
 
-CreateVisitorCommand::~CreateVisitorCommand() {}
+CreateVisitorCommand::~CreateVisitorCommand() = default;
 
 document::Bucket
 CreateVisitorCommand::getBucket() const
@@ -141,8 +141,7 @@ DestroyVisitorCommand::DestroyVisitorCommand(vespalib::stringref instanceId)
 }
 
 void
-DestroyVisitorCommand::print(std::ostream& out, bool verbose,
-                             const std::string& indent) const
+DestroyVisitorCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "DestroyVisitorCommand(" << _instanceId << ")";
     if (verbose) {
@@ -157,8 +156,7 @@ DestroyVisitorReply::DestroyVisitorReply(const DestroyVisitorCommand& cmd)
 }
 
 void
-DestroyVisitorReply::print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
+DestroyVisitorReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "DestroyVisitorReply()";
     if (verbose) {
@@ -175,17 +173,15 @@ VisitorInfoCommand::VisitorInfoCommand()
 {
 }
 
-VisitorInfoCommand::~VisitorInfoCommand() {
-}
+VisitorInfoCommand::~VisitorInfoCommand() = default;
 
 void
-VisitorInfoCommand::print(std::ostream& out, bool verbose,
-                          const std::string& indent) const
+VisitorInfoCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "VisitorInfoCommand(";
     if (_completed) { out << "completed"; }
     if (_error.failed()) {
-        out << _error;
+        out << _error.toString();
     }
     if (verbose) {
         out << ") : ";
@@ -205,8 +201,7 @@ VisitorInfoReply::VisitorInfoReply(const VisitorInfoCommand& cmd)
 }
 
 void
-VisitorInfoReply::print(std::ostream& out, bool verbose,
-                        const std::string& indent) const
+VisitorInfoReply::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "VisitorInfoReply(";
     if (_completed) { out << "completed"; }

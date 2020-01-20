@@ -3,6 +3,8 @@
 #include "storagereply.h"
 #include "storagecommand.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/objects/nbostream.h>
+
 
 using vespalib::alloc::Alloc;
 using vespalib::IllegalStateException;
@@ -17,8 +19,8 @@ StorageReply::StorageReply(mbus::BlobRef data, const ProtocolSerialization& seri
       _reply()
 {
     memcpy(_buffer.get(), data.data(), _sz);
-    document::ByteBuffer buf(data.data(), _sz);
-    buf.getIntNetwork(reinterpret_cast<int32_t&>(_mbusType));
+    vespalib::nbostream nbo(data.data(), _sz);
+    nbo >> _mbusType;
 }
 
 StorageReply::StorageReply(api::StorageReply::SP reply)

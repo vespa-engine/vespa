@@ -4,8 +4,7 @@
 #include "storagecommand.h"
 #include <ostream>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
     : StorageMessage(cmd.getType().getReplyType(), cmd.getMsgId()),
@@ -19,16 +18,14 @@ StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
     setTransportContext(cmd.getTransportContext());
 }
 
-StorageReply::~StorageReply() { }
+StorageReply::~StorageReply() = default;
 
 void
 StorageReply::print(std::ostream& out, bool verbose,
                     const std::string& indent) const
 {
     (void) verbose; (void) indent;
-    out << "StorageReply(" << _type.getName() << ", "
-        << _result.toString() << ")";
+    out << "StorageReply(" << _type.getName() << ", " << _result.toString() << ")";
 }
 
-} // api
-} // storage
+}

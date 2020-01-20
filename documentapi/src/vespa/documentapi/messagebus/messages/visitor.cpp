@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitor.h"
-#include <climits>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/document/util/bytebuffer.h>
+#include <climits>
 
 using document::FixedBucketSpaces;
 
@@ -79,7 +81,7 @@ DestroyVisitorMessage::~DestroyVisitorMessage() = default;
 DocumentReply::UP
 DestroyVisitorMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new DocumentReply(DocumentProtocol::REPLY_DESTROYVISITOR));
+    return std::make_unique<DocumentReply>(DocumentProtocol::REPLY_DESTROYVISITOR);
 }
 
 uint32_t
@@ -115,11 +117,7 @@ VisitorInfoMessage::getType() const
     return DocumentProtocol::MESSAGE_VISITORINFO;
 }
 
-MapVisitorMessage::MapVisitorMessage() :
-    _data()
-{
-    // empty
-}
+MapVisitorMessage::MapVisitorMessage() = default;
 
 uint32_t
 MapVisitorMessage::getApproxSize() const
@@ -138,31 +136,17 @@ uint32_t MapVisitorMessage::getType() const
     return DocumentProtocol::MESSAGE_MAPVISITOR;
 }
 
-DocumentListMessage::Entry::Entry()
-{
-    // empty
-}
+DocumentListMessage::Entry::Entry() = default;
 
-DocumentListMessage::Entry::Entry(int64_t timestamp,
-                                  document::Document::SP doc,
-                                  bool removeEntry) :
+DocumentListMessage::Entry::Entry(int64_t timestamp, document::Document::SP doc, bool removeEntry) :
     _timestamp(timestamp),
     _document(std::move(doc)),
     _removeEntry(removeEntry)
-{
-    // empty
-}
+{ }
 
-DocumentListMessage::Entry::Entry(const Entry& other) :
-    _timestamp(other._timestamp),
-    _document(other._document),
-    _removeEntry(other._removeEntry)
-{
-    // empty
-}
+DocumentListMessage::Entry::Entry(const Entry& other) = default;
 
-DocumentListMessage::Entry::Entry(const document::DocumentTypeRepo &repo,
-                                  document::ByteBuffer& buf)
+DocumentListMessage::Entry::Entry(const document::DocumentTypeRepo &repo, document::ByteBuffer& buf)
 {
     buf.getLongNetwork(_timestamp);
     vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
@@ -174,26 +158,15 @@ DocumentListMessage::Entry::Entry(const document::DocumentTypeRepo &repo,
 }
 
 void
-DocumentListMessage::Entry::serialize(document::ByteBuffer& buf) const
+DocumentListMessage::Entry::serialize(vespalib::GrowableByteBuffer& buf) const
 {
-    buf.putLongNetwork(_timestamp);
-    _document->serialize(buf);
+    buf.putLong(_timestamp);
+    vespalib::nbostream nbo = _document->serialize();
+    buf.putBytes(nbo.c_str(), nbo.size());
     buf.putByte(_removeEntry ? 1 : 0);
 }
 
-uint32_t
-DocumentListMessage::Entry::getSerializedSize() const
-{
-    return sizeof(int64_t) + sizeof(uint8_t)
-        + _document->getSerializedSize();
-}
-
-DocumentListMessage::DocumentListMessage() :
-    _bucketId(),
-    _documents()
-{
-    // empty
-}
+DocumentListMessage::DocumentListMessage() = default;
 
 DocumentListMessage::DocumentListMessage(document::BucketId bid) :
     _bucketId(bid),

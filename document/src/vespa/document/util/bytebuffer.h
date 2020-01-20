@@ -98,10 +98,6 @@ public:
      */
     void incPos(size_t pos);
 
-    void incPosNoCheck(size_t pos) {
-        _pos += pos;
-    }
-
     /**
      * Resets pos to 0, and sets limit to old pos. Use this before reading
      * from a buffer you have written to
@@ -110,175 +106,21 @@ public:
         _pos = 0;
     }
 
-    /**
-     * Sets pos to 0 and limit to length. Use this to start writing from the
-     * start of the buffer.
-     */
-    void clear() {
-        _pos=0;
-    }
-
     void getNumeric(uint8_t & v);
-    void putNumeric(uint8_t v);
     void getNumericNetwork(int16_t & v);
-    void putNumericNetwork(int16_t v);
     void getNumericNetwork(int32_t & v);
-    void getNumeric(int32_t & v);
-    void putNumericNetwork(int32_t v);
-    void putNumeric(int32_t v);
-    void getNumeric(float & v);
 
     void getNumericNetwork(int64_t & v);
     void getNumeric(int64_t& v);
-    void putNumericNetwork(int64_t v);
     void getNumericNetwork(double & v);
-    void getNumeric(double& v);
-    void putNumericNetwork(double v);
-    void putNumeric(double v);
 
+    void getChar(char & val) { unsigned char t;getByte(t); val=t; }
     void getByte(uint8_t & v)         { getNumeric(v); }
-    void putByte(uint8_t v)           { putNumeric(v); }
     void getShortNetwork(int16_t & v) { getNumericNetwork(v); }
-    void putShortNetwork(int16_t v)   { putNumericNetwork(v); }
     void getIntNetwork(int32_t & v)   { getNumericNetwork(v); }
-    void getInt(int32_t & v)          { getNumeric(v); }
-    void putIntNetwork(int32_t v)     { putNumericNetwork(v); }
-    void putInt(int32_t v)            { putNumeric(v); }
-    void getFloat(float & v)          { getNumeric(v); }
     void getLongNetwork(int64_t & v)  { getNumericNetwork(v); }
     void getLong(int64_t& v)          { getNumeric(v); }
-    void putLongNetwork(int64_t v)    { putNumericNetwork(v); }
     void getDoubleNetwork(double & v) { getNumericNetwork(v); }
-    void getDouble(double& v)         { getNumeric(v); }
-    void putDoubleNetwork(double v)   { putNumericNetwork(v); }
-    void putDouble(double v)          { putNumeric(v); }
-
- private:
-    void throwOutOfBounds(size_t want, size_t has) __attribute__((noinline,noreturn));
-    uint8_t peekByte() const { return *getBufferAtPos(); }
-
-#if defined(__i386__) || defined(__x86_64__)
-
-    template<typename T>
-    void putDoubleLongNetwork(T val) {
-        //TODO: Change this if we move to big-endian hardware
-        if (__builtin_expect(getRemaining() < (int)sizeof(T), 0)) {
-            throwOutOfBounds(sizeof(T), getRemaining());
-        }
-        unsigned char* data = reinterpret_cast<unsigned char*>(&val);
-        for (int i=sizeof(T)-1; i>=0; --i) {
-            putByte(data[i]);
-        }
-    }
-
-    template<typename T>
-    void getDoubleLongNetwork(T &val) {
-        //TODO: Change this if we move to big-endian hardware
-        if (__builtin_expect(getRemaining() < (int)sizeof(T), 0)) {
-            throwOutOfBounds(sizeof(T), getRemaining());
-        }
-
-        unsigned char* data = reinterpret_cast<unsigned char*>(&val);
-        for (int i=sizeof(T)-1; i>=0; --i) {
-            getByte(data[i]);
-        }
-    }
-#else
-    #error "getDoubleLongNetwork is undefined for this arcitecture"
-#endif
-
- public:
-    /**
-     * Writes a 62-bit positive integer to the buffer, using 2, 4, or 8 bytes.
-     *
-     * @param number the integer to write
-     */
-    void putInt2_4_8Bytes(int64_t number) {
-        putInt2_4_8Bytes(number, 0);
-    }
-
-    /**
-     * Writes a 62-bit positive integer to the buffer, using 2, 4, or 8 bytes.
-     *
-     * @param number the integer to write
-     * @param len if non-zero, force writing number using len bytes, possibly
-     *            with truncation
-     */
-    void putInt2_4_8Bytes(int64_t number, size_t len);
-
-    /**
-     * Reads a 62-bit positive integer from the buffer, which was written using
-     * 2, 4, or 8 bytes.
-     *
-     * @param v the integer read
-     */
-    void getInt2_4_8Bytes(int64_t & v);
-
-    /**
-     * Computes the size used for storing the given integer using 2, 4 or 8
-     * bytes.
-     *
-     * @param number the integer to check length of
-     * @return the number of bytes used to store it; 2, 4 or 8
-     */
-    static size_t getSerializedSize2_4_8Bytes(int64_t number);
-
-    /**
-     * Writes a 30-bit positive integer to the buffer, using 1, 2, or 4 bytes.
-     *
-     * @param number the integer to write
-     */
-    void putInt1_2_4Bytes(int32_t number);
-
-    /**
-     * Reads a 30-bit positive integer from the buffer, which was written using
-     * 1, 2, or 4 bytes.
-     *
-     * @param v the integer read
-     */
-    void getInt1_2_4Bytes(int32_t & v);
-
-    /**
-     * Computes the size used for storing the given integer using 1, 2 or 4
-     * bytes.
-     *
-     * @param number the integer to check length of
-     * @return the number of bytes used to store it; 1, 2 or 4
-     */
-    static size_t getSerializedSize1_2_4Bytes(int32_t number);
-
-    /**
-     * Writes a 31-bit positive integer to the buffer, using 1 or 4 bytes.
-     *
-     * @param number the integer to write
-     */
-    void putInt1_4Bytes(int32_t number);
-
-    /**
-     * Reads a 31-bit positive integer from the buffer, which was written using
-     * 1 or 4 bytes.
-     *
-     * @param v the integer read
-     */
-    void getInt1_4Bytes(int32_t & v);
-
-    /**
-     * Computes the size used for storing the given integer using 1 or 4 bytes.
-     *
-     * @param number the integer to check length of
-     * @return the number of bytes used to store it; 1 or 4
-     */
-    static size_t getSerializedSize1_4Bytes(int32_t number);
-
-    /**
-     * Writes a 8 bit integer to the buffer at the current position, and
-     * increases the positition accordingly.
-     *
-     * @param  val the int to store
-     * @return True if the value could be stored, false if end of buffer is
-     *         reached
-    */
-    void getChar(char & val) { unsigned char t;getByte(t); val=t; }
 
     /**
      *  Reads the given number of bytes into the given pointer, and updates the
@@ -301,6 +143,11 @@ public:
     void putBytes(const void *buf, size_t count);
 
 private:
+    template<typename T>
+    void getDoubleLongNetwork(T &val);
+
+    void incPosNoCheck(size_t pos) { _pos += pos; }
+
     char   * _buffer;
     size_t   _len;
     size_t   _pos;

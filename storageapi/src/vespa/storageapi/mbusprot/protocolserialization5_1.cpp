@@ -62,32 +62,26 @@ ProtocolSerialization5_1::onDecodeSetBucketStateCommand(BBuf& buf) const
 {
     document::Bucket bucket = getBucket(buf);
     api::SetBucketStateCommand::BUCKET_STATE state(
-            static_cast<api::SetBucketStateCommand::BUCKET_STATE>(
-                    SH::getByte(buf)));
-    api::SetBucketStateCommand::UP msg(
-            new api::SetBucketStateCommand(bucket, state));
+            static_cast<api::SetBucketStateCommand::BUCKET_STATE>(SH::getByte(buf)));
+    auto msg = std::make_unique<api::SetBucketStateCommand>(bucket, state);
     onDecodeCommand(buf, *msg);
-    return api::StorageCommand::UP(msg.release());
+    return msg;
 }
 
-void ProtocolSerialization5_1::onEncode(
-        GBBuf& buf, const api::SetBucketStateReply& msg) const
+void ProtocolSerialization5_1::onEncode(GBBuf& buf, const api::SetBucketStateReply& msg) const
 {
     onEncodeBucketReply(buf, msg);
 }
 
 api::StorageReply::UP
-ProtocolSerialization5_1::onDecodeSetBucketStateReply(const SCmd& cmd,
-                                                      BBuf& buf) const
+ProtocolSerialization5_1::onDecodeSetBucketStateReply(const SCmd& cmd, BBuf& buf) const
 {
-    api::SetBucketStateReply::UP msg(new api::SetBucketStateReply(
-                static_cast<const api::SetBucketStateCommand&>(cmd)));
+    auto msg = std::make_unique<api::SetBucketStateReply>(static_cast<const api::SetBucketStateCommand&>(cmd));
     onDecodeBucketReply(buf, *msg);
-    return api::StorageReply::UP(msg.release());
+    return msg;
 }
 
-void ProtocolSerialization5_1::onEncode(
-        GBBuf& buf, const api::GetCommand& msg) const
+void ProtocolSerialization5_1::onEncode(GBBuf& buf, const api::GetCommand& msg) const
 {
     buf.putString(msg.getDocumentId().toString());
     putBucket(msg.getBucket(), buf);
@@ -103,15 +97,13 @@ ProtocolSerialization5_1::onDecodeGetCommand(BBuf& buf) const
     document::Bucket bucket = getBucket(buf);
     api::Timestamp beforeTimestamp(SH::getLong(buf));
     std::string fieldSet(SH::getString(buf));
-    api::GetCommand::UP msg(
-            new api::GetCommand(bucket, did, fieldSet, beforeTimestamp));
+    auto msg = std::make_unique<api::GetCommand>(bucket, did, fieldSet, beforeTimestamp);
     onDecodeCommand(buf, *msg);
-    return api::StorageCommand::UP(msg.release());
+    return msg;
 }
 
 void
-ProtocolSerialization5_1::onEncode(
-        GBBuf& buf, const api::CreateVisitorCommand& msg) const
+ProtocolSerialization5_1::onEncode(GBBuf& buf, const api::CreateVisitorCommand& msg) const
 {
     putBucketSpace(msg.getBucketSpace(), buf);
     buf.putString(msg.getLibraryName());
@@ -133,11 +125,7 @@ ProtocolSerialization5_1::onEncode(
     buf.putString(msg.getFieldSet());
     buf.putBoolean(msg.visitInconsistentBuckets());
     buf.putInt(vespalib::count_ms(msg.getQueueTimeout()));
-
-    uint32_t size = msg.getParameters().getSerializedSize();
-    char* docBuffer = buf.allocate(size);
-    document::ByteBuffer bbuf(docBuffer, size);
-    msg.getParameters().serialize(bbuf);
+    msg.getParameters().serialize(buf);
 
     onEncodeCommand(buf, msg);
 
@@ -152,8 +140,7 @@ ProtocolSerialization5_1::onDecodeCreateVisitorCommand(BBuf& buf) const
     vespalib::stringref libraryName = SH::getString(buf);
     vespalib::stringref instanceId = SH::getString(buf);
     vespalib::stringref selection = SH::getString(buf);
-    api::CreateVisitorCommand::UP msg(
-            new api::CreateVisitorCommand(bucketSpace, libraryName, instanceId, selection));
+    auto msg = std::make_unique<api::CreateVisitorCommand>(bucketSpace, libraryName, instanceId, selection);
     msg->setVisitorCmdId(SH::getInt(buf));
     msg->setControlDestination(SH::getString(buf));
     msg->setDataDestination(SH::getString(buf));
@@ -182,17 +169,16 @@ ProtocolSerialization5_1::onDecodeCreateVisitorCommand(BBuf& buf) const
         msg->setVisitInconsistentBuckets();
     }
     msg->setQueueTimeout(std::chrono::milliseconds(SH::getInt(buf)));
-    msg->getParameters().deserialize(getTypeRepo(), buf);
+    msg->getParameters().deserialize(buf);
 
     onDecodeCommand(buf, *msg);
     SH::getInt(buf); // Unused
     msg->setMaxBucketsPerVisitor(SH::getInt(buf));
     msg->setVisitorDispatcherVersion(50);
-    return api::StorageCommand::UP(msg.release());
+    return msg;
 }
 
-void ProtocolSerialization5_1::onEncode(
-        GBBuf& buf, const api::CreateBucketCommand& msg) const
+void ProtocolSerialization5_1::onEncode(GBBuf& buf, const api::CreateBucketCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     buf.putBoolean(msg.getActive());
@@ -204,10 +190,10 @@ ProtocolSerialization5_1::onDecodeCreateBucketCommand(BBuf& buf) const
 {
     document::Bucket bucket = getBucket(buf);
     bool setActive = SH::getBoolean(buf);
-    api::CreateBucketCommand::UP msg(new api::CreateBucketCommand(bucket));
+    auto msg = std::make_unique<api::CreateBucketCommand>(bucket);
     msg->setActive(setActive);
     onDecodeBucketInfoCommand(buf, *msg);
-    return api::StorageCommand::UP(msg.release());
+    return msg;
 }
 
 }

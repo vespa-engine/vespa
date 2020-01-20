@@ -36,8 +36,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
 {
     vespalib::LockGuard guard(_mutex);
 
-    LOG(debug, "Visitor %s handling block of %zu documents.",
-               _id.c_str(), entries.size());
+    LOG(debug, "Visitor %s handling block of %zu documents.", _id.c_str(), entries.size());
 
     documentapi::DocumentListMessage* cmd = nullptr;
 

@@ -35,11 +35,6 @@ void FieldValue::serialize(nbostream &stream) const {
     serializer.write(*this);
 }
 
-void FieldValue::serialize(ByteBuffer& buffer) const {
-    nbostream stream = serialize();
-    buffer.putBytes(stream.peek(), stream.size());
-}
-
 nbostream
 FieldValue::serialize() const {
     nbostream stream;

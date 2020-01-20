@@ -891,14 +891,11 @@ TEST(DocumentTest, testGenerateSerializedFile)
     CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
     const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
 
-    ByteBuffer lz4buf(getSerializedSize(doc));
-
-    doc.serialize(lz4buf);
-    lz4buf.flip();
+    nbostream lz4buf = doc.serialize();
 
     fd = open((serializedDir + "/serializecpp-lz4-level9.dat").c_str(),
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, lz4buf.getBufferAtPos(), lz4buf.getRemaining()) != (ssize_t)lz4buf.getRemaining()) {
+    if (write(fd, lz4buf.c_str(), lz4buf.size()) != (ssize_t)lz4buf.size()) {
         throw vespalib::Exception("write failed");
     }
     close(fd);

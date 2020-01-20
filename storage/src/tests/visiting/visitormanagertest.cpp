@@ -653,7 +653,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
                 if (api::ReturnCode::ILLEGAL_PARAMETERS == reply->getResult().getResult()) {
                     failures++;
                 } else {
-                    std::cerr << reply->getResult() << "\n";
+                    std::cerr << reply->getResult().toString() << "\n";
                 }
             } else {
                 if (api::ReturnCode::BUSY == reply->getResult().getResult()) {

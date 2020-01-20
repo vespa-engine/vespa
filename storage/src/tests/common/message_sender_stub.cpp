@@ -22,9 +22,7 @@ MessageSenderStub::getLastCommand(bool verbose) const
 }
 
 std::string
-MessageSenderStub::dumpMessage(const api::StorageMessage& msg,
-                               bool includeAddress,
-                               bool verbose) const
+MessageSenderStub::dumpMessage(const api::StorageMessage& msg, bool includeAddress, bool verbose) const
 {
     std::ostringstream ost;
 
@@ -38,7 +36,7 @@ MessageSenderStub::dumpMessage(const api::StorageMessage& msg,
         ost << " => " << msg.getAddress()->getIndex();
     }
     if (verbose && msg.getType().isReply()) {
-        ost << " " << dynamic_cast<const api::StorageReply&>(msg).getResult();
+        ost << " " << dynamic_cast<const api::StorageReply&>(msg).getResult().toString();
     }
 
     return ost.str();
@@ -67,9 +65,7 @@ MessageSenderStub::getLastReply(bool verbose) const
         throw std::logic_error("Expected reply where there was none");
     }
 
-    return dumpMessage(*replies.back(),
-                       true,
-                       verbose);
+    return dumpMessage(*replies.back(),true, verbose);
 
 }
 

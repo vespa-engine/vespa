@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdslib/container/parameters.h>
+#include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-using document::DocumentTypeRepo;
+using vespalib::GrowableByteBuffer;
+using document::ByteBuffer;
 using namespace vdslib;
 
 TEST(ParametersTest, test_parameters)
@@ -15,11 +17,12 @@ TEST(ParametersTest, test_parameters)
     par.set("number", 6);
     par.set("int64_t", INT64_C(8589934590));
     par.set("double", 0.25);
-    std::unique_ptr<document::ByteBuffer> buffer(par.serialize());
 
-    buffer->flip();
-    DocumentTypeRepo repo;
-    Parameters par2(repo, *buffer);
+    GrowableByteBuffer buffer;
+    par.serialize(buffer);
+
+    ByteBuffer bBuf(buffer.getBuffer(), buffer.position());
+    Parameters par2(bBuf);
 
     EXPECT_EQ(vespalib::stringref("overture"), par2.get("fast"));
     EXPECT_EQ(vespalib::stringref("yahoo"), par2.get("overture"));
@@ -35,4 +38,5 @@ TEST(ParametersTest, test_parameters)
     EXPECT_EQ(numberDefault, par2.get("nonexistingnumber", numberDefault));
     EXPECT_EQ(int64Default,  par2.get("nonexistingint64_t", int64Default));
     EXPECT_EQ(doubleDefault, par2.get("nonexistingdouble", doubleDefault));
+
 }

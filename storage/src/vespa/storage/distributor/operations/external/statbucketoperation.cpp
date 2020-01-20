@@ -8,8 +8,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.statbucket");
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 StatBucketOperation::StatBucketOperation(
         [[maybe_unused]] DistributorComponent& manager,
@@ -21,7 +20,7 @@ StatBucketOperation::StatBucketOperation(
 {
 }
 
-StatBucketOperation::~StatBucketOperation() {}
+StatBucketOperation::~StatBucketOperation() = default;
 
 void
 StatBucketOperation::onClose(DistributorMessageSender& sender)
@@ -36,8 +35,7 @@ StatBucketOperation::onStart(DistributorMessageSender& sender)
 {
     std::vector<uint16_t> nodes;
 
-    BucketDatabase::Entry entry(
-            _bucketSpace.getBucketDatabase().get(_command->getBucketId()));
+    BucketDatabase::Entry entry(_bucketSpace.getBucketDatabase().get(_command->getBucketId()));
 
     if (entry.valid()) {
         nodes = entry->getNodes();
@@ -83,7 +81,7 @@ StatBucketOperation::onReceive(DistributorMessageSender& sender, const std::shar
         if (myreply.getResult().getResult() == api::ReturnCode::OK) {
             ost << "\tBucket information from node " << found->second << ":\n" << myreply.getResults() << "\n\n";
         } else {
-            ost << "\tBucket information retrieval failed on node " << found->second << ": " << myreply.getResult() << "\n\n";
+            ost << "\tBucket information retrieval failed on node " << found->second << ": " << myreply.getResult().toString() << "\n\n";
         }
         _results[found->second] = ost.str();
 
@@ -103,5 +101,4 @@ StatBucketOperation::onReceive(DistributorMessageSender& sender, const std::shar
     }
 }
 
-} // distributor
-} // storage
+}

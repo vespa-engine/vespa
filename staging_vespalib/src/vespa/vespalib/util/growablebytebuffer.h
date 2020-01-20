@@ -45,7 +45,7 @@ public:
     /**
        Adds the given buffer to this buffer.
     */
-    void putBytes(const char* buffer, uint32_t length);
+    void putBytes(const void * buffer, uint32_t length);
 
     /**
        Adds a short to the buffer.
