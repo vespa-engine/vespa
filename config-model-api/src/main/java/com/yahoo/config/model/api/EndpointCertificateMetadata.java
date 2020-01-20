@@ -23,4 +23,13 @@ public class EndpointCertificateMetadata {
     public int version() {
         return version;
     }
+
+    @Override
+    public String toString() {
+        return "EndpointCertificateMetadata{" +
+                "keyName='" + keyName + '\'' +
+                ", certName='" + certName + '\'' +
+                ", version=" + version +
+                '}';
+    }
 }
