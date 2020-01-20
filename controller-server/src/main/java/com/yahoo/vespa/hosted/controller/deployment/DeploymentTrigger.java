@@ -196,6 +196,13 @@ public class DeploymentTrigger {
                                                       instance -> instance.withJobPause(jobType, OptionalLong.of(until.toEpochMilli())))));
     }
 
+    /** Resumes a previously paused job, letting it be triggered normally. */
+    public void resumeJob(ApplicationId id, JobType jobType) {
+        applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application ->
+                applications().store(application.with(id.instance(),
+                                                      instance -> instance.withJobPause(jobType, OptionalLong.empty()))));
+    }
+
     /** Triggers a change of this application, unless it already has a change. */
     public void triggerChange(ApplicationId instanceId, Change change) {
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
