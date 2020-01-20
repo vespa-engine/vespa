@@ -61,12 +61,12 @@ BufferOutOfBoundsException::BufferOutOfBoundsException(size_t pos, size_t len, c
 {
 }
 
-ByteBuffer::ByteBuffer(size_t len) :
+ByteBuffer::ByteBuffer(uint32_t len) :
     ByteBuffer(Alloc::alloc(len), len)
 {
 }
 
-ByteBuffer::ByteBuffer(const char* buffer, size_t len) :
+ByteBuffer::ByteBuffer(const char* buffer, uint32_t len) :
       _buffer(const_cast<char *>(buffer)),
       _len(len),
       _pos(0),
@@ -74,7 +74,7 @@ ByteBuffer::ByteBuffer(const char* buffer, size_t len) :
 {
 }
 
-ByteBuffer::ByteBuffer(Alloc buffer, size_t len) :
+ByteBuffer::ByteBuffer(Alloc buffer, uint32_t len) :
       _buffer(static_cast<char *>(buffer.get())),
       _len(len),
       _pos(0),
@@ -99,7 +99,7 @@ ByteBuffer::ByteBuffer(const ByteBuffer& rhs) :
 
 ByteBuffer::~ByteBuffer() = default;
 
-ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, size_t len)
+ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
 {
     if (buffer && len) {
         Alloc newBuf = Alloc::alloc(len + 1);
@@ -111,7 +111,7 @@ ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, size_t len)
     }
 }
 
-void ByteBuffer::incPos(size_t pos)
+void ByteBuffer::incPos(uint32_t pos)
 {
     if (_pos + pos > _len) {
         throwOutOfBounds(_pos + pos, _len);
@@ -166,7 +166,7 @@ void ByteBuffer::getNumericNetwork(int64_t & v) {
     getDoubleLongNetwork(v);
 }
 
-void ByteBuffer::getBytes(void *buffer, size_t count)
+void ByteBuffer::getBytes(void *buffer, uint32_t count)
 {
     const char *v = getBufferAtPos();
     incPos(count);

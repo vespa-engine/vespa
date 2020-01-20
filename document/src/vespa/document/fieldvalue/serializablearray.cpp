@@ -212,7 +212,7 @@ SerializableArray::deCompress() // throw (DeserializeException)
 
         if (unCompressed.getDataLen() != (size_t)_uncompressedLength) {
             throw DeserializeException(
-                    make_string("Did not decompress to the expected length: had %zu, wanted %d, got %zu",
+                    make_string("Did not decompress to the expected length: had %u, wanted %d, got %zu",
                                 _compSerData->getRemaining(), _uncompressedLength, unCompressed.getDataLen()),
                     VESPA_STRLOC);
         }

@@ -26,12 +26,12 @@ public:
     ByteBuffer(const ByteBuffer &);
     ByteBuffer& operator=(const ByteBuffer &) = delete;
     ByteBuffer(ByteBuffer &&) = default;
-    ByteBuffer& operator=(ByteBuffer &&) = default;
+    ByteBuffer& operator=(ByteBuffer &&) = delete;
 
     ~ByteBuffer();
 
     /** Allocates buffer with len bytes. */
-    ByteBuffer(size_t len);
+    ByteBuffer(uint32_t len);
 
     /**
      * Create a buffer with the given content.
@@ -39,7 +39,7 @@ public:
      * @param buffer The buffer to represent.
      * @param len The length of the buffer
      */
-    ByteBuffer(const char* buffer, size_t len);
+    ByteBuffer(const char* buffer, uint32_t len);
 
     /**
      * Create a buffer with the given content.
@@ -47,7 +47,7 @@ public:
      * @param buffer The buffer to represent.
      * @param len The length of the buffer
      */
-    ByteBuffer(vespalib::alloc::Alloc buffer, size_t len);
+    ByteBuffer(vespalib::alloc::Alloc buffer, uint32_t len);
 
     /**
      * Creates a ByteBuffer object from another buffer. allocates
@@ -59,25 +59,25 @@ public:
      *  @return Returns a newly created bytebuffer object, or nullptr
      *  if buffer was nullptr, or len was <=0.
      */
-    static ByteBuffer* copyBuffer(const char* buffer, size_t len);
+    static ByteBuffer* copyBuffer(const char* buffer, uint32_t len);
 
     /** @return Returns the buffer pointed to by this object (at position 0) */
     const char* getBuffer() const { return _buffer; }
 
     /** @return Returns the length of the buffer pointed to by this object. */
-    size_t getLength() const { return _len; }
+    uint32_t getLength() const { return _len; }
 
     /** @return Returns a pointer to the current position in the buffer. */
     const char* getBufferAtPos() const { return _buffer + _pos; }
 
     /** @return Returns the index of the current position in the buffer. */
-    size_t getPos() const { return _pos; }
+    uint32_t getPos() const { return _pos; }
 
     /**
      * @return Returns the number of bytes remaining in the buffer - that is,
      *         getLimit()-getPos().
     */
-    size_t getRemaining() const { return _len -_pos; }
+    uint32_t getRemaining() const { return _len -_pos; }
 
     /**
      * Moves the position in the buffer.
@@ -89,7 +89,7 @@ public:
      *            of the buffer).
      * @throws BufferOutOfBoundsException;
      */
-    void incPos(size_t pos);
+    void incPos(uint32_t pos);
 
     void getNumeric(uint8_t & v);
     void getNumericNetwork(int16_t & v);
@@ -116,17 +116,17 @@ public:
      *   @return	    True if all the bytes could be read, false if end of
      *                  buffer is reached
      */
-    void getBytes(void *buffer, size_t count);
+    void getBytes(void *buffer, uint32_t count);
 
 private:
     template<typename T>
     void getDoubleLongNetwork(T &val);
 
-    void incPosNoCheck(size_t pos) { _pos += pos; }
+    void incPosNoCheck(uint32_t pos) { _pos += pos; }
 
-    const char * _buffer;
-    const size_t _len;
-    size_t       _pos;
+    const char *   _buffer;
+    const uint32_t _len;
+    uint32_t       _pos;
     vespalib::alloc::Alloc _ownedBuffer;
 };
 
