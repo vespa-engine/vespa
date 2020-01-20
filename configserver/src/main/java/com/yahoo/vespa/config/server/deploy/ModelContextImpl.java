@@ -11,7 +11,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
@@ -130,7 +130,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useAdaptiveDispatch;
-        private final Optional<TlsSecrets> tlsSecrets;
+        private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final boolean useBucketSpaceMetric;
 
@@ -146,7 +146,7 @@ public class ModelContextImpl implements ModelContext {
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
                           FlagSource flagSource,
-                          Optional<TlsSecrets> tlsSecrets) {
+                          Optional<EndpointCertificateSecrets> endpointCertificateSecrets) {
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -160,7 +160,7 @@ public class ModelContextImpl implements ModelContext {
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.tlsSecrets = tlsSecrets;
+            this.endpointCertificateSecrets = endpointCertificateSecrets;
             defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useBucketSpaceMetric = Flags.USE_BUCKET_SPACE_METRIC.bindTo(flagSource)
@@ -208,7 +208,7 @@ public class ModelContextImpl implements ModelContext {
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
 
         @Override
-        public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
+        public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
 
         @Override
         public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
