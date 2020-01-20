@@ -62,13 +62,13 @@ public:
     static ByteBuffer* copyBuffer(const char* buffer, size_t len);
 
     /** @return Returns the buffer pointed to by this object (at position 0) */
-    char* getBuffer() const { return _buffer; }
+    const char* getBuffer() const { return _buffer; }
 
     /** @return Returns the length of the buffer pointed to by this object. */
     size_t getLength() const { return _len; }
 
     /** @return Returns a pointer to the current position in the buffer. */
-    char* getBufferAtPos() const { return _buffer + _pos; }
+    const char* getBufferAtPos() const { return _buffer + _pos; }
 
     /** @return Returns the index of the current position in the buffer. */
     size_t getPos() const { return _pos; }
@@ -78,13 +78,6 @@ public:
      *         getLimit()-getPos().
     */
     size_t getRemaining() const { return _len -_pos; }
-
-    /**
-     * Changes the position in the buffer.
-     *
-     * @throws BufferOutOfBoundsException;
-     */
-    void setPos(size_t pos);
 
     /**
      * Moves the position in the buffer.
@@ -97,14 +90,6 @@ public:
      * @throws BufferOutOfBoundsException;
      */
     void incPos(size_t pos);
-
-    /**
-     * Resets pos to 0, and sets limit to old pos. Use this before reading
-     * from a buffer you have written to
-     */
-    void flip() {
-        _pos = 0;
-    }
 
     void getNumeric(uint8_t & v);
     void getNumericNetwork(int16_t & v);
@@ -133,24 +118,15 @@ public:
      */
     void getBytes(void *buffer, size_t count);
 
-    /**
-     * Writes the given number of bytes into the ByteBuffer at the current
-     * position, and updates the positition accordingly
-     *
-     * @param buf the bytes to store
-     * @param count number of bytes to store
-     */
-    void putBytes(const void *buf, size_t count);
-
 private:
     template<typename T>
     void getDoubleLongNetwork(T &val);
 
     void incPosNoCheck(size_t pos) { _pos += pos; }
 
-    char   * _buffer;
-    size_t   _len;
-    size_t   _pos;
+    const char * _buffer;
+    size_t       _len;
+    size_t       _pos;
     vespalib::alloc::Alloc _ownedBuffer;
 };
 

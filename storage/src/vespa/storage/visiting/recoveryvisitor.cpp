@@ -2,7 +2,7 @@
 
 
 #include "recoveryvisitor.h"
-
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -70,7 +70,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
             }
         }
 
-        hitCounter.addHit(doc->getId(), doc->getSerializedSize());
+        hitCounter.addHit(doc->getId(), doc->serialize().size());
 
         int64_t timestamp = doc->getLastModified();
         cmd->getDocuments().push_back(documentapi::DocumentListMessage::Entry(

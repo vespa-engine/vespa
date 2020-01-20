@@ -260,7 +260,7 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
                        << entry.getDocument()->toString(true);
             }
             EXPECT_EQ(wanted[wantedIdx].timestamp, entry.getTimestamp());
-            size_t serSize = wanted[wantedIdx].doc->getSerializedSize();
+            size_t serSize = wanted[wantedIdx].doc->serialize().size();
             EXPECT_EQ(serSize + sizeof(DocEntry), size_t(entry.getSize()));
             EXPECT_EQ(serSize, size_t(entry.getDocumentSize()));
             ++wantedIdx;

@@ -43,14 +43,13 @@ namespace document {
 
 namespace {
 
-ByteBuffer::UP serializeHEAD(const DocumentUpdate & update)
+nbostream
+serializeHEAD(const DocumentUpdate & update)
 {
     nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.writeHEAD(update);
-    ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
-    retVal->putBytes(stream.peek(), stream.size());
-    return retVal;
+    return stream;
 }
 
 nbostream serialize(const ValueUpdate & update)
@@ -83,25 +82,26 @@ void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
 }
 
 void
-writeBufferToFile(const ByteBuffer &buf, const vespalib::string &fileName)
+writeBufferToFile(const nbostream &buf, const vespalib::string &fileName)
 {
     auto file = std::fstream(fileName, std::ios::out | std::ios::binary);
-    file.write(buf.getBuffer(), buf.getPos());
+    file.write(buf.c_str(), buf.size());
     assert(file.good());
     file.close();
 }
 
-ByteBuffer::UP
+nbostream
 readBufferFromFile(const vespalib::string &fileName)
 {
     auto file = std::fstream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
     auto size = file.tellg();
     auto result = std::make_unique<ByteBuffer>(size);
     file.seekg(0);
-    file.read(result->getBuffer(), size);
+    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(size);
+    file.read(static_cast<char *>(buf.get()), size);
     assert(file.good());
     file.close();
-    return result;
+    return nbostream(std::move(buf), size);
 }
 
 }
@@ -132,9 +132,8 @@ TEST(DocumentUpdateTest, testSimpleUsage)
         // Test that a document update can be serialized
     DocumentUpdate docUpdate(repo, *docType, DocumentId("id:ns:test::1"));
     docUpdate.addUpdate(fieldUpdateCopy);
-    ByteBuffer::UP docBuf = serializeHEAD(docUpdate);
-    docBuf->flip();
-    auto docUpdateCopy(DocumentUpdate::createHEAD(repo, nbostream(docBuf->getBufferAtPos(), docBuf->getRemaining())));
+    nbostream docBuf = serializeHEAD(docUpdate);
+    auto docUpdateCopy(DocumentUpdate::createHEAD(repo, docBuf));
 
         // Create a test document
     Document doc(*docType, DocumentId("id:ns:test::1"));
@@ -236,7 +235,7 @@ TEST(DocumentUpdateTest, testUpdateArray)
     // Create a document.
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
-    EXPECT_EQ((document::FieldValue*)NULL, doc->getValue(doc->getField("tags")).get());
+    EXPECT_EQ((document::FieldValue*)nullptr, doc->getValue(doc->getField("tags")).get());
 
     // Assign array field.
     ArrayFieldValue myarray(doc->getType().getField("tags").getDataType());
@@ -459,8 +458,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     const std::string file_name = "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
-    auto buf = readBufferFromFile("data/serializeupdatejava.dat");
-    nbostream is(buf->getBufferAtPos(), buf->getRemaining());
+    auto is = readBufferFromFile("data/serializeupdatejava.dat");
     DocumentUpdate::UP updp(DocumentUpdate::createHEAD(repo, is));
     DocumentUpdate& upd(*updp);
 
@@ -539,8 +537,8 @@ TEST(DocumentUpdateTest, testGenerateSerializedFile)
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 2)))
           .addUpdate(MapValueUpdate(StringFieldValue("foo"),
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
-    ByteBuffer::UP buf(serializeHEAD(upd));
-    writeBufferToFile(*buf, "data/serializeupdatecpp.dat");
+    nbostream buf(serializeHEAD(upd));
+    writeBufferToFile(buf, "data/serializeupdatecpp.dat");
 }
 
 
@@ -549,7 +547,7 @@ TEST(DocumentUpdateTest, testSetBadFieldTypes)
     // Create a test document
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
-    EXPECT_EQ((document::FieldValue*)NULL, doc->getValue(doc->getField("headerval")).get());
+    EXPECT_EQ((document::FieldValue*)nullptr, doc->getValue(doc->getField("headerval")).get());
 
     // Assign a float value to an int field.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -561,7 +559,7 @@ TEST(DocumentUpdateTest, testSetBadFieldTypes)
     update.applyTo(*doc);
 
     // Verify that the field is NOT set in the document.
-    EXPECT_EQ((document::FieldValue*)NULL,
+    EXPECT_EQ((document::FieldValue*)nullptr,
 			 doc->getValue(doc->getField("headerval")).get());
 }
 
@@ -569,7 +567,7 @@ TEST(DocumentUpdateTest, testUpdateApplyNoParams)
 {
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
-    EXPECT_EQ((document::FieldValue*)NULL, doc->getValue(doc->getField("tags")).get());
+    EXPECT_EQ((document::FieldValue*)nullptr, doc->getValue(doc->getField("tags")).get());
 
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
     update.addUpdate(FieldUpdate(doc->getField("tags")).addUpdate(AssignValueUpdate()));
@@ -1095,13 +1093,12 @@ struct TensorUpdateSerializeFixture {
     }
 
     void serializeUpdateToFile(const DocumentUpdate &update, const vespalib::string &fileName) {
-        ByteBuffer::UP buf = serializeHEAD(update);
-        writeBufferToFile(*buf, fileName);
+        nbostream buf = serializeHEAD(update);
+        writeBufferToFile(buf, fileName);
     }
 
     DocumentUpdate::UP deserializeUpdateFromFile(const vespalib::string &fileName) {
-        auto buf = readBufferFromFile(fileName);
-        nbostream stream(buf->getBufferAtPos(), buf->getRemaining());
+        auto stream = readBufferFromFile(fileName);
         return DocumentUpdate::createHEAD(*repo, stream);
     }
 
@@ -1181,10 +1178,9 @@ TEST(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerializedAndDeseriali
 {
     CreateIfNonExistentFixture f;
 
-    ByteBuffer::UP buf(serializeHEAD(*f.update));
-    buf->flip();
+    nbostream buf(serializeHEAD(*f.update));
 
-    DocumentUpdate::UP deserialized = DocumentUpdate::createHEAD(f.docMan.getTypeRepo(), *buf);
+    DocumentUpdate::UP deserialized = DocumentUpdate::createHEAD(f.docMan.getTypeRepo(), buf);
     EXPECT_EQ(*f.update, *deserialized);
     EXPECT_TRUE(deserialized->getCreateIfNonExistent());
 }
@@ -1216,9 +1212,8 @@ TEST(DocumentUpdateTest, array_element_update_can_be_roundtrip_serialized)
     ArrayUpdateFixture f;
 
     auto buffer = serializeHEAD(*f.update);
-    buffer->flip();
 
-    auto deserialized = DocumentUpdate::createHEAD(f.doc_man.getTypeRepo(), *buffer);
+    auto deserialized = DocumentUpdate::createHEAD(f.doc_man.getTypeRepo(), buffer);
     EXPECT_EQ(*f.update, *deserialized);
 }
 

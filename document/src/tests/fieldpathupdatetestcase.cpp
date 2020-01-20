@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 
 using vespalib::Identifiable;
+using vespalib::nbostream;
 using namespace document::config_builder;
 
 namespace document {
@@ -133,23 +134,21 @@ createTestDocument(const DocumentTypeRepo &repo)
     return doc;
 }
 
-ByteBuffer::UP serializeHEAD(const DocumentUpdate & update)
+nbostream
+serializeHEAD(const DocumentUpdate & update)
 {
     vespalib::nbostream stream;
     VespaDocumentSerializer serializer(stream);
     serializer.writeHEAD(update);
-    ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
-    retVal->putBytes(stream.peek(), stream.size());
-    return retVal;
+    return stream;
 }
 
 void testSerialize(const DocumentTypeRepo& repo, const DocumentUpdate& a) {
     try{
-        ByteBuffer::UP bb(serializeHEAD(a));
-        bb->flip();
-        DocumentUpdate::UP b(DocumentUpdate::createHEAD(repo, *bb));
+        auto bb(serializeHEAD(a));
+        DocumentUpdate::UP b(DocumentUpdate::createHEAD(repo, bb));
 
-        EXPECT_EQ(size_t(0), bb->getRemaining());
+        EXPECT_EQ(size_t(0), bb.size());
         EXPECT_EQ(a.getId().toString(), b->getId().toString());
         EXPECT_EQ(a.getUpdates().size(), b->getUpdates().size());
         for (size_t i(0); i < a.getUpdates().size(); i++) {
@@ -157,8 +156,7 @@ void testSerialize(const DocumentTypeRepo& repo, const DocumentUpdate& a) {
             const FieldUpdate & ub = b->getUpdates()[i];
 
             EXPECT_EQ(&ua.getField(), &ub.getField());
-            EXPECT_EQ(ua.getUpdates().size(),
-                                 ub.getUpdates().size());
+            EXPECT_EQ(ua.getUpdates().size(), ub.getUpdates().size());
             for (size_t j(0); j < ua.getUpdates().size(); j++) {
                 EXPECT_EQ(ua.getUpdates()[j]->getType(), ub.getUpdates()[j]->getType());
             }
@@ -1073,14 +1071,14 @@ TEST_F(FieldPathUpdateTestCase, testReadSerializedFile)
     int fd = open(TEST_PATH("data/serialize-fieldpathupdate-java.dat").c_str(), O_RDONLY);
 
     int len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
+    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
     lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
+    if (read(fd, buf.get(), len) != len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
-    DocumentUpdate::UP updp(DocumentUpdate::createHEAD(repo, buf));
+    DocumentUpdate::UP updp(DocumentUpdate::createHEAD(repo, nbostream(std::move(buf), len)));
     DocumentUpdate& upd(*updp);
 
     DocumentUpdate::UP compare(createDocumentUpdateForSerialization(repo));
@@ -1094,11 +1092,11 @@ TEST_F(FieldPathUpdateTestCase, testGenerateSerializedFile)
     // Tests nothing, only generates a file for java test
     DocumentUpdate::UP upd(createDocumentUpdateForSerialization(repo));
 
-    ByteBuffer::UP buf(serializeHEAD(*upd));
+    nbostream buf(serializeHEAD(*upd));
 
     int fd = open(TEST_PATH("data/serialize-fieldpathupdate-cpp.dat").c_str(),
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
+    if (write(fd, buf.c_str(), buf.size()) != (ssize_t)buf.size()) {
     	throw vespalib::Exception("write failed");
     }
     close(fd);

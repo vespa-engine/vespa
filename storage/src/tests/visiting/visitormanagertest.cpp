@@ -20,6 +20,7 @@
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <gmock/gmock.h>
 #include <optional>
 #include <thread>
@@ -337,7 +338,7 @@ int getTotalSerializedSize(const std::vector<document::Document::SP>& docs)
 {
     int total = 0;
     for (size_t i = 0; i < docs.size(); ++i) {
-        total += int(docs[i]->getSerializedSize());
+        total += int(docs[i]->serialize().size());
     }
     return total;
 }

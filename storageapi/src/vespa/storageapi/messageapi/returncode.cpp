@@ -26,7 +26,14 @@ vespalib::string ReturnCode::getResultString(Result result) {
 
 vespalib::string
 ReturnCode::toString() const {
-    return getResultString(_result) + " : " + _message;
+    vespalib::string ret = "ReturnCode(";
+    ret += getResultString(_result);
+    if ( ! _message.empty()) {
+        ret += ", ";
+        ret += _message;
+    }
+    ret += ")";
+    return ret;
 }
 
 bool

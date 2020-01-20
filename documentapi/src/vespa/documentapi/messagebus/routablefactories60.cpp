@@ -438,14 +438,12 @@ RoutableFactories60::GetBucketStateReplyFactory::doEncode(const DocumentReply &o
 DocumentMessage::UP
 RoutableFactories60::GetDocumentMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
-    return DocumentMessage::UP(
-            new GetDocumentMessage(decodeDocumentId(buf),
-                                   decodeString(buf)));
+    document::DocumentId docId = decodeDocumentId(buf);
+    return std::make_unique<GetDocumentMessage>(docId, decodeString(buf));
 }
 
 bool
-RoutableFactories60::GetDocumentMessageFactory::doEncode(const DocumentMessage &obj,
-                                                         vespalib::GrowableByteBuffer &buf) const
+RoutableFactories60::GetDocumentMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
     const GetDocumentMessage &msg = static_cast<const GetDocumentMessage&>(obj);
 
@@ -526,7 +524,7 @@ void
 RoutableFactories60::PutDocumentMessageFactory::decodeInto(PutDocumentMessage & msg, document::ByteBuffer & buf) const {
     vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
     msg.setDocument(make_shared<document::Document>(_repo, stream));
-    buf.incPos(buf.getRemaining() - stream.size());
+    buf.incPos(stream.rp());
     msg.setTimestamp(static_cast<uint64_t>(decodeLong(buf)));
     decodeTasCondition(msg, buf);
 }
@@ -550,9 +548,6 @@ RoutableFactories60::PutDocumentReplyFactory::doDecode(document::ByteBuffer &buf
 {
     auto reply = make_unique<WriteDocumentReply>(DocumentProtocol::REPLY_PUTDOCUMENT);
     reply->setHighestModificationTimestamp(decodeLong(buf));
-
-    // Doing an explicit move here to force converting result to an rvalue.
-    // This is done automatically in GCC >= 5.
     return reply;
 }
 
@@ -768,7 +763,9 @@ RoutableFactories60::StatDocumentReplyFactory::doEncode(const DocumentReply &, v
 
 void
 RoutableFactories60::UpdateDocumentMessageFactory::decodeInto(UpdateDocumentMessage & msg, document::ByteBuffer & buf) const {
-    msg.setDocumentUpdate(document::DocumentUpdate::createHEAD(_repo, buf));
+    vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
+    msg.setDocumentUpdate(document::DocumentUpdate::createHEAD(_repo, stream));
+    buf.incPos(stream.rp());
     msg.setOldTimestamp(static_cast<uint64_t>(decodeLong(buf)));
     msg.setNewTimestamp(static_cast<uint64_t>(decodeLong(buf)));
     decodeTasCondition(msg, buf);

@@ -17,7 +17,7 @@
 
 LOG_SETUP("translogstress");
 
-using document::ByteBuffer;
+using vespalib::nbostream;
 using search::Runnable;
 using vespalib::Monitor;
 using vespalib::MonitorGuard;
@@ -47,10 +47,10 @@ public:
     BufferGenerator(uint32_t minStrLen, uint32_t maxStrLen) :
         _rnd(), _minStrLen(minStrLen), _maxStrLen(maxStrLen) {}
     void setSeed(long seed) { _rnd.srand48(seed); }
-    ByteBuffer getRandomBuffer();
+    nbostream getRandomBuffer();
 };
 
-ByteBuffer
+nbostream
 BufferGenerator::getRandomBuffer()
 {
     size_t len = _minStrLen + _rnd.lrand48() % (_maxStrLen - _minStrLen);
@@ -59,9 +59,8 @@ BufferGenerator::getRandomBuffer()
         char c = 'a' + _rnd.lrand48() % ('z' - 'a' + 1);
         str.push_back(c);
     }
-    ByteBuffer buf(str.size() + 1);
-    buf.putBytes(str.c_str(), str.size() + 1);
-    buf.flip();
+    nbostream buf(str.size() + 1);
+    buf.write(str.c_str(), str.size() + 1);
     return buf;
 }
 
@@ -75,8 +74,8 @@ private:
     Rand48 _rnd;
     long _baseSeed;
     BufferGenerator _bufferGenerator;
-    const std::vector<document::ByteBuffer> * _buffers;
-    ByteBuffer _lastGeneratedBuffer;
+    const std::vector<nbostream> * _buffers;
+    nbostream _lastGeneratedBuffer;
 
 public:
     EntryGenerator(long baseSeed, const BufferGenerator & bufferGenerator) :
@@ -95,7 +94,7 @@ public:
     SerialNum getRandomSerialNum(SerialNum begin, SerialNum end);
     Packet::Entry getRandomEntry(SerialNum num);
     Rand48 & getRnd() { return _rnd; }
-    void setBuffers(const std::vector<ByteBuffer> & buffers) {
+    void setBuffers(const std::vector<nbostream> & buffers) {
         _buffers = &buffers;
     }
 };
@@ -118,12 +117,12 @@ EntryGenerator::getRandomEntry(SerialNum num)
     _rnd.srand48(_baseSeed + num);
     if (_buffers != NULL) {
         size_t i = _rnd.lrand48() % _buffers->size();
-        const ByteBuffer& buffer = (*_buffers)[i];
-        return Packet::Entry(num, 1024, ConstBufferRef(buffer.getBuffer(), buffer.getLength()));
+        const nbostream& buffer = (*_buffers)[i];
+        return Packet::Entry(num, 1024, ConstBufferRef(buffer.c_str(), buffer.size()));
     } else {
         _bufferGenerator.setSeed(_baseSeed + num);
-        _lastGeneratedBuffer = std::move(_bufferGenerator.getRandomBuffer());
-        return Packet::Entry(num, 1024, ConstBufferRef(_lastGeneratedBuffer.getBuffer(), _lastGeneratedBuffer.getLength()));
+        _lastGeneratedBuffer = _bufferGenerator.getRandomBuffer();
+        return Packet::Entry(num, 1024, ConstBufferRef(_lastGeneratedBuffer.c_str(), _lastGeneratedBuffer.size()));
     }
 }
 
@@ -708,7 +707,7 @@ TransLogStress::Main()
 
     BufferGenerator bufferGenerator(_cfg.minStrLen, _cfg.maxStrLen);
     bufferGenerator.setSeed(_cfg.baseSeed);
-    std::vector<ByteBuffer> buffers;
+    std::vector<nbostream> buffers;
     for (uint32_t i = 0; i < _cfg.numPreGeneratedBuffers; ++i) {
         buffers.push_back(bufferGenerator.getRandomBuffer());
     }

@@ -60,7 +60,7 @@ PutCommand::print(std::ostream& out, bool verbose, const std::string& indent) co
 {
     out << "Put(" << getBucketId() << ", " << _doc->getId()
         << ", timestamp " << _timestamp << ", size "
-        << _doc->getSerializedSize() << ")";
+        << _doc->serialize().size() << ")";
     if (verbose) {
         out << " {\n" << indent << "  ";
         _doc->print(out, verbose, indent + "  ");

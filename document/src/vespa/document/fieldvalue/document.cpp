@@ -256,13 +256,6 @@ void Document::deserializeBody(const DocumentTypeRepo& repo, vespalib::nbostream
     deserializer.readStructNoReset(getFields());
 }
 
-size_t
-Document::getSerializedSize() const
-{
-    // Temporary non-optimal (but guaranteed correct) implementation.
-    return serialize().size();
-}
-
 StructuredFieldValue::StructuredIterator::UP
 Document::getIterator(const Field* first) const
 {

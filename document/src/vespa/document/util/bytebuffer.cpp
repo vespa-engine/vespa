@@ -89,10 +89,11 @@ ByteBuffer::ByteBuffer(const ByteBuffer& rhs) :
       _ownedBuffer()
 {
     if (rhs._len > 0 && rhs._buffer) {
-        Alloc::alloc(rhs._len + 1).swap(_ownedBuffer);
-        _buffer = static_cast<char *>(_ownedBuffer.get());
-        memcpy(_buffer, rhs._buffer, rhs._len);
-        _buffer[rhs._len] = 0;
+        Alloc buf = Alloc::alloc(rhs._len + 1);
+        memcpy(buf.get(), rhs._buffer, rhs._len);
+        static_cast<char *>(buf.get())[rhs._len] = 0;
+        _ownedBuffer = std::move(buf);
+        _buffer = static_cast<const char *>(_ownedBuffer.get());
     }
 }
 
@@ -110,16 +111,6 @@ ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, size_t len)
     }
 }
 
-void
-ByteBuffer::setPos(size_t pos) // throw (BufferOutOfBoundsException)
-{
-    if (pos > _len) {
-        throwOutOfBounds(pos, _len);
-    } else {
-        _pos=pos;
-    }
-}
-
 void ByteBuffer::incPos(size_t pos)
 {
     if (_pos + pos > _len) {
@@ -133,7 +124,7 @@ void ByteBuffer::getNumeric(uint8_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *(uint8_t *) getBufferAtPos();
+        v = *reinterpret_cast<const uint8_t *>(getBufferAtPos());
         incPosNoCheck(sizeof(v));
     }
 }
@@ -142,7 +133,7 @@ void ByteBuffer::getNumericNetwork(int16_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        uint16_t val = *(uint16_t *) (void *) getBufferAtPos();
+        uint16_t val = *reinterpret_cast<const uint16_t *>(getBufferAtPos());
         v = ntohs(val);
         incPosNoCheck(sizeof(v));
     }
@@ -152,7 +143,7 @@ void ByteBuffer::getNumericNetwork(int32_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        uint32_t val = *(uint32_t *) (void *) getBufferAtPos();
+        uint32_t val = *reinterpret_cast<const uint32_t *>(getBufferAtPos());
         v = ntohl(val);
         incPosNoCheck(sizeof(v));
     }
@@ -162,7 +153,7 @@ void ByteBuffer::getNumeric(int64_t& v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *(int64_t *) (void *) getBufferAtPos();
+        v = *reinterpret_cast<const int64_t *>(getBufferAtPos());
         incPosNoCheck(sizeof(v));
     }
 }
@@ -180,14 +171,6 @@ void ByteBuffer::getBytes(void *buffer, size_t count)
     const char *v = getBufferAtPos();
     incPos(count);
     memcpy(buffer, v, count);
-}
-void ByteBuffer::putBytes(const void *buf, size_t count) {
-    if (__builtin_expect(getRemaining() < count, 0)) {
-        throwOutOfBounds(getRemaining(), sizeof(count));
-    } else {
-        memcpy(getBufferAtPos(), buf, count);
-        incPosNoCheck(count);
-    }
 }
 
 } // document

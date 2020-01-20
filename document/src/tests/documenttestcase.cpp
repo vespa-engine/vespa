@@ -567,14 +567,14 @@ TEST(DocumentTest, testReadSerializedFile)
     int fd = open(TEST_PATH("data/serializejava.dat").c_str(), O_RDONLY);
 
     size_t len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
+    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
     lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != (ssize_t)len) {
+    if (read(fd, buf.get(), len) != (ssize_t)len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
-    nbostream stream(buf.getBufferAtPos(), len);
+    nbostream stream(buf.get(), len);
     Document doc(repo, stream);
     verifyJavaDocument(doc);
 
@@ -586,7 +586,7 @@ TEST(DocumentTest, testReadSerializedFile)
     EXPECT_TRUE(buf2.empty());
     buf2.rp(0);
     EXPECT_EQ(len, buf2.size());
-    EXPECT_TRUE(memcmp(buf2.peek(), buf.getBuffer(), buf2.size()) == 0);
+    EXPECT_TRUE(memcmp(buf2.peek(), buf.get(), buf2.size()) == 0);
 
     doc2.setValue("stringfield", StringFieldValue("hei"));
 
@@ -603,14 +603,14 @@ TEST(DocumentTest, testReadSerializedFileCompressed)
     int fd = open(TEST_PATH("data/serializejava-compressed.dat").c_str(), O_RDONLY);
 
     int len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
+    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
     lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
+    if (read(fd, buf.get(), len) != len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
-    nbostream stream(buf.getBufferAtPos(), len);
+    nbostream stream(buf.get(), len);
     Document doc(repo, stream);
     verifyJavaDocument(doc);
 }
@@ -753,14 +753,14 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         }
         int fd = open(tests[i]._dataFile.c_str(), O_RDONLY);
         int len = lseek(fd,0,SEEK_END);
-        ByteBuffer buf(len);
+        vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
         lseek(fd,0,SEEK_SET);
-	if (read(fd, buf.getBuffer(), len) != len) {
-            throw vespalib::Exception("read failed");
-	}
+        if (read(fd, buf.get(), len) != len) {
+                throw vespalib::Exception("read failed");
+        }
         close(fd);
 
-        nbostream stream(buf.getBufferAtPos(), len);
+        nbostream stream(buf.get(), len);
         Document doc(repo, stream);
 
         IntFieldValue intVal;
@@ -1181,14 +1181,14 @@ TEST(DocumentTest, testAnnotationDeserialization)
 
     int fd = open(TEST_PATH("data/serializejavawithannotations.dat").c_str(), O_RDONLY);
     int len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
+    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
     lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
+    if (read(fd, buf.get(), len) != len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
-    nbostream stream1(buf.getBufferAtPos(), len);
+    nbostream stream1(buf.get(), len);
     Document doc(repo, stream1);
     StringFieldValue strVal;
     EXPECT_TRUE(doc.getValue(doc.getField("story"), strVal));
@@ -1226,14 +1226,6 @@ TEST(DocumentTest, testAnnotationDeserialization)
     LongFieldValue longVal;
     EXPECT_TRUE(doc.getValue(doc.getField("friend"), longVal));
     EXPECT_EQ((int64_t)2384LL, longVal.getAsLong());
-}
-
-TEST(DocumentTest, testGetSerializedSize)
-{
-    TestDocMan testDocMan;
-    Document::UP doc = testDocMan.createDocument();
-
-    EXPECT_EQ(getSerializedSize(*doc), doc->getSerializedSize());
 }
 
 TEST(DocumentTest, testDeserializeMultiple)

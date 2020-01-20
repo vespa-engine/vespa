@@ -96,8 +96,6 @@ public:
     /** Deserialize document contained in given bytebuffers. */
     void deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & body, vespalib::nbostream & header);
 
-    size_t getSerializedSize() const;
-
     /** Undo fieldvalue's toXml override for document. */
     std::string toXml() const { return toXml(""); }
     std::string toXml(const std::string& indent) const override;
