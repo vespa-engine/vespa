@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -267,6 +268,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public List<FlagData> listFlagData(ZoneId zone) {
         return List.of();
+    }
+
+    @Override
+    public TesterCloud.Status getTesterStatus(DeploymentId deployment) {
+        return TesterCloud.Status.SUCCESS;
     }
 
     public void addLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {

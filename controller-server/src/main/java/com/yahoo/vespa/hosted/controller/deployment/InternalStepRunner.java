@@ -17,6 +17,9 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -469,7 +472,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
-        if ( ! deployment(id.application(), id.type()).isPresent()) {
+        if (deployment(id.application(), id.type()).isEmpty()) {
             logger.log(INFO, "Deployment expired before tests could complete.");
             return Optional.of(aborted);
         }
@@ -485,15 +488,22 @@ public class InternalStepRunner implements StepRunner {
             }
         }
 
-        Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if ( ! testerEndpoint.isPresent()) {
-            logger.log("Endpoints for tester not found -- trying again later.");
-            return Optional.empty();
-        }
-
         controller.jobController().updateTestLog(id);
 
-        TesterCloud.Status testStatus = controller.jobController().cloud().getStatus(testerEndpoint.get());
+        BooleanFlag useConfigServerForTesterAPI = Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.bindTo(controller.flagSource());
+        ZoneId zoneId = id.type().zone(controller.system());
+        TesterCloud.Status testStatus;
+        if (useConfigServerForTesterAPI.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value()) {
+            testStatus = controller.serviceRegistry().configServer().getTesterStatus(new DeploymentId(id.application(), zoneId));
+        } else {
+            Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
+            if (testerEndpoint.isEmpty()) {
+                logger.log("Endpoints for tester not found -- trying again later.");
+                return Optional.empty();
+            }
+            testStatus = controller.jobController().cloud().getStatus(testerEndpoint.get());
+        }
+
         switch (testStatus) {
             case NOT_STARTED:
                 throw new IllegalStateException("Tester reports tests not started, even though they should have!");
