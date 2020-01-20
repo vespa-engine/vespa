@@ -18,6 +18,7 @@ import java.util.Optional;
  * @author ollivir
  */
 public class MockSearchCluster extends SearchCluster {
+
     private final int numGroups;
     private final int numNodesPerGroup;
     private final ImmutableList<Group> orderedGroups;
@@ -130,4 +131,5 @@ public class MockSearchCluster extends SearchCluster {
         }
         return new DispatchConfig(builder);
     }
+
 }
