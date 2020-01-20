@@ -15,6 +15,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Base class for hosted Vespa plugin mojos.
@@ -96,6 +98,17 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
                 return value;
 
         throw new IllegalArgumentException("No valid value given");
+    }
+
+    protected static Optional<String> optionalOf(String value) {
+        return Optional.ofNullable(value)
+                       .filter(data -> ! data.isBlank());
+    }
+
+    protected static <T> Optional<T> optionalOf(String value, Function<String, T> mapper) {
+        return Optional.ofNullable(value)
+                       .filter(data -> ! data.isBlank())
+                       .map(mapper);
     }
 
 }

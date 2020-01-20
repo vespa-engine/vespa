@@ -288,11 +288,11 @@ public abstract class ControllerHttpClient {
     private static String metaToJson(Submission submission) {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
-        rootObject.setString("repository", submission.repository());
-        rootObject.setString("branch", submission.branch());
-        rootObject.setString("commit", submission.commit());
+        submission.repository().ifPresent(repository -> rootObject.setString("repository", repository));
+        submission.branch().ifPresent(branch -> rootObject.setString("branch", branch));
+        submission.commit().ifPresent(commit -> rootObject.setString("commit", commit));
         submission.sourceUrl().ifPresent(url -> rootObject.setString("sourceUrl", url));
-        rootObject.setString("authorEmail", submission.authorEmail());
+        submission.authorEmail().ifPresent(email -> rootObject.setString("authorEmail", email));
         submission.projectId().ifPresent(projectId -> rootObject.setLong("projectId", projectId));
         return toJson(slime);
     }

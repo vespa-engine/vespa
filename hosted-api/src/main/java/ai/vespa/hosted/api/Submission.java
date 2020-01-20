@@ -12,17 +12,18 @@ import java.util.OptionalLong;
  */
 public class Submission {
 
-    private final String repository;
-    private final String branch;
-    private final String commit;
+    private final Optional<String> repository;
+    private final Optional<String> branch;
+    private final Optional<String> commit;
     private final Optional<String> sourceUrl;
-    private final String authorEmail;
+    private final Optional<String> authorEmail;
     private final Path applicationZip;
     private final Path applicationTestZip;
-    private final OptionalLong projectId;
+    private final Optional<Long> projectId;
 
-    public Submission(String repository, String branch, String commit, Optional<String> sourceUrl, String authorEmail,
-                      Path applicationZip, Path applicationTestZip, OptionalLong projectId) {
+    public Submission(Optional<String> repository, Optional<String> branch, Optional<String> commit,
+                      Optional<String> sourceUrl, Optional<String> authorEmail,
+                      Path applicationZip, Path applicationTestZip, Optional<Long> projectId) {
         this.repository = repository;
         this.branch = branch;
         this.commit = commit;
@@ -33,13 +34,13 @@ public class Submission {
         this.projectId = projectId;
     }
 
-    public String repository() { return repository; }
-    public String branch() { return branch; }
-    public String commit() { return commit; }
+    public Optional<String> repository() { return repository; }
+    public Optional<String> branch() { return branch; }
+    public Optional<String> commit() { return commit; }
     public Optional<String> sourceUrl() { return sourceUrl; }
-    public String authorEmail() { return authorEmail; }
+    public Optional<String> authorEmail() { return authorEmail; }
     public Path applicationZip() { return applicationZip; }
     public Path applicationTestZip() { return applicationTestZip; }
-    public OptionalLong projectId() { return projectId; }
+    public Optional<Long> projectId() { return projectId; }
 
 }
