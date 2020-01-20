@@ -1998,6 +1998,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<String> sourceUrl = optional("sourceUrl", submitOptions);
         Optional<String> authorEmail = optional("authorEmail", submitOptions);
 
+        sourceUrl.map(URI::create).ifPresent(url -> {
+            if (url.getHost() == null || url.getScheme() == null)
+                throw new IllegalArgumentException("Source URL must include scheme and host");
+        });
+
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
