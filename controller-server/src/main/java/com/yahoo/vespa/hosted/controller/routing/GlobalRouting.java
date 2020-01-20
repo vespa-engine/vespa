@@ -5,8 +5,8 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Represents the global routing status of a routing policy. This contains the time global routing status was last
- * changed and who changed it.
+ * Represents the global routing status of a {@link RoutingPolicy} or {@link ZoneRoutingPolicy}. This contains the
+ * time global routing status was last changed and who changed it.
  *
  * This is immutable.
  *

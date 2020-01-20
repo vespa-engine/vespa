@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
@@ -80,6 +82,7 @@ public class CuratorDb {
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
+    private static final Path zoneRoutingPoliciesRoot = root.append("zoneRoutingPolicies");
     private static final Path applicationCertificateRoot = root.append("applicationCertificates");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
@@ -93,6 +96,7 @@ public class CuratorDb {
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
+    private final ZoneRoutingPolicySerializer zoneRoutingPolicySerializer = new ZoneRoutingPolicySerializer(routingPolicySerializer);
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
 
@@ -500,6 +504,15 @@ public class CuratorDb {
                                                         .orElseGet(Map::of);
     }
 
+    public void writeZoneRoutingPolicy(ZoneRoutingPolicy policy) {
+        curator.set(zoneRoutingPolicyPath(policy.zone()), asJson(zoneRoutingPolicySerializer.toSlime(policy)));
+    }
+
+    public ZoneRoutingPolicy readZoneRoutingPolicy(ZoneId zone) {
+        return readSlime(zoneRoutingPolicyPath(zone)).map(data -> zoneRoutingPolicySerializer.fromSlime(zone, data))
+                                                     .orElse(new ZoneRoutingPolicy(zone, GlobalRouting.DEFAULT_STATUS));
+    }
+
     // -------------- Application web certificates ----------------------------
 
     public void writeApplicationCertificate(ApplicationId applicationId, ApplicationCertificate applicationCertificate) {
@@ -580,6 +593,8 @@ public class CuratorDb {
     private static Path routingPolicyPath(ApplicationId application) {
         return routingPoliciesRoot.append(application.serializedForm());
     }
+
+    private static Path zoneRoutingPolicyPath(ZoneId zone) { return zoneRoutingPoliciesRoot.append(zone.value()); }
 
     private static Path nameServiceQueuePath() {
         return root.append("nameServiceQueue");

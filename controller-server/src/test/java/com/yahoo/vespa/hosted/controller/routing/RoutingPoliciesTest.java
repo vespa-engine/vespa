@@ -397,6 +397,62 @@ public class RoutingPoliciesTest {
         assertEquals(GlobalRouting.Agent.tenant, policy1.status().globalRouting().agent());
         assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().globalRouting().changedAt());
     }
+
+    @Test
+    public void set_zone_global_endpoint_status() {
+        var tester = new RoutingPoliciesTester();
+        var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
+        var context2 = tester.newDeploymentContext("tenant2", "app2", "default");
+        var contexts = List.of(context1, context2);
+
+        // Deploy applications
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("default", "c0", zone1.region().value(), zone2.region().value())
+                .build();
+        for (var context : contexts) {
+            tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
+            context.submit(applicationPackage).deploy();
+            tester.assertTargets(context.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
+        }
+
+        // Set zone out
+        tester.routingPolicies().setGlobalRoutingStatus(zone2, GlobalRouting.Status.out);
+        context1.flushDnsUpdates();
+        tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
+        tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1);
+        for (var context : contexts) {
+            var policies = tester.routingPolicies().get(context.instanceId());
+            assertTrue("Global routing status for policy remains " + GlobalRouting.Status.in,
+                       policies.values().stream()
+                               .map(RoutingPolicy::status)
+                               .map(Status::globalRouting)
+                               .map(GlobalRouting::status)
+                               .allMatch(status -> status == GlobalRouting.Status.in));
+        }
+        var changedAt = tester.controllerTester().clock().instant();
+        var zonePolicy = tester.controllerTester().controller().curator().readZoneRoutingPolicy(zone2);
+        assertEquals(GlobalRouting.Status.out, zonePolicy.globalRouting().status());
+        assertEquals(GlobalRouting.Agent.operator, zonePolicy.globalRouting().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), zonePolicy.globalRouting().changedAt());
+
+        // Setting status per deployment does not affect status as entire zone is out
+        tester.routingPolicies().setGlobalRoutingStatus(context1.deploymentIdIn(zone2), GlobalRouting.Status.in, GlobalRouting.Agent.tenant);
+        context1.flushDnsUpdates();
+        tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
+        tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1);
+
+        // Set single deployment out
+        tester.routingPolicies().setGlobalRoutingStatus(context1.deploymentIdIn(zone2), GlobalRouting.Status.out, GlobalRouting.Agent.tenant);
+        context1.flushDnsUpdates();
+
+        // Set zone back in. Deployment set explicitly out, remains out, the rest are in
+        tester.routingPolicies().setGlobalRoutingStatus(zone2, GlobalRouting.Status.in);
+        context1.flushDnsUpdates();
+        tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
+        tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
+    }
     
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();

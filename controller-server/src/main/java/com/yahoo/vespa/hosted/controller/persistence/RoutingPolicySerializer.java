@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -62,10 +63,7 @@ public class RoutingPolicySerializer {
                 rotationArray.addString(endpointId.id());
             });
             policyObject.setBool(loadBalancerActiveField, policy.status().loadBalancerActive());
-            var globalRoutingObject = policyObject.setObject(globalRoutingField);
-            globalRoutingObject.setString(statusField, policy.status().globalRouting().status().name());
-            globalRoutingObject.setString(agentField, policy.status().globalRouting().agent().name());
-            globalRoutingObject.setLong(changedAtField, policy.status().globalRouting().changedAt().toEpochMilli());
+            globalRoutingToSlime(policy.status().globalRouting(), policyObject.setObject(globalRoutingField));
         });
         return slime;
     }
@@ -90,7 +88,13 @@ public class RoutingPolicySerializer {
         return Collections.unmodifiableMap(policies);
     }
 
-    private GlobalRouting globalRoutingFromSlime(Inspector object) {
+    public void globalRoutingToSlime(GlobalRouting globalRouting, Cursor object) {
+        object.setString(statusField, globalRouting.status().name());
+        object.setString(agentField, globalRouting.agent().name());
+        object.setLong(changedAtField, globalRouting.changedAt().toEpochMilli());
+    }
+
+    public GlobalRouting globalRoutingFromSlime(Inspector object) {
         if (!object.valid()) return GlobalRouting.DEFAULT_STATUS;
         var status = GlobalRouting.Status.valueOf(object.field(statusField).asString());
         var agent = GlobalRouting.Agent.valueOf(object.field(agentField).asString());

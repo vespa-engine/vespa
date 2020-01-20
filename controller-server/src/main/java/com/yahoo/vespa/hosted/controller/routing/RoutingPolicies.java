@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -84,6 +85,18 @@ public class RoutingPolicies {
         }
     }
 
+    /** Set the status of all global endpoints in given zone */
+    public void setGlobalRoutingStatus(ZoneId zone, GlobalRouting.Status status) {
+        try (var lock = db.lockRoutingPolicies()) {
+            db.writeZoneRoutingPolicy(new ZoneRoutingPolicy(zone, GlobalRouting.status(status, GlobalRouting.Agent.operator,
+                                                                                       controller.clock().instant())));
+            var allPolicies = db.readRoutingPolicies();
+            for (var applicationPolicies : allPolicies.values()) {
+                updateGlobalDnsOf(applicationPolicies.values(), lock);
+            }
+        }
+    }
+
     /** Set the status of all global endpoints for given deployment */
     public void setGlobalRoutingStatus(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
         try (var lock = db.lockRoutingPolicies()) {
@@ -110,8 +123,9 @@ public class RoutingPolicies {
             for (var policy : routeEntry.getValue()) {
                 if (policy.dnsZone().isEmpty()) continue;
                 var target = new AliasTarget(policy.canonicalName(), policy.dnsZone().get(), policy.id().zone());
-                // Remove target if global routing status is set out
-                if (policy.status().globalRouting().status() == GlobalRouting.Status.out) {
+                var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
+                // Remove target if global routing status is set out, either on zone-level or policy-level
+                if (anyOut(zonePolicy.globalRouting(), policy.status().globalRouting())) {
                     staleTargets.add(target);
                 } else {
                     targets.add(target);
@@ -203,6 +217,12 @@ public class RoutingPolicies {
             }
         }
         return Collections.unmodifiableMap(routingTable);
+    }
+
+    private static boolean anyOut(GlobalRouting... globalRouting) {
+        return Arrays.stream(globalRouting)
+                     .map(GlobalRouting::status)
+                     .anyMatch(status -> status == GlobalRouting.Status.out);
     }
 
     private static boolean isActive(LoadBalancer loadBalancer) {

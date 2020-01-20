@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Represents the DNS routing policy for a load balancer.
+ * Represents the DNS routing policy for a {@link com.yahoo.vespa.hosted.controller.application.Deployment}.
  *
  * @author mortent
  * @author mpolden
