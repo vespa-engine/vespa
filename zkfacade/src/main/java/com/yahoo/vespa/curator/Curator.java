@@ -118,7 +118,7 @@ public class Curator implements AutoCloseable {
         if (this.curatorFramework != null) {
             validateConnectionSpec(connectionSpec);
             validateConnectionSpec(zooKeeperEnsembleConnectionSpec);
-            addFakeListener();
+            addLoggingListener();
             curatorFramework.start();
         }
 
@@ -201,8 +201,7 @@ public class Curator implements AutoCloseable {
         return new InterProcessMutex(curatorFramework, lockPath);
     }
 
-    // To avoid getting warning in log, see ticket 6389740
-    private void addFakeListener() {
+    private void addLoggingListener() {
         curatorFramework.getConnectionStateListenable().addListener((curatorFramework, connectionState) -> {
             switch (connectionState) {
                 case SUSPENDED: logger.info("ZK connection state change: SUSPENDED"); break;
