@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 /**
  * Curator interface for Vespa.
@@ -46,6 +47,8 @@ import java.util.function.Function;
  * @author bratseth
  */
 public class Curator implements AutoCloseable {
+
+    private static final Logger logger = Logger.getLogger(Curator.class.getName());
 
     private static final int ZK_SESSION_TIMEOUT = 30000;
     private static final int ZK_CONNECTION_TIMEOUT = 30000;
@@ -115,7 +118,7 @@ public class Curator implements AutoCloseable {
         if (this.curatorFramework != null) {
             validateConnectionSpec(connectionSpec);
             validateConnectionSpec(zooKeeperEnsembleConnectionSpec);
-            addFakeListener();
+            addLoggingListener();
             curatorFramework.start();
         }
 
@@ -198,10 +201,13 @@ public class Curator implements AutoCloseable {
         return new InterProcessMutex(curatorFramework, lockPath);
     }
 
-    // To avoid getting warning in log, see ticket 6389740
-    private void addFakeListener() {
+    private void addLoggingListener() {
         curatorFramework.getConnectionStateListenable().addListener((curatorFramework, connectionState) -> {
-            // empty, not needed now
+            switch (connectionState) {
+                case SUSPENDED: logger.info("ZK connection state change: SUSPENDED"); break;
+                case RECONNECTED: logger.info("ZK connection state change: RECONNECTED"); break;
+                case LOST: logger.warning("ZK connection state change: LOST"); break;
+            }
         });
     }
 
