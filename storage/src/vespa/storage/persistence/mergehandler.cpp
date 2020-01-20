@@ -552,6 +552,7 @@ MergeHandler::deserializeDiffDocument(
     auto doc = std::make_unique<Document>();
     vespalib::nbostream hbuf(&e._headerBlob[0], e._headerBlob.size());
     if (e._bodyBlob.size() > 0) {
+        // TODO Remove this branch and add warning on error.
         vespalib::nbostream bbuf(&e._bodyBlob[0], e._bodyBlob.size());
         doc->deserialize(repo, hbuf, bbuf);
     } else {
