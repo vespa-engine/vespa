@@ -7,26 +7,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MockSecretStore implements SecretStore {
-    Map<String, Map<Integer, String>> secrets = new HashMap<>();
+    Map<String, String> secrets = new HashMap<>();
 
     @Override
     public String getSecret(String key) {
         if(secrets.containsKey(key))
-            return secrets.get(key).get(0);
+            return secrets.get(key);
         throw new RuntimeException("Key not found: " + key);
     }
 
     @Override
     public String getSecret(String key, int version) {
-        return secrets.get(key).get(version);
-    }
-
-    public void put(String key, int version, String value) {
-        secrets.computeIfAbsent(key, k -> new HashMap<>()).put(version, value);
+        return getSecret(key);
     }
 
     public void put(String key, String value) {
-        put(key, 0, value);
+        secrets.put(key, value);
     }
 
     public void remove(String key) {

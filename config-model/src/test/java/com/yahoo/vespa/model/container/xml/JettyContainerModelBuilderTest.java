@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -258,7 +258,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 .properties(
                         new TestProperties()
                                 .setHostedVespa(true)
-                                .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
+                                .setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY"))))
                 .modelHostProvisioner(new HostsXmlProvisioner(new StringReader(hostsxml)))
                 .build();
         MockRoot root = new MockRoot("root", deployState);

@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -12,7 +11,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
-import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -34,7 +32,6 @@ public final class PrepareParams {
     static final String VESPA_VERSION_PARAM_NAME = "vespaVersion";
     static final String CONTAINER_ENDPOINTS_PARAM_NAME = "containerEndpoints";
     static final String TLS_SECRETS_KEY_NAME_PARAM_NAME = "tlsSecretsKeyName";
-    static final String ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME = "endpointCertificateMetadata";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -45,12 +42,10 @@ public final class PrepareParams {
     private final Optional<Version> vespaVersion;
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<String> tlsSecretsKeyName;
-    private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
-                          List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName,
-                          Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
+                          List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -60,7 +55,6 @@ public final class PrepareParams {
         this.vespaVersion = vespaVersion;
         this.containerEndpoints = containerEndpoints;
         this.tlsSecretsKeyName = tlsSecretsKeyName;
-        this.endpointCertificateMetadata = endpointCertificateMetadata;
     }
 
     public static class Builder {
@@ -74,7 +68,6 @@ public final class PrepareParams {
         private Optional<Version> vespaVersion = Optional.empty();
         private List<ContainerEndpoint> containerEndpoints = List.of();
         private Optional<String> tlsSecretsKeyName = Optional.empty();
-        private Optional<EndpointCertificateMetadata> endpointCertificateMetadata = Optional.empty();
 
         public Builder() { }
 
@@ -135,16 +128,9 @@ public final class PrepareParams {
             return this;
         }
 
-        public Builder endpointCertificateMetadata(String serialized) {
-            if(serialized == null) return this;
-            Slime slime = SlimeUtils.jsonToSlime(serialized);
-            endpointCertificateMetadata = Optional.of(EndpointCertificateMetadataSerializer.fromSlime(slime.get()));
-            return this;
-        }
-
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
-                                     verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName, endpointCertificateMetadata);
+                                     verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName);
         }
 
     }
@@ -158,7 +144,6 @@ public final class PrepareParams {
                             .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
                             .containerEndpoints(request.getProperty(CONTAINER_ENDPOINTS_PARAM_NAME))
                             .tlsSecretsKeyName(request.getProperty(TLS_SECRETS_KEY_NAME_PARAM_NAME))
-                            .endpointCertificateMetadata(request.getProperty(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME))
                             .build();
     }
 
@@ -214,9 +199,5 @@ public final class PrepareParams {
 
     public Optional<String> tlsSecretsKeyName() {
         return tlsSecretsKeyName;
-    }
-
-    public Optional<EndpointCertificateMetadata> endpointCertificateMetadata() {
-        return endpointCertificateMetadata;
     }
 }

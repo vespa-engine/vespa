@@ -13,7 +13,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -327,15 +327,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String serverName = server.getComponentId().getName();
 
         // If the deployment contains certificate/private key reference, setup TLS port
-        if (deployState.endpointCertificateSecrets().isPresent()) {
+        if (deployState.tlsSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
                 throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/security-model#data-plane");
             }
-            EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
+            TlsSecrets tlsSecrets = deployState.tlsSecrets().get();
             HostedSslConnectorFactory connectorFactory = authorizeClient
-                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
-                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets);
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, tlsSecrets, deployState.tlsClientAuthority().get())
+                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, tlsSecrets);
             server.addConnector(connectorFactory);
         } else {
             server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName));

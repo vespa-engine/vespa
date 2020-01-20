@@ -19,16 +19,11 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 import static com.yahoo.security.Extension.SUBJECT_ALTERNATIVE_NAMES;
 import static java.util.stream.Collectors.toList;
@@ -142,22 +137,6 @@ public class X509CertificateUtils {
             return SubjectAlternativeName.fromGeneralNames(names);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-    }
-
-    public static boolean privateKeyMatchesPublicKey(PrivateKey privateKey, PublicKey publicKey) {
-        byte[] someRandomData = new byte[64];
-        new Random().nextBytes(someRandomData);
-
-        Signature signer = SignatureUtils.createSigner(privateKey);
-        Signature verifier = SignatureUtils.createVerifier(publicKey);
-        try {
-            signer.update(someRandomData);
-            verifier.update(someRandomData);
-            byte[] signature = signer.sign();
-            return verifier.verify(signature);
-        } catch (SignatureException e) {
-            throw new RuntimeException(e);
         }
     }
 

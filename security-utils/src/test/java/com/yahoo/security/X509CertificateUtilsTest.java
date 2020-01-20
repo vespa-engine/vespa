@@ -17,9 +17,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -72,19 +70,5 @@ public class X509CertificateUtilsTest {
         List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(cert);
         assertThat(sans.size(), is(1));
         assertThat(sans.get(0), equalTo(san));
-    }
-
-    @Test
-    public void verifies_matching_cert_and_key() {
-        KeyPair ecKeypairA = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
-        KeyPair ecKeypairB = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
-        KeyPair rsaKeypairA = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 1024);
-        KeyPair rsaKeypairB = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 1024);
-
-        assertTrue(X509CertificateUtils.privateKeyMatchesPublicKey(ecKeypairA.getPrivate(), ecKeypairA.getPublic()));
-        assertTrue(X509CertificateUtils.privateKeyMatchesPublicKey(rsaKeypairA.getPrivate(), rsaKeypairA.getPublic()));
-
-        assertFalse(X509CertificateUtils.privateKeyMatchesPublicKey(ecKeypairA.getPrivate(), ecKeypairB.getPublic()));
-        assertFalse(X509CertificateUtils.privateKeyMatchesPublicKey(rsaKeypairA.getPrivate(), rsaKeypairB.getPublic()));
     }
 }
