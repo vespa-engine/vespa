@@ -63,7 +63,7 @@ public class Pong {
     /** Returns the number of active documents in the backend responding in this Pong, if available */
     public Optional<Long> activeDocuments() { return activeDocuments; }
 
-    /** Returns true if the pinged node is currently blocking write operations due t being full */
+    /** Returns true if the pinged node is currently blocking write operations due to being full */
     public boolean isBlockingWrites() { return isBlockingWrites; }
 
     /**
