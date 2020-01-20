@@ -149,7 +149,7 @@ SerializableArray::get(int id) const
         }
     } else {
         // should we clear all or what?
-    }N
+    }
 
     return buf;
 }
