@@ -75,7 +75,7 @@ public:
 
     /**
      * @return Returns the number of bytes remaining in the buffer - that is,
-     *         getLimit()-getPos().
+     *         getLength()-getPos().
     */
     uint32_t getRemaining() const { return _len -_pos; }
 
@@ -85,8 +85,6 @@ public:
      * @param pos The number of bytes to move the position. The new position
      *            will be oldPos + pos. This is the same as doing
      *            setPos(getPos()+pos)
-     * @return    True if the position could be moved (it was inside the limit
-     *            of the buffer).
      * @throws BufferOutOfBoundsException;
      */
     void incPos(uint32_t pos);
@@ -106,16 +104,6 @@ public:
     void getLongNetwork(int64_t & v)  { getNumericNetwork(v); }
     void getLong(int64_t& v)          { getNumeric(v); }
     void getDoubleNetwork(double & v) { getNumericNetwork(v); }
-
-    /**
-     *  Reads the given number of bytes into the given pointer, and updates the
-     *  positition accordingly
-     *
-     *   @param	buffer	where to store the bytes
-     *   @param	count	number of bytes to read
-     *   @return	    True if all the bytes could be read, false if end of
-     *                  buffer is reached
-     */
     void getBytes(void *buffer, uint32_t count);
 
 private:
