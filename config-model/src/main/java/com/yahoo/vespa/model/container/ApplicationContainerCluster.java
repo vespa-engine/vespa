@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
@@ -54,6 +55,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private ContainerModelEvaluation modelEvaluation;
 
+    private Optional<TlsSecrets> tlsSecrets;
     private Optional<String> tlsClientAuthority;
 
     private MbusParams mbusParams;
@@ -63,6 +65,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
+
+        this.tlsSecrets = deployState.tlsSecrets();
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
@@ -199,6 +203,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         } else if (isHostedVespa()) {
             builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
         }
+    }
+
+    public Optional<TlsSecrets> getTlsSecrets() {
+        return tlsSecrets;
     }
 
     public Optional<String> getTlsClientAuthority() {

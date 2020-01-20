@@ -15,7 +15,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -255,7 +255,7 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Instant now() { return now; }
 
-    public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return properties.endpointCertificateSecrets(); }
+    public Optional<TlsSecrets> tlsSecrets() { return properties.tlsSecrets(); }
 
     public Optional<String> tlsClientAuthority() {
         var caFile = applicationPackage.getClientSecurityFile();
@@ -289,6 +289,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
+        private Optional<TlsSecrets> tlsSecrets = Optional.empty();
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
