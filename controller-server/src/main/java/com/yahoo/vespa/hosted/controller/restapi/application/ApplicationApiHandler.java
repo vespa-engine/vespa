@@ -1988,11 +1988,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
         Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
-        SourceRevision sourceRevision = toSourceRevision(submitOptions);
-        String authorEmail = submitOptions.field("authorEmail").asString();
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
-        Optional<String> commit = submitOptions.field("commit").valid() ? Optional.of(submitOptions.field("commit").asString()) : Optional.empty();
-        Optional<String> sourceUrl = submitOptions.field("sourceUrl").valid() ? Optional.of(submitOptions.field("sourceUrl").asString()) : Optional.empty();
+        Optional<String> repository = optional("repository", submitOptions);
+        Optional<String> branch = optional("branch", submitOptions);
+        Optional<String> commit = optional("commit", submitOptions);
+        Optional<SourceRevision> sourceRevision = repository.isPresent() && branch.isPresent() && commit.isPresent()
+                                                  ? Optional.of(new SourceRevision(repository.get(), branch.get(), commit.get()))
+                                                  : Optional.empty();
+        Optional<String> sourceUrl = optional("sourceUrl", submitOptions);
+        Optional<String> authorEmail = optional("authorEmail", submitOptions);
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 

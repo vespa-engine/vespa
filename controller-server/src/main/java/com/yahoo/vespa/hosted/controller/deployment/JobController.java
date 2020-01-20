@@ -372,7 +372,7 @@ public class JobController {
     /**
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
-    public ApplicationVersion submit(TenantAndApplicationId id, SourceRevision revision, String authorEmail,
+    public ApplicationVersion submit(TenantAndApplicationId id, Optional<SourceRevision> revision, Optional<String> authorEmail,
                                      Optional<String> sourceUrl, Optional<String> commit,
                                      long projectId, ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
@@ -380,14 +380,11 @@ public class JobController {
             long run = 1 + application.get().latestVersion()
                                       .map(latestVersion -> latestVersion.buildNumber().getAsLong())
                                       .orElse(0L);
-            if (applicationPackage.compileVersion().isPresent() && applicationPackage.buildTime().isPresent())
-                version.set(ApplicationVersion.from(revision, run, authorEmail,
-                                                    applicationPackage.compileVersion().get(),
-                                                    applicationPackage.buildTime().get(),
-                                                    sourceUrl,
-                                                    commit));
-            else
-                version.set(ApplicationVersion.from(revision, run, authorEmail));
+            version.set(ApplicationVersion.from(revision, run, authorEmail,
+                                                applicationPackage.compileVersion(),
+                                                applicationPackage.buildTime(),
+                                                sourceUrl,
+                                                commit));
 
             controller.applications().applicationStore().put(id.tenant(),
                                                              id.application(),

@@ -472,8 +472,8 @@ class JobControllerApiHandlerHelper {
      * @return Response with the new application version
      */
     static HttpResponse submitResponse(JobController jobController, String tenant, String application,
-                                       SourceRevision sourceRevision, String authorEmail, Optional<String> sourceUrl,
-                                       Optional<String> commit, long projectId,
+                                       Optional<SourceRevision> sourceRevision, Optional<String> authorEmail,
+                                       Optional<String> sourceUrl, Optional<String> commit, long projectId,
                                        ApplicationPackage applicationPackage, byte[] testPackage) {
         ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application),
                                                           sourceRevision,
