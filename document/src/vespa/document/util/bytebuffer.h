@@ -125,7 +125,7 @@ private:
     void incPosNoCheck(size_t pos) { _pos += pos; }
 
     const char * _buffer;
-    size_t       _len;
+    const size_t _len;
     size_t       _pos;
     vespalib::alloc::Alloc _ownedBuffer;
 };
