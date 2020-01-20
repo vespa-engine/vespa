@@ -47,7 +47,7 @@ class FilterTableLineEditor implements LineEditor {
 
     @Override
     public List<String> onComplete() {
-        return position == wantedRules.size() ? List.of() : wantedRules.subList(position, wantedRules.size());
+        return wantedRules.subList(position, wantedRules.size());
     }
 
     private static <T> int indexOf(List<T> list, T value, int startPos) {
