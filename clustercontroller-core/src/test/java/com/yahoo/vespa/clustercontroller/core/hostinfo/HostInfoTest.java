@@ -10,12 +10,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class HostInfoTest {
 
@@ -49,11 +52,21 @@ public class HostInfoTest {
         assertThat(storageNodeList.size(), is(2));
         assertThat(storageNodeList.get(0).getIndex(), is(0));
         List<Metrics.Metric> metrics = hostInfo.getMetrics().getMetrics();
-        assertThat(metrics.size(), is(2));
-        Metrics.Value value = metrics.get(0).getValue();
-        assertThat(value.getLast(), is(5095L));
+        assertThat(metrics.size(), is(4));
+        assertThat(metrics.get(0).getValue().getLast(), is(5095L));
         assertThat(metrics.get(0).getName(), equalTo("vds.datastored.alldisks.buckets"));
+        assertThat(metrics.get(3).getValue().getLast(), is(129L));
+        assertThat(metrics.get(3).getName(), equalTo("vds.datastored.bucket_space.buckets_total"));
         assertThat(hostInfo.getClusterStateVersionOrNull(), is(123));
+
+        assertThat(hostInfo.getMetrics()
+                        .getValueAt("vds.datastored.bucket_space.buckets_total", Map.of("bucketSpace", "default"))
+                        .map(Metrics.Value::getLast),
+                equalTo(Optional.of(129L)));
+        assertThat(hostInfo.getMetrics()
+                        .getValueAt("vds.datastored.bucket_space.buckets_total", Map.of("bucketSpace", "global"))
+                        .map(Metrics.Value::getLast),
+                equalTo(Optional.of(0L)));
     }
 
     @Test

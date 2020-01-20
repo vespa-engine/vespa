@@ -53,7 +53,7 @@ public class StateChangeTest extends FleetControllerTest {
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex);
         eventLog = new EventLog(timer, metricUpdater);
         ContentCluster cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution,
-                                                    options.minStorageNodesUp, options.minRatioOfStorageNodesUp);
+                                                    options.minStorageNodesUp, options.minRatioOfStorageNodesUp, true);
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
         DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
         StateChangeHandler stateGenerator = new StateChangeHandler(timer, eventLog, metricUpdater);

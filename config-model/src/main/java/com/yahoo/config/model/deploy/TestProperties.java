@@ -58,6 +58,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
+    @Override public boolean useBucketSpaceMetric() { return true; }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;

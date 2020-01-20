@@ -128,6 +128,9 @@ public class FleetControllerOptions implements Cloneable {
 
     public int maxDivergentNodesPrintedInTaskErrorMessages = 10;
 
+    // TODO: May be removed once rolled out everywhere.
+    public boolean determineBucketsFromBucketSpaceMetric = true;
+
     // TODO: Replace usage of this by usage where the nodes are explicitly passed (below)
     public FleetControllerOptions(String clusterName) {
         this.clusterName = clusterName;

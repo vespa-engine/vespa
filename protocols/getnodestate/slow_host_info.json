@@ -9,6 +9,40 @@
     "values":
     [
       {
+        "name":"vds.datastored.bucket_space.buckets_total",
+        "description":"Total number buckets present in the bucket space (ready + not ready)",
+        "values":
+        {
+          "average":0.0,
+          "sum":0.0,
+          "count":1,
+          "rate":0.016666,
+          "min":0,
+          "max":0,
+          "last":0
+        },
+        "dimensions":
+        {
+          "bucketSpace":"global"
+        }
+      },
+      {
+        "name": "vds.datastored.bucket_space.buckets_total",
+        "description": "Total number buckets present in the bucket space (ready + not ready)",
+        "values": {
+          "average": 129.0,
+          "sum": 129.0,
+          "count": 1,
+          "rate": 0.016666,
+          "min": 129,
+          "max": 129,
+          "last": 129
+        },
+        "dimensions": {
+          "bucketSpace": "default"
+        }
+      },
+      {
         "name":"vds.datastored.alldisks.buckets",
         "description":"buckets managed",
         "values":
