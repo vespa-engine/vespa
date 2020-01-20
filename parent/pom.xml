@@ -739,7 +739,7 @@
         <apache.httpcore.version>4.4.12</apache.httpcore.version>
         <asm.version>7.0</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.version>1.8.29</athenz.version>
+        <athenz.version>1.8.43</athenz.version>
         <aws.sdk.version>1.11.542</aws.sdk.version>
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
