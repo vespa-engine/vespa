@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.component.Version;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import java.util.OptionalLong;
  *
  * @author bratseth
  * @author mpolden
+ * @author jonmv
  */
 public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
@@ -39,24 +41,24 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     public ApplicationVersion(Optional<SourceRevision> source, OptionalLong buildNumber, Optional<String> authorEmail,
                                Optional<Version> compileVersion, Optional<Instant> buildTime, Optional<String> sourceUrl,
                                Optional<String> commit) {
-        Objects.requireNonNull(source, "source cannot be null");
-        Objects.requireNonNull(buildNumber, "buildNumber cannot be null");
-        Objects.requireNonNull(authorEmail, "author cannot be null");
-        if (source.isPresent() != buildNumber.isPresent()) {
-            throw new IllegalArgumentException("both buildNumber and source must be set together");
-        }
-        if (compileVersion.isPresent() != buildTime.isPresent()) {
-            throw new IllegalArgumentException("both compileVersion and buildTime must be set together");
-        }
-        if (buildNumber.isPresent() && buildNumber.getAsLong() <= 0) {
-            throw new IllegalArgumentException("buildNumber must be > 0");
-        }
-        if (authorEmail.isPresent() && ! authorEmail.get().matches("[^@]+@[^@]+")) {
+        if (buildNumber.isEmpty() && (   source.isPresent() || authorEmail.isPresent() || compileVersion.isPresent()
+                                      || buildTime.isPresent() || sourceUrl.isPresent() || commit.isPresent()))
+            throw new IllegalArgumentException("Build number must be present if any other attribute is");
+
+        if (buildNumber.isPresent() && buildNumber.getAsLong() <= 0)
+            throw new IllegalArgumentException("Build number must be > 0");
+
+        if (commit.isPresent() && commit.get().length() > 128)
+            throw new IllegalArgumentException("Commit may not be longer than 128 characters");
+
+        sourceUrl.map(URI::create);
+
+        if (authorEmail.isPresent() && ! authorEmail.get().matches("[^@]+@[^@]+"))
             throw new IllegalArgumentException("Invalid author email '" + authorEmail.get() + "'.");
-        }
-        if (compileVersion.isPresent() && compileVersion.get().equals(Version.emptyVersion)) {
+
+        if (compileVersion.isPresent() && compileVersion.get().equals(Version.emptyVersion))
             throw new IllegalArgumentException("The empty version is not a legal compile version.");
-        }
+
         this.source = source;
         this.buildNumber = buildNumber;
         this.authorEmail = authorEmail;
@@ -86,10 +88,10 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     }
 
     /** Creates an version from a completed build, an author email, and build meta data. */
-    public static ApplicationVersion from(SourceRevision source, long buildNumber, String authorEmail, Version compileVersion,
-                                          Instant buildTime, Optional<String> sourceUrl, Optional<String> commit) {
-        return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.of(authorEmail),
-                                      Optional.of(compileVersion), Optional.of(buildTime), sourceUrl, commit);
+    public static ApplicationVersion from(Optional<SourceRevision> source, long buildNumber, Optional<String> authorEmail,
+                                          Optional<Version> compileVersion, Optional<Instant> buildTime,
+                                          Optional<String> sourceUrl, Optional<String> commit) {
+        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail, compileVersion, buildTime, sourceUrl, commit);
     }
 
     /** Returns an unique identifier for this version or "unknown" if version is not known */
@@ -146,15 +148,15 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ApplicationVersion)) return false;
+        if ( ! (o instanceof ApplicationVersion)) return false;
         ApplicationVersion that = (ApplicationVersion) o;
-        return Objects.equals(source, that.source) &&
-               Objects.equals(buildNumber, that.buildNumber);
+        return    Objects.equals(buildNumber, that.buildNumber)
+               && Objects.equals(commit(), that.commit());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(source, buildNumber);
+        return Objects.hash(buildNumber, commit());
     }
 
     @Override
@@ -173,8 +175,8 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     @Override
     public int compareTo(ApplicationVersion o) {
-        if ( ! buildNumber().isPresent() || ! o.buildNumber().isPresent())
-            return Boolean.compare(buildNumber().isPresent(), o.buildNumber.isPresent()); // Application package hash sorts first
+        if (buildNumber().isEmpty() || o.buildNumber().isEmpty())
+            return Boolean.compare(buildNumber().isPresent(), o.buildNumber.isPresent()); // Unknown version sorts first
 
         return Long.compare(buildNumber().getAsLong(), o.buildNumber().getAsLong());
     }

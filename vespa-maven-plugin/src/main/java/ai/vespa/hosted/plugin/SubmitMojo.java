@@ -23,32 +23,32 @@ public class SubmitMojo extends AbstractVespaMojo {
     @Parameter(property = "applicationTestZip")
     private String applicationTestZip;
 
-    @Parameter(property = "authorEmail", required = true)
+    @Parameter(property = "authorEmail")
     private String authorEmail;
 
-    @Parameter(property = "repository", defaultValue = "unknown")
+    @Parameter(property = "repository")
     private String repository;
 
-    @Parameter(property = "branch", defaultValue = "unknown")
+    @Parameter(property = "branch")
     private String branch;
 
-    @Parameter(property = "commit", defaultValue = "unknown")
+    @Parameter(property = "commit")
     private String commit;
 
     @Parameter(property = "sourceUrl")
     private String sourceUrl;
 
     @Parameter(property = "projectId")
-    private Long projectId;
+    private String projectId;
 
     @Override
     public void doExecute() {
         applicationZip = firstNonBlank(applicationZip, projectPathOf("target", "application.zip"));
         applicationTestZip = firstNonBlank(applicationTestZip, projectPathOf("target", "application-test.zip"));
-        Submission submission = new Submission(repository, branch, commit, Optional.ofNullable(sourceUrl), authorEmail,
-                                               Paths.get(applicationZip),
-                                               Paths.get(applicationTestZip),
-                                               projectId == null ? OptionalLong.empty() : OptionalLong.of(projectId));
+        Submission submission = new Submission(optionalOf(repository), optionalOf(branch), optionalOf(commit),
+                                               optionalOf(sourceUrl), optionalOf(authorEmail),
+                                               Paths.get(applicationZip), Paths.get(applicationTestZip),
+                                               optionalOf(projectId, Long::parseLong));
 
         getLog().info(controller.submit(submission, id.tenant(), id.application()));
     }
