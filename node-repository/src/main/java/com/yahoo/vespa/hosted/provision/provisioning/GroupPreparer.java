@@ -65,9 +65,10 @@ public class GroupPreparer {
         boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                 .value();
+        // Do not in-place resize in dynamically provisioned zones
         boolean inPlaceResizeEnabled = enableInPlaceResize
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                .value();
+                .value() && !dynamicProvisioningEnabled;
 
         try (Mutex lock = nodeRepository.lock(application)) {
 
