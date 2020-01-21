@@ -203,11 +203,6 @@ public class Flags {
             "Takes effect on next deployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag FAIL_STARTING_NODE_ON_IP_MISMATCH = defineFeatureFlag(
-            "fail-starting-node-on-ip-mismatch", false,
-            "Whether node-admin should refuse to start container when there is an IP mismatch between the DNS and node-repository",
-            "Takes effect on next node creation (f.ex. node reboot or vespa version upgrade)");
-
     public static final UnboundBooleanFlag USE_CONFIG_SERVER_FOR_TESTER_API_CALLS = defineFeatureFlag(
             "use-config-server-for-tester-api-calls", false,
             "Whether controller should send requests to tester API through config server (if false) or tester endpoint (if true)",
