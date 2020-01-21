@@ -285,6 +285,15 @@ TEST("require that HNSW via NNS api mostly works") {
 #endif
 
 
+/**
+ * Before running the benchmark the ANN_SIFT1M data set must be downloaded and extracted:
+ *   wget ftp://ftp.irisa.fr/local/texmex/corpus/sift.tar.gz
+ *   tar -xf sift.tar.gz
+ *
+ * The benchmark program will load the data set from $HOME/sift if no directory is specified.
+ *
+ * More information about the dataset is found here: http://corpus-texmex.irisa.fr/.
+ */
 int main(int argc, char **argv) {
     TEST_MASTER.init(__FILE__);
     std::string sift_dir = ".";
