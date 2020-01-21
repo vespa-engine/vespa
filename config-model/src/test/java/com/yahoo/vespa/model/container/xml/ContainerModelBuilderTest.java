@@ -5,7 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -693,7 +693,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                     .properties(
                         new TestProperties()
                                 .setHostedVespa(true)
-                                .setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY"))))
+                                .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
                     .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
                     .build();
             createModel(root, state, null, clusterElem);
@@ -772,13 +772,13 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatProvidingTlsSecretOpensPort4443() {
+    public void requireThatProvidingEndpointCertificateSecretsOpensPort4443() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 nodesXml,
                 "</container>" );
 
-        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))).build();
         createModel(root, state, null, clusterElem);
         ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
 

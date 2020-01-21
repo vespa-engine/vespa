@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author andreer
  */
-public class TlsSecretsValidatorTest {
+public class EndpointCertificateSecretsValidatorTest {
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
@@ -43,21 +43,21 @@ public class TlsSecretsValidatorTest {
 
     @Test
     public void missing_certificate_fails_validation() throws Exception {
-        DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(TlsSecrets.MISSING));
+        DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(EndpointCertificateSecrets.MISSING));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
         exceptionRule.expect(CertificateNotReadyException.class);
         exceptionRule.expectMessage("TLS enabled, but could not retrieve certificate yet");
 
-        new TlsSecretsValidator().validate(model, deployState);
+        new EndpointCertificateSecretsValidator().validate(model, deployState);
     }
 
     @Test
     public void validation_succeeds_with_certificate() throws Exception {
-        DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(new TlsSecrets("cert", "key")));
+        DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(new EndpointCertificateSecrets("cert", "key")));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new TlsSecretsValidator().validate(model, deployState);
+        new EndpointCertificateSecretsValidator().validate(model, deployState);
     }
 
     @Test
@@ -65,10 +65,10 @@ public class TlsSecretsValidatorTest {
         DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.empty());
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new TlsSecretsValidator().validate(model, deployState);
+        new EndpointCertificateSecretsValidator().validate(model, deployState);
     }
 
-    private static DeployState deployState(String servicesXml, String deploymentXml, Optional<TlsSecrets> tlsSecrets) {
+    private static DeployState deployState(String servicesXml, String deploymentXml, Optional<EndpointCertificateSecrets> endpointCertificateSecretsSecrets) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .withDeploymentSpec(deploymentXml)
@@ -79,7 +79,7 @@ public class TlsSecretsValidatorTest {
                 .properties(
                         new TestProperties()
                                 .setHostedVespa(true)
-                                .setTlsSecrets(tlsSecrets));
+                                .setEndpointCertificateSecrets(endpointCertificateSecretsSecrets));
         final DeployState deployState = builder.build();
 
         assertTrue("Test must emulate a hosted deployment.", deployState.isHosted());
