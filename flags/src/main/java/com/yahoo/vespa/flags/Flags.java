@@ -220,6 +220,12 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID, HOSTNAME);
 
+    public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
+            "generate-l4-routing-config", false,
+            "Whether routing nodes should generate L4 routing config",
+            "Takes effect immediately",
+            ZONE_ID, HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
