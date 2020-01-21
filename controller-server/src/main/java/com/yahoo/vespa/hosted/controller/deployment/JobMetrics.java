@@ -57,7 +57,6 @@ public class JobMetrics {
             case error: return error;
             case aborted: return abort;
             case success: return success;
-            case running: throw new IllegalArgumentException("Not supposed to get this value");
             default: throw new IllegalArgumentException("Unexpected run status '" + status + "'");
         }
     }
