@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.Signatures;
@@ -68,7 +68,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
@@ -804,9 +803,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .forEach(globalEndpointUrls::add);
 
         // Per-cluster endpoints. These are backed by load balancers.
-        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
+        var routingPolicies = controller.applications().routingPolicies().get(instance.id()).values();
         for (var policy : routingPolicies) {
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
+            policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
                   .forEach(globalEndpointUrls::add);
@@ -929,10 +928,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
 
         // Per-cluster rotations
-        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
-        for (RoutingPolicy policy : routingPolicies) {
-            if (!policy.active()) continue;
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
+        var routingPolicies = controller.applications().routingPolicies().get(instance.id()).values();
+        for (var policy : routingPolicies) {
+            if (!policy.status().isActive()) continue;
+            policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
                   .forEach(globalRotationsArray::addString);
@@ -1043,11 +1042,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add endpoint(s) defined by routing policies
         var endpointArray = response.setArray("endpoints");
-        for (var policy : controller.applications().routingPolicies().get(deploymentId)) {
-            if (!policy.active()) continue;
+        for (var policy : controller.applications().routingPolicies().get(deploymentId).values()) {
+            if (!policy.status().isActive()) continue;
             Cursor endpointObject = endpointArray.addObject();
             Endpoint endpoint = policy.endpointIn(controller.system());
-            endpointObject.setString("cluster", policy.cluster().value());
+            endpointObject.setString("cluster", policy.id().cluster().value());
             endpointObject.setBool("tls", endpoint.tls());
             endpointObject.setString("url", endpoint.url().toString());
         }

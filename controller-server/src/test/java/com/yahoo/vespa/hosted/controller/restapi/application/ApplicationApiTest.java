@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -52,8 +51,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -1434,18 +1431,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
         app.submit(applicationPackage).deploy();
-        Set<RoutingPolicy> policies = Set.of(new RoutingPolicy(app.instanceId(),
-                                                 ClusterSpec.Id.from("default"),
-                                                 ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
-                                                 HostName.from("lb-0-canonical-name"),
-                                                 Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")), true),
-                                           // Inactive policy is not included
-                                           new RoutingPolicy(app.instanceId(),
-                                                             ClusterSpec.Id.from("deleted-cluster"),
-                                                             ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
-                                                             HostName.from("lb-1-canonical-name"),
-                                                             Optional.of("dns-zone-1"), Set.of(), false));
-        tester.controller().curator().writeRoutingPolicies(app.instanceId(), policies);
+        app.addRoutingPolicy(ZoneId.from(Environment.prod, RegionName.from("us-west-1")), true);
+        app.addRoutingPolicy(ZoneId.from(Environment.prod, RegionName.from("us-west-1")), false);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)

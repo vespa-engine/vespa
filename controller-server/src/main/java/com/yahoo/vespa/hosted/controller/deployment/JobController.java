@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
@@ -531,7 +531,7 @@ public class JobController {
         DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
         return controller.applications().getDeploymentEndpoints(testerId)
                          .stream().findAny()
-                         .or(() -> controller.applications().routingPolicies().get(testerId).stream()
+                         .or(() -> controller.applications().routingPolicies().get(testerId).values().stream()
                                              .findAny()
                                              .map(policy -> policy.endpointIn(controller.system()).url()));
     }

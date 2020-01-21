@@ -1,11 +1,10 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
@@ -24,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,20 +41,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -208,19 +204,8 @@ public class InternalStepRunnerTest {
         tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
-
-        tester.controller().curator().writeRoutingPolicies(app.instanceId(), Set.of(new RoutingPolicy(app.instanceId(),
-                                                                                                      ClusterSpec.Id.from("default"),
-                                                                                                      JobType.systemTest.zone(system()),
-                                                                                                      HostName.from("host"),
-                                                                                                      Optional.empty(),
-                                                                                                      emptySet(), true)));
-        tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Set.of(new RoutingPolicy(app.testerId().id(),
-                                                                                                         ClusterSpec.Id.from("default"),
-                                                                                                         JobType.systemTest.zone(system()),
-                                                                                                         HostName.from("host"),
-                                                                                                         Optional.empty(),
-                                                                                                         emptySet(), true)));
+        app.addRoutingPolicy(JobType.systemTest.zone(system()), true);
+        app.addTesterRoutingPolicy(JobType.systemTest.zone(system()), true);
         tester.runner().run();;
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));

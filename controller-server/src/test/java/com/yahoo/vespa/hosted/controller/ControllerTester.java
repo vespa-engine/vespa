@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
@@ -355,7 +355,6 @@ public final class ControllerTester {
         assertTrue(application.projectId().isPresent());
         return application;
     }
-
 
     public void deploy(ApplicationId id, ZoneId zone) {
         deploy(id, zone, new ApplicationPackage(new byte[0]));

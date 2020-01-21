@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableList;
@@ -59,7 +59,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
-import com.yahoo.vespa.hosted.controller.maintenance.RoutingPolicies;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicies;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
@@ -686,9 +686,9 @@ public class ApplicationController {
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + id, e);
         }
-        return routingPolicies.get(id).stream()
+        return routingPolicies.get(id).values().stream()
                               .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
-                              .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
+                              .collect(Collectors.toUnmodifiableMap(policy -> policy.id().cluster(),
                                                                     policy -> policy.endpointIn(controller.system()).url()));
     }
 

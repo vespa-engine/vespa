@@ -1,17 +1,13 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
-import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 

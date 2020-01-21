@@ -1,10 +1,12 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -26,9 +28,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.Status;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -38,6 +45,7 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,8 +65,8 @@ import static org.junit.Assert.assertTrue;
  *
  * References to this should be acquired through {@link DeploymentTester#newDeploymentContext}.
  *
- * Tester code that is not specific to deployments should be added to either {@link ControllerTester} or
- * {@link DeploymentTester} instead of this class.
+ * Tester code that is not specific to a single application's deployment context should be added to either
+ * {@link ControllerTester} or {@link DeploymentTester} instead of this class.
  *
  * @author mpolden
  * @author jonmv
@@ -194,6 +202,28 @@ public class DeploymentContext {
         tester.nameServiceDispatcher().run();
         assertTrue("All name service requests dispatched",
                    tester.controller().curator().readNameServiceQueue().requests().isEmpty());
+        return this;
+    }
+
+    /** Add a routing policy for this in given zone, with status set to active */
+    public DeploymentContext addRoutingPolicy(ZoneId zone, boolean active) {
+        return addRoutingPolicy(instanceId, zone, active);
+    }
+
+    /** Add a routing policy for tester instance of this in given zone, with status set to active */
+    public DeploymentContext addTesterRoutingPolicy(ZoneId zone, boolean active) {
+        return addRoutingPolicy(testerId.id(), zone, active);
+    }
+
+    private DeploymentContext addRoutingPolicy(ApplicationId instance, ZoneId zone, boolean active) {
+        var clusterId = "default" + (!active ? "-inactive" : "");
+        var id = new RoutingPolicyId(instance, ClusterSpec.Id.from(clusterId), zone);
+        var policies = new LinkedHashMap<>(tester.controller().curator().readRoutingPolicies(instance));
+        policies.put(id, new RoutingPolicy(id, HostName.from("lb-host"),
+                                           Optional.empty(),
+                                           Set.of(EndpointId.of("c0")),
+                                           new Status(active, GlobalRouting.DEFAULT_STATUS)));
+        tester.controller().curator().writeRoutingPolicies(instance, policies);
         return this;
     }
 
