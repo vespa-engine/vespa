@@ -177,6 +177,22 @@ public:
     small_string(const void * s, size_type sz) : _buf(_stack), _sz(sz) { init(s); }
     small_string(stringref s) : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(const std::string & s) : _buf(_stack), _sz(s.size()) { init(s.data()); }
+    small_string(small_string && rhs) noexcept
+        : _sz(rhs.size()), _bufferSize(rhs._bufferSize)
+    {
+        if (rhs.isAllocated()) {
+            _buf = rhs._buf;
+            rhs._buf = rhs._stack;
+            rhs._sz = 0;
+            rhs._bufferSize = sizeof(rhs._stack);
+            rhs._stack[0] = 0;
+        } else {
+            _buf = _stack;
+            memcpy(_stack, rhs._stack, sizeof(_stack));
+            rhs._sz = 0;
+            rhs._stack[0] = 0;
+        }
+    }
     small_string(const small_string & rhs) noexcept : _buf(_stack), _sz(rhs.size()) { init(rhs.data()); }
     small_string(const small_string & rhs, size_type pos, size_type sz=npos) noexcept
         : _buf(_stack), _sz(std::min(sz, rhs.size()-pos))
@@ -200,7 +216,25 @@ public:
             free(buffer());
         }
     }
-    small_string& operator= (const small_string &rhs) {
+    small_string& operator= (small_string && rhs) noexcept {
+        reset();
+        _sz = rhs._sz;
+        _bufferSize = rhs._bufferSize;
+        if (rhs.isAllocated()) {
+            _buf = rhs._buf;
+            rhs._buf = rhs._stack;
+            rhs._sz = 0;
+            rhs._bufferSize = sizeof(rhs._stack);
+            rhs._stack[0] = 0;
+        } else {
+            _buf = _stack;
+            memcpy(_stack, rhs._stack, sizeof(_stack));
+            rhs._sz = 0;
+            rhs._stack[0] = 0;
+        }
+        return *this;
+    }
+    small_string& operator= (const small_string &rhs) noexcept {
         return assign(rhs.data(), rhs.size());
     }
     small_string & operator= (stringref rhs) {
@@ -212,7 +246,7 @@ public:
     small_string& operator= (const std::string &rhs) {
         return operator= (stringref(rhs));
     }
-    void swap(small_string & rhs) {
+    void swap(small_string & rhs) noexcept {
         std::swap(*this, rhs);
     }
     operator std::string () const { return std::string(c_str(), size()); }
@@ -315,12 +349,12 @@ public:
         const char *found = (const char *)memchr(buf, c, _sz-start);
         return (found != NULL) ? (found - buffer()) : (size_type)npos;
     }
-    small_string & assign(const char * s) { return assign(s, strlen(s)); }
-    small_string & assign(const void * s, size_type sz);
-    small_string & assign(stringref s, size_type pos, size_type sz) {
+    small_string & assign(const char * s) noexcept { return assign(s, strlen(s)); }
+    small_string & assign(const void * s, size_type sz) noexcept;
+    small_string & assign(stringref s, size_type pos, size_type sz) noexcept {
         return assign(s.data() + pos, sz);
     }
-    small_string & assign(stringref rhs) {
+    small_string & assign(stringref rhs) noexcept {
         if (data() != rhs.data()) assign(rhs.data(), rhs.size());
         return *this;
     }

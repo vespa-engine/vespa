@@ -22,8 +22,8 @@ public:
     typedef typename HashTable::const_iterator const_iterator;
     typedef typename HashTable::insert_result insert_result;
 public:
-    hash_map(hash_map &&) = default;
-    hash_map & operator = (hash_map &&) = default;
+    hash_map(hash_map &&) noexcept = default;
+    hash_map & operator = (hash_map &&) noexcept = default;
     hash_map(const hash_map &) = default;
     hash_map & operator = (const hash_map &) = default;
     hash_map(size_t reserveSize=0);

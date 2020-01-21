@@ -74,7 +74,7 @@ Array<T> & Array<T>::operator =(const Array & rhs)
 }
 
 template <typename T>
-Array<T> & Array<T>::operator =(Array && rhs) {
+Array<T> & Array<T>::operator =(Array && rhs) noexcept {
     if (&rhs != this) {
         Array t(std::move(rhs));
         swap(t);
@@ -160,7 +160,7 @@ Array<T>::Array(Alloc && buf, size_t sz) :
 
 
 template <typename T>
-Array<T>::Array(Array &&rhs)
+Array<T>::Array(Array &&rhs) noexcept
     :  _array(std::move(rhs._array)),
        _sz(rhs._sz)
 {
