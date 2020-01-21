@@ -62,6 +62,6 @@ TEST(ByteBuffer_Test, test_SerializableArray)
     EXPECT_EQ(4ul, array.get(0).size());
     EXPECT_EQ(copy.get(0).size(), array.get(0).size());
     EXPECT_TRUE(copy.get(0).c_str() != array.get(0).c_str());
-    EXPECT_EQ(0, strcmp(copy.get(0).c_str(), array.get(0).c_str()));
+    EXPECT_EQ(0, strncmp(copy.get(0).c_str(), array.get(0).c_str(), 4));
     EXPECT_EQ(16ul, sizeof(SerializableArray::Entry));
 }
