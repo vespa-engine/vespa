@@ -84,9 +84,8 @@ ByteBuffer::ByteBuffer(const ByteBuffer& rhs) :
       _ownedBuffer()
 {
     if (rhs._len > 0 && rhs._buffer) {
-        Alloc buf = Alloc::alloc(rhs._len + 1);
+        Alloc buf = Alloc::alloc(rhs._len);
         memcpy(buf.get(), rhs._buffer, rhs._len);
-        static_cast<char *>(buf.get())[rhs._len] = 0;
         _ownedBuffer = std::move(buf);
         _buffer = static_cast<const char *>(_ownedBuffer.get());
     }
@@ -97,9 +96,8 @@ ByteBuffer::~ByteBuffer() = default;
 ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
 {
     if (buffer && len) {
-        Alloc newBuf = Alloc::alloc(len + 1);
+        Alloc newBuf = Alloc::alloc(len);
         memcpy(newBuf.get(), buffer, len);
-        static_cast<char *>(newBuf.get())[len] = 0;
         return new ByteBuffer(std::move(newBuf), len);
     } else {
         return nullptr;
