@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
@@ -39,7 +39,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useAdaptiveDispatch = false;
     private double defaultTermwiseLimit = 1.0;
-    private Optional<TlsSecrets> tlsSecrets = Optional.empty();
+    private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
 
 
     @Override public boolean multitenant() { return multitenant; }
@@ -56,7 +56,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
     @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
-    @Override public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
+    @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useBucketSpaceMetric() { return true; }
 
@@ -96,8 +96,8 @@ public class TestProperties implements ModelContext.Properties {
     }
 
 
-    public TestProperties setTlsSecrets(Optional<TlsSecrets> tlsSecrets) {
-        this.tlsSecrets = tlsSecrets;
+    public TestProperties setEndpointCertificateSecrets(Optional<EndpointCertificateSecrets> endpointCertificateSecrets) {
+        this.endpointCertificateSecrets = endpointCertificateSecrets;
         return this;
     }
 

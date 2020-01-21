@@ -27,8 +27,9 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -135,7 +136,10 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                false, // We may be bootstrapping, but we only know and care during prepare
                                                false, // Always false, assume no one uses it when activating
                                                flagSource,
-                                               new TlsSecretsKeys(curator, TenantRepository.getTenantPath(tenant), secretStore).readTlsSecretsKeyFromZookeeper(applicationId));
+                                               new EndpointCertificateMetadataStore(curator, TenantRepository.getTenantPath(tenant))
+                                                       .readEndpointCertificateMetadata(applicationId)
+                                                       .flatMap(new EndpointCertificateRetriever(secretStore)::readEndpointCertificateSecrets));
+
     }
 
 }
