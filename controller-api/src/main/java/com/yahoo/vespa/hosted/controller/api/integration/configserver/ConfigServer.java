@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.InputStream;
@@ -86,5 +87,9 @@ public interface ConfigServer {
 
     /** List all flag data for the given zone */
     List<FlagData> listFlagData(ZoneId zone);
+
+    /** Gets status for tester application */
+    // TODO: Remove default implementation when implemented in internal repo
+    default TesterCloud.Status getTesterStatus(DeploymentId deployment) { return TesterCloud.Status.SUCCESS; }
 
 }
