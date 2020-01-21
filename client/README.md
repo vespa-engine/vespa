@@ -1,12 +1,12 @@
 # vespa_query_dsl
 This lib is used for composing vespa YQL queries
 
-referece: https://docs.vespa.ai/documentation/reference/query-language-reference.html
+Reference: https://docs.vespa.ai/documentation/reference/query-language-reference.html
 
 # usage
-please refer the unit test:
+Please refer to the unit test:
 
-https://github.com/vespa-engine/vespa/blob/master/client/src/test/groovy/com/yahoo/vespa/client/dsl/QTest.groovy
+https://github.com/vespa-engine/vespa/tree/master/client/src/test/groovy/ai/vespa/client/dsl/QTest.groovy
 
 # todos
 - [ ] support `predicate` (https://docs.vespa.ai/documentation/predicate-fields.html)
