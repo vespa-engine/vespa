@@ -33,7 +33,7 @@ SerializableArray::SerializableArray()
 }
 
 SerializableArray::SerializableArray(EntryMap entries, ByteBuffer::UP buffer,
-                                     CompressionConfig::Type comp_type,uint32_t uncompressed_length)
+                                     CompressionConfig::Type comp_type, uint32_t uncompressed_length)
     : _entries(std::move(entries)),
       _owned(),
       _serializedCompression(comp_type)

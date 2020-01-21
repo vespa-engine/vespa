@@ -452,6 +452,17 @@ RoutableFactories60::GetDocumentMessageFactory::doEncode(const DocumentMessage &
     return true;
 }
 
+namespace {
+
+std::shared_ptr<document::Document>
+decodeDocument(const document::DocumentTypeRepo & repo, document::ByteBuffer & buf) {
+    vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
+    auto doc = std::make_shared<document::Document>(repo, stream);
+    buf.incPos(buf.getRemaining() - stream.size());
+    return doc;
+}
+
+}
 DocumentReply::UP
 RoutableFactories60::GetDocumentReplyFactory::doDecode(document::ByteBuffer &buf) const
 {
@@ -460,9 +471,7 @@ RoutableFactories60::GetDocumentReplyFactory::doDecode(document::ByteBuffer &buf
     bool hasDocument = decodeBoolean(buf);
     document::Document * document = nullptr;
     if (hasDocument) {
-        vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
-        auto doc = std::make_shared<document::Document>(_repo, stream);
-        buf.incPos(buf.getRemaining() - stream.size());
+        auto doc = decodeDocument(_repo, buf);
         document = doc.get();
         reply->setDocument(std::move(doc));
     }
@@ -522,9 +531,7 @@ RoutableFactories60::MapVisitorReplyFactory::doEncode(const DocumentReply &, ves
 
 void
 RoutableFactories60::PutDocumentMessageFactory::decodeInto(PutDocumentMessage & msg, document::ByteBuffer & buf) const {
-    vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
-    msg.setDocument(make_shared<document::Document>(_repo, stream));
-    buf.incPos(stream.rp());
+    msg.setDocument(decodeDocument(_repo, buf));
     msg.setTimestamp(static_cast<uint64_t>(decodeLong(buf)));
     decodeTasCondition(msg, buf);
 }
