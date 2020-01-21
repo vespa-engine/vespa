@@ -912,7 +912,7 @@ void
 DeserializedTensorDoc::setup(const DocumentTypeRepo &docTypeRepo, const vespalib::nbostream &blob)
 {
     vespalib::nbostream wrapStream(blob.peek(), blob.size());
-    _doc = std::make_unique<Document>(docTypeRepo, wrapStream, nullptr);
+    _doc = std::make_unique<Document>(docTypeRepo, wrapStream);
     _fieldValue = _doc->getValue(tensor_field_name);
 }
 

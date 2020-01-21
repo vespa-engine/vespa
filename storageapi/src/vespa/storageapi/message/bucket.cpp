@@ -3,6 +3,7 @@
 #include "bucket.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <ostream>
 #include <iterator>
@@ -319,7 +320,7 @@ ApplyBucketDiffCommand::Entry::print(
         << "), headerBlob(" << _headerBlob.size()
         << "), bodyBlob(" << _bodyBlob.size() << ")";
     if (_headerBlob.size() > 0) {
-        document::ByteBuffer buf(&_headerBlob[0],
+        vespalib::nbostream buf(&_headerBlob[0],
                                  _headerBlob.size());
         if (_repo) {
             document::Document doc(*_repo, buf);

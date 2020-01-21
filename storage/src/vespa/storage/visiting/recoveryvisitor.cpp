@@ -2,7 +2,7 @@
 
 
 #include "recoveryvisitor.h"
-
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -36,10 +36,9 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
 {
     vespalib::LockGuard guard(_mutex);
 
-    LOG(debug, "Visitor %s handling block of %zu documents.",
-               _id.c_str(), entries.size());
+    LOG(debug, "Visitor %s handling block of %zu documents.", _id.c_str(), entries.size());
 
-    documentapi::DocumentListMessage* cmd = NULL;
+    documentapi::DocumentListMessage* cmd = nullptr;
 
     {
         CommandMap::iterator iter = _activeCommands.find(bid);
@@ -71,7 +70,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
             }
         }
 
-        hitCounter.addHit(doc->getId(), doc->serialize()->getLength());
+        hitCounter.addHit(doc->getId(), doc->serialize().size());
 
         int64_t timestamp = doc->getLastModified();
         cmd->getDocuments().push_back(documentapi::DocumentListMessage::Entry(

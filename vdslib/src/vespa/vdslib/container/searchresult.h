@@ -2,10 +2,11 @@
 #pragma once
 
 #include <vespa/vespalib/util/memory.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vector>
 #include <map>
 
+namespace document { class ByteBuffer; }
+namespace vespalib { class GrowableByteBuffer; }
 namespace vdslib {
 
 typedef std::map<size_t, vespalib::MallocPtr> IntBlobMapT;
@@ -15,7 +16,7 @@ class AggregatorList : public IntBlobMapT
 public:
     void add(size_t id, const vespalib::MallocPtr & aggrBlob);
     void deserialize(document::ByteBuffer & buf);
-    void serialize(document::ByteBuffer & buf) const;
+    void serialize(vespalib::GrowableByteBuffer & buf) const;
     uint32_t getSerializedSize() const;
 };
 
@@ -31,7 +32,7 @@ public:
     size_t getSize(size_t index)      const { return _offsets[index+1] - _offsets[index]; }
     const void * getBuf(size_t index) const { return _blob.c_str() + _offsets[index]; }
     void deserialize(document::ByteBuffer & buf);
-    void serialize(document::ByteBuffer & buf) const;
+    void serialize(vespalib::GrowableByteBuffer & buf) const;
     uint32_t getSerializedSize() const { return (1 + getCount()) * sizeof(uint32_t) + getSize(); }
 private:
     typedef vespalib::MallocPtr Blob;
@@ -76,7 +77,7 @@ public:
     void sort();
 
     void deserialize(document::ByteBuffer & buf);
-    void serialize(document::ByteBuffer & buf) const;
+    void serialize(vespalib::GrowableByteBuffer & buf) const;
     uint32_t getSerializedSize() const;
 private:
     class Hit {

@@ -1501,7 +1501,7 @@ TEST_F(FileStorManagerTest, visiting) {
         for (uint32_t i=3; i<docCount; ++i) {
             auto reply = std::dynamic_pointer_cast<api::BucketInfoReply>(top.getReply(i));
             ASSERT_TRUE(reply.get());
-            ASSERT_TRUE(reply->getResult().success()) << reply->getResult().toString();
+            ASSERT_TRUE(reply->getResult().success()) << reply->getResult();
 
             info = reply->getBucketInfo();
         }

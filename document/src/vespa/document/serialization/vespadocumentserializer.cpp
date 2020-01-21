@@ -293,10 +293,10 @@ vespalib::ConstBufferRef
 compressStream(const CompressionConfig &config, nbostream &stream, vespalib::DataBuffer & compressed_data)
 {
     using vespalib::compression::compress;
-    vespalib::ConstBufferRef buf(stream.c_str(), stream.size());
+    vespalib::ConstBufferRef buf(stream.data(), stream.size());
     if (config.useCompression() && bigEnough(stream.size(), config)) {
         CompressionConfig::Type compressedType = compress(config,
-                                                          vespalib::ConstBufferRef(stream.c_str(), stream.size()),
+                                                          vespalib::ConstBufferRef(stream.data(), stream.size()),
                                                           compressed_data, false);
         if (compressedType != config.type ||
             ! compressionSufficient(config, stream.size(), compressed_data.getDataLen()))

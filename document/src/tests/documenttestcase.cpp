@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocman.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/repo/configbuilder.h>
@@ -9,6 +8,9 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/growablebytebuffer.h>
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/util/bytebuffer.h>
@@ -28,10 +30,14 @@ using namespace fieldvalue;
 
 TEST(DocumentTest, testSizeOf)
 {
+    EXPECT_EQ(24u, sizeof(std::vector<char>));
+    EXPECT_EQ(24u, sizeof(vespalib::alloc::Alloc));
+    EXPECT_EQ(40u, sizeof(ByteBuffer));
+    EXPECT_EQ(32u, sizeof(vespalib::GrowableByteBuffer));
     EXPECT_EQ(88ul, sizeof(IdString));
     EXPECT_EQ(104ul, sizeof(DocumentId));
-    EXPECT_EQ(208ul, sizeof(Document));
-    EXPECT_EQ(72ul, sizeof(StructFieldValue));
+    EXPECT_EQ(200ul, sizeof(Document));
+    EXPECT_EQ(64ul, sizeof(StructFieldValue));
     EXPECT_EQ(24ul, sizeof(StructuredFieldValue));
     EXPECT_EQ(64ul, sizeof(SerializableArray));
 }
@@ -63,7 +69,7 @@ TEST(DocumentTest, testFieldPath)
 class Handler : public fieldvalue::IteratorHandler {
 public:
     Handler();
-    ~Handler();
+    ~Handler() override;
     const std::string & getResult() const { return _result; }
 private:
     void onPrimitive(uint32_t, const Content&) override {
@@ -386,13 +392,13 @@ TEST(DocumentTest, testSimpleUsage)
     EXPECT_EQ(1, value.getValue(intF)->getAsInt());
     EXPECT_EQ(2, value.getValue(longF)->getAsInt());
 
-        // Serialize & equality
-    std::unique_ptr<ByteBuffer> buffer(value.serialize());
-    buffer->flip();
+    // Serialize & equality
+    nbostream buffer;
+    value.serialize(buffer);
     Document value2(*repo.getDocumentType("test"),
                     DocumentId("id::test:n=3:foo"));
     EXPECT_TRUE(value != value2);
-    value2.deserialize(repo, *buffer);
+    value2.deserialize(repo, buffer);
     EXPECT_TRUE(value2.hasValue(intF));
     EXPECT_EQ(value, value2);
     EXPECT_EQ(DocumentId("id:ns:test::1"), value2.getId());
@@ -400,15 +406,15 @@ TEST(DocumentTest, testSimpleUsage)
         // Various ways of removing
     {
             // By value
-        buffer->setPos(0);
-        value2.deserialize(repo, *buffer);
+        buffer.rp(0);
+        value2.deserialize(repo, buffer);
         value2.remove(intF);
         EXPECT_TRUE(!value2.hasValue(intF));
         EXPECT_EQ(size_t(1), value2.getSetFieldCount());
 
             // Clearing all
-        buffer->setPos(0);
-        value2.deserialize(repo, *buffer);
+        buffer.rp(0);
+        value2.deserialize(repo, buffer);
         value2.clear();
         EXPECT_TRUE(!value2.hasValue(intF));
         EXPECT_EQ(size_t(0), value2.getSetFieldCount());
@@ -561,29 +567,31 @@ TEST(DocumentTest, testReadSerializedFile)
     int fd = open(TEST_PATH("data/serializejava.dat").c_str(), O_RDONLY);
 
     size_t len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
+    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
     lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != (ssize_t)len) {
+    if (read(fd, buf.get(), len) != (ssize_t)len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
-    Document doc(repo, buf);
+    nbostream stream(buf.get(), len);
+    Document doc(repo, stream);
     verifyJavaDocument(doc);
 
-    std::unique_ptr<ByteBuffer> buf2 = doc.serialize();
-    buf2->flip();
+    nbostream buf2 = doc.serialize();
 
-    Document doc2(repo, *buf2);
+    Document doc2(repo, buf2);
     verifyJavaDocument(doc2);
 
-    EXPECT_EQ(len, buf2->getPos());
-    EXPECT_TRUE(memcmp(buf2->getBuffer(), buf.getBuffer(), buf2->getPos()) == 0);
+    EXPECT_TRUE(buf2.empty());
+    buf2.rp(0);
+    EXPECT_EQ(len, buf2.size());
+    EXPECT_TRUE(memcmp(buf2.peek(), buf.get(), buf2.size()) == 0);
 
     doc2.setValue("stringfield", StringFieldValue("hei"));
 
-    std::unique_ptr<ByteBuffer> buf3 = doc2.serialize();
-    EXPECT_TRUE(len != buf3->getPos());
+    nbostream buf3 = doc2.serialize();
+    EXPECT_TRUE(len != buf3.size());
 }
 
 TEST(DocumentTest, testReadSerializedFileCompressed)
@@ -595,14 +603,15 @@ TEST(DocumentTest, testReadSerializedFileCompressed)
     int fd = open(TEST_PATH("data/serializejava-compressed.dat").c_str(), O_RDONLY);
 
     int len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
+    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
     lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
+    if (read(fd, buf.get(), len) != len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
-    Document doc(repo, buf);
+    nbostream stream(buf.get(), len);
+    Document doc(repo, stream);
     verifyJavaDocument(doc);
 }
 
@@ -706,26 +715,25 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         // you can copy this current to new test for new version)
         {
             //doc.setCompression(CompressionConfig(CompressionConfig::NONE, 0, 0));
-            std::unique_ptr<ByteBuffer> buf = doc.serialize();
-            EXPECT_EQ(buf->getLength(), buf->getPos());
+            nbostream buf = doc.serialize();
             int fd = open(TEST_PATH("data/document-cpp-currentversion-uncompressed.dat").c_str(),
                           O_WRONLY | O_CREAT | O_TRUNC, 0644);
             EXPECT_TRUE(fd > 0);
-            size_t len = write(fd, buf->getBuffer(), buf->getPos());
-            EXPECT_EQ(buf->getPos(), len);
+            size_t len = write(fd, buf.peek(), buf.size());
+            EXPECT_EQ(buf.size(), len);
             close(fd);
         }
         {
             CompressionConfig oldCfg(doc.getType().getFieldsType().getCompressionConfig());
             CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
             const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
-            std::unique_ptr<ByteBuffer> buf = doc.serialize();
-            EXPECT_TRUE(buf->getPos() <= buf->getLength());
+            nbostream buf = doc.serialize();
+            EXPECT_TRUE(buf.size() <= buf.capacity());
             int fd = open(TEST_PATH("data/document-cpp-currentversion-lz4-9.dat").c_str(),
                           O_WRONLY | O_CREAT | O_TRUNC, 0644);
             EXPECT_TRUE(fd > 0);
-            size_t len = write(fd, buf->getBuffer(), buf->getPos());
-            EXPECT_EQ(buf->getPos(), len);
+            size_t len = write(fd, buf.peek(), buf.size());
+            EXPECT_EQ(buf.size(), len);
             close(fd);
             const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(oldCfg);
         }
@@ -745,14 +753,15 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         }
         int fd = open(tests[i]._dataFile.c_str(), O_RDONLY);
         int len = lseek(fd,0,SEEK_END);
-        ByteBuffer buf(len);
+        vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
         lseek(fd,0,SEEK_SET);
-	if (read(fd, buf.getBuffer(), len) != len) {
-            throw vespalib::Exception("read failed");
-	}
+        if (read(fd, buf.get(), len) != len) {
+                throw vespalib::Exception("read failed");
+        }
         close(fd);
 
-        Document doc(repo, buf);
+        nbostream stream(buf.get(), len);
+        Document doc(repo, stream);
 
         IntFieldValue intVal;
         EXPECT_TRUE(doc.getValue(doc.getField("intfield"), intVal));
@@ -805,27 +814,14 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         EXPECT_EQ(199, wset.get(StringFieldValue("Weighted 1")));
 
         // Check that serialization doesn't cause any problems.
-        std::unique_ptr<ByteBuffer> buf2 = doc.serialize();
-        buf2->flip();
+        nbostream buf2 = doc.serialize();
 
-        Document doc2(repo, *buf2);
+        Document doc2(repo, buf2);
     }
 }
 
 size_t getSerializedSize(const Document &doc) {
-    return doc.serialize()->getLength();
-}
-
-size_t getSerializedSizeHeader(const Document &doc) {
-    nbostream stream;
-    doc.serializeHeader(stream);
-    return stream.size();
-}
-
-size_t getSerializedSizeBody(const Document &doc) {
-    nbostream stream;
-    doc.serializeBody(stream);
-    return stream.size();
+    return doc.serialize().size();
 }
 
 TEST(DocumentTest, testGenerateSerializedFile)
@@ -864,30 +860,21 @@ TEST(DocumentTest, testGenerateSerializedFile)
     map.put(StringFieldValue("foo2"), StringFieldValue("bar2"));
     doc.setValue("mapfield", map);
 
-    std::unique_ptr<ByteBuffer> buf = doc.serialize();
+    nbostream buf = doc.serialize();
 
     const std::string serializedDir = TEST_PATH("../test/document/");
     int fd = open((serializedDir + "/serializecpp.dat").c_str(),
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
+    if (write(fd, buf.peek(), buf.size()) != (ssize_t)buf.size()) {
         throw vespalib::Exception("write failed");
     }
     close(fd);
 
-    ByteBuffer hBuf(getSerializedSizeHeader(doc));
+    vespalib::nbostream hBuf;
     doc.serializeHeader(hBuf);
     fd = open((serializedDir + "/serializecppsplit_header.dat").c_str(),
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, hBuf.getBuffer(), hBuf.getPos()) != (ssize_t)hBuf.getPos()) {
-        throw vespalib::Exception("write failed");
-    }
-    close(fd);
-
-    ByteBuffer bBuf(getSerializedSizeBody(doc));
-    doc.serializeBody(bBuf);
-    fd = open((serializedDir+ "/serializecppsplit_body.dat").c_str(),
-              O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, bBuf.getBuffer(), bBuf.getPos()) != (ssize_t)bBuf.getPos()) {
+    if (write(fd, hBuf.peek(), hBuf.size()) != (ssize_t)hBuf.size()) {
         throw vespalib::Exception("write failed");
     }
     close(fd);
@@ -895,62 +882,30 @@ TEST(DocumentTest, testGenerateSerializedFile)
     CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
     const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
 
-    ByteBuffer lz4buf(getSerializedSize(doc));
-
-    doc.serialize(lz4buf);
-    lz4buf.flip();
+    nbostream lz4buf = doc.serialize();
 
     fd = open((serializedDir + "/serializecpp-lz4-level9.dat").c_str(),
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, lz4buf.getBufferAtPos(), lz4buf.getRemaining()) != (ssize_t)lz4buf.getRemaining()) {
+    if (write(fd, lz4buf.data(), lz4buf.size()) != (ssize_t)lz4buf.size()) {
         throw vespalib::Exception("write failed");
     }
     close(fd);
-}
-
-TEST(DocumentTest, testGetURIFromSerialized)
-{
-    TestDocRepo test_repo;
-    Document doc(*test_repo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::1"));
-
-    {
-        std::unique_ptr<ByteBuffer> serialized = doc.serialize();
-        serialized->flip();
-
-        EXPECT_EQ(
-                vespalib::string("id:ns:testdoctype1::1"),
-                Document::getIdFromSerialized(*serialized).toString());
-
-        EXPECT_EQ(vespalib::string("testdoctype1"),
-                             Document::getDocTypeFromSerialized(
-                                     test_repo.getTypeRepo(),
-                                     *serialized)->getName());
-    }
-
-    {
-        std::unique_ptr<ByteBuffer> serialized = doc.serialize();
-        serialized->flip();
-
-        Document doc2(test_repo.getTypeRepo(), *serialized, false, NULL);
-        EXPECT_EQ(vespalib::string("id:ns:testdoctype1::1"), doc2.getId().toString());
-        EXPECT_EQ(vespalib::string("testdoctype1"), doc2.getType().getName());
-    }
 }
 
 TEST(DocumentTest, testBogusserialize)
 {
     TestDocRepo test_repo;
     try {
-        auto buf = std::make_unique<ByteBuffer>("aoifjweprjwoejr203r+2+4r823++!",100);
-        Document doc(test_repo.getTypeRepo(), *buf);
+        nbostream stream("aoifjweprjwoejr203r+2+4r823++!",100);
+        Document doc(test_repo.getTypeRepo(), stream);
         FAIL() << "Failed to throw exception deserializing bogus data";
     } catch (DeserializeException& e) {
         EXPECT_THAT(e.what(), HasSubstr("Unrecognized serialization version"));
     }
 
     try {
-        auto buf = std::make_unique<ByteBuffer>("",0);
-        Document doc(test_repo.getTypeRepo(), *buf);
+        nbostream stream("",0);
+        Document doc(test_repo.getTypeRepo(), stream);
         FAIL() << "Failed to throw exception deserializing empty buffer";
     } catch (DeserializeException& e) {
         EXPECT_THAT(e.what(), HasSubstr("Buffer out of bounds"));
@@ -967,24 +922,23 @@ TEST(DocumentTest, testCRC32)
     uint32_t crc = doc.calculateChecksum();
     EXPECT_EQ(3987392271u, crc);
 
-    std::unique_ptr<ByteBuffer> buf = doc.serialize();
-    buf->flip();
+    nbostream buf = doc.serialize();
 
     int pos = 30;
 
     // Corrupt serialization.
-    buf->getBuffer()[pos] ^= 72;
+    const_cast<char *>(buf.peek())[pos] ^= 72;
         // Create document. Byte corrupted above is in data area and
         // shouldn't fail deserialization.
     try {
-        Document doc2(test_repo.getTypeRepo(), *buf);
-        buf->setPos(0);
+        Document doc2(test_repo.getTypeRepo(), buf);
+        buf.rp(0);
         EXPECT_TRUE(crc != doc2.calculateChecksum());
     } catch (document::DeserializeException& e) {
         EXPECT_TRUE(false);
     }
         // Return original value and retry
-    buf->getBuffer()[pos] ^= 72;
+    const_cast<char *>(buf.peek())[pos] ^= 72;
 
     /// \todo TODO (was warning):  Cannot test for in memory representation altered, as there is no syntax for getting internal refs to data from document. Add test when this is added.
 }
@@ -1001,13 +955,12 @@ TEST(DocumentTest, testHasChanged)
         // Still changed after setting a value of course.
     EXPECT_TRUE(doc.hasChanged());
 
-    std::unique_ptr<ByteBuffer> buf = doc.serialize();
-    buf->flip();
-
+    nbostream buf;
+    doc.serialize(buf);
         // Setting a value in doc tags us changed.
     {
-        buf->setPos(0);
-        Document doc2(test_repo.getTypeRepo(), *buf);
+        buf.rp(0);
+        Document doc2(test_repo.getTypeRepo(), buf);
         EXPECT_TRUE(!doc2.hasChanged());
 
         doc2.set("headerval", 13);
@@ -1015,50 +968,21 @@ TEST(DocumentTest, testHasChanged)
     }
         // Overwriting a value in doc tags us changed.
     {
-        buf->setPos(0);
-        Document doc2(test_repo.getTypeRepo(), *buf);
+        buf.rp(0);
+        Document doc2(test_repo.getTypeRepo(), buf);
 
         doc2.set("hstringval", "bla bla bla bla bla");
         EXPECT_TRUE(doc2.hasChanged());
     }
         // Clearing value tags us changed.
     {
-        buf->setPos(0);
-        Document doc2(test_repo.getTypeRepo(), *buf);
+        buf.rp(0);
+        Document doc2(test_repo.getTypeRepo(), buf);
 
         doc2.clear();
         EXPECT_TRUE(doc2.hasChanged());
     }
         // Add more tests here when we allow non-const refs to internals
-}
-
-TEST(DocumentTest, testSplitSerialization)
-{
-    TestDocMan testDocMan;
-    Document::UP doc = testDocMan.createDocument();
-    doc->set("headerval", 50);
-
-    ByteBuffer buf(getSerializedSizeHeader(*doc));
-    doc->serializeHeader(buf);
-    buf.flip();
-
-    ByteBuffer buf2(getSerializedSizeBody(*doc));
-    doc->serializeBody(buf2);
-    buf2.flip();
-
-    EXPECT_EQ(size_t(65), buf.getLength());
-    EXPECT_EQ(size_t(73), buf2.getLength());
-
-    Document headerDoc(testDocMan.getTypeRepo(), buf);
-    EXPECT_TRUE(headerDoc.hasValue("headerval"));
-    EXPECT_TRUE(!headerDoc.hasValue("content"));
-
-    buf.setPos(0);
-    Document fullDoc(testDocMan.getTypeRepo(), buf, buf2);
-    EXPECT_TRUE(fullDoc.hasValue("headerval"));
-    EXPECT_TRUE(fullDoc.hasValue("content"));
-
-    EXPECT_EQ(*doc, fullDoc);
 }
 
 TEST(DocumentTest, testSliceSerialize)
@@ -1076,17 +1000,15 @@ TEST(DocumentTest, testSliceSerialize)
     val.add(RawFieldValue("hei der", 7));
     doc2->setValue(doc2->getField("rawarray"), val);
 
-    ByteBuffer buf(getSerializedSize(*doc) + getSerializedSize(*doc2));
-    doc->serialize(buf);
-    EXPECT_EQ(getSerializedSize(*doc), buf.getPos());
+    nbostream buf = doc->serialize();
+    EXPECT_EQ(getSerializedSize(*doc), buf.size());
     doc2->serialize(buf);
-    EXPECT_EQ(getSerializedSize(*doc) + getSerializedSize(*doc2), buf.getPos());
-    buf.flip();
+    EXPECT_EQ(getSerializedSize(*doc) + getSerializedSize(*doc2), buf.size());
 
     Document doc3(testDocMan.getTypeRepo(), buf);
-    EXPECT_EQ(getSerializedSize(*doc), buf.getPos());
+    EXPECT_EQ(getSerializedSize(*doc), buf.rp());
     Document doc4(testDocMan.getTypeRepo(), buf);
-    EXPECT_EQ(getSerializedSize(*doc) + getSerializedSize(*doc2), buf.getPos());
+    EXPECT_EQ(getSerializedSize(*doc) + getSerializedSize(*doc2), buf.rp());
 
     EXPECT_EQ(*doc, doc3);
     EXPECT_EQ(*doc2, doc4);
@@ -1102,21 +1024,19 @@ TEST(DocumentTest, testCompression)
 
     doc->setValue("hstringval", StringFieldValue(bigString));
 
-    std::unique_ptr<ByteBuffer> buf_uncompressed = doc->serialize();
-    buf_uncompressed->flip();
+    nbostream buf_uncompressed = doc->serialize();
 
     CompressionConfig oldCfg(doc->getType().getFieldsType().getCompressionConfig());
 
     CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
     const_cast<StructDataType &>(doc->getType().getFieldsType()).setCompressionConfig(newCfg);
-    std::unique_ptr<ByteBuffer> buf_lz4 = doc->serialize();
-    buf_lz4->flip();
+    nbostream buf_lz4 = doc->serialize();
 
     const_cast<StructDataType &>(doc->getType().getFieldsType()).setCompressionConfig(oldCfg);
 
-    EXPECT_TRUE(buf_lz4->getRemaining() < buf_uncompressed->getRemaining());
+    EXPECT_TRUE(buf_lz4.size() < buf_uncompressed.size());
 
-    Document doc_lz4(testDocMan.getTypeRepo(), *buf_lz4);
+    Document doc_lz4(testDocMan.getTypeRepo(), buf_lz4);
 
     EXPECT_EQ(*doc, doc_lz4);
 }
@@ -1136,10 +1056,10 @@ TEST(DocumentTest, testCompressionConfigured)
     for (int i = 0; i < 8; ++i) { bigString += bigString; }
 
     doc_uncompressed.setValue("stringfield", StringFieldValue(bigString));
-    std::unique_ptr<ByteBuffer> buf_uncompressed = doc_uncompressed.serialize();
-    buf_uncompressed->flip();
+    nbostream buf_uncompressed;
+    doc_uncompressed.serialize(buf_uncompressed);
 
-    size_t uncompressedSize = buf_uncompressed->getRemaining();
+    size_t uncompressedSize = buf_uncompressed.size();
 
     DocumenttypesConfigBuilderHelper builder2;
     builder2.document(43, "serializetest",
@@ -1151,22 +1071,22 @@ TEST(DocumentTest, testCompressionConfigured)
                                       9, 99, 0));
     DocumentTypeRepo repo2(builder2.config());
 
-    Document doc(repo2, *buf_uncompressed);
+    Document doc(repo2, buf_uncompressed);
 
-    std::unique_ptr<ByteBuffer> buf_compressed = doc.serialize();
-    buf_compressed->flip();
-    size_t compressedSize = buf_compressed->getRemaining();
+    nbostream buf_compressed;
+    doc.serialize(buf_compressed);
+    size_t compressedSize = buf_compressed.size();
 
     EXPECT_TRUE(compressedSize < uncompressedSize);
 
-    Document doc2(repo2, *buf_compressed);
+    Document doc2(repo2, buf_compressed);
 
-    std::unique_ptr<ByteBuffer> buf_compressed2 = doc2.serialize();
-    buf_compressed2->flip();
+    nbostream buf_compressed2;
+    doc2.serialize(buf_compressed2);
 
-    EXPECT_EQ(compressedSize, buf_compressed2->getRemaining());
+    EXPECT_EQ(compressedSize, buf_compressed2.size());
 
-    Document doc3(repo2, *buf_compressed2);
+    Document doc3(repo2, buf_compressed2);
 
     EXPECT_EQ(doc2, doc_uncompressed);
     EXPECT_EQ(doc2, doc3);
@@ -1198,59 +1118,31 @@ TEST(DocumentTest, testUnknownEntries)
     doc1.setValue(field3, IntFieldValue(3));
     doc1.setValue(field4, IntFieldValue(4));
 
-    uint32_t headerLen = getSerializedSizeHeader(doc1);
-    document::ByteBuffer header(headerLen);
-    doc1.serializeHeader(header);
-    header.flip();
-
-    uint32_t bodyLen = getSerializedSizeBody(doc1);
-    document::ByteBuffer body(bodyLen);
-    doc1.serializeBody(body);
-    body.flip();
-
-    uint32_t totalLen = getSerializedSize(doc1);
-    document::ByteBuffer total(totalLen);
-    doc1.serialize(total);
-    total.flip();
+    vespalib::nbostream os;
+    doc1.serialize(os);
 
     Document doc2;
-    doc2.deserialize(repo, total);
-
-    Document doc3;
-    doc3.deserializeHeader(repo, header);
-    doc3.deserializeBody(repo, body);
+    doc2.deserialize(repo, os);
 
     EXPECT_EQ(std::string(
         "<document documenttype=\"test\" documentid=\"id:ns:test::1\">\n"
         "<int3>3</int3>\n"
         "<int4>4</int4>\n"
         "</document>"), doc2.toXml());
-    EXPECT_EQ(std::string(
-        "<document documenttype=\"test\" documentid=\"id:ns:test::1\">\n"
-        "<int3>3</int3>\n"
-        "<int4>4</int4>\n"
-        "</document>"), doc3.toXml());
 
     EXPECT_EQ(3, doc2.getValue(field3)->getAsInt());
     EXPECT_EQ(4, doc2.getValue(field4)->getAsInt());
-    EXPECT_EQ(3, doc3.getValue(field3)->getAsInt());
-    EXPECT_EQ(4, doc3.getValue(field4)->getAsInt());
 
     // The fields are actually accessible as long as you ask with field of
     // correct type.
 
     EXPECT_TRUE(doc2.hasValue(field1));
     EXPECT_TRUE(doc2.hasValue(field2));
-    EXPECT_TRUE(doc3.hasValue(field1));
-    EXPECT_TRUE(doc3.hasValue(field2));
 
     EXPECT_EQ(1, doc2.getValue(field1)->getAsInt());
     EXPECT_EQ(2, doc2.getValue(field2)->getAsInt());
-    EXPECT_EQ(1, doc3.getValue(field1)->getAsInt());
-    EXPECT_EQ(2, doc3.getValue(field2)->getAsInt());
 
     EXPECT_EQ(size_t(2), doc2.getSetFieldCount());
-    EXPECT_EQ(size_t(2), doc3.getSetFieldCount());
 }
 
 TEST(DocumentTest, testAnnotationDeserialization)
@@ -1280,14 +1172,15 @@ TEST(DocumentTest, testAnnotationDeserialization)
 
     int fd = open(TEST_PATH("data/serializejavawithannotations.dat").c_str(), O_RDONLY);
     int len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
+    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(len);
     lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
+    if (read(fd, buf.get(), len) != len) {
         throw vespalib::Exception("read failed");
     }
     close(fd);
 
-    Document doc(repo, buf);
+    nbostream stream1(buf.get(), len);
+    Document doc(repo, stream1);
     StringFieldValue strVal;
     EXPECT_TRUE(doc.getValue(doc.getField("story"), strVal));
 
@@ -1324,14 +1217,6 @@ TEST(DocumentTest, testAnnotationDeserialization)
     LongFieldValue longVal;
     EXPECT_TRUE(doc.getValue(doc.getField("friend"), longVal));
     EXPECT_EQ((int64_t)2384LL, longVal.getAsLong());
-}
-
-TEST(DocumentTest, testGetSerializedSize)
-{
-    TestDocMan testDocMan;
-    Document::UP doc = testDocMan.createDocument();
-
-    EXPECT_EQ(getSerializedSize(*doc), doc->getSerializedSize());
 }
 
 TEST(DocumentTest, testDeserializeMultiple)

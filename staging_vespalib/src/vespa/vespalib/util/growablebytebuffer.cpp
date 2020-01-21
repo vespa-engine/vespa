@@ -27,7 +27,7 @@ GrowableByteBuffer::allocate(uint32_t len)
 }
 
 void
-GrowableByteBuffer::putBytes(const char* buffer, uint32_t length)
+GrowableByteBuffer::putBytes(const void * buffer, uint32_t length)
 {
     char* buf = allocate(length);
     memcpy(buf, buffer, length);

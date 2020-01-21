@@ -36,11 +36,8 @@ namespace api {
     class StorageReply;
 }
 
-class BucketMergeTest;
-class DiskInfo;
 struct FileStorManagerTest;
 class ReadBucketList;
-class ModifiedBucketCheckerThread;
 class BucketOwnershipNotifier;
 class AbortBucketOperationsCommand;
 

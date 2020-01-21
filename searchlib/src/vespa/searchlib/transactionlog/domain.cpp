@@ -282,7 +282,7 @@ void waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 void Domain::commit(const Packet & packet)
 {
     DomainPart::SP dp(_parts.rbegin()->second);
-    vespalib::nbostream_longlivedbuf is(packet.getHandle().c_str(), packet.getHandle().size());
+    vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
     if (dp->byteSize() > _domainPartSize) {

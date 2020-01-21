@@ -506,18 +506,11 @@ MergeHandler::fetchLocalData(
             assert(doc != 0);
             assertContainedInBucket(doc->getId(), bucket, idFactory);
             e._docName = doc->getId().toString();
-            {
-                vespalib::nbostream stream;
-                doc->serializeHeader(stream);
-                e._headerBlob.resize(stream.size());
-                memcpy(&e._headerBlob[0], stream.peek(), stream.size());
-            }
-            {
-                vespalib::nbostream stream;
-                doc->serializeBody(stream);
-                e._bodyBlob.resize(stream.size());
-                memcpy(&e._bodyBlob[0], stream.peek(), stream.size());
-            }
+            vespalib::nbostream stream;
+            doc->serialize(stream);
+            e._headerBlob.resize(stream.size());
+            memcpy(&e._headerBlob[0], stream.peek(), stream.size());
+            e._bodyBlob.clear();
         } else {
             const DocumentId* docId = docEntry.getDocumentId();
             assert(docId != 0);
@@ -556,11 +549,11 @@ MergeHandler::deserializeDiffDocument(
         const api::ApplyBucketDiffCommand::Entry& e,
         const document::DocumentTypeRepo& repo) const
 {
-    Document::UP doc(new Document);
-    using document::ByteBuffer;
-    ByteBuffer hbuf(&e._headerBlob[0], e._headerBlob.size());
+    auto doc = std::make_unique<Document>();
+    vespalib::nbostream hbuf(&e._headerBlob[0], e._headerBlob.size());
     if (e._bodyBlob.size() > 0) {
-        ByteBuffer bbuf(&e._bodyBlob[0], e._bodyBlob.size());
+        // TODO Remove this branch and add warning on error.
+        vespalib::nbostream bbuf(&e._bodyBlob[0], e._bodyBlob.size());
         doc->deserialize(repo, hbuf, bbuf);
     } else {
         doc->deserialize(repo, hbuf);

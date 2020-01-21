@@ -4,11 +4,7 @@
 
 namespace documentapi {
 
-QueryResultMessage::QueryResultMessage() :
-    VisitorMessage(),
-    _searchResult(),
-    _summary()
-{}
+QueryResultMessage::QueryResultMessage() = default;
 
 QueryResultMessage::QueryResultMessage(const vdslib::SearchResult & result, const vdslib::DocumentSummary & summary) :
     VisitorMessage(),
@@ -16,7 +12,7 @@ QueryResultMessage::QueryResultMessage(const vdslib::SearchResult & result, cons
     _summary(summary)
 {}
 
-QueryResultMessage::~QueryResultMessage() {}
+QueryResultMessage::~QueryResultMessage() = default;
 
 DocumentReply::UP
 QueryResultMessage::doCreateReply() const

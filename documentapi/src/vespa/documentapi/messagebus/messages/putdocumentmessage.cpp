@@ -21,12 +21,12 @@ PutDocumentMessage::PutDocumentMessage(document::Document::SP document) :
     setDocument(std::move(document));
 }
 
-PutDocumentMessage::~PutDocumentMessage() {}
+PutDocumentMessage::~PutDocumentMessage() = default;
 
 DocumentReply::UP
 PutDocumentMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new WriteDocumentReply(DocumentProtocol::REPLY_PUTDOCUMENT));
+    return std::make_unique<WriteDocumentReply>(DocumentProtocol::REPLY_PUTDOCUMENT);
 }
 
 bool

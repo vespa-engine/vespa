@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "searchresult.h"
+#include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/util/growablebytebuffer.h>
 #include <algorithm>
 
 namespace vdslib {
@@ -25,21 +27,21 @@ void AggregatorList::deserialize(document::ByteBuffer & buf)
     }
 }
 
-void AggregatorList::serialize(document::ByteBuffer & buf) const
+void AggregatorList::serialize(vespalib::GrowableByteBuffer & buf) const
 {
-    buf.putIntNetwork(size());
-    for (const_iterator it(begin()), mt(end()); it != mt; it++) {
-        buf.putIntNetwork(it->first);
-        buf.putIntNetwork(it->second.size());
-        buf.putBytes(it->second, it->second.size());
+    buf.putInt(size());
+    for (const auto & entry : *this) {
+        buf.putInt(entry.first);
+        buf.putInt(entry.second.size());
+        buf.putBytes(entry.second, entry.second.size());
     }
 }
 
 uint32_t AggregatorList::getSerializedSize() const
 {
     size_t sz(sizeof(uint32_t) * (1 + 2*size()));
-    for (const_iterator it(begin()), mt(end()); it != mt; it++) {
-        sz += it->second.size();
+    for (const auto & entry : *this) {
+        sz += entry.second.size();
     }
     return sz;
 }
@@ -51,7 +53,7 @@ BlobContainer::BlobContainer(size_t reserve) :
     _offsets.push_back(0);
 }
 
-BlobContainer::~BlobContainer() {}
+BlobContainer::~BlobContainer() = default;
 
 size_t BlobContainer::append(const void * v, size_t sz)
 {
@@ -84,11 +86,11 @@ void BlobContainer::deserialize(document::ByteBuffer & buf)
     buf.getBytes(_blob, getSize());
 }
 
-void BlobContainer::serialize(document::ByteBuffer & buf) const
+void BlobContainer::serialize(vespalib::GrowableByteBuffer & buf) const
 {
-    buf.putIntNetwork(getCount());
+    buf.putInt(getCount());
     for(size_t i(0), m(getCount()); i < m; i++) {
-        buf.putIntNetwork(getSize(i));
+        buf.putInt(getSize(i));
     }
     buf.putBytes(_blob, getSize());
 }
@@ -116,7 +118,7 @@ SearchResult::SearchResult(document::ByteBuffer & buf) :
     deserialize(buf);
 }
 
-SearchResult::~SearchResult() {}
+SearchResult::~SearchResult() = default;
 
 void SearchResult::deserialize(document::ByteBuffer & buf)
 {
@@ -143,26 +145,26 @@ void SearchResult::deserialize(document::ByteBuffer & buf)
     _groupingList.deserialize(buf);
 }
 
-void SearchResult::serialize(document::ByteBuffer & buf) const
+void SearchResult::serialize(vespalib::GrowableByteBuffer & buf) const
 {
-    buf.putIntNetwork(_totalHits);
+    buf.putInt(_totalHits);
     uint32_t hitCount = std::min(_hits.size(), _wantedHits);
-    buf.putIntNetwork(hitCount);
+    buf.putInt(hitCount);
     if (hitCount > 0) {
         uint32_t sz = getBufCount();
-        buf.putIntNetwork(sz);
+        buf.putInt(sz);
         for (size_t i(0), m(hitCount); i < m; i++) {
             const char * s(_hits[i].getDocId(_docIdBuffer->c_str()));
             buf.putBytes(s, strlen(s)+1);
         }
         for (size_t i(0), m(hitCount); i < m; i++) {
-            buf.putDoubleNetwork(_hits[i].getRank());
+            buf.putDouble(_hits[i].getRank());
         }
     }
     uint32_t sortCount = std::min(_sortBlob.getCount(), _wantedHits);
-    buf.putIntNetwork(sortCount);
+    buf.putInt(sortCount);
     for (size_t i(0); i < sortCount; i++) {
-        buf.putIntNetwork(_sortBlob.getSize(_hits[i].getIndex()));
+        buf.putInt(_sortBlob.getSize(_hits[i].getIndex()));
     }
     for (size_t i(0); i < sortCount; i++) {
         size_t sz;

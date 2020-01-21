@@ -27,10 +27,11 @@ private:
     DocumentId _id;
     StructFieldValue _fields;
 
-        // To avoid having to return another container object out of docblocks
-        // the meta data has been added to document. This will not be serialized
-        // with the document and really doesn't belong here!
+    // To avoid having to return another container object out of docblocks
+    // the meta data has been added to document. This will not be serialized
+    // with the document and really doesn't belong here!
     int64_t _lastModified;
+
 public:
     typedef std::unique_ptr<Document> UP;
     typedef std::shared_ptr<Document> SP;
@@ -42,13 +43,7 @@ public:
     Document();
     Document(const Document&);
     Document(const DataType &, DocumentId id);
-    Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, const DataType *anticipatedType = nullptr);
-    Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream, const DataType *anticipatedType = nullptr);
-    /**
-       Constructor to deserialize only document and type from a buffer. Only relevant if includeContent is false.
-    */
-    Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, bool includeContent, const DataType *anticipatedType);
-    Document(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer& body, const DataType *anticipatedType = nullptr);
+    Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
     ~Document() override;
 
     void setRepo(const DocumentTypeRepo & repo);
@@ -86,21 +81,6 @@ public:
 
     bool hasChanged() const override;
 
-    /**
-     * Returns a pointer to the Id of a serialized document, without performing
-     * the deserialization. buffer must point to the start position of the
-     * serialization.  If the buffer doesn't have enough data remaining to have
-     * a legal Id in it, method returns NULL.
-     */
-    static DocumentId getIdFromSerialized(ByteBuffer&);
-
-    /**
-     * Returns a pointer to the document type of a serialized header, without
-     * performing the deserialization. Buffer must point to the start position
-     * of the serialization.
-     */
-    static const DocumentType *getDocTypeFromSerialized(const DocumentTypeRepo&, ByteBuffer&);
-
     // FieldValue implementation.
     FieldValue& assign(const FieldValue&) override;
     int compare(const FieldValue& other) const override;
@@ -108,22 +88,12 @@ public:
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    // Specialized serialization functions
-    void serializeHeader(ByteBuffer& buffer) const;
+    // Specialized serialization functions, Only used for testing legacy stuff
     void serializeHeader(vespalib::nbostream& stream) const;
 
-    void serializeBody(ByteBuffer& buffer) const;
-    void serializeBody(vespalib::nbostream& stream) const;
-
-    /** Deserialize document contained in given bytebuffer. */
-    void deserialize(const DocumentTypeRepo& repo, ByteBuffer& data);
     void deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & os);
     /** Deserialize document contained in given bytebuffers. */
-    void deserialize(const DocumentTypeRepo& repo, ByteBuffer& body, ByteBuffer& header);
-    void deserializeHeader(const DocumentTypeRepo& repo, ByteBuffer& header);
-    void deserializeBody(const DocumentTypeRepo& repo, ByteBuffer& body);
-
-    size_t getSerializedSize() const;
+    void deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & body, vespalib::nbostream & header);
 
     /** Undo fieldvalue's toXml override for document. */
     std::string toXml() const { return toXml(""); }
@@ -137,18 +107,14 @@ public:
 
     void setFieldValue(const Field& field, FieldValue::UP data) override;
 private:
-    bool hasBodyField() const;
+    void deserializeHeader(const DocumentTypeRepo& repo, vespalib::nbostream & header);
+    void deserializeBody(const DocumentTypeRepo& repo, vespalib::nbostream & body);
     bool hasFieldValue(const Field& field) const override { return _fields.hasValue(field); }
     void removeFieldValue(const Field& field) override { _fields.remove(field); }
     FieldValue::UP getFieldValue(const Field& field) const override { return _fields.getValue(field); }
     bool getFieldValue(const Field& field, FieldValue& value) const override { return _fields.getValue(field, value); }
 
     StructuredIterator::UP getIterator(const Field* first) const override;
-
-    static void deserializeDocHeader(ByteBuffer& buffer, DocumentId& id);
-    static const DocumentType *deserializeDocHeaderAndType(
-            const DocumentTypeRepo& repo, ByteBuffer& buffer,
-            DocumentId& id, const DocumentType * docType);
 };
 
 }  // document

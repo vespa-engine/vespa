@@ -85,7 +85,7 @@ std::shared_ptr<document::Document> get_document(const protobuf::Document& src_d
                                                  const document::DocumentTypeRepo& type_repo)
 {
     if (!src_doc.payload().empty()) {
-        document::ByteBuffer doc_buf(src_doc.payload().data(), src_doc.payload().size());
+        vespalib::nbostream doc_buf(src_doc.payload().data(), src_doc.payload().size());
         return std::make_shared<document::Document>(type_repo, doc_buf);
     }
     return std::shared_ptr<document::Document>();

@@ -31,7 +31,7 @@ DocEntry *createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ss
         if (removed) {
             return new DocEntry(timestamp, storage::spi::REMOVE_ENTRY, doc->getId());
         } else {
-            ssize_t serializedSize = defaultSerializedSize >= 0 ? defaultSerializedSize : doc->getSerializedSize();
+            ssize_t serializedSize = defaultSerializedSize >= 0 ? defaultSerializedSize : doc->serialize().size();
             return new DocEntry(timestamp, storage::spi::NONE, std::move(doc), serializedSize);
         }
     } else {

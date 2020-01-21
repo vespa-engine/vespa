@@ -3,8 +3,7 @@
 #include "returncode.h"
 #include <ostream>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 ReturnCode::ReturnCode()
     : _result(OK),
@@ -14,58 +13,32 @@ ReturnCode::ReturnCode()
 ReturnCode::ReturnCode(const ReturnCode &) = default;
 ReturnCode & ReturnCode::operator = (const ReturnCode &) = default;
 ReturnCode & ReturnCode::operator = (ReturnCode &&) = default;
-ReturnCode::~ReturnCode() {}
+ReturnCode::~ReturnCode() = default;
 
 ReturnCode::ReturnCode(Result result, vespalib::stringref msg)
     : _result(result),
       _message(msg)
 {}
 
-ReturnCode::ReturnCode(const document::DocumentTypeRepo &repo,
-                       document::ByteBuffer& buffer)
-    : _result(OK),
-      _message()
-{
-    deserialize(repo, buffer);
-}
-
-void ReturnCode::
-onDeserialize(const document::DocumentTypeRepo &, document::ByteBuffer& buffer)
-{
-    int32_t result;
-    buffer.getInt(result);
-    _result = static_cast<Result>(result);
-    int32_t size;
-    buffer.getInt(size);
-    const char * p = buffer.getBufferAtPos();
-    buffer.incPos(size);
-    _message.assign(p, size);
-}
-
-void ReturnCode::onSerialize(document::ByteBuffer& buffer) const
-{
-    buffer.putInt(_result);
-    buffer.putInt(_message.size());
-    buffer.putBytes(_message.c_str(), _message.size());
-}
-
-size_t ReturnCode::getSerializedSize() const
-{
-    return 2 * sizeof(int32_t) + _message.size();
-}
-
-void
-ReturnCode::print(std::ostream& out, bool verbose,
-                  const std::string& indent) const
-{
-    (void) verbose; (void) indent;
-    out << "ReturnCode(" << ReturnCode::getResultString(getResult());
-    if (getMessage().size() > 0) out << ", " << getMessage();
-    out << ")";
-}
-
 vespalib::string ReturnCode::getResultString(Result result) {
     return documentapi::DocumentProtocol::getErrorName(result);
+}
+
+vespalib::string
+ReturnCode::toString() const {
+    vespalib::string ret = "ReturnCode(";
+    ret += getResultString(_result);
+    if ( ! _message.empty()) {
+        ret += ", ";
+        ret += _message;
+    }
+    ret += ")";
+    return ret;
+}
+
+std::ostream &
+operator << (std::ostream & os, const ReturnCode & returnCode) {
+    return os << returnCode.toString();
 }
 
 bool
@@ -173,5 +146,4 @@ ReturnCode::isBucketDisappearance() const
     }
 }
 
-} // api
-} // storage
+}

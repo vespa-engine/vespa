@@ -2,6 +2,7 @@
 
 #include "docentry.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <sstream>
 #include <cassert>
 
@@ -10,16 +11,13 @@ namespace storage::spi {
 DocEntry::DocEntry(Timestamp t, int metaFlags, DocumentUP doc)
     : _timestamp(t),
       _metaFlags(metaFlags),
-      _persistedDocumentSize(doc->getSerializedSize()),
+      _persistedDocumentSize(doc->serialize().size()),
       _size(_persistedDocumentSize + sizeof(DocEntry)),
       _documentId(),
       _document(std::move(doc))
 { }
 
-DocEntry::DocEntry(Timestamp t,
-         int metaFlags,
-         DocumentUP doc,
-         size_t serializedDocumentSize)
+DocEntry::DocEntry(Timestamp t, int metaFlags, DocumentUP doc, size_t serializedDocumentSize)
     : _timestamp(t),
       _metaFlags(metaFlags),
       _persistedDocumentSize(serializedDocumentSize),

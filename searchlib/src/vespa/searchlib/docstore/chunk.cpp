@@ -89,13 +89,13 @@ Chunk::getLid(uint32_t lid) const
         if (it->getLid() == lid) {
 #if 1
             uint32_t bLid(0), bLen(0);
-            vespalib::nbostream is(getData().c_str()+it->getOffset(), it->size());
+            vespalib::nbostream is(getData().data() + it->getOffset(), it->size());
             is >> bLid >> bLen;
             assert(bLid == lid);
             assert(bLen == it->netSize());
             assert((bLen + 2*sizeof(uint32_t)) == it->size());
 #endif
-            buf = vespalib::ConstBufferRef(getData().c_str() + it->getNetOffset(), it->netSize());
+            buf = vespalib::ConstBufferRef(getData().data() + it->getNetOffset(), it->netSize());
         }
     }
     return buf;

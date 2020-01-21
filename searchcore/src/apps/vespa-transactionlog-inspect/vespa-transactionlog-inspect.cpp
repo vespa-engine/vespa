@@ -298,7 +298,7 @@ public:
     {
     }
     virtual RPC::Result receive(const Packet &packet) override {
-        vespalib::nbostream_longlivedbuf handle(packet.getHandle().c_str(), packet.getHandle().size());
+        vespalib::nbostream_longlivedbuf handle(packet.getHandle().data(), packet.getHandle().size());
         try {
             while (handle.size() > 0) {
                 Packet::Entry entry;

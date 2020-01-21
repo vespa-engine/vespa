@@ -49,7 +49,7 @@ handleProgress(TlsReplayProgress &progress, SerialNum currentSerial)
 void
 handlePacket(PacketWrapper::SP wrap, EntryHandler entryHandler)
 {
-    vespalib::nbostream_longlivedbuf handle(wrap->packet.getHandle().c_str(), wrap->packet.getHandle().size());
+    vespalib::nbostream_longlivedbuf handle(wrap->packet.getHandle().data(), wrap->packet.getHandle().size());
     while (handle.size() > 0) {
         Packet::Entry entry;
         entry.deserialize(handle);

@@ -28,10 +28,9 @@ protected:
 
 namespace {
 template <typename T>
-void deserialize(const ByteBuffer &buffer, T &value, const FixedTypeRepo &repo)
+void deserialize(nbostream & stream, T &value, const FixedTypeRepo &repo)
 {
     uint16_t version = Document::getNewestSerializationVersion();
-    nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
     VespaDocumentDeserializer deserializer(repo, stream, version);
     deserializer.read(value);
 }
@@ -61,13 +60,11 @@ TEST_F(StructFieldValueTest, testEmptyStruct)
     StructFieldValue value(type);
 
     // Serialize & equality
-    std::unique_ptr<ByteBuffer> buffer(value.serialize());
-    buffer->flip();
+    nbostream buffer(value.serialize());
 
-    EXPECT_EQ(buffer->getLength(), buffer->getLimit());
     StructFieldValue value2(type);
 
-    deserialize(*buffer, value2, repo);
+    deserialize(buffer, value2, repo);
     EXPECT_TRUE(value == value2);
 }
 
@@ -101,14 +98,12 @@ TEST_F(StructFieldValueTest, testStruct)
     EXPECT_EQ(2, value.getValue(longF)->getAsInt());
 
         // Serialize & equality
-    std::unique_ptr<ByteBuffer> buffer(value.serialize());
-    buffer->flip();
+    nbostream buffer(value.serialize());
 
-    EXPECT_EQ(buffer->getLength(), buffer->getLimit());
     StructFieldValue value2(type);
     EXPECT_TRUE(value != value2);
 
-    deserialize(*buffer, value2, repo);
+    deserialize(buffer, value2, repo);
 
     EXPECT_TRUE(value2.hasValue(intF));
     EXPECT_EQ(value, value2);
@@ -116,15 +111,15 @@ TEST_F(StructFieldValueTest, testStruct)
     // Various ways of removing
     {
         // By value
-        buffer->setPos(0);
-        deserialize(*buffer, value2, repo);
+        buffer.rp(0);
+        deserialize(buffer, value2, repo);
         value2.remove(intF);
         EXPECT_TRUE(!value2.hasValue(intF));
         EXPECT_EQ(size_t(1), value2.getSetFieldCount());
 
         // Clearing all
-        buffer->setPos(0);
-        deserialize(*buffer, value2, repo);
+        buffer.rp(0);
+        deserialize(buffer, value2, repo);
         value2.clear();
         EXPECT_TRUE(!value2.hasValue(intF));
         EXPECT_EQ(size_t(0), value2.getSetFieldCount());

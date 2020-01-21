@@ -24,8 +24,7 @@ ProtocolSerialization4_2::ProtocolSerialization4_2(
 {
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::GetCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::GetCommand& msg) const
 {
     buf.putString(msg.getDocumentId().toString());
     putBucket(msg.getBucket(), buf);
@@ -41,14 +40,12 @@ ProtocolSerialization4_2::onDecodeGetCommand(BBuf& buf) const
     document::Bucket bucket = getBucket(buf);
     api::Timestamp beforeTimestamp(SH::getLong(buf));
     bool headerOnly(SH::getBoolean(buf));
-    api::GetCommand::UP msg(
-            new api::GetCommand(bucket, did, headerOnly ? "[header]" : "[all]", beforeTimestamp));
+    auto msg = std::make_unique<api::GetCommand>(bucket, did, headerOnly ? "[header]" : "[all]", beforeTimestamp);
     onDecodeCommand(buf, *msg);
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::RemoveCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::RemoveCommand& msg) const
 {
     buf.putString(msg.getDocumentId().toString());
     putBucket(msg.getBucket(), buf);
@@ -62,13 +59,12 @@ ProtocolSerialization4_2::onDecodeRemoveCommand(BBuf& buf) const
     document::DocumentId did(SH::getString(buf));
     document::Bucket bucket = getBucket(buf);
     api::Timestamp timestamp(SH::getLong(buf));
-    api::RemoveCommand::UP msg(new api::RemoveCommand(bucket, did, timestamp));
+    auto msg = std::make_unique<api::RemoveCommand>(bucket, did, timestamp);
     onDecodeBucketInfoCommand(buf, *msg);
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::RevertCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::RevertCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     buf.putInt(msg.getRevertTokens().size());
@@ -86,13 +82,12 @@ ProtocolSerialization4_2::onDecodeRevertCommand(BBuf& buf) const
     for (uint32_t i=0, n=tokens.size(); i<n; ++i) {
         tokens[i] = SH::getLong(buf);
     }
-    api::RevertCommand::UP msg(new api::RevertCommand(bucket, tokens));
+    auto msg = std::make_unique<api::RevertCommand>(bucket, tokens);
     onDecodeBucketInfoCommand(buf, *msg);
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::CreateBucketCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::CreateBucketCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     onEncodeBucketInfoCommand(buf, msg);
@@ -102,13 +97,12 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeCreateBucketCommand(BBuf& buf) const
 {
     document::Bucket bucket = getBucket(buf);
-    api::CreateBucketCommand::UP msg(new api::CreateBucketCommand(bucket));
+    auto msg = std::make_unique<api::CreateBucketCommand>(bucket);
     onDecodeBucketInfoCommand(buf, *msg);
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::MergeBucketCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::MergeBucketCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     const std::vector<api::MergeBucketCommand::Node>& nodes(msg.getNodes());
@@ -135,14 +129,12 @@ ProtocolSerialization4_2::onDecodeMergeBucketCommand(BBuf& buf) const
         nodes.push_back(Node(index, sourceOnly));
     }
     api::Timestamp timestamp(SH::getLong(buf));
-    api::MergeBucketCommand::UP msg(
-            new api::MergeBucketCommand(bucket, nodes, timestamp));
+    auto msg = std::make_unique<api::MergeBucketCommand>(bucket, nodes, timestamp);
     onDecodeCommand(buf, *msg);
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::GetBucketDiffCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::GetBucketDiffCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     const std::vector<api::MergeBucketCommand::Node>& nodes(msg.getNodes());
@@ -174,8 +166,7 @@ ProtocolSerialization4_2::onDecodeGetBucketDiffCommand(BBuf& buf) const
         nodes.push_back(Node(index, sourceOnly));
     }
     api::Timestamp timestamp = SH::getLong(buf);
-    api::GetBucketDiffCommand::UP msg(
-            new api::GetBucketDiffCommand(bucket, nodes, timestamp));
+    auto msg = std::make_unique<api::GetBucketDiffCommand>(bucket, nodes, timestamp);
     std::vector<api::GetBucketDiffCommand::Entry>& entries(msg->getDiff());
     uint32_t entryCount = SH::getInt(buf);
     if (entryCount > buf.getRemaining()) {
@@ -190,8 +181,7 @@ ProtocolSerialization4_2::onDecodeGetBucketDiffCommand(BBuf& buf) const
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::ApplyBucketDiffCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::ApplyBucketDiffCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     const std::vector<api::MergeBucketCommand::Node>& nodes(msg.getNodes());
@@ -201,18 +191,15 @@ void ProtocolSerialization4_2::onEncode(
         buf.putBoolean(nodes[i].sourceOnly);
     }
     buf.putInt(msg.getMaxBufferSize());
-    const std::vector<api::ApplyBucketDiffCommand::Entry>& entries(
-            msg.getDiff());
+    const std::vector<api::ApplyBucketDiffCommand::Entry>& entries(msg.getDiff());
     buf.putInt(entries.size());
     for (uint32_t i=0; i<entries.size(); ++i) {
         onEncodeDiffEntry(buf, entries[i]._entry);
         buf.putString(entries[i]._docName);
         buf.putInt(entries[i]._headerBlob.size());
-        buf.putBytes(&entries[i]._headerBlob[0],
-                     entries[i]._headerBlob.size());
+        buf.putBytes(&entries[i]._headerBlob[0], entries[i]._headerBlob.size());
         buf.putInt(entries[i]._bodyBlob.size());
-        buf.putBytes(&entries[i]._bodyBlob[0],
-                     entries[i]._bodyBlob.size());
+        buf.putBytes(&entries[i]._bodyBlob[0], entries[i]._bodyBlob.size());
     }
     onEncodeBucketInfoCommand(buf, msg);
 }
@@ -231,8 +218,7 @@ ProtocolSerialization4_2::onDecodeApplyBucketDiffCommand(BBuf& buf) const
         nodes.push_back(Node(index, sourceOnly));
     }
     uint32_t maxBufferSize(SH::getInt(buf));
-    api::ApplyBucketDiffCommand::UP msg(
-            new api::ApplyBucketDiffCommand(bucket, nodes, maxBufferSize));
+    auto msg = std::make_unique<api::ApplyBucketDiffCommand>(bucket, nodes, maxBufferSize);
     std::vector<api::ApplyBucketDiffCommand::Entry>& entries(msg->getDiff());
     uint32_t entryCount = SH::getInt(buf);
     if (entryCount > buf.getRemaining()) {
@@ -248,15 +234,13 @@ ProtocolSerialization4_2::onDecodeApplyBucketDiffCommand(BBuf& buf) const
             buf.incPos(headerSize);
         }
         entries[i]._headerBlob.resize(headerSize);
-        buf.getBytes(&entries[i]._headerBlob[0],
-                     entries[i]._headerBlob.size());
+        buf.getBytes(&entries[i]._headerBlob[0], entries[i]._headerBlob.size());
         uint32_t bodySize = SH::getInt(buf);
         if (bodySize > buf.getRemaining()) {
             buf.incPos(bodySize);
         }
         entries[i]._bodyBlob.resize(bodySize);
-        buf.getBytes(&entries[i]._bodyBlob[0],
-                     entries[i]._bodyBlob.size());
+        buf.getBytes(&entries[i]._bodyBlob[0], entries[i]._bodyBlob.size());
     }
     onDecodeBucketInfoCommand(buf, *msg);
     return msg;
@@ -274,11 +258,9 @@ ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::RequestBucketInfoReply
 }
 
 api::StorageReply::UP
-ProtocolSerialization4_2::onDecodeRequestBucketInfoReply(const SCmd& cmd,
-                                                         BBuf& buf) const
+ProtocolSerialization4_2::onDecodeRequestBucketInfoReply(const SCmd& cmd, BBuf& buf) const
 {
-    api::RequestBucketInfoReply::UP msg(new api::RequestBucketInfoReply(
-                static_cast<const api::RequestBucketInfoCommand&>(cmd)));
+    auto msg  = std::make_unique<api::RequestBucketInfoReply>(static_cast<const api::RequestBucketInfoCommand&>(cmd));
     api::RequestBucketInfoReply::EntryVector & entries(msg->getBucketInfo());
     uint32_t entryCount = SH::getInt(buf);
     if (entryCount > buf.getRemaining()) {
@@ -294,8 +276,7 @@ ProtocolSerialization4_2::onDecodeRequestBucketInfoReply(const SCmd& cmd,
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::NotifyBucketChangeCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::NotifyBucketChangeCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     putBucketInfo(msg.getBucketInfo(), buf);
@@ -307,30 +288,25 @@ ProtocolSerialization4_2::onDecodeNotifyBucketChangeCommand(BBuf& buf) const
 {
     document::Bucket bucket = getBucket(buf);
     api::BucketInfo info(getBucketInfo(buf));
-    api::NotifyBucketChangeCommand::UP msg(
-            new api::NotifyBucketChangeCommand(bucket, info));
+    auto msg = std::make_unique<api::NotifyBucketChangeCommand>(bucket, info);
     onDecodeCommand(buf, *msg);
-    return api::StorageCommand::UP(msg.release());
+    return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::NotifyBucketChangeReply& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::NotifyBucketChangeReply& msg) const
 {
     onEncodeReply(buf, msg);
 }
 
 api::StorageReply::UP
-ProtocolSerialization4_2::onDecodeNotifyBucketChangeReply(const SCmd& cmd,
-                                                          BBuf& buf) const
+ProtocolSerialization4_2::onDecodeNotifyBucketChangeReply(const SCmd& cmd,BBuf& buf) const
 {
-    api::NotifyBucketChangeReply::UP msg(new api::NotifyBucketChangeReply(
-                static_cast<const api::NotifyBucketChangeCommand&>(cmd)));
+    auto msg = std::make_unique<api::NotifyBucketChangeReply>(static_cast<const api::NotifyBucketChangeCommand&>(cmd));
     onDecodeReply(buf, *msg);
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::SplitBucketCommand& msg) const
+void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::SplitBucketCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     buf.putByte(msg.getMinSplitBits());
@@ -344,7 +320,7 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeSplitBucketCommand(BBuf& buf) const
 {
     document::Bucket bucket = getBucket(buf);
-    api::SplitBucketCommand::UP msg(new api::SplitBucketCommand(bucket));
+    auto msg = std::make_unique<api::SplitBucketCommand>(bucket);
     msg->setMinSplitBits(SH::getByte(buf));
     msg->setMaxSplitBits(SH::getByte(buf));
     msg->setMinByteSize(SH::getInt(buf));
@@ -353,30 +329,24 @@ ProtocolSerialization4_2::onDecodeSplitBucketCommand(BBuf& buf) const
     return msg;
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf&, const api::SetBucketStateCommand&) const
+void ProtocolSerialization4_2::onEncode(GBBuf&, const api::SetBucketStateCommand&) const
 {
-    throw vespalib::IllegalStateException("Unsupported serialization",
-                                          VESPA_STRLOC);
+    throw vespalib::IllegalStateException("Unsupported serialization", VESPA_STRLOC);
 }
 
 api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeSetBucketStateCommand(BBuf&) const
 {
-    throw vespalib::IllegalStateException("Unsupported deserialization",
-                                          VESPA_STRLOC);
+    throw vespalib::IllegalStateException("Unsupported deserialization", VESPA_STRLOC);
 }
 
-void ProtocolSerialization4_2::onEncode(
-        GBBuf&, const api::SetBucketStateReply&) const
+void ProtocolSerialization4_2::onEncode(GBBuf&, const api::SetBucketStateReply&) const
 {
-    throw vespalib::IllegalStateException("Unsupported serialization",
-                                          VESPA_STRLOC);
+    throw vespalib::IllegalStateException("Unsupported serialization", VESPA_STRLOC);
 }
 
 api::StorageReply::UP
-ProtocolSerialization4_2::onDecodeSetBucketStateReply(const SCmd&,
-                                                      BBuf&) const
+ProtocolSerialization4_2::onDecodeSetBucketStateReply(const SCmd&, BBuf&) const
 {
     throw vespalib::IllegalStateException("Unsupported deserialization", VESPA_STRLOC);
 }
@@ -404,11 +374,7 @@ ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::CreateVisitorCommand& 
     buf.putBoolean(msg.getFieldSet() == "[header]");
     buf.putBoolean(msg.visitInconsistentBuckets());
     buf.putInt(vespalib::count_ms(msg.getQueueTimeout()));
-
-    uint32_t size = msg.getParameters().getSerializedSize();
-    char* docBuffer = buf.allocate(size);
-    document::ByteBuffer bbuf(docBuffer, size);
-    msg.getParameters().serialize(bbuf);
+    msg.getParameters().serialize(buf);
 
     onEncodeCommand(buf, msg);
 }
@@ -420,8 +386,7 @@ ProtocolSerialization4_2::onDecodeCreateVisitorCommand(BBuf& buf) const
     vespalib::stringref libraryName = SH::getString(buf);
     vespalib::stringref instanceId = SH::getString(buf);
     vespalib::stringref selection = SH::getString(buf);
-    api::CreateVisitorCommand::UP msg(
-            new api::CreateVisitorCommand(bucketSpace, libraryName, instanceId, selection));
+    auto msg = std::make_unique<api::CreateVisitorCommand>(bucketSpace, libraryName, instanceId, selection);
     msg->setVisitorCmdId(SH::getInt(buf));
     msg->setControlDestination(SH::getString(buf));
     msg->setDataDestination(SH::getString(buf));
@@ -450,7 +415,7 @@ ProtocolSerialization4_2::onDecodeCreateVisitorCommand(BBuf& buf) const
         msg->setVisitInconsistentBuckets();
     }
     msg->setQueueTimeout(std::chrono::milliseconds(SH::getInt(buf)));
-    msg->getParameters().deserialize(getTypeRepo(), buf);
+    msg->getParameters().deserialize(buf);
 
     onDecodeCommand(buf, *msg);
     msg->setVisitorDispatcherVersion(42);
@@ -458,8 +423,7 @@ ProtocolSerialization4_2::onDecodeCreateVisitorCommand(BBuf& buf) const
 }
 
 void
-ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::DestroyVisitorCommand& msg) const
+ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::DestroyVisitorCommand& msg) const
 {
     buf.putString(msg.getInstanceId());
     onEncodeCommand(buf, msg);
@@ -469,7 +433,7 @@ api::StorageCommand::UP
 ProtocolSerialization4_2::onDecodeDestroyVisitorCommand(BBuf& buf) const
 {
     vespalib::stringref instanceId = SH::getString(buf);
-    api::DestroyVisitorCommand::UP msg(new api::DestroyVisitorCommand(instanceId));
+    auto msg = std::make_unique<api::DestroyVisitorCommand>(instanceId);
     onDecodeCommand(buf, *msg);
     return msg;
 }
@@ -483,7 +447,7 @@ ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::DestroyVisitorReply& m
 api::StorageReply::UP
 ProtocolSerialization4_2::onDecodeDestroyVisitorReply(const SCmd& cmd, BBuf& buf) const
 {
-    api::DestroyVisitorReply::UP msg(new api::DestroyVisitorReply(static_cast<const api::DestroyVisitorCommand&>(cmd)));
+    auto msg = std::make_unique<api::DestroyVisitorReply>(static_cast<const api::DestroyVisitorCommand&>(cmd));
     onDecodeReply(buf, *msg);
     return msg;
 }
@@ -502,8 +466,7 @@ ProtocolSerialization4_2::onDecodeRemoveLocationCommand(BBuf& buf) const
     vespalib::stringref documentSelection = SH::getString(buf);
     document::Bucket bucket = getBucket(buf);
 
-    api::RemoveLocationCommand::UP msg;
-    msg.reset(new api::RemoveLocationCommand(documentSelection, bucket));
+    auto msg = std::make_unique<api::RemoveLocationCommand>(documentSelection, bucket);
     onDecodeCommand(buf, *msg);
     return msg;
 }
@@ -517,7 +480,7 @@ ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::RemoveLocationReply& m
 api::StorageReply::UP
 ProtocolSerialization4_2::onDecodeRemoveLocationReply(const SCmd& cmd, BBuf& buf) const
 {
-    api::RemoveLocationReply::UP msg(new api::RemoveLocationReply(static_cast<const api::RemoveLocationCommand&>(cmd)));
+    auto msg = std::make_unique<api::RemoveLocationReply>(static_cast<const api::RemoveLocationCommand&>(cmd));
     onDecodeBucketInfoReply(buf, *msg);
     return msg;
 }
@@ -525,15 +488,13 @@ ProtocolSerialization4_2::onDecodeRemoveLocationReply(const SCmd& cmd, BBuf& buf
 // Utility functions for serialization
 
 void
-ProtocolSerialization4_2::onEncodeBucketInfoCommand(
-            GBBuf& buf, const api::BucketInfoCommand& msg) const
+ProtocolSerialization4_2::onEncodeBucketInfoCommand(GBBuf& buf, const api::BucketInfoCommand& msg) const
 {
     onEncodeCommand(buf, msg);
 }
 
 void
-ProtocolSerialization4_2::onDecodeBucketInfoCommand(
-            BBuf& buf, api::BucketInfoCommand& msg) const
+ProtocolSerialization4_2::onDecodeBucketInfoCommand(BBuf& buf, api::BucketInfoCommand& msg) const
 {
     onDecodeCommand(buf, msg);
 }
@@ -547,8 +508,7 @@ ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::ReturnCode& rc) const
 }
 
 void
-ProtocolSerialization4_2::onEncodeDiffEntry(
-        GBBuf& buf, const api::GetBucketDiffCommand::Entry& entry) const
+ProtocolSerialization4_2::onEncodeDiffEntry(GBBuf& buf, const api::GetBucketDiffCommand::Entry& entry) const
 {
     buf.putLong(entry._timestamp);
     SH::putGlobalId(entry._gid, buf);
@@ -559,8 +519,7 @@ ProtocolSerialization4_2::onEncodeDiffEntry(
 }
 
 void
-ProtocolSerialization4_2::onDecodeDiffEntry(
-        BBuf& buf, api::GetBucketDiffCommand::Entry& entry) const
+ProtocolSerialization4_2::onDecodeDiffEntry(BBuf& buf, api::GetBucketDiffCommand::Entry& entry) const
 {
     entry._timestamp = SH::getLong(buf);
     entry._gid = SH::getGlobalId(buf);

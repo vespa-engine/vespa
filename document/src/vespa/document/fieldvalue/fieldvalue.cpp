@@ -35,22 +35,11 @@ void FieldValue::serialize(nbostream &stream) const {
     serializer.write(*this);
 }
 
-void FieldValue::serialize(ByteBuffer& buffer) const {
+nbostream
+FieldValue::serialize() const {
     nbostream stream;
     serialize(stream);
-    buffer.putBytes(stream.peek(), stream.size());
-}
-
-std::unique_ptr<ByteBuffer> FieldValue::serialize() const {
-    nbostream stream;
-    serialize(stream);
-
-    nbostream::Buffer buf;
-    stream.swap(buf);
-    size_t sz = buf.size();
-    auto bb = std::make_unique<ByteBuffer>(nbostream::Buffer::stealAlloc(std::move(buf)), sz);
-    bb->setPos(sz);
-    return bb;
+    return stream;
 }
 
 size_t
@@ -58,7 +47,7 @@ FieldValue::hash() const
 {
     vespalib::nbostream os;
     serialize(os);
-    return vespalib::hashValue(os.c_str(), os.size()) ;
+    return vespalib::hashValue(os.data(), os.size()) ;
 }
 
 bool

@@ -14,7 +14,7 @@ ReadBucketList::ReadBucketList(BucketSpace bucketSpace, spi::PartitionId partiti
       _partition(partition)
 { }
 
-ReadBucketList::~ReadBucketList() { }
+ReadBucketList::~ReadBucketList() = default;
 
 document::Bucket
 ReadBucketList::getBucket() const
@@ -38,7 +38,7 @@ ReadBucketListReply::ReadBucketListReply(const ReadBucketList& cmd)
       _partition(cmd.getPartition())
 { }
 
-ReadBucketListReply::~ReadBucketListReply() { }
+ReadBucketListReply::~ReadBucketListReply() = default;
 
 document::Bucket
 ReadBucketListReply::getBucket() const
@@ -66,7 +66,7 @@ ReadBucketInfo::ReadBucketInfo(const document::Bucket &bucket)
       _bucket(bucket)
 { }
 
-ReadBucketInfo::~ReadBucketInfo() { }
+ReadBucketInfo::~ReadBucketInfo() = default;
 
 void
 ReadBucketInfo::print(std::ostream& out, bool verbose, const std::string& indent) const
@@ -92,7 +92,7 @@ ReadBucketInfoReply::ReadBucketInfoReply(const ReadBucketInfo& cmd)
      _bucket(cmd.getBucket())
 { }
 
-ReadBucketInfoReply::~ReadBucketInfoReply() { }
+ReadBucketInfoReply::~ReadBucketInfoReply() = default;
 void
 ReadBucketInfoReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "ReadBucketInfoReply()";
@@ -117,7 +117,7 @@ RepairBucketCommand::RepairBucketCommand(const document::Bucket &bucket, uint16_
     setPriority(LOW);
 }
 
-RepairBucketCommand::~RepairBucketCommand() { }
+RepairBucketCommand::~RepairBucketCommand() = default;
 
 void
 RepairBucketCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
@@ -153,7 +153,7 @@ RepairBucketReply::RepairBucketReply(const RepairBucketCommand& cmd, const api::
       _altered(false)
 { }
 
-RepairBucketReply::~RepairBucketReply() { }
+RepairBucketReply::~RepairBucketReply() = default;
 
 void
 RepairBucketReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
@@ -180,7 +180,7 @@ BucketDiskMoveCommand::BucketDiskMoveCommand(const document::Bucket &bucket,
     setPriority(LOW);
 }
 
-BucketDiskMoveCommand::~BucketDiskMoveCommand() { }
+BucketDiskMoveCommand::~BucketDiskMoveCommand() = default;
 
 void
 BucketDiskMoveCommand::setBucketId(const document::BucketId& id)
@@ -208,14 +208,13 @@ BucketDiskMoveReply::BucketDiskMoveReply(const BucketDiskMoveCommand& cmd,
       _dstDisk(cmd.getDstDisk())
 { }
 
-BucketDiskMoveReply::~BucketDiskMoveReply() { }
+BucketDiskMoveReply::~BucketDiskMoveReply() = default;
 
 void
 BucketDiskMoveReply::print(std::ostream& out, bool, const std::string&) const
 {
     out << "BucketDiskMoveReply(" << _bucket.getBucketId() << ", source " << _srcDisk
-        << ", target " << _dstDisk << ", " << _bucketInfo << ", "
-        << getResult() << ")";
+        << ", target " << _dstDisk << ", " << _bucketInfo << ", " << getResult() << ")";
 }
 
 std::unique_ptr<api::StorageReply>
@@ -236,7 +235,7 @@ InternalBucketJoinCommand::InternalBucketJoinCommand(const document::Bucket &buc
                        // them higher than getting more bucket info lists.
 }
 
-InternalBucketJoinCommand::~InternalBucketJoinCommand() { }
+InternalBucketJoinCommand::~InternalBucketJoinCommand() = default;
 
 void
 InternalBucketJoinCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
@@ -255,7 +254,7 @@ InternalBucketJoinReply::InternalBucketJoinReply(const InternalBucketJoinCommand
       _bucketInfo(info)
 { }
 
-InternalBucketJoinReply::~InternalBucketJoinReply() { }
+InternalBucketJoinReply::~InternalBucketJoinReply() = default;
 
 void
 InternalBucketJoinReply::print(std::ostream& out, bool verbose, const std::string& indent) const

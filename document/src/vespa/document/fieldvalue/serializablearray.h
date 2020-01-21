@@ -26,7 +26,6 @@
 
 namespace document {
 
-class SerializableArrayIterator;
 class ByteBuffer;
 
 namespace serializablearray {
@@ -36,25 +35,6 @@ namespace serializablearray {
 class SerializableArray : public vespalib::Cloneable
 {
 public:
-        // Counts set during serialization, in order to provide metrics for how
-        // often we use cached version, and how often we compress.
-    struct Statistics {
-        uint64_t _usedCachedSerializationCount;
-        uint64_t _compressedDocumentCount;
-        uint64_t _compressionDidntHelpCount;
-        uint64_t _uncompressableCount;
-        uint64_t _serializedUncompressed;
-        uint64_t _inputWronglySerialized;
-
-        Statistics()
-            : _usedCachedSerializationCount(0),
-              _compressedDocumentCount(0),
-              _compressionDidntHelpCount(0),
-              _uncompressableCount(0),
-              _serializedUncompressed(0),
-              _inputWronglySerialized(0) {}
-    };
-
     /**
      * Contains the id of a field, the size and a buffer reference that is either
      * a relative offset to a common buffer, or the buffer itself it it is not.
@@ -98,12 +78,6 @@ public:
     static const uint32_t ReservedId = 100;
     static const uint32_t ReservedIdUpper = 128;
 
-
-private:
-    static Statistics _stats;
-
-public:
-    static Statistics& getStatistics() { return _stats; }
     using CP = vespalib::CloneablePtr<SerializableArray>;
     using UP = std::unique_ptr<SerializableArray>;
     using ByteBufferUP = std::unique_ptr<ByteBuffer>;
@@ -111,9 +85,9 @@ public:
     using CompressionInfo = vespalib::compression::CompressionInfo;
 
     SerializableArray();
-    virtual ~SerializableArray();
-
-    void swap(SerializableArray& other);
+    SerializableArray(EntryMap entries, ByteBufferUP buffer,
+                      CompressionConfig::Type comp_type, uint32_t uncompressed_length);
+    ~SerializableArray() override;
 
     /**
      * Stores a value in the array.
@@ -141,9 +115,6 @@ public:
     /** @return Returns true if the given ID is Set in the array. */
     bool has(int id) const;
 
-    /** @return Number of elements in array */
-    bool hasAnyElems() const { return !_entries.empty(); }
-
     /**
      * clears an attribute.
      *
@@ -156,16 +127,6 @@ public:
 
     CompressionConfig::Type getCompression() const { return _serializedCompression; }
     CompressionInfo getCompressionInfo() const;
-
-    /**
-     * Sets the serialized data that is the basis for this object's
-     * content. This is used by deserialization. Any existing entries
-     * are cleared.
-     */
-    void assign(EntryMap &entries,
-                ByteBufferUP buffer,
-                CompressionConfig::Type comp_type,
-                uint32_t uncompressed_length);
 
     bool empty() const { return _entries.empty(); }
 

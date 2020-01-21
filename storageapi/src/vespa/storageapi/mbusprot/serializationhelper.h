@@ -87,9 +87,9 @@ public:
         if (size == 0) {
             return document::Document::UP();
         } else {
-            document::ByteBuffer bbuf(buf.getBufferAtPos(), size);
+            vespalib::nbostream stream(buf.getBufferAtPos(), size);
             buf.incPos(size);
-            return document::Document::UP(new document::Document(repo, bbuf));
+            return std::make_unique<document::Document>(repo, stream);
         }
     }
 

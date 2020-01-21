@@ -36,7 +36,7 @@ private:
     void insert_tensor_in_properties(const vespalib::string& tensor_name, const Value& tensor_value) {
         vespalib::nbostream stream;
         DefaultTensorEngine::ref().encode(tensor_value, stream);
-        _props.add(tensor_name, vespalib::stringref(stream.c_str(), stream.size()));
+        _props.add(tensor_name, vespalib::stringref(stream.data(), stream.size()));
     }
 
 public:

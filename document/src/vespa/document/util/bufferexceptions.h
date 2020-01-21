@@ -15,13 +15,5 @@ public:
     VESPA_DEFINE_EXCEPTION_SPINE(BufferOutOfBoundsException)
 };
 
-class InputOutOfRangeException : public vespalib::IoException {
-public:
-    InputOutOfRangeException(const vespalib::string& msg,
-                             const vespalib::string& location = "");
-
-    VESPA_DEFINE_EXCEPTION_SPINE(InputOutOfRangeException)
-};
-
 }
 

@@ -24,12 +24,4 @@ public:
     VESPA_DEFINE_EXCEPTION_SPINE(DeserializeException)
 };
 
-class SerializeException : public vespalib::IoException {
-public:
-    SerializeException(const vespalib::string& msg, const vespalib::string& location = "");
-    SerializeException(const vespalib::string& msg, const vespalib::Exception& cause,
-                       const vespalib::string& location = "");
-    VESPA_DEFINE_EXCEPTION_SPINE(SerializeException)
-};
-
 }

@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitor.h"
-#include <climits>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/document/util/bytebuffer.h>
+#include <climits>
 
 using document::FixedBucketSpaces;
 
@@ -56,7 +59,7 @@ CreateVisitorMessage::~CreateVisitorMessage() = default;
 DocumentReply::UP
 CreateVisitorMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new CreateVisitorReply(DocumentProtocol::REPLY_CREATEVISITOR));
+    return std::make_unique<CreateVisitorReply>(DocumentProtocol::REPLY_CREATEVISITOR);
 }
 
 uint32_t
@@ -65,11 +68,7 @@ CreateVisitorMessage::getType() const
     return DocumentProtocol::MESSAGE_CREATEVISITOR;
 }
 
-DestroyVisitorMessage::DestroyVisitorMessage() :
-    DocumentMessage(),
-    _instanceId()
-{
-}
+DestroyVisitorMessage::DestroyVisitorMessage() = default;
 
 DestroyVisitorMessage::DestroyVisitorMessage(const string& instanceId) :
     DocumentMessage(),
@@ -77,13 +76,12 @@ DestroyVisitorMessage::DestroyVisitorMessage(const string& instanceId) :
 {
 }
 
-DestroyVisitorMessage::~DestroyVisitorMessage() {
-}
+DestroyVisitorMessage::~DestroyVisitorMessage() = default;
 
 DocumentReply::UP
 DestroyVisitorMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new DocumentReply(DocumentProtocol::REPLY_DESTROYVISITOR));
+    return std::make_unique<DocumentReply>(DocumentProtocol::REPLY_DESTROYVISITOR);
 }
 
 uint32_t
@@ -104,20 +102,13 @@ CreateVisitorReply::CreateVisitorReply(uint32_t type) :
 {
 }
 
-VisitorInfoMessage::VisitorInfoMessage() :
-    VisitorMessage(),
-    _finishedBuckets(),
-    _errorMessage()
-{
-}
-
-VisitorInfoMessage::~VisitorInfoMessage() {
-}
+VisitorInfoMessage::VisitorInfoMessage() = default;
+VisitorInfoMessage::~VisitorInfoMessage() = default;
 
 DocumentReply::UP
 VisitorInfoMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_VISITORINFO));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_VISITORINFO);
 }
 
 uint32_t
@@ -126,11 +117,7 @@ VisitorInfoMessage::getType() const
     return DocumentProtocol::MESSAGE_VISITORINFO;
 }
 
-MapVisitorMessage::MapVisitorMessage() :
-    _data()
-{
-    // empty
-}
+MapVisitorMessage::MapVisitorMessage() = default;
 
 uint32_t
 MapVisitorMessage::getApproxSize() const
@@ -141,7 +128,7 @@ MapVisitorMessage::getApproxSize() const
 DocumentReply::UP
 MapVisitorMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_MAPVISITOR));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_MAPVISITOR);
 }
 
 uint32_t MapVisitorMessage::getType() const
@@ -149,60 +136,37 @@ uint32_t MapVisitorMessage::getType() const
     return DocumentProtocol::MESSAGE_MAPVISITOR;
 }
 
-DocumentListMessage::Entry::Entry()
-{
-    // empty
-}
+DocumentListMessage::Entry::Entry() = default;
 
-DocumentListMessage::Entry::Entry(int64_t timestamp,
-                                  document::Document::SP doc,
-                                  bool removeEntry) :
+DocumentListMessage::Entry::Entry(int64_t timestamp, document::Document::SP doc, bool removeEntry) :
     _timestamp(timestamp),
-    _document(doc),
+    _document(std::move(doc)),
     _removeEntry(removeEntry)
-{
-    // empty
-}
+{ }
 
-DocumentListMessage::Entry::Entry(const Entry& other) :
-    _timestamp(other._timestamp),
-    _document(other._document),
-    _removeEntry(other._removeEntry)
-{
-    // empty
-}
+DocumentListMessage::Entry::Entry(const Entry& other) = default;
 
-DocumentListMessage::Entry::Entry(const document::DocumentTypeRepo &repo,
-                                  document::ByteBuffer& buf)
+DocumentListMessage::Entry::Entry(const document::DocumentTypeRepo &repo, document::ByteBuffer& buf)
 {
     buf.getLongNetwork(_timestamp);
-    _document.reset(new document::Document(repo, buf));
+    vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
+    _document = std::make_unique<document::Document>(repo, stream);
+    buf.incPos(buf.getRemaining() - stream.size());
     uint8_t b;
     buf.getByte(b);
     _removeEntry = b>0;
 }
 
 void
-DocumentListMessage::Entry::serialize(document::ByteBuffer& buf) const
+DocumentListMessage::Entry::serialize(vespalib::GrowableByteBuffer& buf) const
 {
-    buf.putLongNetwork(_timestamp);
-    _document->serialize(buf);
+    buf.putLong(_timestamp);
+    vespalib::nbostream nbo = _document->serialize();
+    buf.putBytes(nbo.data(), nbo.size());
     buf.putByte(_removeEntry ? 1 : 0);
 }
 
-uint32_t
-DocumentListMessage::Entry::getSerializedSize() const
-{
-    return sizeof(int64_t) + sizeof(uint8_t)
-        + _document->serialize()->getLength();
-}
-
-DocumentListMessage::DocumentListMessage() :
-    _bucketId(),
-    _documents()
-{
-    // empty
-}
+DocumentListMessage::DocumentListMessage() = default;
 
 DocumentListMessage::DocumentListMessage(document::BucketId bid) :
     _bucketId(bid),
@@ -214,7 +178,7 @@ DocumentListMessage::DocumentListMessage(document::BucketId bid) :
 DocumentReply::UP
 DocumentListMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_DOCUMENTLIST));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_DOCUMENTLIST);
 }
 
 uint32_t
