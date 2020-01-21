@@ -128,7 +128,8 @@ void ByteBuffer::getNumericNetwork(int16_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        uint16_t val = *reinterpret_cast<const uint16_t *>(getBufferAtPos());
+        uint16_t val;
+        memcpy(&val, getBufferAtPos(), sizeof(val));
         v = ntohs(val);
         incPosNoCheck(sizeof(v));
     }
@@ -138,7 +139,8 @@ void ByteBuffer::getNumericNetwork(int32_t & v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        uint32_t val = *reinterpret_cast<const uint32_t *>(getBufferAtPos());
+        uint32_t val;
+        memcpy(&val, getBufferAtPos(), sizeof(val));
         v = ntohl(val);
         incPosNoCheck(sizeof(v));
     }
@@ -148,7 +150,7 @@ void ByteBuffer::getNumeric(int64_t& v) {
     if (__builtin_expect(getRemaining() < sizeof(v), 0)) {
         throwOutOfBounds(getRemaining(), sizeof(v));
     } else {
-        v = *reinterpret_cast<const int64_t *>(getBufferAtPos());
+        memcpy(&v, getBufferAtPos(), sizeof(v));
         incPosNoCheck(sizeof(v));
     }
 }

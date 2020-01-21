@@ -969,7 +969,7 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
         << "</td></tr>\n";
 
     out << "<tr><td>Current status</td><td>"
-        << _result.toString() << "</td></tr>\n";
+        << _result << "</td></tr>\n";
 
     out << "<tr><td>Failed</td><td>" << (failed() ? "true" : "false")
         << "</td></tr>\n";

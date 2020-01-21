@@ -81,7 +81,7 @@ StatBucketOperation::onReceive(DistributorMessageSender& sender, const std::shar
         if (myreply.getResult().getResult() == api::ReturnCode::OK) {
             ost << "\tBucket information from node " << found->second << ":\n" << myreply.getResults() << "\n\n";
         } else {
-            ost << "\tBucket information retrieval failed on node " << found->second << ": " << myreply.getResult().toString() << "\n\n";
+            ost << "\tBucket information retrieval failed on node " << found->second << ": " << myreply.getResult() << "\n\n";
         }
         _results[found->second] = ost.str();
 

@@ -105,4 +105,6 @@ public:
     vespalib::string toString() const;
 };
 
+std::ostream & operator << (std::ostream & os, const ReturnCode & returnCode);
+
 }

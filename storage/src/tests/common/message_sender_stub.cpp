@@ -36,7 +36,7 @@ MessageSenderStub::dumpMessage(const api::StorageMessage& msg, bool includeAddre
         ost << " => " << msg.getAddress()->getIndex();
     }
     if (verbose && msg.getType().isReply()) {
-        ost << " " << dynamic_cast<const api::StorageReply&>(msg).getResult().toString();
+        ost << " " << dynamic_cast<const api::StorageReply&>(msg).getResult();
     }
 
     return ost.str();

@@ -25,7 +25,7 @@ StorageReply::print(std::ostream& out, bool verbose,
                     const std::string& indent) const
 {
     (void) verbose; (void) indent;
-    out << "StorageReply(" << _type.getName() << ", " << _result.toString() << ")";
+    out << "StorageReply(" << _type.getName() << ", " << _result << ")";
 }
 
 }

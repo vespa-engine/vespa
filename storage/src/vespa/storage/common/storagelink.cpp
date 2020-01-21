@@ -142,7 +142,7 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
                 sendUp(reply);
             }
         } else {
-            ost << " Return code: " << static_cast<const StorageReply&>(*msg).getResult().toString();
+            ost << " Return code: " << static_cast<const StorageReply&>(*msg).getResult();
             LOGBP(warning, "%s", ost.str().c_str());
         }
     } else if (!_down->onDown(msg)) {
@@ -182,7 +182,7 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
                 sendDown(reply);
             }
         } else {
-            ost << " Return code: " << static_cast<const StorageReply&>(*msg).getResult().toString();
+            ost << " Return code: " << static_cast<const StorageReply&>(*msg).getResult();
             LOGBP(warning, "%s", ost.str().c_str());
         }
     } else if (!_up->onUp(msg)) {

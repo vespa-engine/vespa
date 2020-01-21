@@ -214,8 +214,7 @@ void
 BucketDiskMoveReply::print(std::ostream& out, bool, const std::string&) const
 {
     out << "BucketDiskMoveReply(" << _bucket.getBucketId() << ", source " << _srcDisk
-        << ", target " << _dstDisk << ", " << _bucketInfo << ", "
-        << getResult().toString() << ")";
+        << ", target " << _dstDisk << ", " << _bucketInfo << ", " << getResult() << ")";
 }
 
 std::unique_ptr<api::StorageReply>

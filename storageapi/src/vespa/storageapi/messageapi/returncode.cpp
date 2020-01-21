@@ -36,6 +36,11 @@ ReturnCode::toString() const {
     return ret;
 }
 
+std::ostream &
+operator << (std::ostream & os, const ReturnCode & returnCode) {
+    return os << returnCode.toString();
+}
+
 bool
 ReturnCode::isBusy() const
 {

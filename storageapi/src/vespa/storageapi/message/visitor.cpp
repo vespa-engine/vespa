@@ -181,7 +181,7 @@ VisitorInfoCommand::print(std::ostream& out, bool verbose, const std::string& in
     out << "VisitorInfoCommand(";
     if (_completed) { out << "completed"; }
     if (_error.failed()) {
-        out << _error.toString();
+        out << _error;
     }
     if (verbose) {
         out << ") : ";
