@@ -1,0 +1,7 @@
+search second {
+  document second {
+    field second_field type tensor(second[10]) {
+      indexing: summary | attribute
+    }
+  }
+}

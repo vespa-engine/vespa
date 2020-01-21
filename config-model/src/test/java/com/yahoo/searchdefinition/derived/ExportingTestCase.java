@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -136,6 +137,17 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testTensor() throws IOException, ParseException {
         assertCorrectDeriving("tensor");
+    }
+
+    @Test
+    public void testTensor2() throws IOException, ParseException {
+        String dir = "src/test/derived/tensor2/";
+        SearchBuilder builder = new SearchBuilder();
+        builder.importFile(dir + "first.sd");
+        builder.importFile(dir + "second.sd");
+        builder.build();
+        derive("tensor2", builder, builder.getSearch("second"));
+        assertCorrectConfigFiles("tensor2");
     }
 
 }
