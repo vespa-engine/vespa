@@ -12,18 +12,18 @@ import java.util.Objects;
  */
 public class Status {
 
-    private final boolean loadBalancerActive;
+    private final boolean active;
     private final GlobalRouting globalRouting;
 
     /** DO NOT USE. Public for serialization purposes */
-    public Status(boolean loadBalancerActive, GlobalRouting globalRouting) {
-        this.loadBalancerActive = loadBalancerActive;
+    public Status(boolean active, GlobalRouting globalRouting) {
+        this.active = active;
         this.globalRouting = Objects.requireNonNull(globalRouting, "globalRouting must be non-null");
     }
 
-    /** Returns whether the load balancer is active in node repository */
-    public boolean loadBalancerActive() {
-        return loadBalancerActive;
+    /** Returns whether this is considered active according to the load balancer status */
+    public boolean isActive() {
+        return active;
     }
 
     /** Return status of global routing */
@@ -33,7 +33,7 @@ public class Status {
 
     /** Returns a copy of this with global routing changed */
     public Status with(GlobalRouting globalRouting) {
-        return new Status(loadBalancerActive, globalRouting);
+        return new Status(active, globalRouting);
     }
 
     @Override
@@ -41,13 +41,13 @@ public class Status {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Status status = (Status) o;
-        return loadBalancerActive == status.loadBalancerActive &&
+        return active == status.active &&
                globalRouting.equals(status.globalRouting);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(loadBalancerActive, globalRouting);
+        return Objects.hash(active, globalRouting);
     }
 
 }

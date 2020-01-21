@@ -62,7 +62,7 @@ public class RoutingPolicySerializer {
             policy.endpoints().forEach(endpointId -> {
                 rotationArray.addString(endpointId.id());
             });
-            policyObject.setBool(loadBalancerActiveField, policy.status().loadBalancerActive());
+            policyObject.setBool(loadBalancerActiveField, policy.status().isActive());
             globalRoutingToSlime(policy.status().globalRouting(), policyObject.setObject(globalRoutingField));
         });
         return slime;

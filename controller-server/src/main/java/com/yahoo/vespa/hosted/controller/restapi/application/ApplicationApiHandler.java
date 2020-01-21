@@ -924,7 +924,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Per-cluster rotations
         var routingPolicies = controller.applications().routingPolicies().get(instance.id()).values();
         for (var policy : routingPolicies) {
-            if (!policy.status().loadBalancerActive()) continue;
+            if (!policy.status().isActive()) continue;
             policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
@@ -1037,7 +1037,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Add endpoint(s) defined by routing policies
         var endpointArray = response.setArray("endpoints");
         for (var policy : controller.applications().routingPolicies().get(deploymentId).values()) {
-            if (!policy.status().loadBalancerActive()) continue;
+            if (!policy.status().isActive()) continue;
             Cursor endpointObject = endpointArray.addObject();
             Endpoint endpoint = policy.endpointIn(controller.system());
             endpointObject.setString("cluster", policy.id().cluster().value());
