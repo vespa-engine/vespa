@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Records metrics related to deployment jobs.
  *
- * @author jommv
+ * @author jonmv
  */
 public class JobMetrics {
 
