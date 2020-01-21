@@ -426,12 +426,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         Set<String> fileReferencesInUse = new HashSet<>();
         // Intentionally skip applications that we for some reason do not find
+        // or that we fail to get file references for (they will be retried on the next run)
         listApplications().stream()
                 .map(this::getOptionalApplication)
                 .map(Optional::get)
-                .forEach(application -> fileReferencesInUse.addAll(application.getModel().fileReferences().stream()
-                                                                           .map(FileReference::value)
-                                                                           .collect(Collectors.toSet())));
+                .forEach(application -> {
+                    try {
+                        fileReferencesInUse.addAll(application.getModel().fileReferences().stream()
+                                                           .map(FileReference::value)
+                                                           .collect(Collectors.toSet()));
+                    } catch (Exception e) {
+                        log.log(LogLevel.WARNING, "Getting file references in use from : " + application + " failed", e);
+                    }
+                });
         log.log(LogLevel.DEBUG, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
