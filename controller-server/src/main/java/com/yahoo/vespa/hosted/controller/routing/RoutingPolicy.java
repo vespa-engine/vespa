@@ -43,12 +43,12 @@ public class RoutingPolicy {
         return id;
     }
 
-    /** The canonical name for this (rhs of a CNAME or ALIAS record) */
+    /** The canonical name for the load balancer this applies to (rhs of a CNAME or ALIAS record) */
     public HostName canonicalName() {
         return canonicalName;
     }
 
-    /** DNS zone for this, if any */
+    /** DNS zone for the load balancer this applies to, if any. Used when creating ALIAS records. */
     public Optional<String> dnsZone() {
         return dnsZone;
     }
@@ -93,7 +93,7 @@ public class RoutingPolicy {
 
     @Override
     public String toString() {
-        return String.format("%s [rotations: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
+        return String.format("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
                              dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
                              id.zone().value());
     }
