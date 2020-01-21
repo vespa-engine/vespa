@@ -12,7 +12,7 @@ ReturnCode::ReturnCode()
 
 ReturnCode::ReturnCode(const ReturnCode &) = default;
 ReturnCode & ReturnCode::operator = (const ReturnCode &) = default;
-ReturnCode & ReturnCode::operator = (ReturnCode &&) = default;
+ReturnCode & ReturnCode::operator = (ReturnCode &&) noexcept = default;
 ReturnCode::~ReturnCode() = default;
 
 ReturnCode::ReturnCode(Result result, vespalib::stringref msg)

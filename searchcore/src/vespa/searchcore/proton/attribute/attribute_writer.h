@@ -48,9 +48,9 @@ public:
         bool _hasStructFieldAttribute;
     public:
         WriteContext(ExecutorId executorId);
-        WriteContext(WriteContext &&rhs);
+        WriteContext(WriteContext &&rhs) noexcept;
         ~WriteContext();
-        WriteContext &operator=(WriteContext &&rhs);
+        WriteContext &operator=(WriteContext &&rhs) noexcept;
         void buildFieldPaths(const DocumentType &docType);
         void add(AttributeVector &attr);
         ExecutorId getExecutorId() const { return _executorId; }

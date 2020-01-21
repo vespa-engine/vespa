@@ -8,21 +8,12 @@ namespace search::queryeval {
 
 SearchIteratorPack::~SearchIteratorPack() = default;
 
-SearchIteratorPack::SearchIteratorPack() : _children(), _childMatch(), _md() {}
+SearchIteratorPack::SearchIteratorPack() = default;
 
-SearchIteratorPack::SearchIteratorPack(SearchIteratorPack &&rhs)
-    : _children(std::move(rhs._children)),
-      _childMatch(std::move(rhs._childMatch)),
-      _md(std::move(rhs._md))
-{}
+SearchIteratorPack::SearchIteratorPack(SearchIteratorPack &&rhs) noexcept = default;
 
 SearchIteratorPack &
-SearchIteratorPack::operator=(SearchIteratorPack &&rhs) {
-    _children = std::move(rhs._children);
-    _childMatch = std::move(rhs._childMatch);
-    _md = std::move(rhs._md);
-    return *this;
-}
+SearchIteratorPack::operator=(SearchIteratorPack &&rhs) noexcept = default;
 
 SearchIteratorPack::SearchIteratorPack(const std::vector<SearchIterator*> &children,
                                        const std::vector<fef::TermFieldMatchData*> &childMatch,

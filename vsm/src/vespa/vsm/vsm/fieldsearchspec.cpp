@@ -54,8 +54,8 @@ FieldSearchSpec::FieldSearchSpec() :
 }
 FieldSearchSpec::~FieldSearchSpec() = default;
 
-FieldSearchSpec&
-FieldSearchSpec::operator=(FieldSearchSpec&& rhs) = default;
+FieldSearchSpec::FieldSearchSpec(FieldSearchSpec&& rhs) noexcept = default;
+FieldSearchSpec& FieldSearchSpec::operator=(FieldSearchSpec&& rhs) noexcept = default;
 
 FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname,
                                  VsmfieldsConfig::Fieldspec::Searchmethod searchDef,

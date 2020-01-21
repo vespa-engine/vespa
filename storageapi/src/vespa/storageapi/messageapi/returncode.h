@@ -65,8 +65,8 @@ public:
     explicit ReturnCode(Result result, vespalib::stringref msg = "");
     ReturnCode(const ReturnCode &);
     ReturnCode & operator = (const ReturnCode &);
-    ReturnCode(ReturnCode &&) = default;
-    ReturnCode & operator = (ReturnCode &&);
+    ReturnCode(ReturnCode &&) noexcept = default;
+    ReturnCode & operator = (ReturnCode &&) noexcept;
     ~ReturnCode();
 
     const vespalib::string& getMessage() const { return _message; }

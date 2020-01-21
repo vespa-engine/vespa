@@ -57,8 +57,8 @@ public:
     QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, SearchTerm type);
     QueryTerm(const QueryTerm &);
     QueryTerm & operator = (const QueryTerm &);
-    QueryTerm(QueryTerm &&);
-    QueryTerm & operator = (QueryTerm &&);
+    QueryTerm(QueryTerm &&) noexcept;
+    QueryTerm & operator = (QueryTerm &&) noexcept;
     ~QueryTerm();
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
