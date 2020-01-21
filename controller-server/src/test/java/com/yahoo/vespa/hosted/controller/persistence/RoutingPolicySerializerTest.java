@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
@@ -15,6 +16,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -59,6 +61,18 @@ public class RoutingPolicySerializerTest {
             assertEquals(expected.endpoints(), actual.endpoints());
             assertEquals(expected.status(), actual.status());
         }
+    }
+
+    // TODO(mpolden): Remove after January 2020
+    @Test
+    public void legacy_serialization() {
+        var json = "{\"routingPolicies\":[{\"cluster\":\"default\",\"zone\":\"prod.us-north-1\",\"canonicalName\":\"lb-host\",\"dnsZone\":\"dnsZoneId\",\"rotations\":[\"default\"],\"active\":true}]}";
+        var owner = ApplicationId.defaultId();
+        var serialized = serializer.fromSlime(owner, SlimeUtils.jsonToSlime(json));
+        var id = new RoutingPolicyId(owner, ClusterSpec.Id.from("default"), ZoneId.from("prod", "us-north-1"));
+        var expected = Map.of(id, new RoutingPolicy(id, HostName.from("lb-host"), Optional.of("dnsZoneId"),
+                                                    Set.of(EndpointId.defaultId()), new Status(true, GlobalRouting.DEFAULT_STATUS)));
+        assertEquals(expected, serialized);
     }
 
 }
