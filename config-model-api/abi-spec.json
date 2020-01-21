@@ -758,6 +758,37 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.model.api.EndpointCertificateMetadata": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String, int)",
+      "public java.lang.String keyName()",
+      "public java.lang.String certName()",
+      "public int version()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.EndpointCertificateSecrets": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String certificate()",
+      "public java.lang.String key()",
+      "public boolean isMissing()"
+    ],
+    "fields": [
+      "public static final com.yahoo.config.model.api.EndpointCertificateSecrets MISSING"
+    ]
+  },
   "com.yahoo.config.model.api.FileDistribution": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -846,6 +877,7 @@
       "public boolean useDedicatedNodeForLogserver()",
       "public abstract boolean useAdaptiveDispatch()",
       "public java.util.Optional tlsSecrets()",
+      "public java.util.Optional endpointCertificateSecrets()",
       "public abstract double defaultTermwiseLimit()",
       "public abstract boolean useBucketSpaceMetric()"
     ],
@@ -1003,6 +1035,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String, java.lang.String)",
+      "public void <init>(com.yahoo.config.model.api.EndpointCertificateSecrets)",
       "public java.lang.String certificate()",
       "public java.lang.String key()",
       "public boolean isMissing()"
