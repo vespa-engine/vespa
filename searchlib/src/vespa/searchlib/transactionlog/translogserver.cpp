@@ -366,7 +366,7 @@ public:
         req->SetMethodName("visitCallback");
         req->GetParams()->AddString(domain.c_str());
         req->GetParams()->AddInt32(id);
-        req->GetParams()->AddData(packet.getHandle().c_str(), packet.getHandle().size());
+        req->GetParams()->AddData(packet.getHandle().data(), packet.getHandle().size());
         return send(req);
     }
 

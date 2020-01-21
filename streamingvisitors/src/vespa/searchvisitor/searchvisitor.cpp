@@ -1108,7 +1108,7 @@ SearchVisitor::generateGroupingResults()
         vespalib::NBOSerializer nos(os);
         grouping.serialize(nos);
         vespalib::MallocPtr blob(os.size());
-        memcpy(blob, os.c_str(), os.size());
+        memcpy(blob, os.data(), os.size());
         searchResult.getGroupingList().add(grouping.getId(), blob);
     }
 }

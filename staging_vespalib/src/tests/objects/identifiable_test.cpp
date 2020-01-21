@@ -161,40 +161,40 @@ void IdentifiableTest::testNboStream()
         EXPECT_EQUAL(nbostream::ok, s.state());
         EXPECT_EQUAL(10u, s.size());
         EXPECT_EQUAL(16u, s.capacity());
-        EXPECT_EQUAL(0, strncmp(s.c_str()+4, "abcdef", 6));
+        EXPECT_EQUAL(0, strncmp(s.data() + 4, "abcdef", 6));
     }
     {
         nbostream s(8);
         EXPECT_EQUAL(0u, s.size());
         EXPECT_EQUAL(8u, s.capacity());
-        const char * prev = s.c_str();
+        const char * prev = s.data();
         s << "ABCD";
         EXPECT_EQUAL(8u, s.size());
         EXPECT_EQUAL(8u, s.capacity());
-        EXPECT_EQUAL(prev, s.c_str());
+        EXPECT_EQUAL(prev, s.data());
         s << "A long string that will cause resizing";
         EXPECT_EQUAL(50u, s.size());
         EXPECT_EQUAL(64u, s.capacity());
-        EXPECT_NOT_EQUAL(prev, s.c_str());
+        EXPECT_NOT_EQUAL(prev, s.data());
     }
     {
         nbostream s(8);
         EXPECT_EQUAL(0u, s.size());
         EXPECT_EQUAL(8u, s.capacity());
-        const char * prev = s.c_str();
+        const char * prev = s.data();
         s << "ABCD";
         EXPECT_EQUAL(8u, s.size());
         EXPECT_EQUAL(8u, s.capacity());
-        EXPECT_EQUAL(prev, s.c_str());
+        EXPECT_EQUAL(prev, s.data());
         s.reserve(50);
-        EXPECT_NOT_EQUAL(prev, s.c_str());
+        EXPECT_NOT_EQUAL(prev, s.data());
         EXPECT_EQUAL(8u, s.size());
         EXPECT_EQUAL(64u, s.capacity());
-        prev = s.c_str();
+        prev = s.data();
         s << "A long string that will cause resizing";
         EXPECT_EQUAL(50u, s.size());
         EXPECT_EQUAL(64u, s.capacity());
-        EXPECT_EQUAL(prev, s.c_str());
+        EXPECT_EQUAL(prev, s.data());
     }
     {
         nbostream s;

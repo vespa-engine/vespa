@@ -77,7 +77,7 @@ public:
 
 RPC::Result CallBackTest::receive(const Packet & p)
 {
-    nbostream_longlivedbuf  h(p.getHandle().c_str(), p.getHandle().size());
+    nbostream_longlivedbuf  h(p.getHandle().data(), p.getHandle().size());
     LOG(info,"CallBackTest::receive (%zu, %zu, %zu)(%s)", h.rp(), h.size(), h.capacity(), myhex(h.peek(), h.size()).c_str());
     while(h.size() > 0) {
         Packet::Entry e;
@@ -103,7 +103,7 @@ public:
 
 RPC::Result CallBackManyTest::receive(const Packet & p)
 {
-    nbostream_longlivedbuf h(p.getHandle().c_str(), p.getHandle().size());
+    nbostream_longlivedbuf h(p.getHandle().data(), p.getHandle().size());
     for(;h.size() > 0; _count++, _value++) {
         Packet::Entry e;
         e.deserialize(h);
@@ -135,7 +135,7 @@ public:
 
 RPC::Result CallBackUpdate::receive(const Packet & packet)
 {
-    nbostream_longlivedbuf h(packet.getHandle().c_str(), packet.getHandle().size());
+    nbostream_longlivedbuf h(packet.getHandle().data(), packet.getHandle().size());
     while (h.size() > 0) {
         Packet::Entry e;
         e.deserialize(h);
@@ -187,7 +187,7 @@ public:
 
 RPC::Result CallBackStatsTest::receive(const Packet & p)
 {
-    nbostream_longlivedbuf h(p.getHandle().c_str(), p.getHandle().size());
+    nbostream_longlivedbuf h(p.getHandle().data(), p.getHandle().size());
     for(;h.size() > 0; ++_count) {
         Packet::Entry e;
         e.deserialize(h);
@@ -236,13 +236,13 @@ bool Test::partialUpdateTest()
     nbostream os;
     os << du;
 
-    vespalib::ConstBufferRef bb(os.c_str(), os.size());
+    vespalib::ConstBufferRef bb(os.data(), os.size());
     LOG(info, "DU : %s", myhex(bb.c_str(), bb.size()).c_str());
     Packet::Entry e(7, du.getClass().id(), bb);
     Packet pa;
     pa.add(e);
     pa.close();
-    ASSERT_TRUE(session.commit(vespalib::ConstBufferRef(pa.getHandle().c_str(), pa.getHandle().size())));
+    ASSERT_TRUE(session.commit(vespalib::ConstBufferRef(pa.getHandle().data(), pa.getHandle().size())));
 
     CallBackUpdate ca;
     TransLogClient::Visitor::UP visitor = tls.createVisitor("test1", ca);
@@ -320,10 +320,10 @@ bool Test::fillDomainTest(TransLogClient::Session * s1, const vespalib::string &
     ASSERT_TRUE (!b.add(e1));
     a.close();
     b.close();
-    ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(a.getHandle().c_str(), a.getHandle().size())));
-    ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(b.getHandle().c_str(), b.getHandle().size())));
+    ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())));
+    ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(b.getHandle().data(), b.getHandle().size())));
     try {
-        s1->commit(vespalib::ConstBufferRef(a.getHandle().c_str(), a.getHandle().size()));
+        s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size()));
         ASSERT_TRUE(false);
     } catch (const std::exception & e) {
         EXPECT_EQUAL(vespalib::string("commit failed with code -2. server says: Exception during commit on " + name + " : Incomming serial number(1) must be bigger than the last one (3)."), e.what());
@@ -340,7 +340,7 @@ bool Test::fillDomainTest(TransLogClient::Session * s1, const vespalib::string &
     EXPECT_EQUAL(a.range().to(), 3u);
 
     Packet::Entry e;
-    vespalib::nbostream h(a.getHandle().c_str(), a.getHandle().size());
+    vespalib::nbostream h(a.getHandle().data(), a.getHandle().size());
     e.deserialize(h);
     e.deserialize(h);
     e.deserialize(h);
@@ -358,13 +358,13 @@ void Test::fillDomainTest(TransLogClient::Session * s1, size_t numPackets, size_
             Packet::Entry e(value+1, j+1, vespalib::ConstBufferRef((const char *)&value, sizeof(value)));
             if ( ! p->add(e) ) {
                 p->close();
-                ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().c_str(), p->getHandle().size())));
+                ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().data(), p->getHandle().size())));
                 p.reset(new Packet());
                 ASSERT_TRUE(p->add(e));
             }
         }
         p->close();
-        ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().c_str(), p->getHandle().size())));
+        ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().data(), p->getHandle().size())));
     }
 }
 
@@ -382,13 +382,13 @@ Test::fillDomainTest(TransLogClient::Session * s1,
             Packet::Entry e(value+1, j+1, vespalib::ConstBufferRef((const char *)&entryBuffer[0], entryBuffer.size()));
             if ( ! p->add(e) ) {
                 p->close();
-                ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().c_str(), p->getHandle().size())));
+                ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().data(), p->getHandle().size())));
                 p.reset(new Packet());
                 ASSERT_TRUE(p->add(e));
             }
         }
         p->close();
-        ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().c_str(), p->getHandle().size())));
+        ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().data(), p->getHandle().size())));
     }
 }
 

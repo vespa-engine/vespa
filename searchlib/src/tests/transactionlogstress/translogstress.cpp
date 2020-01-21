@@ -118,11 +118,11 @@ EntryGenerator::getRandomEntry(SerialNum num)
     if (_buffers != NULL) {
         size_t i = _rnd.lrand48() % _buffers->size();
         const nbostream& buffer = (*_buffers)[i];
-        return Packet::Entry(num, 1024, ConstBufferRef(buffer.c_str(), buffer.size()));
+        return Packet::Entry(num, 1024, ConstBufferRef(buffer.data(), buffer.size()));
     } else {
         _bufferGenerator.setSeed(_baseSeed + num);
         _lastGeneratedBuffer = _bufferGenerator.getRandomBuffer();
-        return Packet::Entry(num, 1024, ConstBufferRef(_lastGeneratedBuffer.c_str(), _lastGeneratedBuffer.size()));
+        return Packet::Entry(num, 1024, ConstBufferRef(_lastGeneratedBuffer.data(), _lastGeneratedBuffer.size()));
     }
 }
 
@@ -225,7 +225,7 @@ FeederThread::commitPacket()
 {
     _packet.close();
     const vespalib::nbostream& stream = _packet.getHandle();
-    if (!_session->commit(ConstBufferRef(stream.c_str(), stream.size()))) {
+    if (!_session->commit(ConstBufferRef(stream.data(), stream.size()))) {
         throw std::runtime_error(vespalib::make_string
                                  ("FeederThread: Failed commiting %s", PacketPrinter::toStr(_packet).c_str()));
     } else {

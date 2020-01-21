@@ -162,7 +162,7 @@ DocumentListMessage::Entry::serialize(vespalib::GrowableByteBuffer& buf) const
 {
     buf.putLong(_timestamp);
     vespalib::nbostream nbo = _document->serialize();
-    buf.putBytes(nbo.c_str(), nbo.size());
+    buf.putBytes(nbo.data(), nbo.size());
     buf.putByte(_removeEntry ? 1 : 0);
 }
 

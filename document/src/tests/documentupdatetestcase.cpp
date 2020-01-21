@@ -85,7 +85,7 @@ void
 writeBufferToFile(const nbostream &buf, const vespalib::string &fileName)
 {
     auto file = std::fstream(fileName, std::ios::out | std::ios::binary);
-    file.write(buf.c_str(), buf.size());
+    file.write(buf.data(), buf.size());
     assert(file.good());
     file.close();
 }

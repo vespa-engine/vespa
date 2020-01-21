@@ -1096,7 +1096,7 @@ TEST_F(FieldPathUpdateTestCase, testGenerateSerializedFile)
 
     int fd = open(TEST_PATH("data/serialize-fieldpathupdate-cpp.dat").c_str(),
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, buf.c_str(), buf.size()) != (ssize_t)buf.size()) {
+    if (write(fd, buf.data(), buf.size()) != (ssize_t)buf.size()) {
     	throw vespalib::Exception("write failed");
     }
     close(fd);

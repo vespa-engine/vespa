@@ -886,7 +886,7 @@ TEST(DocumentTest, testGenerateSerializedFile)
 
     fd = open((serializedDir + "/serializecpp-lz4-level9.dat").c_str(),
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, lz4buf.c_str(), lz4buf.size()) != (ssize_t)lz4buf.size()) {
+    if (write(fd, lz4buf.data(), lz4buf.size()) != (ssize_t)lz4buf.size()) {
         throw vespalib::Exception("write failed");
     }
     close(fd);

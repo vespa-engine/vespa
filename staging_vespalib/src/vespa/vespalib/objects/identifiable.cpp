@@ -244,7 +244,7 @@ int Identifiable::onCmp(const Identifiable& b) const
     nbs << b;
     size_t minLength(std::min(as.size(), bs.size()));
     if (minLength > 0) {
-        diff = memcmp(as.c_str(), bs.c_str(), minLength);
+        diff = memcmp(as.data(), bs.data(), minLength);
     }
     if (diff == 0) {
         diff = as.size() - bs.size();

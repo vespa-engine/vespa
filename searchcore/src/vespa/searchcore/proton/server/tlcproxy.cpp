@@ -14,7 +14,7 @@ namespace proton {
 void TlcProxy::commit(search::SerialNum serialNum, search::transactionlog::Type type,
                       const vespalib::nbostream &buf, DoneCallback onDone)
 {
-    Packet::Entry entry(serialNum, type, vespalib::ConstBufferRef(buf.c_str(), buf.size()));
+    Packet::Entry entry(serialNum, type, vespalib::ConstBufferRef(buf.data(), buf.size()));
     Packet packet;
     packet.add(entry);
     packet.close();

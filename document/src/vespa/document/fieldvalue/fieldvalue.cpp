@@ -47,7 +47,7 @@ FieldValue::hash() const
 {
     vespalib::nbostream os;
     serialize(os);
-    return vespalib::hashValue(os.c_str(), os.size()) ;
+    return vespalib::hashValue(os.data(), os.size()) ;
 }
 
 bool

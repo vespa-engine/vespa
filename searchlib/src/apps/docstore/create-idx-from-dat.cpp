@@ -78,7 +78,7 @@ generate(uint64_t serialNum, size_t chunks, FastOS_FileInterface & idxFile, size
             fprintf(stdout, "Failed with lengthError %ld due to '%s'\n", lengthError, e.what());
         }
     }
-    idxFile.Write2(os.c_str(), os.size());
+    idxFile.Write2(os.data(), os.size());
     return serialNum;
 }
 

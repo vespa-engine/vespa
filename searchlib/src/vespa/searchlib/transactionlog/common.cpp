@@ -37,7 +37,7 @@ Packet::Packet(const void * buf, size_t sz) :
      _limit(sz),
      _buf(static_cast<const char *>(buf), sz)
 {
-    nbostream_longlivedbuf os(_buf.c_str(), sz);
+    nbostream_longlivedbuf os(_buf.data(), sz);
     while ( os.size() > 0 ) {
         Entry e;
         e.deserialize(os);
@@ -55,7 +55,7 @@ bool Packet::merge(const Packet & packet)
     if (retval) {
         _count += packet._count;
         _range.to(packet._range.to());
-        _buf.write(packet.getHandle().c_str(), packet.getHandle().size());
+        _buf.write(packet.getHandle().data(), packet.getHandle().size());
     }
     return retval;
 }
