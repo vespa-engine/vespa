@@ -145,7 +145,7 @@ public class RoutingPolicies {
         }
     }
 
-    /** Store routing policies for given load balancers. Returns the persisted policies. */
+    /** Store routing policies for given load balancers */
     private void storePoliciesOf(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
         var policies = new LinkedHashMap<>(get(loadBalancers.application));
         for (LoadBalancer loadBalancer : loadBalancers.list) {
