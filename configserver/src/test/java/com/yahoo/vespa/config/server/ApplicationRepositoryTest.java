@@ -266,13 +266,22 @@ public class ApplicationRepositoryTest {
         }
 
         {
+            PrepareResult prepareResult = deployApp(testApp);
             try {
-                deployApp(testApp);
                 applicationRepository.delete(applicationId(), Duration.ZERO);
                 fail("Should have gotten an exception");
             } catch (InternalServerException e) {
-                assertEquals("Session 5 was not deleted (waited PT0S)", e.getMessage());
+                assertEquals("test1.testapp was not deleted (waited PT0S), session " + prepareResult.sessionId(), e.getMessage());
             }
+
+            // No active session or remote session (deleted in step above), but an exception was thrown above
+            // A new delete should cleanup and be successful
+            LocalSession activeSession = applicationRepository.getActiveSession(applicationId());
+            assertNull(activeSession);
+            Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
+            assertNull(tenant.getRemoteSessionRepo().getSession(prepareResult.sessionId()));
+
+            assertTrue(applicationRepository.delete(applicationId()));
         }
     }
 
