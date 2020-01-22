@@ -81,6 +81,13 @@ SerializableArray::SerializableArray(const SerializableArray& other)
     }
 }
 
+SerializableArray &
+SerializableArray::operator=(const SerializableArray &rhs)
+{
+    *this = SerializableArray(rhs);
+    return *this;
+}
+
 void SerializableArray::clear()
 {
     _entries.clear();
@@ -90,6 +97,8 @@ void SerializableArray::clear()
     _uncompressedLength = 0;
 }
 
+SerializableArray::SerializableArray(SerializableArray &&) noexcept = default;
+SerializableArray& SerializableArray::operator=(SerializableArray &&) noexcept = default;
 SerializableArray::~SerializableArray() = default;
 
 void

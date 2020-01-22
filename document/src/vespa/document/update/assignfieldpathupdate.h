@@ -11,9 +11,9 @@ class AssignFieldPathUpdate : public FieldPathUpdate
 public:
     enum SerializationFlag
     {
-        ARITHMETIC_EXPRESSION = 1,
-        REMOVE_IF_ZERO = 2,
-        CREATE_MISSING_PATH = 4
+        ARITHMETIC_EXPRESSION = 1u,
+        REMOVE_IF_ZERO = 2u,
+        CREATE_MISSING_PATH = 4u
     };
 
     /** For deserialization */

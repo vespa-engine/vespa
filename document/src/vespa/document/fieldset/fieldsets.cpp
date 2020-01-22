@@ -149,7 +149,7 @@ Document::UP
 FieldSet::createDocumentSubsetCopy(const Document& src,
                                    const FieldSet& fields)
 {
-    Document::UP ret(new Document(src.getType(), src.getId()));
+    auto ret = std::make_unique<Document>(src.getType(), src.getId());
     copyFields(*ret, src, fields);
     return ret;
 }

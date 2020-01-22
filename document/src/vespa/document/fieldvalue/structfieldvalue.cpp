@@ -32,6 +32,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructFieldValue, StructuredFieldValue);
 
 StructFieldValue::StructFieldValue(const DataType &type)
     : StructuredFieldValue(type),
+      _fields(),
       _repo(nullptr),
       _doc_type(nullptr),
       _version(Document::getNewestSerializationVersion()),
@@ -43,20 +44,6 @@ StructFieldValue::StructFieldValue(const StructFieldValue & rhs) = default;
 StructFieldValue & StructFieldValue::operator = (const StructFieldValue & rhs) = default;
 
 StructFieldValue::~StructFieldValue() = default;
-
-StructFieldValue::Chunks::~Chunks() = default;
-
-void
-StructFieldValue::Chunks::push_back(SerializableArray::UP item) {
-    assert(size() < 2);
-    _chunks[size()] = std::move(item);
-}
-
-void
-StructFieldValue::Chunks::clear() {
-    _chunks[0].reset();
-    _chunks[1].reset();
-}
 
 const StructDataType &
 StructFieldValue::getStructType() const {
@@ -80,18 +67,15 @@ StructFieldValue::lazyDeserialize(const FixedTypeRepo &repo,
     _doc_type = &repo.getDocumentType();
     _version = version;
 
-    _chunks.push_back(std::make_unique<SerializableArray>(std::move(fm), std::move(buffer), comp_type, uncompressed_length));
+    _fields = SerializableArray(std::move(fm), std::move(buffer), comp_type, uncompressed_length);
     _hasChanged = false;
 }
 
 bool StructFieldValue::serializeField(int field_id, uint16_t version, FieldValueWriter &writer) const {
     if (version == _version) {
-        for (int i = _chunks.size() - 1; i >= 0; --i) {
-            vespalib::ConstBufferRef buf = _chunks[i].get(field_id);
-            if ( buf.size() != 0) {
-                writer.writeSerializedData(buf.data(), buf.size());
-                break;
-            }
+        vespalib::ConstBufferRef buf = _fields.get(field_id);
+        if ( buf.size() != 0) {
+            writer.writeSerializedData(buf.data(), buf.size());
         }
 
         return true;
@@ -108,33 +92,21 @@ bool StructFieldValue::serializeField(int field_id, uint16_t version, FieldValue
 
 void StructFieldValue::getRawFieldIds(vector<int> &raw_ids) const {
     raw_ids.clear();
-
-    size_t count(0);
-    for (uint32_t i = 0; i < _chunks.size(); ++i) {
-        count += _chunks[i].getEntries().size();
-    }
-    raw_ids.reserve(count);
-    for (uint32_t i = 0; i < _chunks.size(); ++i) {
-        const SerializableArray::EntryMap & entries = _chunks[i].getEntries();
-        for (const SerializableArray::Entry & entry : entries) {
-            raw_ids.emplace_back(entry.id());
-        }
+    raw_ids.reserve(_fields.getEntries().size());
+    for (const SerializableArray::Entry & entry : _fields.getEntries()) {
+        raw_ids.emplace_back(entry.id());
     }
     sort(raw_ids.begin(), raw_ids.end());
     raw_ids.erase(unique(raw_ids.begin(), raw_ids.end()), raw_ids.end());
 }
 
 void
-StructFieldValue::getRawFieldIds(vector<int> &raw_ids,
-                                 const FieldSet& fieldSet) const {
+StructFieldValue::getRawFieldIds(vector<int> &raw_ids,const FieldSet& fieldSet) const {
     raw_ids.clear();
 
-    for (uint32_t i = 0; i < _chunks.size(); ++i) {
-        const SerializableArray::EntryMap & entries = _chunks[i].getEntries();
-        for (const SerializableArray::Entry & entry : entries) {
-            if (fieldSet.contains(getStructType().getField(entry.id()))) {
-                raw_ids.push_back(entry.id());
-            }
+    for (const SerializableArray::Entry & entry : _fields.getEntries()) {
+        if (fieldSet.contains(getStructType().getField(entry.id()))) {
+            raw_ids.emplace_back(entry.id());
         }
     }
     sort(raw_ids.begin(), raw_ids.end());
@@ -175,19 +147,17 @@ StructFieldValue::getFieldValue(const Field& field) const
 {
     int fieldId = field.getId();
 
-    for (int i = _chunks.size() - 1; i >= 0; --i) {
-        vespalib::ConstBufferRef buf = _chunks[i].get(fieldId);
-        if (buf.size() != 0) {
-            nbostream stream(buf.c_str(), buf.size());
-            FieldValue::UP value(field.getDataType().createFieldValue());
-            if ((_repo == nullptr) && (_doc_type != nullptr)) {
-                DocumentTypeRepo tmpRepo(*_doc_type);
-                createFV(*value, tmpRepo, stream, *_doc_type, _version);
-            } else {
-                createFV(*value, *_repo, stream, *_doc_type, _version);
-            }
-            return value;
+    vespalib::ConstBufferRef buf = _fields.get(fieldId);
+    if (buf.size() != 0) {
+        nbostream stream(buf.c_str(), buf.size());
+        FieldValue::UP value(field.getDataType().createFieldValue());
+        if ((_repo == nullptr) && (_doc_type != nullptr)) {
+            DocumentTypeRepo tmpRepo(*_doc_type);
+            createFV(*value, tmpRepo, stream, *_doc_type, _version);
+        } else {
+            createFV(*value, *_repo, stream, *_doc_type, _version);
         }
+        return value;
     }
     return FieldValue::UP();
 }
@@ -195,11 +165,9 @@ StructFieldValue::getFieldValue(const Field& field) const
 vespalib::ConstBufferRef
 StructFieldValue::getRawField(uint32_t id) const
 {
-    for (int i = _chunks.size() - 1; i >= 0; --i) {
-        vespalib::ConstBufferRef buf = _chunks[i].get(id);
-        if (buf.size() > 0) {
-            return buf;
-        }
+    vespalib::ConstBufferRef buf = _fields.get(id);
+    if (buf.size() > 0) {
+        return buf;
     }
 
     return vespalib::ConstBufferRef();
@@ -227,13 +195,7 @@ StructFieldValue::getFieldValue(const Field& field, FieldValue& value) const
 bool
 StructFieldValue::hasFieldValue(const Field& field) const
 {
-    for (int i = _chunks.size() - 1; i >= 0; --i) {
-        if (_chunks[i].has(field.getId())) {
-            return true;
-        }
-    }
-
-    return false;
+    return _fields.has(field.getId());
 }
 
 namespace {
@@ -254,11 +216,8 @@ StructFieldValue::setFieldValue(const Field& field, FieldValue::UP value)
     int fieldId = field.getId();
 
     std::unique_ptr<ByteBuffer> serialized = serializeDoc(*value);
-    if (_chunks.empty()) {
-        _chunks.push_back(std::make_unique<SerializableArray>());
-    }
 
-    _chunks[0].set(fieldId, std::move(serialized));
+    _fields.set(fieldId, std::move(serialized));
 
     _hasChanged = true;
 }
@@ -266,16 +225,14 @@ StructFieldValue::setFieldValue(const Field& field, FieldValue::UP value)
 void
 StructFieldValue::removeFieldValue(const Field& field)
 {
-    for (uint32_t i = 0; i < _chunks.size(); ++i) {
-        _chunks[i].clear(field.getId());
-    }
+    _fields.clear(field.getId());
     _hasChanged = true;
 }
 
 void
 StructFieldValue::clear()
 {
-    _chunks.clear();
+    _fields.clear();
     _hasChanged = true;
 }
 
@@ -374,13 +331,7 @@ StructFieldValue::print(std::ostream& out, bool verbose,
 bool
 StructFieldValue::empty() const
 {
-    for (uint32_t i = 0; i < _chunks.size(); ++i) {
-        if (!_chunks[i].empty()) {
-            return false;
-        }
-    }
-
-    return true;
+    return _fields.empty();
 }
 
 void
@@ -428,15 +379,12 @@ struct StructFieldValue::FieldIterator : public StructuredIterator {
 StructuredFieldValue::StructuredIterator::UP
 StructFieldValue::getIterator(const Field* toFind) const
 {
-    StructuredIterator::UP ret;
-
-    auto *fi = new FieldIterator(*this);
-    ret.reset(fi);
+    auto fi = std::make_unique<FieldIterator>(*this);
 
     if (toFind != nullptr) {
         fi->skipTo(toFind->getId());
     }
-    return ret;
+    return fi;
 }
 
 void

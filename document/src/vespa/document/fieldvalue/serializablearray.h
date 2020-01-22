@@ -137,8 +137,10 @@ public:
     }
 
     SerializableArray* clone() const override { return new SerializableArray(*this); }
-    SerializableArray(const SerializableArray&); // Public only for test
-    SerializableArray& operator=(const SerializableArray&) = delete;
+    SerializableArray(const SerializableArray&);
+    SerializableArray& operator=(const SerializableArray&);
+    SerializableArray(SerializableArray &&) noexcept;
+    SerializableArray& operator=(SerializableArray &&) noexcept;
     const EntryMap & getEntries() const { return _entries; }
 private:
     bool shouldDecompress() const {

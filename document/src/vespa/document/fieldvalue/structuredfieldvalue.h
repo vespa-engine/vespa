@@ -147,8 +147,12 @@ public:
      *
      * @throws vespalib::IllegalArgumentException If value given has wrong type
      */
-    inline void setValue(const Field& field, const FieldValue& value)
-        { setFieldValue(field, value); }
+    void setValue(const Field& field, const FieldValue& value) {
+        setFieldValue(field, value);
+    }
+    void setValue(const Field& field, FieldValue::UP value) {
+        setFieldValue(field, std::move(value));
+    }
     /** Remove the value of given field if it is set. */
 
     //These are affected by the begin/commitTanasaction
@@ -157,12 +161,15 @@ public:
     virtual void clear() = 0;
 
         // Utility functions for easy but less efficient access
-    bool hasValue(vespalib::stringref fieldName) const
-        { return hasFieldValue(getField(fieldName)); }
-    void remove(vespalib::stringref fieldName)
-        { removeFieldValue(getField(fieldName)); }
-    void setValue(vespalib::stringref fieldName, const FieldValue& value)
-        { setFieldValue(getField(fieldName), value); }
+    bool hasValue(vespalib::stringref fieldName) const {
+        return hasFieldValue(getField(fieldName));
+    }
+    void remove(vespalib::stringref fieldName) {
+        removeFieldValue(getField(fieldName));
+    }
+    void setValue(vespalib::stringref fieldName, const FieldValue& value) {
+        setFieldValue(getField(fieldName), value);
+    }
     template<typename PrimitiveType>
     void set(const Field& field, PrimitiveType value);
     template<typename PrimitiveType>
@@ -176,7 +183,7 @@ public:
     virtual bool empty() const = 0;
 
     typedef Iterator const_iterator;
-    const_iterator begin() const { return const_iterator(*this, NULL); }
+    const_iterator begin() const { return const_iterator(*this, nullptr); }
     const_iterator end() const { return const_iterator(); }
 
     /**

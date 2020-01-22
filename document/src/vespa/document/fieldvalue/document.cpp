@@ -210,7 +210,7 @@ Document::calculateChecksum() const
 
 void Document::serializeHeader(nbostream& stream) const {
     VespaDocumentSerializer serializer(stream);
-    serializer.write(*this, WITHOUT_BODY);
+    serializer.write(*this);
 }
 
 void Document::deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & os) {
