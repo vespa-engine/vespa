@@ -117,9 +117,9 @@ class Activator {
                 .filter(node -> node.state() != Node.State.active)
                 .map(Node::hostname)
                 .collect(Collectors.toSet());
-        long numNonActive = nonActiveHosts.size();
-        if (numNonActive > 0) {
-            long numActive = parentHostnames.size() - numNonActive;
+
+        if (nonActiveHosts.size() > 0) {
+            long numActive = parentHostnames.size() - nonActiveHosts.size();
             var messageBuilder = new StringBuilder()
                     .append(numActive).append("/").append(parentHostnames.size())
                     .append(" hosts for ")
