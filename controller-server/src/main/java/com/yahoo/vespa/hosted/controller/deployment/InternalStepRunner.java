@@ -52,6 +52,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -76,6 +77,11 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
@@ -186,6 +192,9 @@ public class InternalStepRunner implements StepRunner {
                                                                                vespaVersion,
                                                                                false,
                                                                                setTheStage)),
+                      controller.jobController().run(id).get()
+                                .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
+                                .startTime().get(),
                       logger);
     }
 
@@ -201,10 +210,14 @@ public class InternalStepRunner implements StepRunner {
                                                                                      Optional.of(platform),
                                                                                      false,
                                                                                      false)),
+                      controller.jobController().run(id).get()
+                                .stepInfo(deployTester).get()
+                                .startTime().get(),
                       logger);
     }
 
-    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment, DualLogger logger) {
+    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment,
+                                       Instant startTime, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {
@@ -246,17 +259,20 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(running);
         }
         catch (ConfigServerException e) {
+            // Retry certain failures for up to one hour.
+            Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                                         ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.getErrorCode()) {
                 case ACTIVATION_CONFLICT:
                 case APPLICATION_LOCK_FAILURE:
                 case CERTIFICATE_NOT_READY:
                     logger.log("Deployment failed with possibly transient error " + e.getErrorCode() +
                             ", will retry: " + e.getMessage());
-                    return Optional.empty();
+                    return result;
                 case LOAD_BALANCER_NOT_READY:
                 case PARENT_HOST_NOT_READY:
                     logger.log(e.getServerMessage());
-                    return Optional.empty();
+                    return result;
                 case OUT_OF_CAPACITY:
                     logger.log(e.getServerMessage());
                     return Optional.of(outOfCapacity);
@@ -537,46 +553,32 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
         try {
-            return retrying(10, () -> {
-                logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-                controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
-                return running;
-            });
+            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+            return Optional.of(running);
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting application " + id.application(), e);
-            return Optional.of(error);
+            Instant startTime = controller.jobController().run(id).get().stepInfo(deactivateReal).get().startTime().get();
+            return startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                   ? Optional.of(error)
+                   : Optional.empty();
         }
     }
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
         try {
-            return retrying(10, () -> {
-                logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-                controller.jobController().deactivateTester(id.tester(), id.type());
-                return running;
-            });
+            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.jobController().deactivateTester(id.tester(), id.type());
+            return Optional.of(running);
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting tester of " + id.application(), e);
-            return Optional.of(error);
+            Instant startTime = controller.jobController().run(id).get().stepInfo(deactivateTester).get().startTime().get();
+            return startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                   ? Optional.of(error)
+                   : Optional.empty();
         }
-    }
-
-    private static Optional<RunStatus> retrying(int retries, Supplier<RunStatus> task) {
-        RuntimeException exception = null;
-        do {
-            try {
-                return Optional.of(task.get());
-            }
-            catch (RuntimeException e) {
-                if (exception == null)
-                    exception = e;
-                else
-                    exception.addSuppressed(e);
-            }
-        } while (--retries >= 0);
-        throw exception;
     }
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
@@ -648,7 +650,7 @@ public class InternalStepRunner implements StepRunner {
         // TODO jonmv: This is a workaround for new deployment writes not yet being visible in spite of Curator locking.
         // TODO Investigate what's going on here, and remove this workaround.
         Run run = controller.jobController().run(id).get();
-        if (run.start().isAfter(deployment.at()))
+        if ( ! controller.system().isCd() && run.start().isAfter(deployment.at()))
             return false;
 
         Duration timeout = controller.zoneRegistry().getDeploymentTimeToLive(deployment.zone())
