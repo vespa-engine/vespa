@@ -347,7 +347,7 @@ public class InternalStepRunner implements StepRunner {
             }
         }
 
-        if (run.stepInfo(installTester).get().startTime().get().plus(endpointTimeout).isBefore(controller.clock().instant())) {
+        if (run.stepInfo(installTester).get().startTime().get().plus(testerTimeout).isBefore(controller.clock().instant())) {
             logger.log(WARNING, "Installation of tester failed to complete within " + testerTimeout.toMinutes() + " minutes!");
             return Optional.of(error);
         }
