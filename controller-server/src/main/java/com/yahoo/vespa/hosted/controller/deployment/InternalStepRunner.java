@@ -650,7 +650,7 @@ public class InternalStepRunner implements StepRunner {
         // TODO jonmv: This is a workaround for new deployment writes not yet being visible in spite of Curator locking.
         // TODO Investigate what's going on here, and remove this workaround.
         Run run = controller.jobController().run(id).get();
-        if (run.start().isAfter(deployment.at()))
+        if ( ! controller.system().isCd() && run.start().isAfter(deployment.at()))
             return false;
 
         Duration timeout = controller.zoneRegistry().getDeploymentTimeToLive(deployment.zone())
