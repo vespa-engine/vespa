@@ -93,14 +93,15 @@ ByteBuffer::ByteBuffer(const ByteBuffer& rhs) :
 
 ByteBuffer::~ByteBuffer() = default;
 
-ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
+ByteBuffer
+ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
 {
     if (buffer && len) {
         Alloc newBuf = Alloc::alloc(len);
         memcpy(newBuf.get(), buffer, len);
-        return new ByteBuffer(std::move(newBuf), len);
+        return ByteBuffer(std::move(newBuf), len);
     } else {
-        return nullptr;
+        return ByteBuffer();
     }
 }
 

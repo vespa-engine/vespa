@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/memory.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vector>
 
 #define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
@@ -88,7 +89,7 @@ public:
     SerializableArray& operator=(const SerializableArray&);
     SerializableArray(SerializableArray &&) noexcept;
     SerializableArray& operator=(SerializableArray &&) noexcept;
-    SerializableArray(EntryMap entries, ByteBufferUP buffer,
+    SerializableArray(EntryMap entries, ByteBuffer buffer,
                       CompressionConfig::Type comp_type, uint32_t uncompressed_length);
     ~SerializableArray();
 
@@ -102,7 +103,7 @@ public:
     void set(int id, const char* value, int len);
 
     /** Stores a value in the array. */
-    void set(int id, ByteBufferUP buffer);
+    void set(int id, ByteBuffer buffer);
 
     /**
      * Gets a value from the array. This is the faster version of the above.
@@ -137,14 +138,14 @@ public:
 
     const ByteBuffer* getSerializedBuffer() const {
         return CompressionConfig::isCompressed(getCompression())
-            ? _unlikely->_compSerData.get()
-            : _uncompSerData.get();
+            ? &_unlikely->_compSerData
+            : &_uncompSerData;
     }
 
     const EntryMap & getEntries() const { return _entries; }
 private:
     bool shouldDecompress() const {
-        return _unlikely && _unlikely->_compSerData && !_uncompSerData;
+        return _unlikely && (_unlikely->_compSerData.getRemaining() != 0) && (_uncompSerData.getBuffer() == 0);
     }
     bool maybeDecompressAndCatch() const {
         if ( shouldDecompress() ) {
@@ -167,16 +168,16 @@ private:
         Unlikely(const Unlikely &);
         ~Unlikely();
         std::unique_ptr<serializablearray::BufferMap> _owned;
-        ByteBufferUP             _compSerData;
+        ByteBuffer               _compSerData;
         CompressionConfig::Type  _serializedCompression;
         uint32_t                 _uncompressedLength;
     };
     /** Contains the stored attributes, with reference to the real data.. */
     EntryMap                  _entries;
+    /** Data we deserialized from, if applicable. */
+    ByteBuffer                _uncompSerData;
     std::unique_ptr<Unlikely> _unlikely;
 
-    /** Data we deserialized from, if applicable. */
-    ByteBufferUP             _uncompSerData;
 
     VESPA_DLL_LOCAL void invalidate();
     VESPA_DLL_LOCAL EntryMap::const_iterator find(int id) const;

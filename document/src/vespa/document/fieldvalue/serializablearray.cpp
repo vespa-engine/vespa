@@ -17,7 +17,7 @@ namespace document {
 
 namespace serializablearray {
 
-using BufferMapT = vespalib::hash_map<int, ByteBuffer::UP>;
+using BufferMapT = vespalib::hash_map<int, ByteBuffer>;
 
 class BufferMap : public BufferMapT {
 public:
@@ -28,9 +28,10 @@ public:
 
 SerializableArray::SerializableArray() = default;
 
-SerializableArray::SerializableArray(EntryMap entries, ByteBuffer::UP buffer,
+SerializableArray::SerializableArray(EntryMap entries, ByteBuffer buffer,
                                      CompressionConfig::Type comp_type, uint32_t uncompressed_length)
     : _entries(std::move(entries)),
+      _uncompSerData(),
       _unlikely()
 {
 
@@ -63,7 +64,7 @@ ensure(std::unique_ptr<T> &owned) {
 
 SerializableArray::Unlikely::Unlikely()
     : _owned(),
-      _compSerData(),
+      _compSerData(nullptr, 0),
       _serializedCompression(CompressionConfig::NONE),
       _uncompressedLength(0)
 { }
@@ -71,22 +72,22 @@ SerializableArray::Unlikely::~Unlikely() = default;
 
 SerializableArray::Unlikely::Unlikely(const Unlikely & rhs)
     : _owned(),
-      _compSerData(rhs._compSerData ? new ByteBuffer(*rhs._compSerData) : nullptr),
+      _compSerData(rhs._compSerData),
       _serializedCompression(rhs._serializedCompression),
       _uncompressedLength(rhs._uncompressedLength)
 { }
 
 SerializableArray::SerializableArray(const SerializableArray& rhs)
     : _entries(rhs._entries),
-      _unlikely(rhs._unlikely ? new Unlikely(*rhs._unlikely) : nullptr),
-      _uncompSerData(rhs._uncompSerData ? new ByteBuffer(*rhs._uncompSerData) : nullptr)
+      _uncompSerData(rhs._uncompSerData),
+      _unlikely(rhs._unlikely ? new Unlikely(*rhs._unlikely) : nullptr)
 {
     for (size_t i(0); i < _entries.size(); i++) {
         Entry & e(_entries[i]);
         if (e.hasBuffer()) {
             // Pointing to a buffer in the _owned structure.
-            ByteBuffer::UP buf(ByteBuffer::copyBuffer(e.getBuffer(_uncompSerData.get()), e.size()));
-            e.setBuffer(buf->getBuffer());
+            ByteBuffer buf(ByteBuffer::copyBuffer(e.getBuffer(&_uncompSerData), e.size()));
+            e.setBuffer(buf.getBuffer());
             ensure(_unlikely->_owned)[e.id()] = std::move(buf);
         } else {
             // If not it is relative to the buffer _uncompSerData, and hence it is valid as is.
@@ -104,7 +105,7 @@ SerializableArray::operator=(const SerializableArray &rhs)
 void SerializableArray::clear()
 {
     _entries.clear();
-    _uncompSerData.reset();
+    _uncompSerData = ByteBuffer(nullptr, 0);
     _unlikely.reset();
 }
 
@@ -112,15 +113,15 @@ void
 SerializableArray::invalidate()
 {
     if (_unlikely) {
-        _unlikely->_compSerData.reset();
+        _unlikely->_compSerData = ByteBuffer(nullptr, 0);;
     }
 }
 
 void
-SerializableArray::set(int id, ByteBuffer::UP buffer)
+SerializableArray::set(int id, ByteBuffer buffer)
 {
     maybeDecompress();
-    Entry e(id, buffer->getRemaining(), buffer->getBuffer());
+    Entry e(id, buffer.getRemaining(), buffer.getBuffer());
     ensure(ensure(_unlikely)._owned)[id] = std::move(buffer);
     auto it = find(id);
     if (it == _entries.end()) {
@@ -133,7 +134,7 @@ SerializableArray::set(int id, ByteBuffer::UP buffer)
 
 void SerializableArray::set(int id, const char* value, int len)
 {
-    set(id, std::unique_ptr<ByteBuffer>(ByteBuffer::copyBuffer(value,len)));
+    set(id, ByteBuffer::copyBuffer(value,len));
 }
 
 SerializableArray::EntryMap::const_iterator
@@ -163,7 +164,7 @@ SerializableArray::get(int id) const
 
         if (found != _entries.end()) {
             const Entry& entry = *found;
-            buf = vespalib::ConstBufferRef(entry.getBuffer(_uncompSerData.get()), entry.size());
+            buf = vespalib::ConstBufferRef(entry.getBuffer(&_uncompSerData), entry.size());
         }
     } else {
         // should we clear all or what?
@@ -204,18 +205,18 @@ SerializableArray::deCompress() // throw (DeserializeException)
     using vespalib::compression::decompress;
     // will only do this once
 
-    assert(_unlikely && _unlikely->_compSerData);
-    assert(!_uncompSerData);
+    assert(_unlikely && (_unlikely->_compSerData.getRemaining() != 0));
+    assert(_uncompSerData.getRemaining() == 0);
     assert(CompressionConfig::isCompressed(_unlikely->_serializedCompression));
     uint32_t uncompressedLength = _unlikely->_uncompressedLength;
 
-    auto newSerialization = std::make_unique<ByteBuffer>(vespalib::alloc::Alloc::alloc(uncompressedLength), uncompressedLength);
-    vespalib::DataBuffer unCompressed(newSerialization->getBuffer(), newSerialization->getLength());
+    ByteBuffer newSerialization(vespalib::alloc::Alloc::alloc(uncompressedLength), uncompressedLength);
+    vespalib::DataBuffer unCompressed(newSerialization.getBuffer(), newSerialization.getLength());
     unCompressed.clear();
     try {
         decompress(_unlikely->_serializedCompression,
                    uncompressedLength,
-                   vespalib::ConstBufferRef(_unlikely->_compSerData->getBufferAtPos(), _unlikely->_compSerData->getRemaining()),
+                   vespalib::ConstBufferRef(_unlikely->_compSerData.getBufferAtPos(), _unlikely->_compSerData.getRemaining()),
                    unCompressed,
                    false);
     } catch (const std::runtime_error & e) {
@@ -227,19 +228,19 @@ SerializableArray::deCompress() // throw (DeserializeException)
     if (unCompressed.getDataLen() != (size_t)uncompressedLength) {
         throw DeserializeException(
                 make_string("Did not decompress to the expected length: had %u, wanted %d, got %zu",
-                            _unlikely->_compSerData->getRemaining(), uncompressedLength, unCompressed.getDataLen()),
+                            _unlikely->_compSerData.getRemaining(), uncompressedLength, unCompressed.getDataLen()),
                 VESPA_STRLOC);
     }
-    assert(newSerialization->getBuffer() == unCompressed.getData());
+    assert(newSerialization.getBuffer() == unCompressed.getData());
     _uncompSerData = std::move(newSerialization);
-    LOG_ASSERT(uncompressedLength == _uncompSerData->getRemaining());
+    LOG_ASSERT(uncompressedLength == _uncompSerData.getRemaining());
 }
 
 vespalib::compression::CompressionInfo
 SerializableArray::getCompressionInfo() const {
     return _unlikely
-           ? CompressionInfo(_unlikely->_uncompressedLength, _unlikely->_compSerData->getRemaining())
-           : CompressionInfo(_uncompSerData->getRemaining(), CompressionConfig::NONE);
+           ? CompressionInfo(_unlikely->_uncompressedLength, _unlikely->_compSerData.getRemaining())
+           : CompressionInfo(_uncompSerData.getRemaining(), CompressionConfig::NONE);
 }
 
 const char *

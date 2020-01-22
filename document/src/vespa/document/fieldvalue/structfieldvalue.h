@@ -51,7 +51,7 @@ public:
     void lazyDeserialize(const FixedTypeRepo &repo,
                          uint16_t version,
                          SerializableArray::EntryMap && fields,
-                         std::unique_ptr<ByteBuffer> buffer,
+                         ByteBuffer buffer,
                          CompressionConfig::Type comp_type,
                          int32_t uncompressed_length);
 

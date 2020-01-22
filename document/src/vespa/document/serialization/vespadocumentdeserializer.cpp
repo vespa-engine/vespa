@@ -306,8 +306,8 @@ void VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
     }
 
     if (data_size > 0) {
-        ByteBuffer::UP buffer(_stream.isLongLivedBuffer()
-                          ? new ByteBuffer(_stream.peek(), data_size)
+        ByteBuffer buffer(_stream.isLongLivedBuffer()
+                          ? ByteBuffer(_stream.peek(), data_size)
                           : ByteBuffer::copyBuffer(_stream.peek(), data_size));
         if (value.getFields().empty()) {
             LOG(spam, "Lazy deserializing into %s with _version %u",

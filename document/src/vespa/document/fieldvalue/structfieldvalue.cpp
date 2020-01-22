@@ -59,7 +59,7 @@ void
 StructFieldValue::lazyDeserialize(const FixedTypeRepo &repo,
                                   uint16_t version,
                                   SerializableArray::EntryMap && fm,
-                                  ByteBuffer::UP buffer,
+                                  ByteBuffer buffer,
                                   CompressionConfig::Type comp_type,
                                   int32_t uncompressed_length)
 {
@@ -217,7 +217,7 @@ StructFieldValue::setFieldValue(const Field& field, FieldValue::UP value)
 
     std::unique_ptr<ByteBuffer> serialized = serializeDoc(*value);
 
-    _fields.set(fieldId, std::move(serialized));
+    _fields.set(fieldId, std::move(*serialized));
 
     _hasChanged = true;
 }
