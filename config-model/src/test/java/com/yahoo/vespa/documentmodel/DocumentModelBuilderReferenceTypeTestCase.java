@@ -1,15 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
-import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.ReferenceDataType;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.vespa.configmodel.producers.DocumentManager;
-import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -20,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author geirst
  */
-public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionTestCase {
+public class DocumentModelBuilderReferenceTypeTestCase extends AbstractReferenceFieldTestCase {
 
     @Test
     public void reference_fields_can_reference_other_document_types() throws ParseException, IOException {
@@ -58,24 +53,6 @@ public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionT
         NewDocumentType adType = model.getDocumentManager().getDocumentType("ad");
         ReferenceDataType campaignRefType = (ReferenceDataType) adType.getField("campaign_ref").getDataType();
         assertEquals(campaignRefType.getTargetType(), campaignType);
-    }
-
-    private static String TEST_FOLDER = "src/test/configmodel/types/references/";
-
-    private void assertDocumentConfigs(DocumentModel model,
-                                       String cfgFileSpec) throws IOException {
-        assertDocumentmanagerCfg(model, "documentmanager_" + cfgFileSpec + ".cfg");
-        assertDocumenttypesCfg(model , "documenttypes_" + cfgFileSpec + ".cfg");
-    }
-
-    private void assertDocumentmanagerCfg(DocumentModel model, String documentmanagerCfgFile) throws IOException {
-        DocumentmanagerConfig.Builder documentmanagerCfg = new DocumentManager().produce(model, new DocumentmanagerConfig.Builder());
-        assertConfigFile(TEST_FOLDER + documentmanagerCfgFile, new DocumentmanagerConfig(documentmanagerCfg).toString());
-    }
-
-    private void assertDocumenttypesCfg(DocumentModel model, String documenttypesCfgFile) throws IOException {
-        DocumenttypesConfig.Builder documenttypesCfg = new DocumentTypes().produce(model, new DocumenttypesConfig.Builder());
-        assertConfigFile(TEST_FOLDER + documenttypesCfgFile, new DocumenttypesConfig(documenttypesCfg).toString());
     }
 
     private static class TestDocumentModelBuilder {

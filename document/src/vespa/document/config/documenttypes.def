@@ -104,3 +104,5 @@ documenttype[].referencetype[].id int
 
 ## Numeric ID of the document type instances of the reference point to.
 documenttype[].referencetype[].target_type_id int
+
+documenttype[].importedfield[].name string

@@ -712,6 +712,8 @@
       "public com.yahoo.document.DocumenttypesConfig$Documenttype$Builder fieldsets(java.util.Map)",
       "public com.yahoo.document.DocumenttypesConfig$Documenttype$Builder referencetype(com.yahoo.document.DocumenttypesConfig$Documenttype$Referencetype$Builder)",
       "public com.yahoo.document.DocumenttypesConfig$Documenttype$Builder referencetype(java.util.List)",
+      "public com.yahoo.document.DocumenttypesConfig$Documenttype$Builder importedfield(com.yahoo.document.DocumenttypesConfig$Documenttype$Importedfield$Builder)",
+      "public com.yahoo.document.DocumenttypesConfig$Documenttype$Builder importedfield(java.util.List)",
       "public com.yahoo.document.DocumenttypesConfig$Documenttype build()"
     ],
     "fields": [
@@ -719,7 +721,8 @@
       "public java.util.List datatype",
       "public java.util.List annotationtype",
       "public java.util.Map fieldsets",
-      "public java.util.List referencetype"
+      "public java.util.List referencetype",
+      "public java.util.List importedfield"
     ]
   },
   "com.yahoo.document.DocumenttypesConfig$Documenttype$Datatype$Annotationref$Annotation$Builder": {
@@ -1264,6 +1267,35 @@
     ],
     "fields": []
   },
+  "com.yahoo.document.DocumenttypesConfig$Documenttype$Importedfield$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigBuilder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.document.DocumenttypesConfig$Documenttype$Importedfield)",
+      "public com.yahoo.document.DocumenttypesConfig$Documenttype$Importedfield$Builder name(java.lang.String)",
+      "public com.yahoo.document.DocumenttypesConfig$Documenttype$Importedfield build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.DocumenttypesConfig$Documenttype$Importedfield": {
+    "superClass": "com.yahoo.config.InnerNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.document.DocumenttypesConfig$Documenttype$Importedfield$Builder)",
+      "public java.lang.String name()"
+    ],
+    "fields": []
+  },
   "com.yahoo.document.DocumenttypesConfig$Documenttype$Inherits$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -1347,7 +1379,9 @@
       "public java.util.Map fieldsets()",
       "public com.yahoo.document.DocumenttypesConfig$Documenttype$Fieldsets fieldsets(java.lang.String)",
       "public java.util.List referencetype()",
-      "public com.yahoo.document.DocumenttypesConfig$Documenttype$Referencetype referencetype(int)"
+      "public com.yahoo.document.DocumenttypesConfig$Documenttype$Referencetype referencetype(int)",
+      "public java.util.List importedfield()",
+      "public com.yahoo.document.DocumenttypesConfig$Documenttype$Importedfield importedfield(int)"
     ],
     "fields": []
   },

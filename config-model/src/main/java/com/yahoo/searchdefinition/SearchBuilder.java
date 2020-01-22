@@ -230,20 +230,22 @@ public class SearchBuilder {
                 sdocs.add(search.getDocument());
             }
         }
-        SDDocumentTypeOrderer orderer = new SDDocumentTypeOrderer(sdocs, deployLogger);
+        var orderer = new SDDocumentTypeOrderer(sdocs, deployLogger);
         orderer.process();
         for (SDDocumentType sdoc : orderer.getOrdered()) {
             new FieldOperationApplierForStructs().process(sdoc);
             new FieldOperationApplier().process(sdoc);
         }
 
-        DocumentReferenceResolver resolver = new DocumentReferenceResolver(searchList);
+        var resolver = new DocumentReferenceResolver(searchList);
         sdocs.forEach(resolver::resolveReferences);
+        var importedFieldsEnumerator = new ImportedFieldsEnumerator(searchList);
+        sdocs.forEach(importedFieldsEnumerator::enumerateImportedFields);
 
         if (validate)
             new DocumentGraphValidator().validateDocumentGraph(sdocs);
 
-        DocumentModelBuilder builder = new DocumentModelBuilder(model);
+        var builder = new DocumentModelBuilder(model);
         for (Search search : new SearchOrderer().order(searchList)) {
             new FieldOperationApplierForSearch().process(search); // TODO: Why is this not in the regular list?
             process(search, deployLogger, new QueryProfiles(queryProfileRegistry, deployLogger), validate);

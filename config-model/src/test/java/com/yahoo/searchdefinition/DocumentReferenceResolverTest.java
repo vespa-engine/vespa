@@ -36,7 +36,7 @@ public class DocumentReferenceResolverTest {
         // Create foo document with document reference to bar and add another field
         SDField fooRefToBarField = new SDField
                 ("bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
-        addAttributeAspect(fooRefToBarField);
+        AttributeUtils.addAttributeAspect(fooRefToBarField);
         SDField irrelevantField = new SDField("irrelevant_stuff", DataType.INT);
         Search fooSearch = new Search();
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
@@ -59,7 +59,7 @@ public class DocumentReferenceResolverTest {
         // Create foo document with document reference to non-existing document bar
         SDField fooRefToBarField = new SDField(
                 "bar_ref", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("bar")));
-        addAttributeAspect(fooRefToBarField);
+        AttributeUtils.addAttributeAspect(fooRefToBarField);
         Search fooSearch = new Search();
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
         fooDocument.addField(fooRefToBarField);
@@ -93,10 +93,6 @@ public class DocumentReferenceResolverTest {
         exceptionRule.expectMessage(
                 "The field 'bar_ref' is an invalid document reference. The field must be an attribute.");
         resolver.resolveReferences(fooDocument);
-    }
-
-    private static void addAttributeAspect(SDField fooRefToBarField) {
-        fooRefToBarField.parseIndexingScript("{ attribute }");
     }
 
 }
