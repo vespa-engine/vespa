@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 
 import java.net.URI;
@@ -21,6 +22,10 @@ public interface TesterCloud {
 
     /** Returns the current status of the tester. */
     Status getStatus(URI testerUrl);
+
+    /** Returns the current status of the tester. */
+    // TODO: Remove default implementation when implementors have been updated
+    default Status getStatus(DeploymentId deploymentId) { return Status.FAILURE; }
 
     /** Returns whether the container is ready to serve. */
     boolean ready(URI endpointUrl);
