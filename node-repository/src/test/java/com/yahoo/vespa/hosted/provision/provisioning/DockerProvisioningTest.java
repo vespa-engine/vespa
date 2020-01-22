@@ -118,8 +118,8 @@ public class DockerProvisioningTest {
         ApplicationId application2_1 = ApplicationId.from(tenant2, ApplicationName.from("application1"), InstanceName.defaultName());
         ApplicationId application2_2 = ApplicationId.from(tenant2, ApplicationName.from("application2"), InstanceName.defaultName());
 
-        List<Node> tenant1Parents = tester.makeReadyNodes(10, resources, Optional.of(tenant1), NodeType.host, 1);
-        List<Node> nonreservedParents = tester.makeReadyNodes(10, resources, Optional.empty(), NodeType.host, 1);
+        tester.makeReadyNodes(10, resources, Optional.of(tenant1), NodeType.host, 1);
+        tester.makeReadyNodes(10, resources, Optional.empty(), NodeType.host, 1);
         tester.deployZoneApp();
 
         Version wantedVespaVersion = Version.fromString("6.39");
@@ -128,15 +128,11 @@ public class DockerProvisioningTest {
                                               6, 1, resources);
         assertHostSpecParentReservation(nodes, Optional.empty(), tester); // We do not get nodes on hosts reserved to tenant1
         tester.activate(application2_1, nodes);
-        System.out.println("Allocated to application 2_1:\n-----------------------------------");
-        tester.nodeRepository().getNodes(application2_1).forEach(n -> System.out.println(n.hostname() + " reservedTo " + tester.nodeRepository().getNode(n.hostname()).get().reservedTo()));
 
         try {
             tester.prepare(application2_2,
                            ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
                            5, 1, resources);
-            System.out.println("Allocated to application 2_2:\n-----------------------------------");
-            tester.nodeRepository().getNodes(application2_2).forEach(n -> System.out.println(n.hostname() + " reservedTo " + tester.nodeRepository().getNode(n.hostname()).get().reservedTo()));
             fail("Expected exception");
         }
         catch (OutOfCapacityException e) {
