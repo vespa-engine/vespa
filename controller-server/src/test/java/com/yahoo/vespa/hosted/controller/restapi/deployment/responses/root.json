@@ -53,7 +53,8 @@
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
-          "failing": "staging-test"
+          "failing": "staging-test",
+          "status": "error"
         }
       ],
       "productionApplications": [
