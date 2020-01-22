@@ -116,9 +116,7 @@ Requires: perl-IO-Socket-IP
 Requires: perl-JSON
 Requires: perl-libwww-perl
 Requires: perl-LWP-Protocol-https
-%if !(0%{?centos} && 0%{?el8})
 Requires: perl-Net-INET6Glue
-%endif
 Requires: perl-Pod-Usage
 Requires: perl-URI
 Requires: valgrind
