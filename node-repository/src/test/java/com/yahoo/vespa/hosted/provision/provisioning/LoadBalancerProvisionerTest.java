@@ -247,7 +247,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private void assignIps(List<Node> nodes) {
-        try (var lock = tester.nodeRepository().lockAllocation()) {
+        try (var lock = tester.nodeRepository().lockUnallocated()) {
             for (int i = 0; i < nodes.size(); i++) {
                 tester.nodeRepository().write(nodes.get(i).with(IP.Config.EMPTY.with(Set.of("127.0.0." + i))), lock);
             }

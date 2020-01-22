@@ -73,7 +73,7 @@ public class GroupPreparer {
         try (Mutex lock = nodeRepository.lock(application)) {
 
             // Lock ready pool to ensure that the same nodes are not simultaneously allocated by others
-            try (Mutex allocationLock = nodeRepository.lockAllocation()) {
+            try (Mutex allocationLock = nodeRepository.lockUnallocated()) {
 
                 // Create a prioritized set of nodes
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);

@@ -59,7 +59,7 @@ public class DynamicProvisioningMaintainer extends Maintainer {
     protected void maintain() {
         if (! dynamicProvisioningEnabled.value()) return;
 
-        try (Mutex lock = nodeRepository().lockAllocation()) {
+        try (Mutex lock = nodeRepository().lockUnallocated()) {
             NodeList nodes = nodeRepository().list();
 
             updateProvisioningNodes(nodes, lock);

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
-import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -90,6 +89,27 @@ class Activator {
         nodeRepository.deactivate(activeToRemove, transaction);
         nodeRepository.activate(updateFrom(hosts, continuedActive), transaction); // update active with any changes
         nodeRepository.activate(updatePortsFrom(hosts, reservedToActivate), transaction);
+        unreserveParentsOf(reservedToActivate);
+    }
+
+    /** When a tenant node is activated on a host, we can open up that host for use by others */
+    private void unreserveParentsOf(List<Node> nodes) {
+        List<String> reservedParents = nodes.stream()
+                                            .filter(node -> node.parentHostname().isPresent())
+                                            .map(node -> nodeRepository.getNode(node.parentHostname().get()))
+                                            .filter(parent -> parent.isPresent())
+                                            .filter(parent -> parent.get().reservedTo().isPresent())
+                                            .map(parent -> parent.get().hostname())
+                                            .collect(Collectors.toList());
+        if (reservedParents.isEmpty()) return;
+
+        try (Mutex lock = nodeRepository.lockUnallocated()) {
+            List<Node> unreserved = reservedParents.stream()
+                                                   .map(hostname -> nodeRepository.getNode(hostname).get())
+                                                   .map(host -> host.withReservedTo(Optional.empty()))
+                                                   .collect(Collectors.toList());
+            nodeRepository.write(unreserved, lock);
+        }
     }
 
     /** Activate load balancers */
