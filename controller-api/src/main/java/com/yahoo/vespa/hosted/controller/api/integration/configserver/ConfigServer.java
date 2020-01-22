@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
@@ -32,7 +32,7 @@ public interface ConfigServer {
     }
 
     PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
-                               Set<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate,
+                               Set<ContainerEndpoint> containerEndpoints, Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                                byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);

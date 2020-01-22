@@ -1,12 +1,15 @@
-package com.yahoo.vespa.config.server.tenant;
+package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 
 /**
  * (de)serializes endpoint certificate metadata
+ * <p>
+ * A copy of package com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadata,
+ * but will soon be extended as we need to store some more information in the controller.
  *
  * @author andreer
  */
