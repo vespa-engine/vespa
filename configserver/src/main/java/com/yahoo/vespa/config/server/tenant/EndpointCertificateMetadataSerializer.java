@@ -45,7 +45,7 @@ public class EndpointCertificateMetadataSerializer {
                 );
 
             default:
-                throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
+                throw new IllegalArgumentException("Unknown format encountered for TLS secrets metadata!");
         }
     }
 
