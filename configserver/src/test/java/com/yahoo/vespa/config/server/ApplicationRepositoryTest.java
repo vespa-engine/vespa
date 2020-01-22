@@ -12,7 +12,9 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
@@ -40,6 +42,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -317,6 +321,29 @@ public class ApplicationRepositoryTest {
         assertEquals(0, applicationRepository.deleteExpiredRemoteSessions(Duration.ofSeconds(0)));
     }
 
+    @Test
+    public void testMetrics() {
+        MockMetric actual = new MockMetric();
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          provisioner,
+                                                          orchestrator,
+                                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                                          new MockLogRetriever(),
+                                                          new ManualClock(),
+                                                          new MockTesterClient(),
+                                                          actual);
+        deployApp(testAppLogServerWithContainer);
+        Map<String, ?> context = Map.of("tenant", "test1",
+                                        "application", "testapp",
+                                        "instance", "default",
+                                        "environment", "prod",
+                                        "region", "default");
+        MockMetric expected = new MockMetric();
+        expected.set("deployment.prepareMillis", 0L, expected.createContext(context));
+        expected.set("deployment.activateMillis", 0L, expected.createContext(context));
+        assertEquals(expected.values, actual.values);
+    }
+
     private ApplicationRepository createApplicationRepository() {
         return new ApplicationRepository(tenantRepository,
                                          provisioner,
@@ -324,7 +351,8 @@ public class ApplicationRepositoryTest {
                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                          new MockLogRetriever(),
                                          clock,
-                                         new MockTesterClient());
+                                         new MockTesterClient(),
+                                         new NullMetric());
     }
 
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
@@ -358,6 +386,41 @@ public class ApplicationRepositoryTest {
     private ApplicationMetaData getApplicationMetaData(ApplicationId applicationId, long sessionId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         return applicationRepository.getMetadataFromSession(tenant, sessionId);
+    }
+
+
+    /** Stores all added or set values for each metric and context. */
+    static class MockMetric implements Metric {
+
+        final Map<String, Map<Map<String, ?>, Number>> values = new HashMap<>();
+
+        @Override
+        public void set(String key, Number val, Metric.Context ctx) {
+            values.putIfAbsent(key, new HashMap<>());
+            values.get(key).put(((Context) ctx).point, val);
+        }
+
+        @Override
+        public void add(String key, Number val, Metric.Context ctx) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Context createContext(Map<String, ?> properties) {
+            return new Context(properties);
+        }
+
+
+        private static class Context implements Metric.Context {
+
+            private final Map<String, ?> point;
+
+            public Context(Map<String, ?> point) {
+                this.point = Map.copyOf(point);
+            }
+
+        }
+
     }
 
 }

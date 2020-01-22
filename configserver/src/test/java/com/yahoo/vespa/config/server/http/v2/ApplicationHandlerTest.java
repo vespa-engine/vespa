@@ -9,6 +9,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
@@ -79,7 +80,8 @@ public class ApplicationHandlerTest {
                                                           new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                           new MockLogRetriever(),
                                                           Clock.systemUTC(),
-                                                          new MockTesterClient());
+                                                          new MockTesterClient(),
+                                                          new NullMetric());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                               tenantRepository,
                                                               Zone.defaultZone());
@@ -177,7 +179,8 @@ public class ApplicationHandlerTest {
                                                                                 mockHttpProxy,
                                                                                 new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                                                 new OrchestratorMock(),
-                                                                                new MockTesterClient());
+                                                                                new MockTesterClient(),
+                                                                                new NullMetric());
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
