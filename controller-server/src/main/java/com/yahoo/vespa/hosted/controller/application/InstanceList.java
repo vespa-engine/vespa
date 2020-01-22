@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 
@@ -82,7 +83,9 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which currently have failing jobs on the given version */
     public InstanceList failingOn(Version version) {
-        return matching(id -> ! statuses.get(id).instanceJobs().get(id).failing().lastCompleted().on(version).isEmpty());
+        return matching(id -> ! statuses.get(id).instanceJobs().get(id).failing()
+                                        .not().withStatus(outOfCapacity)
+                                        .lastCompleted().on(version).isEmpty());
     }
 
     /** Returns the subset of instances which are not pinned to a certain Vespa version. */
@@ -92,7 +95,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which are not currently failing any jobs. */
     public InstanceList failing() {
-        return matching(id -> ! statuses.get(id).instanceJobs().get(id).failing().not().withStatus(RunStatus.outOfCapacity).isEmpty());
+        return matching(id -> ! statuses.get(id).instanceJobs().get(id).failing().not().withStatus(outOfCapacity).isEmpty());
     }
 
     /** Returns the subset of instances which are currently failing an upgrade. */
