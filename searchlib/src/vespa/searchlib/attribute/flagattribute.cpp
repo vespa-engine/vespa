@@ -24,8 +24,7 @@ class SaveBits
     FA &_fa;
     
 public:
-    SaveBits(vespalib::ConstArrayRef<T> map,
-             FA &fa)
+    SaveBits(vespalib::ConstArrayRef<T> map, FA &fa)
         : _map(map),
           _fa(fa)
     {
@@ -55,11 +54,9 @@ FlagAttributeT<B>::FlagAttributeT(const vespalib::string & baseFileName, const A
 
 template <typename B>
 AttributeVector::SearchContext::UP
-FlagAttributeT<B>::getSearch(QueryTermSimple::UP qTerm,
-                             const attribute::SearchContextParams & params) const
+FlagAttributeT<B>::getSearch(QueryTermSimple::UP qTerm, const attribute::SearchContextParams &) const
 {
-    (void) params;
-    return AttributeVector::SearchContext::UP (new SearchContext(std::move(qTerm), *this));
+    return std::make_unique<SearchContext>(std::move(qTerm), *this);
 }
 
 template <typename B>
@@ -69,7 +66,7 @@ void FlagAttributeT<B>::clearOldValues(DocId doc)
     for (uint32_t i(0), m(this->get(doc, values)); i < m; i++) {
         BitVector * bv = _bitVectors[getOffset(values[i].value())];
         if (bv != nullptr) {
-            bv->clearBit(doc);
+            bv->clearBitAndMaintainCount(doc);
         }
     }
 }
@@ -130,10 +127,9 @@ void FlagAttributeT<B>::setNewValues(DocId doc, const std::vector<typename B::WT
             _bitVectorStore[offset] = BitVector::create(_bitVectorSize);
             _bitVectors[offset] = _bitVectorStore[offset].get();
             bv = _bitVectors[offset];
-            bv->invalidateCachedCount();
             ensureGuardBit(*bv);
         }
-        bv->setBit(doc);
+        bv->setBitAndMaintainCount(doc);
     }
 }
 
@@ -145,13 +141,12 @@ FlagAttributeT<B>::setNewBVValue(DocId doc, typename B::WType::ValueType value)
     BitVector * bv = _bitVectors[offset];
     if (bv == nullptr) {
         assert(_bitVectorSize >= this->getNumDocs());
-            _bitVectorStore[offset] = BitVector::create(_bitVectorSize);
+        _bitVectorStore[offset] = BitVector::create(_bitVectorSize);
         _bitVectors[offset] = _bitVectorStore[offset].get();
         bv = _bitVectors[offset];
-        bv->invalidateCachedCount();
         ensureGuardBit(*bv);
     }
-    bv->setBit(doc);
+    bv->setBitAndMaintainCount(doc);
 }
 
 
@@ -193,8 +188,7 @@ template <typename B>
 void
 FlagAttributeT<B>::ensureGuardBit()
 {
-    for (uint32_t i = 0; i < _bitVectors.size(); ++i) {
-        BitVector * bv = _bitVectors[i];
+    for (BitVector * bv : _bitVectors) {
         if (bv != nullptr) {
             ensureGuardBit(*bv);
         }
@@ -205,8 +199,7 @@ template <typename B>
 void
 FlagAttributeT<B>::clearGuardBit(DocId doc)
 {
-    for (uint32_t i = 0; i < _bitVectors.size(); ++i) {
-        BitVector * bv = _bitVectors[i];
+    for (BitVector * bv : _bitVectors) {
         if (bv != nullptr) {
             bv->clearBit(doc); // clear guard bit and start using this doc id
         }
@@ -219,8 +212,7 @@ FlagAttributeT<B>::resizeBitVectors(uint32_t neededSize)
 {
     const GrowStrategy & gs = this->getConfig().getGrowStrategy();
     uint32_t newSize = neededSize + (neededSize * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
-    for (uint32_t i = 0; i < _bitVectors.size(); ++i) {
-        BitVector * bv = _bitVectors[i];
+    for (BitVector * bv : _bitVectors) {
         if (bv != nullptr) {
             vespalib::GenerationHeldBase::UP hold(bv->grow(newSize));
             ensureGuardBit(*bv);

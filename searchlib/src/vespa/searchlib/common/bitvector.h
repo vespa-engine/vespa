@@ -134,16 +134,8 @@ public:
     void clearBit(Index idx) {
         _words[wordNum(idx)] &= ~ mask(idx);
     }
-    void flip(Index idx) {
+    void flipBit(Index idx) {
         _words[wordNum(idx)] ^= mask(idx);
-    }
-    void slowSetBit(Index idx) {
-        if ( ! testBit(idx) ) {
-            setBit(idx);
-            if ( isValidCount() ) {
-                _numTrueBits++;
-            }
-        }
     }
 
     void andWith(const BitVector &right);
@@ -171,12 +163,24 @@ public:
      */
     void setInterval(Index start, Index end);
 
-    void slowClearBit(Index idx) {
+    /**
+     * Sets a bit and maintains count of number of bits set.
+     * @param idx
+     */
+    void setBitAndMaintainCount(Index idx) {
+        if ( ! testBit(idx) ) {
+            setBit(idx);
+            incNumBits();
+        }
+    }
+    /**
+     * Clears a bit and maintains count of number of bits set.
+     * @param idx
+     */
+    void clearBitAndMaintainCount(Index idx) {
         if (testBit(idx)) {
             clearBit(idx);
-            if ( isValidCount() ) {
-                _numTrueBits--;
-            }
+            decNumBits();
         }
     }
 
@@ -279,6 +283,16 @@ private:
     static size_t numActiveWords(Index start, Index end) { return (numWords(end) - wordNum(start)); }
     static Index invalidCount() { return std::numeric_limits<Index>::max(); }
     void setGuardBit() { setBit(size()); }
+    void incNumBits() {
+        if ( isValidCount() ) {
+            _numTrueBits++;
+        }
+    }
+    void decNumBits() {
+        if ( isValidCount() ) {
+            _numTrueBits--;
+        }
+    }
     VESPA_DLL_LOCAL void repairEnds();
     VESPA_DLL_LOCAL static Index internalCount(const Word *tarr, size_t sz);
     Index count() const;

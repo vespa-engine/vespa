@@ -91,9 +91,9 @@ public:
     const BitVector & getBitVector() const { return _bv; }
     void setBit(DocId doc, bool value) {
         if (value) {
-            _bv.setBit(doc);
+            _bv.setBitAndMaintainCount(doc);
         } else {
-            _bv.clearBit(doc);
+            _bv.clearBitAndMaintainCount(doc);
         }
     }
 protected:

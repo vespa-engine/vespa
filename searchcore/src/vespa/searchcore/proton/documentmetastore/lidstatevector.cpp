@@ -94,7 +94,7 @@ LidStateVector::setBit(unsigned int idx)
         _highest = idx;
     }
     assert(!_bv.testBit(idx));
-    _bv.slowSetBit(idx);
+    _bv.setBitAndMaintainCount(idx);
     ++_count;
     assert(_count == internalCount());
 }
@@ -105,7 +105,7 @@ LidStateVector::clearBit(unsigned int idx)
 {
     assert(idx < _bv.size());
     assert(_bv.testBit(idx));
-    _bv.slowClearBit(idx);
+    _bv.clearBitAndMaintainCount(idx);
     --_count;
     assert(_count == internalCount());
     maybeUpdateLowest();
