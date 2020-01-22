@@ -77,6 +77,8 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
@@ -551,46 +553,32 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
         try {
-            return retrying(10, () -> {
-                logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-                controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
-                return running;
-            });
+            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+            return Optional.of(running);
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting application " + id.application(), e);
-            return Optional.of(error);
+            Instant startTime = controller.jobController().run(id).get().stepInfo(deactivateReal).get().startTime().get();
+            return startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                   ? Optional.of(error)
+                   : Optional.empty();
         }
     }
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
         try {
-            return retrying(10, () -> {
-                logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-                controller.jobController().deactivateTester(id.tester(), id.type());
-                return running;
-            });
+            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.jobController().deactivateTester(id.tester(), id.type());
+            return Optional.of(running);
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting tester of " + id.application(), e);
-            return Optional.of(error);
+            Instant startTime = controller.jobController().run(id).get().stepInfo(deactivateTester).get().startTime().get();
+            return startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                   ? Optional.of(error)
+                   : Optional.empty();
         }
-    }
-
-    private static Optional<RunStatus> retrying(int retries, Supplier<RunStatus> task) {
-        RuntimeException exception = null;
-        do {
-            try {
-                return Optional.of(task.get());
-            }
-            catch (RuntimeException e) {
-                if (exception == null)
-                    exception = e;
-                else
-                    exception.addSuppressed(e);
-            }
-        } while (--retries >= 0);
-        throw exception;
     }
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
