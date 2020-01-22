@@ -19,12 +19,15 @@ public class ApplicationSummary {
     private final ApplicationId application;
     private final Optional<Instant> lastQueried;
     private final Optional<Instant> lastWritten;
+    private final Optional<Instant> lastBuilt;
     private final Map<ZoneId, Metric> metrics;
 
-    public ApplicationSummary(ApplicationId application, Optional<Instant> lastQueried, Optional<Instant> lastWritten, Map<ZoneId, Metric> metrics) {
+    public ApplicationSummary(ApplicationId application, Optional<Instant> lastQueried, Optional<Instant> lastWritten,
+                              Optional<Instant> lastBuilt, Map<ZoneId, Metric> metrics) {
         this.application = Objects.requireNonNull(application);
         this.lastQueried = Objects.requireNonNull(lastQueried);
         this.lastWritten = Objects.requireNonNull(lastWritten);
+        this.lastBuilt = Objects.requireNonNull(lastBuilt);
         this.metrics = Map.copyOf(Objects.requireNonNull(metrics));
     }
 
@@ -38,6 +41,10 @@ public class ApplicationSummary {
 
     public Optional<Instant> lastWritten() {
         return lastWritten;
+    }
+
+    public Optional<Instant> lastBuilt() {
+        return lastBuilt;
     }
 
     public Map<ZoneId, Metric> metrics() {

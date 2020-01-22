@@ -84,8 +84,8 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                                                                 deploymentMetrics.queriesPerSecond(),
                                                                 deploymentMetrics.writesPerSecond()));
             }
-        // TODO jonmv: Default instance should really be replaced with something better.
-        return new ApplicationSummary(app.id().defaultInstance(), app.activity().lastQueried(), app.activity().lastWritten(), metrics);
+        return new ApplicationSummary(app.id().defaultInstance(), app.activity().lastQueried(), app.activity().lastWritten(),
+                                      app.latestVersion().flatMap(version -> version.buildTime()), metrics);
     }
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
