@@ -21,7 +21,9 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
@@ -75,6 +77,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -110,6 +113,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Orchestrator orchestrator;
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
+    private final Metric metric;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -119,7 +123,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator,
-                                 TesterClient testerClient) {
+                                 TesterClient testerClient,
+                                 Metric metric) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
@@ -130,7 +135,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new LogRetriever(),
              new FileDistributionStatus(),
              Clock.systemUTC(),
-             testerClient);
+             testerClient,
+             metric);
     }
 
     // For testing
@@ -144,7 +150,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new ConfigserverConfig(new ConfigserverConfig.Builder()),
              new LogRetriever(),
              clock,
-             new TesterClient());
+             new TesterClient(),
+             new NullMetric());
     }
 
     // For testing
@@ -154,7 +161,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigserverConfig configserverConfig,
                                  LogRetriever logRetriever,
                                  Clock clock,
-                                 TesterClient testerClient) {
+                                 TesterClient testerClient,
+                                 Metric metric) {
         this(tenantRepository,
              Optional.of(hostProvisioner),
              Optional.empty(),
@@ -165,7 +173,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              logRetriever,
              new FileDistributionStatus(),
              clock,
-             testerClient);
+             testerClient,
+             metric);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -178,7 +187,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   LogRetriever logRetriever,
                                   FileDistributionStatus fileDistributionStatus,
                                   Clock clock,
-                                  TesterClient testerClient) {
+                                  TesterClient testerClient,
+                                  Metric metric) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
         this.infraDeployer = infraDeployer;
@@ -190,6 +200,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.fileDistributionStatus = fileDistributionStatus;
         this.clock = clock;
         this.testerClient = testerClient;
+        this.metric = metric;
     }
 
     // ---------------- Deploying ----------------------------------------------------------------
@@ -201,10 +212,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
         Slime deployLog = createDeployLog();
         DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
-        ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
-        logConfigChangeActions(actions, logger);
-        log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
-        return new PrepareResult(sessionId, actions, deployLog);
+        try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
+            ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
+            logConfigChangeActions(actions, logger);
+            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+            return new PrepareResult(sessionId, actions, deployLog);
+        }
     }
 
     public PrepareResult prepareAndActivate(Tenant tenant, long sessionId, PrepareParams prepareParams,
@@ -846,6 +859,44 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return new Zone(SystemName.from(configserverConfig.system()),
                         Environment.from(configserverConfig.environment()),
                         RegionName.from(configserverConfig.region()));
+    }
+
+    /** Emits as a metric the time in millis spent while holding this timer, with deployment ID as dimensions. */
+    public ActionTimer timerFor(ApplicationId id, String metricName) {
+        return new ActionTimer(metric, clock, id, configserverConfig.environment(), configserverConfig.region(), metricName);
+    }
+
+    public static class ActionTimer implements AutoCloseable {
+
+        private final Metric metric;
+        private final Clock clock;
+        private final ApplicationId id;
+        private final String environment;
+        private final String region;
+        private final String name;
+        private final Instant start;
+
+        private ActionTimer(Metric metric, Clock clock, ApplicationId id, String environment, String region, String name) {
+            this.metric = metric;
+            this.clock = clock;
+            this.id = id;
+            this.environment = environment;
+            this.region = region;
+            this.name = name;
+            this.start = clock.instant();
+        }
+
+        @Override
+        public void close() {
+            metric.set(name,
+                       Duration.between(start, clock.instant()).toMillis(),
+                       metric.createContext(Map.of("tenant", id.tenant().value(),
+                                                   "application", id.application().value(),
+                                                   "instance", id.instance().value(),
+                                                   "environment", environment,
+                                                   "region", region)));
+        }
+
     }
 
 }

@@ -27,6 +27,7 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockTesterClient;
@@ -137,7 +138,8 @@ public class DeployTester {
                                                           configserverConfig,
                                                           new LogRetriever(),
                                                           clock,
-                                                          new MockTesterClient());
+                                                          new MockTesterClient(),
+                                                          new NullMetric());
     }
 
     public Tenant tenant() {
