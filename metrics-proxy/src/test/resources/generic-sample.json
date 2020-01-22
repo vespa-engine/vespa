@@ -33,7 +33,14 @@
             "queries.count": 4
           },
           "dimensions": {
-            "documentType": "music"
+            "applicationId": "music.default",
+            "clustertype": "container",
+            "clusterid": "default",
+            "instance": "qrserver0",
+            "zone": "us-west",
+            "api": "search/",
+            "documenttype": "music",
+            "non-public": "will-be-removed"
           }
         }
       ]

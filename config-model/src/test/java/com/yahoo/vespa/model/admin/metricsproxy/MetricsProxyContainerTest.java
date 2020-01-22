@@ -2,10 +2,10 @@
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Test;
 
@@ -93,8 +93,8 @@ public class MetricsProxyContainerTest {
         String configId = CLUSTER_CONFIG_ID + "/" + hostedModel.getHosts().iterator().next().getHostname();
         NodeDimensionsConfig config = getNodeDimensionsConfig(hostedModel, configId);
 
-        assertEquals("content", config.dimensions(NodeDimensionNames.CLUSTER_TYPE));
-        assertEquals("my-content", config.dimensions(NodeDimensionNames.CLUSTER_ID));
+        assertEquals("content", config.dimensions(PublicDimensions.INTERNAL_CLUSTER_TYPE));
+        assertEquals("my-content", config.dimensions(PublicDimensions.INTERNAL_CLUSTER_ID));
     }
 
 

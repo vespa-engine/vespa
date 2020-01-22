@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcConnector;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServices;
@@ -18,8 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames.CLUSTER_ID;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames.CLUSTER_TYPE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_NAME;
 
 /**
@@ -32,11 +31,6 @@ public class MetricsProxyContainer extends Container implements
         RpcConnectorConfig.Producer,
         VespaServicesConfig.Producer
 {
-
-    static final class NodeDimensionNames {
-        static final String CLUSTER_TYPE = "clustertype";
-        static final String CLUSTER_ID = "clusterid";
-    }
 
     final boolean isHostedVespa;
 
@@ -119,8 +113,8 @@ public class MetricsProxyContainer extends Container implements
         Map<String, String> dimensions = new LinkedHashMap<>();
         if (isHostedVespa) {
             getHostResource().spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
-                dimensions.put(CLUSTER_TYPE, cluster.type().name());
-                dimensions.put(CLUSTER_ID, cluster.id().value());
+                dimensions.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, cluster.type().name());
+                dimensions.put(PublicDimensions.INTERNAL_CLUSTER_ID, cluster.id().value());
             });
 
             builder.dimensions(dimensions);

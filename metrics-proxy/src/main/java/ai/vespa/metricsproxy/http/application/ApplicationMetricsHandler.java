@@ -8,12 +8,12 @@ import ai.vespa.metricsproxy.http.HttpHandlerBase;
 import ai.vespa.metricsproxy.http.JsonResponse;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +23,7 @@ import java.util.logging.Level;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.getConsumerOrDefault;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericApplicationModel;
+import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static java.util.stream.Collectors.toList;
@@ -36,6 +37,8 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     public static final String V1_PATH = "/applicationmetrics/v1";
     static final String VALUES_PATH = V1_PATH + "/values";
+
+    private static final int MAX_DIMENSIONS = 10;
 
     private final ApplicationMetricsRetriever metricsRetriever;
     private final MetricsConsumers metricsConsumers;
@@ -60,7 +63,10 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
         try {
             ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
             var buildersByNode =  metricsRetriever.getMetrics(consumer);
-            var metricsByNode = processAndBuild(buildersByNode);
+            var metricsByNode = processAndBuild(buildersByNode,
+                                                new ServiceIdDimensionProcessor(),
+                                                new ClusterIdDimensionProcessor(),
+                                                new PublicDimensionsProcessor(MAX_DIMENSIONS));
 
             return new JsonResponse(OK, toGenericApplicationModel(metricsByNode).serialize());
         } catch (Exception e) {
@@ -69,8 +75,8 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
         }
     }
 
-    private Map<Node, List<MetricsPacket>> processAndBuild(Map<Node, List<MetricsPacket.Builder>> buildersByNode,
-                                                           MetricsProcessor... processors) {
+    private static Map<Node, List<MetricsPacket>> processAndBuild(Map<Node, List<MetricsPacket.Builder>> buildersByNode,
+                                                                  MetricsProcessor... processors) {
         var metricsByNode = new HashMap<Node, List<MetricsPacket>>();
 
         buildersByNode.forEach((node, builders) -> {
@@ -82,16 +88,6 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
             metricsByNode.put(node, metrics);
         });
         return metricsByNode;
-    }
-
-    private MetricsPacket.Builder applyProcessors(MetricsPacket.Builder builder, MetricsProcessor... processors) {
-        Arrays.stream(processors).forEach(processor -> processor.process(builder));
-        return builder;
-    }
-
-    interface MetricsProcessor {
-        // Processes the metrics packet builder in-place.
-        void process(MetricsPacket.Builder builder);
     }
 
 }
