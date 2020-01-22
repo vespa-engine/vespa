@@ -173,13 +173,6 @@ public class Flags {
             "Takes effect on restart of process",
             NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_OLD_METRICS_CHECKS = defineFeatureFlag(
-            "use-old-metrics-checks", true,
-            "Whether to use old metrics checks",
-             "Takes effect on next host admin tick",
-            NODE_TYPE, HOSTNAME, APPLICATION_ID);
-
-
     public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
             "enable-disk-write-test", false,
             "Regularly issue a small write to disk and fail the host if it is not successful",
