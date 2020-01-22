@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -29,10 +29,9 @@ public class ResourcesReductionValidatorTest {
             tester.deploy(previous, getServices(new NodeResources(8, 16, 800, 1)), Environment.prod, null);
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
-            assertEquals("resources-reduction: Resource reduction in 'default' is too large. " +
-                            "Current memory GB: 64.00, new: 16.00. New resources must be at least 50% of the current resources. " +
-                            ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
-                    Exceptions.toMessageString(expected));
+            assertTrue(Exceptions.toMessageString(expected).matches("resources-reduction: Resource reduction in 'default' is too large. " +
+                    "Current memory GB: 64.00, new: 16.00. New resources must be at least 50% of the current resources. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction)));
         }
     }
 
@@ -43,11 +42,10 @@ public class ResourcesReductionValidatorTest {
             tester.deploy(previous, getServices(new NodeResources(3, 16, 200, 1)), Environment.prod, null);
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
-            assertEquals("resources-reduction: Resource reduction in 'default' is too large. " +
-                            "Current vCPU: 8.00, new: 3.00. Current memory GB: 64.00, new: 16.00. Current disk GB: 800.00, new: 200.00. " +
-                            "New resources must be at least 50% of the current resources. " +
-                            ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
-                    Exceptions.toMessageString(expected));
+            assertTrue(Exceptions.toMessageString(expected).matches("resources-reduction: Resource reduction in 'default' is too large. " +
+                    "Current vCPU: 8.00, new: 3.00. Current memory GB: 64.00, new: 16.00. Current disk GB: 800.00, new: 200.00. " +
+                    "New resources must be at least 50% of the current resources. " +
+                    ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction)));
         }
     }
 
