@@ -60,25 +60,16 @@ SingleBoolAttribute::onCommit() {
         for (const auto & change : _changes) {
             if (change._type == ChangeBase::UPDATE) {
                 std::atomic_thread_fence(std::memory_order_release);
-                if (change._data == 0) {
-                    _bv.clearBit(change._doc);
-                } else {
-                    _bv.setBit(change._doc);
-                }
+                setBit(change._doc, change._data != 0);
             } else if ((change._type >= ChangeBase::ADD) && (change._type <= ChangeBase::DIV)) {
                 std::atomic_thread_fence(std::memory_order_release);
                 int8_t val = applyArithmetic(getFast(change._doc), change);
-                if (val == 0) {
-                    _bv.clearBit(change._doc);
-                } else {
-                    _bv.setBit(change._doc);
-                }
+                setBit(change._doc, val != 0);
             } else if (change._type == ChangeBase::CLEARDOC) {
                 std::atomic_thread_fence(std::memory_order_release);
-                _bv.clearBit(change._doc);
+                _bv.clearBitAndMaintainCount(change._doc);
             }
         }
-        _bv.invalidateCachedCount();
     }
 
     std::atomic_thread_fence(std::memory_order_release);
@@ -160,8 +151,7 @@ BitVectorSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData
 }
 
 void
-BitVectorSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
-    (void) execInfo;
+BitVectorSearchContext::fetchPostings(const queryeval::ExecuteInfo &) {
 }
 
 std::unique_ptr<queryeval::SearchIterator>
@@ -172,7 +162,9 @@ BitVectorSearchContext::createPostingIterator(fef::TermFieldMatchData *matchData
 unsigned int
 BitVectorSearchContext::approximateHits() const {
     return valid()
-        ? (_invert) ? (_bv.size() - _bv.countTrueBits()) : _bv.countTrueBits()
+        ? (_invert)
+            ? (_bv.size() - _bv.countTrueBits())
+            : _bv.countTrueBits()
         : 0;
 }
 
@@ -195,6 +187,7 @@ SingleBoolAttribute::onLoad()
         uint32_t numDocs = attrReader.getNextData();
         _bv.extend(numDocs);
         ssize_t bytesRead = attrReader.getReader().read(_bv.getStart(), _bv.sizeBytes());
+        _bv.invalidateCachedCount();
         assert(bytesRead == _bv.sizeBytes());
         setNumDocs(numDocs);
         setCommittedDocIdLimit(numDocs);

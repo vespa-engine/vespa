@@ -246,9 +246,8 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     uint32_t typeId = getTypeId(iRef);
     assert(isBTree(typeId));
     (void) typeId;
-    std::shared_ptr<GrowableBitVector> bvsp;
     vespalib::GenerationHolder &genHolder = _store.getGenerationHolder();
-    bvsp.reset(new GrowableBitVector(_bvSize, _bvCapacity, genHolder));
+    auto bvsp = std::make_shared<GrowableBitVector>(_bvSize, _bvCapacity, genHolder);
     AllocatedBitVector &bv = *bvsp.get();
     uint32_t docIdLimit = _bvSize;
     (void) docIdLimit;
@@ -288,9 +287,8 @@ PostingStore<DataT>::applyNewBitVector(EntryRef &ref,
 {
     assert(!ref.valid());
     RefType iRef(ref);
-    std::shared_ptr<GrowableBitVector> bvsp;
     vespalib::GenerationHolder &genHolder = _store.getGenerationHolder();
-    bvsp.reset(new GrowableBitVector(_bvSize, _bvCapacity, genHolder));
+    auto bvsp = std::make_shared<GrowableBitVector>(_bvSize, _bvCapacity, genHolder);
     AllocatedBitVector &bv = *bvsp.get();
     uint32_t docIdLimit = _bvSize;
     (void) docIdLimit;
@@ -329,17 +327,17 @@ PostingStore<DataT>::apply(BitVector &bv,
         if (r != re && (a == ae || *r < a->_key)) {
             // remove
             assert(*r < bv.size());
-            bv.slowClearBit(*r);
+            bv.clearBitAndMaintainCount(*r);
             ++r;
         } else {
             if (r != re && !(a->_key < *r)) {
                 // update or add
                 assert(a->_key < bv.size());
-                bv.slowSetBit(a->_key);
+                bv.setBitAndMaintainCount(a->_key);
                 ++r;
             } else {
                 assert(a->_key < bv.size());
-                bv.slowSetBit(a->_key);
+                bv.setBitAndMaintainCount(a->_key);
             }
             ++a;
         }

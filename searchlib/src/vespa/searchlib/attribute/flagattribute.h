@@ -52,10 +52,10 @@ private:
         return _bitVectors[value + 128];
     }
 
-    vespalib::GenerationHolder                   _bitVectorHolder;
+    vespalib::GenerationHolder               _bitVectorHolder;
     std::vector<std::shared_ptr<BitVector> > _bitVectorStore;
     std::vector<BitVector *>                 _bitVectors;
-    uint32_t                                     _bitVectorSize;
+    uint32_t                                 _bitVectorSize;
     template <class SC> friend class FlagAttributeIteratorT;
     template <class SC> friend class FlagAttributeIteratorStrict;
 };
