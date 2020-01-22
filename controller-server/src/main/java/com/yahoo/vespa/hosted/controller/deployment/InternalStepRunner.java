@@ -52,6 +52,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -76,6 +77,9 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
@@ -186,6 +190,9 @@ public class InternalStepRunner implements StepRunner {
                                                                                vespaVersion,
                                                                                false,
                                                                                setTheStage)),
+                      controller.jobController().run(id).get()
+                                .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
+                                .startTime().get(),
                       logger);
     }
 
@@ -201,10 +208,14 @@ public class InternalStepRunner implements StepRunner {
                                                                                      Optional.of(platform),
                                                                                      false,
                                                                                      false)),
+                      controller.jobController().run(id).get()
+                                .stepInfo(deployTester).get()
+                                .startTime().get(),
                       logger);
     }
 
-    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment, DualLogger logger) {
+    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment,
+                                       Instant startTime, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {
@@ -246,17 +257,20 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(running);
         }
         catch (ConfigServerException e) {
+            // Retry certain failures for up to one hour.
+            Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                                         ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.getErrorCode()) {
                 case ACTIVATION_CONFLICT:
                 case APPLICATION_LOCK_FAILURE:
                 case CERTIFICATE_NOT_READY:
                     logger.log("Deployment failed with possibly transient error " + e.getErrorCode() +
                             ", will retry: " + e.getMessage());
-                    return Optional.empty();
+                    return result;
                 case LOAD_BALANCER_NOT_READY:
                 case PARENT_HOST_NOT_READY:
                     logger.log(e.getServerMessage());
-                    return Optional.empty();
+                    return result;
                 case OUT_OF_CAPACITY:
                     logger.log(e.getServerMessage());
                     return Optional.of(outOfCapacity);

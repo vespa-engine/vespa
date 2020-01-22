@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
@@ -50,6 +51,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.wa
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -93,6 +95,28 @@ public class InternalStepRunnerTest {
         assertTrue(spec.instance(app.testerId().id().instance()).isPresent());
         assertEquals("domain", spec.athenzDomain().get().value());
         assertEquals("service", spec.athenzService().get().value());
+    }
+
+    @Test
+    public void retriesDeploymentForOneHour() {
+        RuntimeException exception = new ConfigServerException(URI.create("https://server"),
+                                                               "test failure",
+                                                               "Exception to retry",
+                                                               ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE,
+                                                               new RuntimeException("Retry me"));
+        tester.configServer().throwOnNextPrepare(exception);
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
+
+        tester.configServer().throwOnNextPrepare(exception);
+        tester.runner().run();
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
+
+        tester.clock().advance(Duration.ofHours(1).plusSeconds(1));
+        tester.configServer().throwOnNextPrepare(exception);
+        tester.runner().run();
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
+        assertEquals(deploymentFailed, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().status());
     }
 
     @Test
