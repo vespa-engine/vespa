@@ -128,7 +128,7 @@ public class QueryProfileProperties extends Properties {
             }
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "': " + e.getMessage()); // TODO: Nest instead
+            throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "'", e);
         }
     }
 

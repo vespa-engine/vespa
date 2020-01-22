@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class GroupingParserBenchmarkTest {
 
-    private static final int NUM_RUNS = 10;//000;
+    private static final int NUM_RUNS = 10;
     private static final Map<String, Long> PREV_RESULTS = new LinkedHashMap<>();
 
     static {
