@@ -17,8 +17,8 @@ namespace storage::lib {
 
 NodeState::NodeState(const NodeState &) = default;
 NodeState & NodeState::operator = (const NodeState &) = default;
-NodeState::NodeState(NodeState &&) = default;
-NodeState & NodeState::operator = (NodeState &&) = default;
+NodeState::NodeState(NodeState &&) noexcept = default;
+NodeState & NodeState::operator = (NodeState &&) noexcept = default;
 NodeState::~NodeState() { }
 
 NodeState::NodeState()

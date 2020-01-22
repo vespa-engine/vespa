@@ -14,7 +14,8 @@ public:
                     VsmfieldsConfig::Fieldspec::Searchmethod searchMethod,
                     const vespalib::string & arg1, size_t maxLength);
     ~FieldSearchSpec();
-    FieldSearchSpec& operator=(FieldSearchSpec&& rhs);
+    FieldSearchSpec(FieldSearchSpec&& rhs) noexcept;
+    FieldSearchSpec& operator=(FieldSearchSpec&& rhs) noexcept;
     const FieldSearcher & searcher() const { return *_searcher; }
     const vespalib::string &  name() const { return _name; }
     FieldIdT                    id() const { return _id; }

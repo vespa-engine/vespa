@@ -16,13 +16,8 @@ private:
 
 public:
     AttributeIteratorPack() : _children() {}
-    AttributeIteratorPack(AttributeIteratorPack &&rhs)
-        : _children(std::move(rhs._children)) {}
-
-    AttributeIteratorPack &operator=(AttributeIteratorPack &&rhs) {
-        _children = std::move(rhs._children);
-        return *this;
-    }
+    AttributeIteratorPack(AttributeIteratorPack &&rhs) noexcept = default;
+    AttributeIteratorPack &operator=(AttributeIteratorPack &&rhs) noexcept = default;
 
     explicit AttributeIteratorPack(std::vector<DocumentWeightIterator> &&children)
         : _children(std::move(children)) {}

@@ -20,8 +20,8 @@ private:
 public:
     SearchIteratorPack();
     ~SearchIteratorPack();
-    SearchIteratorPack(SearchIteratorPack &&rhs);
-    SearchIteratorPack &operator=(SearchIteratorPack &&rhs);
+    SearchIteratorPack(SearchIteratorPack &&rhs) noexcept;
+    SearchIteratorPack &operator=(SearchIteratorPack &&rhs) noexcept;
 
     SearchIteratorPack(const std::vector<SearchIterator*> &children,
                        const std::vector<fef::TermFieldMatchData*> &childMatch,

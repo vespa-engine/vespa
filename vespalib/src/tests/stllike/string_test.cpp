@@ -60,6 +60,45 @@ TEST("test self assignment of big string") {
     EXPECT_EQUAL(text, s);
 }
 
+void verify_move_constructor(string org) {
+    string copy(org);
+    EXPECT_EQUAL(org, copy);
+    string moved_into(std::move(copy));
+    EXPECT_EQUAL(org, moved_into);
+    EXPECT_NOT_EQUAL(org, copy);
+    EXPECT_EQUAL(string(), copy);
+}
+
+void verify_move_operator(string org) {
+    string copy(org);
+    EXPECT_EQUAL(org, copy);
+    string moved_into_short("short movable string");
+    EXPECT_LESS(moved_into_short.size(), string().capacity());
+    EXPECT_NOT_EQUAL(org, moved_into_short);
+    moved_into_short = std::move(copy);
+    EXPECT_EQUAL(org, moved_into_short);
+    EXPECT_NOT_EQUAL(org, copy);
+    EXPECT_EQUAL(string(), copy);
+
+    string moved_into_long("longer movable string than the 47 bytes that can be held in the short string optimization.");
+    EXPECT_GREATER(moved_into_long.size(), string().capacity());
+    EXPECT_NOT_EQUAL(org, moved_into_long);
+    moved_into_long = std::move(moved_into_short);
+    EXPECT_EQUAL(org, moved_into_long);
+    EXPECT_NOT_EQUAL(org, moved_into_short);
+    EXPECT_EQUAL(string(), moved_into_short);
+}
+
+void verify_move(string org) {
+    verify_move_constructor(org);
+    verify_move_operator(org);
+}
+
+TEST("test move constructor") {
+    TEST_DO(verify_move("short string"));
+    TEST_DO(verify_move("longer string than the 47 bytes that can be held in the short string optimization."));
+}
+
 TEST("testStringAlloc") {
     fprintf(stderr, "... testing allocations\n");
     string a("abcde");

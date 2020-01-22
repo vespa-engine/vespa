@@ -44,6 +44,10 @@ public:
          * Create this field based on the given config lines.
          **/
         Field(const std::vector<vespalib::string> & lines);
+        Field(const Field &);
+        Field & operator = (const Field &);
+        Field(Field &&) noexcept;
+        Field & operator = (Field &&) noexcept;
 
         virtual ~Field();
 
@@ -78,6 +82,10 @@ public:
     public:
         IndexField(vespalib::stringref name, DataType dt);
         IndexField(vespalib::stringref name, DataType dt, CollectionType ct);
+        IndexField(const IndexField &);
+        IndexField & operator = (const IndexField &);
+        IndexField(IndexField &&) noexcept;
+        IndexField & operator = (IndexField &&) noexcept;
         /**
          * Create this index field based on the given config lines.
          **/
@@ -114,6 +122,10 @@ public:
 
     public:
         FieldSet(vespalib::stringref n) : _name(n), _fields() {}
+        FieldSet(const FieldSet &);
+        FieldSet & operator =(const FieldSet &);
+        FieldSet(FieldSet &&) noexcept = default;
+        FieldSet & operator =(FieldSet &&) noexcept = default;
 
         /**
          * Create this field collection based on the given config lines.

@@ -91,6 +91,11 @@ Schema::Field::Field(const std::vector<vespalib::string> & lines)
 {
 }
 
+Schema::Field::Field(const Field &) = default;
+Schema::Field & Schema::Field::operator = (const Field &) = default;
+Schema::Field::Field(Field &&) noexcept = default;
+Schema::Field & Schema::Field::operator = (Field &&) noexcept = default;
+
 Schema::Field::~Field() = default;
 
 void
@@ -139,6 +144,11 @@ Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
 {
 }
 
+Schema::IndexField::IndexField(const IndexField &) = default;
+Schema::IndexField & Schema::IndexField::operator = (const IndexField &) = default;
+Schema::IndexField::IndexField(IndexField &&) noexcept = default;
+Schema::IndexField & Schema::IndexField::operator = (IndexField &&) noexcept = default;
+
 void
 Schema::IndexField::write(vespalib::asciistream & os, vespalib::stringref prefix) const
 {
@@ -178,7 +188,10 @@ Schema::FieldSet::FieldSet(const std::vector<vespalib::string> & lines) :
     }
 }
 
-Schema::FieldSet::~FieldSet() { }
+Schema::FieldSet::FieldSet(const FieldSet &) = default;
+Schema::FieldSet & Schema::FieldSet::operator = (const FieldSet &) = default;
+
+Schema::FieldSet::~FieldSet() = default;
 
 bool
 Schema::FieldSet::operator==(const FieldSet &rhs) const
@@ -206,19 +219,7 @@ Schema::writeToStream(vespalib::asciistream &os, bool saveToDisk) const
     }
 }
 
-Schema::Schema()
-    : _indexFields(),
-      _attributeFields(),
-      _summaryFields(),
-      _fieldSets(),
-      _importedAttributeFields(),
-      _indexIds(),
-      _attributeIds(),
-      _summaryIds(),
-      _fieldSetIds(),
-      _importedAttributeIds()
-{
-}
+Schema::Schema() = default;
 
 Schema::Schema(const Schema & rhs) = default;
 Schema & Schema::operator=(const Schema & rhs) = default;

@@ -62,11 +62,11 @@ AttributeWriter::WriteContext::WriteContext(ExecutorId executorId)
 }
 
 
-AttributeWriter::WriteContext::WriteContext(WriteContext &&rhs) = default;
+AttributeWriter::WriteContext::WriteContext(WriteContext &&rhs) noexcept = default;
 
 AttributeWriter::WriteContext::~WriteContext() = default;
 
-AttributeWriter::WriteContext &AttributeWriter::WriteContext::operator=(WriteContext &&rhs) = default;
+AttributeWriter::WriteContext &AttributeWriter::WriteContext::operator=(WriteContext &&rhs) noexcept = default;
 
 void
 AttributeWriter::WriteContext::add(AttributeVector &attr)

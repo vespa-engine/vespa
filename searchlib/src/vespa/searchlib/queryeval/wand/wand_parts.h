@@ -157,8 +157,8 @@ private:
 
 public:
     VectorizedState();
-    VectorizedState(VectorizedState &&);
-    VectorizedState & operator=(VectorizedState &&);
+    VectorizedState(VectorizedState &&) noexcept;
+    VectorizedState & operator=(VectorizedState &&) noexcept;
     ~VectorizedState();
 
     template <typename Scorer, typename Input>
@@ -189,14 +189,14 @@ VectorizedState<IteratorPack>::VectorizedState()
       _iteratorPack()
 {}
 template <typename IteratorPack>
-VectorizedState<IteratorPack>::~VectorizedState() { }
+VectorizedState<IteratorPack>::~VectorizedState() = default;
 
 template <typename IteratorPack>
-VectorizedState<IteratorPack>::VectorizedState(VectorizedState &&) = default;
+VectorizedState<IteratorPack>::VectorizedState(VectorizedState &&) noexcept = default;
 
 template <typename IteratorPack>
 VectorizedState<IteratorPack> &
-VectorizedState<IteratorPack>::operator=(VectorizedState &&) = default;
+VectorizedState<IteratorPack>::operator=(VectorizedState &&) noexcept = default;
 
 template <typename IteratorPack>
 template <typename Scorer, typename Input>
@@ -239,8 +239,8 @@ public:
     template <typename Scorer>
     VectorizedIteratorTerms(const Terms &t, const Scorer &, uint32_t docIdLimit,
                             fef::MatchData::UP childrenMatchData);
-    VectorizedIteratorTerms(VectorizedIteratorTerms &&);
-    VectorizedIteratorTerms & operator=(VectorizedIteratorTerms &&);
+    VectorizedIteratorTerms(VectorizedIteratorTerms &&) noexcept;
+    VectorizedIteratorTerms & operator=(VectorizedIteratorTerms &&) noexcept;
 
     ~VectorizedIteratorTerms();
     void unpack(uint16_t ref, uint32_t docid) { iteratorPack().unpack(ref, docid); }

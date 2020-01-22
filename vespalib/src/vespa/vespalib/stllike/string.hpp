@@ -71,7 +71,7 @@ small_string<StackSize>::rfind(const char * s, size_type e) const {
 
 template <uint32_t StackSize>
 small_string<StackSize> &
-small_string<StackSize>::assign(const void * s, size_type sz) {
+small_string<StackSize>::assign(const void * s, size_type sz) noexcept {
     if (__builtin_expect(capacity() >= sz, true)) {
         char *buf = buffer();
         memmove(buf, s, sz);

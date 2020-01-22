@@ -87,12 +87,12 @@ public:
     Array(const Alloc & initial=Alloc::alloc());
     Array(size_t sz, const Alloc & initial=Alloc::alloc());
     Array(Alloc && buf, size_t sz);
-    Array(Array &&rhs);
+    Array(Array &&rhs) noexcept;
     Array(size_t sz, T value, const Alloc & initial=Alloc::alloc());
     Array(const_iterator begin, const_iterator end, const Alloc & initial=Alloc::alloc());
     Array(const Array & rhs);
     Array & operator =(const Array & rhs);
-    Array & operator =(Array && rhs);
+    Array & operator =(Array && rhs) noexcept;
     ~Array();
     void swap(Array & rhs) {
         _array.swap(rhs._array);
