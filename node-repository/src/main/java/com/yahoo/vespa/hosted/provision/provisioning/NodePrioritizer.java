@@ -122,12 +122,14 @@ public class NodePrioritizer {
      *
      * @param exclusively whether the ready docker nodes should only be added on hosts that
      *                    already have nodes allocated to this tenant
+     * @param application the application we are adding nodes for
      */
-    void addNewDockerNodes(boolean exclusively) {
+    void addNewDockerNodes(boolean exclusively, ApplicationId application) {
         if ( ! isDocker) return;
 
         LockedNodeList candidates = allNodes
-                .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()));
+                .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()))
+                .filter(node -> node.reservedTo().isEmpty() || node.reservedTo().get().equals(application.tenant()));
 
         if (exclusively) {
             Set<String> candidateHostnames = candidates.asList().stream()

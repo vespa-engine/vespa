@@ -140,9 +140,9 @@ class NodeAllocation {
                     continue;
                 }
                 node.node = offered.allocate(application,
-                                                        ClusterMembership.from(cluster, highestIndex.add(1)),
-                                                        requestedNodes.resources().orElse(node.node.flavor().resources()),
-                                                        clock.instant());
+                                             ClusterMembership.from(cluster, highestIndex.add(1)),
+                                             requestedNodes.resources().orElse(node.node.flavor().resources()),
+                                             clock.instant());
                 accepted.add(acceptNode(node, false, false));
             }
         }
