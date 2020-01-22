@@ -180,18 +180,7 @@ public:
     small_string(small_string && rhs) noexcept
         : _sz(rhs.size()), _bufferSize(rhs._bufferSize)
     {
-        if (rhs.isAllocated()) {
-            _buf = rhs._buf;
-            rhs._buf = rhs._stack;
-            rhs._sz = 0;
-            rhs._bufferSize = sizeof(rhs._stack);
-            rhs._stack[0] = 0;
-        } else {
-            _buf = _stack;
-            memcpy(_stack, rhs._stack, sizeof(_stack));
-            rhs._sz = 0;
-            rhs._stack[0] = 0;
-        }
+        move(std::move(rhs));
     }
     small_string(const small_string & rhs) noexcept : _buf(_stack), _sz(rhs.size()) { init(rhs.data()); }
     small_string(const small_string & rhs, size_type pos, size_type sz=npos) noexcept
@@ -216,22 +205,12 @@ public:
             free(buffer());
         }
     }
+
     small_string& operator= (small_string && rhs) noexcept {
         reset();
         _sz = rhs._sz;
         _bufferSize = rhs._bufferSize;
-        if (rhs.isAllocated()) {
-            _buf = rhs._buf;
-            rhs._buf = rhs._stack;
-            rhs._sz = 0;
-            rhs._bufferSize = sizeof(rhs._stack);
-            rhs._stack[0] = 0;
-        } else {
-            _buf = _stack;
-            memcpy(_stack, rhs._stack, sizeof(_stack));
-            rhs._sz = 0;
-            rhs._stack[0] = 0;
-        }
+        move(std::move(rhs));
         return *this;
     }
     small_string& operator= (const small_string &rhs) noexcept {
@@ -556,6 +535,20 @@ private:
     void reserveBytes(size_type newBufferSize) {
         if (newBufferSize > _bufferSize) {
             _reserveBytes(newBufferSize);
+        }
+    }
+    void move(small_string && rhs) {
+        if (rhs.isAllocated()) {
+            _buf = rhs._buf;
+            rhs._buf = rhs._stack;
+            rhs._sz = 0;
+            rhs._bufferSize = sizeof(rhs._stack);
+            rhs._stack[0] = 0;
+        } else {
+            _buf = _stack;
+            memcpy(_stack, rhs._stack, sizeof(_stack));
+            rhs._sz = 0;
+            rhs._stack[0] = 0;
         }
     }
     typedef uint32_t isize_type;
