@@ -59,6 +59,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -80,6 +83,7 @@ import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -1185,26 +1189,39 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throw new NotExistsException(instance + " has no deployment in " + zone);
         }
 
+        // The order here matters because setGlobalRotationStatus involves an external request that may fail.
+        // TODO(mpolden): Set only one of these when only one kind of global endpoints are supported per zone.
+        var deploymentId = new DeploymentId(instance.id(), zone);
+        setGlobalRotationStatus(deploymentId, inService, request);
+        setGlobalEndpointStatus(deploymentId, inService, request);
+
+        return new MessageResponse(String.format("Successfully set %s in %s %s service",
+                                                 instance.id().toShortString(), zone, inService ? "in" : "out of"));
+    }
+
+    /** Set the global endpoint status for given deployment. This only applies to global endpoints backed by a cloud service */
+    private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
+        var roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
+        var isOperator = roles.stream().map(Role::definition).anyMatch(d -> d == RoleDefinition.hostedOperator);
+        var agent = isOperator ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
+        var status = inService ? GlobalRouting.Status.in : GlobalRouting.Status.out;
+        controller.applications().routingPolicies().setGlobalRoutingStatus(deployment, status, agent);
+    }
+
+    /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */
+    private void setGlobalRotationStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
         Inspector requestData = toSlime(request.getData()).get();
         String reason = mandatory("reason", requestData).asString();
         String agent = requireUserPrincipal(request).getName();
         long timestamp = controller.clock().instant().getEpochSecond();
         EndpointStatus.Status status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         EndpointStatus endpointStatus = new EndpointStatus(status, reason, agent, timestamp);
-        controller.applications().setGlobalRotationStatus(new DeploymentId(instance.id(), deployment.zone()),
-                                                          endpointStatus);
-        return new MessageResponse(String.format("Successfully set %s in %s.%s %s service",
-                                                 instance.id().toShortString(),
-                                                 deployment.zone().environment().value(),
-                                                 deployment.zone().region().value(),
-                                                 inService ? "in" : "out of"));
+        controller.applications().setGlobalRotationStatus(deployment, endpointStatus);
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
-
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                      ZoneId.from(environment, region));
-
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("globalrotationoverride");
         controller.applications().globalRotationStatus(deploymentId)
@@ -1216,7 +1233,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                       statusObject.setString("agent", status.getAgent() == null ? "" : status.getAgent());
                       statusObject.setLong("timestamp", status.getEpoch());
                   });
-
         return new SlimeJsonResponse(slime);
     }
 
@@ -2064,6 +2080,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case out: return "OUT";
         }
         return "UNKNOWN";
+    }
+
+    private static <T> T getAttribute(HttpRequest request, String attributeName, Class<T> cls) {
+        return Optional.ofNullable(request.getJDiscRequest().context().get(attributeName))
+                       .filter(cls::isInstance)
+                       .map(cls::cast)
+                       .orElseThrow(() -> new IllegalArgumentException("Attribute '" + attributeName + "' was not set on request"));
     }
 
 }

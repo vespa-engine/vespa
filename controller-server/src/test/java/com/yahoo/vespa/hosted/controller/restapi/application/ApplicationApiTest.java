@@ -63,6 +63,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -78,6 +79,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -763,16 +765,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testRotationOverride() {
         // Setup
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+        var applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
                 .globalServiceId("foo")
-                .region("us-west-1")
-                .region("us-east-3")
+                .region(westZone.region())
+                .region(eastZone.region())
                 .build();
 
         // Create tenant and deploy
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
-        app.submit(applicationPackage).runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
+        app.submit(applicationPackage).deploy();
+        app.addRoutingPolicy(westZone, true);
+        app.addRoutingPolicy(eastZone, true);
 
         // Invalid application fails
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation", GET)
@@ -781,16 +787,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               400);
 
         // Invalid deployment fails
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-east-3/global-rotation", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/global-rotation", GET)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-east-3\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-central-1\"}",
                               404);
 
         // Change status of non-existing deployment fails
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-east-3/global-rotation/override", PUT)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/global-rotation/override", PUT)
                                       .userIdentity(USER_ID)
                                       .data("{\"reason\":\"unit-test\"}"),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-east-3\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-central-1\"}",
                               404);
 
         // GET global rotation status
@@ -810,11 +816,23 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"reason\":\"unit-test\"}"),
                               new File("global-rotation-put.json"));
 
+        // Status of routing policy is changed
+        assertGlobalRouting(app.deploymentIdIn(westZone), GlobalRouting.Status.out, GlobalRouting.Agent.tenant);
+
         // DELETE global rotation override status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation/override", DELETE)
                                       .userIdentity(USER_ID)
                                       .data("{\"reason\":\"unit-test\"}"),
                               new File("global-rotation-delete.json"));
+        assertGlobalRouting(app.deploymentIdIn(westZone), GlobalRouting.Status.in, GlobalRouting.Agent.tenant);
+
+        // SET global rotation override status by operator
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation/override", PUT)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR)
+                                      .data("{\"reason\":\"unit-test\"}"),
+                              new File("global-rotation-put.json"));
+        assertGlobalRouting(app.deploymentIdIn(westZone), GlobalRouting.Status.out, GlobalRouting.Agent.operator);
     }
 
     @Test
@@ -1589,6 +1607,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                   List.of(Collections.singletonList("alice"),
                                                                                    Collections.singletonList("bob")),
                                                                                   "queue", Optional.empty()));
+    }
+
+    private void assertGlobalRouting(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
+        var changedAt = tester.controller().clock().instant();
+        var westPolicies = tester.controller().applications().routingPolicies().get(deployment);
+        assertEquals(1, westPolicies.size());
+        var westPolicy = westPolicies.values().iterator().next();
+        assertEquals(status, westPolicy.status().globalRouting().status());
+        assertEquals(agent, westPolicy.status().globalRouting().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), westPolicy.status().globalRouting().changedAt());
     }
 
     private static class RequestBuilder implements Supplier<Request> {
