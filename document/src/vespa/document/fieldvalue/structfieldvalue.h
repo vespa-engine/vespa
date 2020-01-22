@@ -39,8 +39,8 @@ public:
     StructFieldValue(const DataType &type);
     StructFieldValue(const StructFieldValue & rhs);
     StructFieldValue & operator = (const StructFieldValue & rhs);
-    StructFieldValue(StructFieldValue && rhs) = default;
-    StructFieldValue & operator = (StructFieldValue && rhs) = default;
+    StructFieldValue(StructFieldValue && rhs) noexcept = default;
+    StructFieldValue & operator = (StructFieldValue && rhs) noexcept = default;
     ~StructFieldValue() override;
 
     void setRepo(const DocumentTypeRepo & repo) { _repo = & repo; }

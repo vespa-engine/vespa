@@ -17,7 +17,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/compressionconfig.h>
-#include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vector>
@@ -32,7 +31,7 @@ namespace serializablearray {
     class BufferMap;
 }
 
-class SerializableArray : public vespalib::Cloneable
+class SerializableArray
 {
 public:
     /**
@@ -85,9 +84,13 @@ public:
     using CompressionInfo = vespalib::compression::CompressionInfo;
 
     SerializableArray();
+    SerializableArray(const SerializableArray&);
+    SerializableArray& operator=(const SerializableArray&);
+    SerializableArray(SerializableArray &&) noexcept;
+    SerializableArray& operator=(SerializableArray &&) noexcept;
     SerializableArray(EntryMap entries, ByteBufferUP buffer,
                       CompressionConfig::Type comp_type, uint32_t uncompressed_length);
-    ~SerializableArray() override;
+    ~SerializableArray();
 
     /**
      * Stores a value in the array.
@@ -136,11 +139,6 @@ public:
             : _uncompSerData.get();
     }
 
-    SerializableArray* clone() const override { return new SerializableArray(*this); }
-    SerializableArray(const SerializableArray&);
-    SerializableArray& operator=(const SerializableArray&);
-    SerializableArray(SerializableArray &&) noexcept;
-    SerializableArray& operator=(SerializableArray &&) noexcept;
     const EntryMap & getEntries() const { return _entries; }
 private:
     bool shouldDecompress() const {

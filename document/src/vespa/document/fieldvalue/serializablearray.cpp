@@ -48,17 +48,24 @@ SerializableArray::SerializableArray(EntryMap entries, ByteBuffer::UP buffer,
     }
 }
 
+SerializableArray::SerializableArray(SerializableArray &&) noexcept = default;
+SerializableArray& SerializableArray::operator=(SerializableArray &&) noexcept = default;
+SerializableArray::~SerializableArray() = default;
+
+namespace {
+
 serializablearray::BufferMap &
-ensure(std::unique_ptr<serializablearray::BufferMap> & owned) {
+ensure(std::unique_ptr<serializablearray::BufferMap> &owned) {
     if (!owned) {
         owned = std::make_unique<serializablearray::BufferMap>();
     }
     return *owned;
 }
 
+}
+
 SerializableArray::SerializableArray(const SerializableArray& other)
-    : Cloneable(),
-      _entries(other._entries),
+    : _entries(other._entries),
       _owned(),
       _uncompSerData(other._uncompSerData.get() ? new ByteBuffer(*other._uncompSerData) : nullptr),
       _compSerData(other._compSerData.get() ? new ByteBuffer(*other._compSerData) : nullptr),
@@ -96,10 +103,6 @@ void SerializableArray::clear()
     _serializedCompression = CompressionConfig::NONE;
     _uncompressedLength = 0;
 }
-
-SerializableArray::SerializableArray(SerializableArray &&) noexcept = default;
-SerializableArray& SerializableArray::operator=(SerializableArray &&) noexcept = default;
-SerializableArray::~SerializableArray() = default;
 
 void
 SerializableArray::invalidate()
