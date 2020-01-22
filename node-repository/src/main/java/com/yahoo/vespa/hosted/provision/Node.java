@@ -49,6 +49,7 @@ public final class Node {
 
     /** The current allocation of this node, if any */
     private final Optional<Allocation> allocation;
+    private Node retire;
 
     /** Creates a node in the initial state (reserved) */
     public static Node createDockerNode(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
@@ -84,10 +85,14 @@ public final class Node {
 
         if (state == State.active)
             requireNonEmpty(ipConfig.primary(), "An active node must have at least one valid IP address");
+
         if (parentHostname.isPresent()) {
             if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
         }
+
+        if (type != NodeType.host && reservedTo.isPresent())
+            throw new IllegalArgumentException("Only hosts can be reserved to a tenant");
     }
 
     /** Returns the IP addresses of this node */
@@ -158,8 +163,8 @@ public final class Node {
     public Optional<String> modelName() { return modelName; }
 
     /**
-     * Returns the tenant this node is reserved to, if any.
-     * If this is set the node cannot be allocated to any other tenant
+     * Returns the tenant this node is reserved to, if any. Only hosts can be reserved to a tenant.
+     * If this is set, resources on this host cannot be allocated to any other tenant
      */
     public Optional<TenantName> reservedTo() { return reservedTo; }
 

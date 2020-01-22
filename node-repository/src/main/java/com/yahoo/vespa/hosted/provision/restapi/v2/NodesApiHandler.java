@@ -227,14 +227,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
         Set<String> ipAddressPool = new HashSet<>();
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
-        return Node.create(
-                inspector.field("openStackId").asString(),
-                new IP.Config(ipAddresses, ipAddressPool),
-                inspector.field("hostname").asString(),
-                parentHostname,
-                modelName,
-                flavorFromSlime(inspector),
-                reservedToFromSlime(inspector.field("reservedTo")), nodeTypeFromSlime(inspector.field("type"))
+        return Node.create(inspector.field("openStackId").asString(),
+                           new IP.Config(ipAddresses, ipAddressPool),
+                           inspector.field("hostname").asString(),
+                           parentHostname,
+                           modelName,
+                           flavorFromSlime(inspector),
+                           reservedToFromSlime(inspector.field("reservedTo")),
+                           nodeTypeFromSlime(inspector.field("type"))
         );
     }
 
