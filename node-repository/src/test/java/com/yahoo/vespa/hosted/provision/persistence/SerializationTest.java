@@ -229,7 +229,7 @@ public class SerializationTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Optional.empty(), NodeType.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
@@ -441,7 +441,8 @@ public class SerializationTest {
                            Optional.empty(),
                            Optional.empty(),
                            nodeFlavors.getFlavorOrThrow("default"),
-                           NodeType.tenant);
+                           Optional.empty(), NodeType.tenant
+        );
     }
 
 }

@@ -290,6 +290,7 @@ public class FederationSearcher extends ForkingSearcher {
     private void propagatePerSourceQueryProperties(Query original, Query outgoing, Window window,
                                                    String sourceName, String providerName,
                                                    List<CompoundName> queryProperties) {
+        if (1==1) return;
         for (CompoundName key : queryProperties) {
             Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, window.get(key));
             if (value != null)

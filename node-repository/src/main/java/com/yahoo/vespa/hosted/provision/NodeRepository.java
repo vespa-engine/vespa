@@ -313,7 +313,7 @@ public class NodeRepository extends AbstractComponent {
         if (ipConfig.primary().isEmpty()) { // TODO: Remove this. Only test code hits this path
             ipConfig = ipConfig.with(nameResolver.getAllByNameOrThrow(hostname));
         }
-        return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, type);
+        return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, Optional.empty(), type);
     }
 
     public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor,

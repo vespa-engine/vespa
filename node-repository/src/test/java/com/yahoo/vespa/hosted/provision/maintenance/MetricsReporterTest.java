@@ -119,7 +119,7 @@ public class MetricsReporterTest {
         Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
 
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
-                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
         nodeRepository.addNodes(List.of(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());

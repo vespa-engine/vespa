@@ -8,6 +8,7 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -19,6 +20,7 @@ import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -232,7 +234,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 parentHostname,
                 modelName,
                 flavorFromSlime(inspector),
-                nodeTypeFromSlime(inspector.field("type")));
+                reservedToFromSlime(inspector.field("reservedTo")), nodeTypeFromSlime(inspector.field("type"))
+        );
     }
 
     private Flavor flavorFromSlime(Inspector inspector) {
@@ -275,6 +278,13 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private NodeType nodeTypeFromSlime(Inspector object) {
         if (! object.valid()) return NodeType.tenant; // default
         return serializer.typeFrom(object.asString());
+    }
+
+    private Optional<TenantName> reservedToFromSlime(Inspector object) {
+        if (! object.valid()) return Optional.empty();
+        if ( object.type() != Type.STRING)
+            throw new IllegalArgumentException("Expected 'reservedTo' to be a string but is " + object);
+        return Optional.of(TenantName.from(object.asString()));
     }
 
     public static NodeFilter toNodeFilter(HttpRequest request) {
