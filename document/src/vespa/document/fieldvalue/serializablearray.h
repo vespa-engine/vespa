@@ -128,21 +128,23 @@ public:
     /** Deletes all stored attributes. */
     void clear();
 
-    CompressionConfig::Type getCompression() const { return _serializedCompression; }
+    CompressionConfig::Type getCompression() const {
+        return _unlikely ? _unlikely->_serializedCompression : CompressionConfig::NONE;
+    }
     CompressionInfo getCompressionInfo() const;
 
     bool empty() const { return _entries.empty(); }
 
     const ByteBuffer* getSerializedBuffer() const {
-        return CompressionConfig::isCompressed(_serializedCompression)
-            ? _compSerData.get()
+        return CompressionConfig::isCompressed(getCompression())
+            ? _unlikely->_compSerData.get()
             : _uncompSerData.get();
     }
 
     const EntryMap & getEntries() const { return _entries; }
 private:
     bool shouldDecompress() const {
-        return _compSerData.get() && !_uncompSerData.get();
+        return _unlikely && _unlikely->_compSerData && !_uncompSerData;
     }
     bool maybeDecompressAndCatch() const {
         if ( shouldDecompress() ) {
@@ -159,17 +161,22 @@ private:
     }
     void deCompress(); // throw (DeserializeException);
 
+    struct Unlikely {
+        /** The buffers we own. */
+        Unlikely();
+        Unlikely(const Unlikely &);
+        ~Unlikely();
+        std::unique_ptr<serializablearray::BufferMap> _owned;
+        ByteBufferUP             _compSerData;
+        CompressionConfig::Type  _serializedCompression;
+        uint32_t                 _uncompressedLength;
+    };
     /** Contains the stored attributes, with reference to the real data.. */
-    EntryMap _entries;
-    /** The buffers we own. */
-    std::unique_ptr<serializablearray::BufferMap> _owned;
+    EntryMap                  _entries;
+    std::unique_ptr<Unlikely> _unlikely;
 
     /** Data we deserialized from, if applicable. */
     ByteBufferUP             _uncompSerData;
-    ByteBufferUP             _compSerData;
-    CompressionConfig::Type  _serializedCompression;
-
-    uint32_t     _uncompressedLength;
 
     VESPA_DLL_LOCAL void invalidate();
     VESPA_DLL_LOCAL EntryMap::const_iterator find(int id) const;
