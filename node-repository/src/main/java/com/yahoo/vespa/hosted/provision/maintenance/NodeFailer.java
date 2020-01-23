@@ -323,7 +323,7 @@ public class NodeFailer extends Maintainer {
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            return nodeRepository().write(node.downAt(clock.instant()), lock);
+            return nodeRepository().write(node.downAt(clock.instant(), Agent.NodeFailer), lock);
         }
     }
 

@@ -399,19 +399,31 @@ public class NodeSerializer {
 
     private Agent eventAgentFromSlime(Inspector eventAgentField) {
         switch (eventAgentField.asString()) {
+            case "operator" : return Agent.operator;
             case "application" : return Agent.application;
             case "system" : return Agent.system;
-            case "operator" : return Agent.operator;
             case "NodeFailer" : return Agent.NodeFailer;
+            case "Rebalancer" : return Agent.Rebalancer;
+            case "DirtyExpirer" : return Agent.DirtyExpirer;
+            case "FailedExpirer" : return Agent.FailedExpirer;
+            case "InactiveExpirer" : return Agent.InactiveExpirer;
+            case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
+            case "ReservationExpirer" : return Agent.ReservationExpirer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
     private String toString(Agent agent) {
         switch (agent) {
+            case operator : return "operator";
             case application : return "application";
             case system : return "system";
-            case operator : return "operator";
             case NodeFailer : return "NodeFailer";
+            case Rebalancer : return "Rebalancer";
+            case DirtyExpirer : return "DirtyExpirer";
+            case FailedExpirer : return "FailedExpirer";
+            case InactiveExpirer : return "InactiveExpirer";
+            case ProvisionedExpirer : return "ProvisionedExpirer";
+            case ReservationExpirer : return "ReservationExpirer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

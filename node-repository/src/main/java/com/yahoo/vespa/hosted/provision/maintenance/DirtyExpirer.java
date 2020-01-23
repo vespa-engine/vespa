@@ -33,7 +33,7 @@ public class DirtyExpirer extends Expirer {
     @Override
     protected void expire(List<Node> expired) {
         for (Node expiredNode : expired)
-            nodeRepository.fail(expiredNode.hostname(), Agent.system, "Node is stuck in dirty");
+            nodeRepository.fail(expiredNode.hostname(), Agent.DirtyExpirer, "Node is stuck in dirty");
     }
 
 }

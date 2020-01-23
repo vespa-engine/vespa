@@ -684,7 +684,7 @@ public class NodeRepository extends AbstractComponent {
      * Writes these nodes after they have changed some internal state but NOT changed their state field.
      * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
      *
-     * @param lock Already acquired lock
+     * @param lock already acquired lock
      * @return the written nodes for convenience
      */
     public List<Node> write(List<Node> nodes, @SuppressWarnings("unused") Mutex lock) {

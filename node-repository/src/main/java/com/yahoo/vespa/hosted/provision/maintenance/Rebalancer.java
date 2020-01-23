@@ -115,7 +115,7 @@ public class Rebalancer extends Maintainer {
 
             if (nodeToMove.get().status().wantToRetire() == wantToRetire) return false;
 
-            nodeRepository().write(nodeToMove.get().withWantToRetire(wantToRetire, Agent.system, clock.instant()), lock);
+            nodeRepository().write(nodeToMove.get().withWantToRetire(wantToRetire, Agent.Rebalancer, clock.instant()), lock);
             return true;
         }
     }
@@ -154,7 +154,7 @@ public class Rebalancer extends Maintainer {
 
                 // Immediately clean up if we reserved the node but could not activate or reserved a node on the wrong host
                 expectedNewNode.flatMap(node -> nodeRepository().getNode(node.hostname(), Node.State.reserved))
-                               .ifPresent(node -> nodeRepository().setDirty(node, Agent.system, "Expired by Rebalancer"));
+                               .ifPresent(node -> nodeRepository().setDirty(node, Agent.Rebalancer, "Expired by Rebalancer"));
             }
         }
     }
