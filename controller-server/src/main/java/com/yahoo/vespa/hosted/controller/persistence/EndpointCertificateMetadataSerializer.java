@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 
 /**
@@ -52,7 +53,15 @@ public class EndpointCertificateMetadataSerializer {
         }
     }
 
-    public static EndpointCertificateMetadata fromString(String tlsSecretsKeys) {
+    public static EndpointCertificateMetadata fromTlsSecretsKeysString(String tlsSecretsKeys) {
         return fromSlime(new Slime().setString(tlsSecretsKeys));
+    }
+
+    public static EndpointCertificateMetadata fromJsonOrTlsSecretsKeysString(String zkdata) {
+        if(zkdata.strip().startsWith("{")) {
+            return fromSlime(SlimeUtils.jsonToSlime(zkdata).get());
+        } else {
+            return fromTlsSecretsKeysString(zkdata);
+        }
     }
 }

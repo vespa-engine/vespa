@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
+import java.util.Objects;
+
 /**
  * This class is used for metadata about an application's endpoint certificate on the controller.
  * <p>
@@ -38,5 +40,20 @@ public class EndpointCertificateMetadata {
                 ", certName='" + certName + '\'' +
                 ", version=" + version +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        EndpointCertificateMetadata that = (EndpointCertificateMetadata) o;
+        return version == that.version &&
+                Objects.equals(keyName, that.keyName) &&
+                Objects.equals(certName, that.certName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(keyName, certName, version);
     }
 }
