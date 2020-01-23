@@ -33,7 +33,6 @@ class StructuredCache;
 class StructuredFieldValue : public FieldValue
 {
     const DataType *_type;
-    std::unique_ptr<StructuredCache> _cache;
 
     UP onGetNestedFieldValue(PathRange nested) const override;
     /** @return Retrieve value of given field. Null pointer if not set.
@@ -42,12 +41,10 @@ class StructuredFieldValue : public FieldValue
     VESPA_DLL_LOCAL FieldValue::UP getValue(const Field& field, FieldValue::UP container) const;
     VESPA_DLL_LOCAL void updateValue(const Field & field, FieldValue::UP value) const;
     VESPA_DLL_LOCAL void returnValue(const Field & field, FieldValue::UP value) const;
+    virtual StructuredCache * getCache() const { return nullptr; }
 
 protected:
     VESPA_DLL_LOCAL StructuredFieldValue(const DataType &type);
-    StructuredFieldValue(const StructuredFieldValue&);
-    StructuredFieldValue& operator=(const StructuredFieldValue&);
-    ~StructuredFieldValue() override;
 
     /** Called from Document when deserializing alters type. */
     virtual void setType(const DataType& type) { _type = &type; }
@@ -117,9 +114,6 @@ public:
      */
     virtual const Field& getField(vespalib::stringref name) const = 0;
 
-    void beginTransaction();
-    void commitTransaction();
-
     /**
      * Retrieve value of given field and assign it to given field.
      *
@@ -147,8 +141,12 @@ public:
      *
      * @throws vespalib::IllegalArgumentException If value given has wrong type
      */
-    inline void setValue(const Field& field, const FieldValue& value)
-        { setFieldValue(field, value); }
+    void setValue(const Field& field, const FieldValue& value) {
+        setFieldValue(field, value);
+    }
+    void setValue(const Field& field, FieldValue::UP value) {
+        setFieldValue(field, std::move(value));
+    }
     /** Remove the value of given field if it is set. */
 
     //These are affected by the begin/commitTanasaction
@@ -157,12 +155,15 @@ public:
     virtual void clear() = 0;
 
         // Utility functions for easy but less efficient access
-    bool hasValue(vespalib::stringref fieldName) const
-        { return hasFieldValue(getField(fieldName)); }
-    void remove(vespalib::stringref fieldName)
-        { removeFieldValue(getField(fieldName)); }
-    void setValue(vespalib::stringref fieldName, const FieldValue& value)
-        { setFieldValue(getField(fieldName), value); }
+    bool hasValue(vespalib::stringref fieldName) const {
+        return hasFieldValue(getField(fieldName));
+    }
+    void remove(vespalib::stringref fieldName) {
+        removeFieldValue(getField(fieldName));
+    }
+    void setValue(vespalib::stringref fieldName, const FieldValue& value) {
+        setFieldValue(getField(fieldName), value);
+    }
     template<typename PrimitiveType>
     void set(const Field& field, PrimitiveType value);
     template<typename PrimitiveType>
@@ -176,7 +177,7 @@ public:
     virtual bool empty() const = 0;
 
     typedef Iterator const_iterator;
-    const_iterator begin() const { return const_iterator(*this, NULL); }
+    const_iterator begin() const { return const_iterator(*this, nullptr); }
     const_iterator end() const { return const_iterator(); }
 
     /**
@@ -188,18 +189,6 @@ public:
 
     template <typename T>
     std::unique_ptr<T> getAs(const Field &field) const;
-};
-
-class TransactionGuard {
-public:
-    TransactionGuard(StructuredFieldValue & value)
-        : _value(value)
-    {
-        _value.beginTransaction();
-    }
-    ~TransactionGuard() { _value.commitTransaction(); }
-private:
-    StructuredFieldValue & _value;
 };
 
 } // document

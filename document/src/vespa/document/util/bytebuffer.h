@@ -26,8 +26,9 @@ public:
     ByteBuffer(const ByteBuffer &);
     ByteBuffer& operator=(const ByteBuffer &) = delete;
     ByteBuffer(ByteBuffer &&) = default;
-    ByteBuffer& operator=(ByteBuffer &&) = delete;
+    ByteBuffer& operator=(ByteBuffer &&) = default;
 
+    ByteBuffer() : ByteBuffer(nullptr, 0) { }
     ~ByteBuffer();
 
     /**
@@ -45,6 +46,7 @@ public:
      * @param len The length of the buffer
      */
     ByteBuffer(vespalib::alloc::Alloc buffer, uint32_t len);
+    ByteBuffer(std::unique_ptr<vespalib::alloc::Alloc> buffer, uint32_t len);
 
     /**
      * Creates a ByteBuffer object from another buffer. allocates
@@ -56,7 +58,7 @@ public:
      *  @return Returns a newly created bytebuffer object, or nullptr
      *  if buffer was nullptr, or len was <=0.
      */
-    static ByteBuffer* copyBuffer(const char* buffer, uint32_t len);
+    static ByteBuffer copyBuffer(const char* buffer, uint32_t len);
 
     /** @return Returns the buffer pointed to by this object (at position 0) */
     const char* getBuffer() const { return _buffer; }
@@ -110,9 +112,9 @@ private:
     void incPosNoCheck(uint32_t pos) { _pos += pos; }
 
     const char *   _buffer;
-    const uint32_t _len;
+    uint32_t       _len;
     uint32_t       _pos;
-    vespalib::alloc::Alloc _ownedBuffer;
+    std::unique_ptr<vespalib::alloc::Alloc> _ownedBuffer;
 };
 
 } // document

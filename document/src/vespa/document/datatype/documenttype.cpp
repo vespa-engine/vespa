@@ -18,9 +18,7 @@ namespace document {
 
 IMPLEMENT_IDENTIFIABLE(DocumentType, StructuredDataType);
 
-DocumentType::DocumentType()
-{
-}
+DocumentType::DocumentType() = default;
 
 DocumentType::DocumentType(stringref name, int32_t id)
     : StructuredDataType(name, id),
@@ -68,9 +66,7 @@ DocumentType::DocumentType(stringref name, const StructDataType& fields)
     }
 }
 
-DocumentType::~DocumentType()
-{
-}
+DocumentType::~DocumentType() = default;
 
 DocumentType &
 DocumentType::addFieldSet(const vespalib::string & name, const FieldSet::Fields & fields)
@@ -150,10 +146,8 @@ DocumentType::inherit(const DocumentType &docType) {
 bool
 DocumentType::isA(const DataType& other) const
 {
-    for (std::vector<const DocumentType *>::const_iterator
-         it = _inheritedTypes.begin(); it != _inheritedTypes.end(); ++it)
-    {
-        if ((*it)->isA(other)) return true;
+    for (const DocumentType * docType : _inheritedTypes) {
+        if (docType->isA(other)) return true;
     }
     return (*this == other);
 }
@@ -161,12 +155,11 @@ DocumentType::isA(const DataType& other) const
 FieldValue::UP
 DocumentType::createFieldValue() const
 {
-    return FieldValue::UP(new Document(*this, DocumentId("doc::")));
+    return std::make_unique<Document>(*this, DocumentId("id::" + getName() + "::"));
 }
 
 void
-DocumentType::print(std::ostream& out, bool verbose,
-                    const std::string& indent) const
+DocumentType::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "DocumentType(" << getName();
     if (verbose) {

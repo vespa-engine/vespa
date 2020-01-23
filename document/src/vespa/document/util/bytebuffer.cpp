@@ -69,38 +69,47 @@ ByteBuffer::ByteBuffer(const char* buffer, uint32_t len) :
 {
 }
 
-ByteBuffer::ByteBuffer(Alloc buffer, uint32_t len) :
-      _buffer(static_cast<char *>(buffer.get())),
+ByteBuffer::ByteBuffer(Alloc buffer, uint32_t len)
+  : _buffer(static_cast<const char *>(buffer.get())),
+    _len(len),
+    _pos(0),
+    _ownedBuffer(std::make_unique<Alloc>(std::move(buffer)))
+{
+}
+
+ByteBuffer::ByteBuffer(std::unique_ptr<Alloc> buffer, uint32_t len)
+    : _buffer(static_cast<const char *>(buffer->get())),
       _len(len),
       _pos(0),
       _ownedBuffer(std::move(buffer))
 {
 }
 
-ByteBuffer::ByteBuffer(const ByteBuffer& rhs) :
-      _buffer(nullptr),
+ByteBuffer::ByteBuffer(const ByteBuffer& rhs)
+    : _buffer(nullptr),
       _len(rhs._len),
       _pos(rhs._pos),
       _ownedBuffer()
 {
     if (rhs._len > 0 && rhs._buffer) {
-        Alloc buf = Alloc::alloc(rhs._len);
+        auto buf = Alloc::alloc(rhs._len);
         memcpy(buf.get(), rhs._buffer, rhs._len);
-        _ownedBuffer = std::move(buf);
-        _buffer = static_cast<const char *>(_ownedBuffer.get());
+        _buffer = static_cast<const char *>(buf.get());
+        _ownedBuffer = std::make_unique<Alloc>(std::move(buf));
     }
 }
 
 ByteBuffer::~ByteBuffer() = default;
 
-ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
+ByteBuffer
+ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
 {
     if (buffer && len) {
         Alloc newBuf = Alloc::alloc(len);
         memcpy(newBuf.get(), buffer, len);
-        return new ByteBuffer(std::move(newBuf), len);
+        return ByteBuffer(std::make_unique<Alloc>(std::move(newBuf)), len);
     } else {
-        return nullptr;
+        return ByteBuffer();
     }
 }
 

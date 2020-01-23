@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document.h"
+#include "structuredcache.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -11,6 +12,8 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <cassert>
 #include <sstream>
 
 using vespalib::nbostream;
@@ -73,7 +76,12 @@ Document::Document()
     _fields.setDocumentType(getType());
 }
 
-Document::Document(const Document& other) = default;
+Document::Document(const Document& rhs)
+    : StructuredFieldValue(rhs),
+      _id(rhs._id),
+      _fields(rhs._fields),
+      _lastModified(rhs._lastModified)
+{}
 
 Document::Document(const DataType &type, DocumentId documentId)
     : StructuredFieldValue(verifyDocumentType(&type)),
@@ -101,14 +109,34 @@ Document::Document(const DocumentTypeRepo& repo, vespalib::nbostream & is)
     deserialize(repo, is);
 }
 
-Document::~Document() = default;
+Document::Document(Document &&) noexcept = default;
+Document::~Document() noexcept = default;
+
+Document &
+Document::operator =(Document &&rhs) noexcept {
+    assert( ! _cache && ! rhs._cache);
+    _id = std::move(rhs._id);
+    _fields = std::move(rhs._fields);
+    _lastModified = rhs._lastModified;
+    StructuredFieldValue::operator=(std::move(rhs));
+    return *this;
+}
+
+Document &
+Document::operator =(const Document &rhs) {
+    assert( ! _cache && ! rhs._cache);
+    _id = rhs._id;
+    _fields = rhs._fields;
+    _lastModified = rhs._lastModified;
+    StructuredFieldValue::operator=(rhs);
+    return *this;
+}
+
 
 const DocumentType&
 Document::getType() const {
     return static_cast<const DocumentType &>(StructuredFieldValue::getType());
 }
-
-Document& Document::operator=(const Document& doc) = default;
 
 void
 Document::clear()
@@ -134,7 +162,8 @@ Document::assign(const FieldValue& value)
     /// \todo TODO (was warning):  This type checking doesnt work with the way assign is used.
 //    if (*value.getDataType() == *_type) {
     auto & other(dynamic_cast<const Document&>(value));
-    return operator=(other);
+    *this = Document(other);
+    return *this;
 //    }
 //    return FieldValue::assign(value); // Generates exception
 }
@@ -210,7 +239,7 @@ Document::calculateChecksum() const
 
 void Document::serializeHeader(nbostream& stream) const {
     VespaDocumentSerializer serializer(stream);
-    serializer.write(*this, WITHOUT_BODY);
+    serializer.write(*this);
 }
 
 void Document::deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & os) {
@@ -241,6 +270,22 @@ StructuredFieldValue::StructuredIterator::UP
 Document::getIterator(const Field* first) const
 {
     return _fields.getIterator(first);
+}
+
+void
+Document::beginTransaction() {
+    _cache = std::make_unique<StructuredCache>();
+}
+void
+Document::commitTransaction() {
+    for (auto & e : *_cache) {
+        if (e.second.status == fieldvalue::ModificationStatus::REMOVED) {
+            removeFieldValue(e.first);
+        } else if (e.second.status == fieldvalue::ModificationStatus::MODIFIED) {
+            setFieldValue(e.first, std::move(e.second.value));
+        }
+    }
+    _cache.reset();
 }
 
 } // document

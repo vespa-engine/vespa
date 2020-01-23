@@ -21,11 +21,14 @@
 
 namespace document {
 
+class TransactionGuard;
+
 class Document : public StructuredFieldValue
 {
 private:
     DocumentId _id;
     StructFieldValue _fields;
+    std::unique_ptr<StructuredCache> _cache;
 
     // To avoid having to return another container object out of docblocks
     // the meta data has been added to document. This will not be serialized
@@ -42,14 +45,15 @@ public:
 
     Document();
     Document(const Document&);
+    Document(Document &&) noexcept;
+    Document & operator =(const Document &);
+    Document & operator =(Document &&) noexcept;
     Document(const DataType &, DocumentId id);
     Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
-    ~Document() override;
+    ~Document() noexcept override;
 
     void setRepo(const DocumentTypeRepo & repo);
     const DocumentTypeRepo * getRepo() const { return _fields.getRepo(); }
-
-    Document& operator=(const Document&);
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
@@ -107,6 +111,9 @@ public:
 
     void setFieldValue(const Field& field, FieldValue::UP data) override;
 private:
+    friend TransactionGuard;
+    void beginTransaction();
+    void commitTransaction();
     void deserializeHeader(const DocumentTypeRepo& repo, vespalib::nbostream & header);
     void deserializeBody(const DocumentTypeRepo& repo, vespalib::nbostream & body);
     bool hasFieldValue(const Field& field) const override { return _fields.hasValue(field); }
@@ -115,6 +122,19 @@ private:
     bool getFieldValue(const Field& field, FieldValue& value) const override { return _fields.getValue(field, value); }
 
     StructuredIterator::UP getIterator(const Field* first) const override;
+    StructuredCache * getCache() const override { return _cache.get(); }
+};
+
+class TransactionGuard {
+public:
+    TransactionGuard(Document & value)
+        : _value(value)
+    {
+        _value.beginTransaction();
+    }
+    ~TransactionGuard() { _value.commitTransaction(); }
+private:
+    Document & _value;
 };
 
 }  // document

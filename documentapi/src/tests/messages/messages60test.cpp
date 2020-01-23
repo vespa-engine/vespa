@@ -218,7 +218,7 @@ Messages60Test::testDocumentListMessage()
     DocumentListMessage tmp(document::BucketId(16, 1234));
     tmp.getDocuments().push_back(entry);
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + (size_t)69, serialize("DocumentListMessage", tmp));
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 69ul, serialize("DocumentListMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("DocumentListMessage", DocumentProtocol::MESSAGE_DOCUMENTLIST, lang);
@@ -407,7 +407,7 @@ Messages60Test::testPutDocumentMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         auto routableUp = deserialize("PutDocumentMessage", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang);
-        if (EXPECT_TRUE(routableUp.get() != nullptr)) {
+        if (EXPECT_TRUE(routableUp)) {
             auto & deserializedMsg = static_cast<PutDocumentMessage &>(*routableUp);
 
             EXPECT_EQUAL(msg.getDocument().getType().getName(), deserializedMsg.getDocument().getType().getName());

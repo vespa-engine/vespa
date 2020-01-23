@@ -33,6 +33,8 @@ class FieldValue : public vespalib::Identifiable
 protected:
     FieldValue(const FieldValue&) = default;
     FieldValue& operator=(const FieldValue&) = default;
+    FieldValue(FieldValue &&) = default;
+    FieldValue& operator=(FieldValue &&) = default;
     static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType & baseType);
 
 public:

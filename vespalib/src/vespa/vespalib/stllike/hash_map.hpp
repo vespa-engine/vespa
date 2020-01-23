@@ -25,7 +25,7 @@ hash_map<K, V, H, EQ, M>::hash_map(std::initializer_list<value_type> input)
 }
 
 template <typename K, typename V, typename H, typename EQ, typename M>
-hash_map<K, V, H, EQ, M>::~hash_map() = default;
+hash_map<K, V, H, EQ, M>::~hash_map() noexcept = default;
 
 template <typename K, typename V, typename H, typename EQ, typename M>
 void

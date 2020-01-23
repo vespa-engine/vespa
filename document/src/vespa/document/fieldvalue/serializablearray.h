@@ -17,9 +17,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/compressionconfig.h>
-#include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/memory.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vector>
 
 #define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
@@ -32,7 +32,7 @@ namespace serializablearray {
     class BufferMap;
 }
 
-class SerializableArray : public vespalib::Cloneable
+class SerializableArray
 {
 public:
     /**
@@ -85,9 +85,13 @@ public:
     using CompressionInfo = vespalib::compression::CompressionInfo;
 
     SerializableArray();
-    SerializableArray(EntryMap entries, ByteBufferUP buffer,
+    SerializableArray(const SerializableArray&);
+    SerializableArray& operator=(const SerializableArray&);
+    SerializableArray(SerializableArray &&) noexcept;
+    SerializableArray& operator=(SerializableArray &&) noexcept;
+    SerializableArray(EntryMap entries, ByteBuffer buffer,
                       CompressionConfig::Type comp_type, uint32_t uncompressed_length);
-    ~SerializableArray() override;
+    ~SerializableArray();
 
     /**
      * Stores a value in the array.
@@ -99,7 +103,7 @@ public:
     void set(int id, const char* value, int len);
 
     /** Stores a value in the array. */
-    void set(int id, ByteBufferUP buffer);
+    void set(int id, ByteBuffer buffer);
 
     /**
      * Gets a value from the array. This is the faster version of the above.
@@ -125,24 +129,23 @@ public:
     /** Deletes all stored attributes. */
     void clear();
 
-    CompressionConfig::Type getCompression() const { return _serializedCompression; }
+    CompressionConfig::Type getCompression() const {
+        return _unlikely ? _unlikely->_serializedCompression : CompressionConfig::NONE;
+    }
     CompressionInfo getCompressionInfo() const;
 
     bool empty() const { return _entries.empty(); }
 
     const ByteBuffer* getSerializedBuffer() const {
-        return CompressionConfig::isCompressed(_serializedCompression)
-            ? _compSerData.get()
-            : _uncompSerData.get();
+        return CompressionConfig::isCompressed(getCompression())
+            ? &_unlikely->_compSerData
+            : &_uncompSerData;
     }
 
-    SerializableArray* clone() const override { return new SerializableArray(*this); }
-    SerializableArray(const SerializableArray&); // Public only for test
-    SerializableArray& operator=(const SerializableArray&) = delete;
     const EntryMap & getEntries() const { return _entries; }
 private:
     bool shouldDecompress() const {
-        return _compSerData.get() && !_uncompSerData.get();
+        return _unlikely && (_unlikely->_compSerData.getRemaining() != 0) && (_uncompSerData.getBuffer() == 0);
     }
     bool maybeDecompressAndCatch() const {
         if ( shouldDecompress() ) {
@@ -159,17 +162,22 @@ private:
     }
     void deCompress(); // throw (DeserializeException);
 
+    struct RarelyUsedBuffers {
+        /** The buffers we own. */
+        RarelyUsedBuffers();
+        RarelyUsedBuffers(const RarelyUsedBuffers &);
+        ~RarelyUsedBuffers();
+        std::unique_ptr<serializablearray::BufferMap> _owned;
+        ByteBuffer               _compSerData;
+        CompressionConfig::Type  _serializedCompression;
+        uint32_t                 _uncompressedLength;
+    };
     /** Contains the stored attributes, with reference to the real data.. */
-    EntryMap _entries;
-    /** The buffers we own. */
-    std::unique_ptr<serializablearray::BufferMap> _owned;
-
+    EntryMap                  _entries;
     /** Data we deserialized from, if applicable. */
-    ByteBufferUP             _uncompSerData;
-    ByteBufferUP             _compSerData;
-    CompressionConfig::Type  _serializedCompression;
+    ByteBuffer                _uncompSerData;
+    std::unique_ptr<RarelyUsedBuffers> _unlikely;
 
-    uint32_t     _uncompressedLength;
 
     VESPA_DLL_LOCAL void invalidate();
     VESPA_DLL_LOCAL EntryMap::const_iterator find(int id) const;
