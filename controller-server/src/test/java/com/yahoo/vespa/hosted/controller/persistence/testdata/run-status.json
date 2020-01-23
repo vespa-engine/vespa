@@ -8,6 +8,7 @@
     "lastTestRecord": 3,
     "lastVespaLogTimestamp": 1196676930000432,
     "noNodesDownSince": 321321321321,
+    "convergenceSummary": [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89],
     "testerCertificate": "-----BEGIN CERTIFICATE-----\nMIIBEzCBu6ADAgECAgEBMAoGCCqGSM49BAMEMBQxEjAQBgNVBAMTCW15c2Vydmlj\nZTAeFw0xOTA5MDYwNzM3MDZaFw0xOTA5MDcwNzM3MDZaMBQxEjAQBgNVBAMTCW15\nc2VydmljZTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABM0JhD8fV2DlAkjQOGX3\nY50ryMBr3g2+v/uFiRoxJ1muuSOWYrW7HCQIGuzc04fa0QwtaX/voAZKCV51t6jF\n0fwwCgYIKoZIzj0EAwQDRwAwRAIgVbQ3Co1H4X0gmRrtXSyTU0HgBQu9PXHMmX20\n5MyyPSoCIBltOcmaPfdN03L3zqbqZ6PgUBWsvAHgiBzL3hrtJ+iy\n-----END CERTIFICATE-----",
     "steps": {
       "deployInitialReal": "unfinished",

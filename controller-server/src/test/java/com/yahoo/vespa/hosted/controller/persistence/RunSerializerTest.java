@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -99,6 +100,8 @@ public class RunSerializerTest {
                                                                 "badb17"),
                                              122),
                      run.versions().sourceApplication().get());
+        assertEquals(Optional.of(new ConvergenceSummary(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89)),
+                     run.convergenceSummary());
         assertEquals(X509CertificateUtils.fromPem("-----BEGIN CERTIFICATE-----\n" +
                                                   "MIIBEzCBu6ADAgECAgEBMAoGCCqGSM49BAMEMBQxEjAQBgNVBAMTCW15c2Vydmlj\n" +
                                                   "ZTAeFw0xOTA5MDYwNzM3MDZaFw0xOTA5MDcwNzM3MDZaMBQxEjAQBgNVBAMTCW15\n" +
