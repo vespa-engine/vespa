@@ -568,14 +568,14 @@ class JobControllerApiHandlerHelper {
 
                     Cursor runObject = toRunArray.addObject();
                     toSlime(runObject.setObject("versions"), versions);
-                    stepStatus.readyAt(change).ifPresent(ready -> runObject.setLong("readyAt", ready.toEpochMilli()));
-                    stepStatus.readyAt(change)
-                              .filter(controller.clock().instant()::isBefore)
-                              .ifPresent(until -> runObject.setLong("delayedUntil", until.toEpochMilli()));
-                    stepStatus.pausedUntil().ifPresent(until -> runObject.setLong("pausedUntil", until.toEpochMilli()));
-                    stepStatus.coolingDownUntil(change).ifPresent(until -> runObject.setLong("coolingDownUntil", until.toEpochMilli()));
-                    stepStatus.blockedUntil(change).ifPresent(until -> runObject.setLong("blockedUntil", until.toEpochMilli()));
                 }
+                stepStatus.readyAt(change).ifPresent(ready -> stepObject.setLong("readyAt", ready.toEpochMilli()));
+                stepStatus.readyAt(change)
+                          .filter(controller.clock().instant()::isBefore)
+                          .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
+                stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
+                stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
+                stepStatus.blockedUntil(change).ifPresent(until -> stepObject.setLong("blockedUntil", until.toEpochMilli()));
 
                 Cursor runsArray = stepObject.setArray("runs");
                 jobStatus.runs().descendingMap().values().stream().limit(10).forEach(run -> {

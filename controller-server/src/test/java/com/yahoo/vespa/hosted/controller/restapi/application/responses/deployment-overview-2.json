@@ -18,6 +18,7 @@
       "environment": "test",
       "region": "test.us-east-1",
       "toRun": [],
+      "readyAt": 0,
       "runs": [
         {
           "id": 3,
@@ -235,12 +236,12 @@
               "compileVersion": "6.1.0",
               "sourceUrl": "repository1/tree/commit1"
             }
-          },
-          "readyAt": 752000,
-          "delayedUntil": 752000,
-          "coolingDownUntil": 752000
+          }
         }
       ],
+      "readyAt": 752000,
+      "delayedUntil": 752000,
+      "coolingDownUntil": 752000,
       "runs": [
         {
           "id": 5,
@@ -662,6 +663,7 @@
         "sourceUrl": "repository1/tree/commit1"
       },
       "toRun": [],
+      "readyAt": 2000,
       "runs": [
         {
           "id": 3,
