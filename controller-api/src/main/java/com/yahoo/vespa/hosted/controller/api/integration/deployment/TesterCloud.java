@@ -17,15 +17,22 @@ public interface TesterCloud {
     /** Signals the tester to run its tests. */
     void startTests(URI testerUrl, Suite suite, byte[] config);
 
+    /** Signals the tester to run its tests. */
+    // TODO: Remove default implementation when implementations have been updated
+    default void startTests(DeploymentId deploymentId, Suite suite, byte[] config) {}
+
     /** Returns the log entries from the tester with ids after the given threshold. */
     List<LogEntry> getLog(URI testerUrl, long after);
+
+    /** Returns the log entries from the tester with ids after the given threshold. */
+    // TODO: Remove default implementation when implementations have been updated
+    default List<LogEntry> getLog(DeploymentId deploymentId, long after) { return List.of(); }
 
     /** Returns the current status of the tester. */
     Status getStatus(URI testerUrl);
 
     /** Returns the current status of the tester. */
-    // TODO: Remove default implementation when implementors have been updated
-    default Status getStatus(DeploymentId deploymentId) { return Status.FAILURE; }
+    Status getStatus(DeploymentId deploymentId);
 
     /** Returns whether the container is ready to serve. */
     boolean ready(URI endpointUrl);
@@ -33,9 +40,18 @@ public interface TesterCloud {
     /** Returns whether the test container is ready to serve */
     boolean testerReady(URI endpointUrl);
 
+    /** Returns whether the test container is ready to serve */
+    // TODO: Remove default implementation when implementations have been updated
+    default boolean testerReady(DeploymentId deploymentId) { return false; }
+
     /** Returns whether the given URL is registered in DNS. */
     boolean exists(URI endpointUrl);
 
+    /**
+     * Returns whether the given URL is registered in DNS. Always returns true,
+     * as endpoints are not use in this case
+     */
+    default boolean exists(DeploymentId deploymentId) { return true; }
 
     enum Status {
 
