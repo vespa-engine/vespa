@@ -30,7 +30,8 @@ enum PathGroup {
              "/orchestrator/v1/{*}",
              "/os/v1/{*}",
              "/provision/v2/{*}",
-             "/zone/v2/{*}"),
+             "/zone/v2/{*}",
+             "/routing/v1/{*}"),
 
     /** Paths used for creating and reading user resources. */
     user(Optional.of("/api"),
