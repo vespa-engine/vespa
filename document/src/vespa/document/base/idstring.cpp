@@ -194,7 +194,6 @@ IdString::Offsets::compute(stringref id)
     for (;index < VESPA_NELEMS(_offsets); index++) {
         _offsets[index] = id.size() + 1; // 1 is added due to the implicitt accounting for ':'
     }
-    _offsets[MAX_COMPONENTS] = id.size() + 1; // 1 is added due to the implicitt accounting for ':'
     return numComponents;
 }
 
