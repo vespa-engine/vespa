@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -89,7 +90,18 @@ public interface ConfigServer {
     List<FlagData> listFlagData(ZoneId zone);
 
     /** Gets status for tester application */
+    TesterCloud.Status getTesterStatus(DeploymentId deployment);
+
+    /** Starts tests on tester node */
     // TODO: Remove default implementation when implemented in internal repo
-    default TesterCloud.Status getTesterStatus(DeploymentId deployment) { return TesterCloud.Status.SUCCESS; }
+    default void startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) { }
+
+    /** Gets log from tester node */
+    // TODO: Remove default implementation when implemented in internal repo
+    default List<LogEntry> getTesterLog(DeploymentId deployment, long after) { return List.of(); }
+
+    /** Is tester node ready */
+    // TODO: Remove default implementation when implemented in internal repo
+    default boolean isTesterReady(DeploymentId deployment) { return false; }
 
 }
