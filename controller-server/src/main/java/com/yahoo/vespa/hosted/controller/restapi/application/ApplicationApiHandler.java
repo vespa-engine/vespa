@@ -600,6 +600,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             Cursor nodeObject = nodesArray.addObject();
             nodeObject.setString("hostname", node.hostname().value());
             nodeObject.setString("state", valueOf(node.state()));
+            node.reservedTo().ifPresent(tenant -> nodeObject.setString("reservedTo", tenant.value()));
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
             nodeObject.setString("flavor", node.flavor());

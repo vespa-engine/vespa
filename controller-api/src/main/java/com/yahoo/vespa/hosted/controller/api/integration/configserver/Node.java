@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -39,11 +40,13 @@ public class Node {
     private final ClusterType clusterType;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
+    private final Optional<TenantName> reservedTo;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision) {
+                int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
+                Optional<TenantName> reservedTo) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -65,6 +68,7 @@ public class Node {
         this.clusterType = clusterType;
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
+        this.reservedTo = reservedTo;
     }
 
     public HostName hostname() {
@@ -149,6 +153,8 @@ public class Node {
         return wantToDeprovision;
     }
 
+    public Optional<TenantName> reservedTo() { return reservedTo; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -213,7 +219,8 @@ public class Node {
         private ClusterType clusterType;
         private boolean wantToRetire;
         private boolean wantToDeprovision;
-        
+        private Optional<TenantName> reservedTo = Optional.empty();
+
         public Builder() { }
 
         public Builder(Node node) {
@@ -238,6 +245,7 @@ public class Node {
             this.clusterType = node.clusterType;
             this.wantToRetire = node.wantToRetire;
             this.wantToDeprovision = node.wantToDeprovision;
+            this.reservedTo = node.reservedTo;
         }
 
         public Builder hostname(HostName hostname) {
@@ -345,10 +353,16 @@ public class Node {
             return this;
         }
 
+        public Builder reservedTo(TenantName tenant) {
+            this.reservedTo = Optional.of(tenant);
+            return this;
+        }
+
         public Node build() {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion, currentOsVersion,
                     wantedOsVersion, serviceState, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                    cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision);
+                    cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo);
         }
+
     }
 }
