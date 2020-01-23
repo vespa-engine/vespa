@@ -12,6 +12,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
@@ -509,7 +510,10 @@ public class InternalStepRunner implements StepRunner {
         BooleanFlag useConfigServerForTesterAPI = Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.bindTo(controller.flagSource());
         ZoneId zoneId = id.type().zone(controller.system());
         TesterCloud.Status testStatus;
-        if (useConfigServerForTesterAPI.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value()) {
+        boolean useConfigServer = useConfigServerForTesterAPI.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value();
+        InternalStepRunner.logger.log(LogLevel.INFO, Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.id().toString() +
+                                                     " has value " + useConfigServer + " in zone " + zoneId.value());
+        if (useConfigServer) {
             testStatus = controller.serviceRegistry().configServer().getTesterStatus(new DeploymentId(id.application(), zoneId));
         } else {
             Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
