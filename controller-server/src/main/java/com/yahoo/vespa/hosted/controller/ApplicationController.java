@@ -157,7 +157,7 @@ public class ApplicationController {
                         application = application.with(DeploymentSpec.empty);
                     else
                         for (InstanceName instance : application.get().deploymentSpec().instanceNames())
-                            if ( ! application.get().instances().keySet().contains(instance))
+                            if ( ! application.get().instances().containsKey(instance))
                                 application = withNewInstance(application, id.instance(instance));
                     store(application);
                 });
@@ -484,7 +484,7 @@ public class ApplicationController {
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
             DeployOptions options = withVersion(version, DeployOptions.none());
-            return deploy(application.id(), applicationPackage, zone, options, Set.of(), /* No application cert */ null);
+            return deploy(application.id(), applicationPackage, zone, options, Set.of(), /* No application cert */ Optional.empty());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -492,7 +492,7 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        return deploy(tester.id(), applicationPackage, zone, options, Set.of(), /* No application cert for tester*/ null);
+        return deploy(tester.id(), applicationPackage, zone, options, Set.of(), /* No application cert for tester*/ Optional.empty());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
