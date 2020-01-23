@@ -514,7 +514,7 @@ public class InternalStepRunner implements StepRunner {
         InternalStepRunner.logger.log(LogLevel.INFO, Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.id().toString() +
                                                      " has value " + useConfigServer + " in zone " + zoneId.value());
         if (useConfigServer) {
-            testStatus = controller.serviceRegistry().configServer().getTesterStatus(new DeploymentId(id.application(), zoneId));
+            testStatus = controller.serviceRegistry().configServer().getTesterStatus(getTesterDeploymentId(id, zoneId));
         } else {
             Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
             if (testerEndpoint.isEmpty()) {
@@ -708,6 +708,10 @@ public class InternalStepRunner implements StepRunner {
         controller.jobController().storeTesterCertificate(id, certificate);
         zipBuilder.add("artifacts/key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
         zipBuilder.add("artifacts/cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
+    }
+
+    private DeploymentId getTesterDeploymentId(RunId runId, ZoneId zoneId) {
+        return new DeploymentId(runId.tester().id(), zoneId);
     }
 
     private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
