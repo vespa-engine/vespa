@@ -46,6 +46,7 @@ public:
      * @param len The length of the buffer
      */
     ByteBuffer(vespalib::alloc::Alloc buffer, uint32_t len);
+    ByteBuffer(std::unique_ptr<vespalib::alloc::Alloc> buffer, uint32_t len);
 
     /**
      * Creates a ByteBuffer object from another buffer. allocates
@@ -113,7 +114,7 @@ private:
     const char *   _buffer;
     uint32_t       _len;
     uint32_t       _pos;
-    vespalib::alloc::Alloc _ownedBuffer;
+    std::unique_ptr<vespalib::alloc::Alloc> _ownedBuffer;
 };
 
 } // document
