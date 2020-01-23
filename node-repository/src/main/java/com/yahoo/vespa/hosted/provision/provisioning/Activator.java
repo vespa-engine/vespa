@@ -106,7 +106,7 @@ class Activator {
         try (Mutex lock = nodeRepository.lockUnallocated()) {
             List<Node> unreserved = reservedParents.stream()
                                                    .map(hostname -> nodeRepository.getNode(hostname).get())
-                                                   .map(host -> host.withReservedTo(Optional.empty()))
+                                                   .map(host -> host.withoutReservedTo())
                                                    .collect(Collectors.toList());
             nodeRepository.write(unreserved, lock);
         }

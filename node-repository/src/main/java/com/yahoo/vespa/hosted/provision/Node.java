@@ -294,10 +294,10 @@ public final class Node {
                         allocation, history, type, reports, modelName, reservedTo);
     }
 
-    /** Returns a copy of this node marked as reserved to the given tenant (or empty to remove reservation) */
-    public Node withReservedTo(Optional<TenantName> reservedTo) {
+    /** Returns a copy of this node which is not reserved to a tenant */
+    public Node withoutReservedTo() {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
-                        allocation, history, type, reports, modelName, reservedTo);
+                        allocation, history, type, reports, modelName, Optional.empty());
     }
 
     /** Returns a copy of this node with the current reboot generation set to the given number at the given instant */
