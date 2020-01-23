@@ -294,6 +294,13 @@ public final class Node {
                         allocation, history, type, reports, modelName, reservedTo);
     }
 
+    public Node withReservedTo(TenantName tenant) {
+        if (type != NodeType.host)
+            throw new IllegalArgumentException("Only host nodes can be reserved, " + hostname + " has type " + type);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
+                        allocation, history, type, reports, modelName, Optional.of(tenant));
+    }
+
     /** Returns a copy of this node which is not reserved to a tenant */
     public Node withoutReservedTo() {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
