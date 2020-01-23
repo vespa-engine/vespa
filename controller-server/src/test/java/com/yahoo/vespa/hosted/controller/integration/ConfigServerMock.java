@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -287,7 +287,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
                                       Set<ContainerEndpoint> containerEndpoints,
-                                      ApplicationCertificate applicationCertificate, byte[] content) {
+                                      Optional<EndpointCertificateMetadata> endpointCertificateMetadata, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
