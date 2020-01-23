@@ -90,7 +90,7 @@ public class Run {
     public Run finished(Instant now) {
         requireActive();
         return new Run(id, steps, versions, start, Optional.of(now), status == running ? success : status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, Optional.empty());
     }
 
     public Run aborted() {
