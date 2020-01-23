@@ -65,6 +65,7 @@ public interface ConfigServer {
      * @param endpoint The endpoint to modify
      * @param status The new status with metadata
      */
+    // TODO(mpolden): Implement a zone-variant of this
     void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status);
 
     /**

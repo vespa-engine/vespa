@@ -68,6 +68,11 @@ public class RoutingPolicies {
                  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    /** Read routing policy for given zone */
+    public ZoneRoutingPolicy get(ZoneId zone) {
+        return db.readZoneRoutingPolicy(zone);
+    }
+
     /**
      * Refresh routing policies for application in given zone. This is idempotent and changes will only be performed if
      * load balancers for given application have changed.
