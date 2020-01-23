@@ -272,12 +272,10 @@ public class FederationSearcher extends ForkingSearcher {
 
         switch (propagateSourceProperties) {
             case ALL:
-                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName,
-                                                  Query.nativeProperties);
+                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName, Query.nativeProperties);
                 break;
             case OFFSET_HITS:
-                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName,
-                                                  queryAndHits);
+                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName, queryAndHits);
                 break;
         }
 

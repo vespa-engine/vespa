@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
@@ -243,6 +244,7 @@ public class RealNodeRepository implements NodeRepository {
             node.resources.diskSpeed = toString(resources.diskSpeed());
             node.resources.storageType = toString(resources.storageType());
         });
+        node.reservedTo = addNode.reservedTo.map(TenantName::value).orElse(null);
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;
         node.additionalIpAddresses = addNode.additionalIpAddresses;
@@ -258,10 +260,12 @@ public class RealNodeRepository implements NodeRepository {
         node.currentOsVersion = nodeAttributes.getCurrentOsVersion().map(Version::toFullString).orElse(null);
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
         node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
+        node.reservedTo = nodeAttributes.getReservedTo().map(TenantName::value).orElse(null);
 
         Map<String, JsonNode> reports = nodeAttributes.getReports();
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 
         return node;
     }
+
 }

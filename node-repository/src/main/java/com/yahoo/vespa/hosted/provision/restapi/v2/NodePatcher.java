@@ -6,6 +6,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -160,12 +161,11 @@ public class NodePatcher {
             case "bandwidthGbps":
                 return node.with(node.flavor().with(node.flavor().resources().withBandwidthGbps(value.asDouble())));
             case "modelName":
-                if (value.type() == Type.NIX) {
-                    return node.withoutModelName();
-                }
-                return node.withModelName(asString(value));
+                return value.type() == Type.NIX ? node.withoutModelName() : node.withModelName(asString(value));
             case "requiredDiskSpeed":
                 return patchRequiredDiskSpeed(asString(value));
+            case "reservedTo":
+                return value.type() == Type.NIX ? node.withoutReservedTo() : node.withReservedTo(TenantName.from(value.asString()));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

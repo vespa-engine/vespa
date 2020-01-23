@@ -62,6 +62,8 @@ public class NodeRepositoryNode {
     public Integer failCount;
     @JsonProperty("environment")
     public String environment;
+    @JsonProperty("reservedTo")
+    public String reservedTo;
     @JsonProperty("type")
     public String type;
     @JsonProperty("wantedDockerImage")
@@ -106,6 +108,7 @@ public class NodeRepositoryNode {
                 ", wantedFirmwareCheck=" + wantedFirmwareCheck +
                 ", failCount=" + failCount +
                 ", environment='" + environment + '\'' +
+                ", reservedTo='" + reservedTo + "'" +
                 ", type='" + type + '\'' +
                 ", wantedDockerImage='" + wantedDockerImage + '\'' +
                 ", currentDockerImage='" + currentDockerImage + '\'' +
@@ -188,4 +191,5 @@ public class NodeRepositoryNode {
                     '}';
         }
     }
+
 }
