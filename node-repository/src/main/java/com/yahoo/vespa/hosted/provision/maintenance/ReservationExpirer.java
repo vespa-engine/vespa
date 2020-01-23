@@ -28,6 +28,6 @@ public class ReservationExpirer extends Expirer {
     }
 
     @Override
-    protected void expire(List<Node> expired) { nodeRepository.setDirty(expired, Agent.system, "Expired by ReservationExpirer"); }
+    protected void expire(List<Node> expired) { nodeRepository.setDirty(expired, Agent.ReservationExpirer, "Expired by ReservationExpirer"); }
 
 }

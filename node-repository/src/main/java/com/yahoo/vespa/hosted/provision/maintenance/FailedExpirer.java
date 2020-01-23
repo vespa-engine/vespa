@@ -107,7 +107,7 @@ public class FailedExpirer extends Maintainer {
                                       .collect(Collectors.toList());
 
                 if (unparkedChildren.isEmpty()) {
-                    nodeRepository.park(candidate.hostname(), false, Agent.system,
+                    nodeRepository.park(candidate.hostname(), false, Agent.FailedExpirer,
                             "Parked by FailedExpirer due to hardware issue");
                 } else {
                     log.info(String.format("Expired failed node %s with hardware issue was not parked because of " +
@@ -118,7 +118,7 @@ public class FailedExpirer extends Maintainer {
                 nodesToRecycle.add(candidate);
             }
         }
-        nodeRepository.setDirty(nodesToRecycle, Agent.system, "Expired by FailedExpirer");
+        nodeRepository.setDirty(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
     }
 
     /** Returns whether the current node fail count should be used as an indicator of hardware issue */
