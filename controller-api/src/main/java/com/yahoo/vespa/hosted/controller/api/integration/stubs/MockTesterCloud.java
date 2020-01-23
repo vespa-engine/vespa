@@ -28,7 +28,19 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
+    public void startTests(DeploymentId deploymentId, Suite suite, byte[] config) {
+        this.status = RUNNING;
+        this.config = config;
+        this.testerUrl = null;
+    }
+
+    @Override
     public List<LogEntry> getLog(URI testerUrl, long after) {
+        return log.stream().filter(entry -> entry.id() > after).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<LogEntry> getLog(DeploymentId deploymentId, long after) {
         return log.stream().filter(entry -> entry.id() > after).collect(Collectors.toList());
     }
 
@@ -49,7 +61,17 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
+    public boolean testerReady(DeploymentId deploymentId) {
+        return true;
+    }
+
+    @Override
     public boolean exists(URI endpointUrl) {
+        return true;
+    }
+
+    @Override
+    public boolean exists(DeploymentId deploymentId) {
         return true;
     }
 
