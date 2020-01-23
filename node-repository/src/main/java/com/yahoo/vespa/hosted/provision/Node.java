@@ -49,7 +49,6 @@ public final class Node {
 
     /** The current allocation of this node, if any */
     private final Optional<Allocation> allocation;
-    private Node retire;
 
     /** Creates a node in the initial state (reserved) */
     public static Node createDockerNode(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
