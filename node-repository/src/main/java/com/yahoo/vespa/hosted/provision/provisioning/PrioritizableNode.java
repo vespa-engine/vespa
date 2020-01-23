@@ -87,6 +87,10 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
             throw new IllegalStateException("Nodes " + this.node + " and " + other.node + " have different states");
 
         if (this.parent.isPresent() && other.parent.isPresent()) {
+            // Prefer reserved hosts (that they are reserved to the right tenant is ensured elsewhere)
+            if ( this.parent.get().reservedTo().isPresent() && ! other.parent.get().reservedTo().isPresent()) return -1;
+            if ( ! this.parent.get().reservedTo().isPresent() && other.parent.get().reservedTo().isPresent()) return 1;
+
             int diskCostDifference = NodeResources.DiskSpeed.compare(this.parent.get().flavor().resources().diskSpeed(),
                                                                      other.parent.get().flavor().resources().diskSpeed());
             if (diskCostDifference != 0)

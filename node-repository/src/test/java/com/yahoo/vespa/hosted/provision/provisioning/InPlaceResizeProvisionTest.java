@@ -47,6 +47,7 @@ import static org.junit.Assert.fail;
  * @author freva
  */
 public class InPlaceResizeProvisionTest {
+
     private static final NodeResources smallResources = new NodeResources(2, 4, 8, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
     private static final NodeResources mediumResources = new NodeResources(4, 8, 16, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
     private static final NodeResources largeResources = new NodeResources(8, 16, 32, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);

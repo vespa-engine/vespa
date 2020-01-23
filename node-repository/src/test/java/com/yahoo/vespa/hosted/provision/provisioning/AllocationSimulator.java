@@ -81,7 +81,7 @@ public class AllocationSimulator {
         var ipConfig = new IP.Config(Set.of("127.0.0.1"), parent.isPresent() ? Set.of() : getAdditionalIP());
         return new Node("fake", ipConfig, hostname, parent, flavor, Status.initial(),
                         parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant, flavor), History.empty(),
-                        parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports(), Optional.empty());
+                        parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports(), Optional.empty(), Optional.empty());
     }
 
     private Set<String> getAdditionalIP() {

@@ -14,6 +14,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -105,6 +106,45 @@ public class DockerProvisioningTest {
 
         NodeList activeNodes = tester.getNodes(application1, Node.State.active);
         assertEquals(nodeCount, activeNodes.size());
+    }
+
+    @Test
+    public void reservations_are_respected() {
+        NodeResources resources = new NodeResources(10, 10, 10, 10);
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        TenantName tenant1 = TenantName.from("tenant1");
+        TenantName tenant2 = TenantName.from("tenant2");
+        ApplicationId application1_1 = ApplicationId.from(tenant1, ApplicationName.from("application1"), InstanceName.defaultName());
+        ApplicationId application2_1 = ApplicationId.from(tenant2, ApplicationName.from("application1"), InstanceName.defaultName());
+        ApplicationId application2_2 = ApplicationId.from(tenant2, ApplicationName.from("application2"), InstanceName.defaultName());
+
+        tester.makeReadyNodes(10, resources, Optional.of(tenant1), NodeType.host, 1);
+        tester.makeReadyNodes(10, resources, Optional.empty(), NodeType.host, 1);
+        tester.deployZoneApp();
+
+        Version wantedVespaVersion = Version.fromString("6.39");
+        List<HostSpec> nodes = tester.prepare(application2_1,
+                                              ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                                              6, 1, resources);
+        assertHostSpecParentReservation(nodes, Optional.empty(), tester); // We do not get nodes on hosts reserved to tenant1
+        tester.activate(application2_1, nodes);
+
+        try {
+            tester.prepare(application2_2,
+                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                           5, 1, resources);
+            fail("Expected exception");
+        }
+        catch (OutOfCapacityException e) {
+            // Success: Not enough nonreserved hosts left
+        }
+
+        nodes = tester.prepare(application1_1,
+                               ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                              10, 1, resources);
+        assertHostSpecParentReservation(nodes, Optional.of(tenant1), tester);
+        tester.activate(application1_1, nodes);
+        assertNodeParentReservation(tester.getNodes(application1_1).asList(), Optional.empty(), tester); // Reservation is cleared after activation
     }
 
     /** Exclusive app first, then non-exclusive: Should give the same result as below */
@@ -258,6 +298,18 @@ public class DockerProvisioningTest {
                                             Capacity.fromCount(nodeCount, Optional.of(dockerFlavor), false, true),
                                             1));
         tester.activate(application, hosts);
+    }
+
+    private void assertNodeParentReservation(List<Node> nodes, Optional<TenantName> reservation, ProvisioningTester tester) {
+        for (Node node : nodes)
+            assertEquals(reservation, tester.nodeRepository().getNode(node.parentHostname().get()).get().reservedTo());
+    }
+
+    private void assertHostSpecParentReservation(List<HostSpec> hostSpecs, Optional<TenantName> reservation, ProvisioningTester tester) {
+        for (HostSpec hostSpec : hostSpecs) {
+            Node node = tester.nodeRepository().getNode(hostSpec.hostname()).get();
+            assertEquals(reservation, tester.nodeRepository().getNode(node.parentHostname().get()).get().reservedTo());
+        }
     }
 
 }

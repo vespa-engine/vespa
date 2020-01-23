@@ -19,6 +19,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -77,6 +78,7 @@ public class NodeSerializer {
     private static final String firmwareCheckKey = "firmwareCheck";
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
+    private static final String reservedToKey = "reservedTo";
 
     // Node resource fields
     // ...for hosts and nodes allocated by legacy flavor specs
@@ -149,6 +151,7 @@ public class NodeSerializer {
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
+        node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -222,7 +225,8 @@ public class NodeSerializer {
                         historyFromSlime(object.field(historyKey)),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
-                        modelNameFromSlime(object));
+                        modelNameFromSlime(object),
+                        reservedToFromSlime(object.field(reservedToKey)));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -339,6 +343,13 @@ public class NodeSerializer {
             return Optional.of(object.field(modelNameKey).asString());
         }
         return Optional.empty();
+    }
+
+    private Optional<TenantName> reservedToFromSlime(Inspector object) {
+        if (! object.valid()) return Optional.empty();
+        if (object.type() != Type.STRING)
+            throw new IllegalArgumentException("Expected 'reservedTo' to be a string but is " + object);
+        return Optional.of(TenantName.from(object.asString()));
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

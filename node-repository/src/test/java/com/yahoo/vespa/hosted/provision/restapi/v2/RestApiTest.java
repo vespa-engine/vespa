@@ -6,6 +6,7 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -23,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -106,7 +108,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.8.1") + "," + // test with only 1 ip address
                                     asNodeJson("host9.yahoo.com", "large-variant", "127.0.9.1", "::9:1") + "," +
-                                    asHostJson("parent2.yahoo.com", "large-variant", "127.0.127.1", "::127:1") + "," +
+                                    asHostJson("parent2.yahoo.com", "large-variant", Optional.of(TenantName.from("myTenant")), "127.0.127.1", "::127:1") + "," +
                                     asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com", "::11") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
@@ -292,7 +294,7 @@ public class RestApiTest {
 
         // Attempt to POST host node with already assigned IP
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   "[" + asHostJson("host200.yahoo.com", "default", "127.0.2.1") + "]",
+                                   "[" + asHostJson("host200.yahoo.com", "default", Optional.empty(), "127.0.2.1") + "]",
                                    Request.Method.POST), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot assign [127.0.2.1] to host200.yahoo.com: [127.0.2.1] already assigned to host2.yahoo.com\"}");
 
@@ -304,7 +306,7 @@ public class RestApiTest {
 
         // Node types running a single container can share their IP address with child node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   "[" + asNodeJson("cfghost42.yahoo.com", NodeType.confighost, "default", "127.0.42.1") + "]",
+                                   "[" + asNodeJson("cfghost42.yahoo.com", NodeType.confighost, "default", Optional.empty(), "127.0.42.1") + "]",
                                    Request.Method.POST), 200,
                        "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -320,7 +322,7 @@ public class RestApiTest {
 
         // ... nor with child node on different host
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   "[" + asNodeJson("cfghost43.yahoo.com", NodeType.confighost, "default", "127.0.43.1") + "]",
+                                   "[" + asNodeJson("cfghost43.yahoo.com", NodeType.confighost, "default", Optional.empty(), "127.0.43.1") + "]",
                                    Request.Method.POST), 200,
                        "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/cfg42.yahoo.com",
@@ -921,14 +923,15 @@ public class RestApiTest {
                 "\"flavor\":\"" + flavor + "\"}";
     }
 
-    private static String asHostJson(String hostname, String flavor, String... ipAddress) {
-        return asNodeJson(hostname,  NodeType.host, flavor, ipAddress);
+    private static String asHostJson(String hostname, String flavor, Optional<TenantName> reservedTo, String... ipAddress) {
+        return asNodeJson(hostname,  NodeType.host, flavor, reservedTo, ipAddress);
     }
 
-    private static String asNodeJson(String hostname, NodeType nodeType, String flavor, String... ipAddress) {
+    private static String asNodeJson(String hostname, NodeType nodeType, String flavor, Optional<TenantName> reservedTo, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
                createIpAddresses(ipAddress) +
                "\"flavor\":\"" + flavor + "\"" +
+               (reservedTo.isPresent() ? ", \"reservedTo\":\"" + reservedTo.get().value() + "\"" : "") +
                ", \"type\":\"" + nodeType + "\"}";
     }
 

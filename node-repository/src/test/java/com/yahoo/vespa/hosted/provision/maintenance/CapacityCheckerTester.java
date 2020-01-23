@@ -133,8 +133,8 @@ public class CapacityCheckerTester {
             NodeResources nr = containingNodeResources(childResources,
                     excessCapacity);
             Node node = nodeRepository.createNode(hostname, hostname,
-                    new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                    new Flavor(nr), NodeType.host);
+                                                  new IP.Config(Set.of("::"), availableIps), Optional.empty(),
+                                                  new Flavor(nr), Optional.empty(), NodeType.host);
             hosts.add(node);
         }
         return hosts;
@@ -152,8 +152,8 @@ public class CapacityCheckerTester {
                     .mapToObj(n -> String.format("%04X::%04X", hostid, n))
                     .collect(Collectors.toSet());
             Node node = nodeRepository.createNode(hostname, hostname,
-                    new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                    new Flavor(capacity), NodeType.host);
+                                                  new IP.Config(Set.of("::"), availableIps), Optional.empty(),
+                                                  new Flavor(capacity), Optional.empty(), NodeType.host);
             hosts.add(node);
         }
         return hosts;
@@ -263,8 +263,8 @@ public class CapacityCheckerTester {
         Flavor f = new Flavor(nr);
 
         Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,
-                new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses),
-                nodeModel.parentHostname, f, nodeModel.type);
+                                              new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses),
+                                              nodeModel.parentHostname, f, Optional.empty(), nodeModel.type);
 
         if (membership != null) {
             return node.allocate(owner, membership, node.flavor().resources(), Instant.now());

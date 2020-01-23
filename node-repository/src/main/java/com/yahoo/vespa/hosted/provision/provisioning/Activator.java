@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
-import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -90,6 +89,22 @@ class Activator {
         nodeRepository.deactivate(activeToRemove, transaction);
         nodeRepository.activate(updateFrom(hosts, continuedActive), transaction); // update active with any changes
         nodeRepository.activate(updatePortsFrom(hosts, reservedToActivate), transaction);
+        unreserveParentsOf(reservedToActivate);
+    }
+
+    /** When a tenant node is activated on a host, we can open up that host for use by others */
+    private void unreserveParentsOf(List<Node> nodes) {
+        for (Node node : nodes) {
+            if ( node.parentHostname().isEmpty()) continue;
+            Optional<Node> parent = nodeRepository.getNode(node.parentHostname().get());
+            if (parent.isEmpty()) continue;
+            if (parent.get().reservedTo().isEmpty()) continue;
+            try (Mutex lock = nodeRepository.lock(parent.get())) {
+                Optional<Node> lockedParent = nodeRepository.getNode(parent.get().hostname());
+                if (lockedParent.isEmpty()) continue;
+                nodeRepository.write(lockedParent.get().withoutReservedTo(), lock);
+            }
+        }
     }
 
     /** Activate load balancers */
@@ -117,9 +132,9 @@ class Activator {
                 .filter(node -> node.state() != Node.State.active)
                 .map(Node::hostname)
                 .collect(Collectors.toSet());
-        long numNonActive = nonActiveHosts.size();
-        if (numNonActive > 0) {
-            long numActive = parentHostnames.size() - numNonActive;
+
+        if (nonActiveHosts.size() > 0) {
+            long numActive = parentHostnames.size() - nonActiveHosts.size();
             var messageBuilder = new StringBuilder()
                     .append(numActive).append("/").append(parentHostnames.size())
                     .append(" hosts for ")

@@ -119,7 +119,7 @@ public class MetricsReporterTest {
         Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
 
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
-                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
         nodeRepository.addNodes(List.of(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
@@ -127,12 +127,12 @@ public class MetricsReporterTest {
         Node container1 = Node.createDockerNode(Set.of("::2"), "container1",
                                                 "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1"), container1).get());
-        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockAllocation()));
+        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockUnallocated()));
 
         Node container2 = Node.createDockerNode(Set.of("::3"), "container2",
                                                 "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2"), container2).get());
-        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockAllocation()));
+        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockUnallocated()));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);

@@ -241,13 +241,16 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
-        return makeReadyNodes(n, asFlavor(flavor, type), type, 0);
+        return makeReadyNodes(n, asFlavor(flavor, type), Optional.empty(), type, 0);
     }
     public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type) {
-        return makeReadyNodes(n, new Flavor(resources), type, 0);
+        return makeReadyNodes(n, new Flavor(resources), Optional.empty(), type, 0);
     }
     public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type, int ipAddressPoolSize) {
-        return makeReadyNodes(n, new Flavor(resources), type, ipAddressPoolSize);
+        return makeReadyNodes(n, resources, Optional.empty(), type, ipAddressPoolSize);
+    }
+    public List<Node> makeReadyNodes(int n, NodeResources resources, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize) {
+        return makeReadyNodes(n, new Flavor(resources), reservedTo, type, ipAddressPoolSize);
     }
 
     public List<Node> makeProvisionedNodes(int count, String flavor, NodeType type, int ipAddressPoolSize) {
@@ -255,9 +258,9 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
-        return makeProvisionedNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize, dualStack);
+        return makeProvisionedNodes(n, asFlavor(flavor, type), Optional.empty(), type, ipAddressPoolSize, dualStack);
     }
-    public List<Node> makeProvisionedNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+    public List<Node> makeProvisionedNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = new ArrayList<>(n);
 
         for (int i = 0; i < n; i++) {
@@ -299,6 +302,7 @@ public class ProvisioningTester {
                                                 new IP.Config(hostIps, ipAddressPool),
                                                 Optional.empty(),
                                                 flavor,
+                                                reservedTo,
                                                 type));
         }
         nodes = nodeRepository.addNodes(nodes);
@@ -315,11 +319,12 @@ public class ProvisioningTester {
 
             nameResolver.addRecord(hostname, ipv4);
             Node node = nodeRepository.createNode(hostname,
-                    hostname,
-                    new IP.Config(Set.of(ipv4), Set.of()),
-                    Optional.empty(),
-                    nodeFlavors.getFlavorOrThrow(flavor),
-                    NodeType.config);
+                                                  hostname,
+                                                  new IP.Config(Set.of(ipv4), Set.of()),
+                                                  Optional.empty(),
+                                                  nodeFlavors.getFlavorOrThrow(flavor),
+                                                  Optional.empty(),
+                                                  NodeType.config);
             nodes.add(node);
         }
 
@@ -338,17 +343,20 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
-        return makeReadyNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize);
+        return makeReadyNodes(n, asFlavor(flavor, type), Optional.empty(), type, ipAddressPoolSize);
     }
-    public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize) {
-        return makeReadyNodes(n, flavor, type, ipAddressPoolSize, false);
+    public List<Node> makeReadyNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize) {
+        return makeReadyNodes(n, flavor, reservedTo, type, ipAddressPoolSize, false);
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         return makeReadyNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize, dualStack);
     }
     public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
-        List<Node> nodes = makeProvisionedNodes(n, flavor, type, ipAddressPoolSize, dualStack);
+        return makeReadyNodes(n, flavor, Optional.empty(), type, ipAddressPoolSize, dualStack);
+    }
+    public List<Node> makeReadyNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        List<Node> nodes = makeProvisionedNodes(n, flavor, reservedTo, type, ipAddressPoolSize, dualStack);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }

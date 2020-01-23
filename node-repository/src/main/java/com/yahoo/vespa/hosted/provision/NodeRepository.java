@@ -10,6 +10,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
@@ -309,16 +310,15 @@ public class NodeRepository extends AbstractComponent {
 
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
     public Node createNode(String openStackId, String hostname, IP.Config ipConfig, Optional<String> parentHostname,
-                           Flavor flavor, NodeType type) {
+                           Flavor flavor, Optional<TenantName> reservedTo, NodeType type) {
         if (ipConfig.primary().isEmpty()) { // TODO: Remove this. Only test code hits this path
             ipConfig = ipConfig.with(nameResolver.getAllByNameOrThrow(hostname));
         }
-        return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, type);
+        return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, reservedTo, type);
     }
 
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor,
-                           NodeType type) {
-        return createNode(openStackId, hostname, IP.Config.EMPTY, parentHostname, flavor, type);
+    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return createNode(openStackId, hostname, IP.Config.EMPTY, parentHostname, flavor, Optional.empty(), type);
     }
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
@@ -341,7 +341,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
     public List<Node> addNodes(List<Node> nodes) {
-        try (Mutex lock = lockAllocation()) {
+        try (Mutex lock = lockUnallocated()) {
             for (int i = 0; i < nodes.size(); i++) {
                 var node = nodes.get(i);
                 var message = "Cannot add " + node.hostname() + ": A node with this name already exists";
@@ -361,7 +361,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Sets a list of nodes ready and returns the nodes in the ready state */
     public List<Node> setReady(List<Node> nodes, Agent agent, String reason) {
-        try (Mutex lock = lockAllocation()) {
+        try (Mutex lock = lockUnallocated()) {
             List<Node> nodesWithResetFields = nodes.stream()
                     .map(node -> {
                         if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
@@ -585,7 +585,7 @@ public class NodeRepository extends AbstractComponent {
     }
 
     public List<Node> removeRecursively(Node node, boolean force) {
-        try (Mutex lock = lockAllocation()) {
+        try (Mutex lock = lockUnallocated()) {
             List<Node> removed = new ArrayList<>();
 
              if (node.type().isDockerHost()) {
@@ -713,7 +713,7 @@ public class NodeRepository extends AbstractComponent {
 
         // perform operation while holding locks
         List<Node> resultingNodes = new ArrayList<>();
-        try (Mutex lock = lockAllocation()) {
+        try (Mutex lock = lockUnallocated()) {
             for (Node node : unallocatedNodes)
                 resultingNodes.add(action.apply(node, lock));
         }
@@ -738,12 +738,12 @@ public class NodeRepository extends AbstractComponent {
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application, Duration timeout) { return db.lock(application, timeout); }
 
-    /** Create a lock which provides exclusive rights to allocating nodes */
-    public Mutex lockAllocation() { return db.lockInactive(); }
+    /** Create a lock which provides exclusive rights to modifying unallocated nodes */
+    public Mutex lockUnallocated() { return db.lockInactive(); }
 
     /** Acquires the appropriate lock for this node */
     public Mutex lock(Node node) {
-        return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockAllocation();
+        return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
     }
 
 }
