@@ -36,7 +36,7 @@ SerializableArray::SerializableArray(EntryMap entries, ByteBuffer buffer,
 {
 
     if (CompressionConfig::isCompressed(comp_type)) {
-        _unlikely = std::make_unique<Unlikely>();
+        _unlikely = std::make_unique<RarelyUsedBuffers>();
         _unlikely->_compSerData = std::move(buffer);
         _unlikely->_serializedCompression = comp_type;
         _unlikely->_uncompressedLength = uncompressed_length;
@@ -62,15 +62,15 @@ ensure(std::unique_ptr<T> &owned) {
 
 }
 
-SerializableArray::Unlikely::Unlikely()
+SerializableArray::RarelyUsedBuffers::RarelyUsedBuffers()
     : _owned(),
       _compSerData(nullptr, 0),
       _serializedCompression(CompressionConfig::NONE),
       _uncompressedLength(0)
 { }
-SerializableArray::Unlikely::~Unlikely() = default;
+SerializableArray::RarelyUsedBuffers::~RarelyUsedBuffers() = default;
 
-SerializableArray::Unlikely::Unlikely(const Unlikely & rhs)
+SerializableArray::RarelyUsedBuffers::RarelyUsedBuffers(const RarelyUsedBuffers & rhs)
     : _owned(),
       _compSerData(rhs._compSerData),
       _serializedCompression(rhs._serializedCompression),
@@ -80,7 +80,7 @@ SerializableArray::Unlikely::Unlikely(const Unlikely & rhs)
 SerializableArray::SerializableArray(const SerializableArray& rhs)
     : _entries(rhs._entries),
       _uncompSerData(rhs._uncompSerData),
-      _unlikely(rhs._unlikely ? new Unlikely(*rhs._unlikely) : nullptr)
+      _unlikely(rhs._unlikely ? new RarelyUsedBuffers(*rhs._unlikely) : nullptr)
 {
     for (size_t i(0); i < _entries.size(); i++) {
         Entry & e(_entries[i]);
@@ -98,7 +98,9 @@ SerializableArray::SerializableArray(const SerializableArray& rhs)
 SerializableArray &
 SerializableArray::operator=(const SerializableArray &rhs)
 {
-    *this = SerializableArray(rhs);
+    if (this != &rhs) {
+        *this = SerializableArray(rhs);
+    }
     return *this;
 }
 
@@ -122,6 +124,7 @@ SerializableArray::set(int id, ByteBuffer buffer)
 {
     maybeDecompress();
     Entry e(id, buffer.getRemaining(), buffer.getBuffer());
+    assert(buffer.getRemaining() < 0x80000000ul);
     ensure(ensure(_unlikely)._owned)[id] = std::move(buffer);
     auto it = find(id);
     if (it == _entries.end()) {

@@ -162,11 +162,11 @@ private:
     }
     void deCompress(); // throw (DeserializeException);
 
-    struct Unlikely {
+    struct RarelyUsedBuffers {
         /** The buffers we own. */
-        Unlikely();
-        Unlikely(const Unlikely &);
-        ~Unlikely();
+        RarelyUsedBuffers();
+        RarelyUsedBuffers(const RarelyUsedBuffers &);
+        ~RarelyUsedBuffers();
         std::unique_ptr<serializablearray::BufferMap> _owned;
         ByteBuffer               _compSerData;
         CompressionConfig::Type  _serializedCompression;
@@ -176,7 +176,7 @@ private:
     EntryMap                  _entries;
     /** Data we deserialized from, if applicable. */
     ByteBuffer                _uncompSerData;
-    std::unique_ptr<Unlikely> _unlikely;
+    std::unique_ptr<RarelyUsedBuffers> _unlikely;
 
 
     VESPA_DLL_LOCAL void invalidate();

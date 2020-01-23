@@ -165,7 +165,7 @@ TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) 
         "  Timestamp: 208, id:mail:testdoctype1:n=4:42967.html, gid(0x04000000f19ece1668e6de48) (remove)\n"
         "  Timestamp: 209, id:mail:testdoctype1:n=4:6925.html, gid(0x04000000667c0b3cada830be) (remove)\n";
 
-        EXPECT_EQ(expected, reply.getResults());
+    EXPECT_EQ(expected, reply.getResults());
 }
 
 // TODO is this test neccessary? Seems to not test anything more than the above tests
