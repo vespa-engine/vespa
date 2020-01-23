@@ -190,12 +190,12 @@ public:
         RuntimeInfo * _rt;
     };
     DECLARE_IDENTIFIABLE_ROOT(Identifiable);
-    Identifiable() { }
-    Identifiable(Identifiable &&) = default;
-    Identifiable & operator = (Identifiable &&) = default;
+    Identifiable() noexcept = default;
+    Identifiable(Identifiable &&) noexcept = default;
+    Identifiable & operator = (Identifiable &&) noexcept = default;
     Identifiable(const Identifiable &) = default;
     Identifiable & operator = (const Identifiable &) = default;
-    virtual ~Identifiable() { }
+    virtual ~Identifiable() noexcept = default;
 
     /**
      * Will produce the full demangled className

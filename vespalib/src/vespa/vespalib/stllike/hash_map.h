@@ -29,7 +29,7 @@ public:
     hash_map(size_t reserveSize=0);
     hash_map(size_t reserveSize, H hasher, EQ equality);
     hash_map(std::initializer_list<value_type> input);
-    ~hash_map();
+    ~hash_map() noexcept;
     iterator begin()                         { return _ht.begin(); }
     iterator end()                           { return _ht.end(); }
     const_iterator begin()             const { return _ht.begin(); }

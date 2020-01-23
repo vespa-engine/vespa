@@ -35,11 +35,11 @@ public:
 
     DocumentId();
     DocumentId(vespalib::nbostream & os);
-    DocumentId(DocumentId && rhs) = default;
-    DocumentId & operator = (DocumentId && rhs) = default;
+    DocumentId(DocumentId && rhs) noexcept = default;
+    DocumentId & operator = (DocumentId && rhs) noexcept = default;
     DocumentId(const DocumentId & rhs);
     DocumentId & operator = (const DocumentId & rhs);
-    ~DocumentId();
+    ~DocumentId() noexcept ;
     /**
      * Parse the given document identifier given as string, and create an
      * identifier object from it.

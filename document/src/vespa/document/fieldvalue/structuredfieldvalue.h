@@ -33,7 +33,6 @@ class StructuredCache;
 class StructuredFieldValue : public FieldValue
 {
     const DataType *_type;
-    std::unique_ptr<StructuredCache> _cache;
 
     UP onGetNestedFieldValue(PathRange nested) const override;
     /** @return Retrieve value of given field. Null pointer if not set.
@@ -42,12 +41,10 @@ class StructuredFieldValue : public FieldValue
     VESPA_DLL_LOCAL FieldValue::UP getValue(const Field& field, FieldValue::UP container) const;
     VESPA_DLL_LOCAL void updateValue(const Field & field, FieldValue::UP value) const;
     VESPA_DLL_LOCAL void returnValue(const Field & field, FieldValue::UP value) const;
+    virtual StructuredCache * getCache() const { return nullptr; }
 
 protected:
     VESPA_DLL_LOCAL StructuredFieldValue(const DataType &type);
-    StructuredFieldValue(const StructuredFieldValue&);
-    StructuredFieldValue& operator=(const StructuredFieldValue&);
-    ~StructuredFieldValue() override;
 
     /** Called from Document when deserializing alters type. */
     virtual void setType(const DataType& type) { _type = &type; }
@@ -116,9 +113,6 @@ public:
      * @throws FieldNotFoundException If no field with given name exist.
      */
     virtual const Field& getField(vespalib::stringref name) const = 0;
-
-    void beginTransaction();
-    void commitTransaction();
 
     /**
      * Retrieve value of given field and assign it to given field.
@@ -195,18 +189,6 @@ public:
 
     template <typename T>
     std::unique_ptr<T> getAs(const Field &field) const;
-};
-
-class TransactionGuard {
-public:
-    TransactionGuard(StructuredFieldValue & value)
-        : _value(value)
-    {
-        _value.beginTransaction();
-    }
-    ~TransactionGuard() { _value.commitTransaction(); }
-private:
-    StructuredFieldValue & _value;
 };
 
 } // document

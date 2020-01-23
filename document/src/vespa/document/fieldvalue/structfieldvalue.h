@@ -41,7 +41,7 @@ public:
     StructFieldValue & operator = (const StructFieldValue & rhs);
     StructFieldValue(StructFieldValue && rhs) noexcept = default;
     StructFieldValue & operator = (StructFieldValue && rhs) noexcept = default;
-    ~StructFieldValue() override;
+    ~StructFieldValue() noexcept override;
 
     void setRepo(const DocumentTypeRepo & repo) { _repo = & repo; }
     const DocumentTypeRepo * getRepo() const { return _repo; }

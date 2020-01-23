@@ -29,7 +29,7 @@ DocumentId::DocumentId(vespalib::nbostream & is)
 
 DocumentId::DocumentId(const DocumentId & rhs) = default;
 DocumentId & DocumentId::operator = (const DocumentId & rhs) = default;
-DocumentId::~DocumentId() = default;
+DocumentId::~DocumentId() noexcept = default;
 
 vespalib::string
 DocumentId::toString() const {
