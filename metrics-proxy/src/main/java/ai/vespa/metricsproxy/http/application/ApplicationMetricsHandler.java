@@ -3,13 +3,13 @@
 package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
-import ai.vespa.metricsproxy.http.ErrorResponse;
-import ai.vespa.metricsproxy.http.HttpHandlerBase;
-import ai.vespa.metricsproxy.http.JsonResponse;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor;
 import com.google.inject.Inject;
+import com.yahoo.container.handler.metrics.ErrorResponse;
+import com.yahoo.container.handler.metrics.HttpHandlerBase;
+import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 
