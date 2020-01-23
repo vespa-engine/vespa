@@ -92,6 +92,7 @@ class RunSerializer {
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
+    private static final String noNodesDownSinceField = "noNodesDownSince";
     private static final String testerCertificateField = "testerCertificate";
 
     Run runFromSlime(Slime slime) {
@@ -129,12 +130,11 @@ class RunSerializer {
                        steps,
                        versionsFromSlime(runObject.field(versionsField)),
                        Instant.ofEpochMilli(runObject.field(startField).asLong()),
-                       Optional.of(runObject.field(endField))
-                               .filter(Inspector::valid)
-                               .map(end -> Instant.ofEpochMilli(end.asLong())),
+                       Serializers.optionalInstant(runObject.field(endField)),
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
+                       Serializers.optionalInstant(runObject.field(noNodesDownSinceField)),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
                                .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
@@ -194,6 +194,7 @@ class RunSerializer {
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
         runObject.setLong(lastVespaLogTimestampField, Instant.EPOCH.until(run.lastVespaLogTimestamp(), ChronoUnit.MICROS));
+        run.noNodesDownSince().ifPresent(noNodesDownSince -> runObject.setLong(noNodesDownSinceField, noNodesDownSince.toEpochMilli()));
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);

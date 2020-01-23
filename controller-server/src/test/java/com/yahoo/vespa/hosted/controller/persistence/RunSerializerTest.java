@@ -75,6 +75,7 @@ public class RunSerializerTest {
 
         assertEquals(id, run.id());
         assertEquals(start, run.start());
+        assertEquals(Optional.of(Instant.ofEpochMilli(321321321321L)), run.noNodesDownSince());
         assertFalse(run.hasEnded());
         assertEquals(running, run.status());
         assertEquals(3, run.lastTestLogEntry());
@@ -127,6 +128,7 @@ public class RunSerializerTest {
 
         run = run.with(1L << 50)
                  .with(Instant.now().truncatedTo(MILLIS))
+                 .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
                  .aborted()
                  .finished(Instant.now().truncatedTo(MILLIS));
         assertEquals(aborted, run.status());
@@ -138,6 +140,7 @@ public class RunSerializerTest {
         assertEquals(run.end(), phoenix.end());
         assertEquals(run.status(), phoenix.status());
         assertEquals(run.lastTestLogEntry(), phoenix.lastTestLogEntry());
+        assertEquals(run.noNodesDownSince(), phoenix.noNodesDownSince());
         assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());

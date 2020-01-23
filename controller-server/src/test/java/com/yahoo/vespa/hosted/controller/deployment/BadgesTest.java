@@ -26,13 +26,13 @@ public class BadgesTest {
 
     private static final ApplicationId id = ApplicationId.from("tenant", "application", "default");
     private static final Run success = new Run(new RunId(id, systemTest, 3), ImmutableMap.of(report, new StepInfo(report, Step.Status.succeeded, Optional.empty())),
-                                               null, null, Optional.of(now()), RunStatus.success, 0, EPOCH, Optional.empty());
+                                               null, null, Optional.of(now()), RunStatus.success, 0, EPOCH, Optional.empty(), Optional.empty());
 
     private static final Run running = new Run(new RunId(id, systemTest, 4), ImmutableMap.of(report, new StepInfo(report, Step.Status.succeeded, Optional.empty())),
-                                               null, null, Optional.empty(), RunStatus.running, 0, EPOCH, Optional.empty());
+                                               null, null, Optional.empty(), RunStatus.running, 0, EPOCH, Optional.empty(), Optional.empty());
 
     private static final Run failure = new Run(new RunId(id, JobType.stagingTest, 2), ImmutableMap.of(report, new StepInfo(report, Step.Status.succeeded, Optional.empty())),
-                                               null, null, Optional.of(now()), RunStatus.testFailure, 0, EPOCH, Optional.empty());
+                                               null, null, Optional.of(now()), RunStatus.testFailure, 0, EPOCH, Optional.empty(), Optional.empty());
 
     @Test
     public void test() {
