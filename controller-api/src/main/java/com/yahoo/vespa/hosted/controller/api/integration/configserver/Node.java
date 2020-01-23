@@ -219,7 +219,7 @@ public class Node {
         private ClusterType clusterType;
         private boolean wantToRetire;
         private boolean wantToDeprovision;
-        private Optional<TenantName> reservedTo;
+        private Optional<TenantName> reservedTo = Optional.empty();
 
         public Builder() { }
 
