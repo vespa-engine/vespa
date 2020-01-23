@@ -399,8 +399,7 @@ public class ApplicationController {
 
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
                     // Provisions a new certificate if missing
-                    endpointCertificateMetadata = getApplicationCertificate(application.get().require(instance))
-                            .map(appCert -> EndpointCertificateMetadataSerializer.fromString(appCert.secretsKeyNamePrefix()));
+                    endpointCertificateMetadata = getEndpointCertificate(application.get().require(instance));
                 } else {
                     endpointCertificateMetadata = Optional.empty();
                 }
@@ -566,16 +565,16 @@ public class ApplicationController {
         return Collections.unmodifiableSet(containerEndpoints);
     }
 
-    private Optional<ApplicationCertificate> getApplicationCertificate(Instance instance) {
+    private Optional<EndpointCertificateMetadata> getEndpointCertificate(Instance instance) {
         // Re-use certificate if already provisioned
-        Optional<ApplicationCertificate> applicationCertificate = curator.readApplicationCertificate(instance.id());
-        if(applicationCertificate.isPresent())
-            return applicationCertificate;
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = curator.readEndpointCertificateMetadata(instance.id());
+        if(endpointCertificateMetadata.isPresent())
+            return endpointCertificateMetadata;
 
         ApplicationCertificate newCertificate = controller.serviceRegistry().applicationCertificateProvider().requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id()));
         curator.writeApplicationCertificate(instance.id(), newCertificate);
 
-        return Optional.of(newCertificate);
+        return Optional.of(EndpointCertificateMetadataSerializer.fromTlsSecretsKeysString(newCertificate.secretsKeyNamePrefix()));
     }
 
     /** Returns all valid DNS names of given application */

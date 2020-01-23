@@ -16,6 +16,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
@@ -519,8 +520,9 @@ public class CuratorDb {
         curator.set(applicationCertificatePath(applicationId), applicationCertificate.secretsKeyNamePrefix().getBytes());
     }
 
-    public Optional<ApplicationCertificate> readApplicationCertificate(ApplicationId applicationId) {
-        return curator.getData(applicationCertificatePath(applicationId)).map(String::new).map(ApplicationCertificate::new);
+    public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
+        Optional<String> zkData = curator.getData(applicationCertificatePath(applicationId)).map(String::new);
+        return zkData.map(EndpointCertificateMetadataSerializer::fromJsonOrTlsSecretsKeysString);
     }
 
     // -------------- Paths ---------------------------------------------------

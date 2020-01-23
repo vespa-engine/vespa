@@ -16,7 +16,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -709,7 +709,7 @@ public class ControllerTest {
 
     @Test
     public void testDeploySelectivelyProvisionsCertificate() {
-        Function<Instance, Optional<ApplicationCertificate>> certificate = (application) -> tester.controller().curator().readApplicationCertificate(application.id());
+        Function<Instance, Optional<EndpointCertificateMetadata>> certificate = (application) -> tester.controller().curator().readEndpointCertificateMetadata(application.id());
 
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
