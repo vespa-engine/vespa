@@ -182,8 +182,8 @@ StructFieldValue::getFieldValue(const Field& field, FieldValue& value) const
     if (buf.size() > 0) {
         nbostream_longlivedbuf stream(buf.c_str(), buf.size());
         if ((_repo == nullptr) && (_doc_type != nullptr)) {
-            std::unique_ptr<const DocumentTypeRepo> tmpRepo(new DocumentTypeRepo(*_doc_type));
-            createFV(value, *tmpRepo, stream, *_doc_type, _version);
+            DocumentTypeRepo tmpRepo(*_doc_type);
+            createFV(value, tmpRepo, stream, *_doc_type, _version);
         } else {
             createFV(value, *_repo, stream, *_doc_type, _version);
         }
