@@ -28,17 +28,15 @@ public class NearItem extends CompositeItem {
     /**
      * Creates a <i>near</i> item with a limit to the distance between the words.
      *
-     * @param distance the number of word position which may separate
-     *        the words for this near item to match
+     * @param distance the maximum position difference between the words which should be counted as a match
      */
     public NearItem(int distance) {
         setDistance(distance);
     }
 
     public void setDistance(int distance) {
-        if (distance < 0) {
-            throw new IllegalArgumentException("Can not use negative distance '" + distance + "'.");
-        }
+        if (distance < 0)
+            throw new IllegalArgumentException("Can not use negative distance " + distance);
         this.distance = distance;
     }
 

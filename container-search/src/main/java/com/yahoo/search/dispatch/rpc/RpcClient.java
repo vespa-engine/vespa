@@ -22,6 +22,7 @@ import java.util.List;
  * @author bratseth
  */
 class RpcClient implements Client {
+
     private final Supervisor supervisor;
 
     public RpcClient(int transportThreads) {
@@ -66,7 +67,7 @@ class RpcClient implements Client {
 
         @Override
         public void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-                ResponseReceiver responseReceiver, double timeoutSeconds) {
+                            ResponseReceiver responseReceiver, double timeoutSeconds) {
             Request request = new Request(rpcMethod);
             request.parameters().add(new Int8Value(compression.getCode()));
             request.parameters().add(new Int32Value(uncompressedLength));

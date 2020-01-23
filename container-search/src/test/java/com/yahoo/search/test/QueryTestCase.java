@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.test;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
@@ -31,12 +30,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.GroupingQueryParser;
-import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.Hit;
@@ -48,24 +45,18 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -240,10 +231,10 @@ public class QueryTestCase {
     @Test
     public void test_that_cloning_preserves_timeout() {
         Query original = new Query();
-        original.setTimeout(9876l);
+        original.setTimeout(9876L);
 
         Query clone = original.clone();
-        assertThat(clone.getTimeout(), is(9876l));
+        assertEquals(9876L, clone.getTimeout());
     }
 
     @Test
@@ -297,9 +288,7 @@ public class QueryTestCase {
             fail("Above statement should throw");
         } catch (QueryException e) {
             // As expected.
-            assertThat(
-                    Exceptions.toMessageString(e),
-                    containsString("Could not set 'timeout' to 'nalle': Error parsing 'nalle': Invalid number 'nalle'"));
+            assertTrue(Exceptions.toMessageString(e).contains("Could not set 'timeout' to 'nalle': Error parsing 'nalle': Invalid number 'nalle'"));
         }
     }
 
