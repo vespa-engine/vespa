@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
@@ -107,7 +108,8 @@ public interface NodeRepository {
                         clusterIdOf(node.getMembership()),
                         clusterTypeOf(node.getMembership()),
                         node.getWantToRetire(),
-                        node.getWantToDeprovision());
+                        node.getWantToDeprovision(),
+                        Optional.ofNullable(node.getReservedTo()).map(name -> TenantName.from(name)));
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {

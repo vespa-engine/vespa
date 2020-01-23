@@ -80,6 +80,8 @@ public class NodeRepositoryNode {
     private Map<String, JsonNode> reports;
     @JsonProperty("modelName")
     private String modelName;
+    @JsonProperty("reservedTo")
+    private String reservedTo;
 
     public String getUrl() {
         return url;
@@ -339,6 +341,10 @@ public class NodeRepositoryNode {
         this.modelName = modelName;
     }
 
+    public String getReservedTo() { return reservedTo; }
+
+    public void setReservedTo(String reservedTo) { this.reservedTo = reservedTo; }
+
     @Override
     public String toString() {
         return "NodeRepositoryNode{" +
@@ -375,6 +381,7 @@ public class NodeRepositoryNode {
                ", allowedToBeDown=" + allowedToBeDown +
                ", reports=" + reports +
                ", modelName=" + modelName +
+               ", reservedTo=" + reservedTo +
                '}';
     }
 }
