@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -59,6 +60,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
+import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateMetadataSerializer;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicies;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -155,7 +157,7 @@ public class ApplicationController {
                         application = application.with(DeploymentSpec.empty);
                     else
                         for (InstanceName instance : application.get().deploymentSpec().instanceNames())
-                            if ( ! application.get().instances().keySet().contains(instance))
+                            if ( ! application.get().instances().containsKey(instance))
                                 application = withNewInstance(application, id.instance(instance));
                     store(application);
                 });
@@ -359,7 +361,7 @@ public class ApplicationController {
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
             Set<ContainerEndpoint> endpoints;
-            Optional<ApplicationCertificate> applicationCertificate;
+            Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
@@ -397,9 +399,10 @@ public class ApplicationController {
 
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
                     // Provisions a new certificate if missing
-                    applicationCertificate = getApplicationCertificate(application.get().require(instance));
+                    endpointCertificateMetadata = getApplicationCertificate(application.get().require(instance))
+                            .map(appCert -> EndpointCertificateMetadataSerializer.fromString(appCert.secretsKeyNamePrefix()));
                 } else {
-                    applicationCertificate = Optional.empty();
+                    endpointCertificateMetadata = Optional.empty();
                 }
 
                 endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
@@ -408,7 +411,7 @@ public class ApplicationController {
             // Carry out deployment without holding the application lock.
             options = withVersion(platformVersion, options);
             ActivateResult result = deploy(instanceId, applicationPackage, zone, options, endpoints,
-                                           applicationCertificate.orElse(null));
+                                           endpointCertificateMetadata);
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(instanceId.instance(),
@@ -481,7 +484,7 @@ public class ApplicationController {
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
             DeployOptions options = withVersion(version, DeployOptions.none());
-            return deploy(application.id(), applicationPackage, zone, options, Set.of(), /* No application cert */ null);
+            return deploy(application.id(), applicationPackage, zone, options, Set.of(), /* No application cert */ Optional.empty());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -489,16 +492,16 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        return deploy(tester.id(), applicationPackage, zone, options, Set.of(), /* No application cert for tester*/ null);
+        return deploy(tester.id(), applicationPackage, zone, options, Set.of(), /* No application cert for tester*/ Optional.empty());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
                                   ZoneId zone, DeployOptions deployOptions, Set<ContainerEndpoint> endpoints,
-                                  ApplicationCertificate applicationCertificate) {
+                                  Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
         DeploymentId deploymentId = new DeploymentId(application, zone);
         try {
             ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(deploymentId, deployOptions, endpoints, applicationCertificate, applicationPackage.zippedContent());
+                    configServer.deploy(deploymentId, deployOptions, endpoints, endpointCertificateMetadata, applicationPackage.zippedContent());
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {
