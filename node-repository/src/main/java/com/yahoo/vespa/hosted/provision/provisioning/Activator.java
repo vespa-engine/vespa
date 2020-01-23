@@ -94,21 +94,16 @@ class Activator {
 
     /** When a tenant node is activated on a host, we can open up that host for use by others */
     private void unreserveParentsOf(List<Node> nodes) {
-        List<String> reservedParents = nodes.stream()
-                                            .filter(node -> node.parentHostname().isPresent())
-                                            .map(node -> nodeRepository.getNode(node.parentHostname().get()))
-                                            .filter(parent -> parent.isPresent())
-                                            .filter(parent -> parent.get().reservedTo().isPresent())
-                                            .map(parent -> parent.get().hostname())
-                                            .collect(Collectors.toList());
-        if (reservedParents.isEmpty()) return;
-
-        try (Mutex lock = nodeRepository.lockUnallocated()) {
-            List<Node> unreserved = reservedParents.stream()
-                                                   .map(hostname -> nodeRepository.getNode(hostname).get())
-                                                   .map(host -> host.withoutReservedTo())
-                                                   .collect(Collectors.toList());
-            nodeRepository.write(unreserved, lock);
+        for (Node node : nodes) {
+            if ( node.parentHostname().isEmpty()) continue;
+            Optional<Node> parent = nodeRepository.getNode(node.parentHostname().get());
+            if (parent.isEmpty()) continue;
+            if (parent.get().reservedTo().isEmpty()) continue;
+            try (Mutex lock = nodeRepository.lock(parent.get())) {
+                Optional<Node> lockedParent = nodeRepository.getNode(parent.get().hostname());
+                if (lockedParent.isEmpty()) continue;
+                nodeRepository.write(lockedParent.get().withoutReservedTo(), lock);
+            }
         }
     }
 
