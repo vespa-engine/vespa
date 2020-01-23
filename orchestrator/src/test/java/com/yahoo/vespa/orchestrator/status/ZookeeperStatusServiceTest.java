@@ -96,7 +96,7 @@ public class ZookeeperStatusServiceTest {
     @Test
     public void host_state_for_unknown_hosts_is_no_remarks() {
         assertThat(
-                zookeeperStatusService.getHostStatus(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1),
+                zookeeperStatusService.getHostInfo(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1).status(),
                 is(HostStatus.NO_REMARKS));
     }
 
@@ -111,13 +111,13 @@ public class ZookeeperStatusServiceTest {
                 .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
             //shuffling to catch "clean database" failures for all cases.
-            for (HostStatus hostStatus: shuffledList(HostStatus.values())) {
+            for (HostStatus hostStatus: shuffledList(HostStatus.NO_REMARKS, HostStatus.ALLOWED_TO_BE_DOWN)) {
                 for (int i = 0; i < 2; i++) {
                     statusRegistry.setHostState(
                             TestIds.HOST_NAME1,
                             hostStatus);
 
-                    assertThat(statusRegistry.getHostStatus(TestIds.HOST_NAME1),
+                    assertThat(statusRegistry.getHostInfo(TestIds.HOST_NAME1).status(),
                                is(hostStatus));
                 }
             }
@@ -182,7 +182,7 @@ public class ZookeeperStatusServiceTest {
                 killSession(curator.framework(), testingServer);
 
                 //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
-                statusRegistry.getHostStatus(TestIds.HOST_NAME1);
+                statusRegistry.getHostInfo(TestIds.HOST_NAME1);
             });
 
             assertThat(resultOfZkOperationAfterLockFailure, notHoldsException());
@@ -289,7 +289,8 @@ public class ZookeeperStatusServiceTest {
     }
 
     //TODO: move to vespajlib
-    private static <T> List<T> shuffledList(T[] values) {
+    @SafeVarargs
+    private static <T> List<T> shuffledList(T... values) {
         //new ArrayList necessary to avoid "write through" behaviour
         List<T> list = new ArrayList<>(Arrays.asList(values));
         Collections.shuffle(list);

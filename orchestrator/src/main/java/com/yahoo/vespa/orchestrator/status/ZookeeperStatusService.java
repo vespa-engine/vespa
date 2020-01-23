@@ -11,9 +11,9 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
+import com.yahoo.vespa.orchestrator.status.json.WireHostInfo;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.data.Stat;
@@ -22,8 +22,11 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -45,7 +48,7 @@ public class ZookeeperStatusService implements StatusService {
     final static String HOST_STATUS_CACHE_COUNTER_PATH = "/vespa/host-status-service-cache-counter";
 
     private final Curator curator;
-    private final CuratorCounter counter;
+    private final HostInfosCache hostInfosCache;
     private final Metric metric;
     private final Timer timer;
 
@@ -55,18 +58,24 @@ public class ZookeeperStatusService implements StatusService {
      */
     private final ConcurrentHashMap<Map<String, String>, Metric.Context> cachedContexts = new ConcurrentHashMap<>();
 
-    /** A cache of hosts allowed to be down. Access only through {@link #getValidCache()}! */
-    private final Map<ApplicationInstanceReference, Set<HostName>> hostsDown = new ConcurrentHashMap<>();
-
-    private volatile long cacheRefreshedAt;
-
     @Inject
     public ZookeeperStatusService(@Component Curator curator, @Component Metric metric, @Component Timer timer) {
         this.curator = curator;
-        this.counter = new CuratorCounter(curator, HOST_STATUS_CACHE_COUNTER_PATH);
-        this.cacheRefreshedAt = counter.get();
         this.metric = metric;
         this.timer = timer;
+
+        // Insert a cache above some ZooKeeper accesses
+        this.hostInfosCache = new HostInfosCache(curator, new HostInfosService() {
+            @Override
+            public HostInfos getHostInfos(ApplicationInstanceReference application) {
+                return ZookeeperStatusService.this.getHostInfosFromZk(application);
+            }
+
+            @Override
+            public boolean setHostStatus(ApplicationInstanceReference application, HostName hostName, HostStatus hostStatus) {
+                return ZookeeperStatusService.this.setHostStatusInZk(application, hostName, hostStatus);
+            }
+        });
     }
 
     @Override
@@ -98,8 +107,7 @@ public class ZookeeperStatusService implements StatusService {
      */
     @Override
     public Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication() {
-        Map<ApplicationInstanceReference, Set<HostName>> suspendedHostsByApplication = getValidCache();
-        return application -> suspendedHostsByApplication.computeIfAbsent(application, this::hostsDownFor);
+        return application -> hostInfosCache.getHostInfos(application).suspendedHostsnames();
     }
 
 
@@ -166,33 +174,58 @@ public class ZookeeperStatusService implements StatusService {
         return Duration.between(startInstant, endInstant).toMillis() / 1000.0;
     }
 
-    private void setHostStatus(ApplicationInstanceReference applicationInstanceReference,
-                               HostName hostName,
-                               HostStatus status) {
-        String path = hostAllowedDownPath(applicationInstanceReference, hostName);
+    /** Do not call this directly: should be called behind a cache. */
+    private boolean setHostStatusInZk(ApplicationInstanceReference applicationInstanceReference,
+                                      HostName hostName,
+                                      HostStatus status) {
+        String hostAllowedDownPath = hostAllowedDownPath(applicationInstanceReference, hostName);
 
-        boolean invalidate = false;
+        boolean modified;
         try {
             switch (status) {
                 case NO_REMARKS:
-                    invalidate = deleteNode_ignoreNoNodeException(path, "Host already has state NO_REMARKS, path = " + path);
+                    modified = deleteNode_ignoreNoNodeException(hostAllowedDownPath, "Host already has state NO_REMARKS, path = " + hostAllowedDownPath);
                     break;
                 case ALLOWED_TO_BE_DOWN:
-                    invalidate = createNode_ignoreNodeExistsException(path, "Host already has state ALLOWED_TO_BE_DOWN, path = " + path);
+                    modified = createNode_ignoreNodeExistsException(hostAllowedDownPath, "Host already has state ALLOWED_TO_BE_DOWN, path = " + hostAllowedDownPath);
                     break;
                 default:
                     throw new IllegalArgumentException("Unexpected status '" + status + "'.");
             }
+
+            modified |= setHostInfoInZk(applicationInstanceReference, hostName, status);
         } catch (Exception e) {
-            invalidate = true;
             throw new RuntimeException(e);
         }
-        finally {
-            if (invalidate) {
-                counter.next();
-                hostsDown.remove(applicationInstanceReference);
-            }
+
+        return modified;
+    }
+
+    /** Returns false if no changes were made. */
+    private boolean setHostInfoInZk(ApplicationInstanceReference application, HostName hostname, HostStatus status)
+            throws Exception {
+        String path = hostPath(application, hostname);
+
+        if (status == HostStatus.NO_REMARKS) {
+            return deleteNode_ignoreNoNodeException(path, "Host already has state NO_REMARKS, path = " + path);
         }
+
+        Optional<HostInfo> currentHostInfo = readBytesFromZk(path).map(WireHostInfo::deserialize);
+        if (currentHostInfo.isEmpty()) {
+            Instant suspendedSince = timer.currentTime();
+            HostInfo hostInfo = HostInfo.createSuspended(status, suspendedSince);
+            byte[] hostInfoBytes = WireHostInfo.serialize(hostInfo);
+            curator.framework().create().creatingParentsIfNeeded().forPath(path, hostInfoBytes);
+        } else if (currentHostInfo.get().status() == status) {
+            return false;
+        } else {
+            Instant suspendedSince = currentHostInfo.get().suspendedSince().orElseGet(timer::currentTime);
+            HostInfo hostInfo = HostInfo.createSuspended(status, suspendedSince);
+            byte[] hostInfoBytes = WireHostInfo.serialize(hostInfo);
+            curator.framework().setData().forPath(path, hostInfoBytes);
+        }
+
+        return true;
     }
 
     private boolean deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) throws Exception {
@@ -217,20 +250,25 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    @Override
-    public HostStatus getHostStatus(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
-        return getValidCache().computeIfAbsent(applicationInstanceReference, this::hostsDownFor)
-                              .contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS;
+    private Optional<byte[]> readBytesFromZk(String path) throws Exception {
+        try {
+            return Optional.of(curator.framework().getData().forPath(path));
+        } catch (NoNodeException e) {
+            return Optional.empty();
+        }
     }
 
-    /** Holding an application's lock ensures the cache is up to date for that application. */
-    private Map<ApplicationInstanceReference, Set<HostName>> getValidCache() {
-        long cacheGeneration = counter.get();
-        if (counter.get() != cacheRefreshedAt) {
-            cacheRefreshedAt = cacheGeneration;
-            hostsDown.clear();
-        }
-        return hostsDown;
+    private void updateNodeInZk(String path, byte[] bytes) throws Exception {
+        curator.framework().setData().forPath(path, bytes);
+    }
+
+    private void createNodeInZk(String path, byte[] bytes) throws Exception {
+        curator.framework().create().creatingParentsIfNeeded().forPath(path, bytes);
+    }
+
+    @Override
+    public HostInfo getHostInfo(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
+        return hostInfosCache.getHostInfos(applicationInstanceReference).get(hostName);
     }
 
     private Set<HostName> hostsDownFor(ApplicationInstanceReference application) {
@@ -247,6 +285,55 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
+    /** Do not call this directly: should be called behind a cache. */
+    private HostInfos getHostInfosFromZk(ApplicationInstanceReference application) {
+        Map<HostName, HostInfo> hostInfos;
+        String hostsRootPath = hostsPath(application);
+        if (uncheck(() -> curator.framework().checkExists().forPath(hostsRootPath)) == null) {
+            hostInfos = new HashMap<>();
+        } else {
+            List<String> hostnames = uncheck(() -> curator.framework().getChildren().forPath(hostsRootPath));
+            hostInfos = new HashMap<>(hostnames.stream().collect(Collectors.toMap(
+                    hostname -> new HostName(hostname),
+                    hostname -> {
+                        byte[] bytes = uncheck(() -> curator.framework().getData().forPath(hostsRootPath + "/" + hostname));
+                        return WireHostInfo.deserialize(bytes);
+                    })));
+        }
+
+        // For backwards compatibility we'll add HostInfos from the old hosts-allowed-down ZK path,
+        // using the creation time as the since path. The new hosts ZK path should contain a subset of
+        // the hostnames under hosts-allowed-down ZK path. Eventually these sets should be identical.
+        // Once that's true we can stop writing to hosts-allowed-down, remove this code, and all
+        // data in hosts-allowed-down can be removed.
+        Set<HostName> legacyHostsDown = hostsDownFor(application);
+        Map<HostName, HostInfo> legacyHostInfos = legacyHostsDown.stream().collect(Collectors.toMap(
+                hostname -> hostname,
+                hostname -> {
+                    Stat stat = uncheck(() -> curator.framework()
+                            .checkExists()
+                            .forPath(hostsAllowedDownPath(application) + "/" + hostname.s()));
+                    return HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochMilli(stat.getCtime()));
+                }
+        ));
+
+        hostInfos.putAll(legacyHostInfos);
+        return new HostInfos(hostInfos);
+    }
+
+    private <T> T uncheck(SupplierThrowingException<T> supplier) {
+        try {
+            return supplier.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @FunctionalInterface
+    interface SupplierThrowingException<T> {
+        T get() throws Exception;
+    }
+
     @Override
     public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference applicationInstanceReference) {
         try {
@@ -259,17 +346,26 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    private static String applicationInstancePath(ApplicationInstanceReference applicationInstanceReference) {
+    static String applicationInstanceReferencePath(ApplicationInstanceReference applicationInstanceReference) {
         return HOST_STATUS_BASE_PATH + '/' +
                 applicationInstanceReference.tenantId() + ":" + applicationInstanceReference.applicationInstanceId();
     }
 
+    private static String applicationPath(ApplicationInstanceReference applicationInstanceReference) {
+        ApplicationId applicationId = OrchestratorUtil.toApplicationId(applicationInstanceReference);
+        return "/vespa/host-status/" + applicationId.serializedForm();
+    }
+
+    private static String hostsPath(ApplicationInstanceReference applicationInstanceReference) {
+        return applicationPath(applicationInstanceReference) + "/hosts";
+    }
+
     private static String hostsAllowedDownPath(ApplicationInstanceReference applicationInstanceReference) {
-        return applicationInstancePath(applicationInstanceReference) + "/hosts-allowed-down";
+        return applicationInstanceReferencePath(applicationInstanceReference) + "/hosts-allowed-down";
     }
 
     private static String applicationInstanceLock2Path(ApplicationInstanceReference applicationInstanceReference) {
-        return applicationInstancePath(applicationInstanceReference) + "/lock2";
+        return applicationInstanceReferencePath(applicationInstanceReference) + "/lock2";
     }
 
     private String applicationInstanceSuspendedPath(ApplicationInstanceReference applicationInstanceReference) {
@@ -278,6 +374,10 @@ public class ZookeeperStatusService implements StatusService {
 
     private static String hostAllowedDownPath(ApplicationInstanceReference applicationInstanceReference, HostName hostname) {
         return hostsAllowedDownPath(applicationInstanceReference) + '/' + hostname.s();
+    }
+
+    private static String hostPath(ApplicationInstanceReference application, HostName hostname) {
+        return hostsPath(application) + "/" + hostname.s();
     }
 
     private class ZkMutableStatusRegistry implements MutableStatusRegistry {
@@ -303,20 +403,20 @@ public class ZookeeperStatusService implements StatusService {
         }
 
         @Override
-        public HostStatus getHostStatus(HostName hostName) {
-            return ZookeeperStatusService.this.getHostStatus(applicationInstanceReference, hostName);
+        public HostInfo getHostInfo(HostName hostName) {
+            return ZookeeperStatusService.this.getHostInfo(applicationInstanceReference, hostName);
         }
 
         @Override
         public Set<HostName> getSuspendedHosts() {
-            return getValidCache().computeIfAbsent(applicationInstanceReference, ZookeeperStatusService.this::hostsDownFor);
+            return hostInfosCache.getHostInfos(applicationInstanceReference).suspendedHostsnames();
         }
 
         @Override
         public void setHostState(final HostName hostName, final HostStatus status) {
             if (probe) return;
             log.log(LogLevel.INFO, "Setting host " + hostName + " to status " + status);
-            setHostStatus(applicationInstanceReference, hostName, status);
+            hostInfosCache.setHostStatus(applicationInstanceReference, hostName, status);
         }
 
         @Override

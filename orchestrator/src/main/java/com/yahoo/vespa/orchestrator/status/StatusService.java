@@ -64,15 +64,9 @@ public interface StatusService {
      */
     Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication();
 
-    /**
-     * Returns the status of the given application. This is consistent if its lock is held.
-     */
+    /** Returns the status of the given application. This is consistent if its lock is held.*/
     ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference application);
 
-
-    /**
-     * Returns the status of the given host, for the given application. This is consistent if the application's lock is held.
-     */
-    HostStatus getHostStatus(ApplicationInstanceReference application, HostName host);
-
+    /** Get host info for hostname in application. This is consistent if its lock is held. */
+    HostInfo getHostInfo(ApplicationInstanceReference applicationInstanceReference, HostName hostName);
 }

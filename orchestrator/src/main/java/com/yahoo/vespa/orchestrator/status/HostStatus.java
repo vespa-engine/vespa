@@ -2,11 +2,20 @@
 package com.yahoo.vespa.orchestrator.status;
 
 /**
- * Enumeration of the different status' a host can have.
+ * Enumeration of the different statuses a host can have.
  *
  * @author oyving
  */
 public enum HostStatus {
+    /** The services on the host is supposed to be up. */
     NO_REMARKS,
-    ALLOWED_TO_BE_DOWN;
+
+    /** The services on the host is allowed to be down. */
+    ALLOWED_TO_BE_DOWN,
+
+    /**
+     * Same as ALLOWED_TO_BE_DOWN, but in addition, it is expected
+     * the host may be removed from its application at any moment.
+     */
+    PERMANENTLY_DOWN;
 }
