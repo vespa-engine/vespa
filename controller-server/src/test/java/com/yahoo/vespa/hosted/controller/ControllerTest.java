@@ -741,11 +741,12 @@ public class ControllerTest {
         var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
         ZoneId zone = ZoneId.from("dev", "us-east-1");
 
-        // Deploy app2 in dev
+        // Deploy app2, after "removing" direct routing everywhere
+        tester.controllerTester().zoneRegistry().setDirectlyRouted();
         tester.controller().applications().deploy(context2.instanceId(), zone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
                    tester.configServer().application(context2.instanceId(), zone).get().activated());
-        assertFalse("Does not provision certificate in " + Environment.dev, certificate.apply(context2.instance()).isPresent());
+        assertFalse("Does not provision certificate in zones with routing layer", certificate.apply(context2.instance()).isPresent());
     }
 
     @Test
