@@ -87,7 +87,7 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
         private RetryPredicate predicate = (ioException, ctx) -> true;
         private RetryConsumer retryConsumer = (exception, delay, count, ctx) -> {};
         private RetryFailedConsumer retryFailedConsumer = (exception, count, ctx) -> {};
-        private Sleeper sleeper = new DefaultSleeper();
+        private Sleeper sleeper = new Sleeper.Default();
 
         private Builder(DelaySupplier delaySupplier, int maxRetries) {
             this.delaySupplier = delaySupplier;
@@ -95,19 +95,11 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
         }
 
         public static Builder withFixedDelay(Duration delay, int maxRetries) {
-            return new Builder(executionCount -> delay, maxRetries);
+            return new Builder(new DelaySupplier.Fixed(delay), maxRetries);
         }
 
         public static Builder withExponentialBackoff(Duration startDelay, Duration maxDelay, int maxRetries) {
-            return new Builder(
-                    executionCount -> {
-                        Duration nextDelay = startDelay;
-                        for (int i = 1; i < executionCount; ++i) {
-                            nextDelay = nextDelay.multipliedBy(2);
-                        }
-                        return maxDelay.compareTo(nextDelay) > 0 ? nextDelay : maxDelay;
-                    },
-                    maxRetries);
+            return new Builder(new DelaySupplier.Exponential(startDelay, maxDelay), maxRetries);
         }
 
         public Builder retryForExceptions(List<Class<? extends IOException>> exceptionTypes) {
@@ -144,26 +136,5 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
         public DelayedHttpRequestRetryHandler build() {
             return new DelayedHttpRequestRetryHandler(delaySupplier, maxRetries, predicate, retryConsumer, retryFailedConsumer, sleeper);
         }
-
-        private static class DefaultSleeper implements Sleeper {
-            @Override
-            public void sleep(Duration duration) {
-                try {
-                    Thread.sleep(duration.toMillis());
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-
-    // For unit testing
-    interface Sleeper {
-        void sleep(Duration duration);
-    }
-
-    @FunctionalInterface
-    private interface DelaySupplier {
-        Duration getDelay(int executionCount);
     }
 }

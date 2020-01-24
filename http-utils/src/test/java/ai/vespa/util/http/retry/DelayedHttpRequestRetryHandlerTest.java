@@ -3,7 +3,6 @@ package ai.vespa.util.http.retry;
 
 import ai.vespa.util.http.retry.DelayedHttpRequestRetryHandler.RetryConsumer;
 import ai.vespa.util.http.retry.DelayedHttpRequestRetryHandler.RetryFailedConsumer;
-import ai.vespa.util.http.retry.DelayedHttpRequestRetryHandler.Sleeper;
 import com.yahoo.vespa.jdk8compat.List;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.junit.Test;
