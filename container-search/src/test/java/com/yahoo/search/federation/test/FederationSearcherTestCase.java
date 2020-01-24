@@ -201,12 +201,32 @@ public class FederationSearcherTestCase {
     }
 
     @Test
-    public void testPropertyPropagation() {
-        Result result = searchWithPropertyPropagation(PropagateSourceProperties.ALL);
+    public void testPropertyPropagation_native() {
+        Result result = searchWithPropertyPropagation(PropagateSourceProperties.NATIVE);
 
         assertEquals("source:mySource1", result.hits().get(0).getId().stringValue());
         assertEquals("source:mySource2", result.hits().get(1).getId().stringValue());
         assertEquals("nalle", result.hits().get(0).getQuery().getPresentation().getSummary());
+        assertNull(result.hits().get(1).getQuery().getPresentation().getSummary());
+        assertEquals(null, result.hits().get(0).getQuery().properties().get("custom"));
+    }
+
+    @Test
+    public void testPropertyPropagation_every() {
+        Result result = searchWithPropertyPropagation(PropagateSourceProperties.EVERY);
+
+        assertEquals("source:mySource1", result.hits().get(0).getId().stringValue());
+        assertEquals("source:mySource2", result.hits().get(1).getId().stringValue());
+        assertEquals("nalle", result.hits().get(0).getQuery().getPresentation().getSummary());
+        assertEquals("foo", result.hits().get(0).getQuery().properties().get("customSourceProperty"));
+        assertEquals(null,  result.hits().get(1).getQuery().properties().get("customSourceProperty"));
+        assertEquals(null,  result.hits().get(0).getQuery().properties().get("custom.source.property"));
+        assertEquals("bar", result.hits().get(1).getQuery().properties().get("custom.source.property"));
+        assertEquals(13, result.hits().get(0).getQuery().properties().get("hits"));
+        assertEquals(1, result.hits().get(0).getQuery().properties().get("offset"));
+        assertEquals(10, result.hits().get(1).getQuery().properties().get("hits"));
+        assertEquals(0, result.hits().get(1).getQuery().properties().get("offset"));
+
         assertNull(result.hits().get(1).getQuery().getPresentation().getSummary());
     }
 
@@ -215,7 +235,7 @@ public class FederationSearcherTestCase {
         addChained(new MockSearcher(), "mySource2");
         Chain<Searcher> mainChain = new Chain<>("default", createFederationSearcher(propagateSourceProperties));
 
-        Query q = new Query(QueryTestCase.httpEncode("?query=test&source.mySource1.presentation.summary=nalle"));
+        Query q = new Query(QueryTestCase.httpEncode("?query=test&source.mySource1.presentation.summary=nalle&source.mySource1.customSourceProperty=foo&source.mySource2.custom.source.property=bar&source.mySource1.hits=13&source.mySource1.offset=1"));
 
         Result result = new Execution(mainChain, Execution.Context.createContextStub(chainRegistry, null)).search(q);
         assertNull(result.hits().getError());
