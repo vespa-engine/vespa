@@ -572,9 +572,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return testerClient.getLog(getTesterHostname(applicationId), getTesterPort(applicationId), after);
     }
 
-    // TODO: Not implemented in TesterClient yet
-    public HttpResponse startTests(ApplicationId applicationId, String suite, String config) {
-        return testerClient.startTests(getTesterHostname(applicationId), suite, config);
+    public HttpResponse startTests(ApplicationId applicationId, String suite, byte[] config) {
+        return testerClient.startTests(getTesterHostname(applicationId), getTesterPort(applicationId), suite, config);
+    }
+
+    public HttpResponse isTesterReady(ApplicationId applicationId) {
+        return testerClient.isTesterReady(getTesterHostname(applicationId), getTesterPort(applicationId));
     }
 
     private String getTesterHostname(ApplicationId applicationId) {

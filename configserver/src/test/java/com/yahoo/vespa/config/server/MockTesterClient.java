@@ -23,6 +23,16 @@ public class MockTesterClient extends TesterClient {
         return new MockLogResponse();
     }
 
+    @Override
+    public HttpResponse startTests(String testerHostname, int port, String suite, byte[] config) {
+        return new MockStartTestsResponse();
+    }
+
+    @Override
+    public HttpResponse isTesterReady(String testerHostname, int port) {
+        return new MockTesterReadyResponse();
+    }
+
     private static class MockStatusResponse extends HttpResponse {
 
         private MockStatusResponse() {
@@ -46,6 +56,28 @@ public class MockTesterClient extends TesterClient {
         public void render(OutputStream outputStream) throws IOException {
             outputStream.write("log".getBytes(StandardCharsets.UTF_8));
         }
+
+    }
+
+    private static class MockStartTestsResponse extends HttpResponse {
+
+        private MockStartTestsResponse() {
+            super(200);
+        }
+
+        @Override
+        public void render(OutputStream outputStream) { }
+
+    }
+
+    private static class MockTesterReadyResponse extends HttpResponse {
+
+        private MockTesterReadyResponse() {
+            super(200);
+        }
+
+        @Override
+        public void render(OutputStream outputStream) { }
 
     }
 
