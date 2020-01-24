@@ -80,6 +80,7 @@ public class GlobalRouting {
         operator,
         tenant,
         system,
+        unknown, // For compatibility old values from /routing/v1 on config server, which may contain a specific user name.
     }
 
 }

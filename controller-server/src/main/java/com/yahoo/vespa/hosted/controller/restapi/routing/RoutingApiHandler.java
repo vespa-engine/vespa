@@ -12,15 +12,15 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
-import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.Map;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.logging.Level;
 
@@ -30,7 +30,6 @@ import java.util.logging.Level;
  *
  * @author mpolden
  */
-// TODO(mpolden): Add support for zones/deployments using rotations.
 public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private final Controller controller;
@@ -78,8 +77,12 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse setZoneStatus(Path path, boolean in) {
         var zone = zoneFrom(path);
-        var status = in ? GlobalRouting.Status.in : GlobalRouting.Status.out;
-        controller.applications().routingPolicies().setGlobalRoutingStatus(zone, status);
+        if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
+            var status = in ? GlobalRouting.Status.in : GlobalRouting.Status.out;
+            controller.applications().routingPolicies().setGlobalRoutingStatus(zone, status);
+        } else {
+            controller.serviceRegistry().configServer().setGlobalRotationStatus(zone, in);
+        }
         return new MessageResponse("Set global routing status for deployments in " + zone + " to '" +
                                    (in ? "in" : "out") + "'");
     }
@@ -88,55 +91,102 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var zone = zoneFrom(path);
         var slime = new Slime();
         var root = slime.setObject();
-        var zonePolicy = controller.applications().routingPolicies().get(zone);
-        zoneStatusToSlime(root, zonePolicy);
+        if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
+            var zonePolicy = controller.applications().routingPolicies().get(zone);
+            zoneStatusToSlime(root, zonePolicy.zone(), zonePolicy.globalRouting(), RoutingType.policy);
+        } else {
+            // Rotation status per zone only exposes in/out status, no agent or time of change.
+            var in = controller.serviceRegistry().configServer().getGlobalRotationStatus(zone);
+            var globalRouting = new GlobalRouting(in ? GlobalRouting.Status.in : GlobalRouting.Status.out,
+                                                  GlobalRouting.Agent.operator, Instant.EPOCH);
+            zoneStatusToSlime(root, zone, globalRouting, RoutingType.rotation);
+        }
         return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse setDeploymentStatus(Path path, boolean in) {
         var deployment = deploymentFrom(path);
-        routingPoliciesOf(deployment);
+        var instance = controller.applications().requireInstance(deployment.applicationId());
         var status = in ? GlobalRouting.Status.in : GlobalRouting.Status.out;
         var agent = GlobalRouting.Agent.operator; // Always operator as this is an operator API
+
+        // Set rotation status, if any assigned
+        if (rotationCanRouteTo(deployment.zoneId(), instance)) {
+            var endpointStatus = new EndpointStatus(in ? EndpointStatus.Status.in : EndpointStatus.Status.out, "",
+                                                    agent.name(),
+                                                    controller.clock().instant().getEpochSecond());
+            controller.applications().setGlobalRotationStatus(deployment, endpointStatus);
+        }
+
+        // Set policy status
         controller.applications().routingPolicies().setGlobalRoutingStatus(deployment, status, agent);
         return new MessageResponse("Set global routing status for " + deployment + " to '" + (in ? "in" : "out") + "'");
     }
 
     private HttpResponse deploymentStatus(Path path) {
         var deployment = deploymentFrom(path);
+        var instance = controller.applications().requireInstance(deployment.applicationId());
         var slime = new Slime();
         var deploymentsObject = slime.setObject().setArray("deployments");
-        var routingPolicies = routingPoliciesOf(deployment);
+
+        // Include status from rotation
+        if (rotationCanRouteTo(deployment.zoneId(), instance)) {
+            var rotationStatus = controller.applications().globalRotationStatus(deployment);
+            // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
+            var endpointStatus = rotationStatus.values().stream().findFirst();
+            if (endpointStatus.isPresent()) {
+                var changedAt = Instant.ofEpochSecond(endpointStatus.get().getEpoch());
+                GlobalRouting.Agent agent;
+                try {
+                    agent = GlobalRouting.Agent.valueOf(endpointStatus.get().getAgent());
+                } catch (IllegalArgumentException e) {
+                    agent = GlobalRouting.Agent.unknown;
+                }
+                var status = endpointStatus.get().getStatus() == EndpointStatus.Status.in
+                        ? GlobalRouting.Status.in
+                        : GlobalRouting.Status.out;
+                deploymentStatusToSlime(deploymentsObject.addObject(), deployment,
+                                        new GlobalRouting(status, agent, changedAt),
+                                        RoutingType.rotation);
+            }
+        }
+
+        // Include status from routing policies
+        var routingPolicies = controller.applications().routingPolicies().get(deployment);
         for (var policy : routingPolicies.values()) {
             deploymentStatusToSlime(deploymentsObject.addObject(), policy);
         }
+
         return new SlimeJsonResponse(slime);
     }
 
-    private Map<RoutingPolicyId, RoutingPolicy> routingPoliciesOf(DeploymentId deployment) {
-        var routingPolicies = controller.applications().routingPolicies().get(deployment);
-        if (routingPolicies.isEmpty()) {
-            throw new IllegalArgumentException("No such deployment: " + deployment);
-        }
-        return routingPolicies;
+    /** Returns whether instance has an assigned rotation and a deployment in given zone */
+    private static boolean rotationCanRouteTo(ZoneId zone, Instance instance) {
+        return !instance.rotations().isEmpty() && instance.deployments().containsKey(zone);
     }
 
-    private static void zoneStatusToSlime(Cursor object, ZoneRoutingPolicy policy) {
-        object.setString("environment", policy.zone().environment().value());
-        object.setString("region", policy.zone().region().value());
-        object.setString("status", asString(policy.globalRouting().status()));
-        object.setString("agent", asString(policy.globalRouting().agent()));
-        object.setLong("changedAt", policy.globalRouting().changedAt().toEpochMilli());
+    private static void zoneStatusToSlime(Cursor object, ZoneId zone, GlobalRouting globalRouting, RoutingType routingType) {
+        object.setString("routingType", routingType.name());
+        object.setString("environment", zone.environment().value());
+        object.setString("region", zone.region().value());
+        object.setString("status", asString(globalRouting.status()));
+        object.setString("agent", asString(globalRouting.agent()));
+        object.setLong("changedAt", globalRouting.changedAt().toEpochMilli());
+    }
+
+    private static void deploymentStatusToSlime(Cursor object, DeploymentId deployment, GlobalRouting globalRouting, RoutingType routingType) {
+        object.setString("routingType", routingType.name());
+        object.setString("instance", deployment.applicationId().serializedForm());
+        object.setString("environment", deployment.zoneId().environment().value());
+        object.setString("region", deployment.zoneId().region().value());
+        object.setString("status", asString(globalRouting.status()));
+        object.setString("agent", asString(globalRouting.agent()));
+        object.setLong("changedAt", globalRouting.changedAt().toEpochMilli());
     }
 
     private static void deploymentStatusToSlime(Cursor object, RoutingPolicy policy) {
-        object.setString("instance", policy.id().owner().serializedForm());
-        object.setString("cluster", policy.id().cluster().value());
-        object.setString("environment", policy.id().zone().environment().value());
-        object.setString("region", policy.id().zone().region().value());
-        object.setString("status", asString(policy.status().globalRouting().status()));
-        object.setString("agent", asString(policy.status().globalRouting().agent()));
-        object.setLong("changedAt", policy.status().globalRouting().changedAt().toEpochMilli());
+        deploymentStatusToSlime(object, new DeploymentId(policy.id().owner(), policy.id().zone()),
+                                policy.status().globalRouting(), RoutingType.policy);
     }
 
     private DeploymentId deploymentFrom(Path path) {
@@ -146,7 +196,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private ZoneId zoneFrom(Path path) {
         var zone = ZoneId.from(path.get("environment"), path.get("region"));
-        if (!controller.zoneRegistry().zones().all().ids().contains(zone)) {
+        if (!controller.zoneRegistry().hasZone(zone)) {
             throw new IllegalArgumentException("No such zone: " + zone);
         }
         return zone;
@@ -160,13 +210,21 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         }
     }
 
-    private static String asString(GlobalRouting.Agent status) {
-        switch (status) {
+    private static String asString(GlobalRouting.Agent agent) {
+        switch (agent) {
             case operator: return "operator";
             case system: return "system";
             case tenant: return "tenant";
             default: return "unknown";
         }
+    }
+
+    private enum RoutingType {
+        /** Global routing is configured by use of an {@link com.yahoo.vespa.hosted.controller.application.AssignedRotation} */
+        rotation,
+
+        /** Global routing is configured by a {@link com.yahoo.vespa.hosted.controller.routing.RoutingPolicy} */
+        policy,
     }
 
 }

@@ -1202,21 +1202,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     /** Set the global endpoint status for given deployment. This only applies to global endpoints backed by a cloud service */
     private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
-        var roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
-        var isOperator = roles.stream().map(Role::definition).anyMatch(d -> d == RoleDefinition.hostedOperator);
-        var agent = isOperator ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
+        var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
         var status = inService ? GlobalRouting.Status.in : GlobalRouting.Status.out;
         controller.applications().routingPolicies().setGlobalRoutingStatus(deployment, status, agent);
     }
 
     /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */
     private void setGlobalRotationStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
-        Inspector requestData = toSlime(request.getData()).get();
-        String reason = mandatory("reason", requestData).asString();
-        String agent = requireUserPrincipal(request).getName();
+        var requestData = toSlime(request.getData()).get();
+        var reason = mandatory("reason", requestData).asString();
+        var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
         long timestamp = controller.clock().instant().getEpochSecond();
-        EndpointStatus.Status status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
-        EndpointStatus endpointStatus = new EndpointStatus(status, reason, agent, timestamp);
+        var status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
+        var endpointStatus = new EndpointStatus(status, reason, agent.name(), timestamp);
         controller.applications().setGlobalRotationStatus(deployment, endpointStatus);
     }
 
@@ -2088,6 +2086,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                        .filter(cls::isInstance)
                        .map(cls::cast)
                        .orElseThrow(() -> new IllegalArgumentException("Attribute '" + attributeName + "' was not set on request"));
+    }
+
+    /** Returns whether given request is by an operator */
+    private static boolean isOperator(HttpRequest request) {
+        var securityContext = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class);
+        return securityContext.roles().stream()
+                              .map(Role::definition)
+                              .anyMatch(definition -> definition == RoleDefinition.hostedOperator);
     }
 
 }
