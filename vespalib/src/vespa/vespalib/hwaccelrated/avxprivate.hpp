@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "private_helpers.hpp"
 #include <vespa/fastos/dynamiclibrary.h>
 #include <cstring>
 

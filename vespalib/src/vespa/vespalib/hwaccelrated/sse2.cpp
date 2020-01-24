@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sse2.h"
+#include "private_helpers.hpp"
 
 namespace vespalib::hwaccelrated {
 
@@ -74,6 +75,11 @@ Sse2Accelrator::dotProduct(const double * af, const double * bf, size_t sz) cons
     }
     sum += partial[0][0] + partial[0][1];
     return sum; 
+}
+
+size_t
+Sse2Accelrator::populationCount(const uint64_t *a, size_t sz) const {
+    return helper::populationCount(a, sz);
 }
 
 }

@@ -17,4 +17,9 @@ Avx512Accelrator::dotProduct(const double * af, const double * bf, size_t sz) co
     return avx::dotProductSelectAlignment<double, 64>(af, bf, sz);
 }
 
+size_t
+Avx512Accelrator::populationCount(const uint64_t *a, size_t sz) const {
+    return helper::populationCount(a, sz);
+}
+
 }
