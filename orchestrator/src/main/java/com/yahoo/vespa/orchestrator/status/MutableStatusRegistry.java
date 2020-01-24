@@ -19,10 +19,8 @@ public interface MutableStatusRegistry extends AutoCloseable {
      */
     ApplicationInstanceStatus getStatus();
 
-    /**
-     * Returns the status of the given host.
-     */
-    HostStatus getHostStatus(HostName hostName);
+    /** Returns the host info of the given host. */
+    HostInfo getHostInfo(HostName hostName);
 
     /**
      * Returns the set of all suspended hosts for this application.

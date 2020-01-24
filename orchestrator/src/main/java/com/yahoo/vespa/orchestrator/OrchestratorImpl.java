@@ -149,7 +149,7 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (MutableStatusRegistry statusRegistry = statusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
-            HostStatus currentHostState = statusRegistry.getHostStatus(hostName);
+            HostStatus currentHostState = statusRegistry.getHostInfo(hostName).status();
 
             if (HostStatus.NO_REMARKS == currentHostState) {
                 return;
@@ -318,7 +318,7 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     private HostStatus getNodeStatus(ApplicationInstanceReference applicationRef, HostName hostName) {
-        return statusService.getHostStatus(applicationRef, hostName);
+        return statusService.getHostInfo(applicationRef, hostName).status();
     }
 
     private void setApplicationStatus(ApplicationId appId, ApplicationInstanceStatus status) 
