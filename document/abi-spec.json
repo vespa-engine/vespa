@@ -427,6 +427,8 @@
     "methods": [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType, com.yahoo.document.StructDataType)",
+      "public void <init>(java.lang.String, com.yahoo.document.StructDataType, com.yahoo.document.StructDataType, java.util.Set)",
+      "public void <init>(java.lang.String, java.util.Set)",
       "public com.yahoo.document.DocumentType clone()",
       "public com.yahoo.document.Document createFieldValue()",
       "public java.lang.Class getValueClass()",
@@ -448,6 +450,8 @@
       "public com.yahoo.document.Field getField(int)",
       "public boolean hasField(java.lang.String)",
       "public int getFieldCount()",
+      "public java.util.Set getImportedFieldNames()",
+      "public boolean hasImportedField(java.lang.String)",
       "public com.yahoo.document.Field removeField(java.lang.String)",
       "public java.util.Collection getFields()",
       "public java.util.Set fieldSet()",
