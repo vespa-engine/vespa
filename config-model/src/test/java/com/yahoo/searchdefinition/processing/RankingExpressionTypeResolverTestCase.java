@@ -1,11 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.google.inject.internal.util.$ToStringBuilder;
-import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.types.FieldDescription;
-import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.searchdefinition.RankProfile;
@@ -26,7 +23,6 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
