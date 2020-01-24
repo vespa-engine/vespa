@@ -1,8 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.util.http.retry;
 
-import ai.vespa.util.http.retry.DelayedHttpRequestRetryHandler.RetryConsumer;
-import ai.vespa.util.http.retry.DelayedHttpRequestRetryHandler.RetryFailedConsumer;
+import ai.vespa.util.http.retry.DelayedConnectionLevelRetryHandler.RetryConsumer;
+import ai.vespa.util.http.retry.DelayedConnectionLevelRetryHandler.RetryFailedConsumer;
 import com.yahoo.vespa.jdk8compat.List;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.junit.Test;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
 /**
  * @author bjorncs
  */
-public class DelayedHttpRequestRetryHandlerTest {
+public class DelayedConnectionLevelRetryHandlerTest {
 
     @Test
     public void retry_consumers_are_invoked() {
@@ -31,7 +31,7 @@ public class DelayedHttpRequestRetryHandlerTest {
         Duration delay = Duration.ofSeconds(10);
         int maxRetries = 5;
 
-        DelayedHttpRequestRetryHandler handler = DelayedHttpRequestRetryHandler.Builder
+        DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(delay, maxRetries)
                 .withSleeper(mock(Sleeper.class))
                 .onRetry(retryConsumer)
@@ -58,7 +58,7 @@ public class DelayedHttpRequestRetryHandlerTest {
         Duration delay = Duration.ofSeconds(2);
         int maxRetries = 2;
 
-        DelayedHttpRequestRetryHandler handler = DelayedHttpRequestRetryHandler.Builder
+        DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(delay, maxRetries)
                 .withSleeper(sleeper)
                 .build();
@@ -81,7 +81,7 @@ public class DelayedHttpRequestRetryHandlerTest {
         Duration maxDelay = Duration.ofSeconds(5);
         int maxRetries = 10;
 
-        DelayedHttpRequestRetryHandler handler = DelayedHttpRequestRetryHandler.Builder
+        DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withExponentialBackoff(startDelay, maxDelay, maxRetries)
                 .withSleeper(sleeper)
                 .build();
@@ -104,7 +104,7 @@ public class DelayedHttpRequestRetryHandlerTest {
     public void retries_for_listed_exceptions_until_max_retries_exceeded() {
         int maxRetries = 2;
 
-        DelayedHttpRequestRetryHandler handler = DelayedHttpRequestRetryHandler.Builder
+        DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), maxRetries)
                 .retryForExceptions(List.of(SSLException.class, ConnectException.class))
                 .withSleeper(mock(Sleeper.class))
@@ -121,7 +121,7 @@ public class DelayedHttpRequestRetryHandlerTest {
 
     @Test
     public void does_not_retry_for_non_listed_exception() {
-        DelayedHttpRequestRetryHandler handler = DelayedHttpRequestRetryHandler.Builder
+        DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), 2)
                 .retryForExceptions(List.of(SSLException.class, ConnectException.class))
                 .withSleeper(mock(Sleeper.class))

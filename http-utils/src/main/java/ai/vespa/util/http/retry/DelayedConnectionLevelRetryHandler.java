@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * @author bjorncs
  */
 @Contract(threading = ThreadingBehavior.IMMUTABLE)
-public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
+public class DelayedConnectionLevelRetryHandler implements HttpRequestRetryHandler {
 
     private static final Logger log = Logger.getLogger(HttpRequestRetryHandler.class.getName());
 
@@ -44,7 +44,7 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
     private final RetryFailedConsumer retryFailedConsumer;
     private final Sleeper sleeper;
 
-    private DelayedHttpRequestRetryHandler(
+    private DelayedConnectionLevelRetryHandler(
             DelaySupplier delaySupplier,
             int maxRetries,
             RetryPredicate predicate,
@@ -133,8 +133,8 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
             return this;
         }
 
-        public DelayedHttpRequestRetryHandler build() {
-            return new DelayedHttpRequestRetryHandler(delaySupplier, maxRetries, predicate, retryConsumer, retryFailedConsumer, sleeper);
+        public DelayedConnectionLevelRetryHandler build() {
+            return new DelayedConnectionLevelRetryHandler(delaySupplier, maxRetries, predicate, retryConsumer, retryFailedConsumer, sleeper);
         }
     }
 }
