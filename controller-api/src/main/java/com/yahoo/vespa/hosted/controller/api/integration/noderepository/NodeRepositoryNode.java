@@ -56,6 +56,10 @@ public class NodeRepositoryNode {
     private String currentOsVersion;
     @JsonProperty("wantedOsVersion")
     private String wantedOsVersion;
+    @JsonProperty("currentFirmwareCheck")
+    private Long currentFirmwareCheck;
+    @JsonProperty("wantedFirmwareCheck")
+    private Long wantedFirmwareCheck;
     @JsonProperty("failCount")
     private Integer failCount;
     @JsonProperty("environment")
@@ -335,6 +339,22 @@ public class NodeRepositoryNode {
 
     public void setWantedOsVersion(String wantedOsVersion) {
         this.wantedOsVersion = wantedOsVersion;
+    }
+
+    public Long getCurrentFirmwareCheck() {
+        return currentFirmwareCheck;
+    }
+
+    public void setCurrentFirmwareCheck(Long currentFirmwareCheck) {
+        this.currentFirmwareCheck = currentFirmwareCheck;
+    }
+
+    public Long getWantedFirmwareCheck() {
+        return wantedFirmwareCheck;
+    }
+
+    public void setWantedFirmwareCheck(Long wantedFirmwareCheck) {
+        this.wantedFirmwareCheck = wantedFirmwareCheck;
     }
 
     public Map<String, JsonNode> getReports() {

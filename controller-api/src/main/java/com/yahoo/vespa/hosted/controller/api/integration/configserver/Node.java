@@ -32,6 +32,8 @@ public class Node {
     private final Version wantedOsVersion;
     private final ServiceState serviceState;
     private final Optional<Instant> suspendedSince;
+    private final Optional<Instant> currentFirmwareCheck;
+    private final Optional<Instant> wantedFirmwareCheck;
     private final long restartGeneration;
     private final long wantedRestartGeneration;
     private final long rebootGeneration;
@@ -45,7 +47,8 @@ public class Node {
     private final Optional<TenantName> reservedTo;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
-                Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
+                Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
+                Optional<Instant> currentFirmwareCheck, Optional<Instant> wantedFirmwareCheck, ServiceState serviceState,
                 Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
                 int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
                 Optional<TenantName> reservedTo) {
@@ -59,6 +62,8 @@ public class Node {
         this.wantedVersion = wantedVersion;
         this.currentOsVersion = currentOsVersion;
         this.wantedOsVersion = wantedOsVersion;
+        this.currentFirmwareCheck = currentFirmwareCheck;
+        this.wantedFirmwareCheck = wantedFirmwareCheck;
         this.serviceState = serviceState;
         this.suspendedSince = suspendedSince;
         this.restartGeneration = restartGeneration;
@@ -110,6 +115,14 @@ public class Node {
 
     public Version wantedOsVersion() {
         return wantedOsVersion;
+    }
+
+    public Optional<Instant> currentFirmwareCheck() {
+        return currentFirmwareCheck;
+    }
+
+    public Optional<Instant> wantedFirmwareCheck() {
+        return wantedFirmwareCheck;
     }
 
     public ServiceState serviceState() {
@@ -215,6 +228,8 @@ public class Node {
         private Version wantedVersion;
         private Version currentOsVersion;
         private Version wantedOsVersion;
+        private Optional<Instant> currentFirmwareCheck = Optional.empty();
+        private Optional<Instant> wantedFirmwareCheck = Optional.empty();
         private ServiceState serviceState;
         private Optional<Instant> suspendedSince = Optional.empty();
         private long restartGeneration;
@@ -242,6 +257,8 @@ public class Node {
             this.wantedVersion = node.wantedVersion;
             this.currentOsVersion = node.currentOsVersion;
             this.wantedOsVersion = node.wantedOsVersion;
+            this.currentFirmwareCheck = node.currentFirmwareCheck;
+            this.wantedFirmwareCheck = node.wantedFirmwareCheck;
             this.serviceState = node.serviceState;
             this.suspendedSince = node.suspendedSince;
             this.restartGeneration = node.restartGeneration;
@@ -304,6 +321,16 @@ public class Node {
 
         public Builder wantedOsVersion(Version wantedOsVersion) {
             this.wantedOsVersion = wantedOsVersion;
+            return this;
+        }
+
+        public Builder currentFirmwareCheck(Instant currentFirmwareCheck) {
+            this.currentFirmwareCheck = Optional.ofNullable(currentFirmwareCheck);
+            return this;
+        }
+
+        public Builder wantedFirmwareCheck(Instant wantedFirmwareCheck) {
+            this.wantedFirmwareCheck = Optional.ofNullable(wantedFirmwareCheck);
             return this;
         }
 
@@ -373,9 +400,10 @@ public class Node {
         }
 
         public Node build() {
-            return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion, currentOsVersion,
-                    wantedOsVersion, serviceState, suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                    cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo);
+            return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
+                            currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
+                            suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
+                            cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo);
         }
 
     }

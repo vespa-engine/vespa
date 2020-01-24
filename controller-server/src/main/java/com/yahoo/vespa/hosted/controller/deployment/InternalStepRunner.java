@@ -489,6 +489,14 @@ public class InternalStepRunner implements StepRunner {
                                        (node.node().wantedOsVersion().isAfter(node.node().currentOsVersion()) && node.node().serviceState() == Node.ServiceState.allowedDown
                                         ? ", upgrading OS (" + node.node().wantedOsVersion() + " <-- " + node.node().currentOsVersion() + ")"
                                         : "") +
+                                       (node.parent().wantedFirmwareCheck()
+                                            .map(wanted -> node.parent().currentFirmwareCheck()
+                                                               .map(wanted::isAfter)
+                                                               .orElse(true))
+                                            .orElse(false)
+                                        && node.node().serviceState() == Node.ServiceState.allowedDown
+                                        ? ", upgrading firmware"
+                                        : "") +
                                        (node.node().wantedRestartGeneration() > node.node().restartGeneration()
                                         ? ", restart pending (" + node.node().wantedRestartGeneration() + " <-- " + node.node().restartGeneration() + ")"
                                         : "") +

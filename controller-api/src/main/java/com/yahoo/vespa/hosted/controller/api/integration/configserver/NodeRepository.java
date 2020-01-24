@@ -108,6 +108,8 @@ public interface NodeRepository {
                         versionFrom(node.getWantedVespaVersion()),
                         versionFrom(node.getCurrentOsVersion()),
                         versionFrom(node.getWantedOsVersion()),
+                        Optional.ofNullable(node.getCurrentFirmwareCheck()).map(Instant::ofEpochMilli),
+                        Optional.ofNullable(node.getWantedFirmwareCheck()).map(Instant::ofEpochMilli),
                         fromBoolean(node.getAllowedToBeDown()),
                         Optional.ofNullable(node.suspendedSince()).map(Instant::ofEpochMilli),
                         toInt(node.getCurrentRestartGeneration()),

@@ -46,6 +46,15 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
         return matching(node -> node.parent().wantedOsVersion().isAfter(node.parent().currentOsVersion()));
     }
 
+    /** The nodes on an outdated OS. */
+    public NodeList upgradingFirmware() {
+        return matching(node -> node.parent().wantedFirmwareCheck()
+                                    .map(wanted -> node.parent().currentFirmwareCheck()
+                                                       .map(wanted::isAfter)
+                                                       .orElse(true))
+                                    .orElse(false));
+    }
+
     /** The nodes whose parent is down. */
     public NodeList withParentDown() {
         return matching(node -> node.parent().serviceState() == Node.ServiceState.allowedDown);
@@ -87,6 +96,7 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
         return new ConvergenceSummary(size(),
                                       allowedDown.size(),
                                       withParentDown().upgradingOs().size(),
+                                      withParentDown().upgradingFirmware().size(),
                                       upgradingPlatform().size(),
                                       allowedDown.upgradingPlatform().size(),
                                       rebooting().size(),
