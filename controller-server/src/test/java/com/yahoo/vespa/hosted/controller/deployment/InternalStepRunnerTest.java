@@ -211,19 +211,6 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    public void startTestsFailsIfDeploymentExpires() {
-        app.newRun(JobType.systemTest);
-        tester.runner().run();
-        tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
-        tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
-        tester.runner().run();
-
-        tester.applications().deactivate(app.instanceId(), JobType.systemTest.zone(system()));
-        tester.runner().run();
-        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.startTests));
-    }
-
-    @Test
     public void alternativeEndpointsAreDetected() {
         app.newRun(JobType.systemTest);
         tester.runner().run();;
