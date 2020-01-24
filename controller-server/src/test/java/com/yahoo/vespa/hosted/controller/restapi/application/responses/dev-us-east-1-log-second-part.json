@@ -1,41 +1,8 @@
 {
+  "active": false,
+  "status": "success",
   "log": {
     "installReal": [
-      {
-        "at": 0,
-        "type": "info",
-        "message": "Checking installation of 6.1 and unknown ..."
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "                         host-tenant:application:default-dev.us-east-1: unorchestrated  6.1                                                      "
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "Wanted config generation is 2"
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "All services on wanted config generation."
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "Attempting to find deployment endpoints ..."
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "Found endpoints:"
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "- dev.us-east-1"
-      },
       {
         "at": 0,
         "type": "info",
@@ -48,21 +15,19 @@
       }
     ]
   },
-  "active": false,
-  "lastId": 18,
+  "lastId": 11,
   "steps": {
     "deployReal": {
-      "startMillis": 0,
-      "status": "succeeded"
+      "status": "succeeded",
+      "startMillis": 0
     },
     "installReal": {
-      "startMillis": 0,
-      "status": "succeeded"
+      "status": "succeeded",
+      "startMillis": 0
     },
     "copyVespaLogs": {
-      "startMillis": 0,
-      "status": "succeeded"
+      "status": "succeeded",
+      "startMillis": 0
     }
-  },
-  "status": "success"
+  }
 }

@@ -268,7 +268,7 @@ class RunSerializer {
         summaryArray.addLong(summary.needRestart());
         summaryArray.addLong(summary.restarting());
         summaryArray.addLong(summary.services());
-        summaryArray.addLong(summary.upgradingApplication());
+        summaryArray.addLong(summary.needNewConfig());
     }
 
     static String valueOf(Step step) {

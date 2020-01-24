@@ -558,8 +558,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Requested restart of tenant1.application1.instance1 in dev.us-central-1\"}");
 
         // POST a 'restart application' command with a host filter (other filters not supported yet)
-        deploymentTester.configServer().nodeRepository().addFixedNodes(ZoneId.from("prod", "us-central-1"));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart?hostname=hostA", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart?hostname=node-1-tenant-host-prod.us-central-1", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Requested restart of tenant1.application1.instance1 in prod.us-central-1\"}", 200);
 
@@ -1367,7 +1366,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .admin(HostedAthenzIdentities.from(userId));
 
         // POST (deploy) an application to a dev zone
-        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
+        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-east-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(userId),
                               new File("deploy-result.json"));

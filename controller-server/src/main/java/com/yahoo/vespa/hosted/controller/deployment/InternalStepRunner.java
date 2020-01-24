@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -65,6 +66,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
@@ -83,10 +85,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Runs steps of a deployment job against its provided controller.
@@ -297,18 +302,39 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> installReal(RunId id, boolean setTheStage, DualLogger logger) {
         Optional<Deployment> deployment = deployment(id.application(), id.type());
-        if ( ! deployment.isPresent()) {
+        if (deployment.isEmpty()) {
             logger.log(INFO, "Deployment expired before installation was successful.");
             return Optional.of(installationFailed);
         }
 
         Versions versions = controller.jobController().run(id).get().versions();
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
-        ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
-        logger.log("Checking installation of " + platform + " and " + application.id() + " ...");
 
-        if (   nodesConverged(id.application(), id.type(), platform, logger)
-            && servicesConverged(id.application(), id.type(), platform, logger)) {
+        Run run = controller.jobController().run(id).get();
+        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone(controller.system())),
+                                                                                                               Optional.of(platform));
+        if (services.isEmpty()) {
+            logger.log("Config status not currently available -- will retry.");
+            Step step = setTheStage ? installInitialReal : installReal;
+            return run.stepInfo(step).get().startTime().get().isBefore(controller.clock().instant().minus(Duration.ofMinutes(5)))
+                   ? Optional.of(error)
+                   : Optional.empty();
+        }
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
+                                                                                             id.application(),
+                                                                                             ImmutableSet.of(active, reserved));
+        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
+                                                                                               nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
+        NodeList nodeList = NodeList.of(nodes, parents, services.get());
+        boolean firstTick = run.convergenceSummary().isEmpty();
+        if (firstTick) { // Run the first time (for each convergence step).
+            logger.log(nodeList.asList().stream()
+                               .flatMap(node -> nodeDetails(node, true))
+                               .collect(toList()));
+        }
+        ConvergenceSummary summary = nodeList.summary();
+        if (summary.converged()) {
+            controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
             if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
                 if (containersAreUp(id.application(), id.type().zone(controller.system()), logger)) {
                     logger.log("Installation succeeded!");
@@ -320,24 +346,49 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.of(error);
             }
         }
+        controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(summary));
 
         if (timedOut(id, deployment.get(), installationTimeout)) {
+            logger.log(nodeList.asList().stream()
+                               .flatMap(node -> nodeDetails(node, true))
+                               .collect(toList()));
             logger.log(INFO, "Installation failed to complete within " + installationTimeout.toMinutes() + " minutes!");
             return Optional.of(installationFailed);
         }
 
-        logger.log("Installation not yet complete.");
+        if ( ! firstTick)
+            logger.log(nodeList.allowedDown().asList().stream()
+                               .flatMap(node -> nodeDetails(node, false))
+                               .collect(toList()));
         return Optional.empty();
     }
 
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
         Run run = controller.jobController().run(id).get();
         Version platform = controller.systemVersion();
-        logger.log("Checking installation of tester container ...");
-        if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
-            && servicesConverged(id.tester().id(), id.type(), platform, logger)) {
-            if (endpointsAvailable(id.tester().id(), id.type().zone(controller.system()), logger)) {
-                if (containersAreUp(id.tester().id(), id.type().zone(controller.system()), logger)) {
+        ZoneId zone = id.type().zone(controller.system());
+        ApplicationId testerId = id.tester().id();
+
+        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(testerId, zone),
+                                                                                                               Optional.of(platform));
+        if (services.isEmpty()) {
+            logger.log("Config status not currently available -- will retry.");
+            return run.stepInfo(installTester).get().startTime().get().isBefore(controller.clock().instant().minus(Duration.ofMinutes(5)))
+                   ? Optional.of(error)
+                   : Optional.empty();
+        }
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone,
+                                                                                             testerId,
+                                                                                             ImmutableSet.of(active, reserved));
+        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(zone,
+                                                                                               nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
+        NodeList nodeList = NodeList.of(nodes, parents, services.get());
+        logger.log(nodeList.asList().stream()
+                           .flatMap(node -> nodeDetails(node, false))
+                           .collect(toList()));
+        if (nodeList.summary().converged()) {
+            if (endpointsAvailable(testerId, zone, logger)) {
+                if (containersAreUp(testerId, zone, logger)) {
                     logger.log("Tester container successfully installed!");
                     return Optional.of(running);
                 }
@@ -353,7 +404,6 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(error);
         }
 
-        logger.log("Installation of tester not yet complete.");
         return Optional.empty();
     }
 
@@ -377,7 +427,6 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
-        logger.log("Attempting to find deployment endpoints ...");
         var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zone)));
         if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
@@ -403,46 +452,34 @@ public class InternalStepRunner implements StepRunner {
         logger.log(messages);
     }
 
-    private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(type.zone(controller.system()), id, ImmutableSet.of(active, reserved));
-        List<String> statuses = nodes.stream()
-                .map(node -> String.format("%70s: %-16s%-25s%-32s%s",
-                                           node.hostname(),
-                                           node.serviceState(),
-                                           node.wantedVersion() + (node.currentVersion().equals(node.wantedVersion()) ? "" : " <-- " + node.currentVersion()),
-                                           node.restartGeneration() >= node.wantedRestartGeneration() ? ""
-                                                   : "restart pending (" + node.wantedRestartGeneration() + " <-- " + node.restartGeneration() + ")",
-                                           node.rebootGeneration() >= node.wantedRebootGeneration() ? ""
-                                                   : "reboot pending (" + node.wantedRebootGeneration() + " <-- " + node.rebootGeneration() + ")"))
-                .collect(Collectors.toList());
-        logger.log(statuses);
-
-        return nodes.stream().allMatch(node ->    node.currentVersion().equals(target)
-                                               && node.restartGeneration() >= node.wantedRestartGeneration()
-                                               && node.rebootGeneration() >= node.wantedRebootGeneration());
+    private Stream<String> nodeDetails(NodeWithServices node, boolean printAllServices) {
+        return Stream.concat(Stream.of(node.node().hostname() + ": " + humanize(node.node().serviceState()),
+                                       "--- platform " + node.node().wantedVersion() + (node.node().currentVersion().equals(node.node().wantedVersion())
+                                                                                        ? ""
+                                                                                        : " <-- " + (node.node().currentVersion().isEmpty() ? "not booted" : node.node().currentVersion())) +
+                                       (node.node().wantedOsVersion().isAfter(node.node().currentOsVersion()) && node.node().serviceState() == Node.ServiceState.allowedDown
+                                        ? ", upgrading OS (" + node.node().wantedOsVersion() + " <-- " + node.node().currentOsVersion() + ")"
+                                        : "") +
+                                       (node.node().wantedRestartGeneration() > node.node().restartGeneration()
+                                        ? ", restart pending (" + node.node().wantedRestartGeneration() + " <-- " + node.node().restartGeneration() + ")"
+                                        : "") +
+                                       (node.node().wantedRebootGeneration() > node.node().rebootGeneration()
+                                        ? ", reboot pending (" + node.node().wantedRebootGeneration() + " <-- " + node.node().rebootGeneration() + ")"
+                                        : "")),
+                             node.services().stream()
+                                 .filter(service -> printAllServices || node.wantedConfigGeneration() > service.currentGeneration())
+                                 .map(service -> "--- " + service.type() + " on port " + service.port() + (service.currentGeneration() == -1
+                                                                                                           ? " has not started "
+                                                                                                           : " has config generation " + service.currentGeneration() + ", wanted is " + node.wantedConfigGeneration())));
     }
 
-    private boolean servicesConverged(ApplicationId id, JobType type, Version platform, DualLogger logger) {
-        var convergence = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())),
-                                                                       Optional.of(platform));
-        if (convergence.isEmpty()) {
-            logger.log("Config status not currently available -- will retry.");
-            return false;
+    private String humanize(Node.ServiceState state) {
+        switch (state) {
+            case allowedDown: return "allowed to be DOWN";
+            case expectedUp: return "expected to be UP";
+            case unorchestrated: return "unorchestrated";
+            default: return state.name();
         }
-        logger.log("Wanted config generation is " + convergence.get().wantedGeneration());
-        List<String> statuses = convergence.get().services().stream()
-                .filter(serviceStatus -> serviceStatus.currentGeneration() != convergence.get().wantedGeneration())
-                .map(serviceStatus -> String.format("%70s: %11s on port %4d has config generation %s",
-                                                    serviceStatus.host().value(),
-                                                    serviceStatus.type(),
-                                                    serviceStatus.port(),
-                                                    serviceStatus.currentGeneration() == -1 ? "not started!" : Long.toString(serviceStatus.currentGeneration())))
-                .collect(Collectors.toList());
-        logger.log(statuses);
-        if (statuses.isEmpty())
-            logger.log("All services on wanted config generation.");
-
-        return convergence.get().converged();
     }
 
     private Optional<RunStatus> startTests(RunId id, boolean isSetup, DualLogger logger) {

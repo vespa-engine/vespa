@@ -122,10 +122,10 @@ public class Run {
                        Optional.of(noNodesDownSince), convergenceSummary, testerCertificate);
     }
 
-    public Run with(ConvergenceSummary convergenceSummary) {
+    public Run withSummary(ConvergenceSummary convergenceSummary) {
         requireActive();
         return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, Optional.of(convergenceSummary), testerCertificate);
+                       noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate);
     }
 
     public Run with(X509Certificate testerCertificate) {

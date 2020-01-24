@@ -20,10 +20,10 @@ public class ConvergenceSummary {
     private final long needRestart;
     private final long restarting;
     private final long services;
-    private final long upgradingApplication;
+    private final long needNewConfig;
 
     public ConvergenceSummary(long nodes, long down, long upgradingOs, long needPlatformUpgrade, long upgradingPlatform,
-                              long needReboot, long rebooting, long needRestart, long restarting, long services, long upgradingApplication) {
+                              long needReboot, long rebooting, long needRestart, long restarting, long services, long needNewConfig) {
         this.nodes = nodes;
         this.down = down;
         this.upgradingOs = upgradingOs;
@@ -34,7 +34,7 @@ public class ConvergenceSummary {
         this.needRestart = needRestart;
         this.restarting = restarting;
         this.services = services;
-        this.upgradingApplication = upgradingApplication;
+        this.needNewConfig = needNewConfig;
     }
 
     /** Number of nodes in the application. */
@@ -88,8 +88,18 @@ public class ConvergenceSummary {
     }
 
     /** Number of services with outdated config generation. */
-    public long upgradingApplication() {
-        return upgradingApplication;
+    public long needNewConfig() {
+        return needNewConfig;
+    }
+
+    /** Whether the convergence is done. */
+    public boolean converged() {
+        return     nodes > 0
+                && needPlatformUpgrade == 0
+                && needReboot == 0
+                && needRestart == 0
+                && services > 0
+                && needNewConfig == 0;
     }
 
     @Override
@@ -107,12 +117,12 @@ public class ConvergenceSummary {
                needRestart == that.needRestart &&
                restarting == that.restarting &&
                services == that.services &&
-               upgradingApplication == that.upgradingApplication;
+               needNewConfig == that.needNewConfig;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodes, down, upgradingOs, needPlatformUpgrade, upgradingPlatform, needReboot, rebooting, needRestart, restarting, services, upgradingApplication);
+        return Objects.hash(nodes, down, upgradingOs, needPlatformUpgrade, upgradingPlatform, needReboot, rebooting, needRestart, restarting, services, needNewConfig);
     }
 
 }

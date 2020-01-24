@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -197,11 +198,13 @@ public class InternalStepRunnerTest {
         tester.setEndpoints(app.instanceId(), JobType.systemTest.zone(system()));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
 
         tester.applications().deactivate(app.instanceId(), JobType.systemTest.zone(system()));
         tester.setEndpoints(app.testerId().id(), JobType.systemTest.zone(system()));
         tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
         tester.runner().run();
+        assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
         assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.startTests));
         assertTrue(tester.jobs().last(app.instanceId(), JobType.systemTest).get().hasEnded());
         assertTrue(tester.jobs().last(app.instanceId(), JobType.systemTest).get().hasFailed());
@@ -387,7 +390,10 @@ public class InternalStepRunnerTest {
     @Test
     public void certificateTimeoutAbortsJob() {
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.PublicCd);
-        tester.controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("prod.aws-us-east-1c"));
+        tester.controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("test.aws-us-east-1c"),
+                                                          ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                                                          ZoneApiMock.fromId("prod.aws-us-east-1c"));
+        tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.values());
         RunId id = app.startSystemTestTests();
 
         List<X509Certificate> trusted = new ArrayList<>(publicCdApplicationPackage.trustedCertificates());
