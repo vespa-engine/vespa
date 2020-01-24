@@ -144,7 +144,7 @@ public class Run {
         return steps.containsKey(step);
     }
 
-    /** Returns info on step. */
+    /** Returns info on step, or empty if the given step is not a part of this run. */
     public Optional<StepInfo> stepInfo(Step step) {
         return Optional.ofNullable(steps.get(step));
     }
@@ -153,7 +153,7 @@ public class Run {
         return stepInfo(step).orElseThrow(() -> new IllegalArgumentException("There is no such step " + step + " for run " + id));
     }
 
-    /** Returns status of step. */
+    /** Returns status of step, or empty if the given step is not a part of this run. */
     public Optional<Step.Status> stepStatus(Step step) {
         return stepInfo(step).map(StepInfo::status);
     }

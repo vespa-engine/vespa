@@ -57,7 +57,20 @@
     },
     "installReal": {
       "status": "unfinished",
-      "startMillis": 0
+      "startMillis": 0,
+      "convergence": {
+        "nodes": 1,
+        "down": 0,
+        "needPlatformUpgrade": 0,
+        "upgrading": 0,
+        "needReboot": 0,
+        "rebooting": 0,
+        "needRestart": 0,
+        "restarting": 0,
+        "upgradingOs": 0,
+        "services": 1,
+        "needNewConfig": 1
+      }
     },
     "copyVespaLogs": {
       "status": "unfinished"
