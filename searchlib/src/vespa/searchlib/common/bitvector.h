@@ -29,7 +29,7 @@ public:
     typedef std::unique_ptr<BitVector> UP;
     BitVector(const BitVector &) = delete;
     BitVector& operator = (const BitVector &) = delete;
-    virtual ~BitVector() { }
+    virtual ~BitVector() = default;
     bool operator == (const BitVector &right) const;
     const void * getStart() const { return _words; }
     void * getStart() { return _words; }

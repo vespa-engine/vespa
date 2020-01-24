@@ -188,6 +188,7 @@ SingleBoolAttribute::onLoad()
         _bv.extend(numDocs);
         ssize_t bytesRead = attrReader.getReader().read(_bv.getStart(), _bv.sizeBytes());
         _bv.invalidateCachedCount();
+        _bv.countTrueBits();
         assert(bytesRead == _bv.sizeBytes());
         setNumDocs(numDocs);
         setCommittedDocIdLimit(numDocs);
