@@ -11,6 +11,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +48,7 @@ public class ApplicationHandler extends HttpHandler {
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
             "http://*/application/v2/tenant/*/application/*")
@@ -138,13 +141,11 @@ public class ApplicationHandler extends HttpHandler {
             switch (testerCommand) {
                 case "status":
                     return applicationRepository.getTesterStatus(applicationId);
-                case "logs":
+                case "log":
                     Long after = Long.valueOf(request.getProperty("after"));
                     return applicationRepository.getTesterLog(applicationId, after);
-                case "startTests":
-                    String suite = "foo"; // TODO
-                    String config = "bar"; // TODO
-                    return applicationRepository.startTests(applicationId, suite, config);
+                case "ready":
+                    return applicationRepository.isTesterReady(applicationId);
                 default:
                     throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
             }
@@ -156,9 +157,19 @@ public class ApplicationHandler extends HttpHandler {
     @Override
     public HttpResponse handlePOST(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
-        if (request.getUri().getPath().endsWith("restart"))
+        if (request.getUri().getPath().endsWith("restart")) {
             return restart(request, applicationId);
-        throw new NotFoundException("Illegal POST request '" + request.getUri() + "': Must end with /restart");
+        } else if (isTesterStartTestsRequest(request)) {
+            byte[] data;
+            try {
+                data = IOUtils.readBytes(request.getData(), 1024 * 1000);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Could not read data in request " + request);
+            }
+            return applicationRepository.startTests(applicationId, getSuiteFromRequest(request), data);
+        } else {
+            throw new NotFoundException("Illegal POST request '" + request.getUri() + "'");
+        }
     }
 
     private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {
@@ -233,6 +244,12 @@ public class ApplicationHandler extends HttpHandler {
                request.getUri().getPath().contains("/tester");
     }
 
+    private static boolean isTesterStartTestsRequest(HttpRequest request) {
+        System.out.println(getBindingMatch(request).groupCount());
+        return getBindingMatch(request).groupCount() == 9 &&
+               request.getUri().getPath().contains("/tester/run/");
+    }
+
     private static String getHostNameFromRequest(HttpRequest req) {
         BindingMatch<?> bm = getBindingMatch(req);
         return bm.group(7);
@@ -241,6 +258,11 @@ public class ApplicationHandler extends HttpHandler {
     private static String getTesterCommandFromRequest(HttpRequest req) {
         BindingMatch<?> bm = getBindingMatch(req);
         return bm.group(7);
+    }
+
+    private static String getSuiteFromRequest(HttpRequest req) {
+        BindingMatch<?> bm = getBindingMatch(req);
+        return bm.group(8);
     }
 
     private static String getPathSuffix(HttpRequest req) {
