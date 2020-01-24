@@ -297,7 +297,6 @@ private:
         }
     }
     VESPA_DLL_LOCAL void repairEnds();
-    VESPA_DLL_LOCAL static Index internalCount(const Word *tarr, size_t sz);
     Index count() const;
     bool hasTrueBitsInternal() const;
     template <typename FunctionType, typename WordConverter>

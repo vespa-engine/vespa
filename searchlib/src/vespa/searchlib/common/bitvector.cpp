@@ -136,23 +136,6 @@ BitVector::count() const
 }
 
 BitVector::Index
-BitVector::internalCount(const Word *tarr, size_t sz)
-{
-    Index count(0);
-    size_t i(0);
-    for (; (i + 3) < sz; i += 4) {
-        count += Optimized::popCount(tarr[i + 0]) +
-                 Optimized::popCount(tarr[i + 1]) +
-                 Optimized::popCount(tarr[i + 2]) +
-                 Optimized::popCount(tarr[i + 3]);
-    }
-    for (; i < sz; i++) {
-        count += Optimized::popCount(tarr[i]);
-    }
-    return count;
-}
-
-BitVector::Index
 BitVector::countInterval(Index start, Index end) const
 {
     if (start >= end) return 0;
@@ -182,7 +165,7 @@ BitVector::countInterval(Index start, Index end) const
         ++endw;
     }
     if (startw < endw) {
-        res += internalCount(bitValues + startw, endw - startw);
+        res += IAccelrated::getAccelrator()->populationCount(bitValues + startw, endw - startw);
     }
     if (partialEnd) {
         res += Optimized::popCount(bitValues[endw] & ~endBits(last));

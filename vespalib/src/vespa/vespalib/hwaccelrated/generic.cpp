@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generic.h"
+#include "private_helpers.hpp"
 
 namespace vespalib::hwaccelrated {
 
@@ -122,6 +123,11 @@ GenericAccelrator::notBit(void * aOrg, size_t bytes) const
     for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
         ac[i] = ~ac[i];
     }
+}
+
+size_t
+GenericAccelrator::populationCount(const uint64_t *a, size_t sz) const {
+    return helper::populationCount(a, sz);
 }
 
 }
