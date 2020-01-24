@@ -197,8 +197,8 @@ public:
         std::swap(_startOffset, rhs._startOffset);
         std::swap(_sz, rhs._sz);
         Index tmp = rhs._numTrueBits;
-        rhs._numTrueBits = _numTrueBits.load();
-        _numTrueBits = tmp;
+        rhs._numTrueBits = _numTrueBits.load(std::memory_order_relaxed);
+        _numTrueBits.store(tmp, std::memory_order_relaxed);
     }
 
     /**
@@ -287,12 +287,13 @@ private:
     void setGuardBit() { setBit(size()); }
     void incNumBits() {
         if ( isValidCount() ) {
-            _numTrueBits.fetch_add(1, std::memory_order_relaxed);
+            _numTrueBits.store(_numTrueBits.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
         }
     }
     void decNumBits() {
         if ( isValidCount() ) {
-            _numTrueBits.fetch_sub(1, std::memory_order_relaxed);
+            _numTrueBits.store(_numTrueBits.load(std::memory_order_relaxed) - 1, std::memory_order_relaxed);
+
         }
     }
     VESPA_DLL_LOCAL void repairEnds();
