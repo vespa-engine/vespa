@@ -70,6 +70,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     public void setType(Reference reference, TensorType type) {
         featureTypes.put(reference, type);
+        queryFeaturesNotDeclared.remove(reference);
     }
 
     @Override
