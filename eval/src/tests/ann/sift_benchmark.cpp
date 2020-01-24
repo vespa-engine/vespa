@@ -33,7 +33,7 @@ static PointVector *aligned_alloc(size_t num) {
     size_t val = (size_t)mem;
     size_t unalign = val % 512;
     mem -= unalign;
-    return (PointVector *)mem;
+    return reinterpret_cast<PointVector *>(mem);
 }
 
 static PointVector *generatedQueries = aligned_alloc(NUM_Q);
