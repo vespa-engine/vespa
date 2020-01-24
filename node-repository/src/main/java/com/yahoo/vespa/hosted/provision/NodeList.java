@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeType;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
@@ -77,6 +78,16 @@ public class NodeList implements Iterable<Node> {
     /** Returns the subset of nodes that are currently changing their OS version */
     public NodeList changingOsVersion() {
         return filter(node -> node.status().osVersion().changing());
+    }
+
+    /** Returns a copy of this sorted by current OS version (lowest to highest) */
+    public NodeList byIncreasingOsVersion() {
+        return nodes.stream()
+                    .sorted(Comparator.comparing(node -> node.status()
+                                                             .osVersion()
+                                                             .current()
+                                                             .orElse(Version.emptyVersion)))
+                    .collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
     }
 
     /** Returns the subset of nodes that are currently on the given OS version */
