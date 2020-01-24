@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -75,8 +76,11 @@ public class OsVersionsTest {
         tester.makeReadyNodes(totalNodes, "default", NodeType.host);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().nodeType(NodeType.host);
 
-        // Some nodes have reported current version
-        setCurrentVersion(hostNodes.get().asList().subList(0, 2), Version.fromString("7.0"));
+        // 5 nodes have no version. The other 15 are spread across different versions
+        var hostNodesList = hostNodes.get().asList();
+        for (int i = totalNodes - maxActiveUpgrades - 1; i >= 0; i--) {
+            setCurrentVersion(List.of(hostNodesList.get(i)), new Version(7, 0, i));
+        }
 
         // Set target
         var version1 = Version.fromString("7.1");
@@ -86,20 +90,28 @@ public class OsVersionsTest {
         // Activate target
         for (int i = 0; i < totalNodes; i += maxActiveUpgrades) {
             versions.setActive(NodeType.host, true);
-            var nodesUpgrading = hostNodes.get().changingOsVersion();
+            var nodes = hostNodes.get();
+            var nodesUpgrading = nodes.changingOsVersion();
             assertEquals("Target is changed for a subset of nodes", maxActiveUpgrades, nodesUpgrading.size());
             assertEquals("Wanted version is set for nodes upgrading", version1,
                          nodesUpgrading.stream()
                                        .map(node -> node.status().osVersion().wanted().get())
                                        .min(Comparator.naturalOrder()).get());
+            var nodesOnLowestVersion = nodes.asList().stream()
+                                            .sorted(Comparator.comparing(node -> node.status().osVersion().current().orElse(Version.emptyVersion)))
+                                            .collect(Collectors.toList())
+                                            .subList(0, maxActiveUpgrades);
+            assertEquals("Nodes on lowest version are told to upgrade",
+                         nodesUpgrading.asList(), nodesOnLowestVersion);
             completeUpgradeOf(nodesUpgrading.asList());
         }
 
         // Activating again after all nodes have upgraded does nothing
         versions.setActive(NodeType.host, true);
-        assertEquals(version1, hostNodes.get().stream()
-                                        .map(n -> n.status().osVersion().current().get())
-                                        .min(Comparator.naturalOrder()).get());
+        assertEquals("All nodes upgraded", version1,
+                     hostNodes.get().stream()
+                              .map(n -> n.status().osVersion().current().get())
+                              .min(Comparator.naturalOrder()).get());
     }
 
     private void setCurrentVersion(List<Node> nodes, Version currentVersion) {

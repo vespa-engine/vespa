@@ -123,6 +123,7 @@ public class OsVersions {
         var numberToUpgrade = Math.max(0, maxActiveUpgrades - nodes.changingOsVersion().size());
         var nodesToUpgrade = nodes.not().changingOsVersion()
                                   .not().onOsVersion(version)
+                                  .byIncreasingOsVersion()
                                   .first(numberToUpgrade);
         if (nodesToUpgrade.size() == 0) return;
         log.info("Upgrading " + nodesToUpgrade.size() + " nodes of type " + type + " to OS version " + version);
