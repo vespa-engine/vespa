@@ -1,6 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.util.http.retry;
 
+import org.apache.http.annotation.Contract;
+import org.apache.http.annotation.ThreadingBehavior;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.protocol.HttpContext;
@@ -17,6 +19,7 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
+@Contract(threading = ThreadingBehavior.IMMUTABLE)
 public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
 
     private static final Logger log = Logger.getLogger(HttpRequestRetryHandler.class.getName());
