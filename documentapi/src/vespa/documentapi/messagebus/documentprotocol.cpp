@@ -48,7 +48,7 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     std::vector<vespalib::VersionSpecification> from6  = { version6 };
 
     // Add 6.x serialization
-    putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory(*_repo)), from6);
+    putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory()), from6);
     putRoutableFactory(MESSAGE_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories60::DestroyVisitorMessageFactory()), from6);
     putRoutableFactory(MESSAGE_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories60::DocumentListMessageFactory(*_repo)), from6);
     putRoutableFactory(MESSAGE_DOCUMENTSUMMARY, IRoutableFactory::SP(new RoutableFactories60::DocumentSummaryMessageFactory()), from6);
@@ -56,7 +56,7 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutableFactory(MESSAGE_GETBUCKETLIST, IRoutableFactory::SP(new RoutableFactories60::GetBucketListMessageFactory()), from6);
     putRoutableFactory(MESSAGE_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories60::GetBucketStateMessageFactory()), from6);
     putRoutableFactory(MESSAGE_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::GetDocumentMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories60::MapVisitorMessageFactory(*_repo)), from6);
+    putRoutableFactory(MESSAGE_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories60::MapVisitorMessageFactory()), from6);
     putRoutableFactory(MESSAGE_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::PutDocumentMessageFactory(*_repo)), from6);
     putRoutableFactory(MESSAGE_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories60::QueryResultMessageFactory()), from6);
     putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::RemoveDocumentMessageFactory()), from6);

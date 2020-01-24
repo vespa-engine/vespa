@@ -130,7 +130,6 @@ public:
     //
     ////////////////////////////////////////////////////////////////////////////////
     class CreateVisitorMessageFactory : public DocumentMessageFactory {
-        const document::DocumentTypeRepo &_repo;
     protected:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
@@ -138,7 +137,7 @@ public:
         virtual bool encodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf) const;
         virtual string decodeBucketSpace(document::ByteBuffer&) const;
     public:
-        CreateVisitorMessageFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
+        CreateVisitorMessageFactory() : DocumentMessageFactory() {}
     };
     class CreateVisitorReplyFactory : public DocumentReplyFactory {
     protected:
@@ -228,12 +227,11 @@ public:
         GetDocumentReplyFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
     };
     class MapVisitorMessageFactory : public DocumentMessageFactory {
-        const document::DocumentTypeRepo &_repo;
     protected:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
-        MapVisitorMessageFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
+        MapVisitorMessageFactory() : DocumentMessageFactory()  {}
     };
     class MapVisitorReplyFactory : public DocumentReplyFactory {
     protected:

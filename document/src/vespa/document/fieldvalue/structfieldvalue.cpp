@@ -43,7 +43,7 @@ StructFieldValue::StructFieldValue(const DataType &type)
 StructFieldValue::StructFieldValue(const StructFieldValue & rhs) = default;
 StructFieldValue & StructFieldValue::operator = (const StructFieldValue & rhs) = default;
 
-StructFieldValue::~StructFieldValue() = default;
+StructFieldValue::~StructFieldValue() noexcept = default;
 
 const StructDataType &
 StructFieldValue::getStructType() const {
