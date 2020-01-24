@@ -62,6 +62,7 @@ import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
     private final Map<DeploymentId, Application> applications = new LinkedHashMap<>();
+    private final Set<ZoneId> inactiveZones = new HashSet<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
@@ -407,14 +408,28 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status) {
-        endpoints.put(endpoint, status);
+    public void setGlobalRotationStatus(DeploymentId deployment, String upstreamName, EndpointStatus status) {
+        endpoints.put(upstreamName, status);
+    }
+
+    @Override
+    public void setGlobalRotationStatus(ZoneId zone, boolean in) {
+        if (in) {
+            inactiveZones.remove(zone);
+        } else {
+            inactiveZones.add(zone);
+        }
     }
 
     @Override
     public EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) {
         EndpointStatus result = new EndpointStatus(EndpointStatus.Status.in, "", "", 1497618757L);
         return endpoints.getOrDefault(endpoint, result);
+    }
+
+    @Override
+    public boolean getGlobalRotationStatus(ZoneId zone) {
+        return !inactiveZones.contains(zone);
     }
 
     @Override
