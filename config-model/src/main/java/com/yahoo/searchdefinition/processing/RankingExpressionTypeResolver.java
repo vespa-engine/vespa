@@ -85,8 +85,8 @@ public class RankingExpressionTypeResolver extends Processor {
             ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
             if ( context.tensorsAreUsed() && ! context.queryFeaturesNotDeclared().isEmpty()) {
                 deployLogger.log(Level.WARNING, "The following query features are not declared in query profile " +
-                                             "types and will be interpreted as scalars, not tensors: " +
-                                             context.queryFeaturesNotDeclared());
+                                                "types and will be interpreted as scalars, not tensors: " +
+                                                context.queryFeaturesNotDeclared());
             }
         }
     }

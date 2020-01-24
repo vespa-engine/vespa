@@ -1,8 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.google.inject.internal.util.$ToStringBuilder;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.FieldType;
+import com.yahoo.search.query.profile.types.QueryProfileType;
+import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
@@ -277,6 +282,43 @@ public class RankingExpressionTypeResolverTestCase {
         assertEquals("WARNING: The following query features are not declared in query profile types and " +
                      "will be interpreted as scalars, not tensors: [query(bar), query(baz), query(foo)]",
                      message);
+    }
+
+    @Test
+    public void noWarningWhenUsingTensorsWhenQueryFeaturesAreDeclared() throws Exception {
+        InspectableDeployLogger logger = new InspectableDeployLogger();
+        SearchBuilder builder = new SearchBuilder();
+        QueryProfileType myType = new QueryProfileType("mytype");
+        myType.addField(new FieldDescription("rank.feature.query(foo)",
+                                             new TensorFieldType(TensorType.fromSpec("tensor(d[2])"))),
+                        builder.getQueryProfileRegistry().getTypeRegistry());
+        myType.addField(new FieldDescription("rank.feature.query(bar)",
+                                             new TensorFieldType(TensorType.fromSpec("tensor(d[2])"))),
+                        builder.getQueryProfileRegistry().getTypeRegistry());
+        myType.addField(new FieldDescription("rank.feature.query(baz)",
+                                             new TensorFieldType(TensorType.fromSpec("tensor(d[2])"))),
+                        builder.getQueryProfileRegistry().getTypeRegistry());
+        builder.getQueryProfileRegistry().getTypeRegistry().register(myType);
+        builder.importString(joinLines(
+                "search test {",
+                "  document test { ",
+                "    field anyfield type tensor(d[2]) {",
+                "      indexing: attribute",
+                "    }",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    first-phase {",
+                "      expression: sum(query(foo) + f() + sum(attribute(anyfield)))",
+                "    }",
+                "    function f() {",
+                "      expression: query(bar) + query(baz)",
+                "    }",
+                "  }",
+                "}"
+        ), logger);
+        builder.build(true, logger);
+        String message = logger.findMessage("The following query features");
+        assertNull(message);
     }
 
     private Map<String, ReferenceNode> summaryFeatures(RankProfile profile) {
