@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
-import ai.vespa.util.http.retry.DelayedHttpRequestRetryHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -85,9 +84,6 @@ class FlagsClient {
 
 
     private static CloseableHttpClient createClient(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
-        DelayedHttpRequestRetryHandler retryHandler = DelayedHttpRequestRetryHandler.Builder
-                .withExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(20), 5)
-                .build();
         return HttpClientBuilder.create()
                 .setUserAgent("controller-flags-v1-client")
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(5, /*retry on non-idempotent requests*/true))
@@ -100,7 +96,6 @@ class FlagsClient {
                                                  .build())
                 .setMaxConnPerRoute(2)
                 .setMaxConnTotal(100)
-                .setRetryHandler(retryHandler)
                 .build();
     }
 
