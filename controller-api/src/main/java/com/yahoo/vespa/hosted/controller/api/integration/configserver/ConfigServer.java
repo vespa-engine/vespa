@@ -60,23 +60,30 @@ public interface ConfigServer {
     List<String> getContentClusters(DeploymentId deployment);
 
     /**
-     * Set new status on en endpoint in one zone.
+     * Set new status for a endpoint of a single deployment.
      *
-     * @param deployment The application/zone pair
-     * @param endpoint The endpoint to modify
-     * @param status The new status with metadata
+     * @param deployment   The deployment to change
+     * @param upstreamName The upstream to modify. Upstream name is a unique identifier for the global route of a
+     *                     deployment in the shared routing layer
+     * @param status       The new status
      */
     // TODO(mpolden): Implement a zone-variant of this
-    void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status);
+    void setGlobalRotationStatus(DeploymentId deployment, String upstreamName, EndpointStatus status);
 
     /**
      * Get the endpoint status for an app in one zone
      *
      * @param deployment The application/zone pair
      * @param endpoint The endpoint to modify
+    /**
+     * Get the endpoint status for an app in one zone.
+     *
+     * @param deployment   The deployment to change
+     * @param upstreamName The upstream to query. Upstream name is a unique identifier for the global route of a
+     *                     deployment in the shared routing layer
      * @return The endpoint status with metadata
      */
-    EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint);
+    EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String upstreamName);
 
     /** The node repository on this config server */
     NodeRepository nodeRepository();

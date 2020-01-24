@@ -407,8 +407,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status) {
-        endpoints.put(endpoint, status);
+    public void setGlobalRotationStatus(DeploymentId deployment, String upstreamName, EndpointStatus status) {
+        endpoints.put(upstreamName, status);
     }
 
     @Override
