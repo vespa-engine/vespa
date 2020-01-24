@@ -8,11 +8,11 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import com.yahoo.vespa.jdk8compat.List;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertNotEquals;
