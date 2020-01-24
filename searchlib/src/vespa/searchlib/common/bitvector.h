@@ -45,9 +45,9 @@ public:
     }
     Index countTrueBits() const {
         if ( ! isValidCount()) {
-            _numTrueBits = count();
+            _numTrueBits.store(count(), std::memory_order_relaxed);
         }
-        return _numTrueBits;
+        return _numTrueBits.load(std::memory_order_relaxed);
     }
 
     /**
@@ -189,14 +189,16 @@ public:
      * should be called before calling Test/Clear/Flip methods.
      */
     void invalidateCachedCount() const {
-        _numTrueBits = invalidCount();
+        _numTrueBits.store(invalidCount(), std::memory_order_relaxed);
     }
 
     void swap(BitVector & rhs) {
         std::swap(_words, rhs._words);
         std::swap(_startOffset, rhs._startOffset);
         std::swap(_sz, rhs._sz);
-        std::swap(_numTrueBits, rhs._numTrueBits);
+        Index tmp = rhs._numTrueBits;
+        rhs._numTrueBits = _numTrueBits.load();
+        _numTrueBits = tmp;
     }
 
     /**
@@ -253,9 +255,9 @@ protected:
     BitVector(void * buf, Index sz) : BitVector(buf, 0, sz) { }
     BitVector() : BitVector(nullptr, 0) { }
     void init(void * buf,  Index start, Index end);
-    void setTrueBits(Index numTrueBits) { _numTrueBits = numTrueBits; }
+    void setTrueBits(Index numTrueBits) { _numTrueBits.store(numTrueBits, std::memory_order_relaxed); }
     VESPA_DLL_LOCAL void clearIntervalNoInvalidation(Index start, Index end);
-    bool isValidCount() const { return isValidCount(_numTrueBits); }
+    bool isValidCount() const { return isValidCount(_numTrueBits.load(std::memory_order_relaxed)); }
     static bool isValidCount(Index v) { return v != invalidCount(); }
     static Index numWords(Index bits) { return wordNum(bits + 1 + (WordLen - 1)); }
     static Index numBytes(Index bits) { return numWords(bits) * sizeof(Word); }
@@ -285,12 +287,12 @@ private:
     void setGuardBit() { setBit(size()); }
     void incNumBits() {
         if ( isValidCount() ) {
-            _numTrueBits++;
+            _numTrueBits.fetch_add(1, std::memory_order_relaxed);
         }
     }
     void decNumBits() {
         if ( isValidCount() ) {
-            _numTrueBits--;
+            _numTrueBits.fetch_sub(1, std::memory_order_relaxed);
         }
     }
     VESPA_DLL_LOCAL void repairEnds();
@@ -346,7 +348,7 @@ private:
     Word          *_words;        // This is the buffer staring at Index 0
     Index          _startOffset;  // This is the official start
     Index          _sz;           // This is the official end.
-    mutable Index  _numTrueBits;
+    mutable std::atomic<Index>  _numTrueBits;
 
 protected:
     friend vespalib::nbostream &
