@@ -5,7 +5,6 @@ import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
-import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.zpe.AuthorizationResult;
 import com.yahoo.vespa.athenz.zpe.Zpe;
@@ -15,7 +14,6 @@ import org.mockito.Mockito;
 import java.security.cert.X509Certificate;
 
 import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilterConfig.CredentialsToVerify.Enum.ANY;
-import static com.yahoo.vespa.athenz.zpe.AuthorizationResult.*;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -66,7 +64,7 @@ public class AthenzAuthorizationFilterTest {
         assertNotNull(response);
         assertEquals(403, response.getStatus());
         String content = responseHandler.readAll();
-        assertThat(content, containsString(Type.DENY.getDescription()));
+        assertThat(content, containsString(AuthorizationResult.DENY.getDescription()));
     }
 
     private static DiscFilterRequest createRequest() {
@@ -82,24 +80,24 @@ public class AthenzAuthorizationFilterTest {
     static class AllowingZpe implements Zpe {
         @Override
         public AuthorizationResult checkAccessAllowed(ZToken roleToken, AthenzResourceName resourceName, String action) {
-            return new AuthorizationResult(Type.ALLOW, new AthenzRole(resourceName.getDomain(), "rolename"));
+            return AuthorizationResult.ALLOW;
         }
 
         @Override
         public AuthorizationResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action) {
-            return new AuthorizationResult(Type.ALLOW, new AthenzRole(resourceName.getDomain(), "rolename"));
+            return AuthorizationResult.ALLOW;
         }
     }
 
     static class DenyingZpe implements Zpe {
         @Override
         public AuthorizationResult checkAccessAllowed(ZToken roleToken, AthenzResourceName resourceName, String action) {
-            return new AuthorizationResult(Type.DENY);
+            return AuthorizationResult.DENY;
         }
 
         @Override
         public AuthorizationResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action) {
-            return new AuthorizationResult(Type.DENY);
+            return AuthorizationResult.DENY;
         }
     }
 

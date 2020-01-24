@@ -121,12 +121,11 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
                                                                   ZpeCheck<C> accessCheck,
                                                                   Function<C, AthenzPrincipal> principalFactory) {
         AuthorizationResult authorizationResult = accessCheck.checkAccess(credentials, resAndAction.resourceName(), resAndAction.action());
-        if (authorizationResult.type() == AuthorizationResult.Type.ALLOW) {
+        if (authorizationResult == AuthorizationResult.ALLOW) {
             request.setUserPrincipal(principalFactory.apply(credentials));
-            authorizationResult.matchedRole().ifPresent(role -> request.setUserRoles(new String[] {role.roleName()}));
             return Optional.empty();
         }
-        return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access forbidden: " + authorizationResult.type().getDescription()));
+        return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access forbidden: " + authorizationResult.getDescription()));
     }
 
     private static AthenzPrincipal createPrincipal(X509Certificate certificate) {
