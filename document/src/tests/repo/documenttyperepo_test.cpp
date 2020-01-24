@@ -532,6 +532,47 @@ TEST("Reference fields are resolved to correct reference type") {
     EXPECT_EQUAL(*ref1_type, type->getFieldsType().getField("ref3").getDataType());
 }
 
+TEST("Config with no imported fields has empty imported fields set in DocumentType") {
+    DocumenttypesConfigBuilderHelper builder;
+    builder.document(doc_type_id, type_name,
+                     Struct(header_name), Struct(body_name));
+    DocumentTypeRepo repo(builder.config());
+    const auto *type = repo.getDocumentType(doc_type_id);
+    ASSERT_TRUE(type != nullptr);
+    EXPECT_TRUE(type->imported_field_names().empty());
+    EXPECT_FALSE(type->has_imported_field_name("foo"));
+}
+
+TEST("Configured imported field names are available in the DocumentType") {
+    const int type_2_id = doc_type_id + 1;
+    // Note: we cheat a bit by specifying imported field names in types that have no
+    // reference fields. Add to test if we add config read-time validation of this. :)
+    DocumenttypesConfigBuilderHelper builder;
+    // Type with one imported field
+    builder.document(doc_type_id, type_name,
+                     Struct(header_name), Struct(body_name))
+                     .imported_field("my_cool_field");
+    // Type with two imported fields
+    builder.document(type_2_id, type_name_2,
+                     Struct(header_name_2), Struct(body_name_2))
+                     .imported_field("my_awesome_field")
+                     .imported_field("my_swag_field");
+
+    DocumentTypeRepo repo(builder.config());
+    const auto* type = repo.getDocumentType(doc_type_id);
+    ASSERT_TRUE(type != nullptr);
+    EXPECT_EQUAL(1u, type->imported_field_names().size());
+    EXPECT_TRUE(type->has_imported_field_name("my_cool_field"));
+    EXPECT_FALSE(type->has_imported_field_name("my_awesome_field"));
+
+    type = repo.getDocumentType(type_2_id);
+    ASSERT_TRUE(type != nullptr);
+    EXPECT_EQUAL(2u, type->imported_field_names().size());
+    EXPECT_TRUE(type->has_imported_field_name("my_awesome_field"));
+    EXPECT_TRUE(type->has_imported_field_name("my_swag_field"));
+    EXPECT_FALSE(type->has_imported_field_name("my_cool_field"));
+}
+
 namespace {
 
 const TensorDataType &
