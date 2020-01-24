@@ -139,7 +139,14 @@ BitVector::Index
 BitVector::internalCount(const Word *tarr, size_t sz)
 {
     Index count(0);
-    for (size_t i(0); i < sz; i++) {
+    size_t i(0);
+    for (; (i + 3) < sz; i += 4) {
+        count += Optimized::popCount(tarr[i + 0]) +
+                 Optimized::popCount(tarr[i + 1]) +
+                 Optimized::popCount(tarr[i + 2]) +
+                 Optimized::popCount(tarr[i + 3]);
+    }
+    for (; i < sz; i++) {
         count += Optimized::popCount(tarr[i]);
     }
     return count;
