@@ -1,4 +1,5 @@
 {
+  "routingType": "rotation",
   "environment": "prod",
   "region": "us-west-1",
   "status": "out",

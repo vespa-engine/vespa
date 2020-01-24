@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
-import com.google.inject.Inject;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -27,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author mpolden
@@ -39,6 +38,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private SystemName system;
     private UpgradePolicy upgradePolicy = null;
     private Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
+    private Set<ZoneApi> directlyRouted = Set.of();
 
     /**
      * This sets the default list of zones contained in this. If your test need a particular set of zones, use
@@ -55,6 +55,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
                 ZoneApiMock.fromId("prod.us-west-1"),
                 ZoneApiMock.fromId("prod.us-central-1"),
                 ZoneApiMock.fromId("prod.eu-west-1")));
+        setDirectlyRouted(Set.copyOf(this.zones));
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
@@ -91,6 +92,15 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
+    public ZoneRegistryMock setDirectlyRouted(ZoneApi... zones) {
+        return setDirectlyRouted(Set.of(zones));
+    }
+
+    public ZoneRegistryMock setDirectlyRouted(Set<ZoneApi> zones) {
+        directlyRouted = zones;
+        return this;
+    }
+
     @Override
     public SystemName system() {
         return system;
@@ -98,7 +108,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public ZoneFilter zones() {
-        return ZoneFilterMock.from(List.copyOf(zones));
+        return ZoneFilterMock.from(zones, directlyRouted);
     }
 
     @Override

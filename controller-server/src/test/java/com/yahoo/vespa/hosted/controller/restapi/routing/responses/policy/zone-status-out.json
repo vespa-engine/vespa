@@ -1,0 +1,8 @@
+{
+  "routingType": "policy",
+  "environment": "prod",
+  "region": "us-west-1",
+  "status": "out",
+  "agent": "operator",
+  "changedAt": "(ignore)"
+}

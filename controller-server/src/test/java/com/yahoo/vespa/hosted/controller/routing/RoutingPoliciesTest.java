@@ -262,7 +262,10 @@ public class RoutingPoliciesTest {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         var emptyApplicationPackage = new ApplicationPackageBuilder().build();
         var zone = ZoneId.from("dev", "us-east-1");
-        tester.controllerTester().serviceRegistry().zoneRegistry().setZones(ZoneApiMock.from(zone.environment(), zone.region()));
+        var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
+        tester.controllerTester().serviceRegistry().zoneRegistry()
+              .setZones(zoneApi)
+              .setDirectlyRouted(zoneApi);
         tester.provisionLoadBalancers(1, context.instanceId(), zone);
 
         // Deploy to dev
@@ -282,7 +285,11 @@ public class RoutingPoliciesTest {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         context.submit(applicationPackage).deploy();
         var zone = ZoneId.from("dev", "us-east-1");
-        tester.controllerTester().serviceRegistry().zoneRegistry().setZones(ZoneApiMock.from(zone.environment(), zone.region()));
+        var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
+        tester.controllerTester().serviceRegistry().zoneRegistry()
+              .setZones(zoneApi)
+              .setDirectlyRouted(zoneApi);
+
 
         // Deploy to dev under different instance
         var devInstance = context.application().id().instance("user");

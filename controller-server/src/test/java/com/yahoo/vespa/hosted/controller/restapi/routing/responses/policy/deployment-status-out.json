@@ -1,11 +1,11 @@
 {
   "deployments": [
     {
+      "routingType": "policy",
       "instance": "tenant:application:default",
-      "cluster": "default",
       "environment": "prod",
       "region": "us-west-1",
-      "status": "in",
+      "status": "out",
       "agent": "operator",
       "changedAt": "(ignore)"
     }

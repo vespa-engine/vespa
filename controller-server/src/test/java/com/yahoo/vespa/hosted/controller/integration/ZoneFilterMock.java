@@ -9,11 +9,9 @@ import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneList;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -25,20 +23,22 @@ import java.util.stream.Collectors;
 public class ZoneFilterMock implements ZoneList {
 
     private final List<ZoneApi> zones;
+    private final Set<ZoneApi> directlyRouted;
     private final boolean negate;
 
-    private ZoneFilterMock(List<ZoneApi> zones, boolean negate) {
+    private ZoneFilterMock(List<ZoneApi> zones, Set<ZoneApi> directlyRouted, boolean negate) {
         this.zones = zones;
+        this.directlyRouted = directlyRouted;
         this.negate = negate;
     }
 
-    public static ZoneFilter from(Collection<ZoneApi> zones) {
-        return new ZoneFilterMock(new ArrayList<>(zones), false);
+    public static ZoneFilter from(Collection<ZoneApi> zones, Set<ZoneApi> directlyRouted) {
+        return new ZoneFilterMock(List.copyOf(zones), Set.copyOf(directlyRouted), false);
     }
 
     @Override
     public ZoneList not() {
-        return new ZoneFilterMock(zones, ! negate);
+        return new ZoneFilterMock(zones, directlyRouted, ! negate);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public ZoneList directlyRouted() {
-        return all();
+        return filter(directlyRouted::contains);
     }
 
     @Override
@@ -63,17 +63,17 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public ZoneList in(Environment... environments) {
-        return filter(zone -> new HashSet<>(Arrays.asList(environments)).contains(zone.getEnvironment()));
+        return filter(zone -> Set.of(environments).contains(zone.getEnvironment()));
     }
 
     @Override
     public ZoneList in(RegionName... regions) {
-        return filter(zone -> new HashSet<>(Arrays.asList(regions)).contains(zone.getRegionName()));
+        return filter(zone -> Set.of(regions).contains(zone.getRegionName()));
     }
 
     @Override
     public ZoneList among(ZoneId... zones) {
-        return filter(zone -> new HashSet<>(Arrays.asList(zones)).contains(zone.getId()));
+        return filter(zone -> Set.of(zones).contains(zone.getId()));
     }
 
     @Override
@@ -93,7 +93,7 @@ public class ZoneFilterMock implements ZoneList {
                                 condition.negate().test(zone) :
                                 condition.test(zone))
                         .collect(Collectors.toList()),
-                false);
+                directlyRouted, false);
     }
 
 }

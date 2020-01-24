@@ -1,0 +1,22 @@
+{
+  "deployments": [
+    {
+      "routingType": "rotation",
+      "instance": "tenant:application:default",
+      "environment": "prod",
+      "region": "us-west-1",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": "(ignore)"
+    },
+    {
+      "routingType": "policy",
+      "instance": "tenant:application:default",
+      "environment": "prod",
+      "region": "us-west-1",
+      "status": "in",
+      "agent": "system",
+      "changedAt": "(ignore)"
+    }
+  ]
+}
