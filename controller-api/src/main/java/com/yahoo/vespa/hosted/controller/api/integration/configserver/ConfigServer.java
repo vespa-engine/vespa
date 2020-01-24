@@ -67,14 +67,16 @@ public interface ConfigServer {
      *                     deployment in the shared routing layer
      * @param status       The new status
      */
-    // TODO(mpolden): Implement a zone-variant of this
     void setGlobalRotationStatus(DeploymentId deployment, String upstreamName, EndpointStatus status);
 
     /**
-     * Get the endpoint status for an app in one zone
+     * Set the new status for an entire zone.
      *
-     * @param deployment The application/zone pair
-     * @param endpoint The endpoint to modify
+     * @param zone the zone
+     * @param in whether to set zone status to 'in' or 'out'
+     */
+    void setGlobalRotationStatus(ZoneId zone, boolean in);
+
     /**
      * Get the endpoint status for an app in one zone.
      *
@@ -84,6 +86,14 @@ public interface ConfigServer {
      * @return The endpoint status with metadata
      */
     EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String upstreamName);
+
+    /**
+     * Get the status for an entire zone.
+     *
+     * @param zone the zone
+     * @return whether the zone status is 'in'
+     */
+    boolean getGlobalRotationStatus(ZoneId zone);
 
     /** The node repository on this config server */
     NodeRepository nodeRepository();
