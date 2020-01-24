@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
@@ -188,6 +189,53 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installTester));
+    }
+
+    @Test
+    public void timesOutWithoutInstallationProgress() {
+        tester.controllerTester().upgradeSystem(new Version("7.1"));
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain();
+        app.newRun(JobType.systemTest);
+
+        // Node is down too long in system test, and no nodes go down in staging.
+        tester.runner().run();
+        tester.setEndpoints(app.testerId().id(), JobType.systemTest.zone(system()));
+        tester.configServer().setVersion(app.testerId().id(), JobType.systemTest.zone(system()), tester.controller().systemVersion());
+        tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
+        tester.setEndpoints(app.instanceId(), JobType.systemTest.zone(system()));
+        tester.setEndpoints(app.testerId().id(), JobType.stagingTest.zone(system()));
+        tester.configServer().setVersion(app.testerId().id(), JobType.stagingTest.zone(system()), tester.controller().systemVersion());
+        tester.configServer().convergeServices(app.testerId().id(), JobType.stagingTest.zone(system()));
+        tester.setEndpoints(app.instanceId(), JobType.stagingTest.zone(system()));
+        tester.runner().run();
+        assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
+        assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installTester));
+
+        Node systemTestNode = tester.configServer().nodeRepository().list(JobType.systemTest.zone(system()),
+                                                                          app.instanceId()).iterator().next();
+        tester.clock().advance(InternalStepRunner.installationTimeout.minus(Duration.ofSeconds(1)));
+        tester.configServer().nodeRepository().putByHostname(JobType.systemTest.zone(system()),
+                                                             new Node.Builder(systemTestNode)
+                                                                     .serviceState(Node.ServiceState.allowedDown)
+                                                                     .suspendedSince(tester.clock().instant())
+                                                                     .build());
+        tester.runner().run();
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installInitialReal));
+
+        tester.clock().advance(Duration.ofSeconds(2));
+        tester.runner().run();
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installInitialReal));
+
+        tester.clock().advance(InternalStepRunner.installationTimeout.minus(Duration.ofSeconds(3)));
+        tester.runner().run();
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
+
+        tester.clock().advance(Duration.ofSeconds(2));
+        tester.runner().run();
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
     }
 
     @Test

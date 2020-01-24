@@ -359,7 +359,10 @@ public class InternalStepRunner implements StepRunner {
         if (run.noNodesDownSince()
                .map(since -> since.isBefore(controller.clock().instant().minus(installationTimeout)))
                .orElse(false)) {
-            logger.log(INFO, "No nodes allowed to suspend to progress installation for " + installationTimeout.toMinutes() + " minutes.");
+            if (summary.needPlatformUpgrade() > 0 || summary.needReboot() > 0 || summary.needRestart() > 0)
+                logger.log(INFO, "No nodes allowed to suspend to progress installation for " + installationTimeout.toMinutes() + " minutes.");
+            else
+                logger.log(INFO, "Nodes not able to start with new application package.");
             failed = true;
         }
 
