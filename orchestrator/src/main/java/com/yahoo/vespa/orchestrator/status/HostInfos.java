@@ -22,7 +22,7 @@ public class HostInfos {
     /** Get all suspended hostnames. */
     public Set<HostName> suspendedHostsnames() {
         return hostInfos.entrySet().stream()
-                .filter(entry -> entry.getValue().status() != HostStatus.NO_REMARKS)
+                .filter(entry -> entry.getValue().status().isSuspended())
                 .map(entry -> entry.getKey())
                 .collect(Collectors.toSet());
     }

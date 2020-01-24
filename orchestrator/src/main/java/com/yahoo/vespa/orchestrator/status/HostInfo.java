@@ -16,8 +16,8 @@ public class HostInfo {
     private final Optional<Instant> suspendedSince;
 
     public static HostInfo createSuspended(HostStatus status, Instant suspendedSince) {
-        if (status == HostStatus.NO_REMARKS) {
-            throw new IllegalArgumentException("NO_REMARKS is not a suspended-status");
+        if (!status.isSuspended()) {
+            throw new IllegalArgumentException(status + " is not a suspended-status");
         }
 
         return new HostInfo(status, Optional.of(suspendedSince));
@@ -35,8 +35,8 @@ public class HostInfo {
     public HostStatus status() { return status; }
 
     /**
-     * The instant the host status was set to != NO_REMARKS. Is preserved when transitioning
-     * between non-NO_REMARKS states. Returns empty if and only if NO_REMARKS.
+     * The instant the host status was set to a suspended status. Is preserved when transitioning
+     * between suspended statuses. Returns empty if and only if NO_REMARKS.
      */
     public Optional<Instant> suspendedSince() { return suspendedSince; }
 

@@ -35,8 +35,8 @@ public class WireHostInfo {
     }
 
     public static byte[] serialize(HostInfo hostInfo) {
-        if (hostInfo.status() == HostStatus.NO_REMARKS) {
-            throw new IllegalArgumentException("Serialization of NO_REMARKS is not supported");
+        if (!hostInfo.status().isSuspended()) {
+            throw new IllegalArgumentException("Serialization of unsuspended status is not supported: " + hostInfo.status());
         }
 
         WireHostInfo wireHostInfo = new WireHostInfo();

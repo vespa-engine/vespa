@@ -45,7 +45,6 @@ public class ZookeeperStatusService implements StatusService {
 
     final static String HOST_STATUS_BASE_PATH = "/vespa/host-status-service";
     final static String APPLICATION_STATUS_BASE_PATH = "/vespa/application-status-service";
-    final static String HOST_STATUS_CACHE_COUNTER_PATH = "/vespa/host-status-service-cache-counter";
 
     private final Curator curator;
     private final HostInfosCache hostInfosCache;
@@ -307,7 +306,9 @@ public class ZookeeperStatusService implements StatusService {
         // Once that's true we can stop writing to hosts-allowed-down, remove this code, and all
         // data in hosts-allowed-down can be removed.
         Set<HostName> legacyHostsDown = hostsDownFor(application);
-        Map<HostName, HostInfo> legacyHostInfos = legacyHostsDown.stream().collect(Collectors.toMap(
+        Map<HostName, HostInfo> legacyHostInfos = legacyHostsDown.stream()
+                .filter(hostname -> !hostInfos.containsKey(hostname))
+                .collect(Collectors.toMap(
                 hostname -> hostname,
                 hostname -> {
                     Stat stat = uncheck(() -> curator.framework()
