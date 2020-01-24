@@ -41,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Deployment
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
@@ -115,7 +116,7 @@ public class InternalStepRunner implements StepRunner {
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration testerTimeout = Duration.ofMinutes(30);
-    static final Duration installationTimeout = Duration.ofMinutes(150);
+    static final Duration installationTimeout = Duration.ofMinutes(60);
     static final Duration certificateTimeout = Duration.ofMinutes(300);
 
     private final Controller controller;
@@ -346,13 +347,32 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.of(error);
             }
         }
-        controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(summary));
 
-        if (timedOut(id, deployment.get(), installationTimeout)) {
+        boolean failed = false;
+
+        NodeList suspendedTooLong = nodeList.suspendedSince(controller.clock().instant().minus(installationTimeout));
+        if ( ! suspendedTooLong.isEmpty()) {
+            logger.log(INFO, "Some nodes have been suspended for more than " + installationTimeout.toMinutes() + " minutes.");
+            failed = true;
+        }
+
+        if (run.noNodesDownSince()
+               .map(since -> since.isBefore(controller.clock().instant().minus(installationTimeout)))
+               .orElse(false)) {
+            logger.log(INFO, "No nodes allowed to suspend to progress installation for " + installationTimeout.toMinutes() + " minutes.");
+            failed = true;
+        }
+
+        Duration timeout = JobRunner.jobTimeout.minusHours(1); // Time out before job dies.
+        if (timedOut(id, deployment.get(), timeout)) {
+            logger.log(INFO, "Installation failed to complete within " + timeout.toHours() + "hours!");
+            failed = true;
+        }
+
+        if (failed) {
             logger.log(nodeList.asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
                                .collect(toList()));
-            logger.log(INFO, "Installation failed to complete within " + installationTimeout.toMinutes() + " minutes!");
             return Optional.of(installationFailed);
         }
 
@@ -360,6 +380,12 @@ public class InternalStepRunner implements StepRunner {
             logger.log(nodeList.allowedDown().asList().stream()
                                .flatMap(node -> nodeDetails(node, false))
                                .collect(toList()));
+
+        controller.jobController().locked(id, lockedRun -> {
+            Instant noNodesDownSince = summary.down() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
+            return lockedRun.noNodesDownSince(noNodesDownSince).withSummary(summary);
+        });
+
         return Optional.empty();
     }
 

@@ -119,7 +119,7 @@ public class Run {
     public Run noNodesDownSince(Instant noNodesDownSince) {
         requireActive();
         return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
-                       Optional.of(noNodesDownSince), convergenceSummary, testerCertificate);
+                       Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate);
     }
 
     public Run withSummary(ConvergenceSummary convergenceSummary) {

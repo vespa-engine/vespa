@@ -6,6 +6,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +69,11 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
     /** The nodes currently allowed to be down. */
     public NodeList allowedDown() {
         return matching(node -> node.node().serviceState() == Node.ServiceState.allowedDown);
+    }
+
+    /** The nodes which have been suspended since before the given instant. */
+    public NodeList suspendedSince(Instant instant) {
+        return matching(node -> node.node().suspendedSince().map(instant::isBefore).orElse(false));
     }
 
     /** The nodes with services on outdated config generation. */
