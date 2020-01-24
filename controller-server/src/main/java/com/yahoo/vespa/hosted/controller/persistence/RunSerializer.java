@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -92,6 +93,8 @@ class RunSerializer {
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
+    private static final String noNodesDownSinceField = "noNodesDownSince";
+    private static final String convergenceSummaryField = "convergenceSummary";
     private static final String testerCertificateField = "testerCertificate";
 
     Run runFromSlime(Slime slime) {
@@ -129,12 +132,12 @@ class RunSerializer {
                        steps,
                        versionsFromSlime(runObject.field(versionsField)),
                        Instant.ofEpochMilli(runObject.field(startField).asLong()),
-                       Optional.of(runObject.field(endField))
-                               .filter(Inspector::valid)
-                               .map(end -> Instant.ofEpochMilli(end.asLong())),
+                       Serializers.optionalInstant(runObject.field(endField)),
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
+                       Serializers.optionalInstant(runObject.field(noNodesDownSinceField)),
+                       convergenceSummaryFrom(runObject.field(convergenceSummaryField)),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
                                .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
@@ -172,6 +175,27 @@ class RunSerializer {
                                       compileVersion, buildTime, sourceUrl, commit);
     }
 
+    // Don't change this — introduce a separate array instead.
+    private Optional<ConvergenceSummary> convergenceSummaryFrom(Inspector summaryArray) {
+        if ( ! summaryArray.valid())
+            return Optional.empty();
+
+        if (summaryArray.entries() != 11)
+            throw new IllegalArgumentException("Convergence summary must have 11 entries");
+
+        return Optional.of(new ConvergenceSummary(summaryArray.entry(0).asLong(),
+                                                  summaryArray.entry(1).asLong(),
+                                                  summaryArray.entry(2).asLong(),
+                                                  summaryArray.entry(3).asLong(),
+                                                  summaryArray.entry(4).asLong(),
+                                                  summaryArray.entry(5).asLong(),
+                                                  summaryArray.entry(6).asLong(),
+                                                  summaryArray.entry(7).asLong(),
+                                                  summaryArray.entry(8).asLong(),
+                                                  summaryArray.entry(9).asLong(),
+                                                  summaryArray.entry(10).asLong()));
+    }
+
     Slime toSlime(Iterable<Run> runs) {
         Slime slime = new Slime();
         Cursor runArray = slime.setArray();
@@ -194,6 +218,8 @@ class RunSerializer {
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
         runObject.setLong(lastVespaLogTimestampField, Instant.EPOCH.until(run.lastVespaLogTimestamp(), ChronoUnit.MICROS));
+        run.noNodesDownSince().ifPresent(noNodesDownSince -> runObject.setLong(noNodesDownSinceField, noNodesDownSince.toEpochMilli()));
+        run.convergenceSummary().ifPresent(convergenceSummary -> toSlime(convergenceSummary, runObject.setArray(convergenceSummaryField)));
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);
@@ -228,6 +254,21 @@ class RunSerializer {
         applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));
         applicationVersion.sourceUrl().ifPresent(url -> versionsObject.setString(sourceUrlField, url));
         applicationVersion.commit().ifPresent(commit -> versionsObject.setString(commitField, commit));
+    }
+
+    // Don't change this — introduce a separate array with new values if needed.
+    private void toSlime(ConvergenceSummary summary, Cursor summaryArray) {
+        summaryArray.addLong(summary.nodes());
+        summaryArray.addLong(summary.down());
+        summaryArray.addLong(summary.upgradingOs());
+        summaryArray.addLong(summary.needPlatformUpgrade());
+        summaryArray.addLong(summary.upgradingPlatform());
+        summaryArray.addLong(summary.needReboot());
+        summaryArray.addLong(summary.rebooting());
+        summaryArray.addLong(summary.needRestart());
+        summaryArray.addLong(summary.restarting());
+        summaryArray.addLong(summary.services());
+        summaryArray.addLong(summary.needNewConfig());
     }
 
     static String valueOf(Step step) {

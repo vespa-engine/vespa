@@ -38,11 +38,20 @@ public interface NodeRepository {
 
     NodeList listNodes(ZoneId zone, ApplicationId application);
 
+    NodeList listNodes(ZoneId zone, List<HostName> hostnames);
+
     /** List all nodes in given zone */
     default List<Node> list(ZoneId zone) {
         return listNodes(zone).nodes().stream()
                               .map(NodeRepository::toNode)
                               .collect(Collectors.toUnmodifiableList());
+    }
+
+    /** List all nodes in zone owned by given application */
+    default List<Node> list(ZoneId zone, List<HostName> hostnames) {
+        return listNodes(zone, hostnames).nodes().stream()
+                                         .map(NodeRepository::toNode)
+                                         .collect(Collectors.toUnmodifiableList());
     }
 
     /** List all nodes in zone owned by given application */

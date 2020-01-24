@@ -91,12 +91,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
     public void provision(ZoneId zone, ApplicationId application) {
+        Node parent = nodeRepository().list(zone, SystemApplication.tenantHost.id()).stream().findAny()
+                                      .orElseThrow(() -> new IllegalStateException("No parent hosts in " + zone));
         nodeRepository().putByHostname(zone, new Node.Builder().hostname(hostFor(application, zone))
                                                                .state(Node.State.reserved)
                                                                .type(NodeType.tenant)
                                                                .owner(application)
+                                                               .parentHostname(parent.hostname())
                                                                .currentVersion(initialVersion)
                                                                .wantedVersion(initialVersion)
+                                                               .currentOsVersion(Version.emptyVersion)
+                                                               .wantedOsVersion(Version.emptyVersion)
                                                                .resources(new NodeResources(2, 8, 50, 1, slow, remote))
                                                                .serviceState(Node.ServiceState.unorchestrated)
                                                                .flavor("d-2-8-50")

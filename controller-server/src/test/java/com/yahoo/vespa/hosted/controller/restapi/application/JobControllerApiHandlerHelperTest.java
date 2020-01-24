@@ -132,6 +132,7 @@ public class JobControllerApiHandlerHelperTest {
         // staging-test has 5 runs: one success without sources on revision1, one success from revision1 to revision2,
         // one success from revision2 to revision3 and two failures from revision1 to revision3.
         assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(app.instanceId(), stagingTest), URI.create("https://some.url:43/root")), "staging-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), stagingTest).get().id(), "0"), "staging-test-log.json");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")), "overview.json");
 
@@ -182,6 +183,7 @@ public class JobControllerApiHandlerHelperTest {
     private void compare(HttpResponse response, String expected) throws JSONException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
+        System.err.println(baos.toString());
         JSONObject actualJSON = new JSONObject(new String(baos.toByteArray()));
         JSONObject expectedJSON = new JSONObject(expected);
         assertEquals(expectedJSON.toString(), actualJSON.toString());

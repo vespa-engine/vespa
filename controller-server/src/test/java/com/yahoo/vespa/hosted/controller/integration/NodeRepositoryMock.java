@@ -132,6 +132,11 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
+    public NodeList listNodes(ZoneId zone, List<HostName> hostnames) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public List<Node> list(ZoneId zone) {
         return List.copyOf(nodeRepository.getOrDefault(zone, Map.of()).values());
     }
@@ -140,6 +145,13 @@ public class NodeRepositoryMock implements NodeRepository {
     public List<Node> list(ZoneId zone, ApplicationId application) {
         return nodeRepository.getOrDefault(zone, Collections.emptyMap()).values().stream()
                              .filter(node -> node.owner().map(application::equals).orElse(false))
+                             .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Node> list(ZoneId zone, List<HostName> hostnames) {
+        return nodeRepository.getOrDefault(zone, Collections.emptyMap()).values().stream()
+                             .filter(node -> hostnames.contains(node.hostname()))
                              .collect(Collectors.toList());
     }
 

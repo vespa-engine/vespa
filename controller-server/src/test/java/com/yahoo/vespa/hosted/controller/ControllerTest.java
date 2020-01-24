@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -592,9 +593,10 @@ public class ControllerTest {
     @Test
     public void testIntegrationTestDeployment() {
         Version six = Version.fromString("6.1");
-        tester.controllerTester().upgradeSystem(six);
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
         tester.controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("prod.cd-us-central-1"));
+        tester.configServer().bootstrap(List.of(ZoneId.from("prod.cd-us-central-1")), SystemApplication.all());
+        tester.controllerTester().upgradeSystem(six);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .majorVersion(6)
@@ -714,8 +716,8 @@ public class ControllerTest {
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
-                                                                               .region("us-west-1")
-                                                                               .build();
+                                                                .region("us-west-1")
+                                                                .build();
         // Deploy app1 in production
         context1.submit(applicationPackage).deploy();
         var cert = certificate.apply(context1.instance());
@@ -725,7 +727,9 @@ public class ControllerTest {
                                              "*.app1.tenant1.global.vespa.oath.cloud"),
                                    tester.controller().zoneRegistry().zones().all().ids().stream()
                                          .flatMap(zone -> Stream.of("", "*.")
-                                                                .map(prefix -> prefix + "app1.tenant1." + zone.region().value() + ".vespa.oath.cloud")))
+                                                                .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
+                                                                               (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
+                                                                               ".vespa.oath.cloud")))
                            .collect(Collectors.toUnmodifiableList()),
                      tester.controllerTester().serviceRegistry().applicationCertificateMock().dnsNamesOf(context1.instanceId()));
 
@@ -737,11 +741,12 @@ public class ControllerTest {
         var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
         ZoneId zone = ZoneId.from("dev", "us-east-1");
 
-        // Deploy app2 in dev
+        // Deploy app2, after "removing" direct routing everywhere
+        tester.controllerTester().zoneRegistry().setDirectlyRouted();
         tester.controller().applications().deploy(context2.instanceId(), zone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
                    tester.configServer().application(context2.instanceId(), zone).get().activated());
-        assertFalse("Does not provision certificate in " + Environment.dev, certificate.apply(context2.instance()).isPresent());
+        assertFalse("Does not provision certificate in zones with routing layer", certificate.apply(context2.instance()).isPresent());
     }
 
     @Test

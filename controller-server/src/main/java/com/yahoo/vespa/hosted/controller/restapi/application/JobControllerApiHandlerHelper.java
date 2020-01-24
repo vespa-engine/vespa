@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -53,8 +54,11 @@ import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.cons
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.defaultPolicy;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
@@ -450,9 +454,30 @@ class JobControllerApiHandlerHelper {
             Cursor stepCursor = stepsObject.setObject(step.name());
             stepCursor.setString("status", info.status().name());
             info.startTime().ifPresent(startTime -> stepCursor.setLong("startMillis", startTime.toEpochMilli()));
+            run.convergenceSummary().ifPresent(summary -> {
+                // If initial installation never succeeded, but is part of the job, summary concerns it.
+                // If initial succeeded, or is not part of this job, summary concerns upgrade installation.
+                if (   step == installInitialReal && info.status() != succeeded
+                    || step == installReal && run.stepStatus(installInitialReal).map(status -> status == succeeded).orElse(true))
+                    toSlime(stepCursor.setObject("convergence"), summary);
+            });
         });
 
         return new SlimeJsonResponse(slime);
+    }
+
+    private static void toSlime(Cursor summaryObject, ConvergenceSummary summary) {
+        summaryObject.setLong("nodes", summary.nodes());
+        summaryObject.setLong("down", summary.down());
+        summaryObject.setLong("needPlatformUpgrade", summary.needPlatformUpgrade());
+        summaryObject.setLong("upgrading", summary.upgradingPlatform());
+        summaryObject.setLong("needReboot", summary.needReboot());
+        summaryObject.setLong("rebooting", summary.rebooting());
+        summaryObject.setLong("needRestart", summary.needRestart());
+        summaryObject.setLong("restarting", summary.restarting());
+        summaryObject.setLong("upgradingOs", summary.upgradingOs());
+        summaryObject.setLong("services", summary.services());
+        summaryObject.setLong("needNewConfig", summary.needNewConfig());
     }
 
     private static void toSlime(Cursor entryArray, List<LogEntry> entries) {
