@@ -2,20 +2,15 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 
 import com.yahoo.collections.AbstractFilteringList;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 
 public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> {
 
@@ -42,52 +37,48 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
     }
 
     /** The nodes on an outdated OS. */
-    public NodeList upgradingOs() {
-        return matching(node -> node.parent().wantedOsVersion().isAfter(node.parent().currentOsVersion()));
+    public NodeList needsOsUpgrade() {
+        return matching(NodeWithServices::needsOsUpgrade);
     }
 
-    /** The nodes on an outdated OS. */
-    public NodeList upgradingFirmware() {
-        return matching(node -> node.parent().wantedFirmwareCheck()
-                                    .map(wanted -> node.parent().currentFirmwareCheck()
-                                                       .map(wanted::isAfter)
-                                                       .orElse(true))
-                                    .orElse(false));
+    /** The nodes with outdated firmware. */
+    public NodeList needsFirmwareUpgrade() {
+        return matching(NodeWithServices::needsFirmwareUpgrade);
     }
 
     /** The nodes whose parent is down. */
     public NodeList withParentDown() {
-        return matching(node -> node.parent().serviceState() == Node.ServiceState.allowedDown);
+        return matching(NodeWithServices::hasParentDown);
     }
 
     /** The nodes on an outdated platform. */
-    public NodeList upgradingPlatform() {
-        return matching(node -> node.node().wantedVersion().isAfter(node.node().currentVersion()));
+    public NodeList needsPlatformUpgrade() {
+        return matching(NodeWithServices::needsPlatformUpgrade);
     }
 
     /** The nodes in need of a reboot. */
-    public NodeList rebooting() {
-        return matching(node -> node.node().wantedRebootGeneration() > node.node().rebootGeneration());
+    public NodeList needsReboot() {
+        return matching(NodeWithServices::needsReboot);
     }
 
     /** The nodes in need of a restart. */
-    public NodeList restarting() {
-        return matching(node -> node.node().wantedRestartGeneration() > node.node().restartGeneration());
+    public NodeList needsRestart() {
+        return matching(NodeWithServices::needsRestart);
     }
 
     /** The nodes currently allowed to be down. */
     public NodeList allowedDown() {
-        return matching(node -> node.node().serviceState() == Node.ServiceState.allowedDown);
+        return matching(node -> node.isAllowedDown());
     }
 
     /** The nodes which have been suspended since before the given instant. */
     public NodeList suspendedSince(Instant instant) {
-        return matching(node -> node.node().suspendedSince().map(instant::isAfter).orElse(false));
+        return matching(node -> node.isSuspendedSince(instant));
     }
 
     /** The nodes with services on outdated config generation. */
-    public NodeList upgradingApplication() {
-        return matching(node -> node.services().stream().anyMatch(service -> wantedConfigGeneration > service.currentGeneration()));
+    public NodeList needsNewConfig() {
+        return matching(NodeWithServices::needsNewConfig);
     }
 
     /** Returns a summary of the convergence status of the nodes in this list. */
@@ -95,14 +86,14 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
         NodeList allowedDown = allowedDown();
         return new ConvergenceSummary(size(),
                                       allowedDown.size(),
-                                      withParentDown().upgradingOs().size(),
-                                      withParentDown().upgradingFirmware().size(),
-                                      upgradingPlatform().size(),
-                                      allowedDown.upgradingPlatform().size(),
-                                      rebooting().size(),
-                                      allowedDown.rebooting().size(),
-                                      restarting().size(),
-                                      allowedDown.restarting().size(),
+                                      withParentDown().needsOsUpgrade().size(),
+                                      withParentDown().needsFirmwareUpgrade().size(),
+                                      needsPlatformUpgrade().size(),
+                                      allowedDown.needsPlatformUpgrade().size(),
+                                      needsReboot().size(),
+                                      allowedDown.needsReboot().size(),
+                                      needsRestart().size(),
+                                      allowedDown.needsRestart().size(),
                                       asList().stream().mapToLong(node -> node.services().size()).sum(),
                                       asList().stream().mapToLong(node -> node.services().stream().filter(service -> wantedConfigGeneration > service.currentGeneration()).count()).sum());
     }

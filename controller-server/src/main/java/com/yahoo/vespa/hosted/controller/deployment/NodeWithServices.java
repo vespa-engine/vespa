@@ -1,8 +1,10 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 
+import java.time.Instant;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -32,5 +34,49 @@ public class NodeWithServices {
     public Node parent() { return parent; }
     public long wantedConfigGeneration() { return wantedConfigGeneration; }
     public List<ServiceConvergence.Status> services() { return services; }
+
+    public boolean needsOsUpgrade() {
+        return parent.wantedOsVersion().isAfter(parent.currentOsVersion());
+    }
+
+    public boolean needsFirmwareUpgrade(){
+        return parent.wantedFirmwareCheck()
+                     .map(wanted -> parent.currentFirmwareCheck()
+                                          .map(wanted::isAfter)
+                                          .orElse(true))
+                     .orElse(false);
+    }
+
+    public boolean hasParentDown() {
+        return parent.serviceState() == Node.ServiceState.allowedDown;
+    }
+
+    public boolean needsPlatformUpgrade() {
+        return node.wantedVersion().isAfter(node.currentVersion());
+    }
+
+    public boolean needsReboot() {
+        return node.wantedRebootGeneration() > node.rebootGeneration();
+    }
+
+    public boolean needsRestart() {
+        return node.wantedRestartGeneration() > node.restartGeneration();
+    }
+
+    public boolean isAllowedDown() {
+        return node.serviceState() == Node.ServiceState.allowedDown;
+    }
+
+    public boolean isNewlyProvisioned() {
+        return node.currentVersion().equals(Version.emptyVersion);
+    }
+
+    public boolean isSuspendedSince(Instant instant) {
+        return node.suspendedSince().map(instant::isAfter).orElse(false);
+    }
+
+    public boolean needsNewConfig() {
+        return services.stream().anyMatch(service -> wantedConfigGeneration > service.currentGeneration());
+    }
 
 }

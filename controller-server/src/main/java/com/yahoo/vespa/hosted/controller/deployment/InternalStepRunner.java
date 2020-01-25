@@ -483,28 +483,23 @@ public class InternalStepRunner implements StepRunner {
 
     private Stream<String> nodeDetails(NodeWithServices node, boolean printAllServices) {
         return Stream.concat(Stream.of(node.node().hostname() + ": " + humanize(node.node().serviceState()),
-                                       "--- platform " + node.node().wantedVersion() + (node.node().currentVersion().equals(node.node().wantedVersion())
-                                                                                        ? ""
-                                                                                        : " <-- " + (node.node().currentVersion().isEmpty() ? "not booted" : node.node().currentVersion())) +
-                                       (node.node().wantedOsVersion().isAfter(node.node().currentOsVersion()) && node.node().serviceState() == Node.ServiceState.allowedDown
+                                       "--- platform " + node.node().wantedVersion() + (node.needsPlatformUpgrade()
+                                                                                        ? " <-- " + (node.node().currentVersion().isEmpty() ? "not booted" : node.node().currentVersion())
+                                                                                        : "") +
+                                       (node.needsOsUpgrade() && node.isAllowedDown()
                                         ? ", upgrading OS (" + node.node().wantedOsVersion() + " <-- " + node.node().currentOsVersion() + ")"
                                         : "") +
-                                       (node.parent().wantedFirmwareCheck()
-                                            .map(wanted -> node.parent().currentFirmwareCheck()
-                                                               .map(wanted::isAfter)
-                                                               .orElse(true))
-                                            .orElse(false)
-                                        && node.node().serviceState() == Node.ServiceState.allowedDown
+                                       (node.needsFirmwareUpgrade() && node.isAllowedDown()
                                         ? ", upgrading firmware"
                                         : "") +
-                                       (node.node().wantedRestartGeneration() > node.node().restartGeneration()
+                                       (node.needsRestart()
                                         ? ", restart pending (" + node.node().wantedRestartGeneration() + " <-- " + node.node().restartGeneration() + ")"
                                         : "") +
-                                       (node.node().wantedRebootGeneration() > node.node().rebootGeneration()
+                                       (node.needsReboot()
                                         ? ", reboot pending (" + node.node().wantedRebootGeneration() + " <-- " + node.node().rebootGeneration() + ")"
                                         : "")),
                              node.services().stream()
-                                 .filter(service -> printAllServices || node.wantedConfigGeneration() > service.currentGeneration())
+                                 .filter(service -> printAllServices || node.needsNewConfig())
                                  .map(service -> "--- " + service.type() + " on port " + service.port() + (service.currentGeneration() == -1
                                                                                                            ? " has not started "
                                                                                                            : " has config generation " + service.currentGeneration() + ", wanted is " + node.wantedConfigGeneration())));
