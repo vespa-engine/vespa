@@ -68,7 +68,7 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
 
     /** The nodes currently allowed to be down. */
     public NodeList allowedDown() {
-        return matching(node -> node.isAllowedDown());
+        return matching(node -> node.isAllowedDown() || node.isNewlyProvisioned());
     }
 
     /** The nodes which have been suspended since before the given instant. */
