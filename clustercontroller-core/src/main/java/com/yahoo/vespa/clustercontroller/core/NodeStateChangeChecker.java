@@ -21,7 +21,6 @@ import java.util.Optional;
  * @author Haakon Dybdahl
  */
 public class NodeStateChangeChecker {
-    public static final String LEGACY_BUCKETS_METRIC_NAME = "vds.datastored.alldisks.buckets";
     public static final String BUCKETS_METRIC_NAME = "vds.datastored.bucket_space.buckets_total";
     public static final Map<String, String> BUCKETS_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
 
@@ -29,19 +28,16 @@ public class NodeStateChangeChecker {
     private double minRatioOfStorageNodesUp;
     private final int requiredRedundancy;
     private final ClusterInfo clusterInfo;
-    private final boolean determineBucketsFromBucketSpaceMetric;
 
     public NodeStateChangeChecker(
             int minStorageNodesUp,
             double minRatioOfStorageNodesUp,
             int requiredRedundancy,
-            ClusterInfo clusterInfo,
-            boolean determineBucketsFromBucketSpaceMetric) {
+            ClusterInfo clusterInfo) {
         this.minStorageNodesUp = minStorageNodesUp;
         this.minRatioOfStorageNodesUp = minRatioOfStorageNodesUp;
         this.requiredRedundancy = requiredRedundancy;
         this.clusterInfo = clusterInfo;
-        this.determineBucketsFromBucketSpaceMetric = determineBucketsFromBucketSpaceMetric;
     }
 
     public static class Result {
@@ -159,18 +155,10 @@ public class NodeStateChangeChecker {
         }
 
         Optional<Metrics.Value> bucketsMetric;
-        if (determineBucketsFromBucketSpaceMetric) {
-            bucketsMetric = hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, BUCKETS_METRIC_DIMENSIONS);
-            if (!bucketsMetric.isPresent() || bucketsMetric.get().getLast() == null) {
-                return Result.createDisallowed("Missing last value of the " + BUCKETS_METRIC_NAME +
-                        " metric for storage node " + nodeInfo.getNodeIndex());
-            }
-        } else {
-            bucketsMetric = hostInfo.getMetrics().getValue(LEGACY_BUCKETS_METRIC_NAME);
-            if (!bucketsMetric.isPresent() || bucketsMetric.get().getLast() == null) {
-                return Result.createDisallowed("Missing last value of the " + LEGACY_BUCKETS_METRIC_NAME +
-                        " metric for storage node " + nodeInfo.getNodeIndex());
-            }
+        bucketsMetric = hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, BUCKETS_METRIC_DIMENSIONS);
+        if (!bucketsMetric.isPresent() || bucketsMetric.get().getLast() == null) {
+            return Result.createDisallowed("Missing last value of the " + BUCKETS_METRIC_NAME +
+                    " metric for storage node " + nodeInfo.getNodeIndex());
         }
 
         long lastBuckets = bucketsMetric.get().getLast();

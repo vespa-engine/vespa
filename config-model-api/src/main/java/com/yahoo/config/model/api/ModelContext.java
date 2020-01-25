@@ -58,6 +58,7 @@ public interface ModelContext {
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
         double defaultTermwiseLimit();
+        // TODO: Remove once there are no Vespa versions below 7.170
         boolean useBucketSpaceMetric();
     }
 

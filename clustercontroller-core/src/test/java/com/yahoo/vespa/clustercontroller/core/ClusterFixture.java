@@ -198,7 +198,7 @@ public class ClusterFixture {
         Collection<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(nodeCount);
 
         Distribution distribution = DistributionBuilder.forFlatCluster(nodeCount);
-        ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0, true);
+        ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0);
 
         return new ClusterFixture(cluster, distribution);
     }
@@ -206,7 +206,7 @@ public class ClusterFixture {
     static ClusterFixture forHierarchicCluster(DistributionBuilder.GroupBuilder root) {
         List<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(root.totalNodeCount());
         Distribution distribution = DistributionBuilder.forHierarchicCluster(root);
-        ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0, true);
+        ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0);
 
         return new ClusterFixture(cluster, distribution);
     }

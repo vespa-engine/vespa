@@ -40,8 +40,6 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
                 bucketSplittingMinimumBits = clusterTuning.childAsInteger("bucket-splitting.minimum-bits");
             }
 
-            boolean useBucketSpaceMetric = deployState.getProperties().useBucketSpaceMetric();
-
             if (tuning != null) {
                 return new ClusterControllerConfig(ancestor, clusterName,
                         tuning.childAsDuration("init-progress-time"),
@@ -51,11 +49,11 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
                         tuning.childAsDouble("min-distributor-up-ratio"),
                         tuning.childAsDouble("min-storage-up-ratio"),
                         bucketSplittingMinimumBits,
-                        minNodeRatioPerGroup,
-                        useBucketSpaceMetric);
+                        minNodeRatioPerGroup
+                );
             } else {
                 return new ClusterControllerConfig(ancestor, clusterName, null, null, null, null, null, null,
-                        bucketSplittingMinimumBits, minNodeRatioPerGroup, useBucketSpaceMetric);
+                        bucketSplittingMinimumBits, minNodeRatioPerGroup);
             }
         }
     }
@@ -69,7 +67,6 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
     Double minStorageUpRatio;
     Integer minSplitBits;
     private Double minNodeRatioPerGroup;
-    private boolean useBucketSpaceMetric;
 
     // TODO refactor; too many args
     private ClusterControllerConfig(AbstractConfigProducer parent,
@@ -81,8 +78,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
                                     Double minDistributorUpRatio,
                                     Double minStorageUpRatio,
                                     Integer minSplitBits,
-                                    Double minNodeRatioPerGroup,
-                                    boolean useBucketSpaceMetric) {
+                                    Double minNodeRatioPerGroup) {
         super(parent, "fleetcontroller");
 
         this.clusterName = clusterName;
@@ -94,7 +90,6 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         this.minStorageUpRatio = minStorageUpRatio;
         this.minSplitBits = minSplitBits;
         this.minNodeRatioPerGroup = minNodeRatioPerGroup;
-        this.useBucketSpaceMetric = useBucketSpaceMetric;
     }
 
     @Override
@@ -111,7 +106,6 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         builder.index(0);
         builder.cluster_name(clusterName);
         builder.fleet_controller_count(getChildren().size());
-        builder.determine_buckets_from_bucket_space_metric(useBucketSpaceMetric);
 
         if (initProgressTime != null) {
             builder.init_progress_time((int) initProgressTime.getMilliSeconds());
