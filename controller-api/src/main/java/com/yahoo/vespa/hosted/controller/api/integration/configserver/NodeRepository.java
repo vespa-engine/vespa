@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMemb
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -107,7 +108,10 @@ public interface NodeRepository {
                         versionFrom(node.getWantedVespaVersion()),
                         versionFrom(node.getCurrentOsVersion()),
                         versionFrom(node.getWantedOsVersion()),
+                        Optional.ofNullable(node.getCurrentFirmwareCheck()).map(Instant::ofEpochMilli),
+                        Optional.ofNullable(node.getWantedFirmwareCheck()).map(Instant::ofEpochMilli),
                         fromBoolean(node.getAllowedToBeDown()),
+                        Optional.ofNullable(node.suspendedSince()).map(Instant::ofEpochMilli),
                         toInt(node.getCurrentRestartGeneration()),
                         toInt(node.getRestartGeneration()),
                         toInt(node.getCurrentRebootGeneration()),

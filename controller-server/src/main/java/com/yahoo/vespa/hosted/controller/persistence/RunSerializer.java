@@ -180,8 +180,8 @@ class RunSerializer {
         if ( ! summaryArray.valid())
             return Optional.empty();
 
-        if (summaryArray.entries() != 11)
-            throw new IllegalArgumentException("Convergence summary must have 11 entries");
+        if (summaryArray.entries() != 12)
+            throw new IllegalArgumentException("Convergence summary must have 12 entries");
 
         return Optional.of(new ConvergenceSummary(summaryArray.entry(0).asLong(),
                                                   summaryArray.entry(1).asLong(),
@@ -193,7 +193,8 @@ class RunSerializer {
                                                   summaryArray.entry(7).asLong(),
                                                   summaryArray.entry(8).asLong(),
                                                   summaryArray.entry(9).asLong(),
-                                                  summaryArray.entry(10).asLong()));
+                                                  summaryArray.entry(10).asLong(),
+                                                  summaryArray.entry(11).asLong()));
     }
 
     Slime toSlime(Iterable<Run> runs) {
@@ -261,6 +262,7 @@ class RunSerializer {
         summaryArray.addLong(summary.nodes());
         summaryArray.addLong(summary.down());
         summaryArray.addLong(summary.upgradingOs());
+        summaryArray.addLong(summary.upgradingFirmware());
         summaryArray.addLong(summary.needPlatformUpgrade());
         summaryArray.addLong(summary.upgradingPlatform());
         summaryArray.addLong(summary.needReboot());

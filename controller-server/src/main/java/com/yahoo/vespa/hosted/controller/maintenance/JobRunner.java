@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  */
 public class JobRunner extends Maintainer {
 
-    static final Duration jobTimeout = Duration.ofDays(1);
+    public static final Duration jobTimeout = Duration.ofDays(1).plusHours(1);
     private static final Logger log = Logger.getLogger(JobRunner.class.getName());
 
     private final JobController jobs;

@@ -6,8 +6,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -54,6 +56,10 @@ public class NodeRepositoryNode {
     private String currentOsVersion;
     @JsonProperty("wantedOsVersion")
     private String wantedOsVersion;
+    @JsonProperty("currentFirmwareCheck")
+    private Long currentFirmwareCheck;
+    @JsonProperty("wantedFirmwareCheck")
+    private Long wantedFirmwareCheck;
     @JsonProperty("failCount")
     private Integer failCount;
     @JsonProperty("environment")
@@ -76,6 +82,8 @@ public class NodeRepositoryNode {
     private NodeHistory[] history;
     @JsonProperty("allowedToBeDown")
     private Boolean allowedToBeDown;
+    @JsonProperty("suspendedSince")
+    private Long suspendedSince;
     @JsonProperty("reports")
     private Map<String, JsonNode> reports;
     @JsonProperty("modelName")
@@ -309,6 +317,14 @@ public class NodeRepositoryNode {
         return allowedToBeDown;
     }
 
+    public Long suspendedSince() {
+        return suspendedSince;
+    }
+
+    public void setSuspendedSince(long suspendedSinceMillis) {
+        this.suspendedSince = suspendedSinceMillis;
+    }
+
     public String getCurrentOsVersion() {
         return currentOsVersion;
     }
@@ -323,6 +339,22 @@ public class NodeRepositoryNode {
 
     public void setWantedOsVersion(String wantedOsVersion) {
         this.wantedOsVersion = wantedOsVersion;
+    }
+
+    public Long getCurrentFirmwareCheck() {
+        return currentFirmwareCheck;
+    }
+
+    public void setCurrentFirmwareCheck(Long currentFirmwareCheck) {
+        this.currentFirmwareCheck = currentFirmwareCheck;
+    }
+
+    public Long getWantedFirmwareCheck() {
+        return wantedFirmwareCheck;
+    }
+
+    public void setWantedFirmwareCheck(Long wantedFirmwareCheck) {
+        this.wantedFirmwareCheck = wantedFirmwareCheck;
     }
 
     public Map<String, JsonNode> getReports() {

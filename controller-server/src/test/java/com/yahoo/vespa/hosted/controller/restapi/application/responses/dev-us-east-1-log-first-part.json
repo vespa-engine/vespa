@@ -68,6 +68,7 @@
         "needRestart": 0,
         "restarting": 0,
         "upgradingOs": 0,
+        "upgradingFirmware": 0,
         "services": 1,
         "needNewConfig": 1
       }

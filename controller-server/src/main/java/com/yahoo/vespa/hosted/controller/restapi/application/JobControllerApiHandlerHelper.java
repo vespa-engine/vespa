@@ -476,6 +476,7 @@ class JobControllerApiHandlerHelper {
         summaryObject.setLong("needRestart", summary.needRestart());
         summaryObject.setLong("restarting", summary.restarting());
         summaryObject.setLong("upgradingOs", summary.upgradingOs());
+        summaryObject.setLong("upgradingFirmware", summary.upgradingFirmware());
         summaryObject.setLong("services", summary.services());
         summaryObject.setLong("needNewConfig", summary.needNewConfig());
     }
