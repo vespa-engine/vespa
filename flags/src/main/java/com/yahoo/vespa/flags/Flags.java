@@ -214,6 +214,13 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID, HOSTNAME);
 
+    public static final UnboundBooleanFlag GENERATE_ROUTING_CONFIG_FOR_TESTER_APPLICATIONS = defineFeatureFlag(
+            "generate-routing-config-for-tester-applications", true,
+            "Whether config server should generate routing config (lb-services) for tester applications",
+            "Takes effect immediately",
+            ZONE_ID);
+
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
