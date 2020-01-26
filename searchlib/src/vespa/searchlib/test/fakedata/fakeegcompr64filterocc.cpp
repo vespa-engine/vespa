@@ -1282,7 +1282,7 @@ FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>::doSeek(uint32_t docId)
                     s1CacheInt,
                     K_VALUE_FILTEROCC_L1SKIPDELTA_BITPOS, EC,
                     _l1SkipDocIdBitsOffset += 1 +);
-            assert(docIdBitsOffset = _l1SkipDocIdBitsOffset);
+            assert(docIdBitsOffset == _l1SkipDocIdBitsOffset);
             if (__builtin_expect(oDocId >= _l2SkipDocId, false)) {
                 // Validate L2 Skip information
                 assert(oDocId == _l2SkipDocId);

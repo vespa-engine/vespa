@@ -73,7 +73,7 @@ void BitVectorBenchmark::testCountSpeed1()
 {
     _bv[0]->invalidateCachedCount();
     unsigned int cnt = _bv[0]->countTrueBits();
-    assert(cnt = _bvc[0]);
+    assert(cnt == _bvc[0]);
     (void) cnt;
 }
 
