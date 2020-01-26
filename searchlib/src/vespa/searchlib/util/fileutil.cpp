@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <stdexcept>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.util.fileutil");
