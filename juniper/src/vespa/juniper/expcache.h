@@ -2,6 +2,7 @@
 #pragma once
 
 #include "simplemap.h"
+#include <cstdint>
 
 class MatchObject;
 
