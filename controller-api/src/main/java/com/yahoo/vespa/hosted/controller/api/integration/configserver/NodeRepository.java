@@ -111,7 +111,7 @@ public interface NodeRepository {
                         Optional.ofNullable(node.getCurrentFirmwareCheck()).map(Instant::ofEpochMilli),
                         Optional.ofNullable(node.getWantedFirmwareCheck()).map(Instant::ofEpochMilli),
                         fromBoolean(node.getAllowedToBeDown()),
-                        Optional.ofNullable(node.suspendedSince()).map(Instant::ofEpochMilli),
+                        Optional.ofNullable(node.suspendedSinceMillis()).map(Instant::ofEpochMilli),
                         toInt(node.getCurrentRestartGeneration()),
                         toInt(node.getRestartGeneration()),
                         toInt(node.getCurrentRebootGeneration()),
