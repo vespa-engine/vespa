@@ -7,6 +7,7 @@
 #include "avx2.h"
 #include "avx512.h"
 #include <vespa/vespalib/util/memory.h>
+#include <cstdio>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.hwaccelrated");

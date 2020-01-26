@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <memory>
+#include <cstdlib>
 
 namespace search { class BitVector; }
 namespace search::queryeval { class SearchIterator; }

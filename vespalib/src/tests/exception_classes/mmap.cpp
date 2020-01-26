@@ -3,6 +3,7 @@
 #include <vector>
 #include <cassert>
 #include <string.h>
+#include <cstdlib>
 #include <sys/resource.h>
 
 using namespace vespalib::alloc;
