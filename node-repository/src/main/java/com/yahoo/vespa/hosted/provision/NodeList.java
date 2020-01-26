@@ -75,6 +75,11 @@ public class NodeList implements Iterable<Node> {
                               !node.status().vespaVersion().get().equals(node.allocation().get().membership().cluster().vespaVersion()));
     }
 
+    /** Returns the subset of nodes that are currently changing their OS version to given version */
+    public NodeList changingOsVersionTo(Version version) {
+        return filter(node -> node.status().osVersion().changingTo(version));
+    }
+
     /** Returns the subset of nodes that are currently changing their OS version */
     public NodeList changingOsVersion() {
         return filter(node -> node.status().osVersion().changing());
