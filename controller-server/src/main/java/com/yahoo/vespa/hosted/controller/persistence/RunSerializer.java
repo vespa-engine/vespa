@@ -177,7 +177,7 @@ class RunSerializer {
 
     // Don't change this — introduce a separate array instead.
     private Optional<ConvergenceSummary> convergenceSummaryFrom(Inspector summaryArray) {
-        if ( ! summaryArray.valid())
+        if ( ! summaryArray.valid() || summaryArray.entries() == 11) // TODO jonmv: fix
             return Optional.empty();
 
         if (summaryArray.entries() != 12)
