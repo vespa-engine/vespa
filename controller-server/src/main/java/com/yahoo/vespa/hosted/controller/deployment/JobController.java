@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -226,9 +227,14 @@ public class JobController {
 
     /** Returns an immutable map of all known runs for the given application and job type. */
     public NavigableMap<RunId, Run> runs(ApplicationId id, JobType type) {
-        NavigableMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
-        last(id, type).ifPresent(run -> runs.put(run.id(), run));
-        return Collections.unmodifiableNavigableMap(runs);
+        ImmutableSortedMap.Builder<RunId, Run> runs = ImmutableSortedMap.orderedBy(Comparator.comparing(RunId::number));
+        Optional<Run> last = last(id, type);
+        curator.readHistoricRuns(id, type).forEach((runId, run) -> {
+            if (last.isEmpty() || ! runId.equals(last.get().id()))
+                runs.put(runId, run);
+        });
+        last.ifPresent(run -> runs.put(run.id(), run));
+        return runs.build();
     }
 
     /** Returns the run with the given id, if it exists. */

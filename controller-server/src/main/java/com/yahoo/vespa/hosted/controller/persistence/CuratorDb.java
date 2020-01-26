@@ -387,7 +387,6 @@ public class CuratorDb {
 
     public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs) {
         Path path = runsPath(id, type);
-        cachedHistoricRuns.remove(path);
         curator.set(path, asJson(runSerializer.toSlime(runs)));
     }
 
