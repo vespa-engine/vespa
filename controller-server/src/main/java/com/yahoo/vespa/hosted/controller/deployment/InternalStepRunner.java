@@ -417,7 +417,7 @@ public class InternalStepRunner implements StepRunner {
                            .collect(toList()));
         if (nodeList.summary().converged()) {
             if (endpointsAvailable(testerId, zone, logger)) {
-                if (containersAreUp(testerId, zone, logger)) {
+                if (testerContainersAreUp(testerId, zone, logger)) {
                     logger.log("Tester container successfully installed!");
                     return Optional.of(running);
                 }
@@ -437,6 +437,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns true iff all containers in the deployment give 100 consecutive 200 OK responses on /status.html. */
+    // TODO: Change implementation to only be used for real deployments when useConfigServerForTesterAPI() always returns true
     private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
         var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zoneId)));
         if ( ! endpoints.containsKey(zoneId))
@@ -454,6 +455,22 @@ public class InternalStepRunner implements StepRunner {
 
         return true;
     }
+
+    /** Returns true iff all containers in the tester deployment give 100 consecutive 200 OK responses on /status.html. */
+    private boolean testerContainersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
+        if (useConfigServerForTesterAPI(zoneId)) {
+            DeploymentId deploymentId = new DeploymentId(id, zoneId);
+            if (controller.jobController().cloud().testerReady(deploymentId)) {
+                return true;
+            } else {
+                logger.log("Failed to get 100 consecutive OKs from tester container for " + deploymentId);
+                return false;
+            }
+        } else {
+            return containersAreUp(id, zoneId, logger);
+        }
+    }
+
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
         var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zone)));
@@ -525,36 +542,56 @@ public class InternalStepRunner implements StepRunner {
                                     .productionDeployments().keySet().stream()
                                     .map(zone -> new DeploymentId(id.application(), zone))
                                     .collect(Collectors.toSet());
-        deployments.add(new DeploymentId(id.application(), id.type().zone(controller.system())));
+        ZoneId zoneId = id.type().zone(controller.system());
+        deployments.add(new DeploymentId(id.application(), zoneId));
 
         logger.log("Attempting to find endpoints ...");
         var endpoints = controller.applications().clusterEndpoints(deployments);
-        if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
+        if ( ! endpoints.containsKey(zoneId)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
         }
         logEndpoints(endpoints, logger);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isEmpty()) {
-            logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
-            return Optional.of(error);
-        }
+        if (useConfigServerForTesterAPI(zoneId)) {
+            if ( ! controller.serviceRegistry().configServer().isTesterReady(getTesterDeploymentId(id))) {
+                logger.log(WARNING, "Tester container went bad!");
+                return Optional.of(error);
+            }
+        } else {
+            if (testerEndpoint.isEmpty()) {
+                logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
+                return Optional.of(error);
+            }
 
-        if ( ! controller.jobController().cloud().testerReady(testerEndpoint.get())) {
-            logger.log(WARNING, "Tester container went bad!");
-            return Optional.of(error);
+            if ( ! controller.jobController().cloud().testerReady(testerEndpoint.get())) {
+                logger.log(WARNING, "Tester container went bad!");
+                return Optional.of(error);
+            }
         }
 
         logger.log("Starting tests ...");
-        controller.jobController().cloud().startTests(testerEndpoint.get(),
-                                                      TesterCloud.Suite.of(id.type(), isSetup),
-                                                      testConfigSerializer.configJson(id.application(),
-                                                                                      id.type(),
-                                                                                      true,
-                                                                                      endpoints,
-                                                                                      controller.applications().contentClustersByZone(deployments)));
+        TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
+        byte[] config = testConfigSerializer.configJson(id.application(),
+                                                        id.type(),
+                                                        true,
+                                                        endpoints,
+                                                        controller.applications().contentClustersByZone(deployments));
+        if (useConfigServerForTesterAPI(zoneId)) {
+            controller.serviceRegistry().configServer().startTests(getTesterDeploymentId(id), suite, config);
+        } else {
+            controller.jobController().cloud().startTests(testerEndpoint.get(), suite, config);
+        }
         return Optional.of(running);
+    }
+
+    private boolean testerReady(RunId id, URI testerEndpoint) {
+        if (useConfigServerForTesterAPI(id.type().zone(controller.system()))) {
+            return controller.serviceRegistry().configServer().isTesterReady(getTesterDeploymentId(id));
+        } else {
+            return controller.jobController().cloud().testerReady(testerEndpoint);
+        }
     }
 
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
@@ -576,14 +613,9 @@ public class InternalStepRunner implements StepRunner {
 
         controller.jobController().updateTestLog(id);
 
-        BooleanFlag useConfigServerForTesterAPI = Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.bindTo(controller.flagSource());
-        ZoneId zoneId = id.type().zone(controller.system());
         TesterCloud.Status testStatus;
-        boolean useConfigServer = useConfigServerForTesterAPI.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value();
-        InternalStepRunner.logger.log(LogLevel.INFO, Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.id().toString() +
-                                                     " has value " + useConfigServer + " in zone " + zoneId.value());
-        if (useConfigServer) {
-            testStatus = controller.serviceRegistry().configServer().getTesterStatus(getTesterDeploymentId(id, zoneId));
+        if (useConfigServerForTesterAPI(id.type().zone(controller.system()))) {
+            testStatus = controller.serviceRegistry().configServer().getTesterStatus(getTesterDeploymentId(id));
         } else {
             Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
             if (testerEndpoint.isEmpty()) {
@@ -779,8 +811,17 @@ public class InternalStepRunner implements StepRunner {
         zipBuilder.add("artifacts/cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
     }
 
-    private DeploymentId getTesterDeploymentId(RunId runId, ZoneId zoneId) {
+    private DeploymentId getTesterDeploymentId(RunId runId) {
+        ZoneId zoneId = runId.type().zone(controller.system());
         return new DeploymentId(runId.tester().id(), zoneId);
+    }
+
+    private boolean useConfigServerForTesterAPI(ZoneId zoneId) {
+        BooleanFlag useConfigServerForTesterAPI = Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.bindTo(controller.flagSource());
+        boolean useConfigServer = useConfigServerForTesterAPI.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value();
+        InternalStepRunner.logger.log(LogLevel.INFO, Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.id().toString() +
+                                                     " has value " + useConfigServer + " in zone " + zoneId.value());
+        return useConfigServer;
     }
 
     private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
