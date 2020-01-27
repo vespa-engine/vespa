@@ -667,6 +667,13 @@ public class SelectTestCase {
         assertGrouping(expected, parseGrouping(grouping));
     }
 
+    @Test
+    public void testMultipleOutputs() {
+        String grouping = "[ { \"all\" : { \"group\" : \"b\", \"each\" : {\"output\": [ \"count()\", \"avg(foo)\" ] } } } ]";
+        String expected = "[[]all(group(b) each(output(count(), avg(foo))))]";
+        assertGrouping(expected, parseGrouping(grouping));
+    }
+
     //------------------------------------------------------------------- Other tests
 
     @Test
