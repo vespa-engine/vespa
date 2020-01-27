@@ -516,8 +516,8 @@ public class CuratorDb {
 
     // -------------- Application web certificates ----------------------------
 
-    public void writeApplicationCertificate(ApplicationId applicationId, ApplicationCertificate applicationCertificate) {
-        curator.set(applicationCertificatePath(applicationId), applicationCertificate.secretsKeyNamePrefix().getBytes());
+    public void writeEndpointCertificateMetadata(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
+        curator.set(applicationCertificatePath(applicationId), asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
     }
 
     public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
