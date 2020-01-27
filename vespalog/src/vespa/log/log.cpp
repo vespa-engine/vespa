@@ -233,11 +233,10 @@ void Logger::doLogCore(uint64_t timestamp, LogLevel level,
 {
     const size_t sizeofEscapedPayload(msgSize*4+1);
     const size_t sizeofTotalMessage(sizeofEscapedPayload + 1000);
-    char * bigBuffer(new char[sizeofEscapedPayload+sizeofTotalMessage]);
-    char * escapedPayload(bigBuffer);
-    char * totalMessage(escapedPayload + sizeofEscapedPayload);
+    auto escapedPayload = std::make_unique<char[]>(sizeofEscapedPayload);
+    auto totalMessage = std::make_unique<char[]>(sizeofTotalMessage);
 
-    char *dst = escapedPayload;
+    char *dst = escapedPayload.get();
     for (size_t i(0); (i < msgSize) && msg[i]; i++) {
          unsigned char c = static_cast<unsigned char>(msg[i]);
         if ((c >= 32) && (c != '\\') && (c != 127)) {
@@ -274,14 +273,14 @@ void Logger::doLogCore(uint64_t timestamp, LogLevel level,
         localtime_r(&secs, &tmbuf);
         char timebuf[100];
         strftime(timebuf, 100, "%Y-%m-%d %H:%M:%S", &tmbuf);
-        snprintf(totalMessage, sizeofTotalMessage,
+        snprintf(totalMessage.get(), sizeofTotalMessage,
                  "[%s.%06u] %d/%d (%s%s) %s: %s\n",
                  timebuf, static_cast<unsigned int>(timestamp % 1000000),
                  fakePid ? -1 : getpid(), tid,
                  _prefix, _appendix,
                  levelName(level), msg);
     } else if (level == debug || level == spam) {
-        snprintf(totalMessage, sizeofTotalMessage,
+        snprintf(totalMessage.get(), sizeofTotalMessage,
                  "%u.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s:%d %s%s\n",
                  static_cast<unsigned int>(timestamp / 1000000),
                  static_cast<unsigned int>(timestamp % 1000000),
@@ -289,19 +288,18 @@ void Logger::doLogCore(uint64_t timestamp, LogLevel level,
                  _serviceName, _prefix,
                  _appendix, levelName(level), file, line,
                  _rcsId,
-                 escapedPayload);
+                 escapedPayload.get());
     } else {
-        snprintf(totalMessage, sizeofTotalMessage,
+        snprintf(totalMessage.get(), sizeofTotalMessage,
                  "%u.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s\n",
                  static_cast<unsigned int>(timestamp / 1000000),
                  static_cast<unsigned int>(timestamp % 1000000),
                  _hostname, fakePid ? -1 : getpid(), tid,
                  _serviceName, _prefix,
-                 _appendix, levelName(level), escapedPayload);
+                 _appendix, levelName(level), escapedPayload.get());
     }
 
-    _target->write(totalMessage, strlen(totalMessage));
-    delete [] bigBuffer;
+    _target->write(totalMessage.get(), strlen(totalMessage.get()));
 }
 
 const char *
