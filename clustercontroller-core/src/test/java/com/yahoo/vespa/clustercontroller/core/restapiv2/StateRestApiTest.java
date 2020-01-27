@@ -42,8 +42,7 @@ public abstract class StateRestApiTest {
         {
             Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(0, 1, 2, 3);
             ContentCluster cluster = new ContentCluster(
-                    "books", nodes, distribution, 6 /* minStorageNodesUp*/, 0.9 /* minRatioOfStorageNodesUp */
-                    /* determineBucketsFromBucketSpaceMetric */);
+                    "books", nodes, distribution, 6 /* minStorageNodesUp*/, 0.9 /* minRatioOfStorageNodesUp */);
             initializeCluster(cluster, nodes);
             AnnotatedClusterState baselineState = AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString("distributor:4 storage:4"));
             Map<String, AnnotatedClusterState> bucketSpaceStates = new HashMap<>();
@@ -57,8 +56,7 @@ public abstract class StateRestApiTest {
             Set<ConfiguredNode> nodesInSlobrok = FleetControllerTest.toNodes(1, 3, 5, 7);
 
             ContentCluster cluster = new ContentCluster(
-                    "music", nodes, distribution, 4 /* minStorageNodesUp*/, 0.0 /* minRatioOfStorageNodesUp */
-                    /* determineBucketsFromBucketSpaceMetric */);
+                    "music", nodes, distribution, 4 /* minStorageNodesUp*/, 0.0 /* minRatioOfStorageNodesUp */);
             if (dontInitializeNode2) {
                 // TODO: this skips initialization of node 2 to fake that it is not answering
                 // which really leaves us in an illegal state
