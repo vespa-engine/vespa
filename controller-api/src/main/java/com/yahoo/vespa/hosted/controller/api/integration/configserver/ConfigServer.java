@@ -112,7 +112,7 @@ public interface ConfigServer {
 
     /** Starts tests on tester node */
     // TODO: Remove default implementation when implemented in internal repo
-    default void startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) { }
+    default String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) { return "Tests started"; }
 
     /** Gets log from tester node */
     // TODO: Remove default implementation when implemented in internal repo
