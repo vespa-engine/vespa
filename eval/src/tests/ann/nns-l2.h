@@ -2,6 +2,7 @@
 
 #pragma once
 #include <string.h>
+#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 template <typename T, size_t VLEN>
