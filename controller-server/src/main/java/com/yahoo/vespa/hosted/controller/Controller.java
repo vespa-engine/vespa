@@ -9,6 +9,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
@@ -80,14 +81,14 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
      */
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl, FlagSource flagSource,
-                      MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric) {
+                      MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore) {
         this(curator, rotationsConfig, accessControl, com.yahoo.net.HostName::getLocalhost, flagSource,
-             mavenRepository, serviceRegistry, metric);
+             mavenRepository, serviceRegistry, metric, secretStore);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl,
                       Supplier<String> hostnameSupplier, FlagSource flagSource, MavenRepository mavenRepository,
-                      ServiceRegistry serviceRegistry, Metric metric) {
+                      ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -103,7 +104,7 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          clock
+                                                          clock, secretStore
         );
         tenantController = new TenantController(this, curator, accessControl);
         auditLogger = new AuditLogger(curator, clock);

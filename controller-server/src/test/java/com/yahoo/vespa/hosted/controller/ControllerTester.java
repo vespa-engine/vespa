@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
+import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -393,7 +394,7 @@ public final class ControllerTester {
                                                new InMemoryFlagSource(),
                                                new MockMavenRepository(),
                                                serviceRegistry,
-                                               new MetricsMock());
+                                               new MetricsMock(), new SecretStoreMock());
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;
