@@ -84,7 +84,7 @@ public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     using CompressionInfo = vespalib::compression::CompressionInfo;
 
-    SerializableArray();
+    SerializableArray() = default;
     SerializableArray(const SerializableArray&);
     SerializableArray& operator=(const SerializableArray&);
     SerializableArray(SerializableArray &&) noexcept;

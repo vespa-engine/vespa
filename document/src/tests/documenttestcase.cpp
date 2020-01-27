@@ -36,7 +36,7 @@ TEST(DocumentTest, testSizeOf)
     EXPECT_EQ(32u, sizeof(vespalib::GrowableByteBuffer));
     EXPECT_EQ(88ul, sizeof(IdString));
     EXPECT_EQ(104ul, sizeof(DocumentId));
-    EXPECT_EQ(232ul, sizeof(Document));
+    EXPECT_EQ(240ul, sizeof(Document));
     EXPECT_EQ(96ul, sizeof(StructFieldValue));
     EXPECT_EQ(16ul, sizeof(StructuredFieldValue));
     EXPECT_EQ(56ul, sizeof(SerializableArray));

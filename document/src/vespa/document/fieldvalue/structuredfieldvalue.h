@@ -44,7 +44,7 @@ class StructuredFieldValue : public FieldValue
     virtual StructuredCache * getCache() const { return nullptr; }
 
 protected:
-    VESPA_DLL_LOCAL StructuredFieldValue(const DataType &type);
+    StructuredFieldValue(const DataType &type) : FieldValue(), _type(&type) {}
 
     /** Called from Document when deserializing alters type. */
     virtual void setType(const DataType& type) { _type = &type; }

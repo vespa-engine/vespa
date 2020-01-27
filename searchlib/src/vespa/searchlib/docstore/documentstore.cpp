@@ -42,12 +42,6 @@ DocumentVisitorAdapter::visit(uint32_t lid, vespalib::ConstBufferRef buf) {
     }
 }
 
-document::Document::UP
-deserializeDocument(const vespalib::DataBuffer & uncompressed, const DocumentTypeRepo &repo) {
-    vespalib::nbostream is(uncompressed.getData(), uncompressed.getDataLen());
-    return std::make_unique<document::Document>(repo, is);
-}
-
 }
 
 using vespalib::nbostream;
@@ -183,7 +177,7 @@ DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo &repo) const
         }
         Value::Result result = value.decompressed();
         if ( result.second ) {
-            return deserializeDocument(result.first, repo);
+            return std::make_unique<document::Document>(repo, std::move(result.first));
         } else {
             LOG(warning, "Summary cache for lid %u is corrupt. Invalidating and reading directly from backing store", lid);
             _cache->invalidate(lid);
@@ -195,7 +189,7 @@ DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo &repo) const
     if ( ! value.empty() ) {
         Value::Result result = value.decompressed();
         assert(result.second);
-        return deserializeDocument(result.first, repo);
+        return std::make_unique<document::Document>(repo, std::move(result.first));
     }
     return std::unique_ptr<document::Document>();
 }
@@ -309,7 +303,7 @@ public:
         _visitorProgress.updateProgress(progress);
     }
     
-    WrapVisitorProgress(IDocumentStoreVisitorProgress &visitProgress)
+    explicit WrapVisitorProgress(IDocumentStoreVisitorProgress &visitProgress)
         : _visitorProgress(visitProgress)
     {
     }
@@ -369,7 +363,7 @@ DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid, const void *buffer, siz
         value.set(std::move(buf), len);
     }
     if (! value.empty()) {
-        std::shared_ptr<document::Document> doc(deserializeDocument(value.decompressed().first, _repo));
+        auto doc = std::make_shared<document::Document>(_repo, value.decompressed().first);
         _visitor.visit(lid, doc);
         rewrite(lid, *doc);
     } else {

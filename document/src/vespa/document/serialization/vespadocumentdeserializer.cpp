@@ -279,7 +279,8 @@ void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) {
     for (size_t i = 0; i < field_count; ++i) {
         const uint32_t id = getInt1_4Bytes(input);
         const uint32_t size = getInt2_4_8Bytes(input);
-        field_info.emplace_back(id, size, offset);
+        field_info.emplace_back(id,
+                size, offset);
         offset += size;
     }
 }
