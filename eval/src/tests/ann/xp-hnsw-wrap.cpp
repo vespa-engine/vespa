@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nns.h"
 #include <iostream>
@@ -26,7 +26,8 @@ public:
         _hnsw.addPoint(vector.cbegin(), docid);
     }
 
-    void removeDoc(uint32_t ) override {
+    void removeDoc(uint32_t docid) override {
+        _hnsw.markDelete(docid);
     }
 
     std::vector<NnsHit> topK(uint32_t k, Vector vector, uint32_t search_k) override {
