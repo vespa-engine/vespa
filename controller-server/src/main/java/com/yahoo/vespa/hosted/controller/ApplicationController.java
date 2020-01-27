@@ -572,9 +572,9 @@ public class ApplicationController {
             return endpointCertificateMetadata;
 
         ApplicationCertificate newCertificate = controller.serviceRegistry().applicationCertificateProvider().requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id()));
-        curator.writeApplicationCertificate(instance.id(), newCertificate);
-
-        return Optional.of(EndpointCertificateMetadataSerializer.fromTlsSecretsKeysString(newCertificate.secretsKeyNamePrefix()));
+        EndpointCertificateMetadata provisionedCertificateMetadata = EndpointCertificateMetadataSerializer.fromTlsSecretsKeysString(newCertificate.secretsKeyNamePrefix());
+        curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
+        return Optional.of(provisionedCertificateMetadata);
     }
 
     /** Returns all valid DNS names of given application */
