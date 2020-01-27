@@ -62,7 +62,7 @@ public class MetricsV2Handler extends HttpHandlerBase {
     }
 
     private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.create(PoolingHttpClientConnectionManager::new)
+        return VespaHttpClientBuilder.create()
                 .setUserAgent("application-metrics-retriever")
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout(HTTP_CONNECT_TIMEOUT)
