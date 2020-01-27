@@ -1,8 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.util.http.retry;
 
-import ai.vespa.util.http.retry.DelayedConnectionLevelRetryHandler.RetryConsumer;
-import ai.vespa.util.http.retry.DelayedConnectionLevelRetryHandler.RetryFailedConsumer;
 import com.yahoo.vespa.jdk8compat.List;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.junit.Test;
@@ -23,10 +21,11 @@ import static org.mockito.Mockito.verify;
  */
 public class DelayedConnectionLevelRetryHandlerTest {
 
+    @SuppressWarnings("unchecked")
     @Test
     public void retry_consumers_are_invoked() {
-        RetryConsumer retryConsumer = mock(RetryConsumer.class);
-        RetryFailedConsumer retryFailedConsumer = mock(RetryFailedConsumer.class);
+        RetryConsumer<IOException> retryConsumer = (RetryConsumer<IOException>) mock(RetryConsumer.class);
+        RetryFailedConsumer<IOException> retryFailedConsumer = (RetryFailedConsumer<IOException>) mock(RetryFailedConsumer.class);
 
         Duration delay = Duration.ofSeconds(10);
         int maxRetries = 5;

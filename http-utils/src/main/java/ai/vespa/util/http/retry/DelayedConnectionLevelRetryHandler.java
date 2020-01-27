@@ -10,7 +10,6 @@ import org.apache.http.protocol.HttpContext;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -24,32 +23,19 @@ public class DelayedConnectionLevelRetryHandler implements HttpRequestRetryHandl
 
     private static final Logger log = Logger.getLogger(HttpRequestRetryHandler.class.getName());
 
-    @FunctionalInterface
-    public interface RetryConsumer {
-        void onRetry(IOException exception, Duration delay, int executionCount, HttpClientContext context);
-    }
-
-    @FunctionalInterface
-    public interface RetryFailedConsumer {
-        void onRetryFailed(IOException exception, int executionCount, HttpClientContext context);
-    }
-
-    @FunctionalInterface
-    public interface RetryPredicate extends BiPredicate<IOException, HttpClientContext> {}
-
     private final DelaySupplier delaySupplier;
     private final int maxRetries;
-    private final RetryPredicate predicate;
-    private final RetryConsumer retryConsumer;
-    private final RetryFailedConsumer retryFailedConsumer;
+    private final RetryPredicate<IOException> predicate;
+    private final RetryConsumer<IOException> retryConsumer;
+    private final RetryFailedConsumer<IOException> retryFailedConsumer;
     private final Sleeper sleeper;
 
     private DelayedConnectionLevelRetryHandler(
             DelaySupplier delaySupplier,
             int maxRetries,
-            RetryPredicate predicate,
-            RetryConsumer retryConsumer,
-            RetryFailedConsumer retryFailedConsumer,
+            RetryPredicate<IOException> predicate,
+            RetryConsumer<IOException> retryConsumer,
+            RetryFailedConsumer<IOException> retryFailedConsumer,
             Sleeper sleeper) {
         this.delaySupplier = delaySupplier;
         this.maxRetries = maxRetries;
@@ -84,9 +70,9 @@ public class DelayedConnectionLevelRetryHandler implements HttpRequestRetryHandl
 
         private final DelaySupplier delaySupplier;
         private final int maxRetries;
-        private RetryPredicate predicate = (ioException, ctx) -> true;
-        private RetryConsumer retryConsumer = (exception, delay, count, ctx) -> {};
-        private RetryFailedConsumer retryFailedConsumer = (exception, count, ctx) -> {};
+        private RetryPredicate<IOException> predicate = (ioException, ctx) -> true;
+        private RetryConsumer<IOException> retryConsumer = (exception, delay, count, ctx) -> {};
+        private RetryFailedConsumer<IOException> retryFailedConsumer = (exception, count, ctx) -> {};
         private Sleeper sleeper = new Sleeper.Default();
 
         private Builder(DelaySupplier delaySupplier, int maxRetries) {
@@ -112,17 +98,17 @@ public class DelayedConnectionLevelRetryHandler implements HttpRequestRetryHandl
             return this;
         }
 
-        public Builder retryFor(RetryPredicate predicate) {
+        public Builder retryFor(RetryPredicate<IOException> predicate) {
             this.predicate = predicate;
             return this;
         }
 
-        public Builder onRetry(RetryConsumer consumer) {
+        public Builder onRetry(RetryConsumer<IOException> consumer) {
             this.retryConsumer = consumer;
             return this;
         }
 
-        public Builder onRetryFailed(RetryFailedConsumer consumer) {
+        public Builder onRetryFailed(RetryFailedConsumer<IOException> consumer) {
             this.retryFailedConsumer = consumer;
             return this;
         }
