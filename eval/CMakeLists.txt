@@ -33,6 +33,7 @@ vespa_define_module(
     src/tests/tensor/dense_generic_join
     src/tests/tensor/dense_inplace_join_function
     src/tests/tensor/dense_inplace_map_function
+    src/tests/tensor/dense_matmul_function    
     src/tests/tensor/dense_remove_dimension_optimizer
     src/tests/tensor/dense_replace_type_function
     src/tests/tensor/dense_tensor_create_function
