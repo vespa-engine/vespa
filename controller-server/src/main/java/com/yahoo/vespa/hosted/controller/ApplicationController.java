@@ -12,12 +12,8 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.log.LogLevel;
-import com.yahoo.security.SubjectAlternativeName;
-import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -32,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -56,7 +51,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
@@ -65,7 +59,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
-import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateMetadataSerializer;
+import com.yahoo.vespa.hosted.controller.endpointcertificates.EndpointCertificateManager;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicies;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -79,7 +73,6 @@ import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.net.URI;
 import java.security.Principal;
-import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -101,7 +94,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -135,7 +127,7 @@ public class ApplicationController {
     private final Clock clock;
     private final DeploymentTrigger deploymentTrigger;
     private final ApplicationPackageValidator applicationPackageValidator;
-    private final SecretStore secretStore;
+    private final EndpointCertificateManager endpointCertificateManager;
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
@@ -153,7 +145,8 @@ public class ApplicationController {
         rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
-        this.secretStore = secretStore;
+        endpointCertificateManager = new EndpointCertificateManager(controller.zoneRegistry(), curator, secretStore,
+                controller.serviceRegistry().applicationCertificateProvider(), clock);
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -405,12 +398,7 @@ public class ApplicationController {
                     validateRun(application.get().require(instance), zone, platformVersion, applicationVersion);
                 }
 
-                if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
-                    // Provisions a new certificate if missing
-                    endpointCertificateMetadata = getEndpointCertificate(application.get().require(instance), zone);
-                } else {
-                    endpointCertificateMetadata = Optional.empty();
-                }
+                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificate(application.get().require(instance), zone);
 
                 endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
             } // Release application lock while doing the deployment, which is a lengthy task.
@@ -571,95 +559,6 @@ public class ApplicationController {
             containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(), names));
         }
         return Collections.unmodifiableSet(containerEndpoints);
-    }
-
-    private Optional<EndpointCertificateMetadata> getEndpointCertificate(Instance instance, ZoneId zone) {
-        // Re-use certificate if already provisioned
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata =
-                curator.readEndpointCertificateMetadata(instance.id())
-                        .or(() -> Optional.of(provisionEndpointCertificate(instance)));
-
-        // Only logs warnings for now
-        endpointCertificateMetadata.ifPresent(certificateMetadata -> verifyEndpointCertificate(certificateMetadata, instance, zone));
-
-        return endpointCertificateMetadata;
-    }
-
-    private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance) {
-        List<ZoneId> directlyRoutedZones = controller.zoneRegistry().zones().directlyRouted().zones().stream().map(ZoneApi::getId).collect(Collectors.toUnmodifiableList());
-        ApplicationCertificate newCertificate = controller.serviceRegistry().applicationCertificateProvider()
-                .requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), directlyRoutedZones));
-        EndpointCertificateMetadata provisionedCertificateMetadata = EndpointCertificateMetadataSerializer.fromTlsSecretsKeysString(newCertificate.secretsKeyNamePrefix());
-        curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
-        return provisionedCertificateMetadata;
-    }
-
-    boolean verifyEndpointCertificate(EndpointCertificateMetadata endpointCertificateMetadata, Instance instance, ZoneId zone) {
-        try {
-            var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
-
-            if (pemEncodedEndpointCertificate == null) return logWarning("Certificate not found in secret store");
-
-            List<X509Certificate> x509CertificateList = X509CertificateUtils.certificateListFromPem(pemEncodedEndpointCertificate);
-
-            if (x509CertificateList.isEmpty()) return logWarning("Empty certificate list");
-            if (x509CertificateList.size() < 2)
-                return logWarning("Only a single certificate found in chain - intermediate certificates likely missing");
-
-            Instant now = clock.instant();
-            Instant firstExpiry = Instant.MAX;
-            for (X509Certificate x509Certificate : x509CertificateList) {
-                Instant notBefore = x509Certificate.getNotBefore().toInstant();
-                Instant notAfter = x509Certificate.getNotAfter().toInstant();
-                if (now.isBefore(notBefore)) return logWarning("Certificate is not yet valid");
-                if (now.isAfter(notAfter)) return logWarning("Certificate has expired");
-                if (notAfter.isBefore(firstExpiry)) firstExpiry = notAfter;
-            }
-
-            X509Certificate endEntityCertificate = x509CertificateList.get(0);
-            List<String> subjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(endEntityCertificate).stream()
-                    .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
-                    .map(SubjectAlternativeName::getValue).collect(Collectors.toList());
-
-            System.out.println(subjectAlternativeNames);
-
-            if (!subjectAlternativeNames.containsAll(dnsNamesOf(instance.id(), List.of(zone))))
-                return logWarning("Certificate is missing SANs");
-
-            return true; // All good then, hopefully
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception thrown when verifying endpoint certificate", e);
-            return false;
-        }
-    }
-
-    private static boolean logWarning(String message) {
-        log.log(LogLevel.WARNING, message);
-        return false;
-    }
-
-    private List<String> dnsNamesOf(ApplicationId applicationId, List<ZoneId> zones) {
-        List<String> endpointDnsNames = new ArrayList<>();
-
-        // We add first an endpoint name based on a hash of the applicationId,
-        // as the certificate provider requires the first CN to be < 64 characters long.
-        endpointDnsNames.add(Endpoint.createHashedCn(applicationId, controller.system()));
-
-        var globalDefaultEndpoint = Endpoint.of(applicationId).named(EndpointId.defaultId());
-        var rotationEndpoints = Endpoint.of(applicationId).wildcard();
-
-        var zoneLocalEndpoints = zones.stream().flatMap(zone -> Stream.of(
-                Endpoint.of(applicationId).target(ClusterSpec.Id.from("default"), zone),
-                Endpoint.of(applicationId).wildcard(zone)
-        ));
-
-        Stream.concat(Stream.of(globalDefaultEndpoint, rotationEndpoints), zoneLocalEndpoints)
-              .map(Endpoint.EndpointBuilder::directRouting)
-              .map(endpoint -> endpoint.on(Endpoint.Port.tls()))
-              .map(endpointBuilder -> endpointBuilder.in(controller.system()))
-              .map(Endpoint::dnsName).forEach(endpointDnsNames::add);
-
-        return Collections.unmodifiableList(endpointDnsNames);
     }
 
     private ActivateResult unexpectedDeployment(ApplicationId application, ZoneId zone) {
