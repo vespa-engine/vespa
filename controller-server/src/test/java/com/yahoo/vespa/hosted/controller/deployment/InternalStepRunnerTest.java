@@ -54,6 +54,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.app
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -140,9 +141,6 @@ public class InternalStepRunnerTest {
         ZoneId zone = id.type().zone(system());
         HostName host = tester.configServer().hostFor(instanceId, zone);
 
-        tester.setEndpoints(app.testerId().id(), JobType.productionUsCentral1.zone(system()));
-        tester.runner().run();
-
         tester.configServer().setConfigChangeActions(new ConfigChangeActions(singletonList(new RestartAction("cluster",
                                                                                                              "container",
                                                                                                              "search",
@@ -165,7 +163,7 @@ public class InternalStepRunnerTest {
 
         tester.clock().advance(InternalStepRunner.installationTimeout.plus(Duration.ofSeconds(1)));
         tester.runner().run();
-        assertEquals(RunStatus.error, tester.jobs().run(id).get().status());
+        assertEquals(installationFailed, tester.jobs().run(id).get().status());
     }
 
     @Test

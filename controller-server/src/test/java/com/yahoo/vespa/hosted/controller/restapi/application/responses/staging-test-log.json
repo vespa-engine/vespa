@@ -4,122 +4,122 @@
   "log": {
     "deployTester": [
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "No services requiring restart."
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "Deployment successful."
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "foo"
       }
     ],
     "installTester": [
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "host-tenant:application:default-t-staging.us-east-3: unorchestrated"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "--- platform 6.1"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "host-tenant:application:default-t-staging.us-east-3: unorchestrated"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "--- platform 6.1"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "host-tenant:application:default-t-staging.us-east-3: unorchestrated"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "--- platform 6.1"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       }
     ],
     "deployInitialReal": [
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "Deploying platform version 6.1 and application version 1.0.1-commit1 ..."
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "No services requiring restart."
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "Deployment successful."
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "foo"
       }
     ],
     "installInitialReal": [
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "host-tenant:application:default-staging.us-east-3: unorchestrated"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "--- platform 6.1"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "Deployment expired before installation was successful."
       }
     ],
     "deactivateReal": [
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "Deactivating deployment of tenant.application in staging.us-east-3 ..."
       }
     ],
     "deactivateTester": [
       {
-        "at": 102000,
+        "at": 3703000,
         "type": "info",
         "message": "Deactivating tester of tenant.application in staging.us-east-3 ..."
       }
@@ -129,19 +129,19 @@
   "steps": {
     "deployTester": {
       "status": "succeeded",
-      "startMillis": 102000
+      "startMillis": 3703000
     },
     "installTester": {
       "status": "unfinished",
-      "startMillis": 102000
+      "startMillis": 3703000
     },
     "deployInitialReal": {
       "status": "succeeded",
-      "startMillis": 102000
+      "startMillis": 3703000
     },
     "installInitialReal": {
       "status": "failed",
-      "startMillis": 102000,
+      "startMillis": 3703000,
       "convergence": {
         "nodes": 1,
         "down": 0,
@@ -177,19 +177,19 @@
     },
     "copyVespaLogs": {
       "status": "succeeded",
-      "startMillis": 102000
+      "startMillis": 3703000
     },
     "deactivateReal": {
       "status": "succeeded",
-      "startMillis": 102000
+      "startMillis": 3703000
     },
     "deactivateTester": {
       "status": "succeeded",
-      "startMillis": 102000
+      "startMillis": 3703000
     },
     "report": {
       "status": "succeeded",
-      "startMillis": 102000
+      "startMillis": 3703000
     }
   }
 }

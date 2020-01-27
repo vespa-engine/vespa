@@ -5,12 +5,15 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -37,6 +40,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
@@ -80,15 +84,10 @@ public class JobControllerApiHandlerHelperTest {
         tester.runner().run();
         assertEquals(deploymentFailed, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
 
-        ZoneId usWest1 = productionUsWest1.zone(tester.controller().system());
-        tester.configServer().convergeServices(app.instanceId(), usWest1);
-        tester.configServer().convergeServices(app.testerId().id(), usWest1);
-        tester.setEndpoints(app.instanceId(), usWest1);
-        tester.setEndpoints(app.testerId().id(), usWest1);
         tester.runner().run();
-        tester.cloud().set(FAILURE);
+        tester.clock().advance(Duration.ofHours(1).plusSeconds(1));
         tester.runner().run();
-        assertEquals(testFailure, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
+        assertEquals(installationFailed, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
         assertEquals(revision2, app.deployment(productionUsCentral1.zone(tester.controller().system())).applicationVersion());
         assertEquals(revision1, app.deployment(productionUsEast3.zone(tester.controller().system())).applicationVersion());
         assertEquals(revision2, app.deployment(productionUsWest1.zone(tester.controller().system())).applicationVersion());
@@ -183,7 +182,6 @@ public class JobControllerApiHandlerHelperTest {
     private void compare(HttpResponse response, String expected) throws JSONException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        System.err.println(baos.toString());
         JSONObject actualJSON = new JSONObject(new String(baos.toByteArray()));
         JSONObject expectedJSON = new JSONObject(expected);
         assertEquals(expectedJSON.toString(), actualJSON.toString());

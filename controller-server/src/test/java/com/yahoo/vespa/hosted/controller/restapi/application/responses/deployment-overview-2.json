@@ -23,8 +23,8 @@
         {
           "id": 3,
           "url": "https://some.url:43/instance/default/job/system-test/run/run 3 of system-test for tenant.application",
-          "start": 2000,
-          "end": 2000,
+          "start": 3603000,
+          "end": 3603000,
           "status": "success",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -239,15 +239,15 @@
           }
         }
       ],
-      "readyAt": 752000,
-      "delayedUntil": 752000,
-      "coolingDownUntil": 752000,
+      "readyAt": 4353000,
+      "delayedUntil": 4353000,
+      "coolingDownUntil": 4353000,
       "runs": [
         {
           "id": 5,
           "url": "https://some.url:43/instance/default/job/staging-test/run/run 5 of staging-test for tenant.application",
-          "start": 102000,
-          "end": 102000,
+          "start": 3703000,
+          "end": 3703000,
           "status": "installationFailed",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -327,8 +327,8 @@
         {
           "id": 4,
           "url": "https://some.url:43/instance/default/job/staging-test/run/run 4 of staging-test for tenant.application",
-          "start": 2000,
-          "end": 2000,
+          "start": 3603000,
+          "end": 3603000,
           "status": "installationFailed",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -408,8 +408,8 @@
         {
           "id": 3,
           "url": "https://some.url:43/instance/default/job/staging-test/run/run 3 of staging-test for tenant.application",
-          "start": 2000,
-          "end": 2000,
+          "start": 3603000,
+          "end": 3603000,
           "status": "success",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -663,12 +663,12 @@
         "sourceUrl": "repository1/tree/commit1"
       },
       "toRun": [],
-      "readyAt": 2000,
+      "readyAt": 3603000,
       "runs": [
         {
           "id": 3,
           "url": "https://some.url:43/instance/default/job/production-us-central-1/run/run 3 of production-us-central-1 for tenant.application",
-          "start": 2000,
+          "start": 3603000,
           "status": "running",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -688,14 +688,6 @@
           },
           "steps": [
             {
-              "name": "deployTester",
-              "status": "succeeded"
-            },
-            {
-              "name": "installTester",
-              "status": "unfinished"
-            },
-            {
               "name": "deployReal",
               "status": "succeeded"
             },
@@ -704,20 +696,8 @@
               "status": "unfinished"
             },
             {
-              "name": "startTests",
-              "status": "unfinished"
-            },
-            {
-              "name": "endTests",
-              "status": "unfinished"
-            },
-            {
-              "name": "deactivateTester",
-              "status": "unfinished"
-            },
-            {
               "name": "report",
-              "status": "unfinished"
+              "status": "succeeded"
             }
           ]
         },
@@ -745,31 +725,11 @@
           },
           "steps": [
             {
-              "name": "deployTester",
-              "status": "succeeded"
-            },
-            {
-              "name": "installTester",
-              "status": "succeeded"
-            },
-            {
               "name": "deployReal",
               "status": "succeeded"
             },
             {
               "name": "installReal",
-              "status": "succeeded"
-            },
-            {
-              "name": "startTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "endTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "deactivateTester",
               "status": "succeeded"
             },
             {
@@ -795,31 +755,11 @@
           },
           "steps": [
             {
-              "name": "deployTester",
-              "status": "succeeded"
-            },
-            {
-              "name": "installTester",
-              "status": "succeeded"
-            },
-            {
               "name": "deployReal",
               "status": "succeeded"
             },
             {
               "name": "installReal",
-              "status": "succeeded"
-            },
-            {
-              "name": "startTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "endTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "deactivateTester",
               "status": "succeeded"
             },
             {
@@ -1005,8 +945,8 @@
           "id": 2,
           "url": "https://some.url:43/instance/default/job/production-us-west-1/run/run 2 of production-us-west-1 for tenant.application",
           "start": 1000,
-          "end": 1000,
-          "status": "testFailure",
+          "end": 3602000,
+          "status": "installationFailed",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -1025,32 +965,12 @@
           },
           "steps": [
             {
-              "name": "deployTester",
-              "status": "succeeded"
-            },
-            {
-              "name": "installTester",
-              "status": "succeeded"
-            },
-            {
               "name": "deployReal",
               "status": "succeeded"
             },
             {
               "name": "installReal",
-              "status": "succeeded"
-            },
-            {
-              "name": "startTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "endTests",
               "status": "failed"
-            },
-            {
-              "name": "deactivateTester",
-              "status": "succeeded"
             },
             {
               "name": "report",
@@ -1075,31 +995,11 @@
           },
           "steps": [
             {
-              "name": "deployTester",
-              "status": "succeeded"
-            },
-            {
-              "name": "installTester",
-              "status": "succeeded"
-            },
-            {
               "name": "deployReal",
               "status": "succeeded"
             },
             {
               "name": "installReal",
-              "status": "succeeded"
-            },
-            {
-              "name": "startTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "endTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "deactivateTester",
               "status": "succeeded"
             },
             {
@@ -1173,32 +1073,12 @@
           },
           "steps": [
             {
-              "name": "deployTester",
-              "status": "failed"
-            },
-            {
-              "name": "installTester",
-              "status": "unfinished"
-            },
-            {
               "name": "deployReal",
-              "status": "unfinished"
+              "status": "failed"
             },
             {
               "name": "installReal",
               "status": "unfinished"
-            },
-            {
-              "name": "startTests",
-              "status": "unfinished"
-            },
-            {
-              "name": "endTests",
-              "status": "unfinished"
-            },
-            {
-              "name": "deactivateTester",
-              "status": "succeeded"
             },
             {
               "name": "report",
@@ -1223,31 +1103,11 @@
           },
           "steps": [
             {
-              "name": "deployTester",
-              "status": "succeeded"
-            },
-            {
-              "name": "installTester",
-              "status": "succeeded"
-            },
-            {
               "name": "deployReal",
               "status": "succeeded"
             },
             {
               "name": "installReal",
-              "status": "succeeded"
-            },
-            {
-              "name": "startTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "endTests",
-              "status": "succeeded"
-            },
-            {
-              "name": "deactivateTester",
               "status": "succeeded"
             },
             {
