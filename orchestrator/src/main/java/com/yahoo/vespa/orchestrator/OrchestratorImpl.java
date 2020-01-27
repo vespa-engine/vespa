@@ -27,6 +27,7 @@ import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
@@ -112,11 +113,9 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     @Override
-    public Function<HostName, Optional<HostStatus>> getNodeStatuses() {
-        Function<ApplicationInstanceReference, Set<HostName>> suspendedHosts = statusService.getSuspendedHostsByApplication();
+    public Function<HostName, Optional<HostInfo>> getNodeStatuses() {
         return hostName -> instanceLookupService.findInstanceByHost(hostName)
-                                                .map(application -> suspendedHosts.apply(application.reference()).contains(hostName)
-                                                                    ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS);
+                                                .map(application -> statusService.getHostInfo(application.reference(), hostName));
     }
 
     @Override

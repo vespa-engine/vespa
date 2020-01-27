@@ -380,12 +380,12 @@ public class InternalStepRunner implements StepRunner {
         }
 
         if ( ! firstTick)
-            logger.log(nodeList.allowedDown().asList().stream()
+            logger.log(nodeList.expectedDown().asList().stream()
                                .flatMap(node -> nodeDetails(node, false))
                                .collect(toList()));
 
         controller.jobController().locked(id, lockedRun -> {
-            Instant noNodesDownSince = summary.down() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
+            Instant noNodesDownSince = nodeList.allowedDown().size() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
             return lockedRun.noNodesDownSince(noNodesDownSince).withSummary(summary);
         });
 

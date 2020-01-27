@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -87,7 +88,7 @@ public class MetricsReporterTest {
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostStatus.NO_REMARKS));
+        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
@@ -136,7 +137,7 @@ public class MetricsReporterTest {
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostStatus.NO_REMARKS));
+        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());

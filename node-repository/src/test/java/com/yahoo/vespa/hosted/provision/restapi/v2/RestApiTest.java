@@ -9,10 +9,12 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
+import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
@@ -233,6 +235,9 @@ public class RestApiTest {
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "modelName", false);
         container.handleRequest((new Request("http://localhost:8080/nodes/v2/upgrade/tenant", Utf8.toBytes("{\"dockerImage\": \"docker.domain.tld/my/image\"}"), Request.Method.PATCH)));
+
+        ((OrchestratorMock) container.components().getComponent(OrchestratorMock.class.getName()))
+                .suspend(new HostName("host4.yahoo.com"));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
     }

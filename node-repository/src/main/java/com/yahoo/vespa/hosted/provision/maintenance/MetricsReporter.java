@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
@@ -35,7 +36,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
 public class MetricsReporter extends Maintainer {
 
     private final Metric metric;
-    private final Function<HostName, Optional<HostStatus>> orchestrator;
+    private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
@@ -126,7 +127,7 @@ public class MetricsReporter extends Maintainer {
         metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
 
         orchestrator.apply(new HostName(node.hostname()))
-                    .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN ? 1 : 0)
+                    .map(info -> info.status().isSuspended() ? 1 : 0)
                     .ifPresent(allowedToBeDown -> metric.set("allowedToBeDown", allowedToBeDown, context));
 
         long numberOfServices;
