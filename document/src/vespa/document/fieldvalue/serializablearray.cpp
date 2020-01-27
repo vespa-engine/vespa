@@ -26,13 +26,11 @@ public:
 
 }
 
-SerializableArray::SerializableArray(EntryMap entries, ByteBuffer buffer,
-                                     CompressionConfig::Type comp_type, uint32_t uncompressed_length)
-    : _entries(std::move(entries)),
-      _uncompSerData(),
-      _unlikely()
+void
+SerializableArray::set(EntryMap entries, ByteBuffer buffer,
+                       CompressionConfig::Type comp_type, uint32_t uncompressed_length)
 {
-
+    _entries = std::move(entries);
     if (CompressionConfig::isCompressed(comp_type)) {
         _unlikely = std::make_unique<RarelyUsedBuffers>();
         _unlikely->_compSerData = std::move(buffer);
@@ -40,6 +38,7 @@ SerializableArray::SerializableArray(EntryMap entries, ByteBuffer buffer,
         _unlikely->_uncompressedLength = uncompressed_length;
     } else {
         _uncompSerData = std::move(buffer);
+        _unlikely.reset();
     }
 }
 

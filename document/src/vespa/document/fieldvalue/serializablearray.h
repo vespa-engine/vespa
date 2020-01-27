@@ -89,10 +89,10 @@ public:
     SerializableArray& operator=(const SerializableArray&);
     SerializableArray(SerializableArray &&) noexcept;
     SerializableArray& operator=(SerializableArray &&) noexcept;
-    SerializableArray(EntryMap entries, ByteBuffer buffer,
-                      CompressionConfig::Type comp_type, uint32_t uncompressed_length);
     ~SerializableArray();
 
+    void set(EntryMap entries, ByteBuffer buffer,
+             CompressionConfig::Type comp_type, uint32_t uncompressed_length);
     /**
      * Stores a value in the array.
      *

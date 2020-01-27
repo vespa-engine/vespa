@@ -67,7 +67,7 @@ StructFieldValue::lazyDeserialize(const FixedTypeRepo &repo,
     _doc_type = &repo.getDocumentType();
     _version = version;
 
-    _fields = SerializableArray(std::move(fm), std::move(buffer), comp_type, uncompressed_length);
+    _fields.set(std::move(fm), std::move(buffer), comp_type, uncompressed_length);
     _hasChanged = false;
 }
 
