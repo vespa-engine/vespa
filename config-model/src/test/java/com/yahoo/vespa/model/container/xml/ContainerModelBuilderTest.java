@@ -39,7 +39,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainer;
-import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
@@ -71,7 +70,9 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -801,6 +802,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals("CERT", connectorConfig.ssl().certificate());
         assertEquals("KEY", connectorConfig.ssl().privateKey());
         assertEquals(4443, connectorConfig.listenPort());
+
+        assertThat("Connector must use Athenz truststore in a non-public system.",
+                   connectorConfig.ssl().caCertificateFile(), equalTo("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"));
+        assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
     }
 
 
