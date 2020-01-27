@@ -24,7 +24,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -90,7 +89,6 @@ class FlagsClient {
                 .build();
         return HttpClientBuilder.create()
                 .setUserAgent("controller-flags-v1-client")
-                .setRetryHandler(new DefaultHttpRequestRetryHandler(5, /*retry on non-idempotent requests*/true))
                 .setSSLContext(identityProvider.getIdentitySslContext())
                 .setSSLHostnameVerifier(new FlagTargetsHostnameVerifier(targets))
                 .setDefaultRequestConfig(RequestConfig.custom()
