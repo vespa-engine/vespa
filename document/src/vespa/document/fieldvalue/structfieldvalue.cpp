@@ -390,7 +390,7 @@ StructFieldValue::getIterator(const Field* toFind) const
 void
 StructFieldValue::setType(const DataType& type)
 {
-    clear();
+    reset();
     StructuredFieldValue::setType(type);
 }
 
