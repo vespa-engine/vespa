@@ -61,14 +61,6 @@ BufferOutOfBoundsException::BufferOutOfBoundsException(size_t pos, size_t len, c
 {
 }
 
-ByteBuffer::ByteBuffer(const char* buffer, uint32_t len) :
-      _buffer(const_cast<char *>(buffer)),
-      _len(len),
-      _pos(0),
-      _ownedBuffer()
-{
-}
-
 ByteBuffer::ByteBuffer(Alloc buffer, uint32_t len)
   : _buffer(static_cast<const char *>(buffer.get())),
     _len(len),
@@ -98,8 +90,6 @@ ByteBuffer::ByteBuffer(const ByteBuffer& rhs)
         _ownedBuffer = std::make_unique<Alloc>(std::move(buf));
     }
 }
-
-ByteBuffer::~ByteBuffer() = default;
 
 ByteBuffer
 ByteBuffer::copyBuffer(const char* buffer, uint32_t len)
