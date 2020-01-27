@@ -473,6 +473,8 @@ public class InternalStepRunner implements StepRunner {
 
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
+        if (useConfigServerForTesterAPI(zone) && id.instance().isTester()) return true; // Endpoints not used in this case, always return true
+
         var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zone)));
         if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
@@ -555,7 +557,7 @@ public class InternalStepRunner implements StepRunner {
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if (useConfigServerForTesterAPI(zoneId)) {
-            if ( ! controller.serviceRegistry().configServer().isTesterReady(getTesterDeploymentId(id))) {
+            if ( ! controller.jobController().cloud().testerReady(getTesterDeploymentId(id))) {
                 logger.log(WARNING, "Tester container went bad!");
                 return Optional.of(error);
             }
@@ -579,19 +581,11 @@ public class InternalStepRunner implements StepRunner {
                                                         endpoints,
                                                         controller.applications().contentClustersByZone(deployments));
         if (useConfigServerForTesterAPI(zoneId)) {
-            controller.serviceRegistry().configServer().startTests(getTesterDeploymentId(id), suite, config);
+            controller.jobController().cloud().startTests(getTesterDeploymentId(id), suite, config);
         } else {
             controller.jobController().cloud().startTests(testerEndpoint.get(), suite, config);
         }
         return Optional.of(running);
-    }
-
-    private boolean testerReady(RunId id, URI testerEndpoint) {
-        if (useConfigServerForTesterAPI(id.type().zone(controller.system()))) {
-            return controller.serviceRegistry().configServer().isTesterReady(getTesterDeploymentId(id));
-        } else {
-            return controller.jobController().cloud().testerReady(testerEndpoint);
-        }
     }
 
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
@@ -615,7 +609,7 @@ public class InternalStepRunner implements StepRunner {
 
         TesterCloud.Status testStatus;
         if (useConfigServerForTesterAPI(id.type().zone(controller.system()))) {
-            testStatus = controller.serviceRegistry().configServer().getTesterStatus(getTesterDeploymentId(id));
+            testStatus = controller.jobController().cloud().getStatus(getTesterDeploymentId(id));
         } else {
             Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
             if (testerEndpoint.isEmpty()) {
