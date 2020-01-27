@@ -131,8 +131,8 @@ search indexschema {
   }
 
   fieldset exactexplicit {
-    fields:sa, sb
     query-command: "exact ARNOLD"
+    fields:sa, sb
     query-command: dynteaser
   }
   

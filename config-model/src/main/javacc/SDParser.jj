@@ -651,27 +651,27 @@ void field(SDDocumentType document, Search search) :
 
 void fieldSet(Search search) :
 {
-  String name;
-}
-{
-  <FIELDSET> name = identifier() lbrace()
-    (fieldSetItem(name, search)(<NL>)*)+
-  <RBRACE>
-}
-
-void fieldSetItem(String setName, Search search) :
-{
+  String setName;
   String field;
   String queryCommand;
-  SDField matchSettings = new SDField(setName, DataType.STRING); // match etc for fieldset represented as SDField or ease of parsing
+  List queryCommands = new ArrayList();
+  SDField matchSettings;
 }
 {
-  ( <FIELDS><COLON> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
-    ( <COMMA> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
-  |
-    ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { search.fieldSets().userFieldSets().get(setName).queryCommands().add(queryCommand);}
-  |
-    ( match(matchSettings) ) { matchSettings.applyOperations(); search.fieldSets().userFieldSets().get(setName).setMatching(matchSettings.getMatching());}
+  <FIELDSET> setName = identifier() lbrace() { matchSettings = new SDField(setName, DataType.STRING); }
+    ((
+      ( <FIELDS><COLON> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
+      ( <COMMA> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
+    |
+      ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { queryCommands.add(queryCommand); }
+    |
+      ( match(matchSettings) ) { matchSettings.applyOperations(); search.fieldSets().userFieldSets().get(setName).setMatching(matchSettings.getMatching());}
+    )(<NL>)*)+
+  <RBRACE>
+  {
+     for (Object command : queryCommands)
+       search.fieldSets().userFieldSets().get(setName).queryCommands().add((String)command);
+  }
 }
 
 /**
