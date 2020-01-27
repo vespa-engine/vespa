@@ -37,7 +37,7 @@
   "deployments": [
     {
       "us-central-1": {
-        "at": 2000,
+        "at": 3603000,
         "platform": "6.1",
         "application": {
           "hash": "1.0.3-commit1",
@@ -97,8 +97,8 @@
         {
           "id": 3,
           "status": "success",
-          "start": 2000,
-          "end": 2000,
+          "start": 3603000,
+          "end": 3603000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -265,8 +265,8 @@
         {
           "id": 5,
           "status": "installationFailed",
-          "start": 102000,
-          "end": 102000,
+          "start": 3703000,
+          "end": 3703000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -313,8 +313,8 @@
         {
           "id": 4,
           "status": "installationFailed",
-          "start": 2000,
-          "end": 2000,
+          "start": 3603000,
+          "end": 3603000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -361,8 +361,8 @@
         {
           "id": 3,
           "status": "success",
-          "start": 2000,
-          "end": 2000,
+          "start": 3603000,
+          "end": 3603000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -510,7 +510,7 @@
         {
           "id": 3,
           "status": "running",
-          "start": 2000,
+          "start": 3603000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -536,14 +536,9 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "succeeded",
-            "installTester": "unfinished",
             "deployReal": "succeeded",
             "installReal": "unfinished",
-            "startTests": "unfinished",
-            "endTests": "unfinished",
-            "deactivateTester": "unfinished",
-            "report": "unfinished"
+            "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
@@ -581,19 +576,13 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "succeeded",
-            "installTester": "succeeded",
             "deployReal": "succeeded",
             "installReal": "succeeded",
-            "startTests": "succeeded",
-            "endTests": "succeeded",
-            "deactivateTester": "succeeded",
             "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
-            "install": "succeeded",
-            "test": "succeeded"
+            "install": "succeeded"
           },
           "log": "https://some.url:43/root/production-us-central-1/run/2"
         },
@@ -615,19 +604,13 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "succeeded",
-            "installTester": "succeeded",
             "deployReal": "succeeded",
             "installReal": "succeeded",
-            "startTests": "succeeded",
-            "endTests": "succeeded",
-            "deactivateTester": "succeeded",
             "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
-            "install": "succeeded",
-            "test": "succeeded"
+            "install": "succeeded"
           },
           "log": "https://some.url:43/root/production-us-central-1/run/1"
         }
@@ -789,9 +772,9 @@
         },
         {
           "id": 2,
-          "status": "testFailure",
+          "status": "installationFailed",
           "start": 1000,
-          "end": 1000,
+          "end": 3602000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.2-commit1",
@@ -817,19 +800,13 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "succeeded",
-            "installTester": "succeeded",
             "deployReal": "succeeded",
-            "installReal": "succeeded",
-            "startTests": "succeeded",
-            "endTests": "failed",
-            "deactivateTester": "succeeded",
+            "installReal": "failed",
             "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
-            "install": "succeeded",
-            "test": "failed"
+            "install": "failed"
           },
           "log": "https://some.url:43/root/production-us-west-1/run/2"
         },
@@ -851,19 +828,13 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "succeeded",
-            "installTester": "succeeded",
             "deployReal": "succeeded",
             "installReal": "succeeded",
-            "startTests": "succeeded",
-            "endTests": "succeeded",
-            "deactivateTester": "succeeded",
             "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
-            "install": "succeeded",
-            "test": "succeeded"
+            "install": "succeeded"
           },
           "log": "https://some.url:43/root/production-us-west-1/run/1"
         }
@@ -933,16 +904,13 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "failed",
-            "installTester": "unfinished",
-            "deployReal": "unfinished",
+            "deployReal": "failed",
             "installReal": "unfinished",
-            "startTests": "unfinished",
-            "endTests": "unfinished",
-            "deactivateTester": "succeeded",
             "report": "succeeded"
           },
-          "tasks": {},
+          "tasks": {
+            "deploy": "failed"
+          },
           "log": "https://some.url:43/root/production-us-east-3/run/2"
         },
         {
@@ -963,19 +931,13 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "succeeded",
-            "installTester": "succeeded",
             "deployReal": "succeeded",
             "installReal": "succeeded",
-            "startTests": "succeeded",
-            "endTests": "succeeded",
-            "deactivateTester": "succeeded",
             "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
-            "install": "succeeded",
-            "test": "succeeded"
+            "install": "succeeded"
           },
           "log": "https://some.url:43/root/production-us-east-3/run/1"
         }

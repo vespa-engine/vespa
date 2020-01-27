@@ -331,7 +331,8 @@ public class DeploymentContext {
             if (job.type().environment().isManuallyDeployed())
                 return this;
         }
-        doTests(job);
+        if (job.type().isTest())
+            doTests(job);
         doTeardown(job);
         return this;
     }
@@ -440,7 +441,7 @@ public class DeploymentContext {
         // First step is always a deployment.
         runner.advance(currentRun(job));
 
-        if ( ! job.type().environment().isManuallyDeployed())
+        if (job.type().isTest())
             doInstallTester(job);
 
         if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
@@ -453,8 +454,7 @@ public class DeploymentContext {
             assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
 
             // All installation is complete and endpoints are ready, so setup may begin.
-            if (job.type().isDeployment())
-                assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
+            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
             assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
             assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.startStagingSetup));
 

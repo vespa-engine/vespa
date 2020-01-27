@@ -56,13 +56,8 @@ public enum JobProfile {
                            report)),
 
     production(EnumSet.of(deployReal,
-                          installReal,
-                          deployTester,
-                          installTester,
-                          startTests,
-                          endTests),
-               EnumSet.of(deactivateTester,
-                          report)),
+                          installReal),
+               EnumSet.of(report)),
 
     productionTest(EnumSet.of(deployTester,
                               installTester,
