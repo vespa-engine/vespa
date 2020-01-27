@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.io.IOException;
@@ -46,7 +47,7 @@ class NodesResponse extends HttpResponse {
 
     private final NodeFilter filter;
     private final boolean recursive;
-    private final Function<HostName, Optional<HostStatus>> orchestrator;
+    private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
     private final Slime slime;
     private final NodeSerializer serializer = new NodeSerializer();
@@ -163,8 +164,10 @@ class NodesResponse extends HttpResponse {
             toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
-                        .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN)
-                        .ifPresent(allowedToBeDown -> object.setBool("allowedToBeDown", allowedToBeDown));
+                        .ifPresent(info -> {
+                            object.setBool("allowedToBeDown", info.status().isSuspended());
+                            info.suspendedSince().ifPresent(since -> object.setLong("suspendedSinceMillis", since.toEpochMilli()));
+                        });
         });
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());

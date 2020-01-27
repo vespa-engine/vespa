@@ -6,8 +6,10 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -36,8 +38,10 @@ public class OrchestratorMock implements Orchestrator {
     }
 
     @Override
-    public Function<HostName, Optional<HostStatus>> getNodeStatuses() {
-        return hostName -> Optional.of(getNodeStatus(hostName));
+    public Function<HostName, Optional<HostInfo>> getNodeStatuses() {
+        return hostName -> Optional.of(getNodeStatus(hostName))
+                                   .map(status -> status.isSuspended() ? HostInfo.createSuspended(status, Instant.EPOCH)
+                                                                       : HostInfo.createNoRemarks());
     }
 
     @Override

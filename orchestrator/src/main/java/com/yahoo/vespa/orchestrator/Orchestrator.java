@@ -7,6 +7,7 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.util.List;
@@ -54,7 +55,7 @@ public interface Orchestrator {
      * Prefer this to {@link #getNodeStatus(HostName)} when consistency is not required, and when doing bulk reads.
      * @return a mapping from host names to their statuses. Unknown hosts map to {@code Optional.empty()}.
      */
-    Function<HostName, Optional<HostStatus>> getNodeStatuses();
+    Function<HostName, Optional<HostInfo>> getNodeStatuses();
 
     void setNodeStatus(HostName hostName, HostStatus state) throws OrchestrationException;
 

@@ -1,13 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +21,7 @@ import java.util.function.Function;
 /**
  * @author bratseth
  */
-public class OrchestratorMock implements Orchestrator {
+public class OrchestratorMock extends AbstractComponent implements Orchestrator {
 
     private final Set<HostName> suspendedHosts = new HashSet<>();
     private final Set<ApplicationId> suspendedApplications = new HashSet<>();
@@ -34,8 +37,10 @@ public class OrchestratorMock implements Orchestrator {
     }
 
     @Override
-    public Function<HostName, Optional<HostStatus>> getNodeStatuses() {
-        return hostName -> Optional.of(getNodeStatus(hostName));
+    public Function<HostName, Optional<HostInfo>> getNodeStatuses() {
+        return hostName -> Optional.of(getNodeStatus(hostName))
+                                   .map(status -> status.isSuspended() ? HostInfo.createSuspended(status, Instant.EPOCH)
+                                                                       : HostInfo.createNoRemarks());
     }
 
     @Override
