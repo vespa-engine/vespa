@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -98,14 +99,12 @@ public class EndpointCertificateManager {
             }
 
             X509Certificate endEntityCertificate = x509CertificateList.get(0);
-            List<String> subjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(endEntityCertificate).stream()
+            Set<String> subjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(endEntityCertificate).stream()
                     .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
-                    .map(SubjectAlternativeName::getValue).collect(Collectors.toList());
+                    .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
 
-            System.out.println(subjectAlternativeNames);
-
-            if (!subjectAlternativeNames.containsAll(dnsNamesOf(instance.id(), List.of(zone))))
-                return logWarning("Certificate is missing SANs");
+            if (!subjectAlternativeNames.equals(Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))))
+                return logWarning("The set of DNS SANs in the certificate has changed");
 
             return true; // All good then, hopefully
         } catch (Exception e) {
