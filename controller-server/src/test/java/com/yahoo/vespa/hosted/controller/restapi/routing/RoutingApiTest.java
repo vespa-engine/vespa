@@ -56,7 +56,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets deployment out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/deployment-status-out.json"));
@@ -64,7 +64,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets deployment in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/deployment-status-in.json"));
@@ -77,7 +77,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets zone out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/zone-status-out.json"));
@@ -85,7 +85,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets zone in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/zone-status-in.json"));
@@ -116,7 +116,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets deployment out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/deployment-status-out.json"));
@@ -124,7 +124,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets deployment in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/deployment-status-in.json"));
@@ -137,7 +137,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets zone out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/zone-status-out.json"));
@@ -145,7 +145,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets zone in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/zone-status-in.json"));
@@ -161,7 +161,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets deployment out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("multi-status-out.json"));
@@ -169,7 +169,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets deployment in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("multi-status-in.json"));
