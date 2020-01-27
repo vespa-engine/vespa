@@ -1531,7 +1531,7 @@ void queryCommand(FieldOperationContainer container) :
     QueryCommandOperation field = new QueryCommandOperation();
 }
 {
-    <QUERYCOMMAND> <COLON> command = identifierWithDash()
+    <QUERYCOMMAND> <COLON> ( command = identifierWithDash() | command = quotedString() )
     {
         field.addQueryCommand(command);
         container.addOperation(field);

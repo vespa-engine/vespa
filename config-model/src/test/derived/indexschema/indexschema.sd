@@ -24,6 +24,7 @@ search indexschema {
     field sd type string {
       indexing: index
       rank:literal
+      query-command: "phrase-segmenting false"
     }
     field pos type position {
       indexing: attribute
