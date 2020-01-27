@@ -398,7 +398,7 @@ public class ApplicationController {
                     validateRun(application.get().require(instance), zone, platformVersion, applicationVersion);
                 }
 
-                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificate(application.get().require(instance), zone);
+                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(application.get().require(instance), zone);
 
                 endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
             } // Release application lock while doing the deployment, which is a lengthy task.

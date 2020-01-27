@@ -51,11 +51,9 @@ public class EndpointCertificateManager {
         this.clock = clock;
     }
 
-    public Optional<EndpointCertificateMetadata> getEndpointCertificate(Instance instance, ZoneId zone) {
+    public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone) {
 
-        if (!zoneRegistry.zones().directlyRouted().ids().contains(zone)) {
-            return Optional.empty();
-        }
+        if (!zoneRegistry.zones().directlyRouted().ids().contains(zone)) return Optional.empty();
 
         // Re-use certificate if already provisioned
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata =
