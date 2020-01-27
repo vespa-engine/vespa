@@ -110,7 +110,7 @@ public class FederationSearcher extends ForkingSearcher {
 
     // for testing
     public FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver) {
-        this(searchChainResolver, false, PropagateSourceProperties.ALL, null);
+        this(searchChainResolver, false, PropagateSourceProperties.EVERY, null);
     }
 
     private FederationSearcher(SearchChainResolver searchChainResolver,
@@ -271,7 +271,10 @@ public class FederationSearcher extends ForkingSearcher {
         outgoing.setTimeout(timeout);
 
         switch (propagateSourceProperties) {
-            case ALL:
+            case EVERY:
+                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName, null);
+                break;
+            case NATIVE: case ALL:
                 propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName, Query.nativeProperties);
                 break;
             case OFFSET_HITS:
@@ -288,10 +291,21 @@ public class FederationSearcher extends ForkingSearcher {
     private void propagatePerSourceQueryProperties(Query original, Query outgoing, Window window,
                                                    String sourceName, String providerName,
                                                    List<CompoundName> queryProperties) {
-        for (CompoundName key : queryProperties) {
-            Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, window.get(key));
-            if (value != null)
-                outgoing.properties().set(key, value);
+        if (queryProperties == null) {
+            outgoing.setHits(window.hits);
+            outgoing.setOffset(window.offset);
+            original.properties().listProperties(CompoundName.fromComponents("provider", providerName)).forEach((k, v) ->
+                outgoing.properties().set(k, v));
+            original.properties().listProperties(CompoundName.fromComponents("source", sourceName)).forEach((k, v) ->
+                outgoing.properties().set(k, v));
+        }
+        else {
+            for (CompoundName key : queryProperties) {
+                Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, window.get(key));
+                if (value != null)
+                    outgoing.properties().set(key, value);
+                if (value != null) System.out.println("Setting " + key + " = " + value);
+            }
         }
     }
 
@@ -319,7 +333,7 @@ public class FederationSearcher extends ForkingSearcher {
 
     private ErrorMessage missingSearchChainsErrorMessage(List<UnresolvedSearchChainException> unresolvedSearchChainExceptions) {
         String message = String.join(" ", getMessagesSet(unresolvedSearchChainExceptions)) +
-                      " Valid source refs are " + String.join(", ", allSourceRefDescriptions()) +'.';
+                                     " Valid source refs are " + String.join(", ", allSourceRefDescriptions()) +'.';
         return ErrorMessage.createInvalidQueryParameter(message);
     }
 

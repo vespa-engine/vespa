@@ -1,6 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=search.federation
 
+## DEPRECATED: This config will be removed on Vespa 8
 ## A config to control whether to activate strict adherence to public contracts
 ## in the container. Usually, the container tries to do a best effort of hiding
 ## some undesirable effects of the the public contracts. Modifying this config
@@ -11,11 +12,9 @@ namespace=search.federation
 ## can be construed to be unnecessary.
 searchchains bool default=false
 
-# WARNING: Beta feature, might be removed soon.
-# Propagate source.(sourceName).{QueryProperties.PER_SOURCE_QUERY_PROPERTIES} and
-#           provider.(providerName).{QueryProperties.PER_SOURCE_QUERY_PROPERTIES}
-# to the outgoing query.
-# All means all in QueryProperties.PER_SOURCE_QUERY_PROPERTIES
-# OFFSET_HITS means  {Query.HITS, Query.OFFSET}
-# NONE means {}
-propagateSourceProperties enum {ALL, OFFSET_HITS, NONE} default=ALL
+# EVERY, // Propagate any property starting by source.[sourceName] and provider.[providerName]
+# NATIVE, // Propagate native properties only
+# ALL, // Deprecated synonym of NATIVE
+# OFFSET_HITS, // Propagate offset ands hits only
+# NONE // propagate no properties
+propagateSourceProperties enum {EVERY, NATIVE, ALL, OFFSET_HITS, NONE} default=EVERY
