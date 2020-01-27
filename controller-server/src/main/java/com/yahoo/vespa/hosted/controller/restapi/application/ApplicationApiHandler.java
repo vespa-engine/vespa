@@ -754,6 +754,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
+    // TODO: Eliminate duplicated code in this and toSlime(Cursor, Instance, DeploymentStatus, HttpRequest)
     private void toSlime(Cursor object, DeploymentStatus status, Instance instance, DeploymentSpec deploymentSpec, HttpRequest request) {
         object.setString("instance", instance.name().value());
 
@@ -796,6 +797,37 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // Global endpoints
+        globalEndpointsToSlime(object, instance);
+
+        // Deployments sorted according to deployment spec
+        List<Deployment> deployments = deploymentSpec.instance(instance.name())
+                                                     .map(spec -> new DeploymentSteps(spec, controller::system))
+                                                     .map(steps -> steps.sortedDeployments(instance.deployments().values()))
+                                                     .orElse(List.copyOf(instance.deployments().values()));
+
+        Cursor deploymentsArray = object.setArray("deployments");
+        for (Deployment deployment : deployments) {
+            Cursor deploymentObject = deploymentsArray.addObject();
+
+            // Rotation status for this deployment
+            if (deployment.zone().environment() == Environment.prod && ! instance.rotations().isEmpty())
+                toSlime(instance.rotations(), instance.rotationStatus(), deployment, deploymentObject);
+
+            if (recurseOverDeployments(request)) // List full deployment information when recursive.
+                toSlime(deploymentObject, new DeploymentId(instance.id(), deployment.zone()), deployment, request);
+            else {
+                deploymentObject.setString("environment", deployment.zone().environment().value());
+                deploymentObject.setString("region", deployment.zone().region().value());
+                deploymentObject.setString("url", withPath(request.getUri().getPath() +
+                                                           "/instance/" + instance.name().value() +
+                                                           "/environment/" + deployment.zone().environment().value() +
+                                                           "/region/" + deployment.zone().region().value(),
+                                                           request.getUri()).toString());
+            }
+        }
+    }
+
+    private void globalEndpointsToSlime(Cursor object, Instance instance) {
         var globalEndpointUrls = new LinkedHashSet<String>();
 
         // Add default global endpoints. These are backed by rotations.
@@ -824,34 +856,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .map(AssignedRotation::rotationId)
                 .findFirst()
                 .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
-
-
-        // Deployments sorted according to deployment spec
-        List<Deployment> deployments = deploymentSpec.instance(instance.name())
-                                                     .map(spec -> new DeploymentSteps(spec, controller::system))
-                                                     .map(steps -> steps.sortedDeployments(instance.deployments().values()))
-                                                     .orElse(List.copyOf(instance.deployments().values()));
-
-        Cursor deploymentsArray = object.setArray("deployments");
-        for (Deployment deployment : deployments) {
-            Cursor deploymentObject = deploymentsArray.addObject();
-
-            // Rotation status for this deployment
-            if (deployment.zone().environment() == Environment.prod && ! instance.rotations().isEmpty())
-                toSlime(instance.rotations(), instance.rotationStatus(), deployment, deploymentObject);
-
-            if (recurseOverDeployments(request)) // List full deployment information when recursive.
-                toSlime(deploymentObject, new DeploymentId(instance.id(), deployment.zone()), deployment, request);
-            else {
-                deploymentObject.setString("environment", deployment.zone().environment().value());
-                deploymentObject.setString("region", deployment.zone().region().value());
-                deploymentObject.setString("url", withPath(request.getUri().getPath() +
-                                                           "/instance/" + instance.name().value() +
-                                                           "/environment/" + deployment.zone().environment().value() +
-                                                           "/region/" + deployment.zone().region().value(),
-                                                           request.getUri()).toString());
-            }
-        }
     }
 
     private void toSlime(Cursor object, Instance instance, DeploymentStatus status, HttpRequest request) {
@@ -917,30 +921,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
-        // Rotation
-        Cursor globalRotationsArray = object.setArray("globalRotations");
-        instance.endpointsIn(controller.system())
-                .scope(Endpoint.Scope.global)
-                .legacy(false) // Hide legacy names
-                .asList().stream()
-                .map(Endpoint::url)
-                .map(URI::toString)
-                .forEach(globalRotationsArray::addString);
-
-        instance.rotations().stream()
-                .map(AssignedRotation::rotationId)
-                .findFirst()
-                .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
-
-        // Per-cluster rotations
-        var routingPolicies = controller.applications().routingPolicies().get(instance.id()).values();
-        for (var policy : routingPolicies) {
-            if (!policy.status().isActive()) continue;
-            policy.globalEndpointsIn(controller.system()).asList().stream()
-                  .map(Endpoint::url)
-                  .map(URI::toString)
-                  .forEach(globalRotationsArray::addString);
-        }
+        // Global endpoint
+        globalEndpointsToSlime(object, instance);
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments =
