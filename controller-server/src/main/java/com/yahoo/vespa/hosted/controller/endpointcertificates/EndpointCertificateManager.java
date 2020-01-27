@@ -104,7 +104,7 @@ public class EndpointCertificateManager {
                     .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
 
             if (!subjectAlternativeNames.equals(Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))))
-                return logWarning("The set of DNS SANs in the certificate has changed");
+                return logWarning("The list of SANs in the certificate does not match what we expect");
 
             return true; // All good then, hopefully
         } catch (Exception e) {
