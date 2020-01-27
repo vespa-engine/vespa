@@ -351,8 +351,6 @@ public final class Node {
                        .deviation();
     }
 
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -408,6 +406,7 @@ public final class Node {
         public boolean isAllocated() {
             return this == reserved || this == active || this == inactive || this == failed || this == parked;
         }
+
     }
 
     /** The mean and mean deviation (squared difference) of a bunch of numbers */
