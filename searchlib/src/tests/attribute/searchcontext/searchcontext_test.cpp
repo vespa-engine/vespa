@@ -1,24 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeiterators.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/elementiterator.h>
 #include <vespa/searchlib/attribute/flagattribute.h>
+#include <vespa/searchlib/attribute/multistringattribute.h>
+#include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/elementiterator.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/searchlib/queryeval/hitcollector.h>
+#include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
+#include <vespa/searchlib/queryeval/hitcollector.h>
+#include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/searchlib/test/searchiteratorverifier.h>
-#include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchcontext_test");
@@ -43,22 +46,24 @@ isUnsignedSmallIntAttribute(const AttributeVector &a)
 
 }
 
-typedef AttributeVector::SP AttributePtr;
-typedef std::unique_ptr<AttributeVector::SearchContext> SearchContextPtr;
-typedef AttributeVector::SearchContext SearchContext;
-using attribute::Config;
+using AttributePtr = AttributeVector::SP;
+using ResultSetPtr = std::unique_ptr<ResultSet>;
+using SearchBasePtr = queryeval::SearchIterator::UP;
+using SearchContext = AttributeVector::SearchContext;
+using SearchContextPtr = std::unique_ptr<AttributeVector::SearchContext>;
+using largeint_t = AttributeVector::largeint_t;
+
 using attribute::BasicType;
 using attribute::CollectionType;
-typedef AttributeVector::largeint_t largeint_t;
-typedef queryeval::SearchIterator::UP SearchBasePtr;
-typedef std::unique_ptr<ResultSet> ResultSetPtr;
-
-using queryeval::HitCollector;
-using queryeval::SearchIterator;
+using attribute::Config;
+using attribute::SearchContextParams;
 using fef::MatchData;
 using fef::TermFieldMatchData;
 using fef::TermFieldMatchDataArray;
 using fef::TermFieldMatchDataPosition;
+using queryeval::HitCollector;
+using queryeval::SearchIterator;
+using queryeval::SimpleResult;
 
 class DocSet : public std::set<uint32_t>
 {
@@ -266,6 +271,9 @@ private:
 
     void requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name, const Config &cfg, int64_t maxValue);
     void requireThatOutOfBoundsSearchTermGivesZeroHits();
+
+    void single_bool_attribute_search_context_handles_true_and_false_queries();
+    void single_bool_attribute_search_iterator_handles_true_and_false_queries();
 
     // init maps with config objects
     void initIntegerConfig();
@@ -1825,6 +1833,87 @@ SearchContextTest::requireThatOutOfBoundsSearchTermGivesZeroHits()
     }
 }
 
+class BoolAttributeFixture {
+private:
+    search::SingleBoolAttribute _attr;
+
+public:
+    BoolAttributeFixture(const SimpleResult& true_docs, uint32_t num_docs)
+        : _attr("bool_attr", search::GrowStrategy())
+    {
+        _attr.addDocs(num_docs);
+        for (uint32_t i = 0; i < true_docs.getHitCount(); ++i) {
+            uint32_t docid = true_docs.getHit(i);
+            _attr.update(docid, 1);
+        }
+        _attr.commit();
+    }
+    search::AttributeVector::SearchContext::UP create_search_context(const std::string& term) const {
+        return _attr.getSearch(std::make_unique<search::QueryTermSimple>(term, search::QueryTermSimple::WORD),
+                               SearchContextParams().useBitVector(true));
+    }
+    SimpleResult search_context(const std::string& term) const {
+        auto search_ctx = create_search_context(term);
+        SimpleResult result;
+        int32_t weight = 10;
+        for (uint32_t docid = 1; docid < _attr.getNumDocs(); ++docid) {
+            bool match_1 = search_ctx->matches(docid);
+            bool match_2 = search_ctx->matches(docid, weight);
+            EXPECT_EQUAL(match_1, match_2);
+            EXPECT_EQUAL(match_2 ? 1 : 0, weight);
+            if (match_1) {
+                result.addHit(docid);
+            }
+            weight = 10;
+        }
+        return result;
+    }
+    SimpleResult search_iterator(const std::string& term, bool strict) const {
+        auto search_ctx = create_search_context(term);
+        TermFieldMatchData tfmd;
+        auto itr = search_ctx->createIterator(&tfmd, strict);
+        SimpleResult result;
+        if (strict) {
+            result.searchStrict(*itr, _attr.getNumDocs());
+        } else {
+            result.search(*itr, _attr.getNumDocs());
+        }
+        return result;
+    }
+};
+
+void
+SearchContextTest::single_bool_attribute_search_context_handles_true_and_false_queries()
+{
+    BoolAttributeFixture f(SimpleResult().addHit(3).addHit(5).addHit(7), 9);
+
+    auto true_exp = SimpleResult().addHit(3).addHit(5).addHit(7);
+    EXPECT_EQUAL(true_exp, f.search_context("true"));
+    EXPECT_EQUAL(true_exp, f.search_context("1"));
+
+    auto false_exp = SimpleResult().addHit(1).addHit(2).addHit(4).addHit(6).addHit(8);
+    EXPECT_EQUAL(false_exp, f.search_context("false"));
+    EXPECT_EQUAL(false_exp, f.search_context("0"));
+}
+
+void
+SearchContextTest::single_bool_attribute_search_iterator_handles_true_and_false_queries()
+{
+    BoolAttributeFixture f(SimpleResult().addHit(3).addHit(5).addHit(7), 9);
+
+    auto true_exp = SimpleResult().addHit(3).addHit(5).addHit(7);
+    EXPECT_EQUAL(true_exp, f.search_iterator("true", false));
+    EXPECT_EQUAL(true_exp, f.search_iterator("1", false));
+    EXPECT_EQUAL(true_exp, f.search_iterator("true", true));
+    EXPECT_EQUAL(true_exp, f.search_iterator("1", true));
+
+    auto false_exp = SimpleResult().addHit(1).addHit(2).addHit(4).addHit(6).addHit(8);
+    EXPECT_EQUAL(false_exp, f.search_iterator("false", false));
+    EXPECT_EQUAL(false_exp, f.search_iterator("0", false));
+    EXPECT_EQUAL(false_exp, f.search_iterator("false", true));
+    EXPECT_EQUAL(false_exp, f.search_iterator("0", true));
+}
+
 void
 SearchContextTest::initIntegerConfig()
 {
@@ -1955,6 +2044,8 @@ SearchContextTest::Main()
     TEST_DO(requireThatInvalidSearchTermGivesZeroHits());
     TEST_DO(requireThatFlagAttributeHandlesTheByteRange());
     TEST_DO(requireThatOutOfBoundsSearchTermGivesZeroHits());
+    TEST_DO(single_bool_attribute_search_context_handles_true_and_false_queries());
+    TEST_DO(single_bool_attribute_search_iterator_handles_true_and_false_queries());
 
     TEST_DONE();
 }
