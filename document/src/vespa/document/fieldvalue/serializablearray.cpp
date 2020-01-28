@@ -36,6 +36,7 @@ SerializableArray::set(EntryMap entries, ByteBuffer buffer,
         _unlikely->_compSerData = std::move(buffer);
         _unlikely->_serializedCompression = comp_type;
         _unlikely->_uncompressedLength = uncompressed_length;
+        _uncompSerData = ByteBuffer();
     } else {
         _uncompSerData = std::move(buffer);
         _unlikely.reset();
