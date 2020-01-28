@@ -8,6 +8,7 @@ install_config_definition(src/main/resources/configdefinitions/identity.def cont
 install_config_definition(src/main/resources/configdefinitions/log-handler.def container.core.log-handler.def)
 install_config_definition(src/main/resources/configdefinitions/metrics-packets-handler.def container.jdisc.state.metrics-packets-handler.def)
 install_config_definition(src/main/resources/configdefinitions/metrics-presentation.def metrics.metrics-presentation.def)
+install_config_definition(src/main/resources/configdefinitions/metrics-proxy-api.def container.handler.metrics.metrics-proxy-api.def)
 install_config_definition(src/main/resources/configdefinitions/mockservice.def container.handler.test.mockservice.def)
 install_config_definition(src/main/resources/configdefinitions/qr-searchers.def container.qr-searchers.def)
 install_config_definition(src/main/resources/configdefinitions/qr.def container.qr.def)

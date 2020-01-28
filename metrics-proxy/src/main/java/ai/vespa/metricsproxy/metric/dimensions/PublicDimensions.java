@@ -22,7 +22,7 @@ public final class PublicDimensions {
     // Node-specific.
     public static final String INTERNAL_CLUSTER_TYPE = "clustertype";
     public static final String INTERNAL_CLUSTER_ID = "clusterid";
-    public static final String CLUSTER_ID = INTERNAL_CLUSTER_ID;
+    public static final String CLUSTER_ID = "clusterId";
 
     // Internal name (instance) is confusing, so renamed to 'serviceId' for public use.
     // This is added by the metrics-proxy.
