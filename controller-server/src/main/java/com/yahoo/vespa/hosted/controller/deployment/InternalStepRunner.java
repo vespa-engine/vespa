@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.ServiceState;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -92,6 +93,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -345,34 +347,33 @@ public class InternalStepRunner implements StepRunner {
             }
         }
 
-        boolean failed = false;
+        String failureReason = null;
 
         NodeList suspendedTooLong = nodeList.suspendedSince(controller.clock().instant().minus(installationTimeout));
         if ( ! suspendedTooLong.isEmpty()) {
-            logger.log(INFO, "Some nodes have been suspended for more than " + installationTimeout.toMinutes() + " minutes.");
-            failed = true;
+            failureReason = "Some nodes have been suspended for more than " + installationTimeout.toMinutes() + " minutes:\n" +
+                            suspendedTooLong.asList().stream().map(node -> node.node().hostname().value()).collect(joining("\n"));
         }
 
         if (run.noNodesDownSince()
                .map(since -> since.isBefore(controller.clock().instant().minus(installationTimeout)))
                .orElse(false)) {
             if (summary.needPlatformUpgrade() > 0 || summary.needReboot() > 0 || summary.needRestart() > 0)
-                logger.log(INFO, "No nodes allowed to suspend to progress installation for " + installationTimeout.toMinutes() + " minutes.");
+                failureReason ="No nodes allowed to suspend to progress installation for " + installationTimeout.toMinutes() + " minutes.";
             else
-                logger.log(INFO, "Nodes not able to start with new application package.");
-            failed = true;
+                failureReason = "Nodes not able to start with new application package.";
         }
 
         Duration timeout = JobRunner.jobTimeout.minusHours(1); // Time out before job dies.
         if (timedOut(id, deployment.get(), timeout)) {
-            logger.log(INFO, "Installation failed to complete within " + timeout.toHours() + "hours!");
-            failed = true;
+            failureReason = "Installation failed to complete within " + timeout.toHours() + "hours!";
         }
 
-        if (failed) {
+        if (failureReason != null) {
             logger.log(nodeList.asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
                                .collect(toList()));
+            logger.log(INFO, failureReason);
             return Optional.of(installationFailed);
         }
 
@@ -498,7 +499,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Stream<String> nodeDetails(NodeWithServices node, boolean printAllServices) {
-        return Stream.concat(Stream.of(node.node().hostname() + ": " + humanize(node.node().serviceState()),
+        return Stream.concat(Stream.of(node.node().hostname() + ": " + humanize(node.node().serviceState()) + (node.node().suspendedSince().map(since -> " since " + since).orElse("")),
                                        "--- platform " + node.node().wantedVersion() + (node.needsPlatformUpgrade()
                                                                                         ? " <-- " + (node.node().currentVersion().isEmpty() ? "not booted" : node.node().currentVersion())
                                                                                         : "") +
