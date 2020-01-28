@@ -207,7 +207,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(MetricsProxyApiConfig.Builder builder) {
         builder.metricsPort(MetricsProxyContainer.BASEPORT)
-                .metricsApiPath(ApplicationMetricsHandler.V1_PATH);
+                .metricsApiPath(ApplicationMetricsHandler.VALUES_PATH);
     }
 
     @Override

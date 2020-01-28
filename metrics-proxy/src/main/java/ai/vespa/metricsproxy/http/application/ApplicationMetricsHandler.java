@@ -36,7 +36,7 @@ import static java.util.stream.Collectors.toList;
 public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     public static final String V1_PATH = "/applicationmetrics/v1";
-    static final String VALUES_PATH = V1_PATH + "/values";
+    public static final String VALUES_PATH = V1_PATH + "/values";
 
     private static final int MAX_DIMENSIONS = 10;
 
