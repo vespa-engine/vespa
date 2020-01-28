@@ -57,6 +57,9 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             ConnectorConfig.HealthCheckProxy proxyConfig = connector.connectorConfig().healthCheckProxy();
             if (proxyConfig.enable()) {
                 mapping.put(connector.listenPort(), createProxyTarget(proxyConfig.port(), connectors));
+                log.info(String.format("Port %1$d is configured as a health check proxy for port %2$d. " +
+                                               "HTTP requests to '%3$s' on %1$d are proxied as HTTPS to %2$d.",
+                                       connector.listenPort(), proxyConfig.port(), HEALTH_CHECK_PATH));
             }
         }
         return mapping;
@@ -148,13 +151,16 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             return client;
         }
 
-        private static SSLContext getSslContext(SslContextFactory.Server sslContextFactory) {
+        private SSLContext getSslContext(SslContextFactory.Server sslContextFactory) {
             if (sslContextFactory.getNeedClientAuth()) {
+                log.info(String.format("Port %d requires client certificate. HTTPS client will use the target server connector's ssl context.", port));
                 // A client certificate is only required if the server connector's ssl context factory is configured with "need-auth".
                 // We use the server's ssl context (truststore + keystore) if a client certificate is required.
                 // This will only work if the server certificate's CA is in the truststore.
                 return sslContextFactory.getSslContext();
             } else {
+                log.info(String.format(
+                        "Port %d does not require a client certificate. HTTPS client will use a custom ssl context accepting all certificates.", port));
                 // No client certificate required. The client is configured with a trust manager that accepts all certificates.
                 try {
                     return SSLContexts.custom().loadTrustMaterial(new TrustAllStrategy()).build();
