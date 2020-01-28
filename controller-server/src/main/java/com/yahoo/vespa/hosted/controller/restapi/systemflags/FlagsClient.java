@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
-import ai.vespa.util.http.retry.DelayedHttpRequestRetryHandler;
+import ai.vespa.util.http.retry.DelayedConnectionLevelRetryHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -24,7 +24,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -85,12 +84,11 @@ class FlagsClient {
 
 
     private static CloseableHttpClient createClient(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
-        DelayedHttpRequestRetryHandler retryHandler = DelayedHttpRequestRetryHandler.Builder
+        DelayedConnectionLevelRetryHandler retryHandler = DelayedConnectionLevelRetryHandler.Builder
                 .withExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(20), 5)
                 .build();
         return HttpClientBuilder.create()
                 .setUserAgent("controller-flags-v1-client")
-                .setRetryHandler(new DefaultHttpRequestRetryHandler(5, /*retry on non-idempotent requests*/true))
                 .setSSLContext(identityProvider.getIdentitySslContext())
                 .setSSLHostnameVerifier(new FlagTargetsHostnameVerifier(targets))
                 .setDefaultRequestConfig(RequestConfig.custom()

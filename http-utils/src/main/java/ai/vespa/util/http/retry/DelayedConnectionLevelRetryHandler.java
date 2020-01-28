@@ -10,7 +10,6 @@ import org.apache.http.protocol.HttpContext;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -20,36 +19,23 @@ import java.util.logging.Logger;
  * @author bjorncs
  */
 @Contract(threading = ThreadingBehavior.IMMUTABLE)
-public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
+public class DelayedConnectionLevelRetryHandler implements HttpRequestRetryHandler {
 
     private static final Logger log = Logger.getLogger(HttpRequestRetryHandler.class.getName());
 
-    @FunctionalInterface
-    public interface RetryConsumer {
-        void onRetry(IOException exception, Duration delay, int executionCount, HttpClientContext context);
-    }
-
-    @FunctionalInterface
-    public interface RetryFailedConsumer {
-        void onRetryFailed(IOException exception, int executionCount, HttpClientContext context);
-    }
-
-    @FunctionalInterface
-    public interface RetryPredicate extends BiPredicate<IOException, HttpClientContext> {}
-
     private final DelaySupplier delaySupplier;
     private final int maxRetries;
-    private final RetryPredicate predicate;
-    private final RetryConsumer retryConsumer;
-    private final RetryFailedConsumer retryFailedConsumer;
+    private final RetryPredicate<IOException> predicate;
+    private final RetryConsumer<IOException> retryConsumer;
+    private final RetryFailedConsumer<IOException> retryFailedConsumer;
     private final Sleeper sleeper;
 
-    private DelayedHttpRequestRetryHandler(
+    private DelayedConnectionLevelRetryHandler(
             DelaySupplier delaySupplier,
             int maxRetries,
-            RetryPredicate predicate,
-            RetryConsumer retryConsumer,
-            RetryFailedConsumer retryFailedConsumer,
+            RetryPredicate<IOException> predicate,
+            RetryConsumer<IOException> retryConsumer,
+            RetryFailedConsumer<IOException> retryFailedConsumer,
             Sleeper sleeper) {
         this.delaySupplier = delaySupplier;
         this.maxRetries = maxRetries;
@@ -84,10 +70,10 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
 
         private final DelaySupplier delaySupplier;
         private final int maxRetries;
-        private RetryPredicate predicate = (ioException, ctx) -> true;
-        private RetryConsumer retryConsumer = (exception, delay, count, ctx) -> {};
-        private RetryFailedConsumer retryFailedConsumer = (exception, count, ctx) -> {};
-        private Sleeper sleeper = new DefaultSleeper();
+        private RetryPredicate<IOException> predicate = (ioException, ctx) -> true;
+        private RetryConsumer<IOException> retryConsumer = (exception, delay, count, ctx) -> {};
+        private RetryFailedConsumer<IOException> retryFailedConsumer = (exception, count, ctx) -> {};
+        private Sleeper sleeper = new Sleeper.Default();
 
         private Builder(DelaySupplier delaySupplier, int maxRetries) {
             this.delaySupplier = delaySupplier;
@@ -95,19 +81,11 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
         }
 
         public static Builder withFixedDelay(Duration delay, int maxRetries) {
-            return new Builder(executionCount -> delay, maxRetries);
+            return new Builder(new DelaySupplier.Fixed(delay), maxRetries);
         }
 
         public static Builder withExponentialBackoff(Duration startDelay, Duration maxDelay, int maxRetries) {
-            return new Builder(
-                    executionCount -> {
-                        Duration nextDelay = startDelay;
-                        for (int i = 1; i < executionCount; ++i) {
-                            nextDelay = nextDelay.multipliedBy(2);
-                        }
-                        return maxDelay.compareTo(nextDelay) > 0 ? nextDelay : maxDelay;
-                    },
-                    maxRetries);
+            return new Builder(new DelaySupplier.Exponential(startDelay, maxDelay), maxRetries);
         }
 
         public Builder retryForExceptions(List<Class<? extends IOException>> exceptionTypes) {
@@ -120,17 +98,17 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
             return this;
         }
 
-        public Builder retryFor(RetryPredicate predicate) {
+        public Builder retryFor(RetryPredicate<IOException> predicate) {
             this.predicate = predicate;
             return this;
         }
 
-        public Builder onRetry(RetryConsumer consumer) {
+        public Builder onRetry(RetryConsumer<IOException> consumer) {
             this.retryConsumer = consumer;
             return this;
         }
 
-        public Builder onRetryFailed(RetryFailedConsumer consumer) {
+        public Builder onRetryFailed(RetryFailedConsumer<IOException> consumer) {
             this.retryFailedConsumer = consumer;
             return this;
         }
@@ -141,29 +119,8 @@ public class DelayedHttpRequestRetryHandler implements HttpRequestRetryHandler {
             return this;
         }
 
-        public DelayedHttpRequestRetryHandler build() {
-            return new DelayedHttpRequestRetryHandler(delaySupplier, maxRetries, predicate, retryConsumer, retryFailedConsumer, sleeper);
+        public DelayedConnectionLevelRetryHandler build() {
+            return new DelayedConnectionLevelRetryHandler(delaySupplier, maxRetries, predicate, retryConsumer, retryFailedConsumer, sleeper);
         }
-
-        private static class DefaultSleeper implements Sleeper {
-            @Override
-            public void sleep(Duration duration) {
-                try {
-                    Thread.sleep(duration.toMillis());
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-
-    // For unit testing
-    interface Sleeper {
-        void sleep(Duration duration);
-    }
-
-    @FunctionalInterface
-    private interface DelaySupplier {
-        Duration getDelay(int executionCount);
     }
 }
