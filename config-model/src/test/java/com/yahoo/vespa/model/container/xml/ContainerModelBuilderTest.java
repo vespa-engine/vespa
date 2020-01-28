@@ -25,7 +25,6 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.VipStatusHandler;
-import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.servlet.ServletConfigConfig;
@@ -226,13 +225,12 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(defaultRootHandler.serverBindings(), contains("http://*/"));
 
         JdiscBindingsConfig.Handlers applicationStatusHandler = config.handlers(ApplicationStatusHandler.class.getName());
-        assertThat(applicationStatusHandler.serverBindings(), contains("http://*/ApplicationStatus"));
+        assertThat(applicationStatusHandler.serverBindings(),
+                   contains("http://*/ApplicationStatus"));
 
         JdiscBindingsConfig.Handlers fileRequestHandler = config.handlers(VipStatusHandler.class.getName());
-        assertThat(fileRequestHandler.serverBindings(), contains("http://*/status.html"));
-
-        JdiscBindingsConfig.Handlers metricsV2Handler = config.handlers(MetricsV2Handler.class.getName());
-        assertThat(metricsV2Handler.serverBindings(), contains("http://*/metrics/v2", "http://*/metrics/v2/*"));
+        assertThat(fileRequestHandler.serverBindings(),
+                   contains("http://*/status.html"));
     }
 
     @Test

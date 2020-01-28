@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -35,8 +34,7 @@ public final class AccessControl {
             ContainerCluster.APPLICATION_STATUS_HANDLER_CLASS,
             ContainerCluster.BINDINGS_OVERVIEW_HANDLER_CLASS,
             ContainerCluster.STATE_HANDLER_CLASS,
-            ContainerCluster.LOG_HANDLER_CLASS,
-            ApplicationContainerCluster.METRICS_V2_HANDLER_CLASS
+            ContainerCluster.LOG_HANDLER_CLASS
     );
 
     public static final class Builder {
