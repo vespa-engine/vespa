@@ -87,6 +87,7 @@ BuildRequires: gmock-devel
 %endif
 %endif
 BuildRequires: xxhash-devel >= 0.6.5
+BuildRequires: openblas-devel
 BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
@@ -123,6 +124,7 @@ Requires: valgrind
 Requires: Judy
 Requires: xxhash
 Requires: xxhash-libs >= 0.6.5
+Requires: openblas-serial
 Requires: lz4
 Requires: libzstd
 Requires: zlib
