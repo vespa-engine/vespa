@@ -8,19 +8,23 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
+import javax.net.ssl.SSLContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,9 +67,9 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 .filter(connector -> connector.listenPort() == targetPort)
                 .findAny()
                 .orElseThrow(() -> new IllegalArgumentException("Could not find any connector with listen port " + targetPort));
-        SslContextFactory sslContextFactory =
+        SslContextFactory.Server sslContextFactory =
                 Optional.ofNullable(targetConnector.getConnectionFactory(SslConnectionFactory.class))
-                        .map(SslConnectionFactory::getSslContextFactory)
+                        .map(connFactory -> (SslContextFactory.Server) connFactory.getSslContextFactory())
                         .orElseThrow(() -> new IllegalArgumentException("Health check proxy can only target https port"));
         return new ProxyTarget(targetPort, sslContextFactory);
     }
@@ -111,10 +115,10 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     private static class ProxyTarget implements AutoCloseable {
         final int port;
-        final SslContextFactory sslContextFactory;
+        final SslContextFactory.Server sslContextFactory;
         volatile CloseableHttpClient client;
 
-        ProxyTarget(int port, SslContextFactory sslContextFactory) {
+        ProxyTarget(int port, SslContextFactory.Server sslContextFactory) {
             this.port = port;
             this.sslContextFactory = sslContextFactory;
         }
@@ -133,7 +137,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                         client = HttpClientBuilder.create()
                                 .disableAutomaticRetries()
                                 .setConnectionReuseStrategy(NoConnectionReuseStrategy.INSTANCE)
-                                .setSSLContext(sslContextFactory.getSslContext())
+                                .setSSLContext(getSslContext(sslContextFactory))
                                 .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                                 .setUserTokenHandler(context -> null) // https://stackoverflow.com/a/42112034/1615280
                                 .setUserAgent("health-check-proxy-client")
@@ -142,6 +146,22 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 }
             }
             return client;
+        }
+
+        private static SSLContext getSslContext(SslContextFactory.Server sslContextFactory) {
+            if (sslContextFactory.getNeedClientAuth()) {
+                // A client certificate is only required if the server connector's ssl context factory is configured with "need-auth".
+                // We use the server's ssl context (truststore + keystore) if a client certificate is required.
+                // This will only work if the server certificate's CA is in the truststore.
+                return sslContextFactory.getSslContext();
+            } else {
+                // No client certificate required. The client is configured with a trust manager that accepts all certificates.
+                try {
+                    return SSLContexts.custom().loadTrustMaterial(new TrustAllStrategy()).build();
+                } catch (GeneralSecurityException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
 
         @Override
