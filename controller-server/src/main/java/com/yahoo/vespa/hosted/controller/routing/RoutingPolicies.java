@@ -84,10 +84,10 @@ public class RoutingPolicies {
                                                        deploymentSpec);
         var inactiveZones = inactiveZones(application, deploymentSpec);
         try (var lock = db.lockRoutingPolicies()) {
-            removeGlobalDnsUnreferencedBy(loadBalancers, lock);
+            if (!application.instance().isTester()) removeGlobalDnsUnreferencedBy(loadBalancers, lock);
             storePoliciesOf(loadBalancers, lock);
             removePoliciesUnreferencedBy(loadBalancers, lock);
-            updateGlobalDnsOf(get(loadBalancers.application).values(), inactiveZones, lock);
+            if (!application.instance().isTester()) updateGlobalDnsOf(get(loadBalancers.application).values(), inactiveZones, lock);
         }
     }
 

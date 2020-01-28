@@ -620,15 +620,30 @@ public class ApplicationController {
             throw new NotExistsException("Deployment", deploymentId.toString());
 
         try {
-            return ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
-                                                        .map(RoutingEndpoint::endpoint)
-                                                        .map(URI::create)
-                                                        .iterator());
+            return findRoutingEndpoints(deploymentId).stream()
+                                                     .map(RoutingEndpoint::endpoint)
+                                                     .map(URI::create)
+                                                     .collect(Collectors.toUnmodifiableList());
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId, e);
             return Collections.emptyList();
         }
+    }
+
+    /** Find the routing endpoints of a given deployment. Routing endpoints are owned by the shared routing layer. */
+    private List<RoutingEndpoint> findRoutingEndpoints(DeploymentId deployment) {
+        if (controller.zoneRegistry().zones().directlyRouted().ids().contains(deployment.zoneId())) {
+            return List.of(); // No shared routing layer in this zone.
+        }
+        return routingGenerator.endpoints(deployment);
+    }
+
+    private Map<ClusterSpec.Id, URI> findClusterEndpoints(DeploymentId deployment) {
+        if (controller.zoneRegistry().zones().directlyRouted().ids().contains(deployment.zoneId())) {
+            return Map.of(); // No shared routing layer in this zone.
+        }
+        return routingGenerator.clusterEndpoints(deployment);
     }
 
     /** Returns the non-empty endpoints per cluster in the given deployment, or empty if endpoints can't be found. */
@@ -640,7 +655,7 @@ public class ApplicationController {
 
         // TODO(jvenstad): Swap to use routingPolicies first, when this is ready.
         try {
-            var endpoints = routingGenerator.clusterEndpoints(id);
+            var endpoints = findClusterEndpoints(id);
             if ( ! endpoints.isEmpty())
                 return endpoints;
         }

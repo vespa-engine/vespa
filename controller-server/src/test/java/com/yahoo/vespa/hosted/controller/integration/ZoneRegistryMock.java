@@ -60,7 +60,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
                 ZoneApiMock.fromId("prod.us-west-1"),
                 ZoneApiMock.fromId("prod.us-central-1"),
                 ZoneApiMock.fromId("prod.eu-west-1")));
-        setDirectlyRouted(Set.copyOf(this.zones));
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {

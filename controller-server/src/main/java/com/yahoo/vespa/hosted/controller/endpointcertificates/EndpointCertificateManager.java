@@ -30,6 +30,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * @author andreer
+ */
 public class EndpointCertificateManager {
 
     private static final Logger log = Logger.getLogger(EndpointCertificateManager.class.getName());

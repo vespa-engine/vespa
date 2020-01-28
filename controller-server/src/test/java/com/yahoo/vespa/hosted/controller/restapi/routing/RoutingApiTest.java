@@ -6,6 +6,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
@@ -13,7 +14,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertNotEquals;
 
@@ -36,10 +36,13 @@ public class RoutingApiTest extends ControllerContainerTest {
     @Test
     public void policy_based_routing() {
         var context = deploymentTester.newDeploymentContext();
-
-        // Deploy application
+        // Zones support direct routing
         var westZone = ZoneId.from("prod", "us-west-1");
         var eastZone = ZoneId.from("prod", "us-east-3");
+        deploymentTester.controllerTester().zoneRegistry().setDirectlyRouted(ZoneApiMock.from(westZone),
+                                                                             ZoneApiMock.from(eastZone));
+
+        // Deploy application
         var applicationPackage = new ApplicationPackageBuilder()
                 .region(westZone.region())
                 .region(eastZone.region())
@@ -93,8 +96,6 @@ public class RoutingApiTest extends ControllerContainerTest {
 
     @Test
     public void rotation_based_routing() {
-        // No zones support direct routing
-        deploymentTester.controllerTester().zoneRegistry().setDirectlyRouted(Set.of());
         // Deploy application
         var context = deploymentTester.newDeploymentContext();
         var westZone = ZoneId.from("prod", "us-west-1");
