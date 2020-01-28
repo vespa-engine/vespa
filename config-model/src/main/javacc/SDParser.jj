@@ -655,22 +655,30 @@ void fieldSet(Search search) :
   String field;
   String queryCommand;
   List queryCommands = new ArrayList();
-  SDField matchSettings;
+  FieldOperationContainer matchSetting;
+  List matchSettings = new ArrayList();
 }
 {
-  <FIELDSET> setName = identifier() lbrace() { matchSettings = new SDField(setName, DataType.STRING); }
+  <FIELDSET> setName = identifier() lbrace()
     ((
-      ( <FIELDS><COLON> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
-      ( <COMMA> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
+      ( <FIELDS><COLON> field = identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
+      ( <COMMA> field = identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
     |
       ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { queryCommands.add(queryCommand); }
     |
-      ( match(matchSettings) ) { matchSettings.applyOperations(); search.fieldSets().userFieldSets().get(setName).setMatching(matchSettings.getMatching());}
+      ( matchSetting = match(new SDField(setName, DataType.STRING)) ) { matchSettings.add(matchSetting); }
     )(<NL>)*)+
   <RBRACE>
   {
+     // Apply settings after parsing since all user field items must be set first
+
      for (Object command : queryCommands)
        search.fieldSets().userFieldSets().get(setName).queryCommands().add((String)command);
+
+     for (Object setting : matchSettings) {
+       ((SDField)setting).applyOperations();
+       search.fieldSets().userFieldSets().get(setName).setMatching(((SDField)setting).getMatching());
+     }
   }
 }
 
@@ -1551,11 +1559,11 @@ void alias(FieldOperationContainer container) :
     }
 }
 
-Object match(FieldOperationContainer field) : { }
+FieldOperationContainer match(FieldOperationContainer field) : { }
 {
     <MATCH> ( (<COLON> matchType(field))
               | (lbrace() (matchItem(field) (<NL>)*)* <RBRACE>) )
-    { return null; }
+    { return field; }
 }
 
 /**

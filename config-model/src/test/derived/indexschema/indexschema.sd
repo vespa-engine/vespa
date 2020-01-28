@@ -137,11 +137,11 @@ search indexschema {
   }
   
   fieldset exactexplicit2 {
-    fields:sc, sd
     match {
       exact
       exact-terminator: "Arnold"
     }
+    fields:sc, sd
   }
 
   fieldset gram {
