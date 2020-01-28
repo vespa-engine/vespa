@@ -3083,6 +3083,7 @@
       "public final com.yahoo.document.datatypes.FieldValue setFieldValue(java.lang.String, java.lang.Integer)",
       "public final com.yahoo.document.datatypes.FieldValue setFieldValue(java.lang.String, java.lang.Long)",
       "public final com.yahoo.document.datatypes.FieldValue setFieldValue(java.lang.String, java.lang.Byte)",
+      "public final com.yahoo.document.datatypes.FieldValue setFieldValue(java.lang.String, java.lang.Boolean)",
       "public abstract com.yahoo.document.datatypes.FieldValue removeFieldValue(com.yahoo.document.Field)",
       "public com.yahoo.document.datatypes.FieldValue removeFieldValue(java.lang.String)",
       "public abstract void clear()",
