@@ -19,6 +19,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/field.h>
 
+namespace vespalib { class DataBuffer; }
 namespace document {
 
 class TransactionGuard;
@@ -29,6 +30,7 @@ private:
     DocumentId _id;
     StructFieldValue _fields;
     std::unique_ptr<StructuredCache> _cache;
+    std::unique_ptr<vespalib::DataBuffer> _backingBuffer;
 
     // To avoid having to return another container object out of docblocks
     // the meta data has been added to document. This will not be serialized
@@ -50,6 +52,7 @@ public:
     Document & operator =(Document &&) noexcept;
     Document(const DataType &, DocumentId id);
     Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
+    Document(const DocumentTypeRepo& repo, vespalib::DataBuffer && buffer);
     ~Document() noexcept override;
 
     void setRepo(const DocumentTypeRepo & repo);

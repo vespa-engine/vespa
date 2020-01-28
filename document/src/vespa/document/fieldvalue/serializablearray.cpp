@@ -26,8 +26,6 @@ public:
 
 }
 
-SerializableArray::SerializableArray() = default;
-
 SerializableArray::SerializableArray(EntryMap entries, ByteBuffer buffer,
                                      CompressionConfig::Type comp_type, uint32_t uncompressed_length)
     : _entries(std::move(entries)),

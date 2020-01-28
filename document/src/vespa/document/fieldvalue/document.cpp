@@ -11,6 +11,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
@@ -71,6 +72,7 @@ Document::Document()
     : StructuredFieldValue(*DataType::DOCUMENT),
       _id(),
       _fields(getType().getFieldsType()),
+      _backingBuffer(),
       _lastModified(0)
 {
     _fields.setDocumentType(getType());
@@ -80,6 +82,7 @@ Document::Document(const Document& rhs)
     : StructuredFieldValue(rhs),
       _id(rhs._id),
       _fields(rhs._fields),
+      _backingBuffer(),
       _lastModified(rhs._lastModified)
 {}
 
@@ -87,6 +90,7 @@ Document::Document(const DataType &type, DocumentId documentId)
     : StructuredFieldValue(verifyDocumentType(&type)),
       _id(std::move(documentId)),
       _fields(getType().getFieldsType()),
+      _backingBuffer(),
       _lastModified(0)
 {
     _fields.setDocumentType(getType());
@@ -104,9 +108,27 @@ Document::Document(const DocumentTypeRepo& repo, vespalib::nbostream & is)
     : StructuredFieldValue(*DataType::DOCUMENT),
       _id(),
       _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
+      _backingBuffer(),
       _lastModified(0)
 {
     deserialize(repo, is);
+}
+
+Document::Document(const DocumentTypeRepo& repo, vespalib::DataBuffer && backingBuffer)
+    : StructuredFieldValue(*DataType::DOCUMENT),
+      _id(),
+      _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
+      _backingBuffer(),
+      _lastModified(0)
+{
+    if (backingBuffer.referencesExternalData()) {
+        vespalib::nbostream is(backingBuffer.getData(), backingBuffer.getDataLen());
+        deserialize(repo, is);
+    } else {
+        vespalib::nbostream_longlivedbuf is(backingBuffer.getData(), backingBuffer.getDataLen());
+        deserialize(repo, is);
+        _backingBuffer = std::make_unique<vespalib::DataBuffer>(std::move(backingBuffer));
+    }
 }
 
 Document::Document(Document &&) noexcept = default;
@@ -117,6 +139,7 @@ Document::operator =(Document &&rhs) noexcept {
     assert( ! _cache && ! rhs._cache);
     _id = std::move(rhs._id);
     _fields = std::move(rhs._fields);
+    _backingBuffer = std::move(rhs._backingBuffer);
     _lastModified = rhs._lastModified;
     StructuredFieldValue::operator=(std::move(rhs));
     return *this;
@@ -124,14 +147,15 @@ Document::operator =(Document &&rhs) noexcept {
 
 Document &
 Document::operator =(const Document &rhs) {
+    if (this == &rhs) return *this;
     assert( ! _cache && ! rhs._cache);
     _id = rhs._id;
     _fields = rhs._fields;
     _lastModified = rhs._lastModified;
     StructuredFieldValue::operator=(rhs);
+    _backingBuffer.reset();
     return *this;
 }
-
 
 const DocumentType&
 Document::getType() const {

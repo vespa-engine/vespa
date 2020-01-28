@@ -118,7 +118,7 @@ StructDataType::addInheritedField(const Field& field)
 FieldValue::UP
 StructDataType::createFieldValue() const
 {
-    return FieldValue::UP(new StructFieldValue(*this));
+    return std::make_unique<StructFieldValue>(*this);
 }
 
 const Field&
