@@ -120,6 +120,11 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     }
 
     @Test
+    public void testFieldSet2() throws IOException, ParseException {
+        assertCorrectDeriving("fieldset2");
+    }
+
+    @Test
     public void testIndexinfoFieldsets() throws IOException, ParseException {
         assertCorrectDeriving("indexinfo_fieldsets");
     }

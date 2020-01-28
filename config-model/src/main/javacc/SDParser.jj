@@ -673,11 +673,11 @@ void fieldSet(Search search) :
      // Apply settings after parsing since all user field items must be set first
 
      for (Object command : queryCommands)
-       search.fieldSets().userFieldSets().get(setName).queryCommands().add((String)command);
+         search.fieldSets().userFieldSets().get(setName).queryCommands().add((String)command);
 
      for (Object setting : matchSettings) {
-       ((SDField)setting).applyOperations();
-       search.fieldSets().userFieldSets().get(setName).setMatching(((SDField)setting).getMatching());
+         ((SDField)setting).applyOperations();
+         search.fieldSets().userFieldSets().get(setName).setMatching(((SDField)setting).getMatching());
      }
   }
 }

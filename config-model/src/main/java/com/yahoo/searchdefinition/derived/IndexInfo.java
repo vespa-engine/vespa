@@ -286,16 +286,8 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     // TODO: Move this to the FieldSetSettings processor (and rename it) as that already has to look at this.
     private void addFieldSetCommands(IndexInfoConfig.Indexinfo.Builder iiB, FieldSet fieldSet) {
-        // Explicit query commands on the field set, overrides everything.
-        if (!fieldSet.queryCommands().isEmpty()) {
-            for (String qc : fieldSet.queryCommands()) {
-                iiB.command(
-                        new IndexInfoConfig.Indexinfo.Command.Builder()
-                        .indexname(fieldSet.getName())
-                        .command(qc));
-            }
-            return;
-        }        
+        for (String qc : fieldSet.queryCommands())
+            iiB.command(new IndexInfoConfig.Indexinfo.Command.Builder().indexname(fieldSet.getName()).command(qc));
         boolean anyIndexing = false;
         boolean anyAttributing = false;
         boolean anyLowerCasing = false;
