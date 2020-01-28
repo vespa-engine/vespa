@@ -94,6 +94,11 @@ protected:
     virtual bool hasFieldValue(const Field&) const = 0;
     virtual void removeFieldValue(const Field&) = 0;
     virtual FieldValue::UP getFieldValue(const Field&) const = 0;
+    /**
+     * Fetches the value of the field and return true if present.
+     * The document, or the buffer the document was constructed from must live longer than the value.
+     * This restriction allows lightweight object representation and is significantly faster in many cases.
+     */
     virtual bool getFieldValue(const Field& field, FieldValue& value) const = 0;
     virtual void setFieldValue(const Field&, FieldValue::UP value) = 0;
     void setFieldValue(const Field & field, const FieldValue & value);
