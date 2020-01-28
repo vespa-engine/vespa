@@ -90,17 +90,6 @@ public class Flags {
             "Takes effect on the next deployment of the application",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag INCLUDE_SIS_IN_TRUSTSTORE = defineFeatureFlag(
-            "include-sis-in-truststore", false,
-            "Whether to use the trust store backed by Athenz and (in public) Service Identity certificates in " +
-            "host-admin and/or Docker containers",
-            "Takes effect on restart of host-admin (for host-admin), and restart of Docker container.",
-            // For host-admin, HOSTNAME and NODE_TYPE is available
-            // For Docker containers, HOSTNAME and APPLICATION_ID is available
-            // WARNING: Having different sets of dimensions is DISCOURAGED in general, but needed for here since
-            // trust store for host-admin is determined before having access to application ID from node repo.
-            HOSTNAME, NODE_TYPE, APPLICATION_ID);
-
     public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
             "tls-insecure-mixed-mode", "tls_client_mixed_server",
             "TLS insecure mixed mode. Allowed values: ['plaintext_client_mixed_server', 'tls_client_mixed_server', 'tls_client_tls_server']",
