@@ -316,10 +316,7 @@ public class InternalStepRunner implements StepRunner {
                                                                                                                Optional.of(platform));
         if (services.isEmpty()) {
             logger.log("Config status not currently available -- will retry.");
-            Step step = setTheStage ? installInitialReal : installReal;
-            return run.stepInfo(step).get().startTime().get().isBefore(controller.clock().instant().minus(Duration.ofMinutes(5)))
-                   ? Optional.of(error)
-                   : Optional.empty();
+            return Optional.empty();
         }
         List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
                                                                                              id.application(),
