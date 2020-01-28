@@ -124,7 +124,11 @@ Requires: valgrind
 Requires: Judy
 Requires: xxhash
 Requires: xxhash-libs >= 0.6.5
+%if 0%{?el8}
+Requires: openblas
+%else
 Requires: openblas-serial
+%endif
 Requires: lz4
 Requires: libzstd
 Requires: zlib
