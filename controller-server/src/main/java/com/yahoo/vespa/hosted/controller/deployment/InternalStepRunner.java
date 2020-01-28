@@ -903,6 +903,8 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
+                "        <accesslog type='json' fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S'/>\n" +
+                "\n" +
                 "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
                 "            " + resourceString + "\n" +
                 "        </nodes>\n" +
