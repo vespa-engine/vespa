@@ -251,7 +251,6 @@ public class ApplicationController {
     /** Change status of all global endpoints for given deployment */
     public void setGlobalRotationStatus(DeploymentId deployment, EndpointStatus status) {
         var globalEndpoints = findGlobalEndpoints(deployment);
-        if (globalEndpoints.isEmpty()) throw new IllegalArgumentException(deployment + " has no global endpoints");
         globalEndpoints.forEach(endpoint -> {
             try {
                 configServer.setGlobalRotationStatus(deployment, endpoint.upstreamName(), status);

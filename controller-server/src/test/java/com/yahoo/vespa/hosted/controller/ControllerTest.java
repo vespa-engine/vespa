@@ -210,17 +210,6 @@ public class ControllerTest {
         assertEquals(2, upstreamOneEndpoints.get().size());
         assertTrue("All upstreams are out", upstreamOneEndpoints.get().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.out));
         assertTrue("Reason is set", upstreamOneEndpoints.get().stream().allMatch(es -> es.getReason().equals("unit-test")));
-
-        // Deployment without a global endpoint
-        tester.serviceRegistry().routingGeneratorMock().putEndpoints(deployment, List.of(
-                new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
-                new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
-                new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3")
-        ));
-        try {
-            tester.controller().applications().setGlobalRotationStatus(deployment, status);
-            fail("Expected exception");
-        } catch (IllegalArgumentException ignored) {}
     }
 
     @Test

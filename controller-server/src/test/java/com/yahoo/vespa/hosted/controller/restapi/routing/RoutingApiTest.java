@@ -46,6 +46,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         var applicationPackage = new ApplicationPackageBuilder()
                 .region(westZone.region())
                 .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
                 .build();
         context.submit(applicationPackage).deploy();
         context.addRoutingPolicy(westZone, true);
@@ -103,7 +104,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         var applicationPackage = new ApplicationPackageBuilder()
                 .region(westZone.region())
                 .region(eastZone.region())
-                .endpoint("default", "qrs", eastZone.region().value(), westZone.region().value())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
                 .build();
         context.submit(applicationPackage).deploy();
 
@@ -150,11 +151,27 @@ public class RoutingApiTest extends ControllerContainerTest {
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/zone-status-in.json"));
+    }
 
-        // TODO(mpolden): Remove the following once a zone supports either of routing policy and rotation
+    // TODO(mpolden): Remove this once a zone supports either of routing policy and rotation
+    @Test
+    public void mixed_routing() {
+        // Deploy application
+        var context = deploymentTester.newDeploymentContext();
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(westZone.region())
+                .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .build();
+        context.submit(applicationPackage).deploy();
+
+        // Assign policy in one zone
+        deploymentTester.controllerTester().zoneRegistry().setDirectlyRouted(ZoneApiMock.from(westZone));
+        context.addRoutingPolicy(westZone, true);
 
         // GET status with both policy and rotation assigned
-        context.addRoutingPolicy(westZone, true);
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("multi-status-initial.json"));
