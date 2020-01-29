@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <queue>
+#include <cinttypes>
 #include "std-random.h"
 #include "nns.h"
 
@@ -243,13 +244,13 @@ public:
         if (_nodes.size() % 10000 == 0) {
             double div = _nodes.size();
             fprintf(stderr, "added docs: %d\n", (int)div);
-            fprintf(stderr, "distance calls for layer: %zu is %.3f per doc\n", distcalls_search_layer, distcalls_search_layer/ div);
-            fprintf(stderr, "distance calls for heuristic: %zu is %.3f per doc\n", distcalls_heuristic, distcalls_heuristic / div);
-            fprintf(stderr, "distance calls for simple: %zu is %.3f per doc\n", distcalls_simple, distcalls_simple / div);
-            fprintf(stderr, "distance calls for shrink: %zu is %.3f per doc\n", distcalls_shrink, distcalls_shrink / div);
-            fprintf(stderr, "distance calls for refill: %zu is %.3f per doc\n", distcalls_refill, distcalls_refill / div);
-            fprintf(stderr, "distance calls for other: %zu is %.3f per doc\n", distcalls_other, distcalls_other / div);
-            fprintf(stderr, "refill needed calls: %zu is %.3f per doc\n", refill_needed_calls, refill_needed_calls / div);
+            fprintf(stderr, "distance calls for layer: %" PRIu64 " is %.3f per doc\n", distcalls_search_layer, distcalls_search_layer/ div);
+            fprintf(stderr, "distance calls for heuristic: %" PRIu64 " is %.3f per doc\n", distcalls_heuristic, distcalls_heuristic / div);
+            fprintf(stderr, "distance calls for simple: %" PRIu64 " is %.3f per doc\n", distcalls_simple, distcalls_simple / div);
+            fprintf(stderr, "distance calls for shrink: %" PRIu64 " is %.3f per doc\n", distcalls_shrink, distcalls_shrink / div);
+            fprintf(stderr, "distance calls for refill: %" PRIu64 " is %.3f per doc\n", distcalls_refill, distcalls_refill / div);
+            fprintf(stderr, "distance calls for other: %" PRIu64 " is %.3f per doc\n", distcalls_other, distcalls_other / div);
+            fprintf(stderr, "refill needed calls: %" PRIu64 " is %.3f per doc\n", refill_needed_calls, refill_needed_calls / div);
         }
     }
 

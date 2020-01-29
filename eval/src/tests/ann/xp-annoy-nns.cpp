@@ -3,6 +3,7 @@
 #include "nns.h"
 #include "std-random.h"
 #include <assert.h>
+#include <cinttypes>
 #include <algorithm>
 #include <queue>
 #include <set>
@@ -389,11 +390,11 @@ AnnoyLikeNns::topK(uint32_t k, Vector vector, uint32_t search_k)
 void
 AnnoyLikeNns::dumpStats() {
     fprintf(stderr, "stats for AnnoyLikeNns:\n");
-    fprintf(stderr, "planeDistance() calls: %zu\n", plane_dist_cnt);
-    fprintf(stderr, "weightedDistance() calls: %zu\n", w_cen_dist_cnt);
-    fprintf(stderr, "leaf split() calls: %zu\n", leaf_split_cnt);
-    fprintf(stderr, "topK() calls: %zu\n", find_top_k_cnt);
-    fprintf(stderr, "findCandidates() calls: %zu\n", find_cand_cnt);
+    fprintf(stderr, "planeDistance() calls: %" PRIu64 "\n", plane_dist_cnt);
+    fprintf(stderr, "weightedDistance() calls: %" PRIu64 "\n", w_cen_dist_cnt);
+    fprintf(stderr, "leaf split() calls: %" PRIu64 "\n", leaf_split_cnt);
+    fprintf(stderr, "topK() calls: %" PRIu64 "\n", find_top_k_cnt);
+    fprintf(stderr, "findCandidates() calls: %" PRIu64 "\n", find_cand_cnt);
     std::vector<uint32_t> depths;
     _roots[0]->stats(depths);
     std::vector<uint32_t> counts;
