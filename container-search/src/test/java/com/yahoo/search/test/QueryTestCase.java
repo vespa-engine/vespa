@@ -889,7 +889,7 @@ public class QueryTestCase {
 
     @Test
     public void testImplicitPhrase() {
-        Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:a-b myfield:c"));
 
         SearchDefinition test = new SearchDefinition("test");
         Index myField = new Index("myfield");
@@ -899,12 +899,12 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
-        assertEquals("AND myfield:'it s' myfield:fine", query.getModel().getQueryTree().toString());
+        assertEquals("AND myfield:'it s' myfield:\"a b\" myfield:c", query.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testImplicitAnd() {
-        Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:a-b myfield:c"));
 
         SearchDefinition test = new SearchDefinition("test");
         Index myField = new Index("myfield");
@@ -914,7 +914,7 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
-        assertEquals("AND (SAND myfield:it myfield:s) myfield:fine", query.getModel().getQueryTree().toString());
+        assertEquals("AND (SAND myfield:it myfield:s) myfield:a myfield:b myfield:c", query.getModel().getQueryTree().toString());
     }
 
     @Test
