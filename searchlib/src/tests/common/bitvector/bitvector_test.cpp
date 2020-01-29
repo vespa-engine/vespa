@@ -542,15 +542,16 @@ TEST("requireThatGrowWorks")
 {
     vespalib::GenerationHolder g;
     GrowableBitVector v(200, 200, g);
+    EXPECT_EQUAL(0u, v.countTrueBits());
     
-    v.setBit(7);
-    v.setBit(39);
-    v.setBit(71);
-    v.setBit(103);
-   
-    EXPECT_EQUAL(200u, v.size()); 
+    v.setBitAndMaintainCount(7);
+    v.setBitAndMaintainCount(39);
+    v.setBitAndMaintainCount(71);
+    v.setBitAndMaintainCount(103);
+    EXPECT_EQUAL(4u, v.countTrueBits());
+
+    EXPECT_EQUAL(200u, v.size());
     EXPECT_EQUAL(1023u, v.capacity()); 
-    v.invalidateCachedCount();
     EXPECT_TRUE(assertBV("[7,39,71,103]", v));
     EXPECT_EQUAL(4u, v.countTrueBits());
     EXPECT_TRUE(v.reserve(1024));
@@ -584,6 +585,13 @@ TEST("requireThatGrowWorks")
     EXPECT_EQUAL(2047u, v.capacity()); 
     EXPECT_TRUE(assertBV("[7,39,71]", v));
     EXPECT_EQUAL(3u, v.countTrueBits());
+
+    v.invalidateCachedCount();
+    EXPECT_TRUE(v.reserve(3100));
+    EXPECT_EQUAL(100u, v.size());
+    EXPECT_EQUAL(4095u, v.capacity());
+    EXPECT_EQUAL(3u, v.countTrueBits());
+
     g.transferHoldLists(1);
     g.trimHoldLists(2);
 }
