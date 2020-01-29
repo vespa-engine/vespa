@@ -302,7 +302,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
         }
 
-        if (accessLogElements.isEmpty() && cluster.getSearch() != null)
+        if (accessLogElements.isEmpty())
             cluster.addDefaultSearchAccessLog();
     }
 
