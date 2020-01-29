@@ -7,6 +7,7 @@
 #include "selectpruner.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
 namespace proton {
@@ -24,7 +25,7 @@ namespace {
 class AttrVisitor : public document::select::CloningVisitor
 {
 public:
-    typedef std::map<vespalib::string, uint32_t> AttrMap;
+    using AttrMap = std::map<vespalib::string, uint32_t>;
 
     AttrMap _amap;
     const search::IAttributeManager &_amgr;
@@ -62,7 +63,7 @@ AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::At
 
 AttrVisitor::~AttrVisitor() = default;
 
-bool isSingleValueThatWEHandle(BasicType type) {
+bool isSingleValueThatWeHandle(BasicType type) {
     return (type != BasicType::PREDICATE) && (type != BasicType::TENSOR) && (type != BasicType::REFERENCE);
 }
 
@@ -75,17 +76,18 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
     bool complex = false;
     vespalib::string name = SelectUtils::extractFieldName(expr, complex);
 
-    AttributeGuard::UP ag(_amgr.getAttribute(name));
-    if (ag->valid()) {
+    auto av = _amgr.readable_attribute_vector(name);
+    if (av) {
         if (complex) {
             ++_complexAttrs;
             // Don't try to optimize complex attribute references yet.
             _valueNode = expr.clone();
             return;
         }
-        std::shared_ptr<search::AttributeVector> av(ag->getSP());
-        if (av->getCollectionType() == CollectionType::SINGLE) {
-            if (isSingleValueThatWEHandle(av->getBasicType())) {
+        auto guard = av->makeReadGuard(false);
+        const auto* attr = guard->attribute();
+        if (attr->getCollectionType() == CollectionType::SINGLE) {
+            if (isSingleValueThatWeHandle(attr->getBasicType())) {
                 ++_svAttrs;
                 auto it(_amap.find(name));
                 uint32_t idx(invalidIdx());
@@ -99,7 +101,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
                     idx = it->second;
                 }
                 assert(idx != invalidIdx());
-                _valueNode = std::make_unique<AttributeFieldValueNode>(expr.getDocType(), name, av);
+                _valueNode = std::make_unique<AttributeFieldValueNode>(expr.getDocType(), name, idx);
             } else {
                 ++_complexAttrs;
                 // Don't try to optimize predicate/tensor/reference attributes yet.

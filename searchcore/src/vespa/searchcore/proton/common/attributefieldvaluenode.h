@@ -3,18 +3,19 @@
 
 #include <vespa/document/select/valuenodes.h>
 
-namespace search { class AttributeVector; }
+namespace search { class ReadableAttributeVector; }
 namespace proton {
 
 class AttributeFieldValueNode : public document::select::FieldValueNode
 {
     using Context = document::select::Context;
-    std::shared_ptr<search::AttributeVector> _attribute;
+    uint32_t _attr_guard_index;
 
 public:
+    // Precondition: attribute must be of a single-value type.
     AttributeFieldValueNode(const vespalib::string& doctype,
                             const vespalib::string& field,
-                            const std::shared_ptr<search::AttributeVector> &attribute);
+                            uint32_t attr_guard_index);
 
     std::unique_ptr<document::select::Value> getValue(const Context &context) const override;
     std::unique_ptr<document::select::Value> traceValue(const Context &context, std::ostream& out) const override;

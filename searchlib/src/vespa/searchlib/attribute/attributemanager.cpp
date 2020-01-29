@@ -131,7 +131,7 @@ bool AttributeManager::hasReaders() const
 const AttributeManager::VectorHolder *
 AttributeManager::findAndLoadAttribute(const string & name) const
 {
-    const VectorHolder * loadedVector(NULL);
+    const VectorHolder * loadedVector(nullptr);
     AttributeMap::const_iterator found = _attributes.find(name);
     if (found != _attributes.end()) {
         AttributeVector & vec = *found->second;
@@ -263,5 +263,14 @@ AttributeManager::asyncForAttribute(const vespalib::string &, std::unique_ptr<at
     throw std::runtime_error("search::AttributeManager::asyncForAttribute should never be called.");
 }
 
+std::shared_ptr<attribute::ReadableAttributeVector>
+AttributeManager::readable_attribute_vector(const string& name) const
+{
+    const auto* attr = findAndLoadAttribute(name);
+    if (attr) {
+        return *attr;
+    }
+    return {};
+}
 
 }

@@ -34,6 +34,7 @@ private:
     void testGuards();
     void testConfigConvert();
     void testContext();
+    void can_get_readable_attribute_vector_by_name();
 
     bool
     assertDataType(BT::Type exp,
@@ -377,6 +378,21 @@ AttributeManagerTest::testContext()
     }
 }
 
+void
+AttributeManagerTest::can_get_readable_attribute_vector_by_name()
+{
+    auto attr = AttributeFactory::createAttribute("cool_attr", Config(BT::INT32, CT::SINGLE));
+    // Ensure there's something to actually load, or fetching the attribute will throw.
+    attr->addDocs(64);
+    attr->commit();
+    AttributeManager manager;
+    manager.add(attr);
+    auto av = manager.readable_attribute_vector("cool_attr");
+    EXPECT_EQUAL(av.get(), static_cast<ReadableAttributeVector*>(attr.get()));
+    av = manager.readable_attribute_vector("uncool_attr");
+    EXPECT_TRUE(av.get() == nullptr);
+}
+
 int AttributeManagerTest::Main()
 {
     TEST_INIT("attributemanager_test");
@@ -385,6 +401,7 @@ int AttributeManagerTest::Main()
     testGuards();
     testConfigConvert();
     testContext();
+    can_get_readable_attribute_vector_by_name();
 
     TEST_DONE();
 }

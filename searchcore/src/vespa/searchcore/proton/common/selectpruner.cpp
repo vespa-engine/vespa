@@ -12,6 +12,7 @@
 #include <vespa/document/select/invalidconstant.h>
 #include <vespa/document/select/valuenodes.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
 using document::select::And;
@@ -395,7 +396,6 @@ SelectPruner::visitIdValueNode(const IdValueNode &expr)
     CloningVisitor::visitIdValueNode(expr);
 }
 
-
 void
 SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
 {
@@ -440,11 +440,11 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     bool svAttr = false;
     bool attrField = false;
     if (_amgr != nullptr) {
-        AttributeGuard::UP ag(_amgr->getAttribute(name));
-        if (ag->valid()) {
+        auto attr = _amgr->readable_attribute_vector(name);
+        if (attr) {
             attrField = true;
-            auto av(ag->getSP());
-            if (av->getCollectionType() == CollectionType::SINGLE && !complex) {
+            auto ag = attr->makeReadGuard(false);
+            if ((ag->attribute()->getCollectionType() == CollectionType::SINGLE) && !complex) {
                 svAttr = true;
             }
         }
