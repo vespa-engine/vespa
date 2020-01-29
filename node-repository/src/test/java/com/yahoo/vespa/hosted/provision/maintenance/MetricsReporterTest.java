@@ -10,6 +10,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
@@ -30,6 +31,7 @@ import org.junit.Test;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -83,12 +85,17 @@ public class MetricsReporterTest {
         expectedMetrics.put("wantToRetire", 0);
         expectedMetrics.put("wantToDeprovision", 0);
         expectedMetrics.put("failReport", 0);
-        expectedMetrics.put("allowedToBeDown", 0);
+        expectedMetrics.put("allowedToBeDown", 1);
+        expectedMetrics.put("suspended", 1);
+        expectedMetrics.put("suspendedSeconds", 123L);
         expectedMetrics.put("numberOfServices", 0L);
 
+        ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
+        when(orchestrator.getNodeStatuses()).thenReturn(hostName ->
+            Optional.of(HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)))
+        );
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
@@ -100,8 +107,8 @@ public class MetricsReporterTest {
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1)
-        );
+                Duration.ofMinutes(1),
+                clock);
         metricsReporter.maintain();
 
         assertEquals(expectedMetrics, metric.values);
@@ -143,14 +150,15 @@ public class MetricsReporterTest {
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
 
         TestMetric metric = new TestMetric();
+        ManualClock clock = new ManualClock();
         MetricsReporter metricsReporter = new MetricsReporter(
                 nodeRepository,
                 metric,
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1)
-        );
+                Duration.ofMinutes(1),
+                clock);
         metricsReporter.maintain();
 
         assertEquals(0, metric.values.get("hostedVespa.readyHosts")); // Only tenants counts
