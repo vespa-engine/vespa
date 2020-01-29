@@ -10,6 +10,8 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <assert.h>
 
+#include <openblas/cblas.h>
+
 namespace vespalib::tensor {
 
 using eval::ValueType;
@@ -21,29 +23,8 @@ using namespace eval::operation;
 
 namespace {
 
-template <typename LCT, typename RCT>
-struct HWSupport {
-    static double call(hwaccelrated::IAccelrated *, const LCT *lhs, const RCT *rhs, size_t len) {
-        double result = 0.0;
-        for (size_t i = 0; i < len; ++i) {
-            result += (lhs[i] * rhs[i]);
-        }
-        return result;
-    }
-};
-template <> struct HWSupport<float, float> {
-    static double call(hwaccelrated::IAccelrated *hw, const float *lhs, const float *rhs, size_t len) {
-        return hw->dotProduct(lhs, rhs, len);
-    }
-};
-template <> struct HWSupport<double, double> {
-    static double call(hwaccelrated::IAccelrated *hw, const double *lhs, const double *rhs, size_t len) {
-        return hw->dotProduct(lhs, rhs, len);
-    }
-};
-
 template <typename LCT, typename RCT, bool lhs_common_inner, bool rhs_common_inner>
-double sparse_dot_product(const LCT *lhs, const RCT *rhs, size_t lhs_size, size_t common_size, size_t rhs_size) {
+double my_dot_product(const LCT *lhs, const RCT *rhs, size_t lhs_size, size_t common_size, size_t rhs_size) {
     double result = 0.0;
     for (size_t i = 0; i < common_size; ++i) {
         result += ((*lhs) * (*rhs));
@@ -65,15 +46,39 @@ void my_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
     for (size_t i = 0; i < self.lhs_size; ++i) {
         const RCT *rhs = rhs_cells.cbegin();
         for (size_t j = 0; j < self.rhs_size; ++j) {
-            if (lhs_common_inner && rhs_common_inner) {
-                *dst++ = HWSupport<LCT,RCT>::call(self.hw.get(), lhs, rhs, self.common_size);
-            } else {
-                *dst++ = sparse_dot_product<LCT,RCT,lhs_common_inner,rhs_common_inner>(lhs, rhs, self.lhs_size, self.common_size, self.rhs_size);
-            }
+            *dst++ = my_dot_product<LCT,RCT,lhs_common_inner,rhs_common_inner>(lhs, rhs, self.lhs_size, self.common_size, self.rhs_size);
             rhs += (rhs_common_inner ? self.common_size : 1);
         }
         lhs += (lhs_common_inner ? self.common_size : 1);
     }
+    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+}
+
+template <bool lhs_common_inner, bool rhs_common_inner>
+void my_cblas_double_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
+    const DenseMatMulFunction::Self &self = *((const DenseMatMulFunction::Self *)(param));
+    auto lhs_cells = DenseTensorView::typify_cells<double>(state.peek(1));
+    auto rhs_cells = DenseTensorView::typify_cells<double>(state.peek(0));
+    auto dst_cells = state.stash.create_array<double>(self.lhs_size * self.rhs_size);
+    cblas_dgemm(CblasRowMajor, lhs_common_inner ? CblasNoTrans : CblasTrans, rhs_common_inner ? CblasTrans : CblasNoTrans,
+                self.lhs_size, self.rhs_size, self.common_size, 1.0,
+                lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
+                rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
+                0.0, dst_cells.begin(), self.rhs_size);
+    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+}
+
+template <bool lhs_common_inner, bool rhs_common_inner>
+void my_cblas_float_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
+    const DenseMatMulFunction::Self &self = *((const DenseMatMulFunction::Self *)(param));
+    auto lhs_cells = DenseTensorView::typify_cells<float>(state.peek(1));
+    auto rhs_cells = DenseTensorView::typify_cells<float>(state.peek(0));
+    auto dst_cells = state.stash.create_array<float>(self.lhs_size * self.rhs_size);
+    cblas_sgemm(CblasRowMajor, lhs_common_inner ? CblasNoTrans : CblasTrans, rhs_common_inner ? CblasTrans : CblasNoTrans,
+                self.lhs_size, self.rhs_size, self.common_size, 1.0,
+                lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
+                rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
+                0.0, dst_cells.begin(), self.rhs_size);
     state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
@@ -83,14 +88,28 @@ struct MyMatMulOp {
     static auto get_fun() { return my_matmul_op<LCT,RCT,lhs_common_inner,rhs_common_inner>; }
 };
 
+template <bool lhs_common_inner, bool rhs_common_inner>
+eval::InterpretedFunction::op_function my_select3(CellType lct, CellType rct)
+{
+    if (lct == rct) {
+        if (lct == ValueType::CellType::DOUBLE) {
+            return my_cblas_double_matmul_op<lhs_common_inner,rhs_common_inner>;
+        }
+        if (lct == ValueType::CellType::FLOAT) {
+            return my_cblas_float_matmul_op<lhs_common_inner,rhs_common_inner>;
+        }
+    }
+    return select_2<MyMatMulOp<lhs_common_inner,rhs_common_inner>>(lct, rct);
+}
+
 template <bool lhs_common_inner>
 eval::InterpretedFunction::op_function my_select2(CellType lct, CellType rct,
                                                   bool rhs_common_inner)
 {
     if (rhs_common_inner) {
-        return select_2<MyMatMulOp<lhs_common_inner,true>>(lct, rct);
+        return my_select3<lhs_common_inner,true>(lct, rct);
     } else {
-        return select_2<MyMatMulOp<lhs_common_inner,false>>(lct, rct);
+        return my_select3<lhs_common_inner,false>(lct, rct);
     }
 }
 
@@ -152,8 +171,7 @@ DenseMatMulFunction::Self::Self(const eval::ValueType &result_type_in,
     : result_type(result_type_in),
       lhs_size(lhs_size_in),
       common_size(common_size_in),
-      rhs_size(rhs_size_in),
-      hw(hwaccelrated::IAccelrated::getAccelrator())
+      rhs_size(rhs_size_in)
 {
 }
 
