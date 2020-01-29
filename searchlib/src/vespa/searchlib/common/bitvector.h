@@ -45,7 +45,7 @@ public:
     }
     Index countTrueBits() const {
         if ( ! isValidCount()) {
-            _numTrueBits.store(count(), std::memory_order_relaxed);
+            updateCount();
         }
         return _numTrueBits.load(std::memory_order_relaxed);
     }
@@ -255,6 +255,7 @@ protected:
     BitVector(void * buf, Index sz) : BitVector(buf, 0, sz) { }
     BitVector() : BitVector(nullptr, 0) { }
     void init(void * buf,  Index start, Index end);
+    void updateCount() const { _numTrueBits.store(count(), std::memory_order_relaxed); }
     void setTrueBits(Index numTrueBits) { _numTrueBits.store(numTrueBits, std::memory_order_relaxed); }
     VESPA_DLL_LOCAL void clearIntervalNoInvalidation(Index start, Index end);
     bool isValidCount() const { return isValidCount(_numTrueBits.load(std::memory_order_relaxed)); }
@@ -340,7 +341,7 @@ private:
             func(start+pos);
             start += pos + 1;
             word >>= pos;
-            word >>= 1;
+            word >>= 1u;
         }
     }
 
@@ -356,8 +357,6 @@ protected:
     friend vespalib::nbostream &
     operator>>(vespalib::nbostream &in, BitVector &bv);
 };
-
-typedef BitVector ConstBitVectorReference;
 
 vespalib::nbostream &
 operator<<(vespalib::nbostream &out, const BitVector &bv);
