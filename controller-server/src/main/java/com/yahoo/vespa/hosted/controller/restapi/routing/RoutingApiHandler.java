@@ -79,7 +79,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var zone = zoneFrom(path);
         if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
             var status = in ? GlobalRouting.Status.in : GlobalRouting.Status.out;
-            controller.applications().routingPolicies().setGlobalRoutingStatus(zone, status);
+            controller.routingController().policies().setGlobalRoutingStatus(zone, status);
         } else {
             controller.serviceRegistry().configServer().setGlobalRotationStatus(zone, in);
         }
@@ -92,7 +92,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var slime = new Slime();
         var root = slime.setObject();
         if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
-            var zonePolicy = controller.applications().routingPolicies().get(zone);
+            var zonePolicy = controller.routingController().policies().get(zone);
             zoneStatusToSlime(root, zonePolicy.zone(), zonePolicy.globalRouting(), RoutingType.policy);
         } else {
             // Rotation status per zone only exposes in/out status, no agent or time of change.
@@ -115,11 +115,11 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             var endpointStatus = new EndpointStatus(in ? EndpointStatus.Status.in : EndpointStatus.Status.out, "",
                                                     agent.name(),
                                                     controller.clock().instant().getEpochSecond());
-            controller.applications().setGlobalRotationStatus(deployment, endpointStatus);
+            controller.routingController().setGlobalRotationStatus(deployment, endpointStatus);
         }
 
         // Set policy status
-        controller.applications().routingPolicies().setGlobalRoutingStatus(deployment, status, agent);
+        controller.routingController().policies().setGlobalRoutingStatus(deployment, status, agent);
         return new MessageResponse("Set global routing status for " + deployment + " to " + (in ? "IN" : "OUT"));
     }
 
@@ -131,7 +131,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
         // Include status from rotation
         if (rotationCanRouteTo(deployment.zoneId(), instance)) {
-            var rotationStatus = controller.applications().globalRotationStatus(deployment);
+            var rotationStatus = controller.routingController().globalRotationStatus(deployment);
             // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
             var endpointStatus = rotationStatus.values().stream().findFirst();
             if (endpointStatus.isPresent()) {
@@ -152,7 +152,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         }
 
         // Include status from routing policies
-        var routingPolicies = controller.applications().routingPolicies().get(deployment);
+        var routingPolicies = controller.routingController().policies().get(deployment);
         for (var policy : routingPolicies.values()) {
             deploymentStatusToSlime(deploymentsObject.addObject(), policy);
         }

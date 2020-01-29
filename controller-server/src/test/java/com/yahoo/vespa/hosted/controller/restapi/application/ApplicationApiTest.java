@@ -1610,7 +1610,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void assertGlobalRouting(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
         var changedAt = tester.controller().clock().instant();
-        var westPolicies = tester.controller().applications().routingPolicies().get(deployment);
+        var westPolicies = tester.controller().routingController().policies().get(deployment);
         assertEquals(1, westPolicies.size());
         var westPolicy = westPolicies.values().iterator().next();
         assertEquals(status, westPolicy.status().globalRouting().status());

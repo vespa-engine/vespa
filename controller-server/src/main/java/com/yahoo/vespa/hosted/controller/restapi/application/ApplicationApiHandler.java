@@ -840,7 +840,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .forEach(globalEndpointUrls::add);
 
         // Per-cluster endpoints. These are backed by load balancers.
-        var routingPolicies = controller.applications().routingPolicies().get(instance.id()).values();
+        var routingPolicies = controller.routingController().policies().get(instance.id()).values();
         for (var policy : routingPolicies) {
             policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
@@ -1029,7 +1029,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add endpoint(s) defined by routing policies
         var endpointArray = response.setArray("endpoints");
-        for (var policy : controller.applications().routingPolicies().get(deploymentId).values()) {
+        for (var policy : controller.routingController().policies().get(deploymentId).values()) {
             if (!policy.status().isActive()) continue;
             Cursor endpointObject = endpointArray.addObject();
             Endpoint endpoint = policy.endpointIn(controller.system());
@@ -1038,11 +1038,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             endpointObject.setString("url", endpoint.url().toString());
         }
 
-        // serviceUrls contains zone/cluster-specific endpoints for this deployment. The name of these endpoints may
-        // contain  the cluster name (if non-default) and since the controller has no knowledge of clusters, we have to
-        // ask the routing layer here
+        // serviceUrls contains all valid endpoints for this deployment, including global. The name of these endpoints
+        // may contain the cluster name (if non-default). Since the controller has no knowledge of clusters for legacy
+        // endpoints, we can't generate these URLs on-the-fly and we have to query the routing layer.
         Cursor serviceUrlArray = response.setArray("serviceUrls");
-        controller.applications().getDeploymentEndpoints(deploymentId)
+        controller.routingController().legacyEndpointsOf(deploymentId)
                   .forEach(endpoint -> serviceUrlArray.addString(endpoint.toString()));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
@@ -1186,7 +1186,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
         var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
         var status = inService ? GlobalRouting.Status.in : GlobalRouting.Status.out;
-        controller.applications().routingPolicies().setGlobalRoutingStatus(deployment, status, agent);
+        controller.routingController().policies().setGlobalRoutingStatus(deployment, status, agent);
     }
 
     /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */
@@ -1197,7 +1197,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         long timestamp = controller.clock().instant().getEpochSecond();
         var status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         var endpointStatus = new EndpointStatus(status, reason, agent.name(), timestamp);
-        controller.applications().setGlobalRotationStatus(deployment, endpointStatus);
+        controller.routingController().setGlobalRotationStatus(deployment, endpointStatus);
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
@@ -1205,7 +1205,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                      ZoneId.from(environment, region));
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("globalrotationoverride");
-        controller.applications().globalRotationStatus(deploymentId)
+        controller.routingController().globalRotationStatus(deploymentId)
                   .forEach((endpoint, status) -> {
                       array.addString(endpoint.upstreamName());
                       Cursor statusObject = array.addObject();
@@ -1674,7 +1674,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
-                                                                      controller.applications().clusterEndpoints(deployments),
+                                                                      controller.routingController().zoneEndpointsOf(deployments),
                                                                       controller.applications().contentClustersByZone(deployments)));
     }
 

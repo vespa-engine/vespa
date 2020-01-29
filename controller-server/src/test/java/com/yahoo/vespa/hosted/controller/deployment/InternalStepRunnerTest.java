@@ -258,6 +258,9 @@ public class InternalStepRunnerTest {
 
     @Test
     public void alternativeEndpointsAreDetected() {
+        var systemTestZone =  JobType.systemTest.zone(system());
+        var stagingZone =  JobType.stagingTest.zone(system());
+        tester.controllerTester().zoneRegistry().setDirectlyRouted(ZoneApiMock.from(systemTestZone), ZoneApiMock.from(stagingZone));
         app.newRun(JobType.systemTest);
         tester.runner().run();;
         tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));

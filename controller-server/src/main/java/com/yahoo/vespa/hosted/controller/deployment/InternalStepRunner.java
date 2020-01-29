@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.ServiceState;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -87,8 +86,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
@@ -437,7 +434,7 @@ public class InternalStepRunner implements StepRunner {
     /** Returns true iff all containers in the deployment give 100 consecutive 200 OK responses on /status.html. */
     // TODO: Change implementation to only be used for real deployments when useConfigServerForTesterAPI() always returns true
     private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
-        var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zoneId)));
+        var endpoints = controller.routingController().zoneEndpointsOf(Set.of(new DeploymentId(id, zoneId)));
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
@@ -473,7 +470,7 @@ public class InternalStepRunner implements StepRunner {
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
         if (useConfigServerForTesterAPI(zone) && id.instance().isTester()) return true; // Endpoints not used in this case, always return true
 
-        var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zone)));
+        var endpoints = controller.routingController().zoneEndpointsOf(Set.of(new DeploymentId(id, zone)));
         if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
             return false;
@@ -546,7 +543,7 @@ public class InternalStepRunner implements StepRunner {
         deployments.add(new DeploymentId(id.application(), zoneId));
 
         logger.log("Attempting to find endpoints ...");
-        var endpoints = controller.applications().clusterEndpoints(deployments);
+        var endpoints = controller.routingController().zoneEndpointsOf(deployments);
         if ( ! endpoints.containsKey(zoneId)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
