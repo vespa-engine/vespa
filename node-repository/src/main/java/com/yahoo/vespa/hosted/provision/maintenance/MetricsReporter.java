@@ -16,9 +16,9 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -40,18 +40,21 @@ public class MetricsReporter extends Maintainer {
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
+    private final Clock clock;
 
     MetricsReporter(NodeRepository nodeRepository,
                     Metric metric,
                     Orchestrator orchestrator,
                     ServiceMonitor serviceMonitor,
                     Supplier<Integer> pendingRedeploymentsSupplier,
-                    Duration interval) {
+                    Duration interval,
+                    Clock clock) {
         super(nodeRepository, interval);
         this.metric = metric;
         this.orchestrator = orchestrator.getNodeStatuses();
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
+        this.clock = clock;
     }
 
     @Override
@@ -127,8 +130,16 @@ public class MetricsReporter extends Maintainer {
         metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
 
         orchestrator.apply(new HostName(node.hostname()))
-                    .map(info -> info.status().isSuspended() ? 1 : 0)
-                    .ifPresent(allowedToBeDown -> metric.set("allowedToBeDown", allowedToBeDown, context));
+                .ifPresent(info -> {
+                    int suspended = info.status().isSuspended() ? 1 : 0;
+                    metric.set("suspended", suspended, context);
+                    metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
+
+                    info.suspendedSince().ifPresent(suspendedSince -> {
+                        Duration duration = Duration.between(suspendedSince, clock.instant());
+                        metric.set("suspendedSeconds", duration.getSeconds(), context);
+                    });
+                });
 
         long numberOfServices;
         HostName hostName = new HostName(node.hostname());
