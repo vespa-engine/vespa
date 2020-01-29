@@ -34,7 +34,7 @@ public class TesterClient {
     public HttpResponse getLog(String testerHostname, int port, Long after) {
         URI testerUri;
         try {
-            testerUri = createBuilder(testerHostname, port, "/tester/v1/log")
+            testerUri = createBuilder(testerHostname, port, "/tester/v1/log2")
                     .addParameter("after", String.valueOf(after))
                     .build();
         } catch (URISyntaxException e) {
