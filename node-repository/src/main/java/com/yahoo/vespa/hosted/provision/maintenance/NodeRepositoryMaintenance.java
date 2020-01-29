@@ -76,7 +76,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, defaults.dirtyExpiry);
         provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, defaults.provisionedExpiry);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, flagSource);
-        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval, null);
+        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval, clock);
         infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, defaults.infrastructureProvisionInterval);
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
                 new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService));
