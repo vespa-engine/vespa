@@ -8,6 +8,8 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.util.Objects;
+
 /**
  * @author hakonhall
  */
@@ -34,6 +36,10 @@ public class ZoneApiMock implements ZoneApi {
         return newBuilder().with(ZoneId.from(environment, region)).build();
     }
 
+    public static ZoneApiMock from(ZoneId zone) {
+        return newBuilder().with(zone).build();
+    }
+
     @Override
     public SystemName getSystemName() { return systemName; }
 
@@ -45,6 +51,19 @@ public class ZoneApiMock implements ZoneApi {
 
     @Override
     public String getCloudNativeRegionName() { return cloudNativeRegionName; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ZoneApiMock that = (ZoneApiMock) o;
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 
     public static class Builder {
         private SystemName systemName = SystemName.defaultSystem();

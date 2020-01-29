@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -99,6 +101,7 @@ public class DeploymentContext {
     private final RoutingGeneratorMock routing;
     private final JobRunner runner;
     private final DeploymentTester tester;
+    private final Set<Environment> deferLoadBalancerProvisioning = new HashSet<>();
 
     private ApplicationVersion lastSubmission = null;
     private boolean deferDnsUpdates = false;
@@ -187,6 +190,15 @@ public class DeploymentContext {
                                  .allMatch(node -> node.currentVersion().equals(version)));
 
         assertFalse(instance().change().hasTargets());
+        return this;
+    }
+
+    /**
+     * Defer provisioning of load balancers in zones in given environment. Default behaviour is to automatically
+     * provision load balancers in all zones that support direct routing.
+     */
+    public DeploymentContext deferLoadBalancerProvisioningIn(Environment... environment) {
+        deferLoadBalancerProvisioning.addAll(List.of(environment));
         return this;
     }
 
@@ -438,6 +450,25 @@ public class DeploymentContext {
         ZoneId zone = zone(job);
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
+        // Provision load balancers in directly routed zones, unless explicitly deferred
+        if (provisionLoadBalancerIn(zone)) {
+            if (job.type().isTest()) {
+                var testerDeployment = new DeploymentId(testerId.id(), zone);
+                configServer().putLoadBalancers(zone, List.of(new LoadBalancer(testerDeployment.toString(),
+                                                                               testerDeployment.applicationId(),
+                                                                               ClusterSpec.Id.from("default"),
+                                                                               HostName.from("lb-host"),
+                                                                               LoadBalancer.State.active,
+                                                                               Optional.of("dns-zone"))));
+            }
+            configServer().putLoadBalancers(zone, List.of(new LoadBalancer(deployment.toString(),
+                                                                           deployment.applicationId(),
+                                                                           ClusterSpec.Id.from("default"),
+                                                                           HostName.from("lb-host"),
+                                                                           LoadBalancer.State.active,
+                                                                           Optional.of("dns-zone"))));
+        }
+
         // First step is always a deployment.
         runner.advance(currentRun(job));
 
@@ -493,6 +524,7 @@ public class DeploymentContext {
 
     /** Sets a single endpoint in the routing layer; this matches that required for the tester */
     private DeploymentContext setEndpoints(ZoneId zone, boolean tester) {
+        if (isDirectlyRouted(zone)) return this;
         var id = instanceId;
         if (tester) {
             id = testerId.id();
@@ -542,8 +574,12 @@ public class DeploymentContext {
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().convergeServices(TesterId.of(id.application()).id(), zone);
         runner.advance(currentRun(job));
-        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
-        setTesterEndpoints(zone);
+        if (provisionLoadBalancerIn(zone)) { // Endpoints are available immediately after deployment in directly routed zones
+            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
+        } else {
+            assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
+            setTesterEndpoints(zone);
+        }
         runner.advance(currentRun(job));
     }
 
@@ -575,6 +611,15 @@ public class DeploymentContext {
         if ( ! instance().deployments().containsKey(zone))
             routing.removeEndpoints(deployment);
         routing.removeEndpoints(new DeploymentId(TesterId.of(job.application()).id(), zone));
+    }
+
+    /** Returns whether a load balancer is expected to be provisioned in given zone */
+    private boolean provisionLoadBalancerIn(ZoneId zone) {
+        return !deferLoadBalancerProvisioning.contains(zone.environment()) && isDirectlyRouted(zone);
+    }
+
+    private boolean isDirectlyRouted(ZoneId zone) {
+        return tester.controller().zoneRegistry().zones().directlyRouted().ids().contains(zone);
     }
 
     private JobId jobId(JobType type) {

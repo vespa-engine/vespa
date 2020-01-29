@@ -111,8 +111,6 @@ public class SystemFlagsDeployerTest {
 
         SystemFlagsDeployResult result = deployer.deployFlags(archive, false);
 
-        System.out.println(result);
-
         assertThat(result.errors()).containsOnly(
                 OperationError.listFailed(exception.getMessage(), prodUsWest1Target));
         assertThat(result.flagChanges()).containsOnly(

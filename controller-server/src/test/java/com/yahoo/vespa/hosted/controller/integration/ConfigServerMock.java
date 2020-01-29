@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,7 +70,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Set<ApplicationId> disallowConvergenceCheckApplications = new HashSet<>();
     private final Version initialVersion = new Version(6, 1, 0);
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
-    private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
+    private final Map<ZoneId, Set<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
     private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
@@ -260,8 +261,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         disallowConvergenceCheckApplications.add(applicationId);
     }
 
-    private List<LoadBalancer> getLoadBalancers(ZoneId zone) {
-        return loadBalancers.getOrDefault(zone, Collections.emptyList());
+    private Set<LoadBalancer> getLoadBalancers(ZoneId zone) {
+        return loadBalancers.getOrDefault(zone, new LinkedHashSet<>());
     }
 
     @Override
@@ -281,8 +282,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return TesterCloud.Status.SUCCESS;
     }
 
-    public void addLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
-        this.loadBalancers.putIfAbsent(zone, new ArrayList<>());
+    /** Add any of given loadBalancers that do not already exist to the load balancers in zone */
+    public void putLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
+        this.loadBalancers.putIfAbsent(zone, new LinkedHashSet<>());
         this.loadBalancers.get(zone).addAll(loadBalancers);
     }
 
@@ -366,6 +368,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             throw new NotFoundException("No application with id " + applicationId + " exists, cannot deactivate");
         applications.remove(deployment);
         serviceStatus.remove(deployment);
+        removeLoadBalancers(deployment.applicationId(), deployment.zoneId());
     }
 
     // Returns a canned example response

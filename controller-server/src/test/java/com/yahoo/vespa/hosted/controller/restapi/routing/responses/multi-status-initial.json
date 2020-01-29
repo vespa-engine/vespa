@@ -6,7 +6,7 @@
       "environment": "prod",
       "region": "us-west-1",
       "status": "in",
-      "agent": "operator",
+      "agent": "unknown",
       "changedAt": "(ignore)"
     },
     {

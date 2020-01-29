@@ -210,17 +210,6 @@ public class ControllerTest {
         assertEquals(2, upstreamOneEndpoints.get().size());
         assertTrue("All upstreams are out", upstreamOneEndpoints.get().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.out));
         assertTrue("Reason is set", upstreamOneEndpoints.get().stream().allMatch(es -> es.getReason().equals("unit-test")));
-
-        // Deployment without a global endpoint
-        tester.serviceRegistry().routingGeneratorMock().putEndpoints(deployment, List.of(
-                new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
-                new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
-                new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3")
-        ));
-        try {
-            tester.controller().applications().setGlobalRotationStatus(deployment, status);
-            fail("Expected exception");
-        } catch (IllegalArgumentException ignored) {}
     }
 
     @Test
@@ -715,8 +704,10 @@ public class ControllerTest {
 
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
-        var applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
-                                                                .region("us-west-1")
+        var prodZone = ZoneId.from("prod", "us-west-1");
+        tester.controllerTester().zoneRegistry().setDirectlyRouted(ZoneApiMock.from(prodZone));
+        var applicationPackage = new ApplicationPackageBuilder().environment(prodZone.environment())
+                                                                .region(prodZone.region())
                                                                 .build();
         // Deploy app1 in production
         context1.submit(applicationPackage).deploy();
@@ -725,7 +716,7 @@ public class ControllerTest {
         assertEquals(Stream.concat(Stream.of("vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
                                              "app1.tenant1.global.vespa.oath.cloud",
                                              "*.app1.tenant1.global.vespa.oath.cloud"),
-                                   tester.controller().zoneRegistry().zones().all().ids().stream()
+                                   tester.controller().zoneRegistry().zones().directlyRouted().ids().stream()
                                          .flatMap(zone -> Stream.of("", "*.")
                                                                 .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
                                                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
@@ -739,13 +730,13 @@ public class ControllerTest {
 
         // Create app2
         var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
-        ZoneId zone = ZoneId.from("dev", "us-east-1");
+        var devZone = ZoneId.from("dev", "us-east-1");
 
         // Deploy app2, after "removing" direct routing everywhere
         tester.controllerTester().zoneRegistry().setDirectlyRouted();
-        tester.controller().applications().deploy(context2.instanceId(), zone, Optional.of(applicationPackage), DeployOptions.none());
+        tester.controller().applications().deploy(context2.instanceId(), devZone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
-                   tester.configServer().application(context2.instanceId(), zone).get().activated());
+                   tester.configServer().application(context2.instanceId(), devZone).get().activated());
         assertFalse("Does not provision certificate in zones with routing layer", certificate.apply(context2.instance()).isPresent());
     }
 

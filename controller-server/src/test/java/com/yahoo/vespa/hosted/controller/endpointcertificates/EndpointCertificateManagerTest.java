@@ -13,15 +13,20 @@ import org.junit.Test;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author andreer
+ */
 public class EndpointCertificateManagerTest {
 
     @Test
     public void getEndpointCertificate() {
         SecretStoreMock secretStore = new SecretStoreMock();
         ZoneRegistryMock zoneRegistryMock = new ZoneRegistryMock(SystemName.main);
+        zoneRegistryMock.setDirectlyRouted(Set.copyOf(zoneRegistryMock.zones().all().zones()));
         MockCuratorDb mockCuratorDb = new MockCuratorDb();
         ApplicationCertificateMock applicationCertificateMock = new ApplicationCertificateMock();
         Clock clock = Clock.systemUTC();
@@ -31,4 +36,5 @@ public class EndpointCertificateManagerTest {
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(instance, id);
         assertTrue(endpointCertificateMetadata.isPresent());
     }
+
 }

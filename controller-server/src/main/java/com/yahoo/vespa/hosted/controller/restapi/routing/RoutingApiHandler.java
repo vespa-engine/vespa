@@ -83,8 +83,8 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         } else {
             controller.serviceRegistry().configServer().setGlobalRotationStatus(zone, in);
         }
-        return new MessageResponse("Set global routing status for deployments in " + zone + " to '" +
-                                   (in ? "in" : "out") + "'");
+        return new MessageResponse("Set global routing status for deployments in " + zone + " to " +
+                                   (in ? "IN" : "OUT"));
     }
 
     private HttpResponse zoneStatus(Path path) {
@@ -120,7 +120,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
         // Set policy status
         controller.applications().routingPolicies().setGlobalRoutingStatus(deployment, status, agent);
-        return new MessageResponse("Set global routing status for " + deployment + " to '" + (in ? "in" : "out") + "'");
+        return new MessageResponse("Set global routing status for " + deployment + " to " + (in ? "IN" : "OUT"));
     }
 
     private HttpResponse deploymentStatus(Path path) {

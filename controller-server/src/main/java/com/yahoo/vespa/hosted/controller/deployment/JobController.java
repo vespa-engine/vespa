@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
@@ -506,12 +507,17 @@ public class JobController {
                });
     }
 
+    // TODO(mpolden): Eliminate duplication in this and ApplicationController#deactivate
     public void deactivateTester(TesterId id, JobType type) {
+        var zone = type.zone(controller.system());
         try {
-            controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
-        }
-        catch (NotFoundException ignored) {
+            controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), zone));
+        } catch (NotFoundException ignored) {
             // Already gone -- great!
+        } finally {
+            // Passing an empty DeploymentSpec here is fine as it's used for registering global endpoint names, and
+            // tester instances have none.
+            controller.applications().routingPolicies().refresh(id.id(), DeploymentSpec.empty, zone);
         }
     }
 
