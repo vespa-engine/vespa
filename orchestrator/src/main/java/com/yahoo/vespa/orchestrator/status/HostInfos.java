@@ -19,6 +19,10 @@ public class HostInfos {
         this.hostInfos = Map.copyOf(hostInfos);
     }
 
+    public HostInfos() {
+        this.hostInfos = Map.of();
+    }
+
     /** Get all suspended hostnames. */
     public Set<HostName> suspendedHostsnames() {
         return hostInfos.entrySet().stream()

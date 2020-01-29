@@ -21,8 +21,6 @@ import org.apache.zookeeper.data.Stat;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -260,37 +258,21 @@ public class ZookeeperStatusService implements StatusService {
         return hostInfosCache.getHostInfos(applicationInstanceReference).get(hostName);
     }
 
-    private Set<HostName> hostsDownFor(ApplicationInstanceReference application) {
-        try {
-            if (curator.framework().checkExists().forPath(hostsAllowedDownPath(application)) == null)
-                return Collections.emptySet();
-
-            return curator.framework().getChildren().forPath(hostsAllowedDownPath(application))
-                          .stream().map(HostName::new)
-                          .collect(Collectors.toUnmodifiableSet());
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     /** Do not call this directly: should be called behind a cache. */
     private HostInfos getHostInfosFromZk(ApplicationInstanceReference application) {
-        Map<HostName, HostInfo> hostInfos;
         String hostsRootPath = hostsPath(application);
         if (uncheck(() -> curator.framework().checkExists().forPath(hostsRootPath)) == null) {
-            hostInfos = new HashMap<>();
+            return new HostInfos();
         } else {
             List<String> hostnames = uncheck(() -> curator.framework().getChildren().forPath(hostsRootPath));
-            hostInfos = new HashMap<>(hostnames.stream().collect(Collectors.toMap(
+            Map<HostName, HostInfo> hostInfos = hostnames.stream().collect(Collectors.toMap(
                     hostname -> new HostName(hostname),
                     hostname -> {
                         byte[] bytes = uncheck(() -> curator.framework().getData().forPath(hostsRootPath + "/" + hostname));
                         return WireHostInfo.deserialize(bytes);
-                    })));
+                    }));
+            return new HostInfos(hostInfos);
         }
-
-        return new HostInfos(hostInfos);
     }
 
     private <T> T uncheck(SupplierThrowingException<T> supplier) {
