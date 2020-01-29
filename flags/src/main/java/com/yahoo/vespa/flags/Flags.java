@@ -209,6 +209,12 @@ public class Flags {
             "Takes effect on the next deployment of the routing (zone) application",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag USE_REFRESHED_ENDPOINT_CERTIFICATE = defineFeatureFlag(
+            "use-refreshed-endpoint-certificate", false,
+            "Whether an application should start using a newer certificate/key pair if available",
+            "Takes effect on the next deployment of the application",
+            APPLICATION_ID);
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
