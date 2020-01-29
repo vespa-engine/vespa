@@ -78,9 +78,9 @@ void verify_optimized(const vespalib::string &expr, size_t vec_size, size_t res_
     auto info = fixture.find_all<DenseXWProductFunction>();
     ASSERT_EQUAL(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
-    EXPECT_EQUAL(info[0]->vectorSize(), vec_size);
-    EXPECT_EQUAL(info[0]->resultSize(), res_size);
-    EXPECT_EQUAL(info[0]->matrixHasCommonDimensionInnermost(), happy);
+    EXPECT_EQUAL(info[0]->vector_size(), vec_size);
+    EXPECT_EQUAL(info[0]->result_size(), res_size);
+    EXPECT_EQUAL(info[0]->common_inner(), happy);
 }
 
 vespalib::string make_expr(const vespalib::string &a, const vespalib::string &b, const vespalib::string &common,

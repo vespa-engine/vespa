@@ -4,7 +4,6 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 #include "dense_tensor_view.h"
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace vespalib::tensor {
 
@@ -16,37 +15,34 @@ class DenseXWProductFunction : public eval::tensor_function::Op2
     using Super = eval::tensor_function::Op2;
 public:
     struct Self {
-        const eval::ValueType _resultType;
-        const size_t _vectorSize;
-        const size_t _resultSize;
-        hwaccelrated::IAccelrated::UP _hwAccelerator;
-        Self(const eval::ValueType &resultType,
-             size_t vectorSize,
-             size_t resultSize);
-        ~Self() {}
+        eval::ValueType result_type;
+        size_t vector_size;
+        size_t result_size;
+        Self(const eval::ValueType &result_type_in,
+             size_t vector_size_in, size_t result_size_in);
+        ~Self();
     };
 
 private:
-    const size_t _vectorSize;
-    const size_t _resultSize;
-    bool _commonDimensionInnermost;
+    size_t _vector_size;
+    size_t _result_size;
+    bool _common_inner;
 
 public:
-    DenseXWProductFunction(const eval::ValueType &resultType,
+    DenseXWProductFunction(const eval::ValueType &result_type,
                            const eval::TensorFunction &vector_in,
                            const eval::TensorFunction &matrix_in,
-                           size_t vectorSize,
-                           size_t resultSize,
-                           bool matrixHasCommonDimensionInnermost);
+                           size_t vector_size,
+                           size_t result_size,
+                           bool common_inner);
 
     ~DenseXWProductFunction() {}
 
     bool result_is_mutable() const override { return true; }
 
-    size_t vectorSize() const { return _vectorSize; }
-    size_t resultSize() const { return _resultSize; }
-
-    bool matrixHasCommonDimensionInnermost() const { return _commonDimensionInnermost; }
+    size_t vector_size() const { return _vector_size; }
+    size_t result_size() const { return _result_size; }
+    bool common_inner() const { return _common_inner; }
 
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;

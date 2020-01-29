@@ -10,6 +10,8 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <assert.h>
 
+#include <openblas/cblas.h>
+
 namespace vespalib::tensor {
 
 using eval::ValueType;
@@ -21,76 +23,59 @@ using namespace eval::operation;
 
 namespace {
 
-template <typename LCT, typename RCT>
-struct HWSupport {
-    static double call(hwaccelrated::IAccelrated *, const LCT *lhs, const RCT *rhs, size_t len) {
-        double result = 0.0;
-        for (size_t i = 0; i < len; ++i) {
-            result += (lhs[i] * rhs[i]);
-        }
-        return result;
+template <typename LCT, typename RCT, bool common_inner>
+double my_dot_product(const LCT *lhs, const RCT *rhs, size_t vector_size, size_t result_size) {
+    double result = 0.0;
+    for (size_t i = 0; i < vector_size; ++i) {
+        result += ((*lhs) * (*rhs));
+        ++lhs;
+        rhs += (common_inner ? 1 : result_size);
     }
-};
-template <> struct HWSupport<float, float> {
-    static double call(hwaccelrated::IAccelrated *hw, const float *lhs, const float *rhs, size_t len) {
-        return hw->dotProduct(lhs, rhs, len);
-    }
-};
-template <> struct HWSupport<double, double> {
-    static double call(hwaccelrated::IAccelrated *hw, const double *lhs, const double *rhs, size_t len) {
-        return hw->dotProduct(lhs, rhs, len);
-    }
-};
-
-template <typename LCT, typename RCT, typename OCT>
-void multiDotProduct(const DenseXWProductFunction::Self &self,
-                     const ConstArrayRef<LCT> &vectorCells, const ConstArrayRef<RCT> &matrixCells, ArrayRef<OCT> &result)
-{
-    OCT *out = result.begin();
-    const RCT *matrixP = matrixCells.cbegin();
-    const LCT * const vectorP = vectorCells.cbegin();
-    for (size_t row = 0; row < self._resultSize; ++row) {
-        double cell = HWSupport<LCT,RCT>::call(self._hwAccelerator.get(), vectorP, matrixP, self._vectorSize);
-        *out++ = cell;
-        matrixP += self._vectorSize;
-    }
-    assert(out == result.end());
-    assert(matrixP == matrixCells.cend());
+    return result;
 }
 
-template <typename LCT, typename RCT, typename OCT>
-void transposedProduct(const DenseXWProductFunction::Self &self,
-                       const ConstArrayRef<LCT> &vectorCells, const ConstArrayRef<RCT> &matrixCells, ArrayRef<OCT> &result)
-{
-    OCT *out = result.begin();
-    const RCT * const matrixP = matrixCells.cbegin();
-    const LCT * const vectorP = vectorCells.cbegin();
-    for (size_t row = 0; row < self._resultSize; ++row) {
-        double cell = 0;
-        for (size_t col = 0; col < self._vectorSize; ++col) {
-            cell += matrixP[col*self._resultSize + row] * vectorP[col];
-        }
-        *out++ = cell;
-    }
-    assert(out == result.end());
-}
-
-template <typename LCT, typename RCT, bool commonDimensionInnermost>
+template <typename LCT, typename RCT, bool common_inner>
 void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    DenseXWProductFunction::Self *self = (DenseXWProductFunction::Self *)(param);
-
+    const DenseXWProductFunction::Self &self = *((const DenseXWProductFunction::Self *)(param));
     using OCT = typename eval::UnifyCellTypes<LCT,RCT>::type;
-    auto vectorCells = DenseTensorView::typify_cells<LCT>(state.peek(1));
-    auto matrixCells = DenseTensorView::typify_cells<RCT>(state.peek(0));
-    auto outputCells = state.stash.create_array<OCT>(self->_resultSize);
-
-    if (commonDimensionInnermost) {
-        multiDotProduct(*self, vectorCells, matrixCells, outputCells);
-    } else {
-        transposedProduct(*self, vectorCells, matrixCells, outputCells);
+    auto vector_cells = DenseTensorView::typify_cells<LCT>(state.peek(1));
+    auto matrix_cells = DenseTensorView::typify_cells<RCT>(state.peek(0));
+    auto dst_cells = state.stash.create_array<OCT>(self.result_size);
+    OCT *dst = dst_cells.begin();
+    const RCT *matrix = matrix_cells.cbegin();
+    for (size_t i = 0; i < self.result_size; ++i) {
+        *dst++ = my_dot_product<LCT,RCT,common_inner>(vector_cells.cbegin(), matrix, self.vector_size, self.result_size);
+        matrix += (common_inner ? self.vector_size : 1);
     }
+    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+}
 
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self->_resultType, TypedCells(outputCells)));
+template <bool common_inner>
+void my_cblas_double_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
+    const DenseXWProductFunction::Self &self = *((const DenseXWProductFunction::Self *)(param));
+    auto vector_cells = DenseTensorView::typify_cells<double>(state.peek(1));
+    auto matrix_cells = DenseTensorView::typify_cells<double>(state.peek(0));
+    auto dst_cells = state.stash.create_array<double>(self.result_size);
+    cblas_dgemv(CblasRowMajor, common_inner ? CblasNoTrans : CblasTrans,
+                common_inner ? self.result_size : self.vector_size,
+                common_inner ? self.vector_size : self.result_size,
+                1.0, matrix_cells.cbegin(), common_inner ? self.vector_size : self.result_size, vector_cells.cbegin(), 1,
+                0.0, dst_cells.begin(), 1);
+    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+}
+
+template <bool common_inner>
+void my_cblas_float_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
+    const DenseXWProductFunction::Self &self = *((const DenseXWProductFunction::Self *)(param));
+    auto vector_cells = DenseTensorView::typify_cells<float>(state.peek(1));
+    auto matrix_cells = DenseTensorView::typify_cells<float>(state.peek(0));
+    auto dst_cells = state.stash.create_array<float>(self.result_size);
+    cblas_sgemv(CblasRowMajor, common_inner ? CblasNoTrans : CblasTrans,
+                common_inner ? self.result_size : self.vector_size,
+                common_inner ? self.vector_size : self.result_size,
+                1.0, matrix_cells.cbegin(), common_inner ? self.vector_size : self.result_size, vector_cells.cbegin(), 1,
+                0.0, dst_cells.begin(), 1);
+    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool common_inner>
@@ -99,11 +84,24 @@ struct MyXWProductOp {
     static auto get_fun() { return my_xw_product_op<LCT,RCT,common_inner>; }
 };
 
-eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct, bool common_innermost) {
-    if (common_innermost) {
-        return select_2<MyXWProductOp<true> >(lct, rct);
+template <bool common_inner>
+eval::InterpretedFunction::op_function my_select2(CellType lct, CellType rct) {
+    if (lct == rct) {
+        if (lct == ValueType::CellType::DOUBLE) {
+            return my_cblas_double_xw_product_op<common_inner>;
+        }
+        if (lct == ValueType::CellType::FLOAT) {
+            return my_cblas_float_xw_product_op<common_inner>;
+        }
+    }
+    return select_2<MyXWProductOp<common_inner>>(lct, rct);
+}
+
+eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct, bool common_inner) {
+    if (common_inner) {
+        return my_select2<true>(lct, rct);
     } else {
-        return select_2<MyXWProductOp<false> >(lct, rct);
+        return my_select2<false>(lct, rct);
     }
 }
 
@@ -129,42 +127,43 @@ bool isDenseXWProduct(const ValueType &res, const ValueType &vec, const ValueTyp
 }
 
 const TensorFunction &createDenseXWProduct(const ValueType &res, const TensorFunction &vec, const TensorFunction &mat, Stash &stash) {
-    bool common_is_inner = (mat.result_type().dimension_index(vec.result_type().dimensions()[0].name) == 1);
+    bool common_inner = (mat.result_type().dimension_index(vec.result_type().dimensions()[0].name) == 1);
     return stash.create<DenseXWProductFunction>(res, vec, mat,
                                                 vec.result_type().dimensions()[0].size,
                                                 res.dimensions()[0].size,
-                                                common_is_inner);
+                                                common_inner);
 }
 
 } // namespace vespalib::tensor::<unnamed>
 
-DenseXWProductFunction::Self::Self(const eval::ValueType &resultType,
-                                   size_t vectorSize,
-                                   size_t resultSize)
-    : _resultType(resultType),
-      _vectorSize(vectorSize),
-      _resultSize(resultSize),
-      _hwAccelerator(hwaccelrated::IAccelrated::getAccelrator())
-{}
+DenseXWProductFunction::Self::Self(const eval::ValueType &result_type_in,
+                                   size_t vector_size_in, size_t result_size_in)
+    : result_type(result_type_in),
+      vector_size(vector_size_in),
+      result_size(result_size_in)
+{
+}
+DenseXWProductFunction::Self::~Self() = default;
 
-DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &resultType,
+DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &result_type,
                                                const eval::TensorFunction &vector_in,
                                                const eval::TensorFunction &matrix_in,
-                                               size_t vectorSize,
-                                               size_t resultSize,
-                                               bool matrixHasCommonDimensionInnermost)
-    : eval::tensor_function::Op2(resultType, vector_in, matrix_in),
-      _vectorSize(vectorSize),
-      _resultSize(resultSize),
-      _commonDimensionInnermost(matrixHasCommonDimensionInnermost)
-{}
+                                               size_t vector_size,
+                                               size_t result_size,
+                                               bool common_inner)
+    : eval::tensor_function::Op2(result_type, vector_in, matrix_in),
+      _vector_size(vector_size),
+      _result_size(result_size),
+      _common_inner(common_inner)
+{
+}
 
 eval::InterpretedFunction::Instruction
 DenseXWProductFunction::compile_self(Stash &stash) const
 {
-    Self &self = stash.create<Self>(result_type(), _vectorSize, _resultSize);
+    Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
     auto op = my_select(lhs().result_type().cell_type(),
-                        rhs().result_type().cell_type(), _commonDimensionInnermost);
+                        rhs().result_type().cell_type(), _common_inner);
     return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
 }
 
@@ -172,9 +171,9 @@ void
 DenseXWProductFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 {
     Super::visit_self(visitor);
-    visitor.visitInt("vector_size", _vectorSize);
-    visitor.visitInt("result_size", _resultSize);
-    visitor.visitBool("common_dimension_innermost", _commonDimensionInnermost);
+    visitor.visitInt("vector_size", _vector_size);
+    visitor.visitInt("result_size", _result_size);
+    visitor.visitBool("common_inner", _common_inner);
 }
 
 const TensorFunction &
