@@ -179,17 +179,15 @@ public class ZookeeperStatusService implements StatusService {
                                       HostStatus status) {
         String hostAllowedDownPath = hostAllowedDownPath(applicationInstanceReference, hostName);
 
-        boolean modified;
+        boolean modified = false;
         try {
             switch (status) {
                 case NO_REMARKS:
+                    // Deprecated: Remove once 7.170 has rolled out to infrastructure
                     modified = deleteNode_ignoreNoNodeException(hostAllowedDownPath, "Host already has state NO_REMARKS, path = " + hostAllowedDownPath);
                     break;
-                case ALLOWED_TO_BE_DOWN:
-                    modified = createNode_ignoreNodeExistsException(hostAllowedDownPath, "Host already has state ALLOWED_TO_BE_DOWN, path = " + hostAllowedDownPath);
-                    break;
                 default:
-                    throw new IllegalArgumentException("Unexpected status '" + status + "'.");
+                    // ignore, e.g. ALLOWED_TO_BE_DOWN should NOT create a new deprecated znode.
             }
 
             modified |= setHostInfoInZk(applicationInstanceReference, hostName, status);
@@ -257,14 +255,6 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    private void updateNodeInZk(String path, byte[] bytes) throws Exception {
-        curator.framework().setData().forPath(path, bytes);
-    }
-
-    private void createNodeInZk(String path, byte[] bytes) throws Exception {
-        curator.framework().create().creatingParentsIfNeeded().forPath(path, bytes);
-    }
-
     @Override
     public HostInfo getHostInfo(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
         return hostInfosCache.getHostInfos(applicationInstanceReference).get(hostName);
@@ -300,25 +290,6 @@ public class ZookeeperStatusService implements StatusService {
                     })));
         }
 
-        // For backwards compatibility we'll add HostInfos from the old hosts-allowed-down ZK path,
-        // using the creation time as the since path. The new hosts ZK path should contain a subset of
-        // the hostnames under hosts-allowed-down ZK path. Eventually these sets should be identical.
-        // Once that's true we can stop writing to hosts-allowed-down, remove this code, and all
-        // data in hosts-allowed-down can be removed.
-        Set<HostName> legacyHostsDown = hostsDownFor(application);
-        Map<HostName, HostInfo> legacyHostInfos = legacyHostsDown.stream()
-                .filter(hostname -> !hostInfos.containsKey(hostname))
-                .collect(Collectors.toMap(
-                hostname -> hostname,
-                hostname -> {
-                    Stat stat = uncheck(() -> curator.framework()
-                            .checkExists()
-                            .forPath(hostsAllowedDownPath(application) + "/" + hostname.s()));
-                    return HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochMilli(stat.getCtime()));
-                }
-        ));
-
-        hostInfos.putAll(legacyHostInfos);
         return new HostInfos(hostInfos);
     }
 
