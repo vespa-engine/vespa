@@ -33,5 +33,13 @@ public interface RequestResourceMapper {
         public String action() {
             return action;
         }
+
+        @Override
+        public String toString() {
+            return "ResourceNameAndAction{" +
+                    "resourceName=" + resourceName +
+                    ", action='" + action + '\'' +
+                    '}';
+        }
     }
 }
