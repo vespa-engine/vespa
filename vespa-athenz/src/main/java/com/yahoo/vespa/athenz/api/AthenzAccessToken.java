@@ -22,9 +22,13 @@ public class AthenzAccessToken {
 
     private static String stripBearerTokenPrefix(String rawValue) {
         String stripped = rawValue.strip();
-        return stripped.startsWith(BEARER_TOKEN_PREFIX)
-                ? stripped.substring(BEARER_TOKEN_PREFIX.length())
+        String prefixRemoved = stripped.startsWith(BEARER_TOKEN_PREFIX)
+                ? stripped.substring(BEARER_TOKEN_PREFIX.length()).strip()
                 : stripped;
+        if (prefixRemoved.isBlank()) {
+            throw new IllegalArgumentException(String.format("Access token is blank: '%s'", prefixRemoved));
+        }
+        return prefixRemoved;
     }
 
     public String value() { return value; }
