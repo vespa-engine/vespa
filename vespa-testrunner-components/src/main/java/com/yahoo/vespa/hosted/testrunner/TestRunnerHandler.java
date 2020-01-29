@@ -62,9 +62,13 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.equals("/tester/v1/log")) {
-            return new SlimeJsonResponse(toSlime(testRunner.getLog(request.hasProperty("after")
-                                                                           ? Long.parseLong(request.getProperty("after"))
-                                                                           : -1)));
+            return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
+                                                                              ? Long.parseLong(request.getProperty("after"))
+                                                                              : -1)));
+        } else if (path.equals("/tester/v1/log2")) { // TODO: Migrate to /tester/v1/log when the above is not in use anymore
+            return new SlimeJsonResponse(log2ToSlime(testRunner.getLog(request.hasProperty("after")
+                                                                               ? Long.parseLong(request.getProperty("after"))
+                                                                               : -1)));
         } else if (path.equals("/tester/v1/status")) {
             log.info("Responding with status " + testRunner.getStatus());
             return new Response(testRunner.getStatus().name());
@@ -72,7 +76,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
     }
 
-    private HttpResponse handlePOST(HttpRequest request) throws IOException, InterruptedException {
+    private HttpResponse handlePOST(HttpRequest request) throws IOException {
         final String path = request.getUri().getPath();
         if (path.startsWith("/tester/v1/run/")) {
             String type = lastElement(path);
@@ -93,9 +97,22 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         return path.substring(lastSlash + 1, path.length());
     }
 
-    static Slime toSlime(Collection<LogRecord> log) {
+    static Slime logToSlime(Collection<LogRecord> log) {
         Slime root = new Slime();
         Cursor recordArray = root.setArray();
+        logArrayToSlime(recordArray, log);
+        return root;
+    }
+
+    static Slime log2ToSlime(Collection<LogRecord> log) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        Cursor recordArray = root.setArray("logRecords");
+        logArrayToSlime(recordArray, log);
+        return slime;
+    }
+
+    static void logArrayToSlime(Cursor recordArray, Collection<LogRecord> log) {
         log.forEach(record -> {
             Cursor recordObject = recordArray.addObject();
             recordObject.setLong("id", record.getSequenceNumber());
@@ -109,7 +126,6 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             }
             recordObject.setString("message", message);
         });
-        return root;
     }
 
     public static String typeOf(Level level) {
@@ -120,7 +136,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
                 : "error";
     }
 
-    private class SlimeJsonResponse extends HttpResponse {
+    private static class SlimeJsonResponse extends HttpResponse {
         private final Slime slime;
 
         private SlimeJsonResponse(Slime slime) {

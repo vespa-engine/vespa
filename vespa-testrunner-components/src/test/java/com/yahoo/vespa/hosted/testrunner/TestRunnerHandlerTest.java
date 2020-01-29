@@ -21,18 +21,52 @@ public class TestRunnerHandlerTest {
 
     @Test
     public void logSerialization() throws IOException {
-        LogRecord record = new LogRecord(Level.INFO, "Hello.");
-        record.setSequenceNumber(1);
-        record.setInstant(Instant.ofEpochMilli(2));
-        Exception exception = new RuntimeException();
-        record.setThrown(exception);
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        exception.printStackTrace(new PrintStream(buffer));
-        String trace = buffer.toString()
-                             .replaceAll("\n", "\\\\n")
-                             .replaceAll("\t", "\\\\t");
+        Log log = new Log();
+        LogRecord record = log.getLogRecord();
+        String trace = log.getTrace();
         assertEquals("[{\"id\":1,\"at\":2,\"type\":\"info\",\"message\":\"Hello.\\n" + trace + "\"}]",
-                     new String(SlimeUtils.toJsonBytes(TestRunnerHandler.toSlime(Collections.singletonList(record)))));
+                     new String(SlimeUtils.toJsonBytes(TestRunnerHandler.logToSlime(Collections.singletonList(record)))));
+    }
+
+    @Test
+    public void log2Serialization() throws IOException {
+        Log log = new Log();
+        LogRecord record = log.getLogRecord();
+        String trace = log.getTrace();
+        assertEquals("{\"logRecords\":[{\"id\":1,\"at\":2,\"type\":\"info\",\"message\":\"Hello.\\n" + trace + "\"}]}",
+                     new String(SlimeUtils.toJsonBytes(TestRunnerHandler.log2ToSlime(Collections.singletonList(record)))));
+    }
+
+    private static class Log {
+
+        private final LogRecord record;
+        private final String trace;
+
+        public Log() {
+            Exception exception = new RuntimeException();
+            record = createRecord(exception);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            exception.printStackTrace(new PrintStream(buffer));
+            trace = buffer.toString()
+                    .replaceAll("\n", "\\\\n")
+                    .replaceAll("\t", "\\\\t");
+        }
+
+        LogRecord getLogRecord() {
+            return record;
+        }
+
+        String getTrace() {
+            return trace;
+        }
+
+        private static LogRecord createRecord(Exception exception) {
+            LogRecord record = new LogRecord(Level.INFO, "Hello.");
+            record.setSequenceNumber(1);
+            record.setInstant(Instant.ofEpochMilli(2));
+            record.setThrown(exception);
+            return record;
+        }
     }
 
 }
