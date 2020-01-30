@@ -7,6 +7,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/tensor.h>
 
+#include <cblas.h>
+
 namespace vespalib::tensor {
 
 using eval::ValueType;
@@ -19,32 +21,29 @@ using namespace eval::operation;
 namespace {
 
 template <typename LCT, typename RCT>
-struct HWSupport {
-    static double call(hwaccelrated::IAccelrated *, const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs) {
-        double result = 0.0;
-        for (size_t i = 0; i < lhs.size(); ++i) {
-            result += (lhs[i] * rhs[i]);
-        }
-        return result;
+void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
+    auto lhs_cells = DenseTensorView::typify_cells<LCT>(state.peek(1));
+    auto rhs_cells = DenseTensorView::typify_cells<RCT>(state.peek(0));
+    double result = 0.0;
+    const LCT *lhs = lhs_cells.cbegin();
+    const RCT *rhs = rhs_cells.cbegin();
+    for (size_t i = 0; i < lhs_cells.size(); ++i) {
+        result += ((*lhs++) * (*rhs++));
     }
-};
-template <> struct HWSupport<float, float> {
-    static double call(hwaccelrated::IAccelrated *hw, const ConstArrayRef<float> &lhs, const ConstArrayRef<float> &rhs) {
-        return hw->dotProduct(lhs.cbegin(), rhs.cbegin(), lhs.size());
-    }
-};
-template <> struct HWSupport<double, double> {
-    static double call(hwaccelrated::IAccelrated *hw, const ConstArrayRef<double> &lhs, const ConstArrayRef<double> &rhs) {
-        return hw->dotProduct(lhs.cbegin(), rhs.cbegin(), lhs.size());
-    }
-};
+    state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
+}
 
-template <typename LCT, typename RCT>
-void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    auto *hw = (hwaccelrated::IAccelrated *)(param);
-    auto lhs = DenseTensorView::typify_cells<LCT>(state.peek(1));
-    auto rhs = DenseTensorView::typify_cells<RCT>(state.peek(0));
-    double result = HWSupport<LCT,RCT>::call(hw, lhs, rhs);
+void my_cblas_double_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
+    auto lhs_cells = DenseTensorView::typify_cells<double>(state.peek(1));
+    auto rhs_cells = DenseTensorView::typify_cells<double>(state.peek(0));
+    double result = cblas_ddot(lhs_cells.size(), lhs_cells.cbegin(), 1, rhs_cells.cbegin(), 1);
+    state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
+}
+
+void my_cblas_float_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
+    auto lhs_cells = DenseTensorView::typify_cells<float>(state.peek(1));
+    auto rhs_cells = DenseTensorView::typify_cells<float>(state.peek(0));
+    double result = cblas_sdot(lhs_cells.size(), lhs_cells.cbegin(), 1, rhs_cells.cbegin(), 1);
     state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
 }
 
@@ -53,21 +52,31 @@ struct MyDotProductOp {
     static auto get_fun() { return my_dot_product_op<LCT,RCT>; }
 };
 
+eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct) {
+    if (lct == rct) {
+        if (lct == ValueType::CellType::DOUBLE) {
+            return my_cblas_double_dot_product_op;
+        }
+        if (lct == ValueType::CellType::FLOAT) {
+            return my_cblas_float_dot_product_op;
+        }
+    }
+    return select_2<MyDotProductOp>(lct, rct);
+}
+
 } // namespace vespalib::tensor::<unnamed>
 
 DenseDotProductFunction::DenseDotProductFunction(const eval::TensorFunction &lhs_in,
                                                  const eval::TensorFunction &rhs_in)
-    : eval::tensor_function::Op2(eval::ValueType::double_type(), lhs_in, rhs_in),
-      _hwAccelerator(hwaccelrated::IAccelrated::getAccelrator())
+    : eval::tensor_function::Op2(eval::ValueType::double_type(), lhs_in, rhs_in)
 {
 }
 
 eval::InterpretedFunction::Instruction
 DenseDotProductFunction::compile_self(Stash &) const
 {
-    auto op = select_2<MyDotProductOp>(lhs().result_type().cell_type(),
-                                       rhs().result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)(_hwAccelerator.get()));
+    auto op = my_select(lhs().result_type().cell_type(), rhs().result_type().cell_type());
+    return eval::InterpretedFunction::Instruction(op);
 }
 
 bool

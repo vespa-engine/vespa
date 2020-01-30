@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace vespalib::tensor {
 
@@ -13,7 +12,6 @@ namespace vespalib::tensor {
 class DenseDotProductFunction : public eval::tensor_function::Op2
 {
 private:
-    hwaccelrated::IAccelrated::UP _hwAccelerator;
     using ValueType = eval::ValueType;
 public:
     DenseDotProductFunction(const eval::TensorFunction &lhs_in,
