@@ -7,6 +7,8 @@ import java.util.Objects;
  * @author tokle
  */
 public class AthenzRole {
+    private static final String DOMAIN_ROLE_NAME_DELIMITER = ":role.";
+
     private final AthenzDomain domain;
     private final String roleName;
 
@@ -20,6 +22,16 @@ public class AthenzRole {
         this.roleName = roleName;
     }
 
+    public static AthenzRole fromString(String string) {
+        if (!string.contains(DOMAIN_ROLE_NAME_DELIMITER)) {
+            throw new IllegalArgumentException("Not a valid role: " + string);
+        }
+        int delimiterIndex = string.indexOf(DOMAIN_ROLE_NAME_DELIMITER);
+        String domain = string.substring(0, delimiterIndex);
+        String roleName = string.substring(delimiterIndex + DOMAIN_ROLE_NAME_DELIMITER.length());
+        return new AthenzRole(domain, roleName);
+    }
+
     public AthenzDomain domain() {
         return domain;
     }
@@ -27,6 +39,8 @@ public class AthenzRole {
     public String roleName() {
         return roleName;
     }
+
+    public String asString() { return domain.getName() + DOMAIN_ROLE_NAME_DELIMITER + roleName; }
 
     @Override
     public boolean equals(Object o) {
