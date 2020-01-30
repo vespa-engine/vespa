@@ -93,7 +93,7 @@ public class MetricsReporterTest {
         ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName ->
+        when(orchestrator.getHostResolver()).thenReturn(hostName ->
             Optional.of(HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)))
         );
         ServiceModel serviceModel = mock(ServiceModel.class);
@@ -144,7 +144,7 @@ public class MetricsReporterTest {
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
+        when(orchestrator.getHostResolver()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());

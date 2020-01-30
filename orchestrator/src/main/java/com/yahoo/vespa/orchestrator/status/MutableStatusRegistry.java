@@ -28,6 +28,11 @@ public interface MutableStatusRegistry extends AutoCloseable {
     Set<HostName> getSuspendedHosts();
 
     /**
+     * Returns a snapshot of all host infos for this application.
+     */
+    HostInfos getHostInfosSnapshot();
+
+    /**
      * Sets the state for the given host.
      */
     void setHostState(HostName hostName, HostStatus status);

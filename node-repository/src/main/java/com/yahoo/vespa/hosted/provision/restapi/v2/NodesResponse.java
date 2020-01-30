@@ -16,12 +16,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -59,7 +57,7 @@ class NodesResponse extends HttpResponse {
         this.nodeParentUrl = toNodeParentUrl(request);
         filter = NodesApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
-        this.orchestrator = orchestrator.getNodeStatuses();
+        this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
 
         slime = new Slime();

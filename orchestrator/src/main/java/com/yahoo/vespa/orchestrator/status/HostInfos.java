@@ -8,10 +8,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Collection of suspended hosts.
+ * Collection of the suspended hosts of an application.
  *
  * @author hakonhall
  */
+// @Immutable
 public class HostInfos {
     private final Map<HostName, HostInfo> hostInfos;
 
@@ -24,7 +25,7 @@ public class HostInfos {
     }
 
     /** Get all suspended hostnames. */
-    public Set<HostName> suspendedHostsnames() {
+    public Set<HostName> suspendedHostnames() {
         return hostInfos.entrySet().stream()
                 .filter(entry -> entry.getValue().status().isSuspended())
                 .map(entry -> entry.getKey())
@@ -32,7 +33,7 @@ public class HostInfos {
     }
 
     /** Get host info for hostname, returning a NO_REMARKS HostInfo if unknown. */
-    public HostInfo get(HostName hostname) {
+    public HostInfo getOrNoRemarks(HostName hostname) {
         return hostInfos.getOrDefault(hostname, HostInfo.createNoRemarks());
     }
 }

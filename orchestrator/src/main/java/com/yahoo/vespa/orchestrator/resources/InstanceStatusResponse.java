@@ -4,6 +4,7 @@ package com.yahoo.vespa.orchestrator.resources;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 
 import java.util.Map;
 import java.util.Objects;
