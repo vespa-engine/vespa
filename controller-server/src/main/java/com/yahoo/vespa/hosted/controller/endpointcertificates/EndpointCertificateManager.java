@@ -74,7 +74,7 @@ public class EndpointCertificateManager {
         // Re-use existing certificate if already provisioned
         var endpointCertificateMetadata =
                 curator.readEndpointCertificateMetadata(instance.id())
-                        .orElse(provisionEndpointCertificate(instance));
+                        .orElseGet(() -> provisionEndpointCertificate(instance));
 
         // If feature flag set for application, look for and use refreshed certificate
         if (useRefreshedEndpointCertificate.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value()) {
