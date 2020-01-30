@@ -78,7 +78,7 @@ public class EndpointCertificateManager {
         // If feature flag set for application, look for and use refreshed certificate
         var useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
         if (useRefreshedEndpointCertificate.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value()) {
-            var latestAvailableVersion = greatestVersionInSecretStore(endpointCertificateMetadata);
+            var latestAvailableVersion = latestVersionInSecretStore(endpointCertificateMetadata);
 
             if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > endpointCertificateMetadata.version()) {
                 var refreshedCertificateMetadata = new EndpointCertificateMetadata(
@@ -98,7 +98,7 @@ public class EndpointCertificateManager {
         return Optional.of(endpointCertificateMetadata);
     }
 
-    private OptionalInt greatestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
+    private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
         var certVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.certName()));
         var keyVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.keyName()));
 
