@@ -17,19 +17,19 @@ class IConstAttributeFunctor
 {
 public:
     virtual void operator()(const IAttributeVector &attributeVector) = 0;
-    virtual ~IConstAttributeFunctor() { }
+    virtual ~IConstAttributeFunctor() = default;
 };
 
 class IAttributeFunctor
 {
 public:
     virtual void operator()(IAttributeVector &attributeVector) = 0;
-    virtual ~IAttributeFunctor() { }
+    virtual ~IAttributeFunctor() = default;
 };
 
 class IAttributeExecutor {
 public:
-    virtual ~IAttributeExecutor() { }
+    virtual ~IAttributeExecutor() = default;
     virtual void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const = 0;
 };
 

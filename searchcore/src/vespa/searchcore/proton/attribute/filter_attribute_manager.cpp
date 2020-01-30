@@ -231,4 +231,13 @@ FilterAttributeManager::getImportedAttributes() const
     throw vespalib::IllegalArgumentException("Not implemented");
 }
 
+std::shared_ptr<search::attribute::ReadableAttributeVector>
+FilterAttributeManager::readable_attribute_vector(const string& name) const
+{
+    if (acceptAttribute(name)) {
+        return _mgr->readable_attribute_vector(name);
+    }
+    return {};
+}
+
 }

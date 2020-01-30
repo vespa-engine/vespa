@@ -178,6 +178,8 @@ public:
     void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
 
     const ImportedAttributesRepo *getImportedAttributes() const override { return _importedAttributes.get(); }
+
+    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
 };
 
 } // namespace proton

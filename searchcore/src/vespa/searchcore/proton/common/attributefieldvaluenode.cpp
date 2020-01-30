@@ -4,6 +4,7 @@
 #include "selectcontext.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -31,14 +32,10 @@ using vespalib::make_string;
 AttributeFieldValueNode::
 AttributeFieldValueNode(const vespalib::string& doctype,
                         const vespalib::string& field,
-                        const std::shared_ptr<search::AttributeVector> &attribute)
+                        uint32_t attr_guard_index)
     : FieldValueNode(doctype, field),
-      _attribute(attribute)
+      _attr_guard_index(attr_guard_index)
 {
-    const AttributeVector &v(*_attribute);
-    // Only handle single value attribute vectors for now
-    assert(v.getCollectionType() == CollectionType::SINGLE);
-    (void) v;
 }
 
 
@@ -46,10 +43,10 @@ std::unique_ptr<document::select::Value>
 AttributeFieldValueNode::
 getValue(const Context &context) const
 {
-    const SelectContext &sc(static_cast<const SelectContext &>(context)); 
+    const auto &sc(static_cast<const SelectContext &>(context));
     uint32_t docId(sc._docId); 
     assert(docId != 0u);
-    const AttributeVector &v(*_attribute);
+    const auto& v = *sc.read_guard_at_index(_attr_guard_index).attribute();
     if (v.isUndefined(docId)) {
         return std::make_unique<NullValue>();
     }
@@ -86,10 +83,10 @@ getValue(const Context &context) const
         case BasicType::PREDICATE:
         case BasicType::TENSOR:
         case BasicType::REFERENCE:
-            throw new IllegalArgumentException(make_string("Attribute '%s' of type '%s' can not be used for selection",
-                                                           v.getName().c_str(), v.getInternalBasicType().asString()));
+            throw IllegalArgumentException(make_string("Attribute '%s' of type '%s' can not be used for selection",
+                                                       v.getName().c_str(), BasicType(v.getBasicType()).asString()));
         case BasicType::MAX_TYPE:
-            throw new IllegalStateException(make_string("Attribute '%s' has illegal type '%d'", v.getName().c_str(), v.getBasicType()));
+            throw IllegalStateException(make_string("Attribute '%s' has illegal type '%d'", v.getName().c_str(), v.getBasicType()));
     }
     return std::make_unique<NullValue>();;
 
@@ -106,7 +103,7 @@ AttributeFieldValueNode::traceValue(const Context &context, std::ostream& out) c
 document::select::ValueNode::UP
 AttributeFieldValueNode::clone() const
 {
-    return wrapParens(new AttributeFieldValueNode(getDocType(), getFieldName(), _attribute));
+    return wrapParens(new AttributeFieldValueNode(getDocType(), getFieldName(), _attr_guard_index));
 }
 
 } // namespace proton
