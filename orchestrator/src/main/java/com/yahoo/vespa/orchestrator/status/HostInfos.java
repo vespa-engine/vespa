@@ -24,14 +24,6 @@ public class HostInfos {
         this.hostInfos = Map.of();
     }
 
-    /** Get all suspended hostnames. */
-    public Set<HostName> suspendedHostnames() {
-        return hostInfos.entrySet().stream()
-                .filter(entry -> entry.getValue().status().isSuspended())
-                .map(entry -> entry.getKey())
-                .collect(Collectors.toSet());
-    }
-
     /** Get host info for hostname, returning a NO_REMARKS HostInfo if unknown. */
     public HostInfo getOrNoRemarks(HostName hostname) {
         return hostInfos.getOrDefault(hostname, HostInfo.createNoRemarks());

@@ -363,12 +363,7 @@ public class ZookeeperStatusService implements StatusService {
         }
 
         @Override
-        public Set<HostName> getSuspendedHosts() {
-            return hostInfosCache.getHostInfos(applicationInstanceReference).suspendedHostnames();
-        }
-
-        @Override
-        public HostInfos getHostInfosSnapshot() {
+        public HostInfos getHostInfos() {
             return hostInfosCache.getHostInfos(applicationInstanceReference);
         }
 

@@ -335,7 +335,7 @@ public class OrchestratorImpl implements Orchestrator {
             if (status == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 ApplicationInstance application = getApplicationInstance(appRef);
 
-                HostInfos hostInfosSnapshot = statusRegistry.getHostInfosSnapshot();
+                HostInfos hostInfosSnapshot = statusRegistry.getHostInfos();
 
                 // Mark it allowed to be down before we manipulate the clustercontroller
                 OrchestratorUtil.getHostsUsedByApplicationInstance(application)

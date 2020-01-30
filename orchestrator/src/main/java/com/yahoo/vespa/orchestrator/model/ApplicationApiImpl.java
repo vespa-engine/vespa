@@ -18,10 +18,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
@@ -45,7 +43,7 @@ public class ApplicationApiImpl implements ApplicationApi {
         this.nodeGroup = nodeGroup;
         this.hostStatusService = hostStatusService;
         Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
-        this.hostInfos = hostStatusService.getHostInfosSnapshot();
+        this.hostInfos = hostStatusService.getHostInfos();
         this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, numberOfConfigServers);
     }
 
