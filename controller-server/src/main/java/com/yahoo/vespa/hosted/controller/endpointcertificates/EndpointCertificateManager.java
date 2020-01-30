@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -51,7 +52,7 @@ public class EndpointCertificateManager {
     private final SecretStore secretStore;
     private final ApplicationCertificateProvider applicationCertificateProvider;
     private final Clock clock;
-    private final FlagSource flagSource;
+    private final BooleanFlag useRefreshedEndpointCertificate;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
                                       CuratorDb curator,
@@ -63,7 +64,7 @@ public class EndpointCertificateManager {
         this.secretStore = secretStore;
         this.applicationCertificateProvider = applicationCertificateProvider;
         this.clock = clock;
-        this.flagSource = flagSource;
+        this.useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
     }
 
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone) {
@@ -76,7 +77,6 @@ public class EndpointCertificateManager {
                         .orElse(provisionEndpointCertificate(instance));
 
         // If feature flag set for application, look for and use refreshed certificate
-        var useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
         if (useRefreshedEndpointCertificate.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value()) {
             var latestAvailableVersion = latestVersionInSecretStore(endpointCertificateMetadata);
 
