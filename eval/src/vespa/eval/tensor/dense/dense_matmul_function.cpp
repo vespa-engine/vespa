@@ -10,7 +10,7 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <assert.h>
 
-#include <openblas/cblas.h>
+#include <cblas.h>
 
 namespace vespalib::tensor {
 
