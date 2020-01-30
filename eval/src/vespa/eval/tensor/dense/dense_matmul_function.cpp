@@ -10,7 +10,11 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <assert.h>
 
+#ifdef __APPLE__
+#include <cblas.h>
+#else
 #include <openblas/cblas.h>
+#endif
 
 namespace vespalib::tensor {
 
