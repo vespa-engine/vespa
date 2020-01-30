@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.google.inject.Inject;
@@ -42,7 +42,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
-    private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock(RoutingGeneratorMock.TEST_ENDPOINTS);
+    private final RoutingGeneratorMock routingGeneratorMock;
     private final MockMailer mockMailer = new MockMailer();
     private final ApplicationCertificateMock applicationCertificateMock = new ApplicationCertificateMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
@@ -64,6 +64,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
         this.configServerMock = new ConfigServerMock(zoneRegistryMock);
+        this.routingGeneratorMock = new RoutingGeneratorMock(RoutingGeneratorMock.TEST_ENDPOINTS, zoneRegistryMock);
     }
 
     @Inject

@@ -8,6 +8,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -524,7 +525,7 @@ public class DeploymentContext {
 
     /** Sets a single endpoint in the routing layer; this matches that required for the tester */
     private DeploymentContext setEndpoints(ZoneId zone, boolean tester) {
-        if (isDirectlyRouted(zone)) return this;
+        if (!supportsRoutingMethod(RoutingMethod.shared, zone)) return this;
         var id = instanceId;
         if (tester) {
             id = testerId.id();
@@ -615,11 +616,12 @@ public class DeploymentContext {
 
     /** Returns whether a load balancer is expected to be provisioned in given zone */
     private boolean provisionLoadBalancerIn(ZoneId zone) {
-        return !deferLoadBalancerProvisioning.contains(zone.environment()) && isDirectlyRouted(zone);
+        return !deferLoadBalancerProvisioning.contains(zone.environment()) &&
+               supportsRoutingMethod(RoutingMethod.exclusive, zone);
     }
 
-    private boolean isDirectlyRouted(ZoneId zone) {
-        return tester.controller().zoneRegistry().zones().directlyRouted().ids().contains(zone);
+    private boolean supportsRoutingMethod(RoutingMethod method, ZoneId zone) {
+        return tester.controller().zoneRegistry().zones().routingMethod(method).ids().contains(zone);
     }
 
     private JobId jobId(JobType type) {

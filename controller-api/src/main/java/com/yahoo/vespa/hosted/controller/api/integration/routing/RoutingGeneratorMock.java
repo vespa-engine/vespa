@@ -1,8 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.routing;
 
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
 import java.util.List;
@@ -27,17 +29,19 @@ public class RoutingGeneratorMock implements RoutingGenerator {
 
     private final Map<DeploymentId, List<RoutingEndpoint>> routingTable = new ConcurrentHashMap<>();
     private final List<RoutingEndpoint> defaultEndpoints;
+    private final ZoneRegistry zoneRegistry;
 
-    public RoutingGeneratorMock() {
-        this(List.of());
-    }
-
-    public RoutingGeneratorMock(List<RoutingEndpoint> endpoints) {
+    public RoutingGeneratorMock(List<RoutingEndpoint> endpoints, ZoneRegistry zoneRegistry) {
         this.defaultEndpoints = List.copyOf(endpoints);
+        this.zoneRegistry = zoneRegistry;
     }
 
     @Override
     public List<RoutingEndpoint> endpoints(DeploymentId deployment) {
+        if (!zoneRegistry.zones().routingMethod(RoutingMethod.shared).ids().contains(deployment.zoneId())) {
+            throw new IllegalArgumentException(deployment.zoneId() + " does not support routing method " +
+                                               RoutingMethod.shared);
+        }
         if (routingTable.isEmpty()) return defaultEndpoints;
         return routingTable.getOrDefault(deployment, List.of());
     }
