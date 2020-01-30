@@ -79,9 +79,7 @@ public class OrchestratorMock extends AbstractComponent implements Orchestrator 
     }
 
     @Override
-    public void acquirePermissionToRemove(HostName hostName) {
-        suspendedHosts.put(hostName, HostInfo.createSuspended(HostStatus.PERMANENTLY_DOWN, Instant.now()));
-    }
+    public void acquirePermissionToRemove(HostName hostName) { }
 
     @Override
     public void suspendAll(HostName parentHostname, List<HostName> hostNames) {
