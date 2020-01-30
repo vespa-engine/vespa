@@ -7,7 +7,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/tensor.h>
 
-#include <openblas/cblas.h>
+#include <cblas.h>
 
 namespace vespalib::tensor {
 
