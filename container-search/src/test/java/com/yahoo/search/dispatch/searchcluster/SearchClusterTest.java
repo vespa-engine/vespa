@@ -64,28 +64,30 @@ public class SearchClusterTest {
             searchCluster.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
         }
 
-        static private int maxFrom(List<AtomicInteger> list) {
-            int max = list.get(0).get();
-            for (AtomicInteger v : list) {
-                if (v.get() > max) {
-                    max = v.get();
+        private int maxPingCount() {
+            int max = pingCounts.get(0).get();
+            for (AtomicInteger count : pingCounts) {
+                if (count.get() > max) {
+                    max = count.get();
                 }
             }
             return max;
         }
 
-        private static int minFrom(List<AtomicInteger> list) {
-            int min = list.get(0).get();
-            for (AtomicInteger v : list) {
-                if (v.get() < min) {
-                    min = v.get();
+        private int minPingCount() {
+            int min = pingCounts.get(0).get();
+            for (AtomicInteger count : pingCounts) {
+                if (count.get() < min) {
+                    min = count.get();
                 }
             }
             return min;
         }
 
-        private void waitAtLeast(int atLeast, List<AtomicInteger> list) {
-            while (minFrom(list) < atLeast) {
+        void waitOneFullPingRound() {
+            int minPingCount = minPingCount();
+            int atLeast = maxPingCount() + 1;
+            while (minPingCount < atLeast) {
                 ExecutorService executor = Executors.newCachedThreadPool();
                 searchCluster.clusterMonitor().ping(executor);
                 executor.shutdown();
@@ -93,14 +95,13 @@ public class SearchClusterTest {
                     boolean completed = executor.awaitTermination(120, TimeUnit.SECONDS);
                     if ( ! completed )
                         throw new IllegalStateException("Ping thread timed out");
+                    // Since a separate thread will be modifying values in pingCounts, we need to wait for the thread to
+                    // finish before re-reading the minimum value
+                    minPingCount = minPingCount();
                 } catch (InterruptedException e) {
-                    System.out.println("Ping thread interrupted");
+                    throw new RuntimeException(e);
                 }
             }
-        }
-
-        void waitOneFullPingRound() {
-            waitAtLeast(maxFrom(pingCounts) + 1, pingCounts);
         }
 
         @Override
@@ -273,8 +274,8 @@ public class SearchClusterTest {
     static private List<String> generateNodeNames(int numGroups, int nodesPerGroup) {
         List<String> nodeNames = new ArrayList<>(numGroups*nodesPerGroup);
         for (int g = 0; g < numGroups; g++) {
-            for (int n=0; n < nodesPerGroup; n++) {
-                nodeNames.add(new StringBuilder("node.").append(g).append('.').append(n).toString());
+            for (int n = 0; n < nodesPerGroup; n++) {
+                nodeNames.add("node." + g + '.' + n);
             }
         }
         return nodeNames;
