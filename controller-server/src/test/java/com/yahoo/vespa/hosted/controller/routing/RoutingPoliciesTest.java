@@ -266,7 +266,7 @@ public class RoutingPoliciesTest {
         var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
         tester.controllerTester().serviceRegistry().zoneRegistry()
               .setZones(zoneApi)
-              .setDirectlyRouted(zoneApi);
+              .exclusiveRoutingIn(zoneApi);
         tester.provisionLoadBalancers(1, context.instanceId(), zone);
 
         // Deploy to dev
@@ -289,7 +289,7 @@ public class RoutingPoliciesTest {
         var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
         tester.controllerTester().serviceRegistry().zoneRegistry()
               .setZones(zoneApi)
-              .setDirectlyRouted(zoneApi);
+              .exclusiveRoutingIn(zoneApi);
         var prodRecords = Set.of("app1.tenant1.us-central-1.vespa.oath.cloud", "app1.tenant1.us-west-1.vespa.oath.cloud");
         assertEquals(prodRecords, tester.recordNames());
 
@@ -523,7 +523,7 @@ public class RoutingPoliciesTest {
         public RoutingPoliciesTester(DeploymentTester tester) {
             this.tester = tester;
             // Make all zones directly routed
-            tester.controllerTester().zoneRegistry().setDirectlyRouted(Set.copyOf(tester.controllerTester().zoneRegistry().zones().all().zones()));
+            tester.controllerTester().zoneRegistry().exclusiveRoutingIn(tester.controllerTester().zoneRegistry().zones().all().zones());
         }
 
         private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, ZoneId... zones) {

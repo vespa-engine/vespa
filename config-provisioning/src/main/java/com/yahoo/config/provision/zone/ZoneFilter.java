@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision.zone;
 
 import com.yahoo.config.provision.CloudName;
@@ -21,6 +21,9 @@ public interface ZoneFilter {
 
     /** Zones which support direct routing through exclusive load balancers. */
     ZoneList directlyRouted();
+
+    /** Zones where traffic is routed using given method */
+    ZoneList routingMethod(RoutingMethod method);
 
     /** Zones where config servers are up and running. */
     ZoneList reachable();

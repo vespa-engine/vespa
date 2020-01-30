@@ -8,6 +8,7 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
@@ -260,7 +261,7 @@ public class InternalStepRunnerTest {
     public void alternativeEndpointsAreDetected() {
         var systemTestZone =  JobType.systemTest.zone(system());
         var stagingZone =  JobType.stagingTest.zone(system());
-        tester.controllerTester().zoneRegistry().setDirectlyRouted(ZoneApiMock.from(systemTestZone), ZoneApiMock.from(stagingZone));
+        tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(systemTestZone), ZoneApiMock.from(stagingZone));
         app.newRun(JobType.systemTest);
         tester.runner().run();;
         tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
@@ -426,9 +427,12 @@ public class InternalStepRunnerTest {
     @Test
     public void certificateTimeoutAbortsJob() {
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.PublicCd);
-        tester.controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("test.aws-us-east-1c"),
-                                                          ZoneApiMock.fromId("staging.aws-us-east-1c"),
-                                                          ZoneApiMock.fromId("prod.aws-us-east-1c"));
+        var zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
+                                      ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                                      ZoneApiMock.fromId("prod.aws-us-east-1c"));
+        tester.controllerTester().zoneRegistry()
+              .setZones(zones)
+              .setRoutingMethod(zones, RoutingMethod.shared);
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.values());
         RunId id = app.startSystemTestTests();
 
