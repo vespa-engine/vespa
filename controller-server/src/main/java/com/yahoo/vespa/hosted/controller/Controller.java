@@ -73,6 +73,7 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
     private final NameServiceForwarder nameServiceForwarder;
     private final MavenRepository mavenRepository;
     private final Metric metric;
+    private final RoutingController routingController;
 
     /**
      * Creates a controller 
@@ -102,11 +103,9 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         metrics = new ConfigServerMetrics(serviceRegistry.configServer());
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this);
-        applicationController = new ApplicationController(this, curator, accessControl,
-                                                          Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          clock, secretStore
-        );
+        applicationController = new ApplicationController(this, curator, accessControl, clock, secretStore);
         tenantController = new TenantController(this, curator, accessControl);
+        routingController = new RoutingController(this, Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"));
         auditLogger = new AuditLogger(curator, clock);
 
         // Record the version of this controller
@@ -123,6 +122,11 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
 
     /** Returns the instance controlling deployment jobs. */
     public JobController jobController() { return jobController; }
+
+    /** Returns the instance controlling routing */
+    public RoutingController routingController() {
+        return routingController;
+    }
 
     /** Returns the service registry of this */
     public ServiceRegistry serviceRegistry() {

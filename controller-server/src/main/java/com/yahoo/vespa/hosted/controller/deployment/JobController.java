@@ -517,7 +517,7 @@ public class JobController {
         } finally {
             // Passing an empty DeploymentSpec here is fine as it's used for registering global endpoint names, and
             // tester instances have none.
-            controller.applications().routingPolicies().refresh(id.id(), DeploymentSpec.empty, zone);
+            controller.routingController().policies().refresh(id.id(), DeploymentSpec.empty, zone);
         }
     }
 
@@ -545,14 +545,10 @@ public class JobController {
                                     .collect(toList()));
     }
 
-    /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
+    /** Returns the tester endpoint URL, if any */
     Optional<URI> testerEndpoint(RunId id) {
-        DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        return controller.applications().getDeploymentEndpoints(testerId)
-                         .stream().findAny()
-                         .or(() -> controller.applications().routingPolicies().get(testerId).values().stream()
-                                             .findAny()
-                                             .map(policy -> policy.endpointIn(controller.system()).url()));
+        var testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
+        return controller.routingController().zoneEndpointsOf(testerId).values().stream().findFirst();
     }
 
     private void prunePackages(TenantAndApplicationId id) {
