@@ -102,7 +102,7 @@ public class EndpointCertificateManager {
         var certVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.certName()));
         var keyVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.keyName()));
 
-        return Sets.union(certVersions, keyVersions).stream().mapToInt(Integer::intValue).max();
+        return Sets.intersection(certVersions, keyVersions).stream().mapToInt(Integer::intValue).max();
     }
 
     private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance) {

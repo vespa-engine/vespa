@@ -95,6 +95,7 @@ public class EndpointCertificateManagerTest {
         secretStore.setSecret(testKeyName, "secret-key", 7);
         secretStore.setSecret(testCertName, "cert", 7);
         secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 8);
+        secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 9);
         secretStore.setSecret(testCertName, X509CertificateUtils.toPem(testCertificate)+X509CertificateUtils.toPem(testCertificate), 8);
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, 7));
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone);
