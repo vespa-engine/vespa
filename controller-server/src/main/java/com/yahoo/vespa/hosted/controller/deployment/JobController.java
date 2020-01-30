@@ -183,16 +183,17 @@ public class JobController {
             if (step.isEmpty())
                 return run;
 
-            Optional<URI> testerEndpoint = testerEndpoint(id);
-            if (testerEndpoint.isEmpty())
-                return run;
-
             List<LogEntry> entries;
             ZoneId zone = id.type().zone(controller.system());
-            if (useConfigServerForTesterAPI(zone))
+            if (useConfigServerForTesterAPI(zone)) {
                 entries = cloud.getLog(new DeploymentId(id.application(), zone), run.lastTestLogEntry());
-            else
+            } else {
+                Optional<URI> testerEndpoint = testerEndpoint(id);
+                if (testerEndpoint.isEmpty())
+                    return run;
+
                 entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
+            }
             if (entries.isEmpty())
                 return run;
 
