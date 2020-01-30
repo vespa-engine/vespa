@@ -203,6 +203,13 @@ seek_past(LidInfoWithLidV::const_iterator begin, LidInfoWithLidV::const_iterator
    return begin;
 }
 
+struct LidAndBuffer {
+    LidAndBuffer(uint32_t lid, uint32_t sz, std::unique_ptr<char[]> buf) : _lid(lid), _size(sz), _buf(std::move(buf)) {}
+    uint32_t _lid;
+    uint32_t _size;
+    std::unique_ptr<char[]> _buf;
+};
+
 }
 
 void
@@ -211,6 +218,7 @@ WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IB
     if (count == 0) { return; }
     if (!frozen()) {
         vespalib::hash_map<uint32_t, ChunkInfo> chunksOnFile;
+        std::vector<LidAndBuffer> buffers;
         {
             LockGuard guard(_lock);
             for (size_t i(0); i < count; i++) {
@@ -225,11 +233,17 @@ WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IB
                         assert(chunk == _active->getId());
                         buffer = _active->getLid(li.getLid());
                     }
-                    visitor.visit(li.getLid(), buffer);
+                    auto copy = std::make_unique<char[]>(buffer.size());
+                    memcpy(copy.get(), buffer.data(), buffer.size());
+                    buffers.emplace_back(li.getLid(), buffer.size(), std::move(copy));
                 } else {
                     chunksOnFile[chunk] = _chunkInfo[chunk];
                 }
             }
+        }
+        for (auto & entry : buffers) {
+            visitor.visit(entry._lid, vespalib::ConstBufferRef(entry._buf.get(), entry._size));
+            entry._buf.reset();
         }
         for (auto & it : chunksOnFile) {
             auto first = find_first(begin, it.first);
