@@ -46,7 +46,7 @@ getValue(const Context &context) const
     const auto &sc(static_cast<const SelectContext &>(context));
     uint32_t docId(sc._docId); 
     assert(docId != 0u);
-    const auto& v = *sc.read_guard_at_index(_attr_guard_index).attribute();
+    const auto& v = sc.guarded_attribute_at_index(_attr_guard_index);
     if (v.isUndefined(docId)) {
         return std::make_unique<NullValue>();
     }

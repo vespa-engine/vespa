@@ -3,7 +3,7 @@
 
 #include <vespa/document/select/context.h>
 
-namespace search::attribute { class AttributeReadGuard; }
+namespace search::attribute { class IAttributeVector; }
 
 namespace proton {
 
@@ -22,7 +22,7 @@ public:
 
     uint32_t _docId;
 
-    const search::attribute::AttributeReadGuard& read_guard_at_index(uint32_t index) const noexcept;
+    const search::attribute::IAttributeVector& guarded_attribute_at_index(uint32_t index) const noexcept;
 private:
     std::unique_ptr<select::Guards> _guards;
     const CachedSelect &_cachedSelect;

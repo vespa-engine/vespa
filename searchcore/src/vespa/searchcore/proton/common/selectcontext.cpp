@@ -46,12 +46,12 @@ SelectContext::dropAttributeGuards()
     _guards->clear();
 }
 
-const search::attribute::AttributeReadGuard&
-SelectContext::read_guard_at_index(uint32_t index) const noexcept
+const search::attribute::IAttributeVector&
+SelectContext::guarded_attribute_at_index(uint32_t index) const noexcept
 {
     assert(index < _guards->size());
     assert((*_guards)[index].get() != nullptr);
-    return *((*_guards)[index]);
+    return *((*_guards)[index])->attribute();
 }
 
 }
