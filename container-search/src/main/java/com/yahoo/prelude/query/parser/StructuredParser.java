@@ -520,7 +520,7 @@ abstract class StructuredParser extends AbstractParser {
     /** Returns a word, a phrase, or another composite */
     private Item phraseBody(String indexName) {
         boolean quoted = false;
-        PhraseItem phrase = null;
+        CompositeItem composite = null;
         Item firstWord = null;
         boolean starAfterFirst = false;
         boolean starBeforeFirst;
@@ -539,7 +539,7 @@ abstract class StructuredParser extends AbstractParser {
                 quoted = !quoted;
             }
 
-            Item word = phraseWord(indexName, (firstWord != null) || (phrase != null));
+            Item word = phraseWord(indexName, (firstWord != null) || (composite != null));
 
             if (word == null) {
                 if (tokens.skipMultiple(QUOTE)) {
@@ -555,34 +555,37 @@ abstract class StructuredParser extends AbstractParser {
                 ((PhraseSegmentItem) word).setExplicit(true);
             }
 
-            if (phrase != null) {
-                phrase.addItem(word);
+            if (composite != null) {
+                composite.addItem(word);
             } else if (firstWord != null) {
                 if (submodes.site || submodes.url) {
                     UriItem uriItem = new UriItem();
                     if (submodes.site)
                         uriItem.setEndAnchorDefault(true);
-                    phrase = uriItem;
+                    composite = uriItem;
                 }
                 else {
-                    phrase = new PhraseItem();
+                    if (quoted || indexFacts.getIndex(indexName).getPhraseSegmenting())
+                        composite = new PhraseItem();
+                    else
+                        composite = new AndItem();
                 }
 
-                if (quoted || submodes.site || submodes.url) {
-                    phrase.setExplicit(true);
+                if ( (quoted || submodes.site || submodes.url) && composite instanceof PhraseItem) {
+                    ((PhraseItem)composite).setExplicit(true);
                 }
                 if (addStartOfHostMarker) {
-                    phrase.addItem(MarkerWordItem.createStartOfHost());
+                    composite.addItem(MarkerWordItem.createStartOfHost());
                 }
                 if (firstWord instanceof IntItem) {
                     IntItem asInt = (IntItem) firstWord;
                     firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(),
                             true, asInt.getOrigin());
                 }
-                phrase.addItem(firstWord);
-                phrase.addItem(word);
+                composite.addItem(firstWord);
+                composite.addItem(word);
             } else if (word instanceof PhraseItem) {
-                phrase = (PhraseItem) word;
+                composite = (PhraseItem)word;
             } else {
                 firstWord = word;
                 starAfterFirst = tokens.skipNoIgnore(STAR);
@@ -609,29 +612,29 @@ abstract class StructuredParser extends AbstractParser {
 
         braceLevelURL = 0;
 
-        if (phrase != null) {
+        if (composite != null) {
             if (addEndMarking()) {
-                phrase.addItem(MarkerWordItem.createEndOfHost());
+                composite.addItem(MarkerWordItem.createEndOfHost());
             }
-            return phrase;
+            return composite;
         } else if (firstWord != null && submodes.site) {
             if (starAfterFirst && !addStartOfHostMarker) {
                 return firstWord;
             } else {
-                phrase = new PhraseItem();
+                composite = new PhraseItem();
+                ((PhraseItem)composite).setExplicit(true);
                 if (addStartOfHostMarker) {
-                    phrase.addItem(MarkerWordItem.createStartOfHost());
+                    composite.addItem(MarkerWordItem.createStartOfHost());
                 }
                 if (firstWord instanceof IntItem) {
                     IntItem asInt = (IntItem) firstWord;
                     firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(), true, asInt.getOrigin());
                 }
-                phrase.addItem(firstWord);
+                composite.addItem(firstWord);
                 if (!starAfterFirst) {
-                    phrase.addItem(MarkerWordItem.createEndOfHost());
+                    composite.addItem(MarkerWordItem.createEndOfHost());
                 }
-                phrase.setExplicit(true);
-                return phrase;
+                return composite;
             }
         } else {
             if (firstWord != null && firstWord instanceof TermItem && (starAfterFirst || starBeforeFirst)) {
