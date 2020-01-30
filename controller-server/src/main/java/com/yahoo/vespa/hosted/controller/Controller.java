@@ -103,8 +103,8 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         metrics = new ConfigServerMetrics(serviceRegistry.configServer());
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this);
-	applicationController = new ApplicationController(this, curator, accessControl, clock, secretStore, flagSource);
-	tenantController = new TenantController(this, curator, accessControl);
+        applicationController = new ApplicationController(this, curator, accessControl, clock, secretStore, flagSource);
+        tenantController = new TenantController(this, curator, accessControl);
         routingController = new RoutingController(this, Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"));
         auditLogger = new AuditLogger(curator, clock);
 
