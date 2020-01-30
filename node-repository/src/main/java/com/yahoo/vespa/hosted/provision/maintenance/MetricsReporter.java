@@ -51,7 +51,7 @@ public class MetricsReporter extends Maintainer {
                     Clock clock) {
         super(nodeRepository, interval);
         this.metric = metric;
-        this.orchestrator = orchestrator.getNodeStatuses();
+        this.orchestrator = orchestrator.getHostResolver();
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
         this.clock = clock;

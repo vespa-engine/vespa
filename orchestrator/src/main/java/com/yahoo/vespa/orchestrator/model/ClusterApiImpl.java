@@ -8,6 +8,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
+import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.util.Collections;
@@ -27,7 +28,7 @@ class ClusterApiImpl implements ClusterApi {
     private final ApplicationApi applicationApi;
     private final ServiceCluster serviceCluster;
     private final NodeGroup nodeGroup;
-    private final Map<HostName, HostStatus> hostStatusMap;
+    private final HostInfos hostInfos;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final Set<ServiceInstance> servicesInGroup;
     private final Set<ServiceInstance> servicesDownInGroup;
@@ -50,13 +51,13 @@ class ClusterApiImpl implements ClusterApi {
     public ClusterApiImpl(ApplicationApi applicationApi,
                           ServiceCluster serviceCluster,
                           NodeGroup nodeGroup,
-                          Map<HostName, HostStatus> hostStatusMap,
+                          HostInfos hostInfos,
                           ClusterControllerClientFactory clusterControllerClientFactory,
                           int numberOfConfigServers) {
         this.applicationApi = applicationApi;
         this.serviceCluster = serviceCluster;
         this.nodeGroup = nodeGroup;
-        this.hostStatusMap = hostStatusMap;
+        this.hostInfos = hostInfos;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
 
         Map<Boolean, Set<ServiceInstance>> serviceInstancesByLocality =
@@ -144,7 +145,7 @@ class ClusterApiImpl implements ClusterApi {
     public String nodesAllowedToBeDownNotInGroupDescription() {
         return servicesNotInGroup.stream()
                 .map(ServiceInstance::hostName)
-                .filter(hostName -> hostStatus(hostName) == HostStatus.ALLOWED_TO_BE_DOWN)
+                .filter(hostName -> hostStatus(hostName).isSuspended())
                 .sorted()
                 .distinct()
                 .collect(Collectors.toList())
@@ -206,11 +207,11 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     private HostStatus hostStatus(HostName hostName) {
-        return hostStatusMap.getOrDefault(hostName, HostStatus.NO_REMARKS);
+        return hostInfos.getOrNoRemarks(hostName).status();
     }
 
     private boolean serviceEffectivelyDown(ServiceInstance service) {
-        if (hostStatus(service.hostName()) == HostStatus.ALLOWED_TO_BE_DOWN) {
+        if (hostStatus(service.hostName()).isSuspended()) {
             return true;
         }
 

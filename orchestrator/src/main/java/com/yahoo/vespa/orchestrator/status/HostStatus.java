@@ -23,4 +23,5 @@ public enum HostStatus {
 
     HostStatus(boolean suspended) { this.suspended = suspended; }
     public boolean isSuspended() { return suspended; }
+    public String asString() { return name(); }
 }

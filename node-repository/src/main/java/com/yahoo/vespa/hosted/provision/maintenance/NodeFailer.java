@@ -265,7 +265,7 @@ public class NodeFailer extends Maintainer {
 
     private boolean nodeSuspended(Node node) {
         try {
-            return orchestrator.getNodeStatus(new HostName(node.hostname())) == HostStatus.ALLOWED_TO_BE_DOWN;
+            return orchestrator.getNodeStatus(new HostName(node.hostname())).isSuspended();
         } catch (HostNameNotFoundException e) {
             // Treat it as not suspended
             return false;

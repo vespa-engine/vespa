@@ -57,12 +57,12 @@ public interface StatusService {
     Set<ApplicationInstanceReference> getAllSuspendedApplications();
 
     /**
-     * Returns a fresh, but not necessarily consistent mapping from applications to their set of suspended hosts.
+     * Returns a lambda, which when invoked for an application, returns an up-to-date snapshot of {@link HostInfos host infos}.
      *
-     * If the lock for an application is held when this mapping is acquired, new sets returned for that application
-     * are consistent and up to date for as long as the lock is held. (The sets themselves don't reflect changes.)
+     * <p>Unless the lock for the application is held, the returned snapshot may already be out of date.
+     * (The snapshot itself is immutable.)</p>
      */
-    Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication();
+    Function<ApplicationInstanceReference, HostInfos> getHostInfosByApplicationResolver();
 
     /** Returns the status of the given application. This is consistent if its lock is held.*/
     ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference application);

@@ -11,8 +11,10 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -24,7 +26,7 @@ import java.util.function.Function;
  */
 public class OrchestratorMock implements Orchestrator {
 
-    private final Set<HostName> suspendedHosts = new HashSet<>();
+    private final Map<HostName, HostInfo> hostInfos = new HashMap<>();
     private final Set<ApplicationId> suspendedApplications = new HashSet<>();
 
     @Override
@@ -34,14 +36,13 @@ public class OrchestratorMock implements Orchestrator {
 
     @Override
     public HostStatus getNodeStatus(HostName hostName) {
-        return suspendedHosts.contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS;
+        HostInfo hostInfo = hostInfos.get(hostName);
+        return hostInfo == null ? HostStatus.NO_REMARKS : hostInfo.status();
     }
 
     @Override
-    public Function<HostName, Optional<HostInfo>> getNodeStatuses() {
-        return hostName -> Optional.of(getNodeStatus(hostName))
-                                   .map(status -> status.isSuspended() ? HostInfo.createSuspended(status, Instant.EPOCH)
-                                                                       : HostInfo.createNoRemarks());
+    public Function<HostName, Optional<HostInfo>> getHostResolver() {
+        return hostName -> Optional.of(hostInfos.getOrDefault(hostName, HostInfo.createNoRemarks()));
     }
 
     @Override
@@ -49,12 +50,12 @@ public class OrchestratorMock implements Orchestrator {
 
     @Override
     public void resume(HostName hostName) {
-        suspendedHosts.remove(hostName);
+        hostInfos.remove(hostName);
     }
 
     @Override
     public void suspend(HostName hostName) {
-        suspendedHosts.add(hostName);
+        hostInfos.put(hostName, HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.EPOCH));
     }
 
     @Override

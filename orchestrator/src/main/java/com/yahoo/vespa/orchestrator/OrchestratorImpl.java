@@ -28,6 +28,7 @@ import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
+import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
@@ -113,7 +114,7 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     @Override
-    public Function<HostName, Optional<HostInfo>> getNodeStatuses() {
+    public Function<HostName, Optional<HostInfo>> getHostResolver() {
         return hostName -> instanceLookupService.findInstanceByHost(hostName)
                                                 .map(application -> statusService.getHostInfo(application.reference(), hostName));
     }
@@ -334,9 +335,15 @@ public class OrchestratorImpl implements Orchestrator {
             if (status == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 ApplicationInstance application = getApplicationInstance(appRef);
 
+                HostInfos hostInfosSnapshot = statusRegistry.getHostInfos();
+
                 // Mark it allowed to be down before we manipulate the clustercontroller
                 OrchestratorUtil.getHostsUsedByApplicationInstance(application)
-                        .forEach(h -> statusRegistry.setHostState(h, HostStatus.ALLOWED_TO_BE_DOWN));
+                        .stream()
+                        // This filter also ensures host status is not modified if a suspended host
+                        // has status != ALLOWED_TO_BE_DOWN.
+                        .filter(hostname -> !hostInfosSnapshot.getOrNoRemarks(hostname).status().isSuspended())
+                        .forEach(hostname -> statusRegistry.setHostState(hostname, HostStatus.ALLOWED_TO_BE_DOWN));
 
                 // If the clustercontroller throws an error the nodes will be marked as allowed to be down
                 // and be set back up on next resume invocation.

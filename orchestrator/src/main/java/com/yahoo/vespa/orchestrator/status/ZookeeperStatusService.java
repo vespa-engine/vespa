@@ -99,12 +99,13 @@ public class ZookeeperStatusService implements StatusService {
 
     /**
      * Cache is checked for freshness when this mapping is created, and may be invalidated again later
-     * by other users of the cache. Since this function is backed by the cache, any such invalidations
+     * by other users of the cache. Since this function is backed by the cache, any such invalidation
      * will be reflected in the returned mapping; all users of the cache collaborate in repopulating it.
      */
     @Override
-    public Function<ApplicationInstanceReference, Set<HostName>> getSuspendedHostsByApplication() {
-        return application -> hostInfosCache.getHostInfos(application).suspendedHostsnames();
+    public Function<ApplicationInstanceReference, HostInfos> getHostInfosByApplicationResolver() {
+        hostInfosCache.refreshCache();
+        return hostInfosCache::getCachedHostInfos;
     }
 
 
@@ -255,7 +256,7 @@ public class ZookeeperStatusService implements StatusService {
 
     @Override
     public HostInfo getHostInfo(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
-        return hostInfosCache.getHostInfos(applicationInstanceReference).get(hostName);
+        return hostInfosCache.getHostInfos(applicationInstanceReference).getOrNoRemarks(hostName);
     }
 
     /** Do not call this directly: should be called behind a cache. */
@@ -362,8 +363,8 @@ public class ZookeeperStatusService implements StatusService {
         }
 
         @Override
-        public Set<HostName> getSuspendedHosts() {
-            return hostInfosCache.getHostInfos(applicationInstanceReference).suspendedHostsnames();
+        public HostInfos getHostInfos() {
+            return hostInfosCache.getHostInfos(applicationInstanceReference);
         }
 
         @Override

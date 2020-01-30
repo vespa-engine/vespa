@@ -28,14 +28,21 @@ public class HostInfosCache implements HostInfosService {
         this.cacheGeneration = new AtomicLong(counter.get());
     }
 
-    @Override
-    public HostInfos getHostInfos(ApplicationInstanceReference application) {
+    public void refreshCache() {
         long newCacheGeneration = counter.get();
         if (cacheGeneration.getAndSet(newCacheGeneration) != newCacheGeneration) {
             suspendedHosts.clear();
         }
+    }
 
+    public HostInfos getCachedHostInfos(ApplicationInstanceReference application) {
         return suspendedHosts.computeIfAbsent(application, wrappedService::getHostInfos);
+    }
+
+    @Override
+    public HostInfos getHostInfos(ApplicationInstanceReference application) {
+        refreshCache();
+        return getCachedHostInfos(application);
     }
 
     @Override
