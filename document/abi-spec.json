@@ -1457,8 +1457,10 @@
     ],
     "methods": [
       "public void <init>(java.lang.String, int, com.yahoo.document.DataType, boolean)",
+      "public void <init>(java.lang.String, int, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType, boolean, com.yahoo.document.DocumentType)",
+      "public void <init>(java.lang.String, com.yahoo.document.DataType, com.yahoo.document.DocumentType)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType, boolean)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String, com.yahoo.document.Field)",

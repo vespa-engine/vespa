@@ -637,7 +637,7 @@ void field(SDDocumentType document, Search search) :
         if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
-        field = new TemporarySDField(name, type, true, document);
+        field = new TemporarySDField(name, type, document);
     }
     lbrace() (fieldBody(field, search, document) (<NL>)*)* <RBRACE>
     {
@@ -931,7 +931,7 @@ void structFieldDefinition(SDDocumentType struct) :
         if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
-        field = new TemporarySDField(name, type, true, struct);
+        field = new TemporarySDField(name, type, struct);
         struct.addField(field);
     }
     lbrace() (id(field,struct) (<NL>)*)? (match(field) (<NL>)*)* <RBRACE> {

@@ -31,15 +31,15 @@ public class DocumentSelectorTestCase {
     @Before
     public void setUp() {
         DocumentType type = new DocumentType("test");
-        type.addHeaderField("hint", DataType.INT);
-        type.addHeaderField("hfloat", DataType.FLOAT);
-        type.addHeaderField("hstring", DataType.STRING);
+        type.addField("hint", DataType.INT);
+        type.addField("hfloat", DataType.FLOAT);
+        type.addField("hstring", DataType.STRING);
         type.addField("content", DataType.STRING);
 
         StructDataType mystruct = new StructDataType("mystruct");
-        mystruct.addField(new Field("key", DataType.INT, false));
-        mystruct.addField(new Field("value", DataType.STRING, false));
-        type.addHeaderField("mystruct", mystruct);
+        mystruct.addField(new Field("key", DataType.INT));
+        mystruct.addField(new Field("value", DataType.STRING));
+        type.addField("mystruct", mystruct);
 
         ArrayDataType structarray = new ArrayDataType(mystruct);
         type.addField("structarray", structarray);
