@@ -2,7 +2,7 @@
 namespace=jdisc.http.filter.security.athenz
 
 # Which credentials to verify. Note: ANY will prioritize token over certificate if both are present.
-credentialsToVerify enum { CERTIFICATE_ONLY, TOKEN_ONLY, ANY } default=ANY
+enabledCredentials[] enum { ROLE_CERTIFICATE, ROLE_TOKEN, ACCESS_TOKEN }
 
-# Name of header which includes role token. Must be set if 'credentialsTypeRequired' is set to TOKEN_ONLY or ANY.
-roleTokenHeaderName string default=""
+# Name of role token http header
+roleTokenHeaderName string default="Athenz-Role-Token"
