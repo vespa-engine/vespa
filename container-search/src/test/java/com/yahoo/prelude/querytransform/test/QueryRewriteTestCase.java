@@ -1,15 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform.test;
 
+import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.QueryRewrite;
+import com.yahoo.prelude.querytransform.RecallSearcher;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.test.QueryTestCase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -38,9 +45,18 @@ public class QueryRewriteTestCase {
         assertRewritten(query, "OR sddocname:per foo bar");
         ((OrItem)query.getModel().getQueryTree().getRoot()).getItem(2).setRanked(false); // set 'bar' unranked
         assertRewritten(query, "OR sddocname:per foo");
-
         assertRewritten("sddocname:per OR foo OR (bar AND fuz)", "per", "OR sddocname:per foo (AND bar fuz)");
+    }
 
+    @Test
+    public void testRankContributingTermsAreNotRemovedOnFullRecall() {
+        Query query = new Query(QueryTestCase.httpEncode("?query=default:term1 OR default:term2 OR default:term3 OR sddocname:per&type=adv&recall=+id:1"));
+        RecallSearcher searcher = new RecallSearcher();
+        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
+        System.out.println(query.yqlRepresentation());
+        assertNull(result.hits().getError());
+        assertNull(QueryCanonicalizer.canonicalize(query));
+        assertRewritten(query, "");
     }
 
     @Test
@@ -88,6 +104,7 @@ public class QueryRewriteTestCase {
 
     private static void assertRewritten(Query query, String expectedOptimizedQuery) {
         QueryRewrite.optimizeByRestrict(query);
+        QueryRewrite.optimizeAndNot(query);
         QueryRewrite.collapseSingleComposites(query);
         assertEquals(expectedOptimizedQuery, query.getModel().getQueryTree().toString());
     }
