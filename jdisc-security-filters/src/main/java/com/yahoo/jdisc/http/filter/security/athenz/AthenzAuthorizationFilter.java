@@ -54,9 +54,9 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
         this(config, resourceMapper, new DefaultZpe());
     }
 
-    AthenzAuthorizationFilter(AthenzAuthorizationFilterConfig config,
-                              RequestResourceMapper resourceMapper,
-                              Zpe zpe) {
+    public AthenzAuthorizationFilter(AthenzAuthorizationFilterConfig config,
+                                     RequestResourceMapper resourceMapper,
+                                     Zpe zpe) {
         this.roleTokenHeaderName = config.roleTokenHeaderName();
         List<EnabledCredentials.Enum> enabledCredentials = config.enabledCredentials();
         this.enabledCredentials = enabledCredentials.isEmpty()
@@ -67,7 +67,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     }
 
     @Override
-    protected Optional<ErrorResponse> filter(DiscFilterRequest request) {
+    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
             Optional<ResourceNameAndAction> resourceMapping =
                     requestResourceMapper.getResourceNameAndAction(request.getMethod(), request.getRequestURI(), request.getQueryString());
