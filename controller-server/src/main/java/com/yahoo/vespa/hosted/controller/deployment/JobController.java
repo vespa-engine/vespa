@@ -186,7 +186,8 @@ public class JobController {
             List<LogEntry> entries;
             ZoneId zone = id.type().zone(controller.system());
             if (useConfigServerForTesterAPI(zone)) {
-                entries = cloud.getLog(new DeploymentId(id.application(), zone), run.lastTestLogEntry());
+                var testerId = new DeploymentId(id.tester().id(), zone);
+                entries = cloud.getLog(testerId, run.lastTestLogEntry());
             } else {
                 Optional<URI> testerEndpoint = testerEndpoint(id);
                 if (testerEndpoint.isEmpty())
