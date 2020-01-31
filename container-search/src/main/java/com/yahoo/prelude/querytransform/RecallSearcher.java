@@ -35,7 +35,7 @@ import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 @Before({STEMMING, ACCENT_REMOVAL})
 public class RecallSearcher extends Searcher {
 
-    public static final CompoundName recallName=new CompoundName("recall");
+    public static final CompoundName recallName = new CompoundName("recall");
 
     @Override
     public Result search(Query query, Execution execution) {
@@ -44,18 +44,18 @@ public class RecallSearcher extends Searcher {
 
         AnyParser parser = new AnyParser(ParserEnvironment.fromExecutionContext(execution.context()));
         QueryTree root = parser.parse(Parsable.fromQueryModel(query.getModel()).setQuery("foo").setFilter(recall));
-        String err;
+        String error;
         if (root.getRoot() instanceof NullItem) {
-            err = "Failed to parse recall parameter.";
+            error = "Failed to parse recall parameter.";
         } else if (!(root.getRoot() instanceof CompositeItem)) {
-            err = "Expected CompositeItem root node, got " + root.getClass().getSimpleName() + ".";
+            error = "Expected CompositeItem root node, got " + root.getClass().getSimpleName() + ".";
         } else if (hasRankItem(root.getRoot())) {
             query.getModel().getQueryTree().setRoot(root.getRoot());
-            err = "Recall contains at least one rank item.";
+            error = "Recall contains at least one rank item.";
         } else {
-            WordItem placeholder = findOrigWordItem(root.getRoot(), "foo");
+            WordItem placeholder = findOrigWordItem(root.getRoot());
             if (placeholder == null) {
-                err = "Could not find placeholder workQuery root.";
+                error = "Could not find placeholder workQuery root.";
             } else {
                 updateFilterTerms(root);
                 CompositeItem parent = placeholder.getParent();
@@ -66,14 +66,14 @@ public class RecallSearcher extends Searcher {
                 return execution.search(query);
             }
         }
-        return new Result(query, ErrorMessage.createInvalidQueryParameter(err));
+        return new Result(query, ErrorMessage.createInvalidQueryParameter(error));
     }
 
     /**
      * Returns true if the given item tree contains at least one instance of {@link RankItem}.
      *
-     * @param root The root of the tree to check.
-     * @return True if a rank item was found.
+     * @param root the root of the tree to check
+     * @return true if a rank item was found
      */
     private static boolean hasRankItem(Item root) {
         Stack<Item> stack = new Stack<>();
@@ -97,22 +97,16 @@ public class RecallSearcher extends Searcher {
      * Returns the first word item contained in the given item tree that is an instance of {@link WordItem} with the
      * given word value.
      *
-     * @param root The root of the tree to check.
-     * @param value The word to look for.
-     * @return The first node found.
+     * @param root the root of the tree to check
+     * @return the first node found
      */
-    private static WordItem findOrigWordItem(Item root, String value) {
+    private static WordItem findOrigWordItem(Item root) {
         Stack<Item> stack = new Stack<>();
         stack.push(root);
         while (!stack.isEmpty()) {
             Item item = stack.pop();
-            if (item.getCreator() == Item.ItemCreator.ORIG &&
-                item instanceof WordItem)
-            {
-                WordItem word = (WordItem)item;
-                if (word.getWord().equals(value)) {
-                    return word;
-                }
+            if (item.getCreator() == Item.ItemCreator.ORIG && item instanceof WordItem) {
+                return (WordItem)item;
             }
             if (item instanceof CompositeItem) {
                 CompositeItem lst = (CompositeItem)item;
@@ -127,7 +121,7 @@ public class RecallSearcher extends Searcher {
     /**
      * Marks all filter terms in the given query tree as unranked.
      *
-     * @param root The root of the tree to update.
+     * @param root the root of the tree to update
      */
     private static void updateFilterTerms(Item root) {
         Stack<Item> stack = new Stack<>();
@@ -145,4 +139,5 @@ public class RecallSearcher extends Searcher {
             }
         }
     }
+
 }
