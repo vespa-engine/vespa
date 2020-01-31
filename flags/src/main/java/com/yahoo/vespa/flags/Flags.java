@@ -215,6 +215,12 @@ public class Flags {
             "Takes effect on the next deployment of the application",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_NEW_ATHENZ_FILTER = defineFeatureFlag(
+            "use-new-athenz-filter", false,
+            "Use new Athenz filter that supports access-tokens",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
