@@ -83,6 +83,19 @@ std::vector<Value::CREF> get_refs(const std::vector<Value::UP> &values) {
 
 } // namespace vespalib::eval::test
 
+void
+EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const
+{
+    for (size_t i = 0; i < _function->num_params(); ++i) {
+        auto pos = param_repo.map.find(_function->param_name(i));
+        ASSERT_TRUE(pos != param_repo.map.end());
+        bool allow_tampering = allow_mutable && pos->second.is_mutable;
+        if (!allow_tampering) {
+            ASSERT_EQUAL(pos->second.value, _engine.to_spec(*_param_values[i]));
+        }
+    }
+}
+
 EvalFixture::EvalFixture(const TensorEngine &engine,
                          const vespalib::string &expr,
                          const ParamRepo &param_repo,
@@ -104,6 +117,7 @@ EvalFixture::EvalFixture(const TensorEngine &engine,
 {
     auto result_type = ValueType::from_spec(_result.type());
     ASSERT_TRUE(!result_type.is_error());
+    TEST_DO(detect_param_tampering(param_repo, allow_mutable));
 }
 
 const TensorSpec
