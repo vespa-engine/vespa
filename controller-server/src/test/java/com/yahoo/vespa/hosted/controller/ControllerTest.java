@@ -773,19 +773,4 @@ public class ControllerTest {
         }
     }
 
-    @Test
-    public void testDeployWithoutSourceRevision() {
-        var context = tester.newDeploymentContext();
-        var applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("default")
-                .environment(Environment.prod)
-                .region("us-west-1")
-                .build();
-
-        // Submit without source revision
-        context.submit(applicationPackage, Optional.empty())
-               .deploy();
-        assertEquals("Deployed application", 1, context.instance().deployments().size());
-    }
-
 }

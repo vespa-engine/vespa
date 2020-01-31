@@ -161,23 +161,17 @@ class RunSerializer {
         if ( ! versionObject.field(buildField).valid())
             return ApplicationVersion.unknown;
 
-        var revision = Optional.<SourceRevision>empty();
-        var repo = versionObject.field(repositoryField).asString();
-        var branch = versionObject.field(branchField).asString();
-        var srcCommit = versionObject.field(commitField).asString();
-        // TODO(mpolden): Remove this check after February 2020 after these are always written non-blank or not at all
-        if (!repo.isBlank() && !branch.isBlank() && !srcCommit.isBlank()) {
-            revision = Optional.of(new SourceRevision(repo, branch, srcCommit));
-        }
+        SourceRevision revision = new SourceRevision(versionObject.field(repositoryField).asString(),
+                                                     versionObject.field(branchField).asString(),
+                                                     versionObject.field(commitField).asString());
         long buildNumber = versionObject.field(buildField).asLong();
         Optional<String> authorEmail = Serializers.optionalString(versionObject.field(authorEmailField));
-        Optional<Version> compileVersion = Serializers.optionalString(versionObject.field(compileVersionField))
-                                                      .map(Version::fromString);
+        Optional<Version> compileVersion = Serializers.optionalString(versionObject.field(compileVersionField)).map(Version::fromString);
         Optional<Instant> buildTime = Serializers.optionalInstant(versionObject.field(buildTimeField));
         Optional<String> sourceUrl = Serializers.optionalString(versionObject.field(sourceUrlField));
         Optional<String> commit = Serializers.optionalString(versionObject.field(commitField));
 
-        return new ApplicationVersion(revision, OptionalLong.of(buildNumber), authorEmail,
+        return new ApplicationVersion(Optional.of(revision), OptionalLong.of(buildNumber), authorEmail,
                                       compileVersion, buildTime, sourceUrl, commit);
     }
 
@@ -250,11 +244,11 @@ class RunSerializer {
 
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
         versionsObject.setString(platformVersionField, platformVersion.toString());
-        applicationVersion.buildNumber().ifPresent(buildNumber -> versionsObject.setLong(buildField, buildNumber));
-        if (applicationVersion.source().isPresent()) {
+        if ( ! applicationVersion.isUnknown()) {
             versionsObject.setString(repositoryField, applicationVersion.source().get().repository());
             versionsObject.setString(branchField, applicationVersion.source().get().branch());
             versionsObject.setString(commitField, applicationVersion.source().get().commit());
+            versionsObject.setLong(buildField, applicationVersion.buildNumber().getAsLong());
         }
         applicationVersion.authorEmail().ifPresent(email -> versionsObject.setString(authorEmailField, email));
         applicationVersion.compileVersion().ifPresent(version -> versionsObject.setString(compileVersionField, version.toString()));
