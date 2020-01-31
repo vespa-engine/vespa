@@ -788,8 +788,7 @@ public class RankProfile implements Cloneable {
                     type = existingType.dimensionwiseGeneralizationWith(type).orElseThrow( () ->
                         new IllegalArgumentException(queryProfileType + " contains query feature " + feature.get() +
                                                      " with type " + field.getType().asTensorType() +
-                                                     ", but this is already defined " +
-                                                     "in another query profile with type " +
+                                                     ", but this is already defined in another query profile with type " +
                                                      context.getType(feature.get())));
                 context.setType(feature.get(), type);
             }
