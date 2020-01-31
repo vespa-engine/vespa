@@ -258,15 +258,13 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
-        if (applicationVersion.buildNumber().isPresent() && applicationVersion.source().isPresent()) {
-            object.setLong(applicationBuildNumberField, applicationVersion.buildNumber().getAsLong());
-            toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
-            applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
-            applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
-            applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
-            applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
-            applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
-        }
+        applicationVersion.buildNumber().ifPresent(buildNumber -> object.setLong(applicationBuildNumberField, buildNumber));
+        applicationVersion.source().ifPresent(source -> toSlime(source, object.setObject(sourceRevisionField)));
+        applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
+        applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
+        applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
+        applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
+        applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
     }
 
     private void toSlime(SourceRevision sourceRevision, Cursor object) {
@@ -489,9 +487,12 @@ public class ApplicationSerializer {
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        return Optional.of(new SourceRevision(object.field(repositoryField).asString(),
-                                              object.field(branchField).asString(),
-                                              object.field(commitField).asString()));
+        var repository = object.field(repositoryField).asString();
+        var branch = object.field(branchField).asString();
+        var commit = object.field(commitField).asString();
+        // TODO(mpolden): Remove this check after February 2020 after these are always written non-blank or not at all
+        if (repository.isBlank() && branch.isBlank() && commit.isBlank()) return Optional.empty();
+        return Optional.of(new SourceRevision(repository, branch, commit));
     }
 
     private Map<JobType, Instant> jobPausesFromSlime(Inspector object) {

@@ -49,6 +49,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author jonmv
+ */
 public class RunSerializerTest {
 
     private static final RunSerializer serializer = new RunSerializer();
