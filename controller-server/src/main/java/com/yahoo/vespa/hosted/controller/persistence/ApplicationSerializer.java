@@ -474,21 +474,15 @@ public class ApplicationSerializer {
     private ApplicationVersion applicationVersionFromSlime(Inspector object) {
         if ( ! object.valid()) return ApplicationVersion.unknown;
         OptionalLong applicationBuildNumber = Serializers.optionalLong(object.field(applicationBuildNumberField));
-        Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
-        if (sourceRevision.isEmpty() || applicationBuildNumber.isEmpty()) {
+        if (applicationBuildNumber.isEmpty())
             return ApplicationVersion.unknown;
-        }
+
+        Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
         Optional<String> authorEmail = Serializers.optionalString(object.field(authorEmailField));
         Optional<Version> compileVersion = Serializers.optionalString(object.field(compileVersionField)).map(Version::fromString);
         Optional<Instant> buildTime = Serializers.optionalInstant(object.field(buildTimeField));
         Optional<String> sourceUrl = Serializers.optionalString(object.field(sourceUrlField));
         Optional<String> commit = Serializers.optionalString(object.field(commitField));
-
-        if (authorEmail.isEmpty())
-            return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
-
-        if (compileVersion.isEmpty() || buildTime.isEmpty())
-            return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), authorEmail.get());
 
         return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit);
     }
