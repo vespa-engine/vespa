@@ -353,10 +353,8 @@ public class ApplicationSerializer {
     }
 
     private Optional<ApplicationVersion> latestVersionFromSlime(Inspector latestVersionObject) {
-        if (latestVersionObject.valid())
-            return Optional.of(applicationVersionFromSlime(latestVersionObject));
-
-        return Optional.empty();
+        return Optional.of(applicationVersionFromSlime(latestVersionObject))
+                       .filter(version -> ! version.isUnknown());
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {
