@@ -21,12 +21,16 @@ public class Node {
     private final AtomicBoolean statusIsKnown = new AtomicBoolean(false);
     private final AtomicBoolean working = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
+    private final AtomicBoolean pendingPing = new AtomicBoolean();
 
     public Node(int key, String hostname, int group) {
         this.key = key;
         this.hostname = hostname;
         this.group = group;
     }
+
+    public boolean sendPing() { return ! pendingPing.getAndSet(true); }
+    public void receivePing() { pendingPing.set(false); }
 
     /** Returns the unique and stable distribution key of this node */
     public int key() { return key; }

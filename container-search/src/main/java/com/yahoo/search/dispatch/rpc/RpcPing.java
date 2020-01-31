@@ -10,14 +10,12 @@ import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.rpc.Client.ProtobufResponse;
 import com.yahoo.search.dispatch.rpc.Client.ResponseOrError;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.Pinger;
+import com.yahoo.search.dispatch.searchcluster.PongHandler;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
-public class RpcPing implements Callable<Pong> {
+public class RpcPing implements Pinger {
 
     private static final String RPC_METHOD = "vespa.searchprotocol.ping";
     private static final CompressionType PING_COMPRESSION = CompressionType.NONE;
@@ -33,32 +31,41 @@ public class RpcPing implements Callable<Pong> {
     }
 
     @Override
-    public Pong call() throws Exception {
+    public void ping(PongHandler handler) {
         try {
-            var queue = new LinkedBlockingQueue<ResponseOrError<ProtobufResponse>>(1);
-
-            sendPing(queue);
-
-            var responseOrError = queue.poll(clusterMonitor.getConfiguration().getRequestTimeout(), TimeUnit.MILLISECONDS);
-            if (responseOrError == null) {
-                return new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Timed out waiting for pong from " + node));
-            } else if (responseOrError.error().isPresent()) {
-                return new Pong(ErrorMessage.createBackendCommunicationError(responseOrError.error().get()));
+            if (node.sendPing()) {
+                sendPing(handler);
             }
-
-            return decodeReply(responseOrError.response().get());
         } catch (RuntimeException e) {
-            return new Pong(
-                    ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": " + Exceptions.toMessageString(e)));
+            handler.handle(new Pong(
+                    ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": " + Exceptions.toMessageString(e))));
+            node.receivePing();
+        } catch (Throwable throwable) {
+            node.receivePing();
         }
     }
 
-    private void sendPing(LinkedBlockingQueue<ResponseOrError<ProtobufResponse>> queue) {
+    private Pong toPong(ResponseOrError<ProtobufResponse> responseOrError) {
+        if (responseOrError == null) {
+            return new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Timed out waiting for pong from " + node));
+        } else if (responseOrError.error().isPresent()) {
+            return new Pong(ErrorMessage.createBackendCommunicationError(responseOrError.error().get()));
+        }
+
+        try {
+            return decodeReply(responseOrError.response().get());
+        } catch (InvalidProtocolBufferException e) {
+            return new Pong(ErrorMessage.createBackendCommunicationError(e.getMessage()));
+        }
+    }
+
+    private void sendPing(PongHandler handler) {
         var connection = resourcePool.getConnection(node.key());
         var ping = SearchProtocol.MonitorRequest.newBuilder().build().toByteArray();
         double timeoutSeconds = ((double) clusterMonitor.getConfiguration().getRequestTimeout()) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compressor().compress(PING_COMPRESSION, ping);
-        connection.request(RPC_METHOD, compressionResult.type(), ping.length, compressionResult.data(), rsp -> queue.add(rsp), timeoutSeconds);
+        connection.request(RPC_METHOD, compressionResult.type(), ping.length, compressionResult.data(),
+                           rsp -> { node.receivePing(); handler.handle(toPong(rsp));}, timeoutSeconds);
     }
 
     private Pong decodeReply(ProtobufResponse response) throws InvalidProtocolBufferException {

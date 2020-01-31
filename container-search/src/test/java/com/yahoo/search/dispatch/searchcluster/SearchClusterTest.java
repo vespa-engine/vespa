@@ -111,21 +111,21 @@ public class SearchClusterTest {
 
         static class Factory implements PingFactory {
 
-            static class Pinger implements Callable<Pong> {
+            static class PingJob implements Pinger {
 
                 private final AtomicInteger numDocs;
                 private final AtomicInteger pingCount;
-                Pinger(AtomicInteger numDocs, AtomicInteger pingCount) {
+                PingJob(AtomicInteger numDocs, AtomicInteger pingCount) {
                     this.numDocs = numDocs;
                     this.pingCount = pingCount;
                 }
                 @Override
-                public Pong call() {
+                public void ping(PongHandler handler) {
                     int docs = numDocs.get();
                     pingCount.incrementAndGet();
-                    return (docs < 0)
+                    handler.handle ((docs < 0)
                             ? new Pong(ErrorMessage.createBackendCommunicationError("Negative numDocs = " + docs))
-                            : new Pong(docs);
+                            : new Pong(docs));
                 }
             }
 
@@ -140,9 +140,9 @@ public class SearchClusterTest {
             }
 
             @Override
-            public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
+            public Pinger createPinger(Node node, ClusterMonitor<Node> monitor) {
                 int index = node.group() * numPerGroup + node.key();
-                return new Pinger(activeDocs.get(index), pingCounts.get(index));
+                return new PingJob(activeDocs.get(index), pingCounts.get(index));
             }
         }
 

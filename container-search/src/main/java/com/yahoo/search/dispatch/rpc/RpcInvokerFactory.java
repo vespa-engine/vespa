@@ -14,6 +14,7 @@ import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.PingFactory;
+import com.yahoo.search.dispatch.searchcluster.Pinger;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.util.Optional;
@@ -65,7 +66,7 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
     }
 
     @Override
-    public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
+    public Pinger createPinger(Node node, ClusterMonitor<Node> monitor) {
         return new RpcPing(node, monitor, rpcResourcePool);
     }
 }
