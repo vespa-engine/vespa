@@ -18,15 +18,13 @@ public interface TesterCloud {
     void startTests(URI testerUrl, Suite suite, byte[] config);
 
     /** Signals the tester to run its tests. */
-    // TODO: Remove default implementation when implementations have been updated
-    default void startTests(DeploymentId deploymentId, Suite suite, byte[] config) {}
+    void startTests(DeploymentId deploymentId, Suite suite, byte[] config);
 
     /** Returns the log entries from the tester with ids after the given threshold. */
     List<LogEntry> getLog(URI testerUrl, long after);
 
     /** Returns the log entries from the tester with ids after the given threshold. */
-    // TODO: Remove default implementation when implementations have been updated
-    default List<LogEntry> getLog(DeploymentId deploymentId, long after) { return List.of(); }
+    List<LogEntry> getLog(DeploymentId deploymentId, long after);
 
     /** Returns the current status of the tester. */
     Status getStatus(URI testerUrl);
@@ -41,8 +39,7 @@ public interface TesterCloud {
     boolean testerReady(URI endpointUrl);
 
     /** Returns whether the test container is ready to serve */
-    // TODO: Remove default implementation when implementations have been updated
-    default boolean testerReady(DeploymentId deploymentId) { return false; }
+    boolean testerReady(DeploymentId deploymentId);
 
     /** Returns whether the given URL is registered in DNS. */
     boolean exists(URI endpointUrl);
