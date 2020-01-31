@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import org.junit.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -230,61 +229,6 @@ public class ApplicationSerializerTest {
         byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
         APPLICATION_SERIALIZER.fromSlime(applicationJson);
         // ok if no error
-    }
-
-    @Test
-    public void testApplicationVersion() throws Exception {
-        var versions = List.of(
-                // Build number only
-                ApplicationVersion.from(Optional.empty(), 1, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()),
-                // Source revision and build number
-                ApplicationVersion.from(Optional.of(new SourceRevision("a", "b", "c")), 1, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty())
-        );
-        for (var version : versions) {
-            var application = new Application(TenantAndApplicationId.from(ApplicationId.defaultId()),
-                                              Instant.now().truncatedTo(ChronoUnit.MILLIS),
-                                              DeploymentSpec.empty,
-                                              ValidationOverrides.empty,
-                                              Optional.of(IssueId.from("4321")),
-                                              Optional.of(IssueId.from("1234")),
-                                              Optional.of(User.from("by-username")),
-                                              OptionalInt.of(7),
-                                              new ApplicationMetrics(0, 0),
-                                              Set.of(),
-                                              OptionalLong.empty(),
-                                              Optional.of(version),
-                                              List.of());
-            var serialized = APPLICATION_SERIALIZER.fromSlime(SlimeUtils.toJsonBytes(APPLICATION_SERIALIZER.toSlime(application)));
-            assertEquals(version, serialized.latestVersion().get());
-        }
-
-        // Application with empty source revision fields
-        var json = "{\n" +
-                   "  \"id\": \"default:default\",\n" +
-                   "  \"createdAt\": 1580478916715,\n" +
-                   "  \"deploymentSpecField\": \"<deployment version='1.0'/>\",\n" +
-                   "  \"validationOverrides\": \"<validation-overrides/>\",\n" +
-                   "  \"deploymentIssueId\": \"4321\",\n" +
-                   "  \"ownershipIssueId\": \"1234\",\n" +
-                   "  \"confirmedOwner\": \"by-username\",\n" +
-                   "  \"majorVersion\": 7,\n" +
-                   "  \"queryQuality\": 0.0,\n" +
-                   "  \"writeQuality\": 0.0,\n" +
-                   "  \"pemDeployKeys\": [],\n" +
-                   "  \"latestVersion\": {\n" +
-                   "    \"applicationBuildNumber\": 1,\n" +
-                   "    \"sourceRevision\": {\n" +
-                   "      \"repositoryField\": \"\",\n" +
-                   "      \"branchField\": \"\",\n" +
-                   "      \"commitField\": \"\"\n" +
-                   "    },\n" +
-                   "    \"sourceUrl\": \"a/tree/c\",\n" +
-                   "    \"commitField\": \"c\"\n" +
-                   "  },\n" +
-                   "  \"instances\": []\n" +
-                   "}";
-        var deserialized = APPLICATION_SERIALIZER.fromSlime(json.getBytes(StandardCharsets.UTF_8));
-        assertEquals(Optional.empty(), deserialized.latestVersion().get().source());
     }
 
 }

@@ -242,16 +242,16 @@ public class DeploymentContext {
 
     /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage) {
-        return submit(applicationPackage, Optional.of(defaultSourceRevision));
+        return submit(applicationPackage, defaultSourceRevision);
     }
 
     /** Submit given application package for deployment */
-    public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision) {
+    public DeploymentContext submit(ApplicationPackage applicationPackage, SourceRevision sourceRevision) {
         var projectId = tester.controller().applications()
                               .requireApplication(applicationId)
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
-        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
+        lastSubmission = jobs.submit(applicationId, Optional.of(sourceRevision), Optional.of("a@b"), Optional.empty(),
                                      Optional.empty(), projectId, applicationPackage, new byte[0]);
         return this;
     }
