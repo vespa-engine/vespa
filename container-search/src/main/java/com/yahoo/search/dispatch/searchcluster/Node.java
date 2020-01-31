@@ -29,7 +29,10 @@ public class Node {
         this.group = group;
     }
 
+    /** Only send ping if this method return true. If not the is a ping outstanding. */
     public boolean sendPing() { return ! pendingPing.getAndSet(true); }
+
+    /** Need to be called when a pong is called to allow next ping to go through. */
     public void receivePing() { pendingPing.set(false); }
 
     /** Returns the unique and stable distribution key of this node */
