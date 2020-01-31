@@ -15,7 +15,10 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -45,9 +48,10 @@ public class RankingExpressionTypeResolver extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         if (documentsOnly) return;
 
+        Set<Reference> warnedAbout = new HashSet<>();
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
             try {
-                resolveTypesIn(profile, validate);
+                resolveTypesIn(profile, validate, warnedAbout);
             }
             catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("In " + (search != null ? search + ", " : "") + profile, e);
@@ -60,7 +64,7 @@ public class RankingExpressionTypeResolver extends Processor {
      *
      * @throws IllegalArgumentException if validate is true and the given rank profile does not produce valid types
      */
-    private void resolveTypesIn(RankProfile profile, boolean validate) {
+    private void resolveTypesIn(RankProfile profile, boolean validate, Set<Reference> warnedAbout) {
         MapEvaluationTypeContext context = profile.typeContext(queryProfiles);
         for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : profile.getFunctions().entrySet()) {
             ExpressionFunction expressionFunction = function.getValue().function();
@@ -83,10 +87,14 @@ public class RankingExpressionTypeResolver extends Processor {
             profile.getSummaryFeatures().forEach(f -> resolveType(f, "summary feature " + f, context));
             ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
             ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
-            if ( context.tensorsAreUsed() && ! context.queryFeaturesNotDeclared().isEmpty()) {
-                deployLogger.log(Level.WARNING, "The following query features are not declared in query profile " +
+            if ( context.tensorsAreUsed() &&
+                 ! context.queryFeaturesNotDeclared().isEmpty() &&
+                 ! warnedAbout.containsAll(context.queryFeaturesNotDeclared())) {
+                deployLogger.log(Level.WARNING, "The following query features used in '" + profile.getName() +
+                                                "' are not declared in query profile " +
                                                 "types and will be interpreted as scalars, not tensors: " +
                                                 context.queryFeaturesNotDeclared());
+                warnedAbout.addAll(context.queryFeaturesNotDeclared());
             }
         }
     }
