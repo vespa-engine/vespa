@@ -7,7 +7,7 @@ import java.util.Objects;
  * @author tokle
  */
 public class AthenzRole {
-    private static final String DOMAIN_ROLE_NAME_DELIMITER = ":role.";
+    private static final String ROLE_RESOURCE_PREFIX = "role.";
 
     private final AthenzDomain domain;
     private final String roleName;
@@ -22,14 +22,17 @@ public class AthenzRole {
         this.roleName = roleName;
     }
 
-    public static AthenzRole fromString(String string) {
-        if (!string.contains(DOMAIN_ROLE_NAME_DELIMITER)) {
-            throw new IllegalArgumentException("Not a valid role: " + string);
+    public static AthenzRole fromResourceNameString(String string) {
+        return fromResourceName(AthenzResourceName.fromString(string));
+    }
+
+    public static AthenzRole fromResourceName(AthenzResourceName resourceName) {
+        String entityName = resourceName.getEntityName();
+        if (!entityName.startsWith(ROLE_RESOURCE_PREFIX)) {
+            throw new IllegalArgumentException("Not a valid role: " + resourceName.toResourceNameString());
         }
-        int delimiterIndex = string.indexOf(DOMAIN_ROLE_NAME_DELIMITER);
-        String domain = string.substring(0, delimiterIndex);
-        String roleName = string.substring(delimiterIndex + DOMAIN_ROLE_NAME_DELIMITER.length());
-        return new AthenzRole(domain, roleName);
+        String roleName = entityName.substring(ROLE_RESOURCE_PREFIX.length());
+        return new AthenzRole(resourceName.getDomain(), roleName);
     }
 
     public AthenzDomain domain() {
@@ -40,7 +43,9 @@ public class AthenzRole {
         return roleName;
     }
 
-    public String asString() { return domain.getName() + DOMAIN_ROLE_NAME_DELIMITER + roleName; }
+    public String toResourceNameString() { return toResourceName().toResourceNameString(); }
+
+    public AthenzResourceName toResourceName() { return new AthenzResourceName(domain, ROLE_RESOURCE_PREFIX + roleName); }
 
     @Override
     public boolean equals(Object o) {
