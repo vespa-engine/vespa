@@ -258,15 +258,13 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
-        if (applicationVersion.buildNumber().isPresent() && applicationVersion.source().isPresent()) {
-            object.setLong(applicationBuildNumberField, applicationVersion.buildNumber().getAsLong());
-            toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
-            applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
-            applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
-            applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
-            applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
-            applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
-        }
+        applicationVersion.buildNumber().ifPresent(number -> object.setLong(applicationBuildNumberField, number));
+        applicationVersion.source().ifPresent(source -> toSlime(source, object.setObject(sourceRevisionField)));
+        applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
+        applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
+        applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
+        applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
+        applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
     }
 
     private void toSlime(SourceRevision sourceRevision, Cursor object) {
@@ -355,10 +353,8 @@ public class ApplicationSerializer {
     }
 
     private Optional<ApplicationVersion> latestVersionFromSlime(Inspector latestVersionObject) {
-        if (latestVersionObject.valid())
-            return Optional.of(applicationVersionFromSlime(latestVersionObject));
-
-        return Optional.empty();
+        return Optional.of(applicationVersionFromSlime(latestVersionObject))
+                       .filter(version -> ! version.isUnknown());
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {

@@ -161,17 +161,19 @@ class RunSerializer {
         if ( ! versionObject.field(buildField).valid())
             return ApplicationVersion.unknown;
 
-        SourceRevision revision = new SourceRevision(versionObject.field(repositoryField).asString(),
-                                                     versionObject.field(branchField).asString(),
-                                                     versionObject.field(commitField).asString());
         long buildNumber = versionObject.field(buildField).asLong();
+        // TODO jonmv: Remove source revision
+        Optional<SourceRevision> source = Optional.of(new SourceRevision(versionObject.field(repositoryField).asString(),
+                                                                         versionObject.field(branchField).asString(),
+                                                                         versionObject.field(commitField).asString()))
+                                                  .filter(revision -> ! revision.commit().isBlank() && ! revision.repository().isBlank() && ! revision.branch().isBlank());
         Optional<String> authorEmail = Serializers.optionalString(versionObject.field(authorEmailField));
         Optional<Version> compileVersion = Serializers.optionalString(versionObject.field(compileVersionField)).map(Version::fromString);
         Optional<Instant> buildTime = Serializers.optionalInstant(versionObject.field(buildTimeField));
         Optional<String> sourceUrl = Serializers.optionalString(versionObject.field(sourceUrlField));
         Optional<String> commit = Serializers.optionalString(versionObject.field(commitField));
 
-        return new ApplicationVersion(Optional.of(revision), OptionalLong.of(buildNumber), authorEmail,
+        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail,
                                       compileVersion, buildTime, sourceUrl, commit);
     }
 
@@ -244,12 +246,11 @@ class RunSerializer {
 
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
         versionsObject.setString(platformVersionField, platformVersion.toString());
-        if ( ! applicationVersion.isUnknown()) {
-            versionsObject.setString(repositoryField, applicationVersion.source().get().repository());
-            versionsObject.setString(branchField, applicationVersion.source().get().branch());
-            versionsObject.setString(commitField, applicationVersion.source().get().commit());
-            versionsObject.setLong(buildField, applicationVersion.buildNumber().getAsLong());
-        }
+        applicationVersion.buildNumber().ifPresent(number -> versionsObject.setLong(buildField, number));
+        // TODO jonmv: Remove source revision.
+        applicationVersion.source().map(SourceRevision::repository).ifPresent(repository -> versionsObject.setString(repositoryField, repository));
+        applicationVersion.source().map(SourceRevision::branch).ifPresent(branch -> versionsObject.setString(branchField, branch));
+        applicationVersion.source().map(SourceRevision::commit).ifPresent(commit -> versionsObject.setString(commitField, commit));
         applicationVersion.authorEmail().ifPresent(email -> versionsObject.setString(authorEmailField, email));
         applicationVersion.compileVersion().ifPresent(version -> versionsObject.setString(compileVersionField, version.toString()));
         applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));
