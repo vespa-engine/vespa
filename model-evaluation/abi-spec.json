@@ -8,6 +8,7 @@
     "methods": [
       "public ai.vespa.models.evaluation.FunctionEvaluator bind(java.lang.String, com.yahoo.tensor.Tensor)",
       "public ai.vespa.models.evaluation.FunctionEvaluator bind(java.lang.String, double)",
+      "public ai.vespa.models.evaluation.FunctionEvaluator bind(java.lang.String, java.lang.String)",
       "public ai.vespa.models.evaluation.FunctionEvaluator setMissingValue(com.yahoo.tensor.Tensor)",
       "public ai.vespa.models.evaluation.FunctionEvaluator setMissingValue(double)",
       "public com.yahoo.tensor.Tensor evaluate()",
