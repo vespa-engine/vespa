@@ -100,7 +100,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     public QueryProfileType getType() { return type; }
 
     /** Sets the type of this, or set to null to not use any type checking in this profile */
-    public void setType(QueryProfileType type) { this.type = type; }
+    public void setType(QueryProfileType type) { this.type=type; }
 
     /** Returns the virtual variants of this, or null if none */
     public QueryProfileVariants getVariants() { return variants; }

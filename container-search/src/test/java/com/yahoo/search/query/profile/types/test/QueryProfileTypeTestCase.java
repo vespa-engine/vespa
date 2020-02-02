@@ -397,7 +397,7 @@ public class QueryProfileTypeTestCase {
 
     @Test
     public void testTensorRankFeatureInRequest() throws UnsupportedEncodingException {
-        QueryProfile profile = new QueryProfile("test");
+        QueryProfile profile=new QueryProfile("test");
         profile.setType(type);
         registry.register(profile);
 

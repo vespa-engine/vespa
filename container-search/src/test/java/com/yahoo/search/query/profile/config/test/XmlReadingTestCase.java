@@ -384,58 +384,43 @@ public class XmlReadingTestCase {
             assertNull(query.properties().get("profileRef.myProfile1Only"));
 
             // later assignment
-            query.properties().set("profileRef.name", "newName");
-            assertEquals("newName", query.properties().get("profileRef.name"));
+            query.properties().set("profileRef.name","newName");
+            assertEquals("newName",query.properties().get("profileRef.name"));
             // ...will not impact others
-            query=new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET), registry.getComponent("default"));
-            assertEquals("MyProfile2", query.properties().get("profileRef.name"));
+            query=new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET),registry.getComponent("default"));
+            assertEquals("MyProfile2",query.properties().get("profileRef.name"));
         }
 
     }
 
     @Test
     public void testRefOverrideTyped() {
-        CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/refoverridetyped").compile();
+        CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/refoverridetyped").compile();
 
         {
             // Original reference
-            Query query = new Query(HttpRequest.createTestRequest("?query=test", Method.GET), registry.getComponent("default"));
-            assertEquals(null, query.properties().get("profileRef"));
-            assertEquals("MyProfile1", query.properties().get("profileRef.name"));
-            assertEquals("myProfile1Only", query.properties().get("profileRef.myProfile1Only"));
+            Query query=new Query(HttpRequest.createTestRequest("?query=test", Method.GET),registry.getComponent("default"));
+            assertEquals(null,query.properties().get("profileRef"));
+            assertEquals("MyProfile1",query.properties().get("profileRef.name"));
+            assertEquals("myProfile1Only",query.properties().get("profileRef.myProfile1Only"));
             assertNull(query.properties().get("profileRef.myProfile2Only"));
         }
 
         {
             // Overridden reference
-            Query query = new Query(HttpRequest.createTestRequest("?query=test&profileRef=MyProfile2", Method.GET), registry.getComponent("default"));
-            assertEquals(null, query.properties().get("profileRef"));
-            assertEquals("MyProfile2", query.properties().get("profileRef.name"));
-            assertEquals("myProfile2Only", query.properties().get("profileRef.myProfile2Only"));
+            Query query=new Query(HttpRequest.createTestRequest("?query=test&profileRef=MyProfile2", Method.GET),registry.getComponent("default"));
+            assertEquals(null,query.properties().get("profileRef"));
+            assertEquals("MyProfile2",query.properties().get("profileRef.name"));
+            assertEquals("myProfile2Only",query.properties().get("profileRef.myProfile2Only"));
             assertNull(query.properties().get("profileRef.myProfile1Only"));
 
             // later assignment
-            query.properties().set("profileRef.name", "newName");
-            assertEquals("newName", query.properties().get("profileRef.name"));
+            query.properties().set("profileRef.name","newName");
+            assertEquals("newName",query.properties().get("profileRef.name"));
             // ...will not impact others
-            query = new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET), registry.getComponent("default"));
-            assertEquals("MyProfile2", query.properties().get("profileRef.name"));
+            query=new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET),registry.getComponent("default"));
+            assertEquals("MyProfile2",query.properties().get("profileRef.name"));
         }
-    }
-
-    @Test
-    public void testTensorTypes() {
-        CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/tensortypes").compile();
-
-        QueryProfileType type1 = registry.getTypeRegistry().getComponent("type1");
-        assertEquals("tensor<float>(x[1])", type1.getFieldType(new CompoundName("ranking.features.query(tensor_1)")).stringValue());
-        assertNull(type1.getFieldType(new CompoundName("ranking.features.query(tensor_2)")));
-        assertNull(type1.getFieldType(new CompoundName("ranking.features.query(tensor_3)")));
-
-        QueryProfileType type2 = registry.getTypeRegistry().getComponent("type2");
-        assertNull(type2.getFieldType(new CompoundName("ranking.features.query(tensor_1)")));
-        assertEquals("tensor<float>(x[2])", type2.getFieldType(new CompoundName("ranking.features.query(tensor_2)")).stringValue());
-        assertEquals("tensor<float>(x[3])", type2.getFieldType(new CompoundName("ranking.features.query(tensor_3)")).stringValue());
     }
 
 }
