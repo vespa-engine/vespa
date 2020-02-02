@@ -70,7 +70,7 @@ public class QueryProfileProperties extends Properties {
      * @throws IllegalArgumentException if this property cannot be set in the wrapped query profile
      */
     @Override
-    public void set(CompoundName name, Object value, Map<String, String> context) {
+    public void set(CompoundName name, Object value, Map<String,String> context) {
         // TODO: Refactor
         try {
             name = unalias(name, context);
