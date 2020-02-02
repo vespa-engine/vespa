@@ -33,7 +33,7 @@ public class QueryProfileXMLReader {
      * Reads all query profile xml files in a given directory,
      * and all type xml files from the immediate subdirectory "types/" (if any)
      *
-     * @throws RuntimeException if <code>directory</code> is not a readable directory, or if there is some error in the XML
+     * @throws IllegalArgumentException if the directory is not readable, or if there is some error in the XML
      */
     public QueryProfileRegistry read(String directory) {
         List<NamedReader> queryProfileReaders = new ArrayList<>();
@@ -58,7 +58,7 @@ public class QueryProfileXMLReader {
             return read(queryProfileTypeReaders,queryProfileReaders);
         }
         catch (IOException e) {
-            throw new IllegalArgumentException("Could not read query profiles from '" + directory + "'",e);
+            throw new IllegalArgumentException("Could not read query profiles from '" + directory + "'", e);
         }
         finally {
             closeAll(queryProfileReaders);
@@ -105,14 +105,14 @@ public class QueryProfileXMLReader {
                                                    "' must be 'query-profile-type', not '" + root.getNodeName() + "'");
             }
 
-            String idString=root.getAttribute("id");
+            String idString = root.getAttribute("id");
             if (idString == null || idString.equals(""))
                 throw new IllegalArgumentException("'" + reader.getName() + "' has no 'id' attribute in the root element");
             ComponentId id = new ComponentId(idString);
-            validateFileNameToId(reader.getName(),id,"query profile type");
+            validateFileNameToId(reader.getName(), id,"query profile type");
             QueryProfileType type = new QueryProfileType(id);
-            type.setMatchAsPath(XML.getChild(root,"match") != null);
-            type.setStrict(XML.getChild(root,"strict") != null);
+            type.setMatchAsPath(XML.getChild(root, "match") != null);
+            type.setStrict(XML.getChild(root, "strict") != null);
             registry.register(type);
             queryProfileTypeElements.add(root);
         }
@@ -145,7 +145,7 @@ public class QueryProfileXMLReader {
                 queryProfile.setType(type);
             }
 
-            Element dimensions = XML.getChild(root,"dimensions");
+            Element dimensions = XML.getChild(root, "dimensions");
             if (dimensions != null)
                 queryProfile.setDimensions(toArray(XML.getValue(dimensions)));
 
@@ -215,7 +215,7 @@ public class QueryProfileXMLReader {
             try {
                 String fieldTypeName = field.getAttribute("type");
                 if (fieldTypeName == null) throw new IllegalArgumentException("Field '" + field + "' has no 'type' attribute");
-                FieldType fieldType=FieldType.fromString(fieldTypeName,registry);
+                FieldType fieldType = FieldType.fromString(fieldTypeName, registry);
                 type.addField(new FieldDescription(name,
                                                    fieldType,
                                                    field.getAttribute("alias"),
