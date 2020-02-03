@@ -125,10 +125,10 @@ public class SearchClusterTest {
                 @Override
                 public void ping() {
                     int docs = numDocs.get();
-                    pingCount.incrementAndGet();
                     pongHandler.handle ((docs < 0)
                             ? new Pong(ErrorMessage.createBackendCommunicationError("Negative numDocs = " + docs))
                             : new Pong(docs));
+                    pingCount.incrementAndGet();
                 }
             }
 
