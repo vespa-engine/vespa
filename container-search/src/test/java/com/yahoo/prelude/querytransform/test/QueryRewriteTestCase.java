@@ -50,13 +50,12 @@ public class QueryRewriteTestCase {
 
     @Test
     public void testRankContributingTermsAreNotRemovedOnFullRecall() {
-        Query query = new Query(QueryTestCase.httpEncode("?query=default:term1 OR default:term2 OR default:term3 OR sddocname:per&type=adv&recall=+id:1"));
+        Query query = new Query(QueryTestCase.httpEncode("?query=default:term1 OR default:term2 OR default:term3 OR sddocname:per&type=adv&recall=+id:1&restrict=per"));
         RecallSearcher searcher = new RecallSearcher();
         Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
-        System.out.println(query.yqlRepresentation());
         assertNull(result.hits().getError());
         assertNull(QueryCanonicalizer.canonicalize(query));
-        assertRewritten(query, "");
+        assertRewritten(query, "AND (OR default:term1 default:term2 default:term3 sddocname:per) |id:1");
     }
 
     @Test

@@ -4,6 +4,8 @@ package com.yahoo.prelude.querytransform;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.HasIndexItem;
+import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NotItem;
@@ -169,7 +171,9 @@ public class QueryRewrite {
                         removeOtherNonrankedChildren(item, i);
                         recall = Recall.RECALLS_EVERYTHING;
                     } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
-                        item.removeItem(i);
+                        if ( ! isRanked(item.getItem(i))) {
+                            item.removeItem(i);
+                        }
                     } else if (item instanceof RankItem) {
                         // empty
                     } else {
@@ -198,6 +202,21 @@ public class QueryRewrite {
             Item child = parent.getItem(i);
             if ( child != childToKeep && ! parent.getItem(i).isRanked())
                 parent.removeItem(i);
+        }
+    }
+
+    private static boolean isRanked(Item item) {
+        if (item instanceof CompositeItem) {
+            boolean isRanked = false;
+            for (Item child : ((CompositeItem)item).items())
+                isRanked |= isRanked(child);
+            return isRanked;
+        }
+        else if (item instanceof HasIndexItem && Hit.SDDOCNAME_FIELD.equals(((HasIndexItem)item).getIndexName())) {
+            return false; // No point in ranking by sddocname
+        }
+        else {
+            return item.isRanked();
         }
     }
     
