@@ -191,12 +191,6 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID);
 
-    public static final UnboundBooleanFlag INSTALL_L4_ROUTING_SUPPORT = defineFeatureFlag(
-            "install-l4-routing-support", false,
-            "Whether routing nodes should install package supporting L4 routing",
-            "Takes effect immediately",
-            ZONE_ID, HOSTNAME);
-
     public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
             "generate-l4-routing-config", false,
             "Whether routing nodes should generate L4 routing config",
