@@ -471,7 +471,7 @@ public class NodeAgentImpl implements NodeAgent {
                     if (firstSuccessfulHealthCheckInstant.isEmpty())
                         firstSuccessfulHealthCheckInstant = Optional.of(clock.instant());
 
-                    Duration timeLeft = Duration.between(firstSuccessfulHealthCheckInstant.get(), clock.instant());
+                    Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration));
                     if (!container.get().resources.equalsCpu(getContainerResources(context)))
                         throw new ConvergenceException("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? " next tick" : "in " + timeLeft) + ")");

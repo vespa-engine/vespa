@@ -32,7 +32,6 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -680,7 +679,7 @@ public class NodeAgentImplTest {
             nodeAgent.doConverge(context);
             fail("Expected to fail due to warm up period not yet done");
         } catch (ConvergenceException e) {
-            assertTrue(e.getMessage().startsWith("Refusing to resume until warm up period ends"));
+            assertEquals("Refusing to resume until warm up period ends (in PT30S)", e.getMessage());
         }
         inOrder.verify(orchestrator, never()).resume(any());
         inOrder.verify(orchestrator, never()).suspend(any());
