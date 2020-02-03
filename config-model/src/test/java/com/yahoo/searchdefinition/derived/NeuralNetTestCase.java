@@ -6,11 +6,14 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+import com.yahoo.component.ComponentId;
+
 public class NeuralNetTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testNeuralNet() throws IOException, ParseException {
-        assertCorrectDeriving("neuralnet");
+        ComponentId.resetGlobalCountersForTests();
+        DerivedConfiguration c = assertCorrectDeriving("neuralnet");
     }
 
 }

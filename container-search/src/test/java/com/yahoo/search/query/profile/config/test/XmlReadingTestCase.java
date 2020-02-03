@@ -436,6 +436,12 @@ public class XmlReadingTestCase {
         assertNull(type2.getFieldType(new CompoundName("ranking.features.query(tensor_1)")));
         assertEquals("tensor<float>(x[2])", type2.getFieldType(new CompoundName("ranking.features.query(tensor_2)")).stringValue());
         assertEquals("tensor<float>(x[3])", type2.getFieldType(new CompoundName("ranking.features.query(tensor_3)")).stringValue());
+
+        Query queryProfile1 = new Query("?query=test&ranking.features.query(tensor_1)=[1.200]", registry.getComponent("profile1"));
+        assertEquals("Is received as a tensor tensor", "tensor<float>(x[1]):[1.2]", queryProfile1.properties().get("ranking.features.query(tensor_1)").toString());
+
+        Query queryProfile2 = new Query("?query=test&ranking.features.query(tensor_1)=[1.200]", registry.getComponent("profile2"));
+        assertEquals("Is received as a string", "[1.200]", queryProfile2.properties().get("ranking.features.query(tensor_1)").toString());
     }
 
 }
