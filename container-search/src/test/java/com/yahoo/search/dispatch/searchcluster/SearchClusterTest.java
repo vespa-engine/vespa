@@ -87,7 +87,7 @@ public class SearchClusterTest {
 
         void waitOneFullPingRound() {
             int minPingCount = minPingCount();
-            int atLeast = maxPingCount() + 1;
+            int atLeast = maxPingCount() + 2;
             while (minPingCount < atLeast) {
                 ExecutorService executor = Executors.newCachedThreadPool();
                 searchCluster.clusterMonitor().ping(executor);
