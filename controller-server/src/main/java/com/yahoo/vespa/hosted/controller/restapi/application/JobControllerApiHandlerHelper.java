@@ -415,9 +415,11 @@ class JobControllerApiHandlerHelper {
 
         versionObject.setLong("build", version.buildNumber().getAsLong());
         Cursor sourceObject = versionObject.setObject("source");
-        sourceObject.setString("gitRepository", version.source().get().repository());
-        sourceObject.setString("gitBranch", version.source().get().branch());
-        sourceObject.setString("gitCommit", version.source().get().commit());
+        version.source().ifPresent(source -> {
+            sourceObject.setString("gitRepository", source.repository());
+            sourceObject.setString("gitBranch", source.branch());
+            sourceObject.setString("gitCommit", source.commit());
+        });
         version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));
         version.commit().ifPresent(commit -> versionObject.setString("commit", commit));
     }
