@@ -351,7 +351,6 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
 
-    /** Returns true iff container is correctly sized */
     private Container updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
         ContainerResources wantedContainerResources = getContainerResources(context);
 
