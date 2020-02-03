@@ -42,9 +42,8 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
         try {
             sendPing(handler);
         } catch (RuntimeException e) {
-            handler.handle(new Pong(
-                    ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": " + Exceptions.toMessageString(e))));
-        } catch (Throwable throwable) {
+            handler.handle(new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node +
+                                                                                 ": " + Exceptions.toMessageString(e))));
         }
     }
 
