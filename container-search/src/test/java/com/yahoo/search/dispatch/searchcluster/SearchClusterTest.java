@@ -116,15 +116,17 @@ public class SearchClusterTest {
 
                 private final AtomicInteger numDocs;
                 private final AtomicInteger pingCount;
-                PingJob(AtomicInteger numDocs, AtomicInteger pingCount) {
+                private final PongHandler pongHandler;
+                PingJob(AtomicInteger numDocs, AtomicInteger pingCount, PongHandler pongHandler) {
                     this.numDocs = numDocs;
                     this.pingCount = pingCount;
+                    this.pongHandler = pongHandler;
                 }
                 @Override
-                public void ping(PongHandler handler) {
+                public void ping() {
                     int docs = numDocs.get();
                     pingCount.incrementAndGet();
-                    handler.handle ((docs < 0)
+                    pongHandler.handle ((docs < 0)
                             ? new Pong(ErrorMessage.createBackendCommunicationError("Negative numDocs = " + docs))
                             : new Pong(docs));
                 }
@@ -141,9 +143,9 @@ public class SearchClusterTest {
             }
 
             @Override
-            public Pinger createPinger(Node node, ClusterMonitor<Node> monitor) {
+            public Pinger createPinger(Node node, ClusterMonitor<Node> monitor, PongHandler pongHandler) {
                 int index = node.group() * numPerGroup + node.key();
-                return new PingJob(activeDocs.get(index), pingCounts.get(index));
+                return new PingJob(activeDocs.get(index), pingCounts.get(index), pongHandler);
             }
         }
 

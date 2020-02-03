@@ -6,6 +6,6 @@ import com.yahoo.search.cluster.ClusterMonitor;
 
 public interface PingFactory {
 
-    Pinger createPinger(Node node, ClusterMonitor<Node> monitor);
+    Pinger createPinger(Node node, ClusterMonitor<Node> monitor, PongHandler pongHandler);
 
 }

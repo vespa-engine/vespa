@@ -28,21 +28,22 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
     private final RpcResourcePool resourcePool;
     private final ClusterMonitor<Node> clusterMonitor;
     private final long pingSequenceId;
-    private final AtomicReference<PongHandler> handler = new AtomicReference<>();
+    private final PongHandler pongHandler;
 
-    public RpcPing(Node node, ClusterMonitor<Node> clusterMonitor, RpcResourcePool rpcResourcePool) {
+    public RpcPing(Node node, ClusterMonitor<Node> clusterMonitor, RpcResourcePool rpcResourcePool, PongHandler pongHandler) {
         this.node = node;
         this.resourcePool = rpcResourcePool;
         this.clusterMonitor = clusterMonitor;
         pingSequenceId = node.createPingSequenceId();
+        this.pongHandler = pongHandler;
     }
 
     @Override
-    public void ping(PongHandler handler) {
+    public void ping() {
         try {
-            sendPing(handler);
+            sendPing();
         } catch (RuntimeException e) {
-            handler.handle(new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node +
+            pongHandler.handle(new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node +
                                                                                  ": " + Exceptions.toMessageString(e))));
         }
     }
@@ -61,8 +62,7 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
         }
     }
 
-    private void sendPing(PongHandler handler) {
-        this.handler.set(handler);
+    private void sendPing() {
         var connection = resourcePool.getConnection(node.key());
         var ping = SearchProtocol.MonitorRequest.newBuilder().build().toByteArray();
         double timeoutSeconds = ((double) clusterMonitor.getConfiguration().getRequestTimeout()) / 1000.0;
@@ -88,7 +88,7 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
     @Override
     public void receive(ResponseOrError<ProtobufResponse> response) {
         if (node.isLastReceivedPong(pingSequenceId)) {
-            handler.get().handle(toPong(response));
+            pongHandler.handle(toPong(response));
         } else {
             //TODO Reduce to debug or remove once we have enumerated what happens here.
             log.info("Pong " + pingSequenceId + " received too late, latest is " + node.getLastReceivedPongId());

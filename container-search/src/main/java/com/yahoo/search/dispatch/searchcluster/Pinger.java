@@ -8,5 +8,5 @@ package com.yahoo.search.dispatch.searchcluster;
  * @author baldersheim
  */
 public interface Pinger {
-    void ping(PongHandler handler);
+    void ping();
 }

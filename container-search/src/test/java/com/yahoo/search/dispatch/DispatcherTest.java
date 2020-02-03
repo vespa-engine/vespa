@@ -11,6 +11,7 @@ import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.PingFactory;
 import com.yahoo.search.dispatch.searchcluster.Pinger;
+import com.yahoo.search.dispatch.searchcluster.PongHandler;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import org.junit.Test;
 
@@ -143,7 +144,7 @@ public class DispatcherTest {
         }
 
         @Override
-        public Pinger createPinger(Node node, ClusterMonitor<Node> monitor) {
+        public Pinger createPinger(Node node, ClusterMonitor<Node> monitor, PongHandler pongHandler) {
             fail("Unexpected call to createPinger");
             return null;
         }

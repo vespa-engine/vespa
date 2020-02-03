@@ -281,8 +281,8 @@ public class SearchCluster implements NodeManager<Node> {
     public void ping(Node node, Executor executor) {
         if (pingFactory == null) return; // not initialized yet
 
-        Pinger pinger = pingFactory.createPinger(node, clusterMonitor);
-        pinger.ping(new PongCallback(node, clusterMonitor));
+        Pinger pinger = pingFactory.createPinger(node, clusterMonitor, new PongCallback(node, clusterMonitor));
+        pinger.ping();
     }
 
     private void pingIterationCompletedSingleGroup() {
