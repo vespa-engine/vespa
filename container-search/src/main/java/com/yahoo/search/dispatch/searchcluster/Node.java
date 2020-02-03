@@ -22,7 +22,7 @@ public class Node {
     private final AtomicBoolean working = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
     private final AtomicLong pingSequence = new AtomicLong(0);
-    private final AtomicLong lastPing = new AtomicLong(0);
+    private final AtomicLong lastPong = new AtomicLong(0);
 
     public Node(int key, String hostname, int group) {
         this.key = key;
@@ -34,13 +34,13 @@ public class Node {
     public long createPingSequenceId() { return pingSequence.incrementAndGet(); }
     /** Checks if this pong is received in line and accepted, or out of band and should be ignored..*/
     public boolean isLastReceivedPong(long pingId ) {
-        long last = lastPing.get();
-        while ((pingId > last) && ! lastPing.compareAndSet(last, pingId)) {
-            last = pingSequence.get();
+        long last = lastPong.get();
+        while ((pingId > last) && ! lastPong.compareAndSet(last, pingId)) {
+            last = lastPong.get();
         }
         return last < pingId;
     }
-    public long getLastReceivedPongId() { return lastPing.get(); }
+    public long getLastReceivedPongId() { return lastPong.get(); }
 
     /** Returns the unique and stable distribution key of this node */
     public int key() { return key; }
