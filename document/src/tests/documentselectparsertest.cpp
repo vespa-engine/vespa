@@ -92,6 +92,10 @@ void DocumentSelectParserTest::SetUp()
     builder.document(-1673092522, "usergroup",
                      Struct("usergroup.header"),
                      Struct("usergroup.body"));
+    builder.document(1234567, "with_imported",
+                     Struct("with_imported.header"),
+                     Struct("with_imported.body"))
+                     .imported_field("my_imported_field");
     _repo = std::make_unique<DocumentTypeRepo>(builder.config());
 
     _parser = std::make_unique<select::Parser>(*_repo, _bucketIdFactory);
@@ -103,7 +107,7 @@ Document::SP DocumentSelectParserTest::createDoc(
         uint64_t hlong)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
-    Document::SP doc(new Document(*type, DocumentId(id)));
+    auto doc = std::make_shared<Document>(*type, DocumentId(id));
     doc->setValue(doc->getField("headerval"), IntFieldValue(hint));
 
     if (hlong != 0) {
@@ -1522,6 +1526,28 @@ TEST_F(DocumentSelectParserTest, test_parse_utilities_handle_malformed_input)
     // TODO double outside representable range returns Inf, but we probably would
     // like this to trigger a parse failure?
     check_parse_double("1.79769e+309", true, std::numeric_limits<double>::infinity());
+}
+
+TEST_F(DocumentSelectParserTest, imported_field_references_are_treated_as_valid_field_with_missing_value) {
+    const DocumentType* type = _repo->getDocumentType("with_imported");
+    ASSERT_TRUE(type != nullptr);
+    Document doc(*type, DocumentId("id::with_imported::foo"));
+
+    PARSE("with_imported.my_imported_field == null", doc, True);
+    PARSE("with_imported.my_imported_field != null", doc, False);
+    PARSE("with_imported.my_imported_field", doc, False);
+    // Only (in)equality operators are well defined for null values; everything else becomes Invalid.
+    PARSE("with_imported.my_imported_field > 0", doc, Invalid);
+}
+
+TEST_F(DocumentSelectParserTest, imported_field_references_only_support_for_simple_expressions) {
+    const DocumentType* type = _repo->getDocumentType("with_imported");
+    ASSERT_TRUE(type != nullptr);
+    Document doc(*type, DocumentId("id::with_imported::foo"));
+
+    PARSE("with_imported.my_imported_field.foo", doc, Invalid);
+    PARSE("with_imported.my_imported_field[0]", doc, Invalid);
+    PARSE("with_imported.my_imported_field{foo}", doc, Invalid);
 }
 
 } // document

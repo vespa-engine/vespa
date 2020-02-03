@@ -75,7 +75,9 @@ makeDocTypeRepo()
                      addField("aaa", Array(DataType::T_INT)).
                      addField("aaw", Wset(DataType::T_INT)).
                      addField("ab", DataType::T_INT).
-                     addField("ae", DataType::T_INT));
+                     addField("ae", DataType::T_INT)).
+                     imported_field("my_imported_field").
+                     imported_field("my_missing_imported_field");
     builder.document(doc_type_id + 1, type_name_2,
                      Struct(header_name_2), Struct(body_name_2).
                      addField("ic", DataType::T_STRING).
@@ -150,6 +152,9 @@ TestFixture::TestFixture()
     _amgr.addAttribute("aaa", AttributeFactory::createAttribute("aaa", { BasicType::INT32 , CollectionType::ARRAY}));
     _amgr.addAttribute("aaw", AttributeFactory::createAttribute("aaw", { BasicType::INT32 , CollectionType::WSET}));
     _amgr.addAttribute("ae", AttributeFactory::createAttribute("ae", { BasicType::INT32 }));
+    // We "fake" having an imported attribute to avoid having to set up reference attributes, mappings etc.
+    // This is fine since the attribute manager already abstracts away if an attribute is imported or not.
+    _amgr.addAttribute("my_imported_field", AttributeFactory::createAttribute("my_imported_field", { BasicType::INT32 }));
     _repoUP = makeDocTypeRepo();
 }
 
@@ -170,9 +175,9 @@ TestFixture::testParse(const string &selection)
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
         LOG(info, "Parse failed: %s", e.what());
-        select.reset(0);
+        select.reset();
     }
-    ASSERT_TRUE(select.get() != NULL);
+    ASSERT_TRUE(select.get() != nullptr);
 }
 
 
@@ -189,9 +194,9 @@ TestFixture::testParseFail(const string &selection)
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
         LOG(info, "Parse failed: %s", e.getMessage().c_str());
-        select.reset(0);
+        select.reset();
     }
-    ASSERT_TRUE(select.get() == NULL);
+    ASSERT_TRUE(select.get() == nullptr);
 }
 
 
@@ -208,15 +213,15 @@ TestFixture::testPrune(const string &selection, const string &exp, const string 
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
         LOG(info, "Parse failed: %s", e.what());
-        select.reset(0);
+        select.reset();
     }
-    ASSERT_TRUE(select.get() != NULL);
+    ASSERT_TRUE(select.get() != nullptr);
     std::ostringstream os;
     select->print(os, true, "");
     LOG(info, "ParseTree: '%s'", os.str().c_str());
     const DocumentType *docType = repo.getDocumentType(docTypeName);
-    ASSERT_TRUE(docType != NULL);
-    Document::UP emptyDoc(new Document(*docType, document::DocumentId("id:ns:" + docTypeName + "::1")));
+    ASSERT_TRUE(docType != nullptr);
+    auto emptyDoc = std::make_unique<Document>(*docType, document::DocumentId("id:ns:" + docTypeName + "::1"));
     emptyDoc->setRepo(repo);
     SelectPruner pruner(docTypeName, &_amgr, *emptyDoc, repo, _hasFields, _hasDocuments);
     pruner.process(*select);
@@ -788,6 +793,29 @@ TEST_F("Test that field values are invalid when disabling document access", Test
                 "test.aa == 4 and test.ae == 5 and invalid");
 }
 
+TEST_F("Imported fields with matching attribute names are supported", TestFixture)
+{
+    f.testPrune("test.my_imported_field > 0",
+                "test.my_imported_field > 0");
+}
+
+// Edge case: document type reconfigured but attribute not yet visible in Proton
+TEST_F("Imported fields without matching attribute are mapped to constant NullValue", TestFixture)
+{
+    f.testPrune("test.my_missing_imported_field != test.aa", "null != test.aa");
+    // Simplified to -> "null != null" -> "false"
+    f.testPrune("test.my_missing_imported_field != null", "false");
+    // Simplified to -> "null > 0" -> "invalid", as null is not well-defined
+    // for operators other than (in-)equality.
+    f.testPrune("test.my_missing_imported_field > 0", "invalid");
+}
+
+TEST_F("Complex imported field references return Invalid", TestFixture)
+{
+    f.testPrune("test.my_imported_field.foo", "invalid");
+    f.testPrune("test.my_imported_field[123]", "invalid");
+    f.testPrune("test.my_imported_field{foo}", "invalid");
+}
 
 }  // namespace
 

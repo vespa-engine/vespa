@@ -8,6 +8,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
@@ -558,6 +559,35 @@ search annotationsimplicitstruct {
         DocumentType targetDocType = manager.getDocumentType("referenced_type");
         assertTrue(fieldRefType.getTargetType() == targetDocType);
     }
+
+    @Test
+    public void imported_fields_are_empty_if_no_fields_provided_in_config() {
+        var manager = createConfiguredManager("file:src/test/document/documentmanager.singlereference.cfg");
+        var docType = manager.getDocumentType("type_with_ref");
+
+        assertNotNull(docType.getImportedFieldNames());
+        assertEquals(docType.getImportedFieldNames().size(), 0);
+        assertFalse(docType.hasImportedField("foo"));
+    }
+
+    @Test
+    public void imported_fields_are_populated_from_config() {
+        var manager = createConfiguredManager("file:src/test/document/documentmanager.importedfields.cfg");
+        var docType = manager.getDocumentType("type_with_ref");
+
+        var expectedFields = new HashSet<String>();
+        expectedFields.add("my_cool_imported_field");
+        expectedFields.add("my_awesome_imported_field");
+        assertEquals(docType.getImportedFieldNames(), expectedFields);
+
+        assertTrue(docType.hasImportedField("my_cool_imported_field"));
+        assertTrue(docType.hasImportedField("my_awesome_imported_field"));
+        assertFalse(docType.hasImportedField("a_missing_imported_field"));
+    }
+
+    // TODO test clone(). Also fieldSets not part of clone()..!
+
+    // TODO add imported field to equals()/hashCode() for DocumentType? fieldSets not part of this...
 
     // TODO test reference to own doc type
 

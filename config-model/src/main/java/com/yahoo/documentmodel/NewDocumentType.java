@@ -69,25 +69,37 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     private final StructDataType body;
     private final Set<FieldSet> fieldSets = new LinkedHashSet<>();
     private final Set<Name> documentReferences;
+    // Imported fields are virtual and therefore exist outside of the SD's document field definition
+    // block itself. But for features like imported fields in a non-search context (e.g. GC selections)
+    // it is necessary to know that certain identifiers refer to imported fields instead of being unknown
+    // document fields. To achieve this, we track the names of imported fields as part of the document
+    // config itself.
+    private final Set<String> importedFieldNames;
 
     public NewDocumentType(Name name) {
         this(name, emptySet());
     }
 
-    public NewDocumentType(Name name, Set<Name> documentReferences) {
+    public NewDocumentType(Name name, Set<Name> documentReferences, Set<String> importedFieldNames) {
         this(
                 name,
                 new StructDataType(name.getName() + ".header"),
                 new StructDataType(name.getName() + ".body"),
                 new FieldSets(),
-                documentReferences);
+                documentReferences,
+                importedFieldNames);
+    }
+
+    public NewDocumentType(Name name, Set<Name> documentReferences) {
+        this(name, documentReferences, emptySet());
     }
 
     public NewDocumentType(Name name,
                            StructDataType header,
                            StructDataType body,
                            FieldSets fs,
-                           Set<Name> documentReferences) {
+                           Set<Name> documentReferences,
+                           Set<String> importedFieldNames) {
         super(name.getName());
         this.name = name;
         this.header = header;
@@ -102,6 +114,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
             }
         }
         this.documentReferences = documentReferences;
+        this.importedFieldNames = importedFieldNames;
     }
 
     public Name getFullName() {
@@ -387,6 +400,10 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     public Set<Name> getDocumentReferences() {
         return documentReferences;
+    }
+
+    public Set<String> getImportedFieldNames() {
+        return importedFieldNames;
     }
 
 }

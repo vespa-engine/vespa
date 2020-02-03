@@ -81,6 +81,7 @@ public:
     bool getIsFastSearch() const override;
     uint32_t getCommittedDocIdLimit() const override;
     bool isImported() const override;
+    bool isUndefined(DocId doc) const override;
 
 protected:
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available,

@@ -7,6 +7,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentGet;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
@@ -131,10 +132,37 @@ public class AttributeNode implements ExpressionNode {
         throw new IllegalStateException("Function '" + function + "' is not supported.");
     }
 
-    private static Object evaluateFieldPath(String fieldPth, Object value) {
+    private static boolean looksLikeComplexFieldPath(String path) {
+        for (int i = 0; i < path.length(); ++i) {
+            switch (path.charAt(i)) {
+                case '.':
+                case '{':
+                case '[':
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSimpleImportedField(String path, DocumentType documentType) {
+        if (looksLikeComplexFieldPath(path)) {
+            return false;
+        }
+        return documentType.hasImportedField(path);
+    }
+
+    private static Object evaluateFieldPath(String fieldPathStr, Object value) {
         if (value instanceof DocumentPut) {
             final Document doc = ((DocumentPut) value).getDocument();
-            FieldPath fieldPath = doc.getDataType().buildFieldPath(fieldPth);
+            if (isSimpleImportedField(fieldPathStr, doc.getDataType())) {
+                // Imported fields can only be meaningfully evaluated in the backend, so we
+                // explicitly treat them as if they are valid fields with missing values. This
+                // will be treated the same as if it's a normal field by the selection operators.
+                // This avoids any awkward interaction with Invalid values or having to
+                // augment the FieldPath code with knowledge of imported fields.
+                return null;
+            }
+            FieldPath fieldPath = doc.getDataType().buildFieldPath(fieldPathStr);
             IteratorHandler handler = new IteratorHandler();
             doc.iterateNested(fieldPath, 0, handler);
             if (handler.values.isEmpty()) {

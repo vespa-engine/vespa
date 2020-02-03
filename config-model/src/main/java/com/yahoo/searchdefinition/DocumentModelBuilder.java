@@ -18,6 +18,7 @@ import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.TemporaryImportedFields;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
 import com.yahoo.vespa.documentmodel.DocumentModel;
@@ -27,6 +28,7 @@ import com.yahoo.vespa.documentmodel.SearchField;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -338,7 +340,8 @@ public class DocumentModelBuilder {
                                                  sdoc.getDocumentType().contentStruct(),
                                                  sdoc.getDocumentType().getBodyType(),
                                                  sdoc.getFieldSets(),
-                                                 convertDocumentReferencesToNames(sdoc.getDocumentReferences()));
+                                                 convertDocumentReferencesToNames(sdoc.getDocumentReferences()),
+                                                 convertTemporaryImportedFieldsToNames(sdoc.getTemporaryImportedFields()));
         for (SDDocumentType n : sdoc.getInheritedTypes()) {
             NewDocumentType.Name name = new NewDocumentType.Name(n.getName());
                 NewDocumentType inherited =  model.getDocumentManager().getDocumentType(name);
@@ -402,6 +405,13 @@ public class DocumentModelBuilder {
                 .map(documentReference -> documentReference.targetSearch().getDocument())
                 .map(documentType -> new NewDocumentType.Name(documentType.getName()))
                 .collect(toSet());
+    }
+
+    private static Set<String> convertTemporaryImportedFieldsToNames(TemporaryImportedFields importedFields) {
+        if (importedFields == null) {
+            return emptySet();
+        }
+        return Collections.unmodifiableSet(importedFields.fields().keySet());
     }
 
     private static void extractDataTypesFromFields(NewDocumentType dt, Collection<Field> fields) {
