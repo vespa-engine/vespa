@@ -207,10 +207,9 @@ public class QueryRewrite {
 
     private static boolean isRanked(Item item) {
         if (item instanceof CompositeItem) {
-            boolean isRanked = false;
             for (Item child : ((CompositeItem)item).items())
-                isRanked |= isRanked(child);
-            return isRanked;
+                if (isRanked(child)) return true;
+            return false;
         }
         else if (item instanceof HasIndexItem && Hit.SDDOCNAME_FIELD.equals(((HasIndexItem)item).getIndexName())) {
             return false; // No point in ranking by sddocname
