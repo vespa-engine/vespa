@@ -87,7 +87,7 @@ public class SearchClusterTest {
 
         void waitOneFullPingRound() {
             int minPingCount = minPingCount();
-            int atLeast = maxPingCount() + 1;
+            int atLeast = maxPingCount() + 2;
             while (minPingCount < atLeast) {
                 ExecutorService executor = Executors.newCachedThreadPool();
                 searchCluster.clusterMonitor().ping(executor);
@@ -125,10 +125,10 @@ public class SearchClusterTest {
                 @Override
                 public void ping() {
                     int docs = numDocs.get();
-                    pingCount.incrementAndGet();
                     pongHandler.handle ((docs < 0)
                             ? new Pong(ErrorMessage.createBackendCommunicationError("Negative numDocs = " + docs))
                             : new Pong(docs));
+                    pingCount.incrementAndGet();
                 }
             }
 
