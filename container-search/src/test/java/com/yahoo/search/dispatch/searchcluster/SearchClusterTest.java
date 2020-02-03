@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -111,21 +112,23 @@ public class SearchClusterTest {
 
         static class Factory implements PingFactory {
 
-            static class Pinger implements Callable<Pong> {
+            static class PingJob implements Pinger {
 
                 private final AtomicInteger numDocs;
                 private final AtomicInteger pingCount;
-                Pinger(AtomicInteger numDocs, AtomicInteger pingCount) {
+                private final PongHandler pongHandler;
+                PingJob(AtomicInteger numDocs, AtomicInteger pingCount, PongHandler pongHandler) {
                     this.numDocs = numDocs;
                     this.pingCount = pingCount;
+                    this.pongHandler = pongHandler;
                 }
                 @Override
-                public Pong call() {
+                public void ping() {
                     int docs = numDocs.get();
                     pingCount.incrementAndGet();
-                    return (docs < 0)
+                    pongHandler.handle ((docs < 0)
                             ? new Pong(ErrorMessage.createBackendCommunicationError("Negative numDocs = " + docs))
-                            : new Pong(docs);
+                            : new Pong(docs));
                 }
             }
 
@@ -140,9 +143,9 @@ public class SearchClusterTest {
             }
 
             @Override
-            public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
+            public Pinger createPinger(Node node, ClusterMonitor<Node> monitor, PongHandler pongHandler) {
                 int index = node.group() * numPerGroup + node.key();
-                return new Pinger(activeDocs.get(index), pingCounts.get(index));
+                return new PingJob(activeDocs.get(index), pingCounts.get(index), pongHandler);
             }
         }
 
@@ -309,6 +312,20 @@ public class SearchClusterTest {
     public void requireThatVipStatusUpRequireOnlyOneOnlineNode() {
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(1, 2);
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(3, 3);
+    }
+
+    @Test
+    public void requireThatPingSequenceIsUpHeld() {
+        Node node = new Node(1, "n", 1);
+        assertEquals(1, node.createPingSequenceId());
+        assertEquals(2, node.createPingSequenceId());
+        assertEquals(0, node.getLastReceivedPongId());
+        assertTrue(node.isLastReceivedPong(2));
+        assertEquals(2, node.getLastReceivedPongId());
+        assertFalse(node.isLastReceivedPong(1));
+        assertFalse(node.isLastReceivedPong(2));
+        assertTrue(node.isLastReceivedPong(3));
+        assertEquals(3, node.getLastReceivedPongId());
     }
 
 }
