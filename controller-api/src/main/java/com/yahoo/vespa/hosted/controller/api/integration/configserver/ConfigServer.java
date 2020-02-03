@@ -111,15 +111,12 @@ public interface ConfigServer {
     TesterCloud.Status getTesterStatus(DeploymentId deployment);
 
     /** Starts tests on tester node */
-    // TODO: Remove default implementation when implemented in internal repo
-    default String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) { return "Tests started"; }
+    String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config);
 
     /** Gets log from tester node */
-    // TODO: Remove default implementation when implemented in internal repo
-    default List<LogEntry> getTesterLog(DeploymentId deployment, long after) { return List.of(); }
+    List<LogEntry> getTesterLog(DeploymentId deployment, long after);
 
     /** Is tester node ready */
-    // TODO: Remove default implementation when implemented in internal repo
-    default boolean isTesterReady(DeploymentId deployment) { return false; }
+    boolean isTesterReady(DeploymentId deployment);
 
 }

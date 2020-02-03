@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -280,6 +281,21 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public TesterCloud.Status getTesterStatus(DeploymentId deployment) {
         return TesterCloud.Status.SUCCESS;
+    }
+
+    @Override
+    public String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) {
+        return "Tests started";
+    }
+
+    @Override
+    public List<LogEntry> getTesterLog(DeploymentId deployment, long after) {
+        return List.of();
+    }
+
+    @Override
+    public boolean isTesterReady(DeploymentId deployment) {
+        return false;
     }
 
     /** Add any of given loadBalancers that do not already exist to the load balancers in zone */
