@@ -12,6 +12,10 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
@@ -60,13 +64,15 @@ public class OrchestratorImpl implements Orchestrator {
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final Clock clock;
     private final ApplicationApiFactory applicationApiFactory;
+    private final BooleanFlag enableLargeOrchestratorLocks;
 
     @Inject
     public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
                             StatusService statusService,
                             OrchestratorConfig orchestratorConfig,
                             InstanceLookupService instanceLookupService,
-                            ConfigserverConfig configServerConfig)
+                            ConfigserverConfig configServerConfig,
+                            FlagSource flagSource)
     {
         this(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, new ApplicationApiFactory(configServerConfig.zookeeperserver().size())),
              clusterControllerClientFactory,
@@ -74,7 +80,8 @@ public class OrchestratorImpl implements Orchestrator {
              instanceLookupService,
              orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
              Clock.systemUTC(),
-             new ApplicationApiFactory(configServerConfig.zookeeperserver().size()));
+             new ApplicationApiFactory(configServerConfig.zookeeperserver().size()),
+             flagSource);
     }
 
     public OrchestratorImpl(Policy policy,
@@ -83,7 +90,8 @@ public class OrchestratorImpl implements Orchestrator {
                             InstanceLookupService instanceLookupService,
                             int serviceMonitorConvergenceLatencySeconds,
                             Clock clock,
-                            ApplicationApiFactory applicationApiFactory)
+                            ApplicationApiFactory applicationApiFactory,
+                            FlagSource flagSource)
     {
         this.policy = policy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
@@ -92,6 +100,7 @@ public class OrchestratorImpl implements Orchestrator {
         this.instanceLookupService = instanceLookupService;
         this.clock = clock;
         this.applicationApiFactory = applicationApiFactory;
+        this.enableLargeOrchestratorLocks = Flags.ENABLE_LARGE_ORCHESTRATOR_LOCKS.bindTo(flagSource);
     }
 
     @Override
@@ -231,17 +240,20 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public void suspendAll(HostName parentHostname, List<HostName> hostNames)
             throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
-        OrchestratorContext context = OrchestratorContext.createContextForMultiAppOp(clock);
+        boolean largeLocks = enableLargeOrchestratorLocks
+                .with(FetchVector.Dimension.HOSTNAME, parentHostname.s())
+                .value();
+        try (OrchestratorContext context = OrchestratorContext.createContextForMultiAppOp(clock, largeLocks)) {
+            List<NodeGroup> nodeGroupsOrderedByApplication;
+            try {
+                nodeGroupsOrderedByApplication = nodeGroupsOrderedForSuspend(hostNames);
+            } catch (HostNameNotFoundException e) {
+                throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
+            }
 
-        List<NodeGroup> nodeGroupsOrderedByApplication;
-        try {
-            nodeGroupsOrderedByApplication = nodeGroupsOrderedForSuspend(hostNames);
-        } catch (HostNameNotFoundException e) {
-            throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
+            suspendAllNodeGroups(context, parentHostname, nodeGroupsOrderedByApplication, true);
+            suspendAllNodeGroups(context, parentHostname, nodeGroupsOrderedByApplication, false);
         }
-
-        suspendAllNodeGroups(context, parentHostname, nodeGroupsOrderedByApplication, true);
-        suspendAllNodeGroups(context, parentHostname, nodeGroupsOrderedByApplication, false);
     }
 
     private void suspendAllNodeGroups(OrchestratorContext context,
