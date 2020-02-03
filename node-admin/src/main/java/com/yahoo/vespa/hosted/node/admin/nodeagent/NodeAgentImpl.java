@@ -26,6 +26,9 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintai
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -47,11 +50,10 @@ public class NodeAgentImpl implements NodeAgent {
     // This is used as a definition of 1 GB when comparing flavor specs in node-repo
     private static final long BYTES_IN_GB = 1_000_000_000L;
 
-    private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
+    // Container is started with uncapped CPU and is kept that way until the first successful health check + this duration
+    private static final Duration DEFAULT_WARM_UP_DURATION = Duration.ofSeconds(30);
 
-    private final AtomicBoolean terminated = new AtomicBoolean(false);
-    private boolean hasResumedNode = false;
-    private boolean hasStartedServices = true;
+    private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
 
     private final NodeAgentContextSupplier contextSupplier;
     private final NodeRepository nodeRepository;
@@ -61,11 +63,18 @@ public class NodeAgentImpl implements NodeAgent {
     private final Optional<CredentialsMaintainer> credentialsMaintainer;
     private final Optional<AclMaintainer> aclMaintainer;
     private final Optional<HealthChecker> healthChecker;
+    private final Clock clock;
+    private final Duration warmUpDuration;
     private final DoubleFlag containerCpuCap;
 
     private Thread loopThread;
     private ContainerState containerState = UNKNOWN;
     private NodeSpec lastNode;
+
+    private final AtomicBoolean terminated = new AtomicBoolean(false);
+    private boolean hasResumedNode = false;
+    private boolean hasStartedServices = true;
+    private Optional<Instant> firstSuccessfulHealthCheckInstant = Optional.empty();
 
     private int numberOfUnhandledException = 0;
     private long currentRebootGeneration = 0;
@@ -87,16 +96,18 @@ public class NodeAgentImpl implements NodeAgent {
 
 
     // Created in NodeAdminImpl
-    public NodeAgentImpl(
-            final NodeAgentContextSupplier contextSupplier,
-            final NodeRepository nodeRepository,
-            final Orchestrator orchestrator,
-            final DockerOperations dockerOperations,
-            final StorageMaintainer storageMaintainer,
-            final FlagSource flagSource,
-            final Optional<CredentialsMaintainer> credentialsMaintainer,
-            final Optional<AclMaintainer> aclMaintainer,
-            final Optional<HealthChecker> healthChecker) {
+    public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
+                         Orchestrator orchestrator, DockerOperations dockerOperations, StorageMaintainer storageMaintainer,
+                         FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
+                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock) {
+        this(contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource, credentialsMaintainer,
+                aclMaintainer, healthChecker, clock, DEFAULT_WARM_UP_DURATION);
+    }
+
+    public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
+                        Orchestrator orchestrator, DockerOperations dockerOperations, StorageMaintainer storageMaintainer,
+                        FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
+                        Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock, Duration warmUpDuration) {
         this.contextSupplier = contextSupplier;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
@@ -105,6 +116,8 @@ public class NodeAgentImpl implements NodeAgent {
         this.credentialsMaintainer = credentialsMaintainer;
         this.aclMaintainer = aclMaintainer;
         this.healthChecker = healthChecker;
+        this.clock = clock;
+        this.warmUpDuration = warmUpDuration;
         this.containerCpuCap = Flags.CONTAINER_CPU_CAP.bindTo(flagSource);
     }
 
@@ -194,9 +207,11 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void startContainer(NodeAgentContext context) {
+    private Container startContainer(NodeAgentContext context) {
         ContainerData containerData = createContainerData(context);
-        dockerOperations.createContainer(context, containerData, getContainerResources(context));
+        ContainerResources wantedResources = warmUpDuration.isNegative() ?
+                getContainerResources(context) : getContainerResources(context).withUnlimitedCpus();
+        dockerOperations.createContainer(context, containerData, wantedResources);
         dockerOperations.startContainer(context);
 
         currentRebootGeneration = context.node().wantedRebootGeneration();
@@ -204,6 +219,8 @@ public class NodeAgentImpl implements NodeAgent {
         hasStartedServices = true; // Automatically started with the container
         hasResumedNode = false;
         context.log(logger, "Container successfully started, new containerState is " + containerState);
+        return dockerOperations.getContainer(context).orElseThrow(() ->
+                new ConvergenceException("Did not find container that was just started"));
     }
 
     private Optional<Container> removeContainerIfNeededUpdateContainerState(
@@ -250,6 +267,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (containerState == ABSENT) return;
         try {
             hasStartedServices = hasResumedNode = false;
+            firstSuccessfulHealthCheckInstant = Optional.empty();
             dockerOperations.stopServices(context);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
@@ -333,9 +351,16 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
 
-    private void updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
+    /** Returns true iff container is correctly sized */
+    private Container updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
         ContainerResources wantedContainerResources = getContainerResources(context);
-        if (wantedContainerResources.equalsCpu(existingContainer.resources)) return;
+
+        if (healthChecker.isPresent() && firstSuccessfulHealthCheckInstant
+                .map(clock.instant().minus(warmUpDuration)::isBefore)
+                .orElse(true))
+            return existingContainer;
+
+        if (wantedContainerResources.equalsCpu(existingContainer.resources)) return existingContainer;
         context.log(logger, "Container should be running with different CPU allocation, wanted: %s, current: %s",
                 wantedContainerResources.toStringCpu(), existingContainer.resources.toStringCpu());
 
@@ -343,6 +368,8 @@ public class NodeAgentImpl implements NodeAgent {
 
         // Only update CPU resources
         dockerOperations.updateContainer(context, wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
+        return dockerOperations.getContainer(context).orElseThrow(() ->
+                new ConvergenceException("Did not find container that was just updated"));
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
@@ -430,16 +457,25 @@ public class NodeAgentImpl implements NodeAgent {
                 credentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
                 if (container.isEmpty()) {
                     containerState = STARTING;
-                    startContainer(context);
+                    container = Optional.of(startContainer(context));
                     containerState = UNKNOWN;
                 } else {
-                    updateContainerIfNeeded(context, container.get());
+                    container = Optional.of(updateContainerIfNeeded(context, container.get()));
                 }
 
                 aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
-                healthChecker.ifPresent(checker -> checker.verifyHealth(context));
+                if (healthChecker.isPresent()) {
+                    healthChecker.get().verifyHealth(context);
+                    if (firstSuccessfulHealthCheckInstant.isEmpty())
+                        firstSuccessfulHealthCheckInstant = Optional.of(clock.instant());
+
+                    Duration timeLeft = Duration.between(firstSuccessfulHealthCheckInstant.get(), clock.instant());
+                    if (!container.get().resources.equalsCpu(getContainerResources(context)))
+                        throw new ConvergenceException("Refusing to resume until warm up period ends (" +
+                                (timeLeft.isNegative() ? " next tick" : "in " + timeLeft) + ")");
+                }
 
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes

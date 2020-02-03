@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -26,12 +27,17 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -65,6 +71,7 @@ public class NodeAgentImplTest {
     private final HealthChecker healthChecker = mock(HealthChecker.class);
     private final CredentialsMaintainer credentialsMaintainer = mock(CredentialsMaintainer.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final ManualClock clock = new ManualClock(Instant.now());
 
 
     @Test
@@ -641,6 +648,86 @@ public class NodeAgentImplTest {
         verifyThatContainerIsStopped(NodeState.inactive, Optional.of(ApplicationId.defaultId()));
     }
 
+    @Test
+    public void initial_cpu_cap_test() {
+        NodeSpec.Builder specBuilder = nodeBuilder
+                .state(NodeState.active)
+                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
+                .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
+                .wantedRestartGeneration(1).currentRestartGeneration(1);
+
+        NodeAgentContext context = createContext(specBuilder.build());
+        NodeAgentImpl nodeAgent = makeNodeAgent(null, false, Duration.ofSeconds(30));
+
+        when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.of(201326592000L));
+
+        InOrder inOrder = inOrder(orchestrator, dockerOperations);
+
+        ConvergenceException healthCheckException = new ConvergenceException("Not yet up");
+        doThrow(healthCheckException).when(healthChecker).verifyHealth(any());
+        for (int i = 0; i < 3; i++) {
+            try {
+                nodeAgent.doConverge(context);
+                fail("Expected to fail with health check exception");
+            } catch (ConvergenceException e) {
+                assertEquals(healthCheckException, e);
+            }
+            clock.advance(Duration.ofSeconds(30));
+        }
+
+        doNothing().when(healthChecker).verifyHealth(any());
+        try {
+            nodeAgent.doConverge(context);
+            fail("Expected to fail due to warm up period not yet done");
+        } catch (ConvergenceException e) {
+            assertTrue(e.getMessage().startsWith("Refusing to resume until warm up period ends"));
+        }
+        inOrder.verify(orchestrator, never()).resume(any());
+        inOrder.verify(orchestrator, never()).suspend(any());
+        inOrder.verify(dockerOperations, never()).updateContainer(any(), any());
+
+
+        clock.advance(Duration.ofSeconds(31));
+        nodeAgent.doConverge(context);
+
+        inOrder.verify(dockerOperations).updateContainer(eq(context), eq(ContainerResources.from(0, 2, 16)));
+        inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
+        inOrder.verify(dockerOperations, never()).startContainer(any());
+        inOrder.verify(orchestrator).resume(any(String.class));
+
+        // No changes
+        nodeAgent.converge(context);
+        inOrder.verify(orchestrator, never()).suspend(any(String.class));
+        inOrder.verify(dockerOperations, never()).updateContainer(eq(context), any());
+        inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
+        inOrder.verify(orchestrator).resume(any(String.class));
+    }
+
+    @Test
+    public void resumes_normally_if_container_is_already_capped_on_start() {
+        NodeSpec.Builder specBuilder = nodeBuilder
+                .state(NodeState.active)
+                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
+                .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
+                .wantedRestartGeneration(1).currentRestartGeneration(1);
+
+        NodeAgentContext context = createContext(specBuilder.build());
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true, Duration.ofSeconds(30));
+        mockGetContainer(dockerImage, ContainerResources.from(0, 2, 16), true);
+
+        when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.of(201326592000L));
+
+        InOrder inOrder = inOrder(orchestrator, dockerOperations);
+
+        nodeAgent.doConverge(context);
+
+        nodeAgent.converge(context);
+        inOrder.verify(orchestrator, never()).suspend(any(String.class));
+        inOrder.verify(dockerOperations, never()).updateContainer(eq(context), any());
+        inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
+        inOrder.verify(orchestrator).resume(any(String.class));
+    }
+
     private void verifyThatContainerIsStopped(NodeState nodeState, Optional<ApplicationId> owner) {
         NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
                 .resources(resources)
@@ -672,11 +759,28 @@ public class NodeAgentImplTest {
     }
 
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
+        return makeNodeAgent(dockerImage, isRunning, Duration.ofSeconds(-1));
+    }
+
+    private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning, Duration warmUpDuration) {
         mockGetContainer(dockerImage, isRunning);
+        doAnswer(invoc -> {
+            NodeAgentContext context = invoc.getArgument(0, NodeAgentContext.class);
+            ContainerResources resources = invoc.getArgument(2, ContainerResources.class);
+            mockGetContainer(context.node().wantedDockerImage().get(), resources, true);
+            return null;
+        }).when(dockerOperations).createContainer(any(), any(), any());
+
+        doAnswer(invoc -> {
+            NodeAgentContext context = invoc.getArgument(0, NodeAgentContext.class);
+            ContainerResources resources = invoc.getArgument(1, ContainerResources.class);
+            mockGetContainer(context.node().wantedDockerImage().get(), resources, true);
+            return null;
+        }).when(dockerOperations).updateContainer(any(), any());
 
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, dockerOperations,
                 storageMaintainer, flagSource, Optional.of(credentialsMaintainer), Optional.of(aclMaintainer),
-                Optional.of(healthChecker));
+                Optional.of(healthChecker), clock, warmUpDuration);
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
