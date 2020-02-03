@@ -254,6 +254,8 @@ public class OrchestratorImpl implements Orchestrator {
                 suspendGroup(context.createSubcontextForSingleAppOp(probe), nodeGroup);
             } catch (HostStateChangeDeniedException e) {
                 throw new BatchHostStateChangeDeniedException(parentHostname, nodeGroup, e);
+            } catch (UncheckedTimeoutException e) {
+                throw e;
             } catch (RuntimeException e) {
                 throw new BatchInternalErrorException(parentHostname, nodeGroup, e);
             }
