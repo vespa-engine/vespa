@@ -44,7 +44,9 @@ public interface ConfigServer {
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
 
-    Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
+    Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath);
+
+    String getClusterControllerStatus(DeploymentId deployment, String restPath);
 
     /**
      * Gets the Vespa logs of the given deployment.

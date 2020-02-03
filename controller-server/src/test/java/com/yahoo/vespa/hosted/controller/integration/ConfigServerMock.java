@@ -420,8 +420,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     // Returns a canned example response
     @Override
-    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName,
-                                          String environment, String region, String serviceName, String restPath) {
+    public Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath) {
         Map<String,List<?>> root = new HashMap<>();
         List<Map<?,?>> resources = new ArrayList<>();
         Map<String,String> resource = new HashMap<>();
@@ -429,6 +428,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         resources.add(resource);
         root.put("resources", resources);
         return root;
+    }
+
+    @Override
+    public String getClusterControllerStatus(DeploymentId deployment, String restPath) {
+        return "<h1>OK</h1>";
     }
 
     @Override

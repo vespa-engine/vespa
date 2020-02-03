@@ -1331,10 +1331,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse service(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath, HttpRequest request) {
-        Map<?,?> result = controller.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region, serviceName, restPath);
-        ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
-                                                             new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.zoneRegistry().getConfigServerApiUris(ZoneId.from(environment, region)),
+        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), ZoneId.from(environment, region));
+
+        if ("container-clustercontroller".equals((serviceName)) && restPath.contains("/status/")) {
+            String result = controller.serviceRegistry().configServer().getClusterControllerStatus(deploymentId, restPath);
+            return new HtmlResponse(result);
+        }
+
+        Map<?,?> result = controller.serviceRegistry().configServer().getServiceApiResponse(deploymentId, serviceName, restPath);
+        ServiceApiResponse response = new ServiceApiResponse(deploymentId.zoneId(),
+                                                             deploymentId.applicationId(),
+                                                             controller.zoneRegistry().getConfigServerApiUris(deploymentId.zoneId()),
                                                              request.getUri());
         response.setResponse(result, serviceName, restPath);
         return response;

@@ -151,13 +151,6 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         return serviceRegistry.configServer().getApplicationView(tenantName, applicationName, instanceName, environment, region);
     }
 
-    // TODO: Model the response properly
-    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName,
-                                          String environment, String region, String serviceName, String restPath) {
-        return serviceRegistry.configServer().getServiceApiResponse(tenantName, applicationName, instanceName, environment, region,
-                                                                    serviceName, restPath);
-    }
-
     /** Replace the current version status by a new one */
     public void updateVersionStatus(VersionStatus newStatus) {
         VersionStatus currentStatus = versionStatus();
