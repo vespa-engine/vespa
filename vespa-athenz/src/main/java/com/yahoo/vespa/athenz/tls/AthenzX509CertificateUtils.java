@@ -43,10 +43,7 @@ public class AthenzX509CertificateUtils {
 
     public static AthenzRole getRolesFromRoleCertificate(X509Certificate certificate) {
         String commonName = com.yahoo.security.X509CertificateUtils.getSubjectCommonNames(certificate).get(0);
-        int delimiterIndex = commonName.indexOf(COMMON_NAME_ROLE_DELIMITER);
-        String domain = commonName.substring(0, delimiterIndex);
-        String roleName = commonName.substring(delimiterIndex + COMMON_NAME_ROLE_DELIMITER.length());
-        return new AthenzRole(domain, roleName);
+        return AthenzRole.fromResourceNameString(commonName);
     }
 
     private static AthenzIdentity getIdentityFromSanEmail(String email) {
