@@ -5,6 +5,9 @@ usage() {
     echo "Usage: $0 [full | java | default]" >&2
 }
 
+
+MAVEN_TARGET=install
+
 if [ $# -eq 0 ]; then
     # Build minimal set of java modules required to run cmake
     MODE=default
@@ -16,6 +19,9 @@ elif [ "$1" = "java" ]; then
     MODE=java
 elif [ "$1" = "default" ]; then
     MODE=default
+elif [ "$1" = "default-deploy" ]; then
+    MODE=default
+    MAVEN_TARGET=deploy
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
     exit 0
@@ -42,7 +48,7 @@ echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
 
 mvn_install() {
-    ${MAVEN_CMD} --no-snapshot-updates clean install ${MAVEN_EXTRA_OPTS} "$@"
+    ${MAVEN_CMD} --no-snapshot-updates clean ${MAVEN_TARGET} ${MAVEN_EXTRA_OPTS} "$@"
 }
 
 # Generate vtag map
