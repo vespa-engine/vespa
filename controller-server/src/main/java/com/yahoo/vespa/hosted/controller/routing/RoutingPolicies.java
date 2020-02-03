@@ -146,7 +146,9 @@ public class RoutingPolicies {
                                                               routeEntry.getKey().endpointId(), controller.system());
                 controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), targets, Priority.normal);
             }
-            staleTargets.forEach(t -> controller.nameServiceForwarder().removeRecords(Record.Type.ALIAS, t.asData(), Priority.normal));
+            staleTargets.forEach(t -> controller.nameServiceForwarder().removeRecords(Record.Type.ALIAS,
+                                                                                      RecordData.fqdn(t.name().value()),
+                                                                                      Priority.normal));
         }
     }
 
