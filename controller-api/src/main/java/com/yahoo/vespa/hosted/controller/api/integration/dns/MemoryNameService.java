@@ -68,6 +68,11 @@ public class MemoryNameService implements NameService {
 
     @Override
     public List<Record> findRecords(Record.Type type, RecordData data) {
+        if (type == Record.Type.ALIAS && data.asString().contains("/")) {
+            // Validate the same expectation as of a real name service
+            throw new IllegalArgumentException("Finding " + Record.Type.ALIAS + " record by data should only include " +
+                                               "the FQDN name");
+        }
         return records.stream()
                       .filter(record -> record.type() == type && record.data().equals(data))
                       .collect(Collectors.toUnmodifiableList());
