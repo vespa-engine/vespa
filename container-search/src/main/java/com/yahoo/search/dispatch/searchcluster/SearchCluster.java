@@ -240,7 +240,7 @@ public class SearchCluster implements NodeManager<Node> {
             vipStatus.removeFromRotation(clusterId);
     }
 
-    private boolean hasInformationAboutAllNodes() {
+    public boolean hasInformationAboutAllNodes() {
         return nodesByHost.values().stream().allMatch(node -> node.isWorking() != null);
     }
 

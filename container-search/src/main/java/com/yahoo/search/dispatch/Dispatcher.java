@@ -125,6 +125,11 @@ public class Dispatcher extends AbstractComponent {
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
 
         searchCluster.startClusterMonitoring(pingFactory);
+        try {
+            while ( ! searchCluster.hasInformationAboutAllNodes()) {
+                Thread.sleep(1);
+            }
+        } catch (InterruptedException e) {}
     }
 
     /** Returns the search cluster this dispatches to */
