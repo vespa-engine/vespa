@@ -53,10 +53,16 @@ public class StateMonitor extends AbstractComponent {
     }
 
     StateMonitor(HealthMonitorConfig config, Timer timer, ThreadFactory threadFactory) {
+        this((long)(config.snapshot_interval() * TimeUnit.SECONDS.toMillis(1)),
+             Status.valueOf(config.initialStatus()),
+             timer, threadFactory);
+    }
+    /* For Testing */
+    public StateMonitor(long snapshotIntervalMS, Status status, Timer timer, ThreadFactory threadFactory) {
         this.timer = timer;
-        this.snapshotIntervalMs = (long)(config.snapshot_interval() * TimeUnit.SECONDS.toMillis(1));
+        this.snapshotIntervalMs = snapshotIntervalMS;
         this.lastSnapshotTimeMs = timer.currentTimeMillis();
-        this.status = Status.valueOf(config.initialStatus());
+        this.status = status;
         thread = threadFactory.newThread(this::run);
         thread.start();
     }

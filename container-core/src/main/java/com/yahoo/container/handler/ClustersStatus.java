@@ -27,6 +27,8 @@ public class ClustersStatus extends AbstractComponent {
     @Inject
     public ClustersStatus() { }
 
+    public enum Require {ONE, ALL}
+
     /** Are there any (in-service influencing) clusters in this container? */
     private boolean containerHasClusters;
 
@@ -72,12 +74,25 @@ public class ClustersStatus extends AbstractComponent {
         setDown((String) clusterIdentifier);
     }
 
-    /** Returns whether this container should receive traffic based on the state of this */
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean containerShouldReceiveTraffic() {
+        return containerShouldReceiveTraffic(Require.ONE);
+    }
+    /**
+     *  Returns whether this container should receive traffic based on the state of this
+     *  @param require Requirement for being up, ALL or ONE.
+     */
+    public boolean containerShouldReceiveTraffic(Require require) {
         synchronized (mutex) {
             if (containerHasClusters) {
-                // Should receive traffic when at least one cluster is up
-                return clusterStatus.values().stream().anyMatch(status -> status==true);
+                switch (require) {
+                    case ONE:
+                        // Should receive traffic when at least one cluster is up
+                        return clusterStatus.values().stream().anyMatch(status -> status == true);
+                    case ALL:
+                    default:
+                        return !clusterStatus.isEmpty() && clusterStatus.values().stream().allMatch(status -> status == true);
+                }
             }
             else {
                 return true;

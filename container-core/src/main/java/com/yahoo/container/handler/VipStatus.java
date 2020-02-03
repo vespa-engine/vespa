@@ -102,10 +102,15 @@ public class VipStatus {
 
     private void updateCurrentlyInRotation() {
         synchronized (mutex) {
-            if (rotationOverride != null)
+            if (rotationOverride != null) {
                 currentlyInRotation = rotationOverride;
-            else
-                currentlyInRotation = clustersStatus.containerShouldReceiveTraffic();
+            } else {
+                if (healthState.status() == StateMonitor.Status.up) {
+                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ONE);
+                } else {
+                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL);
+                }
+            }
 
             // Change to/from 'up' when appropriate but don't change 'initializing' to 'down'
             if (currentlyInRotation)
