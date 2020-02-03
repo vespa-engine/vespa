@@ -92,7 +92,9 @@ BuildRequires: openblas-devel
 BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
+%if ! 0%{?el7}
 BuildRequires: libicu-devel
+%endif
 BuildRequires: java-11-openjdk-devel
 BuildRequires: rpm-build
 BuildRequires: make
@@ -133,7 +135,9 @@ Requires: openblas-serial
 Requires: lz4
 Requires: libzstd
 Requires: zlib
+%if ! 0%{?el7}
 Requires: libicu
+%endif
 Requires: perf
 Requires: gdb
 Requires: net-tools
