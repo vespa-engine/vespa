@@ -21,7 +21,8 @@ public class Node {
     private final AtomicBoolean statusIsKnown = new AtomicBoolean(false);
     private final AtomicBoolean working = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
-    private final AtomicBoolean pendingPing = new AtomicBoolean();
+    private final AtomicLong pingSequence = new AtomicLong(0);
+    private final AtomicLong lastPing = new AtomicLong(0);
 
     public Node(int key, String hostname, int group) {
         this.key = key;
@@ -29,11 +30,17 @@ public class Node {
         this.group = group;
     }
 
-    /** Only send ping if this method return true. If not the is a ping outstanding. */
-    public boolean sendPing() { return ! pendingPing.getAndSet(true); }
-
-    /** Need to be called when a pong is called to allow next ping to go through. */
-    public void receivePing() { pendingPing.set(false); }
+    /** Give a monotonically increasing sequence number.*/
+    public long createPingSequenceId() { return pingSequence.incrementAndGet(); }
+    /** Checks if this pong is received in line and accepted, or out of band and should be ignored..*/
+    public boolean isLastReceivedPong(long pingId ) {
+        long last = lastPing.get();
+        while ((pingId > last) && ! lastPing.compareAndSet(last, pingId)) {
+            last = pingSequence.get();
+        }
+        return last < pingId;
+    }
+    public long getLastReceivedPongId() { return lastPing.get(); }
 
     /** Returns the unique and stable distribution key of this node */
     public int key() { return key; }

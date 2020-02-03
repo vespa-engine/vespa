@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -309,6 +310,20 @@ public class SearchClusterTest {
     public void requireThatVipStatusUpRequireOnlyOneOnlineNode() {
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(1, 2);
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(3, 3);
+    }
+
+    @Test
+    public void requireThatPingSequenceIsUpHeld() {
+        Node node = new Node(1, "n", 1);
+        assertEquals(1, node.createPingSequenceId());
+        assertEquals(2, node.createPingSequenceId());
+        assertEquals(0, node.getLastReceivedPongId());
+        assertTrue(node.isLastReceivedPong(2));
+        assertEquals(2, node.getLastReceivedPongId());
+        assertFalse(node.isLastReceivedPong(1));
+        assertFalse(node.isLastReceivedPong(2));
+        assertTrue(node.isLastReceivedPong(3));
+        assertEquals(3, node.getLastReceivedPongId());
     }
 
 }
