@@ -58,8 +58,6 @@
             </filtering>
         </http>
 
-        <accesslog type='json' fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S'/>
-
         <nodes count="1" allocated-memory="17%">
             <resources vcpu="2.00" memory="12.00Gb" disk="75.00Gb" disk-speed="fast" storage-type="local"/>
         </nodes>
