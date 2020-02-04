@@ -39,7 +39,7 @@ public class ClusterMonitor<T> {
     private final Map<T, TrafficNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
     /** @deprecated It is not advised to start the monitoring thread in the constructor.
-     * Use ClusterMonitor(NodeManager<T> manager, false) and explicit start(). */
+     * Use ClusterMonitor(NodeManager manager, false) and explicit start(). */
     @Deprecated
     public ClusterMonitor(NodeManager<T> manager) {
         this(manager, true);

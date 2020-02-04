@@ -20,7 +20,7 @@ public interface NodeManager<T> {
     /** 
      * Called when a node should be pinged. 
      * This *must* lead to either a call to NodeMonitor.failed or NodeMonitor.responded
-     * @deprecated Use ping(ClusterMonitor<T> clusterMonitor, T node, Executor executor) instead.
+     * @deprecated Use ping(ClusterMonitor clusterMonitor, T node, Executor executor) instead.
      */
     @Deprecated
     default void ping(T node, Executor executor) {

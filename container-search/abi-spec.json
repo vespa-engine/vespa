@@ -1954,6 +1954,7 @@
     "methods": [
       "public void <init>(com.yahoo.search.cluster.NodeManager)",
       "public void <init>(com.yahoo.search.cluster.NodeManager, boolean)",
+      "public void start()",
       "public com.yahoo.search.cluster.MonitorConfiguration getConfiguration()",
       "public void add(java.lang.Object, boolean)",
       "public com.yahoo.search.cluster.BaseNodeMonitor getNodeMonitor(java.lang.Object)",
@@ -1978,8 +1979,8 @@
     "methods": [
       "public void <init>(com.yahoo.component.ComponentId, java.util.List, boolean)",
       "public void <init>(com.yahoo.component.ComponentId, java.util.List, com.yahoo.search.cluster.Hasher, boolean)",
-      "public void <init>(com.yahoo.component.ComponentId, java.util.List, com.yahoo.search.cluster.Hasher, boolean, boolean)",
-      "public final void ping(java.lang.Object, java.util.concurrent.Executor)",
+      "protected void <init>(com.yahoo.component.ComponentId, java.util.List, com.yahoo.search.cluster.Hasher, boolean, boolean)",
+      "public final void ping(com.yahoo.search.cluster.ClusterMonitor, java.lang.Object, java.util.concurrent.Executor)",
       "protected abstract com.yahoo.prelude.Pong ping(com.yahoo.prelude.Ping, java.lang.Object)",
       "protected java.lang.Object getFirstConnection(com.yahoo.search.cluster.Hasher$NodeList, int, int, com.yahoo.search.Query)",
       "public final com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
@@ -2074,7 +2075,8 @@
     "methods": [
       "public abstract void working(java.lang.Object)",
       "public abstract void failed(java.lang.Object)",
-      "public abstract void ping(java.lang.Object, java.util.concurrent.Executor)",
+      "public void ping(java.lang.Object, java.util.concurrent.Executor)",
+      "public void ping(com.yahoo.search.cluster.ClusterMonitor, java.lang.Object, java.util.concurrent.Executor)",
       "public void pingIterationCompleted()"
     ],
     "fields": []
