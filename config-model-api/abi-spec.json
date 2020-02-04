@@ -879,7 +879,8 @@
       "public java.util.Optional tlsSecrets()",
       "public java.util.Optional endpointCertificateSecrets()",
       "public abstract double defaultTermwiseLimit()",
-      "public abstract boolean useBucketSpaceMetric()"
+      "public abstract boolean useBucketSpaceMetric()",
+      "public boolean useNewAthenzFilter()"
     ],
     "fields": []
   },

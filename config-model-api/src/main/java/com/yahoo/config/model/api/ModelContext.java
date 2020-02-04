@@ -59,6 +59,7 @@ public interface ModelContext {
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
         double defaultTermwiseLimit();
         boolean useBucketSpaceMetric();
+        default boolean useNewAthenzFilter() { return false; }
     }
 
 }
