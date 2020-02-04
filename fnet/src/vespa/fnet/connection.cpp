@@ -13,6 +13,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
 
+std::atomic<uint64_t> FNET_Connection::_num_connections = 0;
+
 namespace {
 class SyncPacket : public FNET_DummyPacket {
 private:
@@ -489,6 +491,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _cleanup(nullptr)
 {
     assert(_socket && (_socket->get_fd() >= 0));
+    ++_num_connections;
 }
 
 
@@ -526,6 +529,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
         _adminChannel = admin.get();
         _channels.Register(admin.release());
     }
+    ++_num_connections;
 }
 
 
@@ -536,6 +540,7 @@ FNET_Connection::~FNET_Connection()
         delete _adminChannel;
     }
     assert(_cleanup == nullptr);
+    --_num_connections;
 }
 
 
