@@ -550,13 +550,14 @@ public class InternalStepRunner implements StepRunner {
         }
         logEndpoints(endpoints, logger);
 
-        Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
+        Optional<URI> testerEndpoint = Optional.empty();
         if (useConfigServerForTesterAPI(zoneId)) {
             if ( ! controller.jobController().cloud().testerReady(getTesterDeploymentId(id))) {
                 logger.log(WARNING, "Tester container went bad!");
                 return Optional.of(error);
             }
         } else {
+            testerEndpoint = controller.jobController().testerEndpoint(id);
             if (testerEndpoint.isEmpty()) {
                 logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
                 return Optional.of(error);
