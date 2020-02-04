@@ -1,10 +1,8 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.prelude.fastsearch.test.MockMetric;
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.ClusterMonitor;
@@ -18,7 +16,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.concurrent.Callable;
 
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
 import static org.junit.Assert.assertEquals;

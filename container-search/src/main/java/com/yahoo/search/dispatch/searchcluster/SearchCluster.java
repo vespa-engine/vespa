@@ -82,19 +82,22 @@ public class SearchCluster implements NodeManager<Node> {
                                                                        nodesByHost,
                                                                        groups);
 
-        this.clusterMonitor = new ClusterMonitor<>(this);
+        this.clusterMonitor = new ClusterMonitor<>(this, false);
     }
 
     public void shutDown() {
         clusterMonitor.shutdown();
     }
 
-    public void startClusterMonitoring(PingFactory pingFactory) {
+    public void startClusterMonitoring(PingFactory pingFactory, boolean startPingThread) {
         this.pingFactory = pingFactory;
 
         for (var group : orderedGroups) {
             for (var node : group.nodes())
                 clusterMonitor.add(node, true);
+        }
+        if (startPingThread) {
+            clusterMonitor.start();
         }
     }
 

@@ -124,7 +124,7 @@ public class Dispatcher extends AbstractComponent {
         this.metricContext = metric.createContext(null);
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
 
-        searchCluster.startClusterMonitoring(pingFactory);
+        searchCluster.startClusterMonitoring(pingFactory, true);
         try {
             while ( ! searchCluster.hasInformationAboutAllNodes()) {
                 Thread.sleep(1);

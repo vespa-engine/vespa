@@ -62,7 +62,7 @@ public class SearchClusterTest {
         }
 
         void startMonitoring() {
-            searchCluster.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
+            searchCluster.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts), false);
         }
 
         private int maxPingCount() {
@@ -87,7 +87,7 @@ public class SearchClusterTest {
 
         void waitOneFullPingRound() {
             int minPingCount = minPingCount();
-            int atLeast = maxPingCount() + 2;
+            int atLeast = maxPingCount() + 1;
             while (minPingCount < atLeast) {
                 ExecutorService executor = Executors.newCachedThreadPool();
                 searchCluster.clusterMonitor().ping(executor);
