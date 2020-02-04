@@ -10,9 +10,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ConfigSetTest {
+
     @Test
     public void testToString() {
         ConfigSet set = new ConfigSet();

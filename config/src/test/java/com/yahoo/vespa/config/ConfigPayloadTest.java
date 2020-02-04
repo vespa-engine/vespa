@@ -24,8 +24,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author Ulf Lilleengen                                               3
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ConfigPayloadTest {
 

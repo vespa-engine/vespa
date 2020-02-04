@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.util.ConfigUtils;
  * For unit testing
  *
  * @author hmusum
- * @since 5.1.11
  */
 public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {
 

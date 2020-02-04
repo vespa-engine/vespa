@@ -13,7 +13,6 @@ import java.time.Clock;
  * A trace utility that can serialize/deserialize to/from {@link Slime}
  *
  * @author Ulf Lilleengen
- * @since 5.3
  */
 public class Trace {
     private static final String TRACE_TRACELOG = "traceLog";

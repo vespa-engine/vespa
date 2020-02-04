@@ -20,12 +20,7 @@ public class SlimeUtils {
         if (from.type() != Type.OBJECT) {
             throw new IllegalArgumentException("Cannot copy object: " + from);
         }
-        from.traverse(new ObjectTraverser() {
-            @Override
-            public void field(String name, Inspector inspector) {
-                setObjectEntry(inspector, name, to);
-            }
-        });
+        from.traverse((ObjectTraverser) (name, inspector) -> setObjectEntry(inspector, name, to));
 
     }
 
@@ -61,13 +56,7 @@ public class SlimeUtils {
     }
 
     private static void copyArray(Inspector from, final Cursor to) {
-        from.traverse(new ArrayTraverser() {
-            @Override
-            public void entry(int i, Inspector inspector) {
-                addValue(inspector, to);
-            }
-        });
-
+        from.traverse((ArrayTraverser) (i, inspector) -> addValue(inspector, to));
     }
 
     private static void addValue(Inspector from, Cursor to) {

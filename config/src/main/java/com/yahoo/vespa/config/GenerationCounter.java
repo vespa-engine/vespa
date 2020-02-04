@@ -5,7 +5,6 @@ package com.yahoo.vespa.config;
  * Interface for counters.
  *
  * @author Ulf Lilleengen
- * @since 5.9
  */
 public interface GenerationCounter {
     /**

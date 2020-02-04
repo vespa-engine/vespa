@@ -12,7 +12,6 @@ import java.util.*;
  *
  * TODO: Add toString
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ConfigPayloadBuilder {
 

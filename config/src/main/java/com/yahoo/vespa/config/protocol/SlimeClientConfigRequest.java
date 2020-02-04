@@ -39,15 +39,15 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
                                        CompressionType compressionType,
                                        Optional<VespaVersion> vespaVersion) {
         Slime data = SlimeRequestData.encodeRequest(key,
-                hostname,
-                defSchema,
-                configMd5,
-                generation,
-                timeout,
-                trace,
-                getProtocolVersion(),
-                compressionType,
-                vespaVersion);
+                                                    hostname,
+                                                    defSchema,
+                                                    configMd5,
+                                                    generation,
+                                                    timeout,
+                                                    trace,
+                                                    getProtocolVersion(),
+                                                    compressionType,
+                                                    vespaVersion);
         Request jrtReq = new Request(getJRTMethodName());
         jrtReq.parameters().add(new StringValue(encodeAsUtf8String(data, true)));
 
@@ -134,7 +134,7 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
 
     protected long newGen() {
         long newGen = getNewGeneration();
-        if (newGen==0) return getRequestGeneration();
+        if (newGen == 0) return getRequestGeneration();
         return newGen;
     }
 
