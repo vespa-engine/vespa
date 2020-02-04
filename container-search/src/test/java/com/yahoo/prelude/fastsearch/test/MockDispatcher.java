@@ -2,8 +2,10 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
+import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
@@ -22,7 +24,7 @@ class MockDispatcher extends Dispatcher {
     public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool,
             int containerClusterSize, VipStatus vipStatus) {
         var dispatchConfig = toDispatchConfig(nodes);
-        var searchCluster = new SearchCluster("a", dispatchConfig, containerClusterSize, vipStatus);
+        var searchCluster = new SearchCluster("a", dispatchConfig, containerClusterSize, vipStatus, new RpcPingFactory(rpcResourcePool));
         return new MockDispatcher(searchCluster, dispatchConfig, rpcResourcePool);
     }
 
@@ -31,7 +33,7 @@ class MockDispatcher extends Dispatcher {
     }
 
     private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
-        super(searchCluster, dispatchConfig, invokerFactory, new MockMetric());
+        super(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, invokerFactory, new MockMetric());
     }
 
     static DispatchConfig toDispatchConfig(List<Node> nodes) {

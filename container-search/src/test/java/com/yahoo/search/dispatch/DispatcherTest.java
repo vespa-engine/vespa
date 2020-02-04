@@ -1,10 +1,8 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.prelude.fastsearch.test.MockMetric;
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.ClusterMonitor;
@@ -18,7 +16,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.concurrent.Callable;
 
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
 import static org.junit.Assert.assertEquals;
@@ -41,9 +38,10 @@ public class DispatcherTest {
             assertEquals(2, nodes.get(0).key());
             return true;
         });
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(q, null);
         invokerFactory.verifyAllEventsProcessed();
+        disp.deconstruct();
     }
 
     @Test
@@ -55,9 +53,10 @@ public class DispatcherTest {
             }
         };
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> true);
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         invokerFactory.verifyAllEventsProcessed();
+        disp.deconstruct();
     }
 
     @Test
@@ -71,9 +70,10 @@ public class DispatcherTest {
             assertTrue(acceptIncompleteCoverage);
             return true;
         });
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         invokerFactory.verifyAllEventsProcessed();
+        disp.deconstruct();
     }
 
     @Test
@@ -82,8 +82,9 @@ public class DispatcherTest {
             SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
             MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> false, (n, a) -> false);
-            Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+            Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
             disp.getSearchInvoker(new Query(), null);
+            disp.deconstruct();
             fail("Expected exception");
         }
         catch (IllegalStateException e) {

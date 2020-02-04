@@ -11,8 +11,10 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
+import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -58,6 +60,7 @@ public class Dispatcher extends AbstractComponent {
 
     /** A model of the search cluster this dispatches to */
     private final SearchCluster searchCluster;
+    private final ClusterMonitor clusterMonitor;
 
     private final LoadBalancer loadBalancer;
 
@@ -87,44 +90,43 @@ public class Dispatcher extends AbstractComponent {
                       ClusterInfoConfig clusterInfoConfig,
                       VipStatus vipStatus,
                       Metric metric) {
-        this(new SearchCluster(clusterId.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(), vipStatus),
-             dispatchConfig,
-             metric);
+        this(new RpcResourcePool(dispatchConfig), clusterId, dispatchConfig, clusterInfoConfig, vipStatus, metric);
     }
 
-    private Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, Metric metric) {
-        this(searchCluster,
-             dispatchConfig,
-             new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster),
-             metric);
+    private Dispatcher(RpcResourcePool resourcePool,
+                       ComponentId clusterId,
+                       DispatchConfig dispatchConfig,
+                       ClusterInfoConfig clusterInfoConfig,
+                       VipStatus vipStatus,
+                       Metric metric) {
+        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(),
+                                             vipStatus, new RpcPingFactory(resourcePool)),
+             dispatchConfig, metric);
+
+    }
+
+    private Dispatcher(RpcResourcePool resourcePool, SearchCluster searchCluster, DispatchConfig dispatchConfig, Metric metric) {
+        this(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, new RpcInvokerFactory(resourcePool, searchCluster), metric);
     }
 
     /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
-    protected Dispatcher(SearchCluster searchCluster,
-                         DispatchConfig dispatchConfig,
-                         RpcInvokerFactory rcpInvokerFactory,
-                         Metric metric) {
-        this(searchCluster, dispatchConfig, rcpInvokerFactory, rcpInvokerFactory, metric);
-    }
-
-    /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
-    protected Dispatcher(SearchCluster searchCluster,
+    protected Dispatcher(ClusterMonitor clusterMonitor,
+                         SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          InvokerFactory invokerFactory,
-                         PingFactory pingFactory,
                          Metric metric) {
         if (dispatchConfig.useMultilevelDispatch())
             throw new IllegalArgumentException(searchCluster + " is configured with multilevel dispatch, but this is not supported");
 
         this.searchCluster = searchCluster;
+        this.clusterMonitor = clusterMonitor;
         this.loadBalancer = new LoadBalancer(searchCluster,
                                   dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
         this.invokerFactory = invokerFactory;
         this.metric = metric;
         this.metricContext = metric.createContext(null);
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
-
-        searchCluster.startClusterMonitoring(pingFactory);
+        searchCluster.addMonitoring(clusterMonitor);
         try {
             while ( ! searchCluster.hasInformationAboutAllNodes()) {
                 Thread.sleep(1);
@@ -139,8 +141,8 @@ public class Dispatcher extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        /* The seach cluster must be shutdown first as it uses the invokerfactory. */
-        searchCluster.shutDown();
+        /* The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster. */
+        clusterMonitor.shutdown();
         invokerFactory.release();
     }
 
