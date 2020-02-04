@@ -72,6 +72,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.server.network.tls-connections-broken"));
         metrics.add(new Metric("vds.server.network.failed-tls-config-reloads"));
 
+        // C++ Fnet metrics
+        metrics.add(new Metric("vds.server.fnet.num-connections"));
+
         return metrics;
     }
 

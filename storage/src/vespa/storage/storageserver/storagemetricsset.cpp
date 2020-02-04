@@ -23,7 +23,8 @@ StorageMetricSet::StorageMetricSet()
       memoryUse_messages(this),
       memoryUse_visiting("memoryusage_visiting", {{"memory"}},
             "Message use from visiting", this),
-      tls_metrics(this)
+      tls_metrics(this),
+      fnet_metrics(this)
 {}
 
 StorageMetricSet::~StorageMetricSet() = default;
@@ -35,6 +36,7 @@ void StorageMetricSet::updateMetrics() {
     // be erased from history. This will no longer be a problem once we move to a
     // metrics system built around absolute (rather than derived) values.
     tls_metrics.update_metrics_with_snapshot_delta();
+    fnet_metrics.update_metrics();
 }
 
 } // storage
