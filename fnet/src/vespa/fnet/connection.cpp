@@ -491,7 +491,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _cleanup(nullptr)
 {
     assert(_socket && (_socket->get_fd() >= 0));
-    ++_num_connections;
+    _num_connections.fetch_add(1, std::memory_order_relaxed);
 }
 
 
@@ -529,7 +529,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
         _adminChannel = admin.get();
         _channels.Register(admin.release());
     }
-    ++_num_connections;
+    _num_connections.fetch_add(1, std::memory_order_relaxed);
 }
 
 
@@ -540,7 +540,7 @@ FNET_Connection::~FNET_Connection()
         delete _adminChannel;
     }
     assert(_cleanup == nullptr);
-    --_num_connections;
+    _num_connections.fetch_sub(1, std::memory_order_relaxed);
 }
 
 
