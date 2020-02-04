@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.client.zts;
 
 import com.yahoo.security.Pkcs10Csr;
+import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
@@ -76,6 +77,22 @@ public interface ZtsClient extends AutoCloseable {
      * @return A role token
      */
     ZToken getRoleToken(AthenzRole athenzRole);
+
+    /**
+     * Fetch an access token for the target domain
+     *
+     * @param domain Target domain
+     * @return An Athenz access token
+     */
+    AthenzAccessToken getAccessToken(AthenzDomain domain);
+
+    /**
+     * Fetch an access token for the target roles
+     *
+     * @param athenzRole List of athenz roles to get access token for
+     * @return An Athenz access token
+     */
+    AthenzAccessToken getAccessToken(List<AthenzRole> athenzRole);
 
     /**
      * Fetch role certificate for the target domain and role
