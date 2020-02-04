@@ -137,16 +137,15 @@ public class ZookeeperStatusService implements StatusService {
         // then a non-probe. With "large locks", the lock is not release in between -
         // no lock is taken on the non-probe. Instead, the release is done on the multi-application
         // context close.
-        if (!context.largeLocks() || !context.partOfMultiAppOp() || context.isProbe()) {
+        if (context.hasLock(applicationInstanceReference)) {
+            onRegistryClose = () -> {};
+        } else {
             Runnable unlock = acquireLock(context, applicationInstanceReference);
-            if (context.largeLocks() && context.isProbe()) {
-                context.runOnClose(unlock);
+            if (context.registerLockAcquisition(applicationInstanceReference, unlock)) {
                 onRegistryClose = () -> {};
             } else {
                 onRegistryClose = unlock;
             }
-        } else {
-            onRegistryClose = () -> {};
         }
 
         try {

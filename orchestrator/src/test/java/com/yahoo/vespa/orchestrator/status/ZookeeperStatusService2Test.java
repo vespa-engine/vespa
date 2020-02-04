@@ -42,8 +42,8 @@ public class ZookeeperStatusService2Test {
     @Test
     public void verifyLocks() throws Exception {
         when(context.isProbe()).thenReturn(true);
-        when(context.largeLocks()).thenReturn(false);
-        when(context.partOfMultiAppOp()).thenReturn(true);
+        when(context.hasLock(any())).thenReturn(false);
+        when(context.registerLockAcquisition(any(), any())).thenReturn(false);
 
         when(curator.createMutex(any())).thenReturn(mutex);
         when(mutex.acquire(anyLong(), any())).thenReturn(true);
@@ -57,7 +57,8 @@ public class ZookeeperStatusService2Test {
         verify(curator, times(1)).createMutex(any());
         verify(mutex, times(1)).acquire(anyLong(), any());
         verify(mutex, times(1)).release();
-        verify(context, times(0)).runOnClose(any());
+        verify(context, times(1)).hasLock(any());
+        verify(context, times(1)).registerLockAcquisition(any(), any());
         verifyNoMoreInteractions(mutex);
 
         // Now the non-probe suspension
@@ -71,15 +72,16 @@ public class ZookeeperStatusService2Test {
         verify(mutex, times(2)).acquire(anyLong(), any());
         verify(mutex, times(2)).release();
         ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
-        verify(context, times(0)).runOnClose(runnableCaptor.capture());
+        verify(context, times(2)).hasLock(any());
+        verify(context, times(2)).registerLockAcquisition(any(), any());
         verifyNoMoreInteractions(mutex);
     }
 
     @Test
     public void verifyLargeLocks() throws Exception {
         when(context.isProbe()).thenReturn(true);
-        when(context.largeLocks()).thenReturn(true);
-        when(context.partOfMultiAppOp()).thenReturn(true);
+        when(context.hasLock(any())).thenReturn(false);
+        when(context.registerLockAcquisition(any(), any())).thenReturn(true);
 
         when(curator.createMutex(any())).thenReturn(mutex);
         when(mutex.acquire(anyLong(), any())).thenReturn(true);
@@ -93,12 +95,15 @@ public class ZookeeperStatusService2Test {
         verify(curator, times(1)).createMutex(any());
         verify(mutex, times(1)).acquire(anyLong(), any());
         verify(mutex, times(0)).release();
-        verify(context, times(1)).runOnClose(any());
+        verify(context, times(1)).hasLock(any());
+        verify(context, times(1)).registerLockAcquisition(any(), any());
         verifyNoMoreInteractions(mutex);
 
         // Now the non-probe suspension
 
         when(context.isProbe()).thenReturn(false);
+        when(context.hasLock(any())).thenReturn(true);
+        when(context.registerLockAcquisition(any(), any())).thenReturn(false);
 
         try (MutableStatusRegistry registry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(context, reference)) {
             // nothing
@@ -107,15 +112,16 @@ public class ZookeeperStatusService2Test {
         // No (additional) acquire, and no releases.
         verify(mutex, times(1)).acquire(anyLong(), any());
         verify(mutex, times(0)).release();
-        ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
-        verify(context, times(1)).runOnClose(runnableCaptor.capture());
+        verify(context, times(2)).hasLock(any());
+        verify(context, times(1)).registerLockAcquisition(any(), any());
         verifyNoMoreInteractions(mutex);
 
         // Verify the context runnable releases the mutex
+        ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+        verify(context, times(1)).registerLockAcquisition(any(), runnableCaptor.capture());
         assertEquals(1, runnableCaptor.getAllValues().size());
         runnableCaptor.getAllValues().forEach(Runnable::run);
         verify(mutex, times(1)).acquire(anyLong(), any());
         verify(mutex, times(1)).release();
-
     }
 }

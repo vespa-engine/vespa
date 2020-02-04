@@ -16,8 +16,8 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
@@ -27,21 +27,16 @@ import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
-import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
 import com.yahoo.vespa.service.monitor.ServiceModel;
-import org.apache.curator.framework.recipes.atomic.AtomicValue;
-import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
-import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
-import java.time.Clock;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -64,7 +59,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -331,6 +325,8 @@ public class OrchestratorImplTest {
 
     @Test
     public void testLargeLocks() throws Exception {
+        flagSource.withBooleanFlag(Flags.ENABLE_LARGE_ORCHESTRATOR_LOCKS.id(), true);
+
         var tenantId = new TenantId("tenant");
         var applicationInstanceId = new ApplicationInstanceId("app:dev:us-east-1:default");
         var applicationInstanceReference = new ApplicationInstanceReference(tenantId, applicationInstanceId);
@@ -371,9 +367,9 @@ public class OrchestratorImplTest {
         // First invocation is probe, second is not.
         assertEquals(2, contexts.size());
         assertTrue(contexts.get(0).isProbe());
-        assertTrue(contexts.get(0).partOfMultiAppOp());
+        assertTrue(contexts.get(0).largeLocks());
         assertFalse(contexts.get(1).isProbe());
-        assertTrue(contexts.get(1).partOfMultiAppOp());
+        assertTrue(contexts.get(1).largeLocks());
 
         verify(applicationApiFactory, times(2)).create(any(), any(), any());
         verify(policy, times(2)).grantSuspensionRequest(any(), any());
