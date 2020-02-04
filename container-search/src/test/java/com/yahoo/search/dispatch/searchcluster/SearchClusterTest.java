@@ -58,11 +58,12 @@ public class SearchClusterTest {
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
-            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPerGroup, vipStatus);
+            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPerGroup,
+                                              vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
         }
 
         void startMonitoring() {
-            searchCluster.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts), false);
+            searchCluster.startClusterMonitoring(false);
         }
 
         private int maxPingCount() {

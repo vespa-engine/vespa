@@ -38,7 +38,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final ImmutableList<Group> orderedGroups;
     private final ClusterMonitor<Node> clusterMonitor;
     private final VipStatus vipStatus;
-    private PingFactory pingFactory;
+    private final PingFactory pingFactory;
     private long nextLogTime = 0;
 
     /**
@@ -51,10 +51,11 @@ public class SearchCluster implements NodeManager<Node> {
      */
     private final Optional<Node> localCorpusDispatchTarget;
 
-    public SearchCluster(String clusterId, DispatchConfig dispatchConfig, int containerClusterSize, VipStatus vipStatus) {
+    public SearchCluster(String clusterId, DispatchConfig dispatchConfig, int containerClusterSize, VipStatus vipStatus, PingFactory pingFactory) {
         this.clusterId = clusterId;
         this.dispatchConfig = dispatchConfig;
         this.vipStatus = vipStatus;
+        this.pingFactory = pingFactory;
 
         List<Node> nodes = toNodes(dispatchConfig);
         this.size = nodes.size();
@@ -83,19 +84,17 @@ public class SearchCluster implements NodeManager<Node> {
                                                                        groups);
 
         this.clusterMonitor = new ClusterMonitor<>(this, false);
+        for (var group : orderedGroups) {
+            for (var node : group.nodes())
+                clusterMonitor.add(node, true);
+        }
     }
 
     public void shutDown() {
         clusterMonitor.shutdown();
     }
 
-    public void startClusterMonitoring(PingFactory pingFactory, boolean startPingThread) {
-        this.pingFactory = pingFactory;
-
-        for (var group : orderedGroups) {
-            for (var node : group.nodes())
-                clusterMonitor.add(node, true);
-        }
+    public void startClusterMonitoring(boolean startPingThread) {
         if (startPingThread) {
             clusterMonitor.start();
         }

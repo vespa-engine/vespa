@@ -38,7 +38,7 @@ public class DispatcherTest {
             assertEquals(2, nodes.get(0).key());
             return true;
         });
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(q, null);
         invokerFactory.verifyAllEventsProcessed();
     }
@@ -52,7 +52,7 @@ public class DispatcherTest {
             }
         };
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> true);
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         invokerFactory.verifyAllEventsProcessed();
     }
@@ -68,7 +68,7 @@ public class DispatcherTest {
             assertTrue(acceptIncompleteCoverage);
             return true;
         });
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         invokerFactory.verifyAllEventsProcessed();
     }
@@ -79,7 +79,7 @@ public class DispatcherTest {
             SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
             MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> false, (n, a) -> false);
-            Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+            Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, new MockMetric());
             disp.getSearchInvoker(new Query(), null);
             fail("Expected exception");
         }
