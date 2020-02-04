@@ -1,7 +1,7 @@
 {
   "deployments": [
     {
-      "routingType": "policy",
+      "routingMethod": "exclusive",
       "instance": "tenant:application:default",
       "environment": "prod",
       "region": "us-west-1",
