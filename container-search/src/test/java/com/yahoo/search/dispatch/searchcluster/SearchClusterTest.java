@@ -35,6 +35,7 @@ public class SearchClusterTest {
         final int nodesPerGroup;
         final VipStatus vipStatus;
         final SearchCluster searchCluster;
+        final ClusterMonitor clusterMonitor;
         final List<AtomicInteger> numDocsPerNode;
         List<AtomicInteger> pingCounts;
 
@@ -60,10 +61,8 @@ public class SearchClusterTest {
             }
             searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPerGroup,
                                               vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
-        }
-
-        void startMonitoring() {
-            searchCluster.startClusterMonitoring(false);
+            clusterMonitor = new ClusterMonitor(searchCluster, false);
+            searchCluster.addMonitoring(clusterMonitor);
         }
 
         private int maxPingCount() {
@@ -91,7 +90,7 @@ public class SearchClusterTest {
             int atLeast = maxPingCount() + 1;
             while (minPingCount < atLeast) {
                 ExecutorService executor = Executors.newCachedThreadPool();
-                searchCluster.clusterMonitor().ping(executor);
+                clusterMonitor.ping(executor);
                 executor.shutdown();
                 try {
                     boolean completed = executor.awaitTermination(120, TimeUnit.SECONDS);
@@ -108,7 +107,7 @@ public class SearchClusterTest {
 
         @Override
         public void close() {
-            searchCluster.shutDown();
+            clusterMonitor.shutdown();
         }
 
         static class Factory implements PingFactory {
@@ -158,7 +157,6 @@ public class SearchClusterTest {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
 
             assertFalse(test.vipStatus.isInRotation());
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
         }
@@ -167,7 +165,6 @@ public class SearchClusterTest {
     @Test
     public void requireThatZeroDocsAreFine() {
         try (State test = new State("cluster.1", 2, "a", "b")) {
-            test.startMonitoring();
             test.waitOneFullPingRound();
 
             assertTrue(test.vipStatus.isInRotation());
@@ -189,7 +186,6 @@ public class SearchClusterTest {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
         }
@@ -201,7 +197,6 @@ public class SearchClusterTest {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
             test.numDocsPerNode.get(0).set(-1);
@@ -214,7 +209,6 @@ public class SearchClusterTest {
     public void requireThatVipStatusDownWhenLocalIsDown() {
         try (State test = new State("cluster.1",1,HostName.getLocalhost(), "b")) {
 
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
@@ -250,7 +244,6 @@ public class SearchClusterTest {
         List<String> nodeNames = generateNodeNames(numGroups, nodesPerGroup);
 
         try (State test = new State("cluster.1", nodesPerGroup, nodeNames)) {
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
@@ -289,7 +282,6 @@ public class SearchClusterTest {
         List<String> nodeNames = generateNodeNames(numGroups, nodesPerGroup);
 
         try (State test = new State("cluster.1", nodesPerGroup, nodeNames)) {
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());

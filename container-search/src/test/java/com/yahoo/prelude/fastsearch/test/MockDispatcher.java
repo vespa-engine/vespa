@@ -2,6 +2,7 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
@@ -32,7 +33,7 @@ class MockDispatcher extends Dispatcher {
     }
 
     private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
-        super(searchCluster, dispatchConfig, invokerFactory, new MockMetric());
+        super(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, invokerFactory, new MockMetric());
     }
 
     static DispatchConfig toDispatchConfig(List<Node> nodes) {

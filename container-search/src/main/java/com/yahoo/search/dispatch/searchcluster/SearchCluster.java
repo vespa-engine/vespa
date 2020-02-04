@@ -36,7 +36,6 @@ public class SearchCluster implements NodeManager<Node> {
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
     private final ImmutableList<Group> orderedGroups;
-    private final ClusterMonitor<Node> clusterMonitor;
     private final VipStatus vipStatus;
     private final PingFactory pingFactory;
     private long nextLogTime = 0;
@@ -51,7 +50,8 @@ public class SearchCluster implements NodeManager<Node> {
      */
     private final Optional<Node> localCorpusDispatchTarget;
 
-    public SearchCluster(String clusterId, DispatchConfig dispatchConfig, int containerClusterSize, VipStatus vipStatus, PingFactory pingFactory) {
+    public SearchCluster(String clusterId, DispatchConfig dispatchConfig, int containerClusterSize,
+                         VipStatus vipStatus, PingFactory pingFactory) {
         this.clusterId = clusterId;
         this.dispatchConfig = dispatchConfig;
         this.vipStatus = vipStatus;
@@ -78,29 +78,17 @@ public class SearchCluster implements NodeManager<Node> {
         this.nodesByHost = nodesByHostBuilder.build();
 
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(),
-                                                                       size,
-                                                                       containerClusterSize,
-                                                                       nodesByHost,
-                                                                       groups);
-
-        this.clusterMonitor = new ClusterMonitor<>(this, false);
+                size,
+                containerClusterSize,
+                nodesByHost,
+                groups);
+    }
+    public void addMonitoring(ClusterMonitor clusterMonitor) {
         for (var group : orderedGroups) {
             for (var node : group.nodes())
                 clusterMonitor.add(node, true);
         }
     }
-
-    public void shutDown() {
-        clusterMonitor.shutdown();
-    }
-
-    public void startClusterMonitoring(boolean startPingThread) {
-        if (startPingThread) {
-            clusterMonitor.start();
-        }
-    }
-
-    ClusterMonitor<Node> clusterMonitor() { return clusterMonitor; }
 
     private static Optional<Node> findLocalCorpusDispatchTarget(String selfHostname,
                                                                 int searchClusterSize,
@@ -280,7 +268,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     /** Used by the cluster monitor to manage node status */
     @Override
-    public void ping(Node node, Executor executor) {
+    public void ping(ClusterMonitor clusterMonitor, Node node, Executor executor) {
         if (pingFactory == null) return; // not initialized yet
 
         Pinger pinger = pingFactory.createPinger(node, clusterMonitor, new PongCallback(node, clusterMonitor));

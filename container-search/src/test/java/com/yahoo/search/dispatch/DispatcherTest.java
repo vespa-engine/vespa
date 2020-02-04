@@ -38,9 +38,10 @@ public class DispatcherTest {
             assertEquals(2, nodes.get(0).key());
             return true;
         });
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(q, null);
         invokerFactory.verifyAllEventsProcessed();
+        disp.deconstruct();
     }
 
     @Test
@@ -52,9 +53,10 @@ public class DispatcherTest {
             }
         };
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> true);
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         invokerFactory.verifyAllEventsProcessed();
+        disp.deconstruct();
     }
 
     @Test
@@ -68,9 +70,10 @@ public class DispatcherTest {
             assertTrue(acceptIncompleteCoverage);
             return true;
         });
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         invokerFactory.verifyAllEventsProcessed();
+        disp.deconstruct();
     }
 
     @Test
@@ -79,8 +82,9 @@ public class DispatcherTest {
             SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
             MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> false, (n, a) -> false);
-            Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, new MockMetric());
+            Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
             disp.getSearchInvoker(new Query(), null);
+            disp.deconstruct();
             fail("Expected exception");
         }
         catch (IllegalStateException e) {
