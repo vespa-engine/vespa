@@ -12,7 +12,6 @@ import java.io.IOException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
-
 /**
  * Unit tests for ConfigDefinitionBuilder.
  *

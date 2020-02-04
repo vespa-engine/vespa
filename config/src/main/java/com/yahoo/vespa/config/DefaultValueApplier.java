@@ -11,7 +11,6 @@ import com.yahoo.slime.*;
  * TODO: Support giving correct type of default values
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class DefaultValueApplier {
 
@@ -31,21 +30,11 @@ public class DefaultValueApplier {
     }
 
     private void applyDefaultsToMap(final Cursor cursor, final InnerCNode def) {
-        cursor.traverse(new ObjectTraverser() {
-            @Override
-            public void field(String name, Inspector inspector) {
-                applyDefaultsToObject(cursor.field(name), def);
-            }
-        });
+        cursor.traverse((ObjectTraverser) (name, inspector) -> applyDefaultsToObject(cursor.field(name), def));
     }
 
     private void applyDefaultsToArray(final Cursor cursor, final InnerCNode def) {
-        cursor.traverse(new ArrayTraverser() {
-            @Override
-            public void entry(int idx, Inspector inspector) {
-                applyDefaultsToObject(cursor.entry(idx), def);
-            }
-        });
+        cursor.traverse((ArrayTraverser) (idx, inspector) -> applyDefaultsToObject(cursor.entry(idx), def));
     }
 
     private void applyDefaultsToObject(Cursor cursor, InnerCNode def) {

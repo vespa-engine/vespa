@@ -13,6 +13,7 @@ import static org.junit.Assert.assertEquals;
  * @author Harald Musum
  */
 public class UnicodeTest {
+
     /**
      * Reads a config from a file which is exactly like one returned from
      * the config server given only default values for this config.

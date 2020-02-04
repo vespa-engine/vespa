@@ -9,9 +9,9 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.19
  */
 public class LZ4PayloadCompressorTest {
+
     @Test
     public void testCompression() {
         assertCompression("hei hallo der");

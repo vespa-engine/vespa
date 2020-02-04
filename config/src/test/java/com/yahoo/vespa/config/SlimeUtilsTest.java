@@ -14,9 +14,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.8
  */
 public class SlimeUtilsTest {
+
     @Test
     public void test_copying_slime_types_into_cursor() {
         Slime slime = new Slime();
@@ -79,4 +79,5 @@ public class SlimeUtilsTest {
         assertThat(slime.get().field("foo").asString(), is("foobie"));
         assertTrue(slime.get().field("bar").valid());
     }
+
 }

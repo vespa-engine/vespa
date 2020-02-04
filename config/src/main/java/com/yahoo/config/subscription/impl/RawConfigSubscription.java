@@ -12,10 +12,10 @@ import com.yahoo.vespa.config.ConfigPayload;
 
 /**
  * Subscription used when config id is raw:...
- *
+ * <p>
  * Config is the actual text given after the config id, with newlines
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
 
@@ -24,7 +24,7 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     RawConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, String pl) {
         super(key, subscriber);
-        this.inputPayload=pl;
+        this.inputPayload = pl;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         if (checkReloaded()) {
             return true;
         }
-        if (payload==null) {
+        if (payload == null) {
             payload = inputPayload;
             ConfigPayload configPayload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(payload.split("\n")));
             setConfig(0L, false, configPayload.toInstance(configClass, key.getConfigId()));

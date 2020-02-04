@@ -12,7 +12,6 @@ import java.util.Stack;
  * Serialize a {@link TraceNode} to {@link com.yahoo.slime.Slime}.
  *
  * @author Ulf Lilleengen
- * @since 5.5
  */
 public class SlimeTraceSerializer extends TraceVisitor {
     static final String TIMESTAMP = "timestamp";
@@ -30,7 +29,6 @@ public class SlimeTraceSerializer extends TraceVisitor {
         current.setLong(TIMESTAMP, node.timestamp());
         encodePayload(current, node.payload());
         addChildrenCursors(current, node);
-
     }
 
     private void encodePayload(Cursor current, Object payload) {

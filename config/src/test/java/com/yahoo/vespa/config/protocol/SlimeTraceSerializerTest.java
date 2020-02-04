@@ -21,9 +21,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.5
  */
 public class SlimeTraceSerializerTest {
+
     @Test
     public void test_serializer() throws IOException {
         TraceNode root = new TraceNode(null, 1);

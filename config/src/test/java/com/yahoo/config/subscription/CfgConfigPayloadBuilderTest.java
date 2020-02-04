@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author hmusum
  * @author Vegard Sjonfjell
- * @since 5.1
  */
 public class CfgConfigPayloadBuilderTest {
 
@@ -135,7 +134,7 @@ public class CfgConfigPayloadBuilderTest {
                 "                'boolVal': 'true'",
                 "            },",
                 "            {",
-                "                'stringVal': 'blue a=\\\'escaped\\\'',",
+                "                'stringVal': 'blue a=\\'escaped\\'',",
                 "                'boolVal': 'false'",
                 "            }",
                 "        ],",
@@ -182,7 +181,7 @@ public class CfgConfigPayloadBuilderTest {
         assertDeserializedConfigEqualsJson("a b=\"escaped\"",
                 inputJson(
                         "{",
-                        " 'a': 'b=\\\'escaped\\\''",
+                        " 'a': 'b=\\'escaped\\''",
                         "}"
                 )
         );
@@ -305,7 +304,7 @@ public class CfgConfigPayloadBuilderTest {
     }
 
     private static void assertDeserializedConfigEqualsJson(String serializedConfig, String expectedJson) {
-        assertDeserializedConfigEqualsJson(Arrays.asList(serializedConfig), expectedJson);
+        assertDeserializedConfigEqualsJson(List.of(serializedConfig), expectedJson);
     }
 
     private static void assertDeserializedConfigEqualsJson(List<String> inputConfig, String expectedJson) {

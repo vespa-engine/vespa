@@ -4,7 +4,6 @@ package com.yahoo.config.subscription;
 /**
  * This exception is thrown when any blocking call within the Config API is interrupted.
  * @author Ulf Lilleengen
- * @since 5.1
  */
 @SuppressWarnings("serial")
 public class ConfigInterruptedException extends RuntimeException {
