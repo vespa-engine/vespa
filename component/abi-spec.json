@@ -73,7 +73,6 @@
       "public static com.yahoo.component.ComponentId fromString(java.lang.String)",
       "public java.lang.String toFileName()",
       "public static com.yahoo.component.ComponentId fromFileName(java.lang.String)",
-      "public static void resetGlobalCountersForTests()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": []

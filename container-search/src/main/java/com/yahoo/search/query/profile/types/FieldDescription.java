@@ -97,7 +97,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
         this.type = type;
 
         // Forbidden until we can figure out the right semantics
-        if (name.isCompound() && ! aliases.isEmpty()) throw new IllegalArgumentException("Aliases are not allowed with compound names");
+        if (name.isCompound() && ! aliases.isEmpty()) throw new IllegalArgumentException("Aliases is not allowed with compound names");
 
         this.aliases = ImmutableList.copyOf(aliases);
         this.mandatory = mandatory;

@@ -397,7 +397,7 @@ public class QueryProfileTypeTestCase {
 
     @Test
     public void testTensorRankFeatureInRequest() throws UnsupportedEncodingException {
-        QueryProfile profile = new QueryProfile("test");
+        QueryProfile profile=new QueryProfile("test");
         profile.setType(type);
         registry.register(profile);
 
@@ -447,25 +447,25 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testTypedOverridingOfQueryProfileReferencesNonStrictThroughQueryNestedInAnUntypedProfile() {
-        QueryProfile topMap = new QueryProfile("topMap");
+        QueryProfile topMap=new QueryProfile("topMap");
 
-        QueryProfile subMap = new QueryProfile("topSubMap");
-        topMap.set("subMap", subMap, registry);
+        QueryProfile subMap=new QueryProfile("topSubMap");
+        topMap.set("subMap",subMap, registry);
 
-        QueryProfile test = new QueryProfile("test");
+        QueryProfile test=new QueryProfile("test");
         test.setType(type);
-        subMap.set("typeProfile", test, registry);
+        subMap.set("typeProfile",test, registry);
 
-        QueryProfile myUser = new QueryProfile("myUser");
+        QueryProfile myUser=new QueryProfile("myUser");
         myUser.setType(user);
-        myUser.set("myUserString", "userValue1", registry);
-        myUser.set("myUserInteger", 442, registry);
-        test.set("myUserQueryProfile", myUser, registry);
+        myUser.set("myUserString","userValue1", registry);
+        myUser.set("myUserInteger",442, registry);
+        test.set("myUserQueryProfile",myUser, registry);
 
-        QueryProfile newUser = new QueryProfile("newUser");
+        QueryProfile newUser=new QueryProfile("newUser");
         newUser.setType(user);
-        newUser.set("myUserString", "newUserValue1", registry);
-        newUser.set("myUserInteger", 845, registry);
+        newUser.set("myUserString","newUserValue1", registry);
+        newUser.set("myUserInteger",845, registry);
 
         registry.register(topMap);
         registry.register(subMap);

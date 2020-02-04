@@ -9,7 +9,6 @@ import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.DimensionalValue;
 import com.yahoo.search.query.profile.types.FieldDescription;
-import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.ArrayList;
@@ -88,10 +87,8 @@ public class QueryProfileProperties extends Properties {
 
             // Check types
             if ( ! profile.getTypes().isEmpty()) {
-                QueryProfileType type = null;
-                for (int i = 0; i < name.size(); i++) {
-                    if (type == null) // We're on the first iteration, or no type is explicitly specified
-                        type = profile.getType(name.first(i), context);
+                for (int i = 0; i<name.size(); i++) {
+                    QueryProfileType type = profile.getType(name.first(i), context);
                     if (type == null) continue;
                     String localName = name.get(i);
                     FieldDescription fieldDescription = type.getField(localName);
@@ -100,19 +97,12 @@ public class QueryProfileProperties extends Properties {
 
                     // TODO: In addition to strictness, check legality along the way
 
-                    if (fieldDescription != null) {
-                        if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                            value = fieldDescription.getType().convertFrom(value, profile.getRegistry());
-                            if (value == null)
-                                throw new IllegalArgumentException("'" + value + "' is not a " +
-                                                                   fieldDescription.getType().toInstanceDescription());
-                        }
-                        else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
-                            // If a type is specified, use that instead of the type implied by the name
-                            type = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
-                        }
+                    if (i == name.size()-1 && fieldDescription != null) { // at the end of the path, check the assignment type
+                        value = fieldDescription.getType().convertFrom(value, profile.getRegistry());
+                        if (value == null)
+                            throw new IllegalArgumentException("'" + value + "' is not a " +
+                                                               fieldDescription.getType().toInstanceDescription());
                     }
-
                 }
             }
 
