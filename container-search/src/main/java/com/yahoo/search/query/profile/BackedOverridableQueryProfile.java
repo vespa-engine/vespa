@@ -135,8 +135,8 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
 
     @Override
     public List<String> getDimensions() {
-        List<String> dimensions = super.getDimensions();
-        if (dimensions != null) return dimensions;
+        List<String> dimensions=super.getDimensions();
+        if (dimensions!=null) return dimensions;
         return backingProfile.getDimensions();
     }
 

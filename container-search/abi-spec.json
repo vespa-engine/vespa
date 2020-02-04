@@ -6283,7 +6283,6 @@
       "public boolean isOverridable(java.lang.String)",
       "public java.lang.Class getValueClass(java.lang.String)",
       "public com.yahoo.search.query.profile.types.QueryProfileType getType(java.lang.String)",
-      "public com.yahoo.search.query.profile.types.FieldType getFieldType(com.yahoo.processing.request.CompoundName)",
       "public com.yahoo.search.query.profile.types.FieldDescription getField(java.lang.String)",
       "public com.yahoo.search.query.profile.types.FieldDescription removeField(java.lang.String)",
       "public void addField(com.yahoo.search.query.profile.types.FieldDescription)",
