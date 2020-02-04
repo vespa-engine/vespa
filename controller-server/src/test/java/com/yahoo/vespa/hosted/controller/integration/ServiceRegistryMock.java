@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
@@ -44,7 +44,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
     private final RoutingGeneratorMock routingGeneratorMock;
     private final MockMailer mockMailer = new MockMailer();
-    private final ApplicationCertificateMock applicationCertificateMock = new ApplicationCertificateMock();
+    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
     private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
     private final MockIssueHandler mockIssueHandler = new MockIssueHandler();
@@ -102,8 +102,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public ApplicationCertificateMock applicationCertificateProvider() {
-        return applicationCertificateMock;
+    public EndpointCertificateMock endpointCertificateProvider() {
+        return endpointCertificateMock;
     }
 
     @Override
@@ -213,8 +213,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         return artifactRepositoryMock;
     }
 
-    public ApplicationCertificateMock applicationCertificateMock() {
-        return applicationCertificateMock;
+    public EndpointCertificateMock endpointCertificateMock() {
+        return endpointCertificateMock;
     }
 
 }

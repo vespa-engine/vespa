@@ -11,7 +11,7 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
@@ -38,10 +38,10 @@ public class EndpointCertificateManagerTest {
     private final SecretStoreMock secretStore = new SecretStoreMock();
     private final ZoneRegistryMock zoneRegistryMock = new ZoneRegistryMock(SystemName.main);
     private final MockCuratorDb mockCuratorDb = new MockCuratorDb();
-    private final ApplicationCertificateMock applicationCertificateMock = new ApplicationCertificateMock();
+    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final InMemoryFlagSource inMemoryFlagSource = new InMemoryFlagSource();
     private final Clock clock = Clock.systemUTC();
-    private final EndpointCertificateManager endpointCertificateManager = new EndpointCertificateManager(zoneRegistryMock, mockCuratorDb, secretStore, applicationCertificateMock, clock, inMemoryFlagSource);
+    private final EndpointCertificateManager endpointCertificateManager = new EndpointCertificateManager(zoneRegistryMock, mockCuratorDb, secretStore, endpointCertificateMock, clock, inMemoryFlagSource);
 
     private static final KeyPair testKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 192);
     private static final X509Certificate testCertificate = X509CertificateBuilder

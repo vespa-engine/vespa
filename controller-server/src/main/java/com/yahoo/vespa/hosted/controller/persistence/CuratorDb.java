@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -84,7 +83,7 @@ public class CuratorDb {
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
     private static final Path zoneRoutingPoliciesRoot = root.append("zoneRoutingPolicies");
-    private static final Path applicationCertificateRoot = root.append("applicationCertificates");
+    private static final Path endpointCertificateRoot = root.append("applicationCertificates");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
@@ -516,11 +515,11 @@ public class CuratorDb {
     // -------------- Application web certificates ----------------------------
 
     public void writeEndpointCertificateMetadata(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
-        curator.set(applicationCertificatePath(applicationId), asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
+        curator.set(endpointCertificatePath(applicationId), asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
     }
 
     public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
-        Optional<String> zkData = curator.getData(applicationCertificatePath(applicationId)).map(String::new);
+        Optional<String> zkData = curator.getData(endpointCertificatePath(applicationId)).map(String::new);
         return zkData.map(EndpointCertificateMetadataSerializer::fromJsonOrTlsSecretsKeysString);
     }
 
@@ -641,8 +640,8 @@ public class CuratorDb {
         return controllerRoot.append(hostname);
     }
 
-    private static Path applicationCertificatePath(ApplicationId id) {
-        return applicationCertificateRoot.append(id.serializedForm());
+    private static Path endpointCertificatePath(ApplicationId id) {
+        return endpointCertificateRoot.append(id.serializedForm());
     }
 
 }
