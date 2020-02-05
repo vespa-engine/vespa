@@ -70,23 +70,61 @@ HnswIndexBase::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef
     mutable_levels[level] = links_ref;
 }
 
+bool
+HnswIndexBase::have_closer_distance(HnswCandidate candidate, const LinkArray& result) const
+{
+    for (uint32_t result_docid : result) {
+        double dist = calc_distance(candidate.docid, result_docid);
+        if (dist < candidate.distance) {
+            return true;
+        }
+    }
+    return false;
+}
+
 HnswIndexBase::LinkArray
 HnswIndexBase::select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
+    HnswCandidateVector sorted(neighbors);
+    std::sort(sorted.begin(), sorted.end(), LesserDistance());
     LinkArray result;
+    for (size_t i = 0, m = std::min(static_cast<size_t>(max_links), sorted.size()); i < m; ++i) {
+        result.push_back(sorted[i].docid);
+    }
+    return result;
+}
+
+HnswIndexBase::LinkArray
+HnswIndexBase::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const
+{
+    LinkArray result;
+    bool need_filtering = neighbors.size() > max_links;
     NearestPriQ nearest;
     for (const auto& entry : neighbors) {
         nearest.push(entry);
     }
     while (!nearest.empty()) {
-        HnswCandidate candidate = nearest.top();
+        auto candidate = nearest.top();
         nearest.pop();
+        if (need_filtering && have_closer_distance(candidate, result)) {
+            continue;
+        }
         result.push_back(candidate.docid);
         if (result.size() == max_links) {
             return result;
         }
     }
     return result;
+}
+
+HnswIndexBase::LinkArray
+HnswIndexBase::select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const
+{
+    if (_cfg.heuristic_select_neighbors()) {
+        return select_neighbors_heuristic(neighbors, max_links);
+    } else {
+        return select_neighbors_simple(neighbors, max_links);
+    }
 }
 
 void

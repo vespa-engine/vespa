@@ -27,6 +27,7 @@ private:
         return _vectors.get_vector(docid).template typify<FloatType>();
     }
 
+    double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const override;
     double calc_distance(const Vector& lhs, uint32_t rhs_docid) const;
     void search_layer(const Vector& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level);
 

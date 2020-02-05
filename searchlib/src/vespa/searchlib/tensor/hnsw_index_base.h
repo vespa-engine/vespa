@@ -33,18 +33,22 @@ public:
         uint32_t _max_links_at_level_0;
         uint32_t _max_links_at_hierarchic_levels;
         uint32_t _neighbors_to_explore_at_construction;
+        bool _heuristic_select_neighbors;
 
     public:
         Config(uint32_t max_links_at_level_0_in,
                uint32_t max_links_at_hierarchic_levels_in,
-               uint32_t neighbors_to_explore_at_construction_in)
+               uint32_t neighbors_to_explore_at_construction_in,
+               bool heuristic_select_neighbors_in)
             : _max_links_at_level_0(max_links_at_level_0_in),
               _max_links_at_hierarchic_levels(max_links_at_hierarchic_levels_in),
-              _neighbors_to_explore_at_construction(neighbors_to_explore_at_construction_in)
+              _neighbors_to_explore_at_construction(neighbors_to_explore_at_construction_in),
+              _heuristic_select_neighbors(heuristic_select_neighbors_in)
         {}
         uint32_t max_links_at_level_0() const { return _max_links_at_level_0; }
         uint32_t max_links_at_hierarchic_levels() const { return _max_links_at_hierarchic_levels; }
         uint32_t neighbors_to_explore_at_construction() const { return _neighbors_to_explore_at_construction; }
+        bool heuristic_select_neighbors() const { return _heuristic_select_neighbors; }
     };
 
 protected:
@@ -86,7 +90,19 @@ protected:
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const;
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links);
 
+    virtual double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const = 0;
+
+    /**
+     * Returns true if the distance between the candidate and a node in the current result
+     * is less than the distance between the candidate and the node we want to add to the graph.
+     * In this case the candidate should be discarded as we already are connected to the space
+     * where the candidate is located.
+     * Used by select_neighbors_heuristic().
+     */
+    bool have_closer_distance(HnswCandidate candidate, const LinkArray& curr_result) const;
+    LinkArray select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     LinkArray select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    LinkArray select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     void connect_new_node(uint32_t docid, const LinkArray& neighbors, uint32_t level);
 
 public:

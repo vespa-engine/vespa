@@ -6,6 +6,14 @@ namespace search::tensor {
 
 template <typename FloatType>
 double
+HnswIndex<FloatType>::calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const
+{
+    auto lhs = get_vector(lhs_docid);
+    return calc_distance(lhs, rhs_docid);
+}
+
+template <typename FloatType>
+double
 HnswIndex<FloatType>::calc_distance(const Vector& lhs, uint32_t rhs_docid) const
 {
     // TODO: Make it possible to specify the distance function from the outside and make it hardware optimized.
@@ -85,7 +93,7 @@ HnswIndex<FloatType>::add_document(uint32_t docid)
     // TODO: Add support for multiple levels.
     // TODO: Rename to search_level?
     search_layer(input, _cfg.neighbors_to_explore_at_construction(), best_neighbors, 0);
-    auto neighbors = select_neighbors_simple(best_neighbors.peek(), _cfg.max_links_at_level_0());
+    auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_at_level_0());
     connect_new_node(docid, neighbors, 0);
     // TODO: Shrink neighbors if needed
 }
