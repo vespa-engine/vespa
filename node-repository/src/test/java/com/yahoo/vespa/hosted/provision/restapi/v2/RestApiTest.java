@@ -218,9 +218,6 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"wantToRetire\": true}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                        Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
-                "{\"message\":\"Updated host4.yahoo.com\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"currentVespaVersion\": \"6.43.0\",\"currentDockerImage\": \"docker-registry.domain.tld:8080/dist/vespa:6.45.0\"}"), Request.Method.PATCH),
                         "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
@@ -229,6 +226,9 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                        Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
+                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "\"modelName\":\"foo\"");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"modelName\": null}"), Request.Method.PATCH),
@@ -541,11 +541,13 @@ public class RestApiTest {
                                 "    \"actualCpuCores\": {" +
                                 "      \"createdMillis\": 1, " +
                                 "      \"description\": \"Actual number of CPU cores (2) differs from spec (4)\"," +
+                                "      \"type\": \"HARD_FAIL\"," +
                                 "      \"value\":2" +
                                 "    }," +
                                 "    \"diskSpace\": {" +
                                 "      \"createdMillis\": 2, " +
                                 "      \"description\": \"Actual disk space (2TB) differs from spec (3TB)\"," +
+                                "      \"type\": \"HARD_FAIL\"," +
                                 "      \"details\": {" +
                                 "        \"inGib\": 3," +
                                 "        \"disks\": [\"/dev/sda1\", \"/dev/sdb3\"]" +
