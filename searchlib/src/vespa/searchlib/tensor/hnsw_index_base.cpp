@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hnsw_index_base.h"
+#include "random_level_generator.h"
 #include <vespa/vespalib/datastore/array_store.hpp>
 
 namespace search::tensor {
@@ -34,8 +35,8 @@ HnswIndexBase::make_default_link_store_config()
 void
 HnswIndexBase::make_node_for_document(uint32_t docid)
 {
-    // TODO: Draw this number from a random generator that is provided from the outside.
-    uint32_t num_levels = 1;
+    // TODO: Add capping on num_levels
+    uint32_t num_levels = _level_generator.max_level() + 1;
     // Note: The level array instance lives as long as the document is present in the index.
     LevelArray levels(num_levels, EntryRef());
     auto node_ref = _nodes.add(levels);
@@ -139,8 +140,9 @@ HnswIndexBase::connect_new_node(uint32_t docid, const LinkArray& neighbors, uint
     }
 }
 
-HnswIndexBase::HnswIndexBase(const DocVectorAccess& vectors, const Config& cfg)
+HnswIndexBase::HnswIndexBase(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg)
     : _vectors(vectors),
+      _level_generator(level_generator),
       _cfg(cfg),
       _node_refs(),
       _nodes(make_default_node_store_config()),

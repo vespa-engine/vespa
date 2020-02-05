@@ -3,6 +3,7 @@
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
+#include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 
@@ -33,6 +34,10 @@ public:
     }
 };
 
+class LevelZeroGenerator : public RandomLevelGenerator {
+    uint32_t max_level() override { return 0; }
+};
+
 using FloatVectors = MyDocVectorAccess<float>;
 using FloatIndex = HnswIndex<float>;
 using FloatIndexUP = std::unique_ptr<FloatIndex>;
@@ -40,10 +45,12 @@ using FloatIndexUP = std::unique_ptr<FloatIndex>;
 class HnswIndexTest : public ::testing::Test {
 public:
     FloatVectors vectors;
+    LevelZeroGenerator level_generator;
     FloatIndexUP index;
 
     HnswIndexTest()
         : vectors(),
+          level_generator(),
           index()
     {
         vectors.set(1, {2, 2}).set(2, {3, 2}).set(3, {2, 3})
@@ -51,7 +58,8 @@ public:
                .set(7, {3, 5});
     }
     void init(bool heuristic_select_neighbors) {
-        index = std::make_unique<FloatIndex>(vectors, HnswIndexBase::Config(2, 0, 10, heuristic_select_neighbors));
+        index = std::make_unique<FloatIndex>(vectors, level_generator,
+                                             HnswIndexBase::Config(2, 0, 10, heuristic_select_neighbors));
     }
     void expect_level_0(uint32_t docid, const HnswNode::LinkArray& exp_links) {
         auto node = index->get_node(docid);

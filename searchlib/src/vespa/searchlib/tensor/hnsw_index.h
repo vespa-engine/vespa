@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "doc_vector_access.h"
 #include "hnsw_index_base.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
@@ -9,6 +10,9 @@
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::tensor {
+
+class DocVectorAccess;
+class RandomLevelGenerator;
 
 /**
  * Concrete implementation of a hierarchical navigable small world graph (HNSW)
@@ -32,7 +36,7 @@ private:
     void search_layer(const Vector& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level);
 
 public:
-    HnswIndex(const DocVectorAccess& vectors, const Config& cfg);
+    HnswIndex(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg);
     ~HnswIndex() override;
 
     void add_document(uint32_t docid) override;

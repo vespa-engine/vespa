@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "doc_vector_access.h"
 #include "hnsw_index_utils.h"
 #include "hnsw_node.h"
 #include "nearest_neighbor_index.h"
@@ -12,6 +11,9 @@
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::tensor {
+
+class DocVectorAccess;
+class RandomLevelGenerator;
 
 /**
  * Base class for an implementation of a hierarchical navigable small world graph (HNSW)
@@ -76,6 +78,7 @@ protected:
     using LinkArray = vespalib::Array<uint32_t>;
 
     const DocVectorAccess& _vectors;
+    RandomLevelGenerator& _level_generator;
     Config _cfg;
     NodeRefVector _node_refs;
     NodeStore _nodes;
@@ -106,7 +109,7 @@ protected:
     void connect_new_node(uint32_t docid, const LinkArray& neighbors, uint32_t level);
 
 public:
-    HnswIndexBase(const DocVectorAccess& vectors, const Config& cfg);
+    HnswIndexBase(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg);
     ~HnswIndexBase() override;
 
     // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)

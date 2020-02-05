@@ -66,8 +66,8 @@ HnswIndex<FloatType>::search_layer(const Vector& input, uint32_t neighbors_to_fi
 }
 
 template <typename FloatType>
-HnswIndex<FloatType>::HnswIndex(const DocVectorAccess& vectors, const Config& cfg)
-    : HnswIndexBase(vectors, cfg)
+HnswIndex<FloatType>::HnswIndex(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg)
+    : HnswIndexBase(vectors, level_generator, cfg)
 {
 }
 
