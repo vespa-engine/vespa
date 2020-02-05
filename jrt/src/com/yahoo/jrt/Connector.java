@@ -10,20 +10,10 @@ import java.util.concurrent.TimeUnit;
 
 class Connector {
 
-    private final Transport   parent;
     private final ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("jrt.connector"));
-    private boolean     done = false;
 
     private void connect(Connection conn) {
-        try {
-            conn.transportThread().addConnection(conn.connect());
-        } catch (Throwable problem) {
-            parent.handleFailure(problem, Connector.this);
-        }
-    }
-
-    public Connector(Transport parent) {
-        this.parent = parent;
+        conn.transportThread().addConnection(conn.connect());
     }
 
     public void connectLater(Connection conn) {
@@ -32,35 +22,19 @@ class Connector {
         } catch (RejectedExecutionException e) {
             conn.transportThread().addConnection(conn);
         }
-
     }
 
     public Connector shutdown() {
         executor.shutdown();
-        join();
-        synchronized (this) {
-            done = true;
-            notifyAll();
-        }
-        return this;
-    }
-
-    public synchronized void waitDone() {
-        while (!done) {
-            try { wait(); } catch (InterruptedException x) {}
-        }
-    }
-
-    public synchronized Connector exit() {
-        notifyAll();
         return this;
     }
 
     public void join() {
         while (true) {
             try {
-                executor.awaitTermination(60, TimeUnit.SECONDS);
-                return;
+                if (executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    return;
+                }
             } catch (InterruptedException e) {}
         }
     }
