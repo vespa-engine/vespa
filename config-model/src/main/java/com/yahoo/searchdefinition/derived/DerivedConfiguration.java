@@ -41,6 +41,7 @@ public class DerivedConfiguration {
     private VsmSummary streamingSummary;
     private IndexSchema indexSchema;
     private ImportedFields importedFields;
+    private QueryProfileRegistry queryProfiles;
 
     /**
      * Creates a complete derived configuration from a search definition.
@@ -74,6 +75,7 @@ public class DerivedConfiguration {
                                 ImportedMlModels importedModels) {
         Validator.ensureNotNull("Search definition", search);
         this.search = search;
+        this.queryProfiles = queryProfiles;
         if ( ! search.isDocumentsOnly()) {
             streamingFields = new VsmFields(search);
             streamingSummary = new VsmSummary(search);
@@ -192,4 +194,7 @@ public class DerivedConfiguration {
     public ImportedFields getImportedFields() {
         return importedFields;
     }
+
+    public QueryProfileRegistry getQueryProfiles() { return queryProfiles; }
+
 }
