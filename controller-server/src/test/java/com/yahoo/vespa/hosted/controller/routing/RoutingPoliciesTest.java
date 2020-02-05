@@ -8,19 +8,25 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Test;
@@ -484,6 +490,48 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
         tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
     }
+
+    @Test
+    public void non_production_deployment_is_not_registered_in_global_endpoint() {
+        var tester = new RoutingPoliciesTester(SystemName.Public);
+
+        // Configure the system to use the same region for test, staging and prod
+        var sharedRegion = RegionName.from("aws-us-east-1c");
+        var prodZone = ZoneId.from(Environment.prod, sharedRegion);
+        var stagingZone = ZoneId.from(Environment.staging, sharedRegion);
+        var testZone = ZoneId.from(Environment.test, sharedRegion);
+        var zones = List.of(ZoneApiMock.from(prodZone),
+                            ZoneApiMock.from(stagingZone),
+                            ZoneApiMock.from(testZone));
+        tester.controllerTester().zoneRegistry()
+              .setZones(zones)
+              .setRoutingMethod(zones, RoutingMethod.exclusive);
+        tester.controllerTester().configServer().bootstrap(List.of(prodZone, stagingZone, testZone),
+                                                           SystemApplication.all());
+
+        var context = tester.tester.newDeploymentContext();
+        var endpointId = EndpointId.of("r0");
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(sharedRegion)
+                .endpoint(endpointId.id(), "default")
+                .build();
+
+        // Application starts deployment
+        context = context.submit(applicationPackage);
+        for (var testJob : List.of(JobType.systemTest, JobType.stagingTest)) {
+            context = context.runJob(testJob);
+            // Since runJob implicitly tears down the deployment and immediately deletes DNS records associated with the
+            // deployment, we consume only one DNS update at a time here
+            do {
+                context = context.flushDnsUpdates(1);
+                tester.assertTargets(context.instanceId(), endpointId, 0);
+            } while (!tester.recordNames().isEmpty());
+        }
+
+        // Deployment completes
+        context.completeRollout();
+        tester.assertTargets(context.instanceId(), endpointId, 0, prodZone);
+    }
     
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
@@ -505,7 +553,11 @@ public class RoutingPoliciesTest {
         private final DeploymentTester tester;
 
         public RoutingPoliciesTester() {
-            this(new DeploymentTester());
+            this(SystemName.main);
+        }
+
+        public RoutingPoliciesTester(SystemName system) {
+            this(new DeploymentTester(new ControllerTester(new ServiceRegistryMock(system))));
         }
 
         public RoutingPolicies routingPolicies() {
@@ -559,12 +611,7 @@ public class RoutingPoliciesTest {
         }
 
         private void assertTargets(ApplicationId application, EndpointId endpointId, int loadBalancerId, ZoneId ...zone) {
-            var prefix = "";
-            if (!endpointId.equals(EndpointId.defaultId())) {
-                prefix = endpointId.id() + ".";
-            }
-            var endpoint = prefix + application.application().value() + "." + application.tenant().value() +
-                           ".global.vespa.oath.cloud";
+            var endpoint = RoutingPolicy.globalEndpointOf(application, endpointId, tester.controller().system()).dnsName();
             var zoneTargets = Arrays.stream(zone)
                                     .map(z -> "lb-" + loadBalancerId + "--" + application.serializedForm() + "--" +
                                               z.value() + "/dns-zone-1/" + z.value())
