@@ -1,7 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # @author Vegard Sjonfjell
 
-include(vtag.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/vtag.cmake)
 
 # Build options
 # Whether to build unit tests as part of the 'all' target
