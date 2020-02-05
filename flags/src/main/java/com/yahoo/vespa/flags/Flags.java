@@ -223,6 +223,11 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_RPM_PACKAGES_FOR_DATA_HIGHWAY = defineFeatureFlag(
+            "use-rpm-packages-for-data-highway", false,
+            "Whether RPM packages should be used for Data Highway",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
