@@ -30,7 +30,7 @@
   "currentRebootGeneration": 0,
   "failCount": 0,
   "wantToRetire": false,
-  "wantToDeprovision": false,
+  "wantToDeprovision": true,
   "history": [
     {
       "event": "provisioned",
@@ -65,6 +65,7 @@
     "diskSpace": {
       "createdMillis": 2,
       "description": "Actual disk space (2TB) differs from spec (3TB)",
+      "type":"HARD_FAIL",
       "details": {
         "inGib": 3,
         "disks": [
