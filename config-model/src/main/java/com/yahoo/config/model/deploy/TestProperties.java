@@ -109,6 +109,11 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
+    public TestProperties setZone(Zone zone) {
+        this.zone = zone;
+        return this;
+    }
+
     public static class Spec implements ConfigServerSpec {
 
         private final String hostName;
