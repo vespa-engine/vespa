@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunnerTest;
-import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
@@ -58,7 +57,6 @@ public class DeploymentTester {
     private final Upgrader upgrader;
     private final ReadyJobsTrigger readyJobsTrigger;
     private final OutstandingChangeDeployer outstandingChangeDeployer;
-    private final NameServiceDispatcher nameServiceDispatcher;
 
     public JobController jobs() { return jobs; }
     public RoutingGeneratorMock routing() { return routing; }
@@ -92,8 +90,6 @@ public class DeploymentTester {
         upgrader.setUpgradesPerMinute(1); // Anything that makes it at least one for any maintenance period is fine.
         readyJobsTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
         outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
-        nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), maintenanceInterval, jobControl,
-                                                          Integer.MAX_VALUE);
         routing.putEndpoints(new DeploymentId(null, null), Collections.emptyList()); // Turn off default behaviour for the mock.
 
         // Get deployment job logs to stderr.
@@ -111,10 +107,6 @@ public class DeploymentTester {
     }
 
     public OutstandingChangeDeployer outstandingChangeDeployer() { return outstandingChangeDeployer; }
-
-    public NameServiceDispatcher nameServiceDispatcher() {
-        return nameServiceDispatcher;
-    }
 
     public DeploymentTester atMondayMorning() {
         return at(tester.clock().instant().atZone(ZoneOffset.UTC)

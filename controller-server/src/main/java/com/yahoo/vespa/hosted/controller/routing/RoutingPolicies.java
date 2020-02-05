@@ -91,6 +91,13 @@ public class RoutingPolicies {
         }
     }
 
+    /** Returns whether global DNS records should be updated for given application and zone */
+    private boolean updateGlobalDnsOf(ApplicationId application, ZoneId zone) {
+        if (application.instance().isTester()) return false;
+        if (!zone.environment().isProduction()) return false;
+        return true;
+    }
+
     /** Set the status of all global endpoints in given zone */
     public void setGlobalRoutingStatus(ZoneId zone, GlobalRouting.Status status) {
         try (var lock = db.lockRoutingPolicies()) {
@@ -264,7 +271,7 @@ public class RoutingPolicies {
 
         /** Compute all endpoint IDs for given load balancer */
         private Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer) {
-            if (zone.environment().isManuallyDeployed()) { // Manual deployments do not have any configurable endpoints
+            if (!zone.environment().isProduction()) { // Only production deployments have configurable endpoints
                 return Set.of();
             }
             var instanceSpec = deploymentSpec.instance(loadBalancer.application().instance());
