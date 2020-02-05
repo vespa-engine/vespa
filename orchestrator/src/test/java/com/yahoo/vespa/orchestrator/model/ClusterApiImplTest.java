@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
+import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import org.junit.Test;
 
@@ -75,7 +76,7 @@ public class ClusterApiImplTest {
                 applicationApi,
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), hostName5),
-                modelUtils.getHostStatusMap(),
+                modelUtils.getHostInfos(),
                 modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertEquals("{ clusterId=cluster, serviceType=service-type }", clusterApi.clusterInfo());
@@ -184,7 +185,7 @@ public class ClusterApiImplTest {
                 applicationApi,
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), groupNodes),
-                modelUtils.getHostStatusMap(),
+                modelUtils.getHostInfos(),
                 modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertEquals(expectedNoServicesInGroupIsUp, clusterApi.noServicesInGroupIsUp());
@@ -214,7 +215,7 @@ public class ClusterApiImplTest {
                 applicationApi,
                 serviceCluster,
                 new NodeGroup(applicationInstance, hostName1, hostName3),
-                new HashMap<>(),
+                new HostInfos(),
                 modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertTrue(clusterApi.isStorageCluster());
@@ -254,7 +255,7 @@ public class ClusterApiImplTest {
                 applicationApi,
                 serviceCluster,
                 new NodeGroup(application, hostnames.get(0)),
-                modelUtils.getHostStatusMap(),
+                modelUtils.getHostInfos(),
                 modelUtils.getClusterControllerClientFactory(), clusterSize);
 
         assertEquals(clusterSize - serviceStatusList.size(), clusterApi.missingServices());

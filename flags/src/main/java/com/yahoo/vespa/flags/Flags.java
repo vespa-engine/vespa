@@ -191,12 +191,6 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID);
 
-    public static final UnboundBooleanFlag INSTALL_L4_ROUTING_SUPPORT = defineFeatureFlag(
-            "install-l4-routing-support", false,
-            "Whether routing nodes should install package supporting L4 routing",
-            "Takes effect immediately",
-            ZONE_ID, HOSTNAME);
-
     public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
             "generate-l4-routing-config", false,
             "Whether routing nodes should generate L4 routing config",
@@ -213,6 +207,12 @@ public class Flags {
             "use-refreshed-endpoint-certificate", false,
             "Whether an application should start using a newer certificate/key pair if available",
             "Takes effect on the next deployment of the application",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_NEW_ATHENZ_FILTER = defineFeatureFlag(
+            "use-new-athenz-filter", false,
+            "Use new Athenz filter that supports access-tokens",
+            "Takes effect at redeployment",
             APPLICATION_ID);
 
 

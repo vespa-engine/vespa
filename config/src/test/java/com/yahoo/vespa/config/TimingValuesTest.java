@@ -13,6 +13,7 @@ import static org.junit.Assert.assertThat;
  * @author hmusum
  */
 public class TimingValuesTest {
+
     @Test
     public void basic() {
         TimingValues tv = new TimingValues();

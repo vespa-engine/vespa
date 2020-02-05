@@ -219,6 +219,15 @@ TEST_F("Weighted floating point attribute values can be retrieved via reference"
     assert_multi_value_matches<WeightedFloat>(f, DocId(3), doc7_values);
 }
 
+TEST_F("isUndefined() works for primitive attribute type", Fixture) {
+    reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
+            f, BasicType::INT32,
+            {{DocId(3), dummy_gid(7), DocId(7), 5678}});
+
+    EXPECT_FALSE(f.get_imported_attr()->isUndefined(DocId(3))); // Mapped
+    EXPECT_TRUE(f.get_imported_attr()->isUndefined(DocId(2))); // Not mapped
+}
+
 struct SingleStringAttrFixture : Fixture {
     SingleStringAttrFixture() : Fixture() {
         setup();
@@ -253,6 +262,11 @@ TEST_F("findEnum() returns target vector enum via reference", SingleStringAttrFi
     EnumHandle actual_handle{};
     ASSERT_TRUE(f.get_imported_attr()->findEnum("foo", actual_handle));
     EXPECT_EQUAL(expected_handle, actual_handle);
+}
+
+TEST_F("isUndefined() works for enumerated attribute type", SingleStringAttrFixture) {
+    EXPECT_FALSE(f.get_imported_attr()->isUndefined(DocId(2))); // Mapped
+    EXPECT_TRUE(f.get_imported_attr()->isUndefined(DocId(3))); // Not mapped
 }
 
 // Note: assumes that fixture has set up a string enum of value "foo" in target attribute

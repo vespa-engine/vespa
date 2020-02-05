@@ -111,7 +111,7 @@ public class Endpoint {
         return URI.create(scheme + "://" +
                           sanitize(namePart(name, separator)) +
                           systemPart(system, separator) +
-                          sanitize(instancePart(application, zone, separator)) +
+                          sanitize(instancePart(application, separator)) +
                           sanitize(application.application().value()) +
                           separator +
                           sanitize(application.tenant().value()) +
@@ -144,7 +144,7 @@ public class Endpoint {
         return zone.region().value() + "." + zone.environment().value();
     }
 
-    private static String instancePart(ApplicationId application, ZoneId zone, String separator) {
+    private static String instancePart(ApplicationId application, String separator) {
         if (application.instance().isDefault()) return ""; // Skip "default"
         return application.instance().value() + separator;
     }

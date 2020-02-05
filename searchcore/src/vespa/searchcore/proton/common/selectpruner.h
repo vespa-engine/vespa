@@ -81,6 +81,7 @@ private:
     void setInvalidVal();
     void setInvalidConst();
     void setTernaryConst(bool val);
+    void set_null_value_node();
     void resolveTernaryConst(bool wantInverted);
     bool isInvalidVal() const;
     bool isNullVal() const;

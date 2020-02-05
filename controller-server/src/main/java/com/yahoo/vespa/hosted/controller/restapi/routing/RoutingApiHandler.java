@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.routing;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -93,13 +94,13 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var root = slime.setObject();
         if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
             var zonePolicy = controller.routingController().policies().get(zone);
-            zoneStatusToSlime(root, zonePolicy.zone(), zonePolicy.globalRouting(), RoutingType.policy);
+            zoneStatusToSlime(root, zonePolicy.zone(), zonePolicy.globalRouting(), RoutingMethod.exclusive);
         } else {
             // Rotation status per zone only exposes in/out status, no agent or time of change.
             var in = controller.serviceRegistry().configServer().getGlobalRotationStatus(zone);
             var globalRouting = new GlobalRouting(in ? GlobalRouting.Status.in : GlobalRouting.Status.out,
                                                   GlobalRouting.Agent.operator, Instant.EPOCH);
-            zoneStatusToSlime(root, zone, globalRouting, RoutingType.rotation);
+            zoneStatusToSlime(root, zone, globalRouting, RoutingMethod.shared);
         }
         return new SlimeJsonResponse(slime);
     }
@@ -147,7 +148,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                         : GlobalRouting.Status.out;
                 deploymentStatusToSlime(deploymentsObject.addObject(), deployment,
                                         new GlobalRouting(status, agent, changedAt),
-                                        RoutingType.rotation);
+                                        RoutingMethod.shared);
             }
         }
 
@@ -165,8 +166,8 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         return !instance.rotations().isEmpty() && instance.deployments().containsKey(zone);
     }
 
-    private static void zoneStatusToSlime(Cursor object, ZoneId zone, GlobalRouting globalRouting, RoutingType routingType) {
-        object.setString("routingType", routingType.name());
+    private static void zoneStatusToSlime(Cursor object, ZoneId zone, GlobalRouting globalRouting, RoutingMethod method) {
+        object.setString("routingMethod", asString(method));
         object.setString("environment", zone.environment().value());
         object.setString("region", zone.region().value());
         object.setString("status", asString(globalRouting.status()));
@@ -174,8 +175,8 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         object.setLong("changedAt", globalRouting.changedAt().toEpochMilli());
     }
 
-    private static void deploymentStatusToSlime(Cursor object, DeploymentId deployment, GlobalRouting globalRouting, RoutingType routingType) {
-        object.setString("routingType", routingType.name());
+    private static void deploymentStatusToSlime(Cursor object, DeploymentId deployment, GlobalRouting globalRouting, RoutingMethod method) {
+        object.setString("routingMethod", asString(method));
         object.setString("instance", deployment.applicationId().serializedForm());
         object.setString("environment", deployment.zoneId().environment().value());
         object.setString("region", deployment.zoneId().region().value());
@@ -186,7 +187,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private static void deploymentStatusToSlime(Cursor object, RoutingPolicy policy) {
         deploymentStatusToSlime(object, new DeploymentId(policy.id().owner(), policy.id().zone()),
-                                policy.status().globalRouting(), RoutingType.policy);
+                                policy.status().globalRouting(), RoutingMethod.exclusive);
     }
 
     private DeploymentId deploymentFrom(Path path) {
@@ -219,12 +220,12 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         }
     }
 
-    private enum RoutingType {
-        /** Global routing is configured by use of an {@link com.yahoo.vespa.hosted.controller.application.AssignedRotation} */
-        rotation,
-
-        /** Global routing is configured by a {@link com.yahoo.vespa.hosted.controller.routing.RoutingPolicy} */
-        policy,
+    private static String asString(RoutingMethod method) {
+        switch (method) {
+            case shared: return "shared";
+            case exclusive: return "exclusive";
+            default: return "unknonwn";
+        }
     }
 
 }

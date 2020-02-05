@@ -14,7 +14,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.manager.MonitorManager;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
@@ -81,12 +81,11 @@ public class InstanceResource {
                 = instanceLookupService.findInstanceById(instanceId)
                 .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build()));
 
-        Set<HostName> suspendedHosts = statusService.getSuspendedHostsByApplication().apply(applicationInstance.reference());
+        HostInfos hostInfos = statusService.getHostInfosByApplicationResolver().apply(applicationInstance.reference());
         Map<HostName, String> hostStatusMap = getHostsUsedByApplicationInstance(applicationInstance)
                 .stream()
                 .collect(Collectors.toMap(hostName -> hostName,
-                                          hostName -> suspendedHosts.contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN.name()
-                                                                                        : HostStatus.NO_REMARKS.name()));
+                                          hostName -> hostInfos.getOrNoRemarks(hostName).status().asString()));
         return InstanceStatusResponse.create(applicationInstance, hostStatusMap);
     }
 

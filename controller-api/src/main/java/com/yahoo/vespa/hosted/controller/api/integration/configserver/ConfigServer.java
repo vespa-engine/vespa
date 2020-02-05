@@ -44,7 +44,9 @@ public interface ConfigServer {
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
 
-    Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
+    Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath);
+
+    String getClusterControllerStatus(DeploymentId deployment, String restPath);
 
     /**
      * Gets the Vespa logs of the given deployment.
@@ -111,15 +113,12 @@ public interface ConfigServer {
     TesterCloud.Status getTesterStatus(DeploymentId deployment);
 
     /** Starts tests on tester node */
-    // TODO: Remove default implementation when implemented in internal repo
-    default String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) { return "Tests started"; }
+    String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config);
 
     /** Gets log from tester node */
-    // TODO: Remove default implementation when implemented in internal repo
-    default List<LogEntry> getTesterLog(DeploymentId deployment, long after) { return List.of(); }
+    List<LogEntry> getTesterLog(DeploymentId deployment, long after);
 
     /** Is tester node ready */
-    // TODO: Remove default implementation when implemented in internal repo
-    default boolean isTesterReady(DeploymentId deployment) { return false; }
+    boolean isTesterReady(DeploymentId deployment);
 
 }

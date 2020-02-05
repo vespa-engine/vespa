@@ -3,10 +3,12 @@ package com.yahoo.vespa.config.protocol;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.yahoo.jrt.*;
-import com.yahoo.slime.*;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Value;
+import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8Array;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ErrorCode;
 
 import java.io.ByteArrayOutputStream;

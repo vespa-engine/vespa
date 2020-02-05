@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.Sets;
@@ -178,7 +178,7 @@ public class ControllerTest {
     public void testGlobalRotations() {
         // Setup
         ControllerTester tester = this.tester.controllerTester();
-        ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
+        ZoneId zone = ZoneId.from("prod", "us-west-1");
         ApplicationId app = ApplicationId.from("tenant", "app1", "default");
         DeploymentId deployment = new DeploymentId(app, zone);
         tester.serviceRegistry().routingGeneratorMock().putEndpoints(deployment, List.of(
@@ -705,7 +705,7 @@ public class ControllerTest {
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodZone = ZoneId.from("prod", "us-west-1");
-        tester.controllerTester().zoneRegistry().setDirectlyRouted(ZoneApiMock.from(prodZone));
+        tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
         var applicationPackage = new ApplicationPackageBuilder().environment(prodZone.environment())
                                                                 .region(prodZone.region())
                                                                 .build();
@@ -722,7 +722,7 @@ public class ControllerTest {
                                                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
                                                                                ".vespa.oath.cloud")))
                            .collect(Collectors.toUnmodifiableList()),
-                     tester.controllerTester().serviceRegistry().applicationCertificateMock().dnsNamesOf(context1.instanceId()));
+                     tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(context1.instanceId()));
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();
@@ -732,8 +732,7 @@ public class ControllerTest {
         var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
         var devZone = ZoneId.from("dev", "us-east-1");
 
-        // Deploy app2, after "removing" direct routing everywhere
-        tester.controllerTester().zoneRegistry().setDirectlyRouted();
+        // Deploy app2 in a zone with shared routing
         tester.controller().applications().deploy(context2.instanceId(), devZone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
                    tester.configServer().application(context2.instanceId(), devZone).get().activated());
@@ -772,6 +771,21 @@ public class ControllerTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Endpoint 'foo' in instance 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
+    }
+
+    @Test
+    public void testDeployWithoutSourceRevision() {
+        var context = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+
+        // Submit without source revision
+        context.submit(applicationPackage, Optional.empty())
+               .deploy();
+        assertEquals("Deployed application", 1, context.instance().deployments().size());
     }
 
 }

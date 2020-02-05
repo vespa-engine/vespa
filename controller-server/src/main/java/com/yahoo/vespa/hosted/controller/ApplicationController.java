@@ -17,6 +17,7 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
@@ -106,8 +107,10 @@ public class ApplicationController {
     private final ApplicationPackageValidator applicationPackageValidator;
     private final EndpointCertificateManager endpointCertificateManager;
 
-    ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
-                          SecretStore secretStore) {
+    ApplicationController(Controller controller, CuratorDb curator,
+	                  AccessControl accessControl, Clock clock,
+			  SecretStore secretStore, FlagSource flagSource) {
+
         this.controller = controller;
         this.curator = curator;
         this.accessControl = accessControl;
@@ -119,7 +122,7 @@ public class ApplicationController {
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
         endpointCertificateManager = new EndpointCertificateManager(controller.zoneRegistry(), curator, secretStore,
-                controller.serviceRegistry().applicationCertificateProvider(), clock);
+                controller.serviceRegistry().endpointCertificateProvider(), clock, flagSource);
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {

@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -282,6 +283,21 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return TesterCloud.Status.SUCCESS;
     }
 
+    @Override
+    public String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) {
+        return "Tests started";
+    }
+
+    @Override
+    public List<LogEntry> getTesterLog(DeploymentId deployment, long after) {
+        return List.of();
+    }
+
+    @Override
+    public boolean isTesterReady(DeploymentId deployment) {
+        return false;
+    }
+
     /** Add any of given loadBalancers that do not already exist to the load balancers in zone */
     public void putLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
         this.loadBalancers.putIfAbsent(zone, new LinkedHashSet<>());
@@ -404,8 +420,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     // Returns a canned example response
     @Override
-    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName,
-                                          String environment, String region, String serviceName, String restPath) {
+    public Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath) {
         Map<String,List<?>> root = new HashMap<>();
         List<Map<?,?>> resources = new ArrayList<>();
         Map<String,String> resource = new HashMap<>();
@@ -413,6 +428,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         resources.add(resource);
         root.put("resources", resources);
         return root;
+    }
+
+    @Override
+    public String getClusterControllerStatus(DeploymentId deployment, String restPath) {
+        return "<h1>OK</h1>";
     }
 
     @Override

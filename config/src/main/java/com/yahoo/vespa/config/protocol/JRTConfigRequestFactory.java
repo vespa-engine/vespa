@@ -12,7 +12,6 @@ import java.util.*;
  * To hide JRT implementations.
  *
  * @author Ulf Lilleengen
- * @since 5.3
  */
 public class JRTConfigRequestFactory {
 

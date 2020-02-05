@@ -51,7 +51,7 @@ public class MetricsReporter extends Maintainer {
                     Clock clock) {
         super(nodeRepository, interval);
         this.metric = metric;
-        this.orchestrator = orchestrator.getNodeStatuses();
+        this.orchestrator = orchestrator.getHostResolver();
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
         this.clock = clock;
@@ -129,17 +129,15 @@ public class MetricsReporter extends Maintainer {
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
         metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
 
-        orchestrator.apply(new HostName(node.hostname()))
-                .ifPresent(info -> {
-                    int suspended = info.status().isSuspended() ? 1 : 0;
-                    metric.set("suspended", suspended, context);
-                    metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
-
-                    info.suspendedSince().ifPresent(suspendedSince -> {
-                        Duration duration = Duration.between(suspendedSince, clock.instant());
-                        metric.set("suspendedSeconds", duration.getSeconds(), context);
-                    });
-                });
+        orchestrator.apply(new HostName(node.hostname())).ifPresent(info -> {
+            int suspended = info.status().isSuspended() ? 1 : 0;
+            metric.set("suspended", suspended, context);
+            metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
+            long suspendedSeconds = info.suspendedSince()
+                    .map(suspendedSince -> Duration.between(suspendedSince, clock.instant()).getSeconds())
+                    .orElse(0L);
+            metric.set("suspendedSeconds", suspendedSeconds, context);
+        });
 
         long numberOfServices;
         HostName hostName = new HostName(node.hostname());

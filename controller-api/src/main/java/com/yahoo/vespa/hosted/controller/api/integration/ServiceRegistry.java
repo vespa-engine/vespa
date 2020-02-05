@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -46,7 +46,7 @@ public interface ServiceRegistry {
 
     Mailer mailer();
 
-    ApplicationCertificateProvider applicationCertificateProvider();
+    EndpointCertificateProvider endpointCertificateProvider();
 
     MeteringClient meteringService();
 

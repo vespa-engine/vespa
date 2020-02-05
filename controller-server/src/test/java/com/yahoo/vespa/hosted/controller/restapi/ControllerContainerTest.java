@@ -65,6 +65,8 @@ public class ControllerContainerTest {
                "      <item key=\"rotation-id-5\">rotation-fqdn-5</item>\n" +
                "    </rotations>\n" +
                "  </config>\n" +
+               "  " +
+               "<accesslog type='disabled'/>\n" +
                "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
                "  <component id='com.yahoo.vespa.configserver.flags.db.FlagsDbImpl'/>\n" +
                "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +

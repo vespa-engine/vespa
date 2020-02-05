@@ -96,9 +96,10 @@ public class ModelEvaluationTest {
         cluster.getConfig(cb);
         RankingConstantsConfig constantsConfig = new RankingConstantsConfig(cb);
 
-        assertEquals(4, config.rankprofile().size());
+        assertEquals(5, config.rankprofile().size());
         Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
         assertTrue(modelNames.contains("xgboost_2_2"));
+        assertTrue(modelNames.contains("lightgbm_regression"));
         assertTrue(modelNames.contains("mnist_saved"));
         assertTrue(modelNames.contains("mnist_softmax"));
         assertTrue(modelNames.contains("mnist_softmax_saved"));
@@ -112,12 +113,17 @@ public class ModelEvaluationTest {
         ModelsEvaluator evaluator = new ModelsEvaluator(new ToleratingMissingConstantFilesRankProfilesConfigImporter(MockFileAcquirer.returnFile(null))
                                                                 .importFrom(config, constantsConfig));
 
-        assertEquals(4, evaluator.models().size());
+        assertEquals(5, evaluator.models().size());
 
         Model xgboost = evaluator.models().get("xgboost_2_2");
         assertNotNull(xgboost);
         assertNotNull(xgboost.evaluatorOf());
         assertNotNull(xgboost.evaluatorOf("xgboost_2_2"));
+
+        Model lightgbm = evaluator.models().get("lightgbm_regression");
+        assertNotNull(lightgbm);
+        assertNotNull(lightgbm.evaluatorOf());
+        assertNotNull(lightgbm.evaluatorOf("lightgbm_regression"));
 
         Model tensorflow_mnist = evaluator.models().get("mnist_saved");
         assertNotNull(tensorflow_mnist);

@@ -3,10 +3,9 @@ package com.yahoo.prelude.query;
 
 
 /**
- * An interface used for anything which represents a single block
- * of query input.
+ * An interface used for anything which represents a single block of query input.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface BlockItem extends HasIndexItem {
 
@@ -39,4 +38,5 @@ public interface BlockItem extends HasIndexItem {
      * is necessary to change operator?
      */
     SegmentingRule getSegmentingRule();
+
 }

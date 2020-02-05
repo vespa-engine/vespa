@@ -16,6 +16,7 @@ import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.tls.MutableX509KeyManager;
+import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -84,6 +85,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
     private final LoadingCache<AthenzRole, ZToken> roleSpecificRoleTokenCache;
     private final LoadingCache<AthenzDomain, ZToken> domainSpecificRoleTokenCache;
+    private final LoadingCache<AthenzDomain, AthenzAccessToken> domainSpecificAccessTokenCache;
+    private final LoadingCache<List<AthenzRole>, AthenzAccessToken> roleSpecificAccessTokenCache;
     private final CsrGenerator csrGenerator;
 
     @Inject
@@ -116,6 +119,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         roleSslContextCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::createRoleSslContext);
         roleSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         domainSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
+        domainSpecificAccessTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createAccessToken);
+        roleSpecificAccessTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createAccessToken);
         this.csrGenerator = new CsrGenerator(config.athenzDnsSuffix(), config.configserverIdentityName());
         this.identitySslContext = createIdentitySslContext(identityKeyManager, trustStore);
         registerInstance();
@@ -199,6 +204,16 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
+    public String getAccessToken(String domain) {
+        return null;
+    }
+
+    @Override
+    public String getAccessToken(String domain, List<String> roles) {
+        return null;
+    }
+
+    @Override
     public PrivateKey getPrivateKey() {
         return credentials.getKeyPair().getPrivate();
     }
@@ -237,6 +252,18 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private ZToken createRoleToken(AthenzDomain domain) {
         try (ZtsClient client = createZtsClient()) {
             return client.getRoleToken(domain);
+        }
+    }
+
+    private AthenzAccessToken createAccessToken(AthenzDomain domain) {
+        try (ZtsClient client = createZtsClient()) {
+            return client.getAccessToken(domain);
+        }
+    }
+
+    private AthenzAccessToken createAccessToken(List<AthenzRole> roles) {
+        try (ZtsClient client = createZtsClient()) {
+            return client.getAccessToken(roles);
         }
     }
 

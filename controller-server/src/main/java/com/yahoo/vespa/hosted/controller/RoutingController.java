@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -72,18 +73,10 @@ public class RoutingController {
 
     /** Returns all known endpoint URLs for given deployment, including global, in the shared routing layer */
     public List<URI> legacyEndpointsOf(DeploymentId deployment) {
-        if (controller.zoneRegistry().zones().directlyRouted().ids().contains(deployment.zoneId())) {
-            return List.of(); // No shared routing layer in this zone.
-        }
-        try {
-            return routingGenerator.endpoints(deployment).stream()
-                                   .map(RoutingEndpoint::endpoint)
-                                   .map(URI::create)
-                                   .collect(Collectors.toUnmodifiableList());
-        } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to get endpoints for " + deployment, e);
-            return List.of();
-        }
+        return routingEndpointsOf(deployment).stream()
+                                             .map(RoutingEndpoint::endpoint)
+                                             .map(URI::create)
+                                             .collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns all non-global endpoint URLs for given deployment, grouped by their cluster ID */
@@ -146,9 +139,9 @@ public class RoutingController {
 
     /** Find the global endpoints of given deployment */
     private List<RoutingEndpoint> legacyGlobalEndpointsOf(DeploymentId deployment) {
-        return controller.serviceRegistry().routingGenerator().endpoints(deployment).stream()
-                         .filter(RoutingEndpoint::isGlobal)
-                         .collect(Collectors.toUnmodifiableList());
+        return routingEndpointsOf(deployment).stream()
+                                             .filter(RoutingEndpoint::isGlobal)
+                                             .collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -220,6 +213,18 @@ public class RoutingController {
                                                                          Priority.normal);
                      });
         });
+    }
+
+    private List<RoutingEndpoint> routingEndpointsOf(DeploymentId deployment) {
+        if (!controller.zoneRegistry().zones().routingMethod(RoutingMethod.shared).ids().contains(deployment.zoneId())) {
+            return List.of(); // No rotations/shared routing layer in this zone.
+        }
+        try {
+            return routingGenerator.endpoints(deployment);
+        } catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed to get endpoints for " + deployment, e);
+            return List.of();
+        }
     }
 
 }

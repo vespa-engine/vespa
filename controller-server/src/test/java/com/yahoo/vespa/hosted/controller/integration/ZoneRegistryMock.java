@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneFilter;
@@ -34,11 +35,12 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     private final Map<ZoneId, Duration> deploymentTimeToLive = new HashMap<>();
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
-    private List<ZoneApi> zones = List.of();
+    private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
+    private final Map<ZoneApi, Set<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
+
+    private List<? extends ZoneApi> zones;
     private SystemName system;
     private UpgradePolicy upgradePolicy = null;
-    private Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
-    private Set<ZoneApi> directlyRouted = Set.of();
 
     /**
      * This sets the default list of zones contained in this. If your test need a particular set of zones, use
@@ -46,20 +48,21 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
      */
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
-        setZones(List.of(
-                ZoneApiMock.fromId("test.us-east-1"),
-                ZoneApiMock.fromId("staging.us-east-3"),
-                ZoneApiMock.fromId("dev.us-east-1"),
-                ZoneApiMock.fromId("dev.aws-us-east-2a"),
-                ZoneApiMock.fromId("perf.us-east-3"),
-                ZoneApiMock.fromId("prod.aws-us-east-1a"),
-                ZoneApiMock.fromId("prod.ap-northeast-1"),
-                ZoneApiMock.fromId("prod.ap-northeast-2"),
-                ZoneApiMock.fromId("prod.ap-southeast-1"),
-                ZoneApiMock.fromId("prod.us-east-3"),
-                ZoneApiMock.fromId("prod.us-west-1"),
-                ZoneApiMock.fromId("prod.us-central-1"),
-                ZoneApiMock.fromId("prod.eu-west-1")));
+        this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
+                             ZoneApiMock.fromId("staging.us-east-3"),
+                             ZoneApiMock.fromId("dev.us-east-1"),
+                             ZoneApiMock.fromId("dev.aws-us-east-2a"),
+                             ZoneApiMock.fromId("perf.us-east-3"),
+                             ZoneApiMock.fromId("prod.aws-us-east-1a"),
+                             ZoneApiMock.fromId("prod.ap-northeast-1"),
+                             ZoneApiMock.fromId("prod.ap-northeast-2"),
+                             ZoneApiMock.fromId("prod.ap-southeast-1"),
+                             ZoneApiMock.fromId("prod.us-east-3"),
+                             ZoneApiMock.fromId("prod.us-west-1"),
+                             ZoneApiMock.fromId("prod.us-central-1"),
+                             ZoneApiMock.fromId("prod.eu-west-1"));
+        // All zones use a shared routing method by default
+        setRoutingMethod(this.zones, RoutingMethod.shared);
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
@@ -72,7 +75,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
-    public ZoneRegistryMock setZones(List<ZoneApi> zones) {
+    public ZoneRegistryMock setZones(List<? extends ZoneApi> zones) {
         this.zones = zones;
         return this;
     }
@@ -96,12 +99,25 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
-    public ZoneRegistryMock setDirectlyRouted(ZoneApi... zones) {
-        return setDirectlyRouted(Set.of(zones));
+    public ZoneRegistryMock exclusiveRoutingIn(ZoneApi... zones) {
+        return exclusiveRoutingIn(List.of(zones));
     }
 
-    public ZoneRegistryMock setDirectlyRouted(Set<ZoneApi> zones) {
-        directlyRouted = zones;
+    public ZoneRegistryMock exclusiveRoutingIn(List<? extends ZoneApi> zones) {
+        return setRoutingMethod(zones, RoutingMethod.exclusive);
+    }
+
+    public ZoneRegistryMock setRoutingMethod(ZoneApi zone, RoutingMethod... routingMethods) {
+        return setRoutingMethod(zone, Set.of(routingMethods));
+    }
+
+    public ZoneRegistryMock setRoutingMethod(List<? extends ZoneApi> zones, RoutingMethod... routingMethods) {
+        zones.forEach(zone -> setRoutingMethod(zone, Set.of(routingMethods)));
+        return this;
+    }
+
+    public ZoneRegistryMock setRoutingMethod(ZoneApi zone, Set<RoutingMethod> routingMethods) {
+        this.zoneRoutingMethods.put(zone, Set.copyOf(routingMethods));
         return this;
     }
 
@@ -112,7 +128,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public ZoneFilter zones() {
-        return ZoneFilterMock.from(zones, directlyRouted);
+        return ZoneFilterMock.from(zones, zoneRoutingMethods);
     }
 
     @Override

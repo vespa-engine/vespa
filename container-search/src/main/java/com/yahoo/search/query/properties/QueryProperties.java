@@ -44,7 +44,7 @@ public class QueryProperties extends Properties {
 
     @Override
     public Object get(CompoundName key,
-                      Map<String,String> context,
+                      Map<String, String> context,
                       com.yahoo.processing.request.Properties substitution) {
         if (key.size() == 2 && key.first().equals(Model.MODEL)) {
             Model model = query.getModel();

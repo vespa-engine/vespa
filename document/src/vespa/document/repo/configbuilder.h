@@ -38,9 +38,9 @@ struct TypeOrId {
 };
 
 struct Struct : DatatypeConfig {
-    Struct(const vespalib::string &name) {
+    explicit Struct(vespalib::string name) {
         type = Type::STRUCT;
-        sstruct.name = name;
+        sstruct.name = std::move(name);
     }
     Struct &setCompression(Sstruct::Compression::Type t, int32_t level,
                            int32_t threshold, int32_t min_size) {
@@ -63,7 +63,7 @@ struct Struct : DatatypeConfig {
 };
 
 struct Array : DatatypeConfig {
-    Array(TypeOrId nested_type) {
+    explicit Array(TypeOrId nested_type) {
         addNestedType(nested_type);
         type = Type::ARRAY;
         array.element.id = nested_type.id;
@@ -71,7 +71,7 @@ struct Array : DatatypeConfig {
 };
 
 struct Wset : DatatypeConfig {
-    Wset(TypeOrId nested_type) {
+    explicit Wset(TypeOrId nested_type) {
         addNestedType(nested_type);
         type = Type::WSET;
         wset.key.id = nested_type.id;
@@ -94,7 +94,7 @@ struct Map : DatatypeConfig {
 };
 
 struct AnnotationRef : DatatypeConfig {
-    AnnotationRef(int32_t annotation_type_id) {
+    explicit AnnotationRef(int32_t annotation_type_id) {
         type = Type::ANNOTATIONREF;
         annotationref.annotation.id = annotation_type_id;
     }
@@ -103,7 +103,7 @@ struct AnnotationRef : DatatypeConfig {
 struct DocTypeRep {
     DocumenttypesConfig::Documenttype &doc_type;
 
-    DocTypeRep(DocumenttypesConfig::Documenttype &type)
+    explicit DocTypeRep(DocumenttypesConfig::Documenttype &type)
         : doc_type(type) {}
     DocTypeRep &inherit(int32_t id) {
         doc_type.inherits.resize(doc_type.inherits.size() + 1);
@@ -125,6 +125,12 @@ struct DocTypeRep {
         doc_type.referencetype.resize(doc_type.referencetype.size() + 1);
         doc_type.referencetype.back().id = id;
         doc_type.referencetype.back().targetTypeId = target_type_id;
+        return *this;
+    }
+
+    DocTypeRep& imported_field(vespalib::string field_name) {
+        doc_type.importedfield.resize(doc_type.importedfield.size() + 1);
+        doc_type.importedfield.back().name = std::move(field_name);
         return *this;
     }
 };

@@ -10,8 +10,10 @@ import com.yahoo.log.LogLevel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Configures the Vespa document manager from a config id.
@@ -144,7 +146,10 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         for (Field field : body.getFields()) {
             field.setHeader(false);
         }
-        DocumentType type = new DocumentType(doc.name(), header, body);
+        var importedFields = doc.importedfield().stream()
+                .map(f -> f.name())
+                .collect(Collectors.toUnmodifiableSet());
+        DocumentType type = new DocumentType(doc.name(), header, body, importedFields);
         for (Object j : doc.inherits()) {
             DocumentmanagerConfig.Datatype.Documenttype.Inherits parent =
                     (DocumentmanagerConfig.Datatype.Documenttype.Inherits) j;

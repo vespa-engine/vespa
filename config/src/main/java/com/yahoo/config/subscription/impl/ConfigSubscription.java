@@ -21,7 +21,7 @@ import com.yahoo.vespa.config.protocol.DefContent;
 /**
  * Represents one active subscription to one config
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public abstract class ConfigSubscription<T extends ConfigInstance> {
 

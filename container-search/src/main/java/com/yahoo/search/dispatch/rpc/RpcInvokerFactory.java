@@ -14,6 +14,8 @@ import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.PingFactory;
+import com.yahoo.search.dispatch.searchcluster.Pinger;
+import com.yahoo.search.dispatch.searchcluster.PongHandler;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.util.Optional;
@@ -22,7 +24,7 @@ import java.util.concurrent.Callable;
 /**
  * @author ollivir
  */
-public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
+public class RpcInvokerFactory extends InvokerFactory {
 
     /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
     private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
@@ -62,10 +64,5 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
 
     public void release() {
         rpcResourcePool.release();
-    }
-
-    @Override
-    public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
-        return new RpcPing(node, monitor, rpcResourcePool);
     }
 }

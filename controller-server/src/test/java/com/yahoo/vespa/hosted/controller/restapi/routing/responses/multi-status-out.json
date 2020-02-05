@@ -1,7 +1,7 @@
 {
   "deployments": [
     {
-      "routingType": "rotation",
+      "routingMethod": "shared",
       "instance": "tenant:application:default",
       "environment": "prod",
       "region": "us-west-1",
@@ -10,7 +10,7 @@
       "changedAt": "(ignore)"
     },
     {
-      "routingType": "policy",
+      "routingMethod": "exclusive",
       "instance": "tenant:application:default",
       "environment": "prod",
       "region": "us-west-1",

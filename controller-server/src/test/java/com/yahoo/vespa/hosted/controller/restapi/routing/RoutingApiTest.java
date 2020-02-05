@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.routing;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -34,14 +35,13 @@ public class RoutingApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void policy_based_routing() {
+    public void exclusive_routing() {
         var context = deploymentTester.newDeploymentContext();
         // Zones support direct routing
         var westZone = ZoneId.from("prod", "us-west-1");
         var eastZone = ZoneId.from("prod", "us-east-3");
-        deploymentTester.controllerTester().zoneRegistry().setDirectlyRouted(ZoneApiMock.from(westZone),
-                                                                             ZoneApiMock.from(eastZone));
-
+        deploymentTester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(westZone),
+                                                                              ZoneApiMock.from(eastZone));
         // Deploy application
         var applicationPackage = new ApplicationPackageBuilder()
                 .region(westZone.region())
@@ -96,7 +96,7 @@ public class RoutingApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void rotation_based_routing() {
+    public void shared_routing() {
         // Deploy application
         var context = deploymentTester.newDeploymentContext();
         var westZone = ZoneId.from("prod", "us-west-1");
@@ -156,10 +156,16 @@ public class RoutingApiTest extends ControllerContainerTest {
     // TODO(mpolden): Remove this once a zone supports either of routing policy and rotation
     @Test
     public void mixed_routing() {
-        // Deploy application
-        var context = deploymentTester.newDeploymentContext();
         var westZone = ZoneId.from("prod", "us-west-1");
         var eastZone = ZoneId.from("prod", "us-east-3");
+
+        // One zone supports multiple routing methods
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(westZone),
+                                                                            RoutingMethod.shared,
+                                                                            RoutingMethod.exclusive);
+
+        // Deploy application
+        var context = deploymentTester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
                 .region(westZone.region())
                 .region(eastZone.region())
@@ -168,7 +174,6 @@ public class RoutingApiTest extends ControllerContainerTest {
         context.submit(applicationPackage).deploy();
 
         // Assign policy in one zone
-        deploymentTester.controllerTester().zoneRegistry().setDirectlyRouted(ZoneApiMock.from(westZone));
         context.addRoutingPolicy(westZone, true);
 
         // GET status with both policy and rotation assigned

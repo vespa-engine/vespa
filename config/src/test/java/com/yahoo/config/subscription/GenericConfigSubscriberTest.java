@@ -21,7 +21,6 @@ import static org.junit.Assert.*;
  * Test cases for the "generic" (class-less) subscription mechanism.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class GenericConfigSubscriberTest {
 
@@ -52,7 +51,6 @@ public class GenericConfigSubscriberTest {
         GenericConfigSubscriber sub = new GenericConfigSubscriber(requesters);
         assertEquals(sub.requesters().get(source1).getConnectionPool().getCurrent().getAddress(), "tcp/foo:78");
         assertEquals(sub.requesters().get(source2).getConnectionPool().getCurrent().getAddress(), "tcp/bar:79");
-
     }
 
     @Test(expected=UnsupportedOperationException.class)
