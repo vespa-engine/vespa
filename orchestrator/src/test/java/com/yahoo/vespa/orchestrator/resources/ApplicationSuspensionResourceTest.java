@@ -155,6 +155,7 @@ public class ApplicationSuspensionResourceTest {
 
         return "<services>\n" +
                 "    <container version=\"1.0\" jetty=\"true\">\n" +
+                "        <accesslog type=\"disabled\"/>\n" +
                 "        <config name=\"container.handler.threadpool\">\n" +
                 "            <maxthreads>10</maxthreads>\n" +
                 "        </config>\n" +
