@@ -63,11 +63,11 @@ void
 HnswIndexBase::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links)
 {
     auto links_ref = _links.add(links);
-    auto levels = get_level_array(docid);
-    // TODO: Add function to ArrayStore that returns mutable array ref, eg. get_writable()
-    auto mutable_levels = vespalib::unconstify(levels);
+    // TODO: Add memory barrier?
+    auto node_ref = _node_refs[docid];
+    auto levels = _nodes.get_writable(node_ref);
     // TODO: Make this change atomic.
-    mutable_levels[level] = links_ref;
+    levels[level] = links_ref;
 }
 
 bool
