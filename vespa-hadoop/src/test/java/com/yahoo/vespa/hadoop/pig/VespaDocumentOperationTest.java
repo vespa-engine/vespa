@@ -49,13 +49,13 @@ public class VespaDocumentOperationTest {
 
     @Test
     public void requireThatUDFSupportsConditionalUpdateAssign() throws IOException {
-        String json = getDocumentOperationJson("docid=id:<application>:metrics::<name>-<date>", "operation=update", "condition=clicks>100");
+        String json = getDocumentOperationJson("docid=id:<application>:metrics::<name>-<date>", "operation=update", "condition=clicks < <name>");
         ObjectMapper m = new ObjectMapper();
         JsonNode root = m.readTree(json);
         JsonNode fields = root.path("fields");
 
         assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").getTextValue());
-        assertEquals("clicks>100", root.get("condition").getTextValue());
+        assertEquals("clicks < 3", root.get("condition").getTextValue());
         assertEquals("testapp", fields.get("application").get("assign").getTextValue());
         assertEquals("clicks", fields.get("name").get("assign").getTextValue());
         assertEquals(3, fields.get("value").get("assign").getIntValue());
