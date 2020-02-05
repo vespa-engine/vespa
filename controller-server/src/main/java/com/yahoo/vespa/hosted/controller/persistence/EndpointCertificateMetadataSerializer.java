@@ -6,6 +6,11 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 /**
  * (de)serializes endpoint certificate metadata
  * <p>
@@ -26,6 +31,8 @@ public class EndpointCertificateMetadataSerializer {
     private final static String keyNameField = "keyName";
     private final static String certNameField = "certName";
     private final static String versionField = "version";
+    private final static String requestIdField = "requestId";
+    private final static String requestedDnsSansField = "requestedDnsSans";
 
     public static Slime toSlime(EndpointCertificateMetadata metadata) {
         Slime slime = new Slime();
@@ -33,6 +40,13 @@ public class EndpointCertificateMetadataSerializer {
         object.setString(keyNameField, metadata.keyName());
         object.setString(certNameField, metadata.certName());
         object.setLong(versionField, metadata.version());
+
+        metadata.request_id().ifPresent(id -> object.setString(requestIdField, id));
+        metadata.requestedDnsSans().ifPresent(sans -> {
+            Cursor cursor = object.setArray(requestedDnsSansField);
+            sans.forEach(cursor::addString);
+        });
+
         return slime;
     }
 
@@ -44,12 +58,24 @@ public class EndpointCertificateMetadataSerializer {
                         inspector.asString() + "-cert",
                         0
                 );
-            case OBJECT:
+            case OBJECT: {
+                Optional<String> request_id = inspector.field(requestIdField).valid() ?
+                        Optional.of(inspector.field(requestIdField).asString()) :
+                        Optional.empty();
+
+                Optional<List<String>> requestedDnsSans = inspector.field(requestedDnsSansField).valid() ?
+                        Optional.of(IntStream.range(0, inspector.field(requestedDnsSansField).entries())
+                                .mapToObj(i -> inspector.field(requestedDnsSansField).entry(i).asString()).collect(Collectors.toList())) :
+                        Optional.empty();
+
                 return new EndpointCertificateMetadata(
                         inspector.field(keyNameField).asString(),
                         inspector.field(certNameField).asString(),
-                        Math.toIntExact(inspector.field(versionField).asLong())
+                        Math.toIntExact(inspector.field(versionField).asLong()),
+                        request_id,
+                        requestedDnsSans
                 );
+            }
 
             default:
                 throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
@@ -61,7 +87,7 @@ public class EndpointCertificateMetadataSerializer {
     }
 
     public static EndpointCertificateMetadata fromJsonOrTlsSecretsKeysString(String zkdata) {
-        if(zkdata.strip().startsWith("{")) {
+        if (zkdata.strip().startsWith("{")) {
             return fromSlime(SlimeUtils.jsonToSlime(zkdata).get());
         } else {
             return fromTlsSecretsKeysString(zkdata);
