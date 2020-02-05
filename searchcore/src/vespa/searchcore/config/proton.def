@@ -397,8 +397,8 @@ writefilter.memorylimit double default = 0.8
 ## put and update portion of feed is blocked.
 writefilter.disklimit double default = 0.8
 
-## Interval between sampling of disk and memory usage. Default is 60 seconds.
-writefilter.sampleinterval double default = 60.0
+## Interval between sampling of disk and memory usage. Default is 20 seconds.
+writefilter.sampleinterval double default = 20.0
 
 ## The size of the disk partition (in bytes) on which proton basedir is located.
 ## If set to 0, the disk size is sampled by looking at the filesystem space info.
