@@ -69,6 +69,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     private static final String SIMPLE_OBJECT_FIELDS = "simple-object-fields";
     private static final String CREATE_TENSOR_FIELDS = "create-tensor-fields";
     private static final String EXCLUDE_FIELDS = "exclude-fields";
+    private static final String TESTSET_CONDITION = "condition";
 
     private static final String PARTIAL_UPDATE_ASSIGN = "assign";
 
@@ -162,7 +163,10 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         if (op == Operation.UPDATE && createIfNonExistent) {
             writeField("create", true, DataType.BOOLEAN, g, properties, schema, op, 0);
         }
-
+        String testSetCondition = properties.getProperty(TESTSET_CONDITION);
+        if (testSetCondition != null) {
+            writeField(TESTSET_CONDITION, testSetCondition, DataType.CHARARRAY, g, properties, schema, op, 0);
+        }
         if (op != Operation.REMOVE) {
             writeField("fields", fields, DataType.MAP, g, properties, schema, op, 0);
         }
