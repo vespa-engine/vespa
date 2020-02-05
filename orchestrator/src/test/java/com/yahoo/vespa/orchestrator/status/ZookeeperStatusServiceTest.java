@@ -288,16 +288,6 @@ public class ZookeeperStatusServiceTest {
         assertThat(suspendedApps, hasItem(TestIds.APPLICATION_INSTANCE_REFERENCE2));
     }
 
-    @Test
-    public void large_orchestrator_locks() {
-        when(context.isProbe()).thenReturn(true);
-
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
-            statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
-        }
-    }
-
     //TODO: move to vespajlib
     @SafeVarargs
     private static <T> List<T> shuffledList(T... values) {
