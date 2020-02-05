@@ -14,8 +14,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
@@ -50,19 +49,19 @@ public class EndpointCertificateManager {
     private final ZoneRegistry zoneRegistry;
     private final CuratorDb curator;
     private final SecretStore secretStore;
-    private final ApplicationCertificateProvider applicationCertificateProvider;
+    private final EndpointCertificateProvider endpointCertificateProvider;
     private final Clock clock;
     private final BooleanFlag useRefreshedEndpointCertificate;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
                                       CuratorDb curator,
                                       SecretStore secretStore,
-                                      ApplicationCertificateProvider applicationCertificateProvider,
+                                      EndpointCertificateProvider endpointCertificateProvider,
                                       Clock clock, FlagSource flagSource) {
         this.zoneRegistry = zoneRegistry;
         this.curator = curator;
         this.secretStore = secretStore;
-        this.applicationCertificateProvider = applicationCertificateProvider;
+        this.endpointCertificateProvider = endpointCertificateProvider;
         this.clock = clock;
         this.useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
     }
@@ -107,9 +106,8 @@ public class EndpointCertificateManager {
 
     private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance) {
         List<ZoneId> directlyRoutedZones = zoneRegistry.zones().directlyRouted().zones().stream().map(ZoneApi::getId).collect(Collectors.toUnmodifiableList());
-        ApplicationCertificate newCertificate = applicationCertificateProvider
+        EndpointCertificateMetadata provisionedCertificateMetadata = endpointCertificateProvider
                 .requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), directlyRoutedZones));
-        EndpointCertificateMetadata provisionedCertificateMetadata = EndpointCertificateMetadataSerializer.fromTlsSecretsKeysString(newCertificate.secretsKeyNamePrefix());
         curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
         return provisionedCertificateMetadata;
     }
