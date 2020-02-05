@@ -33,6 +33,17 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.secretstore.SecretNotFoundException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.secretstore.SecretStore": {
     "superClass": "java.lang.Object",
     "interfaces": [],

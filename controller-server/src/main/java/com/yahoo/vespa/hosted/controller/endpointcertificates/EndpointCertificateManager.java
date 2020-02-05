@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.security.SubjectAlternativeName;
@@ -20,7 +21,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateMetadataSerializer;
 
 import java.security.cert.X509Certificate;
 import java.time.Clock;
@@ -116,7 +116,8 @@ public class EndpointCertificateManager {
         try {
             var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
 
-            if (pemEncodedEndpointCertificate == null) return logWarning(warningPrefix, "Certificate not found in secret store");
+            if (pemEncodedEndpointCertificate == null)
+                return logWarning(warningPrefix, "Secret store returned null for certificate");
 
             List<X509Certificate> x509CertificateList = X509CertificateUtils.certificateListFromPem(pemEncodedEndpointCertificate);
 
@@ -139,10 +140,13 @@ public class EndpointCertificateManager {
                     .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
                     .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
 
-            if (!subjectAlternativeNames.equals(Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))))
-                return logWarning(warningPrefix, "The list of SANs in the certificate does not match what we expect");
+            if(Sets.intersection(subjectAlternativeNames, Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))).isEmpty()) {
+                return logWarning(warningPrefix, "No overlap between SANs in certificate and expected SANs");
+            }
 
             return true; // All good then, hopefully
+        } catch (SecretNotFoundException s) {
+            return logWarning(warningPrefix, "Certificate not found in secret store");
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Exception thrown when verifying endpoint certificate", e);
             return false;
