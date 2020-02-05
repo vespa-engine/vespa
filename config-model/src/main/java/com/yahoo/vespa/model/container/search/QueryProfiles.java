@@ -232,8 +232,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         return propB;
     }
 
-    private QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder createVariantPropertyFieldConfig(
-            String fullName, Object value) {
+    private QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder createVariantPropertyFieldConfig(String fullName, Object value) {
         QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder();
         if (value instanceof SubstituteString)
             value=value.toString(); // Send only types understood by configBuilder downwards
@@ -251,7 +250,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
             qtB.matchaspath(true);
         for (QueryProfileType inherited : profileType.inherited())
             qtB.inherit(inherited.getId().stringValue());
-        List<FieldDescription> fields=new ArrayList<>(profileType.declaredFields().values());
+        List<FieldDescription> fields = new ArrayList<>(profileType.declaredFields().values());
         Collections.sort(fields);
         for (FieldDescription field : fields)
             qtB.field(createConfig(field));
@@ -260,22 +259,20 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
 
     private QueryProfilesConfig.Queryprofiletype.Field.Builder createConfig(FieldDescription field) {
         QueryProfilesConfig.Queryprofiletype.Field.Builder fB = new QueryProfilesConfig.Queryprofiletype.Field.Builder();
-        fB.
-        name(field.getName()).
-        type(field.getType().stringValue());
+        fB.name(field.getName()).type(field.getType().stringValue());
         if ( ! field.isOverridable())
             fB.overridable(false);
         if (field.isMandatory())
             fB.mandatory(true);
-        String aliases=toSpaceSeparatedString(field.getAliases());
-        if (!aliases.isEmpty())
+        String aliases = toSpaceSeparatedString(field.getAliases());
+        if ( ! aliases.isEmpty())
             fB.alias(aliases);
         return fB;
     }
 
     public String toSpaceSeparatedString(List<String> list) {
-        StringBuilder b=new StringBuilder();
-        for (Iterator<String> i=list.iterator(); i.hasNext(); ) {
+        StringBuilder b = new StringBuilder();
+        for (Iterator<String> i = list.iterator(); i.hasNext(); ) {
             b.append(i.next());
             if (i.hasNext())
                 b.append(" ");
@@ -290,10 +287,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         }
     }
 
-    /**
-     * The config produced by this
-     * @return query profiles config
-     */
+    /** Returns the config produced by this */
     public QueryProfilesConfig getConfig() {
         QueryProfilesConfig.Builder qB = new QueryProfilesConfig.Builder();
         getConfig(qB);
