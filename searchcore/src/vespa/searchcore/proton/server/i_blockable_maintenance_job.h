@@ -36,7 +36,7 @@ public:
      */
     virtual void unBlock(BlockedReason reason) = 0;
 
-    virtual IBlockableMaintenanceJob *asBlockable() override { return this; }
+    IBlockableMaintenanceJob *asBlockable() override { return this; }
 };
 
 }
