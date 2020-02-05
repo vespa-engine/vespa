@@ -114,6 +114,14 @@ public class Flags {
             "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
             "Takes effect on next run of NodeRebooter");
 
+    public static final UnboundBooleanFlag ENABLE_LARGE_ORCHESTRATOR_LOCKS = defineFeatureFlag(
+            "enable-large-orchestrator-locks", false,
+            "If enabled, the orchestrator will accumulate application locks during probe in batch suspension, " +
+            "and release them in reverse order only after the non-probe is complete. Can be set depending on " +
+            "parent hostname.",
+            "Takes immediate effect for new batch suspensions.",
+            HOSTNAME);
+
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
             "enable-dynamic-provisioning", false,
             "Provision a new docker host when we otherwise can't allocate a docker node",

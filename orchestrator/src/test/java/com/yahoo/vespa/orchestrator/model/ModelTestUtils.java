@@ -16,6 +16,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -52,6 +53,7 @@ class ModelTestUtils {
 
     public static final int NUMBER_OF_CONFIG_SERVERS = 3;
 
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
     private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
@@ -62,7 +64,8 @@ class ModelTestUtils {
                                                                    new ServiceMonitorInstanceLookupService(() -> new ServiceModel(applications)),
                                                                    0,
                                                                    new ManualClock(),
-                                                                   applicationApiFactory());
+                                                                   applicationApiFactory(),
+                                                                   flagSource);
 
     ApplicationApiFactory applicationApiFactory() {
         return new ApplicationApiFactory(NUMBER_OF_CONFIG_SERVERS);

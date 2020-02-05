@@ -75,6 +75,14 @@ public class ZookeeperStatusService implements StatusService {
         });
     }
 
+    /** Non-private for testing only. */
+    ZookeeperStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache) {
+        this.curator = curator;
+        this.metric = metric;
+        this.timer = timer;
+        this.hostInfosCache = hostInfosCache;
+    }
+
     @Override
     public Set<ApplicationInstanceReference> getAllSuspendedApplications() {
         try {
@@ -123,6 +131,35 @@ public class ZookeeperStatusService implements StatusService {
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             OrchestratorContext context,
             ApplicationInstanceReference applicationInstanceReference) throws UncheckedTimeoutException {
+        Runnable onRegistryClose;
+
+        // A multi-application operation, aka batch suspension, will first issue a probe
+        // then a non-probe. With "large locks", the lock is not release in between -
+        // no lock is taken on the non-probe. Instead, the release is done on the multi-application
+        // context close.
+        if (context.hasLock(applicationInstanceReference)) {
+            onRegistryClose = () -> {};
+        } else {
+            Runnable unlock = acquireLock(context, applicationInstanceReference);
+            if (context.registerLockAcquisition(applicationInstanceReference, unlock)) {
+                onRegistryClose = () -> {};
+            } else {
+                onRegistryClose = unlock;
+            }
+        }
+
+        try {
+            return new ZkMutableStatusRegistry(onRegistryClose, applicationInstanceReference, context.isProbe());
+        } catch (Throwable t) {
+            // In case the constructor throws an exception.
+            onRegistryClose.run();
+            throw t;
+        }
+    }
+
+    private Runnable acquireLock(OrchestratorContext context,
+                                 ApplicationInstanceReference applicationInstanceReference)
+            throws UncheckedTimeoutException {
         ApplicationId applicationId = OrchestratorUtil.toApplicationId(applicationInstanceReference);
         String app = applicationId.application().value() + "." + applicationId.instance().value();
         Map<String, String> dimensions = Map.of(
@@ -152,20 +189,21 @@ public class ZookeeperStatusService implements StatusService {
             metric.add(acquireResultMetricName, 1, metricContext);
         }
 
-        Runnable updateLockHoldMetric = () -> {
+        return () -> {
+            try {
+                lock.close();
+            } catch (RuntimeException e) {
+                // We may want to avoid logging some exceptions that may be expected, like when session expires.
+                log.log(LogLevel.WARNING,
+                        "Failed to close application lock for " +
+                                ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue",
+                        e);
+            }
+
             Instant lockReleasedTime = timer.currentTime();
             double seconds = durationInSeconds(acquireEndTime, lockReleasedTime);
             metric.set("orchestrator.lock.hold-latency", seconds, metricContext);
         };
-
-        try {
-            return new ZkMutableStatusRegistry(lock, applicationInstanceReference, context.isProbe(), updateLockHoldMetric);
-        } catch (Throwable t) {
-            // In case the constructor throws an exception.
-            updateLockHoldMetric.run();
-            lock.close();
-            throw t;
-        }
     }
 
     private double durationInSeconds(Instant startInstant, Instant endInstant) {
@@ -337,19 +375,16 @@ public class ZookeeperStatusService implements StatusService {
 
     private class ZkMutableStatusRegistry implements MutableStatusRegistry {
 
-        private final Lock lock;
+        private final Runnable onClose;
         private final ApplicationInstanceReference applicationInstanceReference;
         private final boolean probe;
-        private final Runnable onLockRelease;
 
-        public ZkMutableStatusRegistry(Lock lock,
+        public ZkMutableStatusRegistry(Runnable onClose,
                                        ApplicationInstanceReference applicationInstanceReference,
-                                       boolean probe,
-                                       Runnable onLockRelease) {
-            this.lock = lock;
+                                       boolean probe) {
+            this.onClose = onClose;
             this.applicationInstanceReference = applicationInstanceReference;
             this.probe = probe;
-            this.onLockRelease = onLockRelease;
         }
 
         @Override
@@ -399,13 +434,12 @@ public class ZookeeperStatusService implements StatusService {
 
         @Override
         public void close()  {
-            onLockRelease.run();
             try {
-                lock.close();
+                onClose.run();
             } catch (RuntimeException e) {
                 // We may want to avoid logging some exceptions that may be expected, like when session expires.
                 log.log(LogLevel.WARNING,
-                        "Failed to close application lock for " +
+                        "Failed close application lock in " +
                         ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue",
                         e);
             }
