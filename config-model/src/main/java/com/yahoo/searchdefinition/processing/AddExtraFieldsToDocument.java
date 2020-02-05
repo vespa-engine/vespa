@@ -71,7 +71,7 @@ public class AddExtraFieldsToDocument extends Processor {
         if (docField == null) {
             ImmutableSDField existingField = search.getField(field.getName());
             if (existingField == null) {
-                SDField newField = new SDField(document, field.getName(), field.getDataType(), field.isHeader(), true);
+                SDField newField = new SDField(document, field.getName(), field.getDataType(), true);
                 newField.setIsExtraField(true);
                 document.addField(newField);
             } else if (!existingField.isImportedField()) {

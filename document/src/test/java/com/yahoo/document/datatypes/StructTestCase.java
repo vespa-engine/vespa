@@ -20,14 +20,14 @@ public class StructTestCase {
     @Test
     public void testBasicStuff() throws Exception {
         StructDataType type = new StructDataType("teststr");
-        type.addField(new Field("int", 0, DataType.INT, true));
-        type.addField(new Field("flt", 1, DataType.FLOAT, true));
-        type.addField(new Field("str", 2, DataType.STRING, true));
-        type.addField(new Field("raw", 3, DataType.RAW, true));
-        type.addField(new Field("lng", 4, DataType.LONG, true));
-        type.addField(new Field("dbl", 5, DataType.DOUBLE, true));
-        type.addField(new Field("uri", 6, DataType.URI, true));
-        type.addField(new Field("byt", 8, DataType.BYTE, true));
+        type.addField(new Field("int", 0, DataType.INT));
+        type.addField(new Field("flt", 1, DataType.FLOAT));
+        type.addField(new Field("str", 2, DataType.STRING));
+        type.addField(new Field("raw", 3, DataType.RAW));
+        type.addField(new Field("lng", 4, DataType.LONG));
+        type.addField(new Field("dbl", 5, DataType.DOUBLE));
+        type.addField(new Field("uri", 6, DataType.URI));
+        type.addField(new Field("byt", 8, DataType.BYTE));
 
         Struct struct = new Struct(type);
         {
@@ -236,7 +236,7 @@ public class StructTestCase {
     @Test
     public void testSetUnknownType() {
         StructDataType type = new StructDataType("teststr");
-        type.addField(new Field("int", 0, DataType.INT, true));
+        type.addField(new Field("int", 0, DataType.INT));
 
         Struct struct = new Struct(type);
         try {
@@ -251,9 +251,9 @@ public class StructTestCase {
     public void testCompareToDoesNotMutateStateBug6394548() {
         StructDataType type = new StructDataType("test");
         // NOTE: non-increasing ID order!
-        type.addField(new Field("int", 2, DataType.INT, true));
-        type.addField(new Field("flt", 1, DataType.FLOAT, true));
-        type.addField(new Field("str", 0, DataType.STRING, true));
+        type.addField(new Field("int", 2, DataType.INT));
+        type.addField(new Field("flt", 1, DataType.FLOAT));
+        type.addField(new Field("str", 0, DataType.STRING));
 
         Struct a = new Struct(type);
         a.setFieldValue("int", new IntegerFieldValue(123));

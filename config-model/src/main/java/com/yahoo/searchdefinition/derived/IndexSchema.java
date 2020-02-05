@@ -138,11 +138,10 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
             return Collections.singletonList(field);
         }
         if (fieldType instanceof ArrayDataType) {
-            boolean header = field.isHeader();
             List<Field> ret = new LinkedList<>();
-            Field innerField = new Field(field.getName(), ((ArrayDataType)fieldType).getNestedType(), header);
+            Field innerField = new Field(field.getName(), ((ArrayDataType)fieldType).getNestedType());
             for (Field flatField : flattenField(innerField)) {
-                ret.add(new Field(flatField.getName(), DataType.getArray(flatField.getDataType()), header));
+                ret.add(new Field(flatField.getName(), DataType.getArray(flatField.getDataType())));
             }
             return ret;
         }

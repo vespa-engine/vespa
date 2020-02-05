@@ -185,9 +185,9 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                                : manager.getDataType(field.datatype(), field.detailedtype());
 
             if (field.id().size() == 1) {
-                type.addField(new Field(field.name(), field.id().get(0).id(), fieldType, true));
+                type.addField(new Field(field.name(), field.id().get(0).id(), fieldType));
             } else {
-                type.addField(new Field(field.name(), fieldType, true));
+                type.addField(new Field(field.name(), fieldType));
             }
         }
         manager.register(type);
