@@ -15,7 +15,6 @@ import com.yahoo.search.dispatch.searchcluster.PongHandler;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 public class RpcPing implements Pinger, Client.ResponseReceiver {
@@ -91,7 +90,8 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
             pongHandler.handle(toPong(response));
         } else {
             //TODO Reduce to debug or remove once we have enumerated what happens here.
-            log.info("Pong " + pingSequenceId + " received too late, latest is " + node.getLastReceivedPongId());
+            log.info("Pong " + pingSequenceId + " from node " + node.key() + " in group " + node.group() +
+                     " with hostname " + node.hostname() + " received too late, latest is " + node.getLastReceivedPongId());
         }
     }
 }
