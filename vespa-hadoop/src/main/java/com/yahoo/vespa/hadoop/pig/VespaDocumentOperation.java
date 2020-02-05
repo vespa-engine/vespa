@@ -163,8 +163,9 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         if (op == Operation.UPDATE && createIfNonExistent) {
             writeField("create", true, DataType.BOOLEAN, g, properties, schema, op, 0);
         }
-        String testSetCondition = properties.getProperty(TESTSET_CONDITION);
-        if (testSetCondition != null) {
+        String testSetConditionTemplate = properties.getProperty(TESTSET_CONDITION);
+        if (testSetConditionTemplate != null) {
+            String testSetCondition = TupleTools.toString(fields, testSetConditionTemplate);
             writeField(TESTSET_CONDITION, testSetCondition, DataType.CHARARRAY, g, properties, schema, op, 0);
         }
         if (op != Operation.REMOVE) {
