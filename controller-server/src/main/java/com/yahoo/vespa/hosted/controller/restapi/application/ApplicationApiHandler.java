@@ -848,6 +848,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                   .forEach(globalEndpointUrls::add);
         }
 
+        // TODO(mpolden): Remove once clients stop expecting this field
         var globalRotationsArray = object.setArray("globalRotations");
         globalEndpointUrls.forEach(globalRotationsArray::addString);
 
@@ -1027,7 +1028,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setString("environment", deploymentId.zoneId().environment().value());
         response.setString("region", deploymentId.zoneId().region().value());
 
-        // Add endpoint(s) defined by routing policies
+        // Add zone endpoints defined by routing policies
         var endpointArray = response.setArray("endpoints");
         for (var policy : controller.routingController().policies().get(deploymentId).values()) {
             if (!policy.status().isActive()) continue;
@@ -1039,7 +1040,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 endpointObject.setString("url", endpoint.url().toString());
                 endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
             }
-            // Add all global endpoints that point to this policy
+            // Add global endpoints that point to this policy
             for (var endpoint : policy.globalEndpointsIn(controller.system()).asList()) {
                 var endpointObject = endpointArray.addObject();
                 endpointObject.setString("cluster", policy.id().cluster().value());
@@ -1048,10 +1049,37 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
             }
         }
+        // Add zone endpoints served by shared routing layer
+        for (var clusterAndUrl : controller.routingController().legacyZoneEndpointsOf(deploymentId).entrySet()) {
+            var endpointObject = endpointArray.addObject();
+            endpointObject.setString("cluster", clusterAndUrl.getKey().value());
+            endpointObject.setBool("tls", true);
+            endpointObject.setString("url", clusterAndUrl.getValue().toString());
+            endpointObject.setString("scope", endpointScopeString(Endpoint.Scope.zone));
+        }
+        // Add global endpoints served by shared routing layer
+        var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
+        var instance = application.instances().get(deploymentId.applicationId().instance());
+        if (deploymentId.zoneId().environment().isProduction()) { // Global endpoints can only point to production deployments
+            for (var rotation : instance.rotations()) {
+                var endpoints = instance.endpointsIn(controller.system(), rotation.endpointId())
+                                        .legacy(false)
+                                        .scope(Endpoint.Scope.global)
+                                        .asList();
+                for (var endpoint : endpoints) {
+                    var endpointObject = endpointArray.addObject();
+                    endpointObject.setString("cluster", rotation.clusterId().value());
+                    endpointObject.setBool("tls", true);
+                    endpointObject.setString("url", endpoint.url().toString());
+                    endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+                }
+            }
+        }
 
         // serviceUrls contains all valid endpoints for this deployment, including global. The name of these endpoints
         // may contain the cluster name (if non-default). Since the controller has no knowledge of clusters for legacy
         // endpoints, we can't generate these URLs on-the-fly and we have to query the routing layer.
+        // TODO(mpolden): Remove this once all clients stop reading this.
         Cursor serviceUrlArray = response.setArray("serviceUrls");
         controller.routingController().legacyEndpointsOf(deploymentId)
                   .forEach(endpoint -> serviceUrlArray.addString(endpoint.toString()));
@@ -1064,12 +1092,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
-        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
         DeploymentStatus status = controller.jobController().deploymentStatus(application);
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
-        Instance instance = application.instances().get(deploymentId.applicationId().instance());
         if (instance != null) {
             if (!instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
                 toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);
