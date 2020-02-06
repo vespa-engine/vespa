@@ -1031,11 +1031,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         var endpointArray = response.setArray("endpoints");
         for (var policy : controller.routingController().policies().get(deploymentId).values()) {
             if (!policy.status().isActive()) continue;
-            Cursor endpointObject = endpointArray.addObject();
-            Endpoint endpoint = policy.endpointIn(controller.system());
-            endpointObject.setString("cluster", policy.id().cluster().value());
-            endpointObject.setBool("tls", endpoint.tls());
-            endpointObject.setString("url", endpoint.url().toString());
+            {
+                var endpointObject = endpointArray.addObject();
+                var endpoint = policy.endpointIn(controller.system());
+                endpointObject.setString("cluster", policy.id().cluster().value());
+                endpointObject.setBool("tls", endpoint.tls());
+                endpointObject.setString("url", endpoint.url().toString());
+                endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+            }
+            // Add all global endpoints that point to this policy
+            for (var endpoint : policy.globalEndpointsIn(controller.system()).asList()) {
+                var endpointObject = endpointArray.addObject();
+                endpointObject.setString("cluster", policy.id().cluster().value());
+                endpointObject.setBool("tls", endpoint.tls());
+                endpointObject.setString("url", endpoint.url().toString());
+                endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+            }
         }
 
         // serviceUrls contains all valid endpoints for this deployment, including global. The name of these endpoints
@@ -2068,6 +2079,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case out: return "OUT";
         }
         return "UNKNOWN";
+    }
+
+    private static String endpointScopeString(Endpoint.Scope scope) {
+        switch (scope) {
+            case global: return "global";
+            case zone: return "zone";
+        }
+        throw new IllegalArgumentException("Unknown endpoint scope " + scope);
     }
 
     private static <T> T getAttribute(HttpRequest request, String attributeName, Class<T> cls) {
