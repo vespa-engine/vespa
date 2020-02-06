@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
@@ -209,7 +210,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Container startContainer(NodeAgentContext context) {
         ContainerData containerData = createContainerData(context);
-        ContainerResources wantedResources = warmUpDuration.isNegative() ?
+        ContainerResources wantedResources = context.nodeType() != NodeType.tenant || warmUpDuration.isNegative() ?
                 getContainerResources(context) : getContainerResources(context).withUnlimitedCpus();
         dockerOperations.createContainer(context, containerData, wantedResources);
         dockerOperations.startContainer(context);
@@ -473,7 +474,7 @@ public class NodeAgentImpl implements NodeAgent {
                     Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration));
                     if (!container.get().resources.equalsCpu(getContainerResources(context)))
                         throw new ConvergenceException("Refusing to resume until warm up period ends (" +
-                                (timeLeft.isNegative() ? " next tick" : "in " + timeLeft) + ")");
+                                (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
                 }
 
                 // Because it's more important to stop a bad release from rolling out in prod,
