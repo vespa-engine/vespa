@@ -356,6 +356,7 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
         if ((attribute->getCollectionType() == CollectionType::SINGLE) && (attribute->isIntegerType() || attribute->isFloatingPointType())) {
             { SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash); }
             { SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;  if (creator.handle(attribute)) return creator.create(stash); }
+            { SingleValueExecutorCreator<IntegerAttributeTemplate<int8_t>> creator;       if (creator.handle(attribute)) return creator.create(stash); }
             { SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
             { SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
         }
