@@ -72,6 +72,7 @@ public class LoadBalancerProvisioner {
     public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
         if (requestedNodes.type() != NodeType.tenant) return; // Nothing to provision for this node type
         if (!cluster.type().isContainer()) return; // Nothing to provision for this cluster type
+        if (application.instance().isTester()) return; // Do not provision for tester instances
         try (var loadBalancersLock = db.lockLoadBalancers()) {
             provision(application, cluster.id(), false, loadBalancersLock);
         }
