@@ -7,6 +7,7 @@
 #include "nearest_neighbor_index.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
+#include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
@@ -54,7 +55,7 @@ public:
     };
 
 protected:
-    using EntryRef = search::datastore::EntryRef;
+    using AtomicEntryRef = search::datastore::AtomicEntryRef;
 
     // This uses 10 bits for buffer id -> 1024 buffers.
     // As we have very short arrays we get less fragmentation with fewer and larger buffers.
@@ -62,14 +63,13 @@ protected:
 
     // Provides mapping from document id -> node reference.
     // The reference is used to lookup the node data in NodeStore.
-    using NodeRefVector = vespalib::RcuVector<EntryRef>;
+    using NodeRefVector = vespalib::RcuVector<AtomicEntryRef>;
 
     // This stores the level arrays for all nodes.
     // Each node consists of an array of levels (from level 0 to n) where each entry is a reference to the link array at that level.
-    // TODO: Make replacing all links on a level atomically, e.g. AtomicEntryRef
-    using NodeStore = search::datastore::ArrayStore<EntryRef, EntryRefType>;
+    using NodeStore = search::datastore::ArrayStore<AtomicEntryRef, EntryRefType>;
     using LevelArrayRef = NodeStore::ConstArrayRef;
-    using LevelArray = vespalib::Array<EntryRef>;
+    using LevelArray = vespalib::Array<AtomicEntryRef>;
 
     // This stores all link arrays.
     // A link array consists of the document ids of the nodes a particular node is linked to.

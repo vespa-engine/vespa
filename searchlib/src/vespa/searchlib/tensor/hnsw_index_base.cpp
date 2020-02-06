@@ -3,6 +3,7 @@
 #include "hnsw_index_base.h"
 #include "random_level_generator.h"
 #include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::tensor {
 
@@ -45,18 +46,16 @@ HnswIndexBase::make_node_for_document(uint32_t docid)
     // TODO: Add capping on num_levels
     uint32_t num_levels = max_level + 1;
     // Note: The level array instance lives as long as the document is present in the index.
-    LevelArray levels(num_levels, EntryRef());
+    LevelArray levels(num_levels, AtomicEntryRef());
     auto node_ref = _nodes.add(levels);
-    // TODO: Add memory barrier?
-    _node_refs[docid] = node_ref;
+    _node_refs[docid].store_release(node_ref);
     return max_level;
 }
 
 HnswIndexBase::LevelArrayRef
 HnswIndexBase::get_level_array(uint32_t docid) const
 {
-    // TODO: Add memory barrier?
-    auto node_ref = _node_refs[docid];
+    auto node_ref = _node_refs[docid].load_acquire();
     return _nodes.get(node_ref);
 }
 
@@ -65,18 +64,16 @@ HnswIndexBase::get_link_array(uint32_t docid, uint32_t level) const
 {
     auto levels = get_level_array(docid);
     assert(level < levels.size());
-    return _links.get(levels[level]);
+    return _links.get(levels[level].load_acquire());
 }
 
 void
 HnswIndexBase::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links)
 {
     auto links_ref = _links.add(links);
-    // TODO: Add memory barrier?
-    auto node_ref = _node_refs[docid];
+    auto node_ref = _node_refs[docid].load_acquire();
     auto levels = _nodes.get_writable(node_ref);
-    // TODO: Make this change atomic.
-    levels[level] = links_ref;
+    levels[level].store_release(links_ref);
 }
 
 bool
@@ -165,14 +162,14 @@ HnswIndexBase::~HnswIndexBase() = default;
 HnswNode
 HnswIndexBase::get_node(uint32_t docid) const
 {
-    auto node_ref = _node_refs[docid];
+    auto node_ref = _node_refs[docid].load_acquire();
     if (!node_ref.valid()) {
         return HnswNode();
     }
     auto levels = _nodes.get(node_ref);
     HnswNode::LevelArray result;
     for (const auto& links_ref : levels) {
-        auto links = _links.get(links_ref);
+        auto links = _links.get(links_ref.load_acquire());
         HnswNode::LinkArray result_links(links.begin(), links.end());
         std::sort(result_links.begin(), result_links.end());
         result.push_back(result_links);
