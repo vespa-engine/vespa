@@ -5,6 +5,7 @@ import com.google.common.base.Joiner;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.DeploymentSpec.ChangeBlocker;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -41,14 +42,18 @@ import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.net.URI;
+import java.time.Instant;
+import java.time.format.TextStyle;
 import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.conservative;
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.defaultPolicy;
@@ -62,6 +67,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
+import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -569,6 +575,41 @@ class JobControllerApiHandlerHelper {
             stepObject.setBool("declared", stepStatus.isDeclared());
             stepObject.setString("instance", stepStatus.instance().value());
 
+            stepStatus.readyAt(change).ifPresent(ready -> stepObject.setLong("readyAt", ready.toEpochMilli()));
+            stepStatus.readyAt(change)
+                      .filter(controller.clock().instant()::isBefore)
+                      .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
+            stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
+            stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
+            stepStatus.blockedUntil(change).ifPresent(until -> stepObject.setLong("blockedUntil", until.toEpochMilli()));
+
+            if (stepStatus.type() == DeploymentStatus.StepType.instance) {
+                Cursor deployingObject = stepObject.setObject("deploying");
+                if ( ! change.isEmpty()) {
+                    change.platform().ifPresent(version -> deployingObject.setString("platform", version.toString()));
+                    change.application().ifPresent(version -> toSlime(deployingObject.setObject("application"), version));
+                }
+
+                Cursor latestVersionsObject = stepObject.setObject("latestVersions");
+                List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
+                controller.versionStatus().versions().stream()
+                          .filter(version -> version.confidence().equalOrHigherThan(normal))
+                          .max(naturalOrder())
+                          .or(() -> controller.versionStatus().versions().stream().filter(VespaVersion::isSystemVersion).findAny())
+                          .ifPresent(latestPlatform -> {
+                              Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
+                              latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
+                              latestPlatformObject.setLong("at", latestPlatform.committedAt().toEpochMilli());
+                              toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
+                          });
+                application.latestVersion().ifPresent(latestApplication -> {
+                    Cursor latestApplicationObject = latestVersionsObject.setObject("application");
+                    toSlime(latestApplicationObject.setObject("application"), latestApplication);
+                    latestApplicationObject.setLong("at", latestApplication.buildTime().orElse(Instant.EPOCH).toEpochMilli());
+                    toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
+                });
+            }
+
             stepStatus.job().ifPresent(job -> {
                 stepObject.setString("jobName", job.type().jobName());
                 String baseUriForJob = baseUriForDeployments.resolve(baseUriForDeployments.getPath() +
@@ -599,13 +640,6 @@ class JobControllerApiHandlerHelper {
                     Cursor runObject = toRunArray.addObject();
                     toSlime(runObject.setObject("versions"), versions);
                 }
-                stepStatus.readyAt(change).ifPresent(ready -> stepObject.setLong("readyAt", ready.toEpochMilli()));
-                stepStatus.readyAt(change)
-                          .filter(controller.clock().instant()::isBefore)
-                          .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
-                stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
-                stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
-                stepStatus.blockedUntil(change).ifPresent(until -> stepObject.setLong("blockedUntil", until.toEpochMilli()));
 
                 Cursor runsArray = stepObject.setArray("runs");
                 jobStatus.runs().descendingMap().values().stream().limit(10).forEach(run -> {
@@ -626,8 +660,6 @@ class JobControllerApiHandlerHelper {
             });
         }
 
-        // TODO jonmv: Add latest platform and application status.
-
         return new SlimeJsonResponse(slime);
     }
 
@@ -646,5 +678,80 @@ class JobControllerApiHandlerHelper {
         versions.sourceApplication().ifPresent(application -> toSlime(versionsObject.setObject("sourceApplication"), application));
     }
 
+    private static void toSlime(Cursor latestPlatformObject, Controller controller, Application application,
+                                Instance instance, Map<JobType, JobStatus> status, Change change,
+                                List<JobType> productionJobs, Optional<DeploymentInstanceSpec> instanceSpec) {
+        VespaVersion lastVespa = controller.versionStatus().version(controller.systemVersion());
+        VespaVersion.Confidence targetConfidence = instanceSpec.map(spec -> Map.of(defaultPolicy, normal,
+                                                                                   conservative, high)
+                                                                               .getOrDefault(spec.upgradePolicy(), broken))
+                                                               .orElse(normal);
+        for (VespaVersion version : controller.versionStatus().versions())
+            if (   ! version.versionNumber().isAfter(controller.systemVersion())
+                   &&   version.confidence().equalOrHigherThan(targetConfidence))
+                lastVespa = version;
+
+        Version lastPlatform = lastVespa.versionNumber();
+        latestPlatformObject.setString("platform", lastPlatform.toString());
+        latestPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
+        long completed = productionJobs.stream()
+                                       .filter(type -> ! type.isTest())
+                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change.withoutPlatform().withoutPin().with(lastPlatform), instance, type, status.get(type)))
+                                       .count();
+        long total = productionJobs.stream().filter(type -> ! type.isTest()).count();
+        if (Optional.of(lastPlatform).equals(change.platform()))
+            latestPlatformObject.setString("deploying", completed + " of " + total + " complete");
+        else if (completed == total)
+            latestPlatformObject.setString("completed", completed + " of " + total + " complete");
+        else if ( ! application.deploymentSpec().requireInstance(instance.name()).canUpgradeAt(controller.clock().instant())) {
+            latestPlatformObject.setString("blocked", application.deploymentSpec().instances().stream()
+                                                                 .flatMap(spec -> spec.changeBlocker().stream())
+                                                                 .filter(blocker -> blocker.blocksVersions())
+                                                                 .filter(blocker -> blocker.window().includes(controller.clock().instant()))
+                                                                 .findAny().map(blocker -> blocker.window().toString()).get());
+        }
+        else
+            latestPlatformObject.setString("pending",
+                                         instance.change().isEmpty()
+                                         ? "Waiting for upgrade slot"
+                                         : "Waiting for " + instance.change() + " to complete");
+    }
+
+    private static void toSlime(Cursor latestApplicationObject, Application application, Instance instance, Map<JobType, JobStatus> status, Change change, List<JobType> productionJobs, Controller controller) {
+        ApplicationVersion lastApplication = application.latestVersion().get();
+        applicationVersionToSlime(latestApplicationObject.setObject("application"), lastApplication);
+        latestApplicationObject.setLong("at", lastApplication.buildTime().get().toEpochMilli());
+        long completed = productionJobs.stream()
+                                       .filter(type -> ! type.isTest())
+                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change.withoutApplication().with(lastApplication), instance, type, status.get(type)))
+                                       .count();
+        long total = productionJobs.stream().filter(type -> ! type.isTest()).count();
+        if (Optional.of(lastApplication).equals(change.application()))
+            latestApplicationObject.setString("deploying", completed + " of " + total + " complete");
+        else if (completed == total)
+            latestApplicationObject.setString("completed", completed + " of " + total + " complete");
+        else if ( ! application.deploymentSpec().instances().stream()
+                               .allMatch(spec -> spec.canChangeRevisionAt(controller.clock().instant()))) {
+            latestApplicationObject.setString("blocked", application.deploymentSpec().instances().stream()
+                                                                    .flatMap(spec -> spec.changeBlocker().stream())
+                                                                    .filter(blocker -> blocker.blocksRevisions())
+                                                                    .filter(blocker -> blocker.window().includes(controller.clock().instant()))
+                                                                    .findAny().map(blocker -> blocker.window().toString()).get());
+        }
+        else
+            latestApplicationObject.setString("pending", "Waiting for current deployment to complete");
+    }
+
+    private static void toSlime(Cursor blockersArray, Stream<ChangeBlocker> blockers) {
+        blockers.forEach(blocker -> {
+            Cursor blockerObject = blockersArray.addObject();
+            blocker.window().days().stream()
+                   .map(day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH))
+                   .forEach(blockerObject.setArray("days")::addString);
+            blocker.window().hours()
+                   .forEach(blockerObject.setArray("hours")::addLong);
+            blockerObject.setString("zone", blocker.window().zone().toString());
+        });
+    }
 }
 

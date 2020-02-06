@@ -6,19 +6,45 @@
       "type": "instance",
       "dependencies": [],
       "declared": true,
-      "instance": "default"
+      "instance": "default",
+      "readyAt": 0,
+      "deploying": {
+        "application": {
+          "id": 3,
+          "commit": "commit1",
+          "compileVersion": "6.1.0",
+          "sourceUrl": "repository1/tree/commit1"
+        }
+      },
+      "latestVersions": {
+        "platform": {
+          "platform": "7.1.0",
+          "at": 0,
+          "blockers": []
+        },
+        "application": {
+          "application": {
+            "id": 3,
+            "commit": "commit1",
+            "compileVersion": "6.1.0",
+            "sourceUrl": "repository1/tree/commit1"
+          },
+          "at": 1000,
+          "blockers": []
+        }
+      }
     },
     {
       "type": "test",
       "dependencies": [],
       "declared": false,
       "instance": "default",
+      "readyAt": 0,
       "jobName": "system-test",
       "url": "https://some.url:43/instance/default/job/system-test",
       "environment": "test",
       "region": "test.us-east-1",
       "toRun": [],
-      "readyAt": 0,
       "runs": [
         {
           "id": 3,
@@ -215,6 +241,9 @@
       "dependencies": [],
       "declared": true,
       "instance": "default",
+      "readyAt": 4353000,
+      "delayedUntil": 4353000,
+      "coolingDownUntil": 4353000,
       "jobName": "staging-test",
       "url": "https://some.url:43/instance/default/job/staging-test",
       "environment": "staging",
@@ -239,9 +268,6 @@
           }
         }
       ],
-      "readyAt": 4353000,
-      "delayedUntil": 4353000,
-      "coolingDownUntil": 4353000,
       "runs": [
         {
           "id": 5,
@@ -651,6 +677,7 @@
       ],
       "declared": true,
       "instance": "default",
+      "readyAt": 3603000,
       "jobName": "production-us-central-1",
       "url": "https://some.url:43/instance/default/job/production-us-central-1",
       "environment": "prod",
@@ -663,7 +690,6 @@
         "sourceUrl": "repository1/tree/commit1"
       },
       "toRun": [],
-      "readyAt": 3603000,
       "runs": [
         {
           "id": 3,

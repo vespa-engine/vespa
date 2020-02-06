@@ -6,19 +6,45 @@
       "type": "instance",
       "dependencies": [],
       "declared": true,
-      "instance": "instance1"
+      "instance": "instance1",
+      "readyAt": 0,
+      "deploying": {
+        "application": {
+          "id": 4,
+          "commit": "commit1",
+          "compileVersion": "6.1.0",
+          "sourceUrl": "repository1/tree/commit1"
+        }
+      },
+      "latestVersions": {
+        "platform": {
+          "platform": "7.164.0",
+          "at": "(ignore)",
+          "blockers": []
+        },
+        "application": {
+          "application": {
+            "id": 4,
+            "commit": "commit1",
+            "compileVersion": "6.1.0",
+            "sourceUrl": "repository1/tree/commit1"
+          },
+          "at": 1000,
+          "blockers": []
+        }
+      }
     },
     {
       "type": "test",
       "dependencies": [],
       "declared": false,
       "instance": "instance1",
+      "readyAt": 0,
       "jobName": "system-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test",
       "environment": "test",
       "region": "test.us-east-1",
       "toRun": [],
-      "readyAt": 0,
       "runs": [
         {
           "id": 2,
@@ -142,12 +168,12 @@
       "dependencies": [],
       "declared": false,
       "instance": "instance1",
+      "readyAt": 0,
       "jobName": "staging-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test",
       "environment": "staging",
       "region": "staging.us-east-3",
       "toRun": [],
-      "readyAt": 0,
       "runs": [
         {
           "id": 2,
@@ -473,19 +499,37 @@
         5
       ],
       "declared": true,
-      "instance": "instance2"
+      "instance": "instance2",
+      "deploying": {},
+      "latestVersions": {
+        "platform": {
+          "platform": "7.164.0",
+          "at": "(ignore)",
+          "blockers": []
+        },
+        "application": {
+          "application": {
+            "id": 4,
+            "commit": "commit1",
+            "compileVersion": "6.1.0",
+            "sourceUrl": "repository1/tree/commit1"
+          },
+          "at": 1000,
+          "blockers": []
+        }
+      }
     },
     {
       "type": "test",
       "dependencies": [],
       "declared": false,
       "instance": "instance2",
+      "readyAt": 0,
       "jobName": "system-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/system-test",
       "environment": "test",
       "region": "test.us-east-1",
       "toRun": [],
-      "readyAt": 0,
       "runs": []
     },
     {
@@ -493,12 +537,12 @@
       "dependencies": [],
       "declared": false,
       "instance": "instance2",
+      "readyAt": 0,
       "jobName": "staging-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/staging-test",
       "environment": "staging",
       "region": "staging.us-east-3",
       "toRun": [],
-      "readyAt": 0,
       "runs": []
     },
     {
