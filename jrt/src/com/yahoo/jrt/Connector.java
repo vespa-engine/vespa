@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 class Connector {
 
-    private final ExecutorService executor = new ThreadPoolExecutor(1, 8, 10L, TimeUnit.MILLISECONDS,
+    private final ExecutorService executor = new ThreadPoolExecutor(1, 64, 1L, TimeUnit.SECONDS,
                                                                     new LinkedBlockingQueue<>(),
                                                                     ThreadFactoryFactory.getDaemonThreadFactory("jrt.connector"));
 
