@@ -24,17 +24,8 @@ public class TestRunnerHandlerTest {
         Log log = new Log();
         LogRecord record = log.getLogRecord();
         String trace = log.getTrace();
-        assertEquals("[{\"id\":1,\"at\":2,\"type\":\"info\",\"message\":\"Hello.\\n" + trace + "\"}]",
-                     new String(SlimeUtils.toJsonBytes(TestRunnerHandler.logToSlime(Collections.singletonList(record)))));
-    }
-
-    @Test
-    public void log2Serialization() throws IOException {
-        Log log = new Log();
-        LogRecord record = log.getLogRecord();
-        String trace = log.getTrace();
         assertEquals("{\"logRecords\":[{\"id\":1,\"at\":2,\"type\":\"info\",\"message\":\"Hello.\\n" + trace + "\"}]}",
-                     new String(SlimeUtils.toJsonBytes(TestRunnerHandler.log2ToSlime(Collections.singletonList(record)))));
+                     new String(SlimeUtils.toJsonBytes(TestRunnerHandler.logToSlime(Collections.singletonList(record)))));
     }
 
     private static class Log {
