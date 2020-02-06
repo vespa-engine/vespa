@@ -664,8 +664,7 @@ class JobControllerApiHandlerHelper {
     }
 
     private static void toSlime(Cursor versionObject, ApplicationVersion version) {
-        version.buildNumber().ifPresent(id -> versionObject.setLong("id", id));
-        version.source().ifPresent(source -> versionObject.setString("commit", source.commit()));
+        version.buildNumber().ifPresent(id -> versionObject.setLong("build", id));
         version.compileVersion().ifPresent(platform -> versionObject.setString("compileVersion", platform.toFullString()));
         version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));
         version.commit().ifPresent(commit -> versionObject.setString("commit", commit));

@@ -10,10 +10,10 @@
       "readyAt": 0,
       "deploying": {
         "application": {
-          "id": 4,
-          "commit": "commit1",
+          "build": 4,
           "compileVersion": "6.1.0",
-          "sourceUrl": "repository1/tree/commit1"
+          "sourceUrl": "repository1/tree/commit1",
+          "commit": "commit1"
         }
       },
       "latestVersions": {
@@ -24,10 +24,10 @@
         },
         "application": {
           "application": {
-            "id": 4,
-            "commit": "commit1",
+            "build": 4,
             "compileVersion": "6.1.0",
-            "sourceUrl": "repository1/tree/commit1"
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "at": 1000,
           "blockers": []
@@ -54,10 +54,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -112,10 +112,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
+              "build": 1,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -183,10 +183,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -257,10 +257,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
+              "build": 1,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -340,10 +340,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -358,10 +358,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
+              "build": 1,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -397,10 +397,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -414,9 +414,9 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
-              "sourceUrl": "repository1/tree/commit1"
+              "build": 1,
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -452,10 +452,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -469,10 +469,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 1,
-              "commit": "commit1",
+              "build": 1,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           },
           "steps": [
@@ -509,10 +509,10 @@
         },
         "application": {
           "application": {
-            "id": 4,
-            "commit": "commit1",
+            "build": 4,
             "compileVersion": "6.1.0",
-            "sourceUrl": "repository1/tree/commit1"
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "at": 1000,
           "blockers": []
@@ -561,10 +561,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -587,10 +587,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
@@ -613,10 +613,10 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "id": 4,
-              "commit": "commit1",
+              "build": 4,
               "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             }
           }
         }
