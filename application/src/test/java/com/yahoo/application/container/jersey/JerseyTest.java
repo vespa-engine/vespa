@@ -66,11 +66,10 @@ public class JerseyTest {
 
     @Test
     public void jersey_resources_in_provided_dependencies_can_be_invoked_from_application() throws Exception {
-        BundleClasspathMapping providedDependency = new BundleClasspathMapping(bundleSymbolicName,
-                Arrays.asList(testClassesDirectory));
+        BundleClasspathMapping providedDependency =
+                new BundleClasspathMapping(bundleSymbolicName, List.of(testClassesDirectory));
 
-        save(new ProjectBundleClassPaths(new BundleClasspathMapping("main", emptyList()),
-                Arrays.asList(providedDependency)));
+        save(new ProjectBundleClassPaths(new BundleClasspathMapping("main", emptyList()), List.of(providedDependency)));
         with_jersey_resources(emptyList(), httpGetter -> assertResourcesResponds(classPathResources, httpGetter));
     }
 
@@ -113,16 +112,16 @@ public class JerseyTest {
     }
 
     private interface ThrowingConsumer<T> {
-        public void accept(T arg) throws Exception;
+        void accept(T arg) throws Exception;
     }
 
     private interface HttpGetter {
-        public HttpResponse get(String path) throws Exception;
+        HttpResponse get(String path) throws Exception;
     }
 
     @SuppressWarnings("try") // jdisc unreferenced inside try
     private void with_jersey_resources(List<String> packagesToScan, ThrowingConsumer<HttpGetter> f) throws Exception {
-        StringBuffer packageElements = new StringBuffer();
+        StringBuilder packageElements = new StringBuilder();
         for (String p : packagesToScan) {
             packageElements.append("<package>");
             packageElements.append(p);
@@ -140,6 +139,7 @@ public class JerseyTest {
                         "<http>" + //
                         "<server id=\"mainServer\" port=\"0\" />" + //
                         "</http>" + //
+                        "<accesslog type=\"disabled\" />" +
                         "</container>" + //
                         "</services>", //
                 Networking.enable)) {
@@ -177,8 +177,8 @@ public class JerseyTest {
     }
 
     public void saveMainBundleClassPathMappings(String classPathElement) throws Exception {
-        BundleClasspathMapping mainBundleClassPathMappings = new BundleClasspathMapping(bundleSymbolicName,
-                Arrays.asList(classPathElement));
+        BundleClasspathMapping mainBundleClassPathMappings =
+                new BundleClasspathMapping(bundleSymbolicName, List.of(classPathElement));
         save(new ProjectBundleClassPaths(mainBundleClassPathMappings, emptyList()));
     }
 
