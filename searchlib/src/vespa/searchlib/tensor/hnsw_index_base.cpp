@@ -32,16 +32,24 @@ HnswIndexBase::make_default_link_store_config()
                                                  small_page_size, min_num_arrays_for_new_buffer, alloc_grow_factor).enable_free_lists(true);
 }
 
-void
+uint32_t
+HnswIndexBase::max_links_for_level(uint32_t level) const
+{
+    return (level == 0) ? _cfg.max_links_at_level_0() : _cfg.max_links_at_hierarchic_levels();
+}
+
+uint32_t
 HnswIndexBase::make_node_for_document(uint32_t docid)
 {
+    uint32_t max_level = _level_generator.max_level();
     // TODO: Add capping on num_levels
-    uint32_t num_levels = _level_generator.max_level() + 1;
+    uint32_t num_levels = max_level + 1;
     // Note: The level array instance lives as long as the document is present in the index.
     LevelArray levels(num_levels, EntryRef());
     auto node_ref = _nodes.add(levels);
     // TODO: Add memory barrier?
     _node_refs[docid] = node_ref;
+    return max_level;
 }
 
 HnswIndexBase::LevelArrayRef
@@ -147,7 +155,8 @@ HnswIndexBase::HnswIndexBase(const DocVectorAccess& vectors, RandomLevelGenerato
       _node_refs(),
       _nodes(make_default_node_store_config()),
       _links(make_default_link_store_config()),
-      _entry_docid(0)
+      _entry_docid(0), // Note that docid 0 is reserved and never used
+      _entry_level(0)
 {
 }
 

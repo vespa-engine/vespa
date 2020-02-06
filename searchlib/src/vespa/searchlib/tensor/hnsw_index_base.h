@@ -84,11 +84,13 @@ protected:
     NodeStore _nodes;
     LinkStore _links;
     uint32_t _entry_docid;
+    uint32_t _entry_level;
 
     static search::datastore::ArrayStoreConfig make_default_node_store_config();
     static search::datastore::ArrayStoreConfig make_default_link_store_config();
 
-    void make_node_for_document(uint32_t docid);
+    uint32_t max_links_for_level(uint32_t level) const;
+    uint32_t make_node_for_document(uint32_t docid);
     LevelArrayRef get_level_array(uint32_t docid) const;
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const;
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links);
@@ -113,6 +115,9 @@ public:
     ~HnswIndexBase() override;
 
     // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)
+
+    uint32_t get_entry_docid() const { return _entry_docid; }
+    uint32_t get_entry_level() const { return _entry_level; }
 
     // Should only be used by unit tests.
     HnswNode get_node(uint32_t docid) const;
