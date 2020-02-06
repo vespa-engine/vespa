@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "doc_vector_access.h"
 #include "hnsw_index_base.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
@@ -9,6 +10,9 @@
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::tensor {
+
+class DocVectorAccess;
+class RandomLevelGenerator;
 
 /**
  * Concrete implementation of a hierarchical navigable small world graph (HNSW)
@@ -27,11 +31,16 @@ private:
         return _vectors.get_vector(docid).template typify<FloatType>();
     }
 
+    double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const override;
     double calc_distance(const Vector& lhs, uint32_t rhs_docid) const;
+    /**
+     * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
+     */
+    HnswCandidate find_nearest_in_layer(const Vector& input, const HnswCandidate& entry_point, uint32_t level);
     void search_layer(const Vector& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level);
 
 public:
-    HnswIndex(const DocVectorAccess& vectors, const Config& cfg);
+    HnswIndex(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg);
     ~HnswIndex() override;
 
     void add_document(uint32_t docid) override;

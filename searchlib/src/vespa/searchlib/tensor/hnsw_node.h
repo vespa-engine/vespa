@@ -24,6 +24,7 @@ public:
     HnswNode(const LevelArray& levels_in) : _levels(levels_in) {}
     bool empty() const { return _levels.empty(); }
     size_t size() const { return _levels.size(); }
+    const LevelArray& levels() const { return _levels; }
     const LinkArray& level(size_t idx) const { return _levels[idx]; }
     bool operator==(const HnswNode& rhs) {
         return _levels == rhs._levels;
