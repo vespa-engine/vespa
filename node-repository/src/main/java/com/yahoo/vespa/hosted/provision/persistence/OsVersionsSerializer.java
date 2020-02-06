@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
 
 import java.io.IOException;

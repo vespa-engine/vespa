@@ -17,7 +17,7 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceConfirmation;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceValidator;
