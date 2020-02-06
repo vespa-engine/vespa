@@ -5,13 +5,20 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.jrt.Request;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.Slime;
+import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Represents version 3 config request for config clients. Provides methods for inspecting request and response
@@ -21,7 +28,12 @@ import java.util.Optional;
  *
  * @author Ulf Lilleengen
  */
-public class JRTClientConfigRequestV3 extends SlimeClientConfigRequest {
+public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
+
+    protected static final Logger log = Logger.getLogger(JRTClientConfigRequestV3.class.getName());
+    protected final SlimeRequestData requestData;
+    protected final Request request;
+    private final SlimeResponseData responseData;
 
     protected JRTClientConfigRequestV3(ConfigKey<?> key,
                                        String hostname,
@@ -32,15 +44,38 @@ public class JRTClientConfigRequestV3 extends SlimeClientConfigRequest {
                                        Trace trace,
                                        CompressionType compressionType,
                                        Optional<VespaVersion> vespaVersion) {
-        super(key, hostname, defSchema, configMd5, generation, timeout, trace, compressionType, vespaVersion);
+        Slime data = SlimeRequestData.encodeRequest(key,
+                                                    hostname,
+                                                    defSchema,
+                                                    configMd5,
+                                                    generation,
+                                                    timeout,
+                                                    trace,
+                                                    getProtocolVersion(),
+                                                    compressionType,
+                                                    vespaVersion);
+        Request jrtReq = new Request(getJRTMethodName());
+        jrtReq.parameters().add(new StringValue(encodeAsUtf8String(data, true)));
+
+        this.requestData = new SlimeRequestData(jrtReq, data);
+        this.responseData = new SlimeResponseData(jrtReq);
+        this.request = jrtReq;
     }
 
-    @Override
+    protected static String encodeAsUtf8String(Slime data, boolean compact) {
+        ByteArrayOutputStream baos = new NoCopyByteArrayOutputStream();
+        try {
+            new JsonFormat(compact).encode(baos, data);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to encode config request", e);
+        }
+        return Utf8.toString(baos.toByteArray());
+    }
+
     protected String getJRTMethodName() {
         return JRTMethods.configV3getConfigMethodName;
     }
 
-    @Override
     protected boolean checkReturnTypes(Request request) {
         return JRTMethods.checkV3ReturnTypes(request);
     }
@@ -133,4 +168,147 @@ public class JRTClientConfigRequestV3 extends SlimeClientConfigRequest {
         return requestData.getVespaVersion();
     }
 
+    public ConfigKey<?> getConfigKey() {
+        return requestData.getConfigKey();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("request='").append(getConfigKey())
+                .append(",").append(getClientHostName())
+                .append(",").append(getRequestConfigMd5())
+                .append(",").append(getRequestGeneration())
+                .append(",").append(getTimeout())
+                .append(",").append(getVespaVersion().map(VespaVersion::toString).orElse(""))
+                .append("'\n");
+        sb.append("response='").append(getNewConfigMd5())
+                .append(",").append(getNewGeneration())
+                .append(",").append(responseIsInternalRedeploy())
+                .append("'\n");
+        return sb.toString();
+    }
+
+    @Override
+    public String getClientHostName() {
+        return requestData.getClientHostName();
+    }
+
+    @Override
+    public Request getRequest() {
+        return request;
+    }
+
+    @Override
+    public int errorCode() {
+        return request.errorCode();
+    }
+
+    @Override
+    public String errorMessage() {
+        return request.errorMessage();
+    }
+
+    @Override
+    public String getShortDescription() {
+        return toString();
+    }
+
+    @Override
+    public boolean hasUpdatedGeneration() {
+        long prevGen = getRequestGeneration();
+        long newGen = getNewGeneration();
+        return ConfigUtils.isGenerationNewer(newGen, prevGen);
+    }
+
+    @Override
+    public long getTimeout() {
+        return requestData.getTimeout();
+    }
+
+    protected String newConfMd5() {
+        String newMd5 = getNewConfigMd5();
+        if ("".equals(newMd5)) return getRequestConfigMd5();
+        return newMd5;
+    }
+
+    protected long newGen() {
+        long newGen = getNewGeneration();
+        if (newGen == 0) return getRequestGeneration();
+        return newGen;
+    }
+
+    @Override
+    public DefContent getDefContent() {
+        return requestData.getSchema();
+    }
+
+    @Override
+    public boolean isError() {
+        return request.isError();
+    }
+
+    @Override
+    public boolean containsPayload() {
+        return false;
+    }
+
+    @Override
+    public boolean hasUpdatedConfig() {
+        String respMd5 = getNewConfigMd5();
+        return !respMd5.equals("") && !getRequestConfigMd5().equals(respMd5);
+    }
+
+    @Override
+    public Trace getResponseTrace() {
+        return responseData.getResponseTrace();
+    }
+
+    @Override
+    public String getRequestConfigMd5() {
+        return requestData.getRequestConfigMd5();
+    }
+
+    @Override
+    public boolean validateResponse() {
+        if (request.isError()) {
+            return false;
+        } else if (request.returnValues().size() == 0) {
+            return false;
+        } else if (!checkReturnTypes(request)) {
+            log.warning("Invalid return types for config response: " + errorMessage());
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean validateParameters() {
+        int errorCode = RequestValidation.validateRequest(this);
+        return (errorCode == 0);
+    }
+
+    @Override
+    public String getNewConfigMd5() {
+        return responseData.getResponseConfigMd5();
+    }
+
+    @Override
+    public long getNewGeneration() {
+        return responseData.getResponseConfigGeneration();
+    }
+
+    @Override
+    public boolean responseIsInternalRedeploy() {
+        return responseData.getResponseInternalRedeployment();
+    }
+
+    @Override
+    public long getRequestGeneration() {
+        return requestData.getRequestGeneration();
+    }
+
+    protected SlimeResponseData getResponseData() {
+        return responseData;
+    }
 }
