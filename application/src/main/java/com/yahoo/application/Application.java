@@ -587,6 +587,7 @@ public final class Application implements AutoCloseable {
                     xml.println("</search>");
                 }
 
+                xml.println("<accesslog type=\"disabled\" />");
                 xml.println("</container>");
             }
 

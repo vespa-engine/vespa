@@ -164,6 +164,7 @@ public class ContainerTest {
                         "<http>\n" + //
                         "<server id=\"main\" port=\"9999\" />\n" + //
                         "</http>\n" + //
+                        "<accesslog type=\"disabled\" />" +
                         "</container>";
         return JDisc.fromServicesXml(xml, Networking.disable);
     }
