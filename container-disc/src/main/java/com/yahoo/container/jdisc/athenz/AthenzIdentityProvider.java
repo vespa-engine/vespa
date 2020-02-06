@@ -16,6 +16,8 @@ public interface AthenzIdentityProvider {
     SSLContext getRoleSslContext(String domain, String role);
     String getRoleToken(String domain);
     String getRoleToken(String domain, String role);
+    String getAccessToken(String domain);
+    String getAccessToken(String domain, List<String> roles);
     List<X509Certificate> getIdentityCertificate();
     PrivateKey getPrivateKey();
 }

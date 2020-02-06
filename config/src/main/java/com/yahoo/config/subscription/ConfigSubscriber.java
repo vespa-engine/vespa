@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.toList;
  * {@link #subscribe(Class, String)} on the configs needed, call {@link #nextConfig(long)} and get the config from the
  * {@link ConfigHandle} which {@link #subscribe(Class, String)} returned.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class ConfigSubscriber implements AutoCloseable {
 

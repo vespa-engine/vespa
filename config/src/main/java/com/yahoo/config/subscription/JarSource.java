@@ -5,8 +5,7 @@ import java.util.jar.JarFile;
 
 /**
  * Source specifying config as a jar file entry
- * @author vegardh
- * @since 5.1
+ * @author Vegard Havdal
  *
  */
 public class JarSource implements ConfigSource {

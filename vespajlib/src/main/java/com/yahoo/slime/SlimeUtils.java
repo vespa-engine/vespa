@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config;
-
-import com.yahoo.slime.*;
+package com.yahoo.slime;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,8 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
- * Extra utilities/operations on slime trees that we would like to have as part of slime in the future, but
- * which resides here until we have a better place to put it.
+ * Extra utilities/operations on slime trees.
  *
  * @author Ulf Lilleengen
  */
@@ -20,12 +17,7 @@ public class SlimeUtils {
         if (from.type() != Type.OBJECT) {
             throw new IllegalArgumentException("Cannot copy object: " + from);
         }
-        from.traverse(new ObjectTraverser() {
-            @Override
-            public void field(String name, Inspector inspector) {
-                setObjectEntry(inspector, name, to);
-            }
-        });
+        from.traverse((ObjectTraverser) (name, inspector) -> setObjectEntry(inspector, name, to));
 
     }
 
@@ -61,13 +53,7 @@ public class SlimeUtils {
     }
 
     private static void copyArray(Inspector from, final Cursor to) {
-        from.traverse(new ArrayTraverser() {
-            @Override
-            public void entry(int i, Inspector inspector) {
-                addValue(inspector, to);
-            }
-        });
-
+        from.traverse((ArrayTraverser) (i, inspector) -> addValue(inspector, to));
     }
 
     private static void addValue(Inspector from, Cursor to) {

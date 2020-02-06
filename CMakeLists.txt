@@ -13,6 +13,9 @@ vespa_use_default_cxx_compiler()
 vespa_use_default_java_home()
 
 project(vespa CXX C)
+vespa_use_default_vespa_unprivileged()
+vespa_use_default_cmake_install_prefix()
+vespa_use_default_vespa_user()
 vespa_use_default_build_settings()
 
 # allows import of project in CLion on OSX

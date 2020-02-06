@@ -6,12 +6,12 @@ import com.yahoo.config.provision.ApplicationId;
 import java.util.List;
 
 /**
- * Generates a certificate.
+ * Generates an endpoint certificate for an application instance.
  *
  * @author andreer
  */
-public interface ApplicationCertificateProvider {
+public interface EndpointCertificateProvider  {
 
-    ApplicationCertificate requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames);
+    EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames);
 
 }

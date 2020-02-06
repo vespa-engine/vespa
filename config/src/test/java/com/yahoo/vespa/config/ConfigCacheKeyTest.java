@@ -12,6 +12,7 @@ import static org.junit.Assert.*;
  * @author hmusum
  */
 public class ConfigCacheKeyTest {
+
     @Test
     public void testConfigCacheKey() {
         final String defMd5 = "md5";

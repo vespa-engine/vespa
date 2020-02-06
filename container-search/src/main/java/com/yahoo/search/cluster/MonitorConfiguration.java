@@ -30,7 +30,7 @@ public class MonitorConfiguration  {
      * The number of milliseconds to attempt to complete a request
      * before giving up
      */
-    private long requestTimeout = 5000;
+    private final long requestTimeout = 5000;
 
     /**
      * The number of milliseconds a node is allowed to fail before we

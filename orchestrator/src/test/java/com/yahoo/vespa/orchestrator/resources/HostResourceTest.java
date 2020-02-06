@@ -16,6 +16,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Host;
@@ -90,6 +91,8 @@ public class HostResourceTest {
                                 makeServiceClusterSet())));
     }
 
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+
     private static final InstanceLookupService alwaysEmptyInstanceLookUpService = new InstanceLookupService() {
         @Override
         public Optional<ApplicationInstance> findInstanceById(
@@ -129,23 +132,23 @@ public class HostResourceTest {
         }
     }
 
-    private static final OrchestratorImpl alwaysAllowOrchestrator = new OrchestratorImpl(
+    private final OrchestratorImpl alwaysAllowOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, mockInstanceLookupService,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
-            applicationApiFactory
-    );
+            applicationApiFactory,
+            flagSource);
 
-    private static final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
+    private final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyInstanceLookUpService,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
-            applicationApiFactory
-    );
+            applicationApiFactory,
+            flagSource);
 
     private final UriInfo uriInfo = mock(UriInfo.class);
 
@@ -247,7 +250,8 @@ public class HostResourceTest {
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,mockInstanceLookupService,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
-                applicationApiFactory);
+                applicationApiFactory,
+                flagSource);
 
         try {
             HostResource hostResource = new HostResource(alwaysRejectResolver, uriInfo);
@@ -267,7 +271,8 @@ public class HostResourceTest {
                 mockInstanceLookupService,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
-                applicationApiFactory);
+                applicationApiFactory,
+                flagSource);
 
         try {
             HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysRejectResolver);

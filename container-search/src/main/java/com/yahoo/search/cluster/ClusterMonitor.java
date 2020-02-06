@@ -38,6 +38,9 @@ public class ClusterMonitor<T> {
     /** A map from Node to corresponding MonitoredNode */
     private final Map<T, TrafficNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
+    /** @deprecated It is not advised to start the monitoring thread in the constructor.
+     * Use ClusterMonitor(NodeManager manager, false) and explicit start(). */
+    @Deprecated
     public ClusterMonitor(NodeManager<T> manager) {
         this(manager, true);
     }
@@ -46,6 +49,12 @@ public class ClusterMonitor<T> {
         nodeManager = manager;
         monitorThread = new MonitorThread("search.clustermonitor");
         if (startPingThread) {
+            monitorThread.start();
+        }
+    }
+
+    public void start() {
+        if ( ! monitorThread.isAlive()) {
             monitorThread.start();
         }
     }
@@ -101,7 +110,7 @@ public class ClusterMonitor<T> {
     public void ping(Executor executor) {
         for (Iterator<BaseNodeMonitor<T>> i = nodeMonitorIterator(); i.hasNext() && !closed.get(); ) {
             BaseNodeMonitor<T> monitor= i.next();
-            nodeManager.ping(monitor.getNode(), executor); // Cause call to failed or responded
+            nodeManager.ping(this, monitor.getNode(), executor); // Cause call to failed or responded
         }
         if (closed.get()) return; // Do nothing to change state if close has started.
         nodeManager.pingIterationCompleted();

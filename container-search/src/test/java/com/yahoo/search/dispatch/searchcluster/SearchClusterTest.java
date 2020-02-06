@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -34,6 +35,7 @@ public class SearchClusterTest {
         final int nodesPerGroup;
         final VipStatus vipStatus;
         final SearchCluster searchCluster;
+        final ClusterMonitor clusterMonitor;
         final List<AtomicInteger> numDocsPerNode;
         List<AtomicInteger> pingCounts;
 
@@ -57,11 +59,10 @@ public class SearchClusterTest {
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
-            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPerGroup, vipStatus);
-        }
-
-        void startMonitoring() {
-            searchCluster.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
+            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPerGroup,
+                                              vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
+            clusterMonitor = new ClusterMonitor(searchCluster, false);
+            searchCluster.addMonitoring(clusterMonitor);
         }
 
         private int maxPingCount() {
@@ -89,7 +90,7 @@ public class SearchClusterTest {
             int atLeast = maxPingCount() + 1;
             while (minPingCount < atLeast) {
                 ExecutorService executor = Executors.newCachedThreadPool();
-                searchCluster.clusterMonitor().ping(executor);
+                clusterMonitor.ping(executor);
                 executor.shutdown();
                 try {
                     boolean completed = executor.awaitTermination(120, TimeUnit.SECONDS);
@@ -106,26 +107,28 @@ public class SearchClusterTest {
 
         @Override
         public void close() {
-            searchCluster.shutDown();
+            clusterMonitor.shutdown();
         }
 
         static class Factory implements PingFactory {
 
-            static class Pinger implements Callable<Pong> {
+            static class PingJob implements Pinger {
 
                 private final AtomicInteger numDocs;
                 private final AtomicInteger pingCount;
-                Pinger(AtomicInteger numDocs, AtomicInteger pingCount) {
+                private final PongHandler pongHandler;
+                PingJob(AtomicInteger numDocs, AtomicInteger pingCount, PongHandler pongHandler) {
                     this.numDocs = numDocs;
                     this.pingCount = pingCount;
+                    this.pongHandler = pongHandler;
                 }
                 @Override
-                public Pong call() {
+                public void ping() {
                     int docs = numDocs.get();
-                    pingCount.incrementAndGet();
-                    return (docs < 0)
+                    pongHandler.handle ((docs < 0)
                             ? new Pong(ErrorMessage.createBackendCommunicationError("Negative numDocs = " + docs))
-                            : new Pong(docs);
+                            : new Pong(docs));
+                    pingCount.incrementAndGet();
                 }
             }
 
@@ -140,9 +143,9 @@ public class SearchClusterTest {
             }
 
             @Override
-            public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
+            public Pinger createPinger(Node node, ClusterMonitor<Node> monitor, PongHandler pongHandler) {
                 int index = node.group() * numPerGroup + node.key();
-                return new Pinger(activeDocs.get(index), pingCounts.get(index));
+                return new PingJob(activeDocs.get(index), pingCounts.get(index), pongHandler);
             }
         }
 
@@ -154,7 +157,6 @@ public class SearchClusterTest {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
 
             assertFalse(test.vipStatus.isInRotation());
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
         }
@@ -163,7 +165,6 @@ public class SearchClusterTest {
     @Test
     public void requireThatZeroDocsAreFine() {
         try (State test = new State("cluster.1", 2, "a", "b")) {
-            test.startMonitoring();
             test.waitOneFullPingRound();
 
             assertTrue(test.vipStatus.isInRotation());
@@ -185,7 +186,6 @@ public class SearchClusterTest {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
         }
@@ -197,7 +197,6 @@ public class SearchClusterTest {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
             test.numDocsPerNode.get(0).set(-1);
@@ -210,7 +209,6 @@ public class SearchClusterTest {
     public void requireThatVipStatusDownWhenLocalIsDown() {
         try (State test = new State("cluster.1",1,HostName.getLocalhost(), "b")) {
 
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
@@ -246,7 +244,6 @@ public class SearchClusterTest {
         List<String> nodeNames = generateNodeNames(numGroups, nodesPerGroup);
 
         try (State test = new State("cluster.1", nodesPerGroup, nodeNames)) {
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
@@ -285,7 +282,6 @@ public class SearchClusterTest {
         List<String> nodeNames = generateNodeNames(numGroups, nodesPerGroup);
 
         try (State test = new State("cluster.1", nodesPerGroup, nodeNames)) {
-            test.startMonitoring();
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
@@ -309,6 +305,20 @@ public class SearchClusterTest {
     public void requireThatVipStatusUpRequireOnlyOneOnlineNode() {
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(1, 2);
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(3, 3);
+    }
+
+    @Test
+    public void requireThatPingSequenceIsUpHeld() {
+        Node node = new Node(1, "n", 1);
+        assertEquals(1, node.createPingSequenceId());
+        assertEquals(2, node.createPingSequenceId());
+        assertEquals(0, node.getLastReceivedPongId());
+        assertTrue(node.isLastReceivedPong(2));
+        assertEquals(2, node.getLastReceivedPongId());
+        assertFalse(node.isLastReceivedPong(1));
+        assertFalse(node.isLastReceivedPong(2));
+        assertTrue(node.isLastReceivedPong(3));
+        assertEquals(3, node.getLastReceivedPongId());
     }
 
 }

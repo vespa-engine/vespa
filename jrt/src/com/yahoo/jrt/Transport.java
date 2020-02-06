@@ -46,7 +46,7 @@ public class Transport {
             this.fatalHandler = fatalHandler; // NB: this must be set first
         }
         this.cryptoEngine = cryptoEngine;
-        connector = new Connector(this);
+        connector = new Connector();
         worker = new Worker(this);
         runCnt = new AtomicInteger(numThreads);
         for (int i = 0; i < numThreads; ++i) {
@@ -162,7 +162,7 @@ public class Transport {
      * @return this object, to enable chaining with join
      **/
     public Transport shutdown() {
-        connector.shutdown().waitDone();
+        connector.shutdown().join();
         for (TransportThread thread: threads) {
             thread.shutdown();
         }
@@ -181,7 +181,6 @@ public class Transport {
     void notifyDone(TransportThread self) {
         if (runCnt.decrementAndGet() == 0) {
             worker.shutdown().join();
-            connector.exit().join();
             try { cryptoEngine.close(); } catch (Exception e) {}
         }
     }

@@ -585,7 +585,7 @@ TEST(DocumentTest, testReadSerializedFile)
 
     EXPECT_TRUE(buf2.empty());
     buf2.rp(0);
-    EXPECT_EQ(len - 13, buf2.size()); // Size is smaller as we are merging to one chunk.
+    EXPECT_EQ(len, buf2.size());
 
     doc2.setValue("stringfield", StringFieldValue("hei"));
 

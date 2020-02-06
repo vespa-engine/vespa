@@ -24,7 +24,6 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -36,7 +35,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.3
  */
 public abstract class JRTConfigRequestBase {
 
@@ -54,19 +52,19 @@ public abstract class JRTConfigRequestBase {
     protected JRTServerConfigRequest serverReq;
 
     @Before
-    public void setupRequest() throws IOException {
+    public void setupRequest() {
         clientReq = createReq();
         serverReq = createReq(clientReq.getRequest());
         assertTrue(serverReq.validateParameters());
     }
 
-    private JRTClientConfigRequest createReq() throws IOException {
+    private JRTClientConfigRequest createReq() {
         trace = Trace.createNew(3, new ManualClock());
         trace.trace(1, "hei");
         return createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace);
     }
 
-    private JRTClientConfigRequest createReq(Payload payload) throws IOException {
+    private JRTClientConfigRequest createReq(Payload payload) {
         trace = Trace.createNew(3, new ManualClock());
         trace.trace(1, "hei");
         return createReq(defName, defNamespace, defMd5, hostname, configId, ConfigUtils.getMd5(payload.getData()), currentGeneration, timeout, trace);
@@ -195,7 +193,7 @@ public abstract class JRTConfigRequestBase {
     }
 
     @Test
-    public void payload_is_empty() throws IOException {
+    public void payload_is_empty() {
         Payload payload = Payload.from(ConfigPayload.empty());
         clientReq = createReq(payload);
         serverReq = createReq(clientReq.getRequest());
@@ -258,7 +256,7 @@ public abstract class JRTConfigRequestBase {
     protected abstract String getProtocolVersion();
 
     @Test
-    public void created_from_raw() throws IOException {
+    public void created_from_raw() {
         RawConfig rawConfig = new RawConfig(new ConfigKey<>(defName, configId, defNamespace), defMd5);
         long serverTimeout = 100000L;
         JRTClientConfigRequest request = createFromRaw(rawConfig, serverTimeout, Trace.createNew(9));
@@ -269,9 +267,8 @@ public abstract class JRTConfigRequestBase {
         assertThat(serverRequest.getDefContent().asList(), is(rawConfig.getDefContent()));
     }
 
-
     @Test
-    public void parameters_are_validated() throws IOException {
+    public void parameters_are_validated() {
         assertTrue(serverReq.validateParameters());
         assertValidationFail(createReq("35#$#!$@#", defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace));
         assertValidationFail(createReq(defName, "abcd.o#$*(!&$", defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace));

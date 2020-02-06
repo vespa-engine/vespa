@@ -1,75 +1,43 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import com.yahoo.concurrent.ThreadFactoryFactory;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 class Connector {
 
-    private class Run implements Runnable {
-        public void run() {
-            try {
-                Connector.this.run();
-            } catch (Throwable problem) {
-                parent.handleFailure(problem, Connector.this);
-            }
-        }
+    private final ExecutorService executor = new ThreadPoolExecutor(1, 64, 1L, TimeUnit.SECONDS,
+                                                                    new LinkedBlockingQueue<>(),
+                                                                    ThreadFactoryFactory.getDaemonThreadFactory("jrt.connector"));
+
+    private void connect(Connection conn) {
+        conn.transportThread().addConnection(conn.connect());
     }
 
-    private Thread      thread = new Thread(new Run(), "<jrt-connector>");
-    private Transport   parent;
-    private ThreadQueue connectQueue = new ThreadQueue();
-    private boolean     done = false;
-    private boolean     exit = false;
-
-    public Connector(Transport parent) {
-        this.parent = parent;
-        thread.setDaemon(true);
-        thread.start();
-    }
-
-    public void connectLater(Connection c) {
-        if ( ! connectQueue.enqueue(c)) {
-            c.transportThread().addConnection(c);
-        }
-    }
-
-    private void run() {
+    public void connectLater(Connection conn) {
         try {
-            while (true) {
-                Connection conn = (Connection) connectQueue.dequeue();
-                conn.transportThread().addConnection(conn.connect());
-            }
-        } catch (EndOfQueueException e) {}
-        synchronized (this) {
-            done = true;
-            notifyAll();
-            while (!exit) {
-                try { wait(); } catch (InterruptedException x) {}
-            }
+            executor.execute(() -> connect(conn));
+        } catch (RejectedExecutionException e) {
+            conn.transportThread().addConnection(conn);
         }
     }
 
     public Connector shutdown() {
-        connectQueue.close();
-        return this;
-    }
-
-    public synchronized void waitDone() {
-        while (!done) {
-            try { wait(); } catch (InterruptedException x) {}
-        }
-    }
-
-    public synchronized Connector exit() {
-        exit = true;
-        notifyAll();
+        executor.shutdown();
         return this;
     }
 
     public void join() {
         while (true) {
             try {
-                thread.join();
-                return;
+                if (executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    return;
+                }
             } catch (InterruptedException e) {}
         }
     }

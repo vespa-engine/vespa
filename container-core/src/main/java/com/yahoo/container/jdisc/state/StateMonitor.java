@@ -14,6 +14,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
@@ -27,7 +28,7 @@ public class StateMonitor extends AbstractComponent {
 
     private final static Logger log = Logger.getLogger(StateMonitor.class.getName());
 
-    public enum Status {up, down, initializing};
+    public enum Status {up, down, initializing}
 
     private final CopyOnWriteArrayList<StateMetricConsumer> consumers = new CopyOnWriteArrayList<>();
     private final Thread thread;
@@ -37,6 +38,7 @@ public class StateMonitor extends AbstractComponent {
     private volatile MetricSnapshot snapshot;
     private volatile Status status;
     private final TreeSet<String> valueNames = new TreeSet<>();
+    private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     /** For testing */
     public StateMonitor() {
@@ -53,10 +55,16 @@ public class StateMonitor extends AbstractComponent {
     }
 
     StateMonitor(HealthMonitorConfig config, Timer timer, ThreadFactory threadFactory) {
+        this((long)(config.snapshot_interval() * TimeUnit.SECONDS.toMillis(1)),
+             Status.valueOf(config.initialStatus()),
+             timer, threadFactory);
+    }
+    /* For Testing */
+    public StateMonitor(long snapshotIntervalMS, Status status, Timer timer, ThreadFactory threadFactory) {
         this.timer = timer;
-        this.snapshotIntervalMs = (long)(config.snapshot_interval() * TimeUnit.SECONDS.toMillis(1));
+        this.snapshotIntervalMs = snapshotIntervalMS;
         this.lastSnapshotTimeMs = timer.currentTimeMillis();
-        this.status = Status.valueOf(config.initialStatus());
+        this.status = status;
         thread = threadFactory.newThread(this::run);
         thread.start();
     }
@@ -99,13 +107,13 @@ public class StateMonitor extends AbstractComponent {
     private void run() {
         log.finest("StateMonitor started.");
         try {
-            while (!Thread.interrupted()) {
-                checkTime();
-                Thread.sleep((lastSnapshotTimeMs + snapshotIntervalMs) - timer.currentTimeMillis());
+            synchronized (stopped) {
+                while (!stopped.get()) {
+                    checkTime();
+                    stopped.wait((lastSnapshotTimeMs + snapshotIntervalMs) - timer.currentTimeMillis());
+                }
             }
-        } catch (InterruptedException e) {
-
-        }
+        } catch (InterruptedException e) { }
         log.finest("StateMonitor stopped.");
     }
 
@@ -137,12 +145,13 @@ public class StateMonitor extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        thread.interrupt();
+        synchronized (stopped) {
+            stopped.set(true);
+            stopped.notifyAll();
+        }
         try {
             thread.join(5000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        } catch (InterruptedException e) { }
         if (thread.isAlive()) {
             log.warning("StateMonitor failed to terminate within 5 seconds of interrupt signal. Ignoring.");
         }

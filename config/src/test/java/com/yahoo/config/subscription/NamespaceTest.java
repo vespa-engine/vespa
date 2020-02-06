@@ -11,6 +11,7 @@ import static org.junit.Assert.assertThat;
  * @author gjoranv
  */
 public class NamespaceTest {
+
     @Test
     public void verifyConfigClassWithExplicitNamespace() {
         NamespaceConfig config = new ConfigGetter<>(NamespaceConfig.class).getConfig("raw: a 0\n");

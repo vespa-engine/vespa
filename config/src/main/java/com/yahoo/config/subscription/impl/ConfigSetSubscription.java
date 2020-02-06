@@ -11,8 +11,7 @@ import java.lang.reflect.Constructor;
 
 /**
  * Subscription on a programmatically built set of configs
- * @author vegardh
- * @since 5.1
+ * @author Vegard Havdal
  */
 public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
 

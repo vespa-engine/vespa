@@ -5,8 +5,7 @@ import java.io.File;
 
 /**
  * Source specifying config from a local directory
- * @author vegardh
- * @since 5.1
+ * @author Vegard Havdal
  *
  */
 public class DirSource implements ConfigSource {

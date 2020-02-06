@@ -199,8 +199,7 @@ public class DocumentType extends StructuredDataType {
         if (isRegistered()) {
             throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
         }
-        StructDataType struct = (field.isHeader() ? headerType : bodyType);
-        struct.addField(field);
+        headerType.addField(field);
     }
 
     // Do not use, public only for testing
@@ -239,8 +238,8 @@ public class DocumentType extends StructuredDataType {
         if (isRegistered()) {
             throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
         }
-        Field field = new Field(name, type, false);
-        bodyType.addField(field);
+        Field field = new Field(name, type);
+        headerType.addField(field);
         return field;
     }
 
@@ -252,13 +251,9 @@ public class DocumentType extends StructuredDataType {
      * @return The field created
      *         TODO Fix searchdefinition so that exception can be thrown if filed is already registerd
      */
+    @Deprecated
     public Field addHeaderField(String name, DataType type) {
-        if (isRegistered()) {
-            throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
-        }
-        Field field = new Field(name, type, true);
-        headerType.addField(field);
-        return field;
+        return addField(name, type);
     }
 
     /**

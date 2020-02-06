@@ -4,6 +4,8 @@ package com.yahoo.container.handler;
 import static org.junit.Assert.*;
 
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.jdisc.state.StateMonitor;
+import com.yahoo.jdisc.core.SystemTimer;
 import org.junit.Test;
 
 /**
@@ -12,45 +14,79 @@ import org.junit.Test;
  * @author steinar
  */
 public class VipStatusTestCase {
+    private static final String [] clusters = {"cluster1", "cluster2", "cluster3"};
 
-    @Test
-    public void testVipStatusWorksWithClusters() {
+    private static QrSearchersConfig getSearchersCfg() {
         var b = new QrSearchersConfig.Builder();
         var searchClusterB = new QrSearchersConfig.Searchcluster.Builder();
-        searchClusterB.name("cluster1");
-        searchClusterB.name("cluster2");
-        searchClusterB.name("cluster3");
+        for (String cluster : clusters) {
+            searchClusterB.name(cluster);
+        }
         b.searchcluster(searchClusterB);
-        VipStatus v = new VipStatus(b.build());
+        return b.build();
+    }
+    private static VipStatus getVipStatus(StateMonitor.Status startState) {
+        return new VipStatus(getSearchersCfg(), new ClustersStatus(), new StateMonitor(1000, startState, new SystemTimer(), runnable -> {
+            Thread thread = new Thread(runnable, "StateMonitor");
+            thread.setDaemon(true);
+            return thread;
+        }));
+    }
 
-        String cluster1 = "cluster1";
-        String cluster2 = "cluster2";
-        String cluster3 = "cluster3";
+    private static void removeAll(VipStatus v) {
+        for (String s : clusters) {
+            v.removeFromRotation(s);
+        }
+    }
+    private static void addAll(VipStatus v) {
+        for (String s : clusters) {
+            v.addToRotation(s);
+        }
+    }
 
+    private static void verifyUpOrDown(StateMonitor.Status status) {
+        VipStatus v = getVipStatus(status);
+        removeAll(v);
         // initial state
         assertFalse(v.isInRotation());
-
-        // one cluster becomes up
-        v.addToRotation(cluster1);
-        assertTrue(v.isInRotation());
-
-        // all clusters down
-        v.removeFromRotation(cluster1);
-        v.removeFromRotation(cluster2);
-        v.removeFromRotation(cluster3);
+        v.addToRotation(clusters[0]);
         assertFalse(v.isInRotation());
-        // some clusters down
-        v.addToRotation(cluster2);
-        assertTrue(v.isInRotation());
-        // all clusters up
-        v.addToRotation(cluster1);
-        v.addToRotation(cluster3);
-        assertTrue(v.isInRotation());
-        // and down again
-        v.removeFromRotation(cluster1);
-        v.removeFromRotation(cluster2);
-        v.removeFromRotation(cluster3);
+        v.addToRotation(clusters[1]);
         assertFalse(v.isInRotation());
+        v.addToRotation(clusters[2]);
+        assertTrue(v.isInRotation());
+    }
+
+    @Test
+    public void testInitializingOrDownRequireAllUp() {
+        verifyUpOrDown(StateMonitor.Status.initializing);
+        verifyUpOrDown(StateMonitor.Status.down);
+    }
+
+    @Test
+    public void testUpRequireAllDown() {
+        VipStatus v = getVipStatus(StateMonitor.Status.initializing);
+        assertFalse(v.isInRotation());
+        addAll(v);
+        assertTrue(v.isInRotation());
+
+        v.removeFromRotation(clusters[0]);
+        assertTrue(v.isInRotation());
+        v.removeFromRotation(clusters[1]);
+        assertTrue(v.isInRotation());
+        v.removeFromRotation(clusters[2]);
+        assertFalse(v.isInRotation());  // All down
+        v.addToRotation(clusters[1]);
+        assertFalse(v.isInRotation());
+        v.addToRotation(clusters[0]);
+        v.addToRotation(clusters[2]);
+        assertTrue(v.isInRotation());   // All up
+        v.removeFromRotation(clusters[0]);
+        v.removeFromRotation(clusters[2]);
+        assertTrue(v.isInRotation());
+        v.addToRotation(clusters[0]);
+        v.addToRotation(clusters[2]);
+        assertTrue(v.isInRotation());
     }
 
 }

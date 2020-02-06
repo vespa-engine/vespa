@@ -12,7 +12,7 @@ import java.util.UUID;
 /**
  * @author tokle
  */
-public class ApplicationCertificateMock implements ApplicationCertificateProvider {
+public class EndpointCertificateMock implements EndpointCertificateProvider {
 
     private final Map<ApplicationId, List<String>> dnsNames = new HashMap<>();
 
@@ -21,11 +21,12 @@ public class ApplicationCertificateMock implements ApplicationCertificateProvide
     }
 
     @Override
-    public ApplicationCertificate requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames) {
+    public EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames) {
         this.dnsNames.put(applicationId, dnsNames);
-        return new ApplicationCertificate(String.format("vespa.tls.%s.%s@%s", applicationId.tenant(),
-                                                        applicationId.application(),
-                                                        UUID.randomUUID().toString()));
+        String endpointCertificatePrefix = String.format("vespa.tls.%s.%s@%s", applicationId.tenant(),
+                applicationId.application(),
+                UUID.randomUUID().toString());
+        return new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0);
     }
 
 }

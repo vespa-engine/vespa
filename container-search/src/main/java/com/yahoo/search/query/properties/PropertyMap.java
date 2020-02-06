@@ -37,7 +37,7 @@ public class PropertyMap extends Properties {
      * Return true if this value should be set in this map, false if the set should be propagated instead
      * This default implementation always returns true.
      */
-    protected boolean shouldSet(CompoundName name,Object value) { return true; }
+    protected boolean shouldSet(CompoundName name, Object value) { return true; }
 
     @Override
     public Object get(CompoundName name, Map<String,String> context,

@@ -799,8 +799,8 @@ public class DocumentUpdateTestCase {
         public TensorUpdateSerializeFixture() {
             docMan = new DocumentTypeManager();
             docType = new DocumentType("test");
-            docType.addHeaderField("sparse_tensor", new TensorDataType(TensorType.fromSpec("tensor(x{})")));
-            docType.addHeaderField("dense_tensor", new TensorDataType(TensorType.fromSpec("tensor(x[4])")));
+            docType.addField("sparse_tensor", new TensorDataType(TensorType.fromSpec("tensor(x{})")));
+            docType.addField("dense_tensor", new TensorDataType(TensorType.fromSpec("tensor(x[4])")));
             docMan.registerDocumentType(docType);
         }
 

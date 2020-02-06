@@ -10,6 +10,7 @@
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_socket.h>
+#include <atomic>
 
 class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
@@ -110,6 +111,8 @@ private:
     FNET_Channel            *_callbackTarget;  // target of current callback
 
     FNET_IConnectionCleanupHandler *_cleanup;  // cleanup handler
+
+    static std::atomic<uint64_t> _num_connections; // total number of connections
 
     FNET_Connection(const FNET_Connection &);
     FNET_Connection &operator=(const FNET_Connection &);
@@ -517,5 +520,10 @@ public:
      */
     uint32_t getInputBufferSize() const { return _input.GetBufSize(); }
 
+    /**
+     * @return the total number of connection objects
+     **/
+    static uint64_t get_num_connections() {
+        return _num_connections.load(std::memory_order_relaxed);
+    }
 };
-

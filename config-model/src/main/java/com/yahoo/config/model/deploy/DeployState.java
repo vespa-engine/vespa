@@ -67,6 +67,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Optional<ConfigDefinitionRepo> configDefinitionRepo;
     private final Optional<ApplicationPackage> permanentApplicationPackage;
     private final Optional<Model> previousModel;
+    private final boolean accessLoggingEnabledByDefault;
     private final ModelContext.Properties properties;
     private final Version vespaVersion;
     private final Set<ContainerEndpoint> endpoints;
@@ -101,14 +102,15 @@ public class DeployState implements ConfigDefinitionStore {
                         Version vespaVersion,
                         Optional<ApplicationPackage> permanentApplicationPackage,
                         Optional<ConfigDefinitionRepo> configDefinitionRepo,
-                        java.util.Optional<Model> previousModel,
+                        Optional<Model> previousModel,
                         Set<ContainerEndpoint> endpoints,
                         Collection<MlModelImporter> modelImporters,
                         Zone zone,
                         QueryProfiles queryProfiles,
                         SemanticRules semanticRules,
                         Instant now,
-                        Version wantedNodeVespaVersion) {
+                        Version wantedNodeVespaVersion,
+                        boolean accessLoggingEnabledByDefault) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -116,6 +118,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.properties = properties;
         this.vespaVersion = vespaVersion;
         this.previousModel = previousModel;
+        this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
         this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
         this.searchDefinitions = searchDocumentModel.getSearchDefinitions();
         this.documentModel = searchDocumentModel.getDocumentModel();
@@ -217,6 +220,10 @@ public class DeployState implements ConfigDefinitionStore {
         return logger;
     }
 
+    public boolean getAccessLoggingEnabledByDefault() {
+        return accessLoggingEnabledByDefault;
+    }
+
     public FileRegistry getFileRegistry() {
         return fileRegistry;
     }
@@ -289,6 +296,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
+        private boolean accessLoggingEnabledByDefault = true;
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -360,6 +368,15 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        /**
+         * Whether access logging is enabled for an application without an accesslog element in services.xml.
+         * True by default.
+         */
+        public Builder accessLoggingEnabledByDefault(boolean accessLoggingEnabledByDefault) {
+            this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
+            return this;
+        }
+
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -386,7 +403,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    queryProfiles,
                                    semanticRules,
                                    now,
-                                   wantedNodeVespaVersion);
+                                   wantedNodeVespaVersion,
+                                   accessLoggingEnabledByDefault);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,

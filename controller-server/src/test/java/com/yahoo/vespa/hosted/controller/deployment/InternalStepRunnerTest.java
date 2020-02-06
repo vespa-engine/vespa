@@ -12,7 +12,7 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
@@ -451,6 +451,39 @@ public class InternalStepRunnerTest {
                                            "3554970337.947777\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
                                            "3554970337.947820\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
                                            "3554970337.947845\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)";
+
+    @Test
+    public void generates_correct_tester_flavor() {
+        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
+                                                     "    <instance id='first'>\n" +
+                                                     "        <test tester-flavor=\"d-6-16-100\" />\n" +
+                                                     "        <prod>\n" +
+                                                     "            <region active=\"true\">us-west-1</region>\n" +
+                                                     "            <test>us-west-1</test>\n" +
+                                                     "        </prod>\n" +
+                                                     "    </instance>\n" +
+                                                     "    <instance id='second'>\n" +
+                                                     "        <test />\n" +
+                                                     "        <staging />\n" +
+                                                     "        <prod tester-flavor=\"d-6-16-100\">\n" +
+                                                     "            <parallel>\n" +
+                                                     "                <region active=\"true\">us-east-3</region>\n" +
+                                                     "                <region active=\"true\">us-central-1</region>\n" +
+                                                     "            </parallel>\n" +
+                                                     "            <region active=\"true\">us-west-1</region>\n" +
+                                                     "            <test>us-west-1</test>\n" +
+                                                     "        </prod>\n" +
+                                                     "    </instance>\n" +
+                                                     "</deployment>\n");
+
+        NodeResources firstResources = InternalStepRunner.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("first"));
+        assertEquals(InternalStepRunner.DEFAULT_TESTER_RESOURCES, firstResources);
+
+        NodeResources secondResources = InternalStepRunner.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("second"));
+        assertEquals(6, secondResources.vcpu(), 1e-9);
+        assertEquals(16, secondResources.memoryGb(), 1e-9);
+        assertEquals(100, secondResources.diskGb(), 1e-9);
+    }
 
     @Test
     public void generates_correct_services_xml_test() {

@@ -320,7 +320,7 @@ public final class XmlDocumentWriter implements DocumentWriter {
         buffer = new XmlStream();
         buffer.setIndent(indent);
         optionalWrapperMarker.clear();
-        write(new Field(document.getDataType().getName(), 0, document.getDataType(), true), document);
+        write(new Field(document.getDataType().getName(), 0, document.getDataType()), document);
     }
 
     @Override

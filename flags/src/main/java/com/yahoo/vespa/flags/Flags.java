@@ -114,6 +114,14 @@ public class Flags {
             "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
             "Takes effect on next run of NodeRebooter");
 
+    public static final UnboundBooleanFlag ENABLE_LARGE_ORCHESTRATOR_LOCKS = defineFeatureFlag(
+            "enable-large-orchestrator-locks", true,
+            "If enabled, the orchestrator will accumulate application locks during probe in batch suspension, " +
+            "and release them in reverse order only after the non-probe is complete. Can be set depending on " +
+            "parent hostname.",
+            "Takes immediate effect for new batch suspensions.",
+            HOSTNAME);
+
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
             "enable-dynamic-provisioning", false,
             "Provision a new docker host when we otherwise can't allocate a docker node",
@@ -215,6 +223,11 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_RPM_PACKAGES_FOR_DATA_HIGHWAY = defineFeatureFlag(
+            "use-rpm-packages-for-data-highway", false,
+            "Whether RPM packages should be used for Data Highway",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

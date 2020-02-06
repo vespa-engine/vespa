@@ -7,7 +7,7 @@ import com.yahoo.search.query.Properties;
 import java.util.Map;
 
 /**
- * Turns get(name) into get(name,request) using the request given at construction time.
+ * Turns get(name) into get(name, request) using the request given at construction time.
  * This is used to allow the query's request to be supplied to all property requests
  * without forcing users of the query.properties() to supply this explicitly.
  *
@@ -22,18 +22,18 @@ public class RequestContextProperties extends Properties {
     }
 
     @Override
-    public Object get(CompoundName name,Map<String,String> context,
+    public Object get(CompoundName name, Map<String,String> context,
                       com.yahoo.processing.request.Properties substitution) {
         return super.get(name, context == null ? requestMap : context, substitution);
     }
 
     @Override
-    public void set(CompoundName name,Object value,Map<String,String> context) {
+    public void set(CompoundName name, Object value, Map<String,String> context) {
         super.set(name, value, context == null ? requestMap : context);
     }
 
     @Override
-    public Map<String, Object> listProperties(CompoundName path,Map<String,String> context,
+    public Map<String, Object> listProperties(CompoundName path, Map<String,String> context,
                                               com.yahoo.processing.request.Properties substitution) {
         return super.listProperties(path, context == null ? requestMap : context, substitution);
     }

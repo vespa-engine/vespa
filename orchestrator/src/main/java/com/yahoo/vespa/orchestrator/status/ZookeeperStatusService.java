@@ -70,9 +70,17 @@ public class ZookeeperStatusService implements StatusService {
 
             @Override
             public boolean setHostStatus(ApplicationInstanceReference application, HostName hostName, HostStatus hostStatus) {
-                return ZookeeperStatusService.this.setHostStatusInZk(application, hostName, hostStatus);
+                return ZookeeperStatusService.this.setHostInfoInZk(application, hostName, hostStatus);
             }
         });
+    }
+
+    /** Non-private for testing only. */
+    ZookeeperStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache) {
+        this.curator = curator;
+        this.metric = metric;
+        this.timer = timer;
+        this.hostInfosCache = hostInfosCache;
     }
 
     @Override
@@ -123,6 +131,35 @@ public class ZookeeperStatusService implements StatusService {
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             OrchestratorContext context,
             ApplicationInstanceReference applicationInstanceReference) throws UncheckedTimeoutException {
+        Runnable onRegistryClose;
+
+        // A multi-application operation, aka batch suspension, will first issue a probe
+        // then a non-probe. With "large locks", the lock is not release in between -
+        // no lock is taken on the non-probe. Instead, the release is done on the multi-application
+        // context close.
+        if (context.hasLock(applicationInstanceReference)) {
+            onRegistryClose = () -> {};
+        } else {
+            Runnable unlock = acquireLock(context, applicationInstanceReference);
+            if (context.registerLockAcquisition(applicationInstanceReference, unlock)) {
+                onRegistryClose = () -> {};
+            } else {
+                onRegistryClose = unlock;
+            }
+        }
+
+        try {
+            return new ZkMutableStatusRegistry(onRegistryClose, applicationInstanceReference, context.isProbe());
+        } catch (Throwable t) {
+            // In case the constructor throws an exception.
+            onRegistryClose.run();
+            throw t;
+        }
+    }
+
+    private Runnable acquireLock(OrchestratorContext context,
+                                 ApplicationInstanceReference applicationInstanceReference)
+            throws UncheckedTimeoutException {
         ApplicationId applicationId = OrchestratorUtil.toApplicationId(applicationInstanceReference);
         String app = applicationId.application().value() + "." + applicationId.instance().value();
         Map<String, String> dimensions = Map.of(
@@ -152,89 +189,66 @@ public class ZookeeperStatusService implements StatusService {
             metric.add(acquireResultMetricName, 1, metricContext);
         }
 
-        Runnable updateLockHoldMetric = () -> {
+        return () -> {
+            try {
+                lock.close();
+            } catch (RuntimeException e) {
+                // We may want to avoid logging some exceptions that may be expected, like when session expires.
+                log.log(LogLevel.WARNING,
+                        "Failed to close application lock for " +
+                                ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue",
+                        e);
+            }
+
             Instant lockReleasedTime = timer.currentTime();
             double seconds = durationInSeconds(acquireEndTime, lockReleasedTime);
             metric.set("orchestrator.lock.hold-latency", seconds, metricContext);
         };
-
-        try {
-            return new ZkMutableStatusRegistry(lock, applicationInstanceReference, context.isProbe(), updateLockHoldMetric);
-        } catch (Throwable t) {
-            // In case the constructor throws an exception.
-            updateLockHoldMetric.run();
-            lock.close();
-            throw t;
-        }
     }
 
     private double durationInSeconds(Instant startInstant, Instant endInstant) {
         return Duration.between(startInstant, endInstant).toMillis() / 1000.0;
     }
 
-    /** Do not call this directly: should be called behind a cache. */
-    private boolean setHostStatusInZk(ApplicationInstanceReference applicationInstanceReference,
-                                      HostName hostName,
-                                      HostStatus status) {
-        String hostAllowedDownPath = hostAllowedDownPath(applicationInstanceReference, hostName);
-
-        boolean modified = false;
-        try {
-            switch (status) {
-                case NO_REMARKS:
-                    // Deprecated: Remove once 7.170 has rolled out to infrastructure
-                    modified = deleteNode_ignoreNoNodeException(hostAllowedDownPath, "Host already has state NO_REMARKS, path = " + hostAllowedDownPath);
-                    break;
-                default:
-                    // ignore, e.g. ALLOWED_TO_BE_DOWN should NOT create a new deprecated znode.
-            }
-
-            modified |= setHostInfoInZk(applicationInstanceReference, hostName, status);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return modified;
-    }
-
     /** Returns false if no changes were made. */
-    private boolean setHostInfoInZk(ApplicationInstanceReference application, HostName hostname, HostStatus status)
-            throws Exception {
+    private boolean setHostInfoInZk(ApplicationInstanceReference application, HostName hostname, HostStatus status) {
         String path = hostPath(application, hostname);
 
         if (status == HostStatus.NO_REMARKS) {
             return deleteNode_ignoreNoNodeException(path, "Host already has state NO_REMARKS, path = " + path);
         }
 
-        Optional<HostInfo> currentHostInfo = readBytesFromZk(path).map(WireHostInfo::deserialize);
+        Optional<HostInfo> currentHostInfo = uncheck(() -> readBytesFromZk(path)).map(WireHostInfo::deserialize);
         if (currentHostInfo.isEmpty()) {
             Instant suspendedSince = timer.currentTime();
             HostInfo hostInfo = HostInfo.createSuspended(status, suspendedSince);
             byte[] hostInfoBytes = WireHostInfo.serialize(hostInfo);
-            curator.framework().create().creatingParentsIfNeeded().forPath(path, hostInfoBytes);
+            uncheck(() -> curator.framework().create().creatingParentsIfNeeded().forPath(path, hostInfoBytes));
         } else if (currentHostInfo.get().status() == status) {
             return false;
         } else {
             Instant suspendedSince = currentHostInfo.get().suspendedSince().orElseGet(timer::currentTime);
             HostInfo hostInfo = HostInfo.createSuspended(status, suspendedSince);
             byte[] hostInfoBytes = WireHostInfo.serialize(hostInfo);
-            curator.framework().setData().forPath(path, hostInfoBytes);
+            uncheck(() -> curator.framework().setData().forPath(path, hostInfoBytes));
         }
 
         return true;
     }
 
-    private boolean deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) throws Exception {
+    private boolean deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) {
         try {
             curator.framework().delete().forPath(path);
             return true;
         } catch (NoNodeException e) {
             log.log(LogLevel.DEBUG, debugLogMessageIfNotExists, e);
             return false;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private boolean createNode_ignoreNodeExistsException(String path, String debugLogMessageIfExists) throws Exception {
+    private boolean createNode_ignoreNodeExistsException(String path, String debugLogMessageIfExists) {
         try {
             curator.framework().create()
                     .creatingParentsIfNeeded()
@@ -243,6 +257,8 @@ public class ZookeeperStatusService implements StatusService {
         } catch (NodeExistsException e) {
             log.log(LogLevel.DEBUG, debugLogMessageIfExists, e);
             return false;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -337,19 +353,16 @@ public class ZookeeperStatusService implements StatusService {
 
     private class ZkMutableStatusRegistry implements MutableStatusRegistry {
 
-        private final Lock lock;
+        private final Runnable onClose;
         private final ApplicationInstanceReference applicationInstanceReference;
         private final boolean probe;
-        private final Runnable onLockRelease;
 
-        public ZkMutableStatusRegistry(Lock lock,
+        public ZkMutableStatusRegistry(Runnable onClose,
                                        ApplicationInstanceReference applicationInstanceReference,
-                                       boolean probe,
-                                       Runnable onLockRelease) {
-            this.lock = lock;
+                                       boolean probe) {
+            this.onClose = onClose;
             this.applicationInstanceReference = applicationInstanceReference;
             this.probe = probe;
-            this.onLockRelease = onLockRelease;
         }
 
         @Override
@@ -381,31 +394,26 @@ public class ZookeeperStatusService implements StatusService {
             log.log(LogLevel.INFO, "Setting app " + applicationInstanceReference.asString() + " to status " + applicationInstanceStatus);
 
             String path = applicationInstanceSuspendedPath(applicationInstanceReference);
-            try {
-                switch (applicationInstanceStatus) {
-                    case NO_REMARKS:
-                        deleteNode_ignoreNoNodeException(path,
-                                "Instance is already in state NO_REMARKS, path = " + path);
-                        break;
-                    case ALLOWED_TO_BE_DOWN:
-                        createNode_ignoreNodeExistsException(path,
-                                "Instance is already in state ALLOWED_TO_BE_DOWN, path = " + path);
-                        break;
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            switch (applicationInstanceStatus) {
+                case NO_REMARKS:
+                    deleteNode_ignoreNoNodeException(path,
+                            "Instance is already in state NO_REMARKS, path = " + path);
+                    break;
+                case ALLOWED_TO_BE_DOWN:
+                    createNode_ignoreNodeExistsException(path,
+                            "Instance is already in state ALLOWED_TO_BE_DOWN, path = " + path);
+                    break;
             }
         }
 
         @Override
         public void close()  {
-            onLockRelease.run();
             try {
-                lock.close();
+                onClose.run();
             } catch (RuntimeException e) {
                 // We may want to avoid logging some exceptions that may be expected, like when session expires.
                 log.log(LogLevel.WARNING,
-                        "Failed to close application lock for " +
+                        "Failed close application lock in " +
                         ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue",
                         e);
             }

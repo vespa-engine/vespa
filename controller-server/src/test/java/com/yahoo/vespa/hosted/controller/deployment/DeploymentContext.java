@@ -34,7 +34,9 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
+import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
@@ -45,6 +47,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
@@ -212,9 +215,17 @@ public class DeploymentContext {
 
     /** Flush all pending DNS updates */
     public DeploymentContext flushDnsUpdates() {
-        tester.nameServiceDispatcher().run();
+        flushDnsUpdates(Integer.MAX_VALUE);
         assertTrue("All name service requests dispatched",
                    tester.controller().curator().readNameServiceQueue().requests().isEmpty());
+        return this;
+    }
+
+    /** Flush count pending DNS updates */
+    public DeploymentContext flushDnsUpdates(int count) {
+        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofDays(1),
+                                                   new JobControl(tester.controller().curator()), count);
+        dispatcher.run();
         return this;
     }
 
@@ -455,9 +466,9 @@ public class DeploymentContext {
             configServer().putLoadBalancers(zone, List.of(new LoadBalancer(deployment.toString(),
                                                                            deployment.applicationId(),
                                                                            ClusterSpec.Id.from("default"),
-                                                                           HostName.from("lb-host"),
+                                                                           HostName.from("lb-0--" + instanceId.serializedForm() + "--" + zone.toString()),
                                                                            LoadBalancer.State.active,
-                                                                           Optional.of("dns-zone"))));
+                                                                           Optional.of("dns-zone-1"))));
         }
 
         // First step is always a deployment.

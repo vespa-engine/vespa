@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.security.SubjectAlternativeName;
@@ -14,14 +15,12 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateMetadataSerializer;
 
 import java.security.cert.X509Certificate;
 import java.time.Clock;
@@ -50,19 +49,19 @@ public class EndpointCertificateManager {
     private final ZoneRegistry zoneRegistry;
     private final CuratorDb curator;
     private final SecretStore secretStore;
-    private final ApplicationCertificateProvider applicationCertificateProvider;
+    private final EndpointCertificateProvider endpointCertificateProvider;
     private final Clock clock;
     private final BooleanFlag useRefreshedEndpointCertificate;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
                                       CuratorDb curator,
                                       SecretStore secretStore,
-                                      ApplicationCertificateProvider applicationCertificateProvider,
+                                      EndpointCertificateProvider endpointCertificateProvider,
                                       Clock clock, FlagSource flagSource) {
         this.zoneRegistry = zoneRegistry;
         this.curator = curator;
         this.secretStore = secretStore;
-        this.applicationCertificateProvider = applicationCertificateProvider;
+        this.endpointCertificateProvider = endpointCertificateProvider;
         this.clock = clock;
         this.useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
     }
@@ -107,9 +106,8 @@ public class EndpointCertificateManager {
 
     private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance) {
         List<ZoneId> directlyRoutedZones = zoneRegistry.zones().directlyRouted().zones().stream().map(ZoneApi::getId).collect(Collectors.toUnmodifiableList());
-        ApplicationCertificate newCertificate = applicationCertificateProvider
+        EndpointCertificateMetadata provisionedCertificateMetadata = endpointCertificateProvider
                 .requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), directlyRoutedZones));
-        EndpointCertificateMetadata provisionedCertificateMetadata = EndpointCertificateMetadataSerializer.fromTlsSecretsKeysString(newCertificate.secretsKeyNamePrefix());
         curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
         return provisionedCertificateMetadata;
     }
@@ -118,7 +116,8 @@ public class EndpointCertificateManager {
         try {
             var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
 
-            if (pemEncodedEndpointCertificate == null) return logWarning(warningPrefix, "Certificate not found in secret store");
+            if (pemEncodedEndpointCertificate == null)
+                return logWarning(warningPrefix, "Secret store returned null for certificate");
 
             List<X509Certificate> x509CertificateList = X509CertificateUtils.certificateListFromPem(pemEncodedEndpointCertificate);
 
@@ -141,10 +140,13 @@ public class EndpointCertificateManager {
                     .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
                     .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
 
-            if (!subjectAlternativeNames.equals(Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))))
-                return logWarning(warningPrefix, "The list of SANs in the certificate does not match what we expect");
+            if(Sets.intersection(subjectAlternativeNames, Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))).isEmpty()) {
+                return logWarning(warningPrefix, "No overlap between SANs in certificate and expected SANs");
+            }
 
             return true; // All good then, hopefully
+        } catch (SecretNotFoundException s) {
+            return logWarning(warningPrefix, "Certificate not found in secret store");
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Exception thrown when verifying endpoint certificate", e);
             return false;

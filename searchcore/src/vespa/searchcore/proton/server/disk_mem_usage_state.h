@@ -15,11 +15,7 @@ class DiskMemUsageState
     ResourceUsageState _memoryState;
 
 public:
-    DiskMemUsageState()
-        : _diskState(),
-          _memoryState()
-    {
-    }
+    DiskMemUsageState() = default;
     DiskMemUsageState(const ResourceUsageState &diskState_,
                       const ResourceUsageState &memoryState_)
         : _diskState(diskState_),

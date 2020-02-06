@@ -38,9 +38,8 @@ import java.util.TreeMap;
 
 /**
  * The field class represents a document field. It is used in
- * the Document class to get and set fields. Each SDField has
- * a name, a numeric ID, a data type, and a boolean that says whether it's
- * a header field. The numeric ID is used when the fields are stored
+ * the Document class to get and set fields. Each SDField has a name, a numeric ID,
+ * a data type. The numeric ID is used when the fields are stored
  * in serialized form.
  *
  * @author bratseth
@@ -120,15 +119,14 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * Creates a new field. This method is only used to create reserved fields
      * @param name The name of the field
      * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field (true = "header").
     */
-    protected SDField(SDDocumentType repo, String name, int id, DataType dataType, boolean isHeader, boolean populate) {
-        super(name, id, dataType, isHeader);
-        populate(populate, repo, name, dataType, isHeader);
+    protected SDField(SDDocumentType repo, String name, int id, DataType dataType, boolean populate) {
+        super(name, id, dataType);
+        populate(populate, repo, name, dataType);
     }
 
-    public SDField(SDDocumentType repo, String name, int id, DataType dataType, boolean isHeader) {
-        this(repo, name, id, dataType, isHeader, true);
+    public SDField(SDDocumentType repo, String name, int id, DataType dataType) {
+        this(repo, name, id, dataType, true);
     }
 
     /**
@@ -136,41 +134,35 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
        @param name The name of the field
        @param dataType The datatype of the field
-       @param isHeader Whether this is a "header" field or a "content" field
-       (true = "header").
     */
-    public SDField(SDDocumentType repo, String name, DataType dataType, boolean isHeader, boolean populate) {
-        super(name,dataType,isHeader);
-        populate(populate, repo, name, dataType, isHeader);
+    public SDField(SDDocumentType repo, String name, DataType dataType, boolean populate) {
+        super(name,dataType);
+        populate(populate, repo, name, dataType);
     }
 
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, boolean isHeader) {
-        populate(populate,repo, name, dataType, isHeader, null, 0);
+    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType) {
+        populate(populate,repo, name, dataType, null, 0);
     }
 
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, boolean isHeader, Matching fieldMatching,  int recursion) {
+    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, Matching fieldMatching,  int recursion) {
         if (populate || (dataType instanceof MapDataType)) {
-            populateWithStructFields(repo, name, dataType, isHeader, recursion);
+            populateWithStructFields(repo, name, dataType, recursion);
             populateWithStructMatching(repo, name, dataType, fieldMatching);
         }
     }
 
-    public SDField(String name, DataType dataType, boolean isHeader) {
-        this(null, name, dataType, isHeader, true);
-    }
 
     /**
      * Creates a new field.
      *
      * @param name The name of the field
      * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field (true = "header").
      * @param owner the owning document (used to check for id collisions)
      */
-    protected SDField(SDDocumentType repo, String name, DataType dataType, boolean isHeader, SDDocumentType owner, boolean populate) {
-        super(name, dataType, isHeader, owner == null ? null : owner.getDocumentType());
+    protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner, boolean populate) {
+        super(name, dataType, owner == null ? null : owner.getDocumentType());
         this.ownerDocType=owner;
-        populate(populate, repo, name, dataType, isHeader);
+        populate(populate, repo, name, dataType);
     }
 
     /**
@@ -178,27 +170,25 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      *
      * @param name The name of the field
      * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field (true = "header").
      * @param owner The owning document (used to check for id collisions)
      * @param fieldMatching The matching object to set for the field
      */
-    protected SDField(SDDocumentType repo, String name, DataType dataType, boolean isHeader, SDDocumentType owner,
+    protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner,
                       Matching fieldMatching, boolean populate, int recursion) {
-        super(name, dataType, isHeader, owner == null ? null : owner.getDocumentType());
+        super(name, dataType, owner == null ? null : owner.getDocumentType());
         this.ownerDocType=owner;
         if (fieldMatching != null)
             this.setMatching(fieldMatching);
-        populate(populate, repo, name, dataType, isHeader, fieldMatching, recursion);
+        populate(populate, repo, name, dataType, fieldMatching, recursion);
     }
 
     /**
-     * Constructor for <b>header</b> fields
      *
      * @param name The name of the field
      * @param dataType The datatype of the field
      */
     public SDField(SDDocumentType repo,  String name, DataType dataType) {
-        this(repo, name,dataType,true, true);
+        this(repo, name,dataType, true);
     }
     public SDField(String name, DataType dataType) {
         this(null, name,dataType);
@@ -277,7 +267,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         }
     }
 
-    public void populateWithStructFields(SDDocumentType sdoc, String name, DataType dataType, boolean isHeader, int recursion) {
+    public void populateWithStructFields(SDDocumentType sdoc, String name, DataType dataType, int recursion) {
         DataType dt = getFirstStructOrMapRecursive();
         if (dt == null) {
             return;
@@ -286,11 +276,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
             MapDataType mdt = (MapDataType) dataType;
 
             SDField keyField = new SDField(sdoc, name.concat(".key"), mdt.getKeyType(),
-                                           isHeader, getOwnerDocType(), new Matching(), true, recursion + 1);
+                                           getOwnerDocType(), new Matching(), true, recursion + 1);
             structFields.put("key", keyField);
 
             SDField valueField = new SDField(sdoc, name.concat(".value"), mdt.getValueType(),
-                                             isHeader, getOwnerDocType(), new Matching(), true, recursion + 1);
+                                             getOwnerDocType(), new Matching(), true, recursion + 1);
             structFields.put("value", valueField);
         } else {
             if (recursion >= 10) {
@@ -306,7 +296,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                 }
                 for (Field field : subType.fieldSet()) {
                     SDField subField = new SDField(sdoc, name.concat(".").concat(field.getName()), field.getDataType(),
-                                                   isHeader, subType, new Matching(), true, recursion + 1);
+                                                   subType, new Matching(), true, recursion + 1);
                     structFields.put(field.getName(), subField);
                 }
             }

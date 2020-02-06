@@ -122,7 +122,7 @@ public class ApplicationController {
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
         endpointCertificateManager = new EndpointCertificateManager(controller.zoneRegistry(), curator, secretStore,
-                controller.serviceRegistry().applicationCertificateProvider(), clock, flagSource);
+                controller.serviceRegistry().endpointCertificateProvider(), clock, flagSource);
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {

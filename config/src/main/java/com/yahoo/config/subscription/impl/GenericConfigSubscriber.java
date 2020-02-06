@@ -16,7 +16,7 @@ import com.yahoo.vespa.config.TimingValues;
 /**
  * A subscriber that can subscribe without the class. Used by configproxy.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class GenericConfigSubscriber extends ConfigSubscriber {
 

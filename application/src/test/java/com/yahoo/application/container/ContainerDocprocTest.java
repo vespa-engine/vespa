@@ -44,6 +44,7 @@ public class ContainerDocprocTest {
         xml +=
                 "    </chain>\n" +
                 "  </document-processing>\n" +
+                "  <accesslog type=\"disabled\" />" +
                 "</container>\n";
         return xml;
     }

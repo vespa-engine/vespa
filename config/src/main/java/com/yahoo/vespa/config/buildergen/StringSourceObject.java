@@ -8,7 +8,6 @@ import java.net.URI;
  * Represents an in memory source object that can be compiled.
  *
  * @author Ulf Lilleengen
- * @since 5.2
  */
 class StringSourceObject extends SimpleJavaFileObject {
     private final String code;

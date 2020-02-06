@@ -4,8 +4,8 @@ package com.yahoo.config.model.deploy;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -41,6 +41,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useAdaptiveDispatch = false;
     private double defaultTermwiseLimit = 1.0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
+    private boolean useNewAthenzFilter = false;
 
 
     @Override public boolean multitenant() { return multitenant; }
@@ -61,6 +62,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Optional<TlsSecrets> tlsSecrets() { return endpointCertificateSecrets.map(TlsSecrets::new); }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useBucketSpaceMetric() { return true; }
+    @Override public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
@@ -99,6 +101,16 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setEndpointCertificateSecrets(Optional<EndpointCertificateSecrets> endpointCertificateSecrets) {
         this.endpointCertificateSecrets = endpointCertificateSecrets;
+        return this;
+    }
+
+    public TestProperties setUseNewAthenzFilter(boolean useNewAthenzFilter) {
+        this.useNewAthenzFilter = useNewAthenzFilter;
+        return this;
+    }
+
+    public TestProperties setZone(Zone zone) {
+        this.zone = zone;
         return this;
     }
 

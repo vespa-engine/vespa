@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config;
+package com.yahoo.slime;
 
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
 
@@ -14,9 +12,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.8
  */
 public class SlimeUtilsTest {
+
     @Test
     public void test_copying_slime_types_into_cursor() {
         Slime slime = new Slime();
@@ -79,4 +77,5 @@ public class SlimeUtilsTest {
         assertThat(slime.get().field("foo").asString(), is("foobie"));
         assertTrue(slime.get().field("bar").valid());
     }
+
 }

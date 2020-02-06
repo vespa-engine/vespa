@@ -722,7 +722,7 @@ public class ControllerTest {
                                                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
                                                                                ".vespa.oath.cloud")))
                            .collect(Collectors.toUnmodifiableList()),
-                     tester.controllerTester().serviceRegistry().applicationCertificateMock().dnsNamesOf(context1.instanceId()));
+                     tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(context1.instanceId()));
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();

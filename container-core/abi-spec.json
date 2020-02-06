@@ -11,6 +11,23 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.handler.ClustersStatus$Require": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.container.handler.ClustersStatus$Require[] values()",
+      "public static com.yahoo.container.handler.ClustersStatus$Require valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.container.handler.ClustersStatus$Require ONE",
+      "public static final enum com.yahoo.container.handler.ClustersStatus$Require ALL"
+    ]
+  },
   "com.yahoo.container.handler.ClustersStatus": {
     "superClass": "com.yahoo.component.AbstractComponent",
     "interfaces": [],
@@ -23,7 +40,8 @@
       "public void setReceiveTrafficByDefault(boolean)",
       "public void setUp(java.lang.Object)",
       "public void setDown(java.lang.Object)",
-      "public boolean containerShouldReceiveTraffic()"
+      "public boolean containerShouldReceiveTraffic()",
+      "public boolean containerShouldReceiveTraffic(com.yahoo.container.handler.ClustersStatus$Require)"
     ],
     "fields": []
   },

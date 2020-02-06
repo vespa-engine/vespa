@@ -61,7 +61,7 @@ public class UriHack extends Processor {
             String partName = uriName + "." + suffix;
             // I wonder if this is explicit in qrs or implicit in backend?
             // search.addFieldSetItem(uriName, partName);
-            SDField partField = new SDField(partName, generatedType, true);
+            SDField partField = new SDField(partName, generatedType);
             partField.setIndexStructureField(uriField.doesIndexing());
             partField.setRankType(uriField.getRankType());
             partField.setStemming(Stemming.NONE);

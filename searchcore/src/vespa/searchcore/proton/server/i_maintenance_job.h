@@ -31,7 +31,7 @@ public:
           _interval(interval)
     {}
 
-    virtual ~IMaintenanceJob() {}
+    virtual ~IMaintenanceJob() = default;
 
     virtual const vespalib::string &getName() const { return _name; }
     virtual vespalib::duration getDelay() const { return _delay; }

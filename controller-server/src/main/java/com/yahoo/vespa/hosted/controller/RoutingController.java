@@ -71,7 +71,7 @@ public class RoutingController {
         return rotationRepository;
     }
 
-    /** Returns all known endpoint URLs for given deployment, including global, in the shared routing layer */
+    /** Returns all legacy endpoint URLs for given deployment, including global, in the shared routing layer */
     public List<URI> legacyEndpointsOf(DeploymentId deployment) {
         return routingEndpointsOf(deployment).stream()
                                              .map(RoutingEndpoint::endpoint)
@@ -79,28 +79,38 @@ public class RoutingController {
                                              .collect(Collectors.toUnmodifiableList());
     }
 
-    /** Returns all non-global endpoint URLs for given deployment, grouped by their cluster ID */
-    public Map<ClusterSpec.Id, URI> zoneEndpointsOf(DeploymentId deployment) {
-        if ( ! controller.applications().getInstance(deployment.applicationId())
-                .map(application -> application.deployments().containsKey(deployment.zoneId()))
-                .orElse(deployment.applicationId().instance().isTester()))
-            throw new NotExistsException("Deployment", deployment.toString());
-
-        // In directly routed zones we create endpoint URLs from routing policies
-        if (controller.zoneRegistry().zones().directlyRouted().ids().contains(deployment.zoneId())) {
-            return routingPolicies.get(deployment).values().stream()
-                                  .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
-                                  .collect(Collectors.toUnmodifiableMap(policy -> policy.id().cluster(),
-                                                                        policy -> policy.endpointIn(controller.system())
-                                                                                        .url()));
+    /** Returns legacy zone endpoints for given deployment, in the shared routing layer */
+    public Map<ClusterSpec.Id, URI> legacyZoneEndpointsOf(DeploymentId deployment) {
+        if (!supportsRoutingMethod(RoutingMethod.shared, deployment.zoneId())) {
+            return Map.of();
         }
-        // In other zones we fetch endpoints from the shared routing layer
         try {
             return routingGenerator.clusterEndpoints(deployment);
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + deployment, e);
             return Map.of();
         }
+    }
+
+    /**
+     * Returns all non-global endpoint URLs for given deployment, grouped by their cluster ID. If deployment supports
+     * {@link RoutingMethod#exclusive} endpoints defined through routing polices are returned.
+     */
+    public Map<ClusterSpec.Id, URI> zoneEndpointsOf(DeploymentId deployment) {
+        if ( ! controller.applications().getInstance(deployment.applicationId())
+                .map(application -> application.deployments().containsKey(deployment.zoneId()))
+                .orElse(deployment.applicationId().instance().isTester()))
+            throw new NotExistsException("Deployment", deployment.toString());
+
+        // In exclusively routed zones we create endpoint URLs from routing policies
+        if (supportsRoutingMethod(RoutingMethod.exclusive, deployment.zoneId())) {
+            return routingPolicies.get(deployment).values().stream()
+                                  .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
+                                  .collect(Collectors.toUnmodifiableMap(policy -> policy.id().cluster(),
+                                                                        policy -> policy.endpointIn(controller.system())
+                                                                                        .url()));
+        }
+        return legacyZoneEndpointsOf(deployment);
     }
 
     /** Returns all non-global endpoint URLs for given deployments, grouped by their cluster ID and zone */
@@ -216,7 +226,7 @@ public class RoutingController {
     }
 
     private List<RoutingEndpoint> routingEndpointsOf(DeploymentId deployment) {
-        if (!controller.zoneRegistry().zones().routingMethod(RoutingMethod.shared).ids().contains(deployment.zoneId())) {
+        if (!supportsRoutingMethod(RoutingMethod.shared, deployment.zoneId())) {
             return List.of(); // No rotations/shared routing layer in this zone.
         }
         try {
@@ -225,6 +235,10 @@ public class RoutingController {
             log.log(Level.WARNING, "Failed to get endpoints for " + deployment, e);
             return List.of();
         }
+    }
+
+    private boolean supportsRoutingMethod(RoutingMethod routingMethod, ZoneId zone) {
+        return controller.zoneRegistry().zones().routingMethod(routingMethod).ids().contains(zone);
     }
 
 }

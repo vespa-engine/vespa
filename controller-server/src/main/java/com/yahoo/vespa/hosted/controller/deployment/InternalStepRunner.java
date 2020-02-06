@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.Notifications.When;
@@ -102,11 +103,12 @@ import static java.util.stream.Collectors.toList;
 public class InternalStepRunner implements StepRunner {
 
     private static final Logger logger = Logger.getLogger(InternalStepRunner.class.getName());
-    private static final NodeResources DEFAULT_TESTER_RESOURCES =
+
+    static final NodeResources DEFAULT_TESTER_RESOURCES =
             new NodeResources(1, 4, 50, 0.3, NodeResources.DiskSpeed.any);
     // Must match exactly the advertised resources of an AWS instance type. Also consider that the container
     // will have ~1.8 GB less memory than equivalent resources in AWS (VESPA-16259).
-    private static final NodeResources DEFAULT_TESTER_RESOURCES_AWS =
+    static final NodeResources DEFAULT_TESTER_RESOURCES_AWS =
             new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
@@ -715,10 +717,7 @@ public class InternalStepRunner implements StepRunner {
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          ! controller.system().isPublic(),
                                          useTesterCertificate,
-                                         testerFlavorFor(id, spec)
-                                                 .map(NodeResources::fromLegacyName)
-                                                 .orElse(zone.region().value().contains("aws-") ?
-                                                         DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
+                                         testerResourcesFor(zone, spec.requireInstance(id.application().instance())));
         byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
         byte[] deploymentXml = deploymentXml(id.tester(),
                                              spec.athenzDomain(),
@@ -756,12 +755,14 @@ public class InternalStepRunner implements StepRunner {
         return new DeploymentId(runId.tester().id(), zoneId);
     }
 
-    private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
-        for (DeploymentSpec.Step step : spec.steps())
-            if (step.concerns(id.type().environment()))
-                return step.zones().get(0).testerFlavor();
-
-        return Optional.empty();
+    static NodeResources testerResourcesFor(ZoneId zone, DeploymentInstanceSpec spec) {
+        return spec.steps().stream()
+                   .filter(step -> step.concerns(zone.environment()))
+                   .findFirst()
+                   .flatMap(step -> step.zones().get(0).testerFlavor())
+                   .map(NodeResources::fromLegacyName)
+                   .orElse(zone.region().value().contains("aws-") ?
+                           DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES);
     }
 
     /** Returns the generated services.xml content for the tester application. */
@@ -840,8 +841,6 @@ public class InternalStepRunner implements StepRunner {
                 "                </request-chain>\n" +
                 "            </filtering>\n" +
                 "        </http>\n" +
-                "\n" +
-                "        <accesslog type='json' fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S'/>\n" +
                 "\n" +
                 "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
                 "            " + resourceString + "\n" +

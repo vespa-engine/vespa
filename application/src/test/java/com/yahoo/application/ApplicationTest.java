@@ -183,6 +183,7 @@ public class ApplicationTest {
     }
 
     @Test
+    // TODO: Creates access log
     public void renderer() throws Exception {
         try (
                 ApplicationFacade app = new ApplicationFacade(Application.fromBuilder(new Application.Builder().container("default", new Application.Builder.Container()
@@ -375,7 +376,8 @@ public class ApplicationTest {
     private static String servicesXmlWithServer(int port) {
         return "<container version='1.0'>" +
                 "  <http> <server port='" + port +"' id='foo'/> </http>" +
-                "</container>";
+               "  <accesslog type=\"disabled\" />" +
+               "</container>";
     }
 
     @Test
@@ -392,7 +394,8 @@ public class ApplicationTest {
                 "      <access-control domain='foo' />" +
                 "    </filtering>" +
                 "  </http>" +
-                "</container>";
+               "  <accesslog type=\"disabled\" />" +
+               "</container>";
     }
 
 }

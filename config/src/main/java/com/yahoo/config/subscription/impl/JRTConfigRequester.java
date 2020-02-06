@@ -233,7 +233,8 @@ public class JRTConfigRequester implements RequestWaiter {
         suspendWarningLogged = Instant.MIN;
         noApplicationWarningLogged = Instant.MIN;
         connection.setSuccess();
-        sub.setLastCallBackOKTS(System.currentTimeMillis());
+        sub.setLastCallBackOKTS(Instant.now());
+        log.log(LogLevel.DEBUG, () -> "OK response received in handleOkRequest: " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
             // We only want this latest generation to be in the queue, we do not preserve history in this system
             sub.getReqQueue().clear();
