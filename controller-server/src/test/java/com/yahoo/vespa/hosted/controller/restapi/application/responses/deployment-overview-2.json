@@ -20,6 +20,7 @@
         "platform": {
           "platform": "7.1.0",
           "at": 0,
+          "upgrade": true,
           "blockers": []
         },
         "application": {
@@ -30,6 +31,7 @@
             "commit": "commit1"
           },
           "at": 1000,
+          "upgrade": true,
           "blockers": []
         }
       }

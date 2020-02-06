@@ -20,6 +20,7 @@
         "platform": {
           "platform": "7.164.0",
           "at": "(ignore)",
+          "upgrade": false,
           "blockers": []
         },
         "application": {
@@ -30,6 +31,7 @@
             "commit": "commit1"
           },
           "at": 1000,
+          "upgrade": false,
           "blockers": []
         }
       }
@@ -505,6 +507,7 @@
         "platform": {
           "platform": "7.164.0",
           "at": "(ignore)",
+          "upgrade": false,
           "blockers": []
         },
         "application": {
@@ -515,6 +518,7 @@
             "commit": "commit1"
           },
           "at": 1000,
+          "upgrade": false,
           "blockers": []
         }
       }

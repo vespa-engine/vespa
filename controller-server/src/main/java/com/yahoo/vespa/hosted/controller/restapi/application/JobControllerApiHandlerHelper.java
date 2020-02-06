@@ -600,12 +600,16 @@ class JobControllerApiHandlerHelper {
                               Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
                               latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
                               latestPlatformObject.setLong("at", latestPlatform.committedAt().toEpochMilli());
+                              latestPlatformObject.setBool("upgrade", application.require(stepStatus.instance()).productionDeployments().values().stream()
+                                                                                 .anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
                               toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
                           });
                 application.latestVersion().ifPresent(latestApplication -> {
                     Cursor latestApplicationObject = latestVersionsObject.setObject("application");
                     toSlime(latestApplicationObject.setObject("application"), latestApplication);
                     latestApplicationObject.setLong("at", latestApplication.buildTime().orElse(Instant.EPOCH).toEpochMilli());
+                    latestApplicationObject.setBool("upgrade", application.require(stepStatus.instance()).productionDeployments().values().stream()
+                                                                          .anyMatch(deployment -> deployment.applicationVersion().compareTo(latestApplication) < 0));
                     toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
                 });
             }
