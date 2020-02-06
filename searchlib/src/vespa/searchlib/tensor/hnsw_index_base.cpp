@@ -156,7 +156,7 @@ HnswIndexBase::HnswIndexBase(const DocVectorAccess& vectors, RandomLevelGenerato
       _nodes(make_default_node_store_config()),
       _links(make_default_link_store_config()),
       _entry_docid(0), // Note that docid 0 is reserved and never used
-      _entry_level(0)
+      _entry_level(-1)
 {
 }
 

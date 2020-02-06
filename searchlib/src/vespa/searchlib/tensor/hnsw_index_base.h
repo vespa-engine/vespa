@@ -84,7 +84,7 @@ protected:
     NodeStore _nodes;
     LinkStore _links;
     uint32_t _entry_docid;
-    uint32_t _entry_level;
+    int _entry_level;
 
     static search::datastore::ArrayStoreConfig make_default_node_store_config();
     static search::datastore::ArrayStoreConfig make_default_link_store_config();

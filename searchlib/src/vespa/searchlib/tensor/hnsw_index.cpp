@@ -118,7 +118,7 @@ HnswIndex<FloatType>::add_document(uint32_t docid)
 
     FurthestPriQ best_neighbors;
     best_neighbors.push(entry_point);
-    search_level = std::min(level, static_cast<int>(_entry_level));
+    search_level = std::min(level, _entry_level);
 
     // Insert the added document in each level it should exist in.
     while (search_level >= 0) {
@@ -129,7 +129,7 @@ HnswIndex<FloatType>::add_document(uint32_t docid)
         // TODO: Shrink neighbors if needed
         --search_level;
     }
-    if (static_cast<uint32_t>(level) > _entry_level) {
+    if (level > _entry_level) {
         _entry_docid = docid;
         _entry_level = level;
     }
