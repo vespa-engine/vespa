@@ -16,6 +16,7 @@
 #include <vespa/document/select/invalidconstant.h>
 #include <vespa/document/select/doctype.h>
 #include <vespa/document/select/compare.h>
+#include <vespa/document/select/operator.h>
 #include <vespa/document/select/parse_utils.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <limits>
@@ -56,16 +57,6 @@ protected:
     void SetUp() override;
     void createDocs();
 
-    void testOperators0();
-    void testOperators1();
-    void testOperators2();
-    void testOperators3();
-    void testOperators4();
-    void testOperators5();
-    void testOperators6();
-    void testOperators7();
-    void testOperators8();
-    void testOperators9();
     void testDocumentUpdates0();
     void testDocumentUpdates1();
     void testDocumentUpdates2();
@@ -502,21 +493,7 @@ DocumentSelectParserTest::doParse(vespalib::stringref expr,
     EXPECT_EQ(select::ResultList(select::Result::result), \
               doParse(expr, (doc).getId())) << (std::string("Doc id: ") + expr);
 
-TEST_F(DocumentSelectParserTest, testOperators)
-{
-    testOperators0();
-    testOperators1();
-    testOperators2();
-    testOperators3();
-    testOperators4();
-    testOperators5();
-    testOperators6();
-    testOperators7();
-    testOperators8();
-    testOperators9();
-}
-
-void DocumentSelectParserTest::testOperators0()
+TEST_F(DocumentSelectParserTest, operators_0)
 {
     createDocs();
 
@@ -555,8 +532,17 @@ void DocumentSelectParserTest::testOperators0()
     PARSE("\"foo\" == 'foo'", *_doc[0], True);
     PARSE("\"bar\" = \"a\"", *_doc[0], False);
     PARSE("\"bar\" = \"*a*\"", *_doc[0], True);
+    PARSE("\"bar\" = \"*x*\"", *_doc[0], False);
+    PARSE("\"bar\" = \"ba*\"", *_doc[0], True);
+    PARSE("\"bar\" = \"a*\"", *_doc[0], False)
+    PARSE("\"bar\" = \"*ar\"", *_doc[0], True);
+    PARSE("\"bar\" = \"*a\"", *_doc[0], False);
     PARSE("\"bar\" = \"\"", *_doc[0], False);
     PARSE("\"\" = \"\"", *_doc[0], True);
+    PARSE("\"\" = \"*\"", *_doc[0], True);
+    PARSE("\"\" = \"****\"", *_doc[0], True);
+    PARSE("\"a\" = \"*?*\"", *_doc[0], True);
+    PARSE("\"a\" = \"*??*\"", *_doc[0], False);
     PARSE("\"bar\" =~ \"^a$\"", *_doc[0], False);
     PARSE("\"bar\" =~ \"a\"", *_doc[0], True);
     PARSE("\"bar\" =~ \"\"", *_doc[0], True);
@@ -565,7 +551,16 @@ void DocumentSelectParserTest::testOperators0()
     PARSE("30 = 30", *_doc[0], True);
 }
 
-void DocumentSelectParserTest::testOperators1()
+TEST_F(DocumentSelectParserTest, regex_matching_does_not_bind_anchors_to_newlines) {
+    createDocs();
+
+    PARSE("\"a\\nb\\nc\" =~ \"^b$\"", *_doc[0], False);
+    PARSE("\"a\\r\\nb\\r\\nc\" =~ \"^b$\"", *_doc[0], False);
+    // Same applies to implicit regex created from glob expression
+    PARSE("\"a\\nb\\nc\" = \"b\"", *_doc[0], False);
+}
+
+TEST_F(DocumentSelectParserTest, operators_1)
 {
     createDocs();
 
@@ -612,7 +607,7 @@ void DocumentSelectParserTest::testOperators1()
     PARSE("testdoctype1.headerval = 10", *_doc[4], True);
 }
 
-void DocumentSelectParserTest::testOperators2()
+TEST_F(DocumentSelectParserTest, operators_2)
 {
     createDocs();
 
@@ -637,7 +632,7 @@ void DocumentSelectParserTest::testOperators2()
     PARSEI("id.group == \"xyzzy\"", *_doc[10], True);
 }
 
-void DocumentSelectParserTest::testOperators3()
+TEST_F(DocumentSelectParserTest, operators3)
 {
     createDocs();
     {
@@ -670,7 +665,7 @@ void DocumentSelectParserTest::testOperators3()
     PARSEI("id == \"id:footype:testdoctype1:n=123456789:badger\"", *_doc[5], False);
 }
 
-void DocumentSelectParserTest::testOperators4()
+TEST_F(DocumentSelectParserTest, operators_4)
 {
     createDocs();
 
@@ -697,7 +692,7 @@ void DocumentSelectParserTest::testOperators4()
     PARSE("false or testdoctype1.content = 1", *_doc[0], Invalid);
 }
 
-void DocumentSelectParserTest::testOperators5()
+TEST_F(DocumentSelectParserTest, operators_5)
 {
     createDocs();
 
@@ -726,7 +721,7 @@ void DocumentSelectParserTest::testOperators5()
     PARSEI("-6 % 10 = -6", *_doc[0], True);
 }
 
-void DocumentSelectParserTest::testOperators6()
+TEST_F(DocumentSelectParserTest, operators_6)
 {
     createDocs();
 
@@ -770,7 +765,7 @@ void DocumentSelectParserTest::testOperators6()
     PARSE("testdoctype1.headerlongval<0", *_doc[7], True);
 }
 
-void DocumentSelectParserTest::testOperators7()
+TEST_F(DocumentSelectParserTest, operators_7)
 {
     createDocs();
 
@@ -807,7 +802,7 @@ void DocumentSelectParserTest::testOperators7()
     PARSE("testdoctype1.structarray[$x].key == 15 AND testdoctype1.structarray[$y].value == \"structval2\"", *_doc[1], True);
 }
 
-void DocumentSelectParserTest::testOperators8()
+TEST_F(DocumentSelectParserTest, operators_8)
 {
     createDocs();
 
@@ -840,7 +835,7 @@ void DocumentSelectParserTest::testOperators8()
     PARSE("testdoctype1.structarrmap{$x}[$y].key == 15 AND testdoctype1.structarrmap{$y}[$x].value == \"structval2\"", *_doc[1], False);
 }
 
-void DocumentSelectParserTest::testOperators9()
+TEST_F(DocumentSelectParserTest, operators_9)
 {
     createDocs();
 
@@ -1051,6 +1046,11 @@ void DocumentSelectParserTest::testDocumentUpdates0()
     PARSEI("\"foo\" == \"foo\"", *_update[0], True);
     PARSEI("\"bar\" = \"a\"", *_update[0], False);
     PARSEI("\"bar\" = \"*a*\"", *_update[0], True);
+    PARSEI("\"bar\" = \"**\"", *_update[0], True);
+    PARSEI("\"bar\" = \"***\"", *_update[0], True);
+    PARSEI("\"bar\" = \"****\"", *_update[0], True);
+    PARSEI("\"bar\" = \"???\"", *_update[0], True);
+    PARSEI("\"bar\" = \"????\"", *_update[0], False);
     PARSEI("\"bar\" = \"\"", *_update[0], False);
     PARSEI("\"\" = \"\"", *_update[0], True);
     PARSEI("\"bar\" =~ \"^a$\"", *_update[0], False);
@@ -1548,6 +1548,28 @@ TEST_F(DocumentSelectParserTest, imported_field_references_only_support_for_simp
     PARSE("with_imported.my_imported_field.foo", doc, Invalid);
     PARSE("with_imported.my_imported_field[0]", doc, Invalid);
     PARSE("with_imported.my_imported_field{foo}", doc, Invalid);
+}
+
+TEST_F(DocumentSelectParserTest, prefix_and_suffix_wildcard_globs_are_rewritten_to_optimized_form) {
+    using select::GlobOperator;
+    EXPECT_EQ(GlobOperator::convertToRegex("*foo"), "foo$");
+    EXPECT_EQ(GlobOperator::convertToRegex("foo*"), "^foo");
+    EXPECT_EQ(GlobOperator::convertToRegex("*foo*"), "foo");
+    EXPECT_EQ(GlobOperator::convertToRegex("*"), ""); // Matches any string.
+    EXPECT_EQ(GlobOperator::convertToRegex("**"), ""); // Still matches any string.
+}
+
+TEST_F(DocumentSelectParserTest, redundant_glob_wildcards_are_collapsed_into_minimal_form) {
+    using select::GlobOperator;
+    EXPECT_EQ(GlobOperator::convertToRegex("***"), ""); // Even still matches any string.
+    EXPECT_EQ(GlobOperator::convertToRegex("**foo**"), "foo");
+    EXPECT_EQ(GlobOperator::convertToRegex("foo***"), "^foo");
+    EXPECT_EQ(GlobOperator::convertToRegex("***foo"), "foo$");
+    EXPECT_EQ(GlobOperator::convertToRegex("foo**bar"), "^foo.*bar$");
+    EXPECT_EQ(GlobOperator::convertToRegex("**foo*bar**"), "foo.*bar");
+    EXPECT_EQ(GlobOperator::convertToRegex("**foo***bar**"), "foo.*bar");
+    EXPECT_EQ(GlobOperator::convertToRegex("*?*"), ".");
+    EXPECT_EQ(GlobOperator::convertToRegex("*?*?*?*"), "..*..*."); // Don't try this at home, kids!
 }
 
 } // document

@@ -191,35 +191,64 @@ GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const
     return match(left->getValue(), regex);
 }
 
+namespace {
+
+// Returns the number of consecutive wildcard ('*') characters found from
+// _and including_ the character at `i`, i.e. the wildcard run length.
+size_t wildcard_run_length(size_t i, vespalib::stringref str) {
+    size_t n = 0;
+    for (; (i < str.size()) && (str[i] == '*'); ++n, ++i) {}
+    return n;
+}
+
+}
+
 vespalib::string
-GlobOperator::convertToRegex(vespalib::stringref globpattern) const
+GlobOperator::convertToRegex(vespalib::stringref globpattern)
 {
+    if (globpattern.empty()) {
+        return "^$"; // Empty glob can only match the empty string.
+    }
     vespalib::asciistream ost;
-    ost << '^';
-    for(uint32_t i=0, n=globpattern.size(); i<n; ++i) {
+    size_t i = 0;
+    if (globpattern[0] != '*') {
+        ost << '^';
+    } else {
+        i += wildcard_run_length(0, globpattern); // Skip entire prefix wildcard run.
+    }
+    const size_t n = globpattern.size();
+    for (; i < n; ++i) {
         switch(globpattern[i]) {
-            case '*': ost << ".*";
-                      break;
-            case '?': ost << ".";
-                      break;
-            case '^':
-            case '$':
-            case '|':
-            case '{':
-            case '}':
-            case '(':
-            case ')':
-            case '[':
-            case ']':
-            case '\\':
-            case '+':
-            case '.': ost << '\\' << globpattern[i];
-                      break;
-                // Are there other regex special chars we need to escape?
-            default: ost << globpattern[i];
+        case '*':
+            i += wildcard_run_length(i, globpattern) - 1; // -1 since we always inc by 1 anyway.
+            if (i != (n - 1)) { // Don't emit trailing wildcard.
+                ost << ".*";
+            }
+            break;
+        case '?':
+            ost << '.';
+            break;
+        case '^':
+        case '$':
+        case '|':
+        case '{':
+        case '}':
+        case '(':
+        case ')':
+        case '[':
+        case ']':
+        case '\\':
+        case '+':
+        case '.':
+            ost << '\\' << globpattern[i];
+            break;
+        // Are there other regex special chars we need to escape?
+        default: ost << globpattern[i];
         }
     }
-    ost << '$';
+    if (globpattern[n - 1] != '*') {
+        ost << '$';
+    }
     return ost.str();
 }
 
