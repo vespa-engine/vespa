@@ -90,6 +90,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             // timed out, we know nothing new.
             return false;
         }
+        log.log(LogLevel.DEBUG, () -> "Polled queue and found config " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
             setInternalRedeploy(jrtReq.responseIsInternalRedeploy());
             setNewConfig(jrtReq);
