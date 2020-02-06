@@ -115,7 +115,7 @@ public class Flags {
             "Takes effect on next run of NodeRebooter");
 
     public static final UnboundBooleanFlag ENABLE_LARGE_ORCHESTRATOR_LOCKS = defineFeatureFlag(
-            "enable-large-orchestrator-locks", false,
+            "enable-large-orchestrator-locks", true,
             "If enabled, the orchestrator will accumulate application locks during probe in batch suspension, " +
             "and release them in reverse order only after the non-probe is complete. Can be set depending on " +
             "parent hostname.",
