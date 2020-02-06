@@ -11,7 +11,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;

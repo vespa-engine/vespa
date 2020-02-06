@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;

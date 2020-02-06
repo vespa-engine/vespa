@@ -30,7 +30,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;

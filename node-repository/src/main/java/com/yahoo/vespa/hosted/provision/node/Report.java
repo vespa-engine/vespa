@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.node;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 
 import java.time.Instant;
 import java.util.Arrays;

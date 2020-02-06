@@ -10,7 +10,7 @@ import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.ca.CertificateTester;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;

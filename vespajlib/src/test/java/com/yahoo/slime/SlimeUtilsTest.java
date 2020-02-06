@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config;
+package com.yahoo.slime;
 
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
 

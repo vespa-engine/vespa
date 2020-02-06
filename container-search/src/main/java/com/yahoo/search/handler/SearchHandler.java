@@ -29,7 +29,7 @@ import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;

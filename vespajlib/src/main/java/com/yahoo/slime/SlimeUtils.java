@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config;
-
-import com.yahoo.slime.*;
+package com.yahoo.slime;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,8 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
- * Extra utilities/operations on slime trees that we would like to have as part of slime in the future, but
- * which resides here until we have a better place to put it.
+ * Extra utilities/operations on slime trees.
  *
  * @author Ulf Lilleengen
  */

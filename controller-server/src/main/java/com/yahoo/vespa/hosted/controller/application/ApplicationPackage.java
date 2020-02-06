@@ -9,7 +9,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayInputStream;
