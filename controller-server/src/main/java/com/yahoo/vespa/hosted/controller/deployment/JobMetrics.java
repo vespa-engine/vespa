@@ -40,12 +40,11 @@ public class JobMetrics {
     }
 
     Map<String, String> contextOf(JobId id) {
-        return Map.of("tenant", id.application().tenant().value(),
-                      "application", id.application().application().value(),
-                      "instance", id.application().instance().value(),
-                      "job", id.type().jobName(),
-                      "environment", id.type().environment().value(),
-                      "region", id.type().zone(system).region().value());
+        return Map.of("applicationId", id.application().toFullString(),
+                      "tenantName", id.application().tenant().value(),
+                      "app", id.application().application().value() + "." + id.application().instance().value(),
+                      "test", Boolean.toString(id.type().isTest()),
+                      "zone", id.type().zone(system).value());
     }
 
     static String valueOf(RunStatus status) {

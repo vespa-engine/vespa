@@ -375,12 +375,11 @@ public class JobRunnerTest {
             jobs.finish(jobs.last(id, systemTest).get().id());
         }
 
-        Map<String, String> context = Map.of("tenant", "tenant",
-                                             "application", "real",
-                                             "instance", "default",
-                                             "job", "system-test",
-                                             "environment", "test",
-                                             "region", "us-east-1");
+        Map<String, String> context = Map.of("applicationId", "tenant.real.default",
+                                             "tenantName", "tenant",
+                                             "app", "real.default",
+                                             "test", "true",
+                                             "zone", "test.us-east-1");
         MetricsMock metric = ((MetricsMock) tester.controller().metric());
         assertEquals(RunStatus.values().length - 1, metric.getMetric(context::equals, JobMetrics.start).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.abort).get().intValue());
