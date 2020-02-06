@@ -93,7 +93,11 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         log.log(LogLevel.DEBUG, () -> "Polled queue and found config " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
             setInternalRedeploy(jrtReq.responseIsInternalRedeploy());
-            setNewConfig(jrtReq);
+            if (jrtReq.hasUpdatedConfig()) {
+                setNewConfig(jrtReq);
+            } else {
+                setGeneration(jrtReq.getNewGeneration());
+            }
         }
         return true;
     }
