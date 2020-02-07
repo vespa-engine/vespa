@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -47,7 +46,6 @@ public class DeploymentTester {
 
     public static final TenantAndApplicationId appId = TenantAndApplicationId.from("tenant", "application");
     public static final ApplicationId instanceId = appId.defaultInstance();
-    public static final TesterId testerId = TesterId.of(instanceId);
 
     private final ControllerTester tester;
     private final JobController jobs;

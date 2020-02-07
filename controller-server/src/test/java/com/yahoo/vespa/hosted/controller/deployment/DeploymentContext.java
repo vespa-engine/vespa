@@ -409,11 +409,6 @@ public class DeploymentContext {
         return this;
     }
 
-    /** Sets a single endpoint in the routing layer for the instance in this */
-    public DeploymentContext setEndpoints(ZoneId zone) {
-        return setEndpoints(zone, false);
-    }
-
     /** Deploy default application package, start a run for that change and return its ID */
     public RunId newRun(JobType type) {
         submit();
@@ -519,13 +514,10 @@ public class DeploymentContext {
         return run;
     }
 
-    /** Sets a single endpoint in the routing layer; this matches that required for the tester */
-    private DeploymentContext setEndpoints(ZoneId zone, boolean tester) {
+    /** Sets a single endpoint in the routing layer */
+    DeploymentContext setEndpoints(ZoneId zone) {
         if (!supportsRoutingMethod(RoutingMethod.shared, zone)) return this;
         var id = instanceId;
-        if (tester) {
-            id = testerId.id();
-        }
         routing.putEndpoints(new DeploymentId(id, zone),
                              Collections.singletonList(new RoutingEndpoint(String.format("https://%s--%s--%s.%s.%s.vespa:43",
                                                                                          id.instance().value(),
