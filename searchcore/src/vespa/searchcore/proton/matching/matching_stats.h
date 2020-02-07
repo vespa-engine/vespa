@@ -125,7 +125,7 @@ private:
     size_t                 _softDoomed;
     Avg                    _doomOvertime;
     double                 _softDoomFactor;
-    Avg                    _queryCollateralTime;
+    Avg                    _queryCollateralTime; // TODO: Remove in Vespa 8
     Avg                    _querySetupTime;
     Avg                    _queryLatency;
     Avg                    _matchTime;
@@ -169,6 +169,7 @@ public:
     double softDoomFactor() const { return _softDoomFactor; }
     MatchingStats &updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit, vespalib::duration duration);
 
+    // TODO: Remove in Vespa 8
     MatchingStats &queryCollateralTime(double time_s) { _queryCollateralTime.set(time_s); return *this; }
     double queryCollateralTimeAvg() const { return _queryCollateralTime.avg(); }
     size_t queryCollateralTimeCount() const { return _queryCollateralTime.count(); }
