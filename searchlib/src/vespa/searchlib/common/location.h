@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/geo/zcurve.h>
 #include "documentlocations.h"
+#include <vespa/vespalib/geo/zcurve.h>
+
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace common {
+namespace search::common {
 
 class Location : public DocumentLocations
 {
@@ -51,5 +51,3 @@ private:
 };
 
 }
-}
-
