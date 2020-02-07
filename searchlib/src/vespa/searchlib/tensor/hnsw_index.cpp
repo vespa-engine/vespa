@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hnsw_index.h"
+#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::tensor {
 
@@ -98,9 +99,9 @@ void
 HnswIndex<FloatType>::add_document(uint32_t docid)
 {
     auto input = get_vector(docid);
-    _node_refs.ensure_size(docid + 1, EntryRef());
+    _node_refs.ensure_size(docid + 1, AtomicEntryRef());
     // A document cannot be added twice.
-    assert(!_node_refs[docid].valid());
+    assert(!_node_refs[docid].load_acquire().valid());
     int level = make_node_for_document(docid);
     if (_entry_docid == 0) {
         _entry_docid = docid;
