@@ -61,12 +61,9 @@ public class TestRunnerHandler extends LoggingRequestHandler {
 
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
-        if (path.equals("/tester/v1/log")) {
+        // TODO: Migrate to /tester/v1/log when /tester/v1/log2 is not in use anymore (and remove /tester/v1/log2)
+        if (path.equals("/tester/v1/log") || path.equals("/tester/v1/log2")) {
             return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
-                                                                              ? Long.parseLong(request.getProperty("after"))
-                                                                              : -1)));
-        } else if (path.equals("/tester/v1/log2")) { // TODO: Migrate to /tester/v1/log when the above is not in use anymore
-            return new SlimeJsonResponse(log2ToSlime(testRunner.getLog(request.hasProperty("after")
                                                                                ? Long.parseLong(request.getProperty("after"))
                                                                                : -1)));
         } else if (path.equals("/tester/v1/status")) {
@@ -98,13 +95,6 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     }
 
     static Slime logToSlime(Collection<LogRecord> log) {
-        Slime root = new Slime();
-        Cursor recordArray = root.setArray();
-        logArrayToSlime(recordArray, log);
-        return root;
-    }
-
-    static Slime log2ToSlime(Collection<LogRecord> log) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor recordArray = root.setArray("logRecords");
