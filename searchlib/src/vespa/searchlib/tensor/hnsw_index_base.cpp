@@ -145,6 +145,17 @@ HnswIndexBase::connect_new_node(uint32_t docid, const LinkArray& neighbors, uint
     }
 }
 
+void
+HnswIndexBase::remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level)
+{
+    LinkArray new_links;
+    auto old_links = get_link_array(remove_from, level);
+    for (uint32_t id : old_links) {
+        if (id != remove_id) new_links.push_back(id);
+    }
+    set_link_array(remove_from, level, new_links);
+}
+
 HnswIndexBase::HnswIndexBase(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg)
     : _vectors(vectors),
       _level_generator(level_generator),

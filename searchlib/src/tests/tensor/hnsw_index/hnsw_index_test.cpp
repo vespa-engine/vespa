@@ -67,6 +67,9 @@ public:
         level_generator.level = max_level;
         index->add_document(docid);
     }
+    void remove_document(uint32_t docid) {
+        index->remove_document(docid);
+    }
     void expect_entry_point(uint32_t exp_docid, uint32_t exp_level) {
         EXPECT_EQ(exp_docid, index->get_entry_docid());
         EXPECT_EQ(exp_level, index->get_entry_level());
@@ -129,6 +132,38 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_select_ne
     expect_level_0(5, {2, 3, 6});
     expect_level_0(6, {2, 5});
     expect_level_0(7, {2, 3});
+}
+
+TEST_F(HnswIndexTest, 2d_vectors_inserted_and_removed)
+{
+    init(false);
+
+    add_document(1);
+    expect_level_0(1, {});
+    expect_entry_point(1, 0);
+
+    add_document(2);
+    expect_level_0(1, {2});
+    expect_level_0(2, {1});
+    expect_entry_point(1, 0);
+
+    add_document(3);
+    expect_level_0(1, {2, 3});
+    expect_level_0(2, {1, 3});
+    expect_level_0(3, {1, 2});
+    expect_entry_point(1, 0);
+
+    remove_document(2);
+    expect_level_0(1, {3});
+    expect_level_0(3, {1});
+    expect_entry_point(1, 0);
+
+    remove_document(1);
+    expect_level_0(3, {});
+    expect_entry_point(3, 0);
+
+    remove_document(3);
+    expect_entry_point(0, -1);
 }
 
 TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_select_neighbors)

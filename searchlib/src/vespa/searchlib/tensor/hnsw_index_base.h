@@ -109,6 +109,7 @@ protected:
     LinkArray select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     LinkArray select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     void connect_new_node(uint32_t docid, const LinkArray& neighbors, uint32_t level);
+    void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
 public:
     HnswIndexBase(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg);
