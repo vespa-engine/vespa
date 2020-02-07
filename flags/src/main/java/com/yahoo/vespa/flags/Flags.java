@@ -126,7 +126,7 @@ public class Flags {
             "retire-with-permanently-down", true,
             "If enabled, retirement will end with setting the host status to PERMANENTLY_DOWN, " +
             "instead of ALLOWED_TO_BE_DOWN (old behavior).",
-            "Takes effect on the first run of RetiredExpirer.",
+            "Takes effect on the next run of RetiredExpirer.",
             HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
