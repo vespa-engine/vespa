@@ -213,7 +213,7 @@ public class Flags {
             ZONE_ID, HOSTNAME);
 
     public static final UnboundBooleanFlag GENERATE_ROUTING_CONFIG_FOR_TESTER_APPLICATIONS = defineFeatureFlag(
-            "generate-routing-config-for-tester-applications", true,
+            "generate-routing-config-for-tester-applications", false,
             "Whether config server should generate routing config (lb-services) for tester applications",
             "Takes effect on the next deployment of the routing (zone) application",
             ZONE_ID);
