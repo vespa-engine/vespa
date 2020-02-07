@@ -140,8 +140,27 @@ template <typename FloatType>
 void
 HnswIndex<FloatType>::remove_document(uint32_t docid)
 {
-    (void) docid;
-    // TODO: implement
+    bool need_new_entrypoint = (docid == _entry_docid);
+    LinkArray empty;
+    LevelArrayRef node_levels = get_level_array(docid);
+    for (int level = node_levels.size(); level-- > 0; ) {
+        LinkArrayRef my_links = get_link_array(docid, level);
+        for (uint32_t neighbor_id : my_links) {
+            if (need_new_entrypoint) {
+                _entry_docid = neighbor_id;
+                _entry_level = level;
+                need_new_entrypoint = false;
+            }
+            remove_link_to(neighbor_id, docid, level);
+        }
+        set_link_array(docid, level, empty);
+    }
+    if (need_new_entrypoint) {
+        _entry_docid = 0;
+        _entry_level = -1;
+    }
+    search::datastore::EntryRef invalid;
+    _node_refs[docid].store_release(invalid);
 }
 
 }
