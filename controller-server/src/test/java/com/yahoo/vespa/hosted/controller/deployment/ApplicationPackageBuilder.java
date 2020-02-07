@@ -201,11 +201,11 @@ public class ApplicationPackageBuilder {
             xml.append("'/>\n");
         }
         xml.append(notifications);
+        xml.append(blockChange);
         if (explicitSystemTest)
             xml.append("    <test />\n");
         if (explicitStagingTest)
             xml.append("    <staging />\n");
-        xml.append(blockChange);
         xml.append("    <");
         xml.append(environment.value());
         if (globalServiceId != null) {
