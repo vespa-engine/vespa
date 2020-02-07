@@ -27,7 +27,6 @@ public class ServerCacheTest {
     private static String configMd5 = "mymd5";
     private static String configMd5_2 = "mymd5_2";
     private static ConfigDefinition def = new ConfigDefinition("mypayload", new String[0]);
-    private static ConfigDefinition def_2 = new ConfigDefinition("otherpayload", new String[0]);
 
     private static ConfigDefinitionKey fooBarDefKey = new ConfigDefinitionKey("foo", "bar");
     private static ConfigDefinitionKey fooBazDefKey = new ConfigDefinitionKey("foo", "baz");
@@ -49,9 +48,9 @@ public class ServerCacheTest {
 
         cache = new ServerCache(new TestConfigDefinitionRepo(), userConfigDefinitionRepo);
 
-        cache.put(fooBarCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), def.getCNode(), 2, false, configMd5), configMd5);
-        cache.put(bazQuuxCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), def.getCNode(), 2, false, configMd5), configMd5);
-        cache.put(fooBarCacheKeyDifferentMd5, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), def_2.getCNode(), 2, false, configMd5_2), configMd5_2);
+        cache.put(fooBarCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5), configMd5);
+        cache.put(bazQuuxCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5), configMd5);
+        cache.put(fooBarCacheKeyDifferentMd5, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5_2), configMd5_2);
     }
 
     @Test

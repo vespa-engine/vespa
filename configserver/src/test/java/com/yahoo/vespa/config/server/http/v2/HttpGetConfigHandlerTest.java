@@ -1,37 +1,36 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
-import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
-import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Collections;
-import java.util.HashSet;
-
+import com.yahoo.config.SimpletypesConfig;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.http.HandlerTest;
+import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Test;
-import com.yahoo.config.SimpletypesConfig;
-import com.yahoo.config.codegen.DefParser;
-import com.yahoo.config.codegen.InnerCNode;
-import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.text.StringUtilities;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
-import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.http.HandlerTest;
-import com.yahoo.vespa.config.server.http.HttpConfigRequest;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+
+import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
+import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
+import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class HttpGetConfigHandlerTest {
 
@@ -58,9 +57,8 @@ public class HttpGetConfigHandlerTest {
         // Define config response for mock handler
         final long generation = 1L;
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
-        InnerCNode targetDef = getInnerCNode();
         mockRequestHandler.responses.put(new ApplicationId.Builder().tenant(tenant).applicationName("myapplication").build(),
-                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5"));
+                                         SlimeConfigResponse.fromConfigPayload(payload, generation, false, "mymd5"));
         HttpResponse response = handler.handle(HttpRequest.createTestRequest(configUri, GET));
         assertThat(SessionHandlerTest.getRenderedString(response), is(EXPECTED_RENDERED_STRING));
     }
@@ -71,11 +69,10 @@ public class HttpGetConfigHandlerTest {
                               "/application/myapplication/environment/staging/region/myregion/instance/myinstance/foo.bar/myid";
         final long generation = 1L;
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
-        InnerCNode targetDef = getInnerCNode();
         mockRequestHandler.responses.put(new ApplicationId.Builder()
                                          .tenant(tenant)
                                          .applicationName("myapplication").instanceName("myinstance").build(),
-                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5"));
+                                         SlimeConfigResponse.fromConfigPayload(payload, generation, false, "mymd5"));
         HttpResponse response = handler.handle(HttpRequest.createTestRequest(uriLongAppId, GET));
         assertThat(SessionHandlerTest.getRenderedString(response), is(EXPECTED_RENDERED_STRING));
     }
@@ -121,18 +118,11 @@ public class HttpGetConfigHandlerTest {
     public void require_that_nocache_property_works() throws IOException {
         long generation = 1L;
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
-        InnerCNode targetDef = getInnerCNode();
         mockRequestHandler.responses.put(new ApplicationId.Builder().tenant(tenant).applicationName("myapplication").build(),
-                                         SlimeConfigResponse.fromConfigPayload(payload, targetDef, generation, false, "mymd5"));
+                                         SlimeConfigResponse.fromConfigPayload(payload, generation, false, "mymd5"));
         final HttpRequest request = HttpRequest.createTestRequest(configUri, GET, null, Collections.singletonMap("nocache", "true"));
         HttpResponse response = handler.handle(request);
         assertThat(SessionHandlerTest.getRenderedString(response), is(EXPECTED_RENDERED_STRING));
-    }
-
-    private InnerCNode getInnerCNode() {
-        // TODO: Hope to be able to remove this mess soon.
-        DefParser dParser = new DefParser(SimpletypesConfig.getDefName(), new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
-        return dParser.getTree();
     }
 
 }

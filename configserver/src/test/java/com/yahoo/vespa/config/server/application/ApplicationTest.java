@@ -4,14 +4,15 @@ package com.yahoo.vespa.config.server.application;
 import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
 import com.yahoo.jrt.Request;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
@@ -33,12 +34,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -111,22 +114,27 @@ public class ApplicationTest {
     }
 
     @Test
-    public void require_that_build_config_can_be_resolved() {
-        List<String> payload = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA)).getLegacyPayload();
-        assertTrue(payload.get(1).contains("host"));
+    public void require_that_build_config_can_be_resolved() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE,
+                                                                   ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA))
+                .serialize(baos, CompressionType.UNCOMPRESSED);
+        assertTrue(baos.toString().startsWith("{\"vespaVersion\":\"1.0.0\",\"hosts\":[{\"name\":\"mytesthost\""));
     }
 
     @Test
-    public void require_that_non_existent_fields_in_schema_is_skipped() {
+    public void require_that_non_existent_fields_in_schema_is_skipped() throws IOException {
         // Ask for config without schema and check that we get correct default value back
-        List<String> payload = handler.resolveConfig(createSimpleConfigRequest()).getLegacyPayload();
-        assertThat(payload.get(0), is("boolval false"));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        handler.resolveConfig(createSimpleConfigRequest()).serialize(baos, CompressionType.UNCOMPRESSED);;
+        assertEquals("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}", baos.toString(StandardCharsets.UTF_8));
         // Ask for config with wrong schema
         String[] schema = new String[1];
         schema[0] = "boolval bool default=true"; // changed to be true, original is false
-        payload = handler.resolveConfig(createRequest(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE, "", schema)).getLegacyPayload();
-        assertThat(payload.size(), is(1));
-        assertThat(payload.get(0), is("boolval true"));
+        baos = new ByteArrayOutputStream();
+        handler.resolveConfig(createRequest(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE, "", schema))
+                                        .serialize(baos, CompressionType.UNCOMPRESSED);
+        assertEquals("{\"boolval\":true,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}", baos.toString(Utf8.getCharset()));
     }
 
     @Test
