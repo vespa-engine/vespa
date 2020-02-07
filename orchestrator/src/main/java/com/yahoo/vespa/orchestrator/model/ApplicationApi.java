@@ -8,6 +8,7 @@ import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * The API a Policy has access to
@@ -29,10 +30,12 @@ public interface ApplicationApi {
     ApplicationInstanceStatus getApplicationStatus();
 
     void setHostState(OrchestratorContext context, HostName hostName, HostStatus status);
-    List<HostName> getNodesInGroupWithStatus(HostStatus status);
+    List<HostName> getNodesInGroupWith(Predicate<HostStatus> statusPredicate);
+    default List<HostName> getNodesInGroupWithStatus(HostStatus requiredStatus) {
+        return getNodesInGroupWith(status -> status == requiredStatus);
+    }
 
     List<StorageNode> getStorageNodesInGroupInClusterOrder();
     List<StorageNode> getUpStorageNodesInGroupInClusterOrder();
-    List<StorageNode> getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder();
-
+    List<StorageNode> getSuspendedStorageNodesInGroupInReverseClusterOrder();
 }
