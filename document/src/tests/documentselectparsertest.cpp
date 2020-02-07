@@ -632,7 +632,7 @@ TEST_F(DocumentSelectParserTest, operators_2)
     PARSEI("id.group == \"xyzzy\"", *_doc[10], True);
 }
 
-TEST_F(DocumentSelectParserTest, operators3)
+TEST_F(DocumentSelectParserTest, operators_3)
 {
     createDocs();
     {
