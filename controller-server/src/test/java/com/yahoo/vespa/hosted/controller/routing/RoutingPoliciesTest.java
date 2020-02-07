@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mortent
@@ -433,6 +434,69 @@ public class RoutingPoliciesTest {
         context.submit(applicationPackage3).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1, zone2);
+    }
+
+    @Test
+    public void set_global_endpoint_status_respects_constraint() {
+        var tester = new RoutingPoliciesTester();
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+
+        // Provision load balancers and deploy application
+        tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
+                .build();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+
+        // Global DNS record is created
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // Global routing status is overridden in one zone
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.out,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+
+        // Inactive deployment is removed from global DNS record
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
+
+        // Attempt to set remaining deployment out fails
+        var expectedMessage = "Changing status of deployment or zone to 'out' would violate status constraint: " +
+                              "tenant1.app1 in prod.us-west-1 is currently out. Maximum 1 of 2 deployment(s) are " +
+                              "allowed out";
+        try {
+            tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone2), GlobalRouting.Status.out, GlobalRouting.Agent.tenant);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals(expectedMessage, e.getMessage());
+        }
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
+
+        // Attempt to set entire zone out, which contains remaining deployment, fails
+        try {
+            tester.routingPolicies().setGlobalRoutingStatus(zone2, GlobalRouting.Status.out);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals(expectedMessage, e.getMessage());
+        }
+        assertEquals(GlobalRouting.Status.in, tester.routingPolicies().get(zone2).globalRouting().status());
+
+        // Inactive deployment is put back in
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.in, GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // Other deployment can now be taken out
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone2), GlobalRouting.Status.out, GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
+
+        // Entire zone can also be taken out
+        tester.routingPolicies().setGlobalRoutingStatus(zone2, GlobalRouting.Status.out);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
     }
 
     @Test

@@ -158,9 +158,11 @@ public class RoutingApiTest extends ControllerContainerTest {
     public void mixed_routing() {
         var westZone = ZoneId.from("prod", "us-west-1");
         var eastZone = ZoneId.from("prod", "us-east-3");
+        var centralZone = ZoneId.from("prod", "us-central-1");
 
         // One zone supports multiple routing methods
-        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(westZone),
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(List.of(ZoneApiMock.from(westZone),
+                                                                                    ZoneApiMock.from(centralZone)),
                                                                             RoutingMethod.shared,
                                                                             RoutingMethod.exclusive);
 
@@ -168,13 +170,15 @@ public class RoutingApiTest extends ControllerContainerTest {
         var context = deploymentTester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
                 .region(westZone.region())
+                .region(centralZone.region())
                 .region(eastZone.region())
-                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .endpoint("default", "default", westZone.region().value(), centralZone.region().value())
                 .build();
         context.submit(applicationPackage).deploy();
 
-        // Assign policy in one zone
+        // Assign policy in 2/3 zones
         context.addRoutingPolicy(westZone, true);
+        context.addRoutingPolicy(centralZone, true);
 
         // GET status with both policy and rotation assigned
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",

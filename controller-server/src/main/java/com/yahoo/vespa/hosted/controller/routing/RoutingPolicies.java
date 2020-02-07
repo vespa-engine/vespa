@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -84,26 +83,22 @@ public class RoutingPolicies {
                                                        deploymentSpec);
         var inactiveZones = inactiveZones(application, deploymentSpec);
         try (var lock = db.lockRoutingPolicies()) {
-            if (!application.instance().isTester()) removeGlobalDnsUnreferencedBy(loadBalancers, lock);
+            removeGlobalDnsUnreferencedBy(loadBalancers, lock);
             storePoliciesOf(loadBalancers, lock);
             removePoliciesUnreferencedBy(loadBalancers, lock);
-            if (!application.instance().isTester()) updateGlobalDnsOf(get(loadBalancers.application).values(), inactiveZones, lock);
+            updateGlobalDnsOf(get(loadBalancers.application).values(), inactiveZones, lock);
         }
-    }
-
-    /** Returns whether global DNS records should be updated for given application and zone */
-    private boolean updateGlobalDnsOf(ApplicationId application, ZoneId zone) {
-        if (application.instance().isTester()) return false;
-        if (!zone.environment().isProduction()) return false;
-        return true;
     }
 
     /** Set the status of all global endpoints in given zone */
     public void setGlobalRoutingStatus(ZoneId zone, GlobalRouting.Status status) {
         try (var lock = db.lockRoutingPolicies()) {
+            var allPolicies = db.readRoutingPolicies();
+            for (var applicationPolicies : allPolicies.values()) {
+                checkStatusChangeTo(status, zone, applicationPolicies.values(), Set.of(), lock);
+            }
             db.writeZoneRoutingPolicy(new ZoneRoutingPolicy(zone, GlobalRouting.status(status, GlobalRouting.Agent.operator,
                                                                                        controller.clock().instant())));
-            var allPolicies = db.readRoutingPolicies();
             for (var applicationPolicies : allPolicies.values()) {
                 updateGlobalDnsOf(applicationPolicies.values(), Set.of(), lock);
             }
@@ -114,6 +109,7 @@ public class RoutingPolicies {
     public void setGlobalRoutingStatus(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
         try (var lock = db.lockRoutingPolicies()) {
             var policies = get(deployment.applicationId());
+            checkStatusChangeTo(status, deployment.zoneId(), policies.values(), Set.of(), lock);
             var newPolicies = new LinkedHashMap<>(policies);
             for (var policy : policies.values()) {
                 if (!policy.id().zone().equals(deployment.zoneId())) continue; // Wrong zone
@@ -131,18 +127,14 @@ public class RoutingPolicies {
         // Create DNS record for each routing ID
         var routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
+            if (routeEntry.getKey().application().instance().isTester()) continue;
             var targets = new LinkedHashSet<AliasTarget>();
             var staleTargets = new LinkedHashSet<AliasTarget>();
             for (var policy : routeEntry.getValue()) {
                 if (policy.dnsZone().isEmpty()) continue;
                 var target = new AliasTarget(policy.canonicalName(), policy.dnsZone().get(), policy.id().zone());
                 var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
-                // Remove target zone if global routing status is set out at:
-                // - zone level (ZoneRoutingPolicy)
-                // - deployment level (RoutingPolicy)
-                // - application package level (deployment.xml)
-                if (anyOut(zonePolicy.globalRouting(), policy.status().globalRouting()) ||
-                    inactiveZones.contains(policy.id().zone())) {
+                if (isConfiguredOut(policy, zonePolicy, inactiveZones)) {
                     staleTargets.add(target);
                 } else {
                     targets.add(target);
@@ -204,6 +196,7 @@ public class RoutingPolicies {
 
     /** Remove unreferenced global endpoints from DNS */
     private void removeGlobalDnsUnreferencedBy(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+        if (loadBalancers.application.instance().isTester()) return;
         var zonePolicies = get(loadBalancers.application, loadBalancers.zone).values();
         var removalCandidates = new HashSet<>(routingTableFrom(zonePolicies).keySet());
         var activeRoutingIds = routingIdsFrom(loadBalancers);
@@ -211,6 +204,31 @@ public class RoutingPolicies {
         for (var id : removalCandidates) {
             var endpoint = RoutingPolicy.globalEndpointOf(id.application(), id.endpointId(), controller.system());
             controller.nameServiceForwarder().removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()), Priority.normal);
+        }
+    }
+
+    /** Check whether status can be changed to target for given zone, based on the existing status in routingPolicies */
+    private void checkStatusChangeTo(GlobalRouting.Status target, ZoneId zone, Collection<RoutingPolicy> routingPolicies,
+                                     Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
+        if (target != GlobalRouting.Status.out) return; // Can always change to 'in' status
+        var routingTable = routingTableFrom(routingPolicies);
+        for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
+            int deployments = routeEntry.getValue().size();
+            int maxOut = Math.max(0, deployments - 1);
+            var out = new ArrayList<DeploymentId>();
+            for (var policy : routeEntry.getValue()) {
+                if (policy.id().zone().equals(zone)) continue; // Do not count status for the zone we're changing
+                var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
+                if (isConfiguredOut(policy, zonePolicy, inactiveZones)) out.add(new DeploymentId(policy.id().owner(),
+                                                                                                 policy.id().zone()));
+            }
+            if (out.size() < maxOut) continue;
+            throw new IllegalArgumentException("Changing status of deployment or zone to '" + target +
+                                               "' would violate status constraint: " +
+                                               out.stream().map(DeploymentId::toString)
+                                                  .collect(Collectors.joining(", ")) +
+                                               (out.size() == 1 ? " is" : " are") + " currently out. Maximum " +
+                                               maxOut + " of " + deployments + " deployment(s) are allowed out");
         }
     }
 
@@ -238,12 +256,6 @@ public class RoutingPolicies {
         return Collections.unmodifiableMap(routingTable);
     }
 
-    private static boolean anyOut(GlobalRouting... globalRouting) {
-        return Arrays.stream(globalRouting)
-                     .map(GlobalRouting::status)
-                     .anyMatch(status -> status == GlobalRouting.Status.out);
-    }
-
     private static boolean isActive(LoadBalancer loadBalancer) {
         switch (loadBalancer.state()) {
             case reserved: // Count reserved as active as we want callers (application API) to see the endpoint as early
@@ -251,6 +263,17 @@ public class RoutingPolicies {
             case active: return true;
         }
         return false;
+    }
+
+    /** Returns whether the global routing status of given policy is configured out */
+    private static boolean isConfiguredOut(RoutingPolicy policy, ZoneRoutingPolicy zonePolicy, Set<ZoneId> inactiveZones) {
+        // A deployment is can be configured out at any of the following levels:
+        // - zone level (ZoneRoutingPolicy)
+        // - deployment level (RoutingPolicy)
+        // - application package level (deployment.xml)
+        return zonePolicy.globalRouting().status() == GlobalRouting.Status.out ||
+               policy.status().globalRouting().status() == GlobalRouting.Status.out ||
+               inactiveZones.contains(policy.id().zone());
     }
 
     /** Load balancers allocated to a deployment */
