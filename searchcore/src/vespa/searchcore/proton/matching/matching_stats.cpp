@@ -30,6 +30,7 @@ MatchingStats::MatchingStats()
       _doomOvertime(),
       _softDoomFactor(INITIAL_SOFT_DOOM_FACTOR),
       _queryCollateralTime(),
+      _querySetupTime(),
       _queryLatency(),
       _matchTime(),
       _groupingTime(),
@@ -70,6 +71,7 @@ MatchingStats::add(const MatchingStats &rhs)
     _doomOvertime.add(rhs._doomOvertime);
 
     _queryCollateralTime.add(rhs._queryCollateralTime);
+    _querySetupTime.add(rhs._querySetupTime);
     _queryLatency.add(rhs._queryLatency);
     _matchTime.add(rhs._matchTime);
     _groupingTime.add(rhs._groupingTime);

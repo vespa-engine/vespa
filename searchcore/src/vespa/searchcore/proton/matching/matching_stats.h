@@ -126,6 +126,7 @@ private:
     Avg                    _doomOvertime;
     double                 _softDoomFactor;
     Avg                    _queryCollateralTime;
+    Avg                    _querySetupTime;
     Avg                    _queryLatency;
     Avg                    _matchTime;
     Avg                    _groupingTime;
@@ -173,6 +174,12 @@ public:
     size_t queryCollateralTimeCount() const { return _queryCollateralTime.count(); }
     double queryCollateralTimeMin() const { return _queryCollateralTime.min(); }
     double queryCollateralTimeMax() const { return _queryCollateralTime.max(); }
+
+    MatchingStats &querySetupTime(double time_s) { _querySetupTime.set(time_s); return *this; }
+    double querySetupTimeAvg() const { return _querySetupTime.avg(); }
+    size_t querySetupTimeCount() const { return _querySetupTime.count(); }
+    double querySetupTimeMin() const { return _querySetupTime.min(); }
+    double querySetupTimeMax() const { return _querySetupTime.max(); }
 
     MatchingStats &queryLatency(double time_s) { _queryLatency.set(time_s); return *this; }
     double queryLatencyAvg() const { return _queryLatency.avg(); }

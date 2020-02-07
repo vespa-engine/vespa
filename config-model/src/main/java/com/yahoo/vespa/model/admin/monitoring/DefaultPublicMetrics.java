@@ -84,6 +84,7 @@ public class DefaultPublicMetrics {
 
         metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.docs_reranked.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.average"));
 
