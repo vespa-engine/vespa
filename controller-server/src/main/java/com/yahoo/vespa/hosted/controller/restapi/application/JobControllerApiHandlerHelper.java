@@ -592,10 +592,7 @@ class JobControllerApiHandlerHelper {
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");
                 List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
-                controller.versionStatus().versions().stream()
-                          .filter(version -> version.confidence().equalOrHigherThan(normal))
-                          .max(naturalOrder())
-                          .or(() -> controller.versionStatus().versions().stream().filter(VespaVersion::isSystemVersion).findAny())
+                latestVersionPreferablyWithNormalConfidenceNAndotNewerThanSystem(controller.versionStatus().versions())
                           .ifPresent(latestPlatform -> {
                               Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
                               latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
@@ -692,5 +689,22 @@ class JobControllerApiHandlerHelper {
             blockerObject.setString("zone", blocker.window().zone().toString());
         });
     }
+
+    private static Optional<VespaVersion> latestVersionPreferablyWithNormalConfidenceNAndotNewerThanSystem(List<VespaVersion> versions) {
+        int i;
+        for (i = versions.size(); i-- > 0; )
+            if (versions.get(i).isSystemVersion())
+                break;
+
+        if (i < 0)
+            return Optional.empty();
+
+        for (int j = i; j >= 0; j--)
+            if (versions.get(j).confidence().equalOrHigherThan(normal))
+                return Optional.of(versions.get(j));
+
+        return Optional.of(versions.get(i));
+    }
+
 }
 

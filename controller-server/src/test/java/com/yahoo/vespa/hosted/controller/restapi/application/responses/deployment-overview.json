@@ -18,7 +18,7 @@
       },
       "latestVersions": {
         "platform": {
-          "platform": "7.164.0",
+          "platform": "6.1.0",
           "at": "(ignore)",
           "upgrade": false,
           "blockers": []
@@ -505,7 +505,7 @@
       "deploying": {},
       "latestVersions": {
         "platform": {
-          "platform": "7.164.0",
+          "platform": "6.1.0",
           "at": "(ignore)",
           "upgrade": false,
           "blockers": []
