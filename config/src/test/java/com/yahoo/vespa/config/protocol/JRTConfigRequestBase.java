@@ -207,7 +207,6 @@ public abstract class JRTConfigRequestBase {
     @Test
     public void request_interface_is_implemented() {
         JRTClientConfigRequest request = clientReq;
-        assertFalse(request.containsPayload());
         assertFalse(request.isError());
         assertThat(request.errorCode(), is(clientReq.getRequest().errorCode()));
         assertThat(request.errorMessage(), is(clientReq.getRequest().errorMessage()));

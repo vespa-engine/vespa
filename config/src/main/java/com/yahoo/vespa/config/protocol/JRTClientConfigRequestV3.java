@@ -55,17 +55,17 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                                                     compressionType,
                                                     vespaVersion);
         Request jrtReq = new Request(getJRTMethodName());
-        jrtReq.parameters().add(new StringValue(encodeAsUtf8String(data, true)));
+        jrtReq.parameters().add(new StringValue(encodeAsUtf8String(data)));
 
         this.requestData = new SlimeRequestData(jrtReq, data);
         this.responseData = new SlimeResponseData(jrtReq);
         this.request = jrtReq;
     }
 
-    protected static String encodeAsUtf8String(Slime data, boolean compact) {
+    protected static String encodeAsUtf8String(Slime data) {
         ByteArrayOutputStream baos = new NoCopyByteArrayOutputStream();
         try {
-            new JsonFormat(compact).encode(baos, data);
+            new JsonFormat(true /* compact format */).encode(baos, data);
         } catch (IOException e) {
             throw new RuntimeException("Unable to encode config request", e);
         }
@@ -246,11 +246,6 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     @Override
     public boolean isError() {
         return request.isError();
-    }
-
-    @Override
-    public boolean containsPayload() {
-        return false;
     }
 
     @Override
