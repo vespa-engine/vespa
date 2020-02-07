@@ -65,6 +65,7 @@ public class OrchestratorImpl implements Orchestrator {
     private final Clock clock;
     private final ApplicationApiFactory applicationApiFactory;
     private final BooleanFlag enableLargeOrchestratorLocks;
+    private final BooleanFlag retireWithPermanentlyDownFlag;
 
     @Inject
     public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
@@ -101,6 +102,7 @@ public class OrchestratorImpl implements Orchestrator {
         this.clock = clock;
         this.applicationApiFactory = applicationApiFactory;
         this.enableLargeOrchestratorLocks = Flags.ENABLE_LARGE_ORCHESTRATOR_LOCKS.bindTo(flagSource);
+        this.retireWithPermanentlyDownFlag = Flags.RETIRE_WITH_PERMANENTLY_DOWN.bindTo(flagSource);
     }
 
     @Override
@@ -150,6 +152,12 @@ public class OrchestratorImpl implements Orchestrator {
         * monitoring will have had time to catch up. Since we don't want do the delay with the lock held,
         * and the host status service's locking functionality does not support something like condition
         * variables or Object.wait(), we break out here, releasing the lock before delaying.
+        *
+        * 2020-02-07: We should utilize suspendedSince timestamp on the HostInfo: The above
+        * is equivalent to guaranteeing a minimum time after suspendedSince, before checking
+        * the health with service monitor. This should for all practical purposes remove
+        * the amount of time in this sleep.
+        * Caveat: Cannot be implemented before lingering HostInfo has been fixed (VESPA-17546).
         */
         sleep(serviceMonitorConvergenceLatencySeconds, TimeUnit.SECONDS);
 
@@ -159,15 +167,21 @@ public class OrchestratorImpl implements Orchestrator {
         try (MutableStatusRegistry statusRegistry = statusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
             HostStatus currentHostState = statusRegistry.getHostInfo(hostName).status();
-
-            if (HostStatus.NO_REMARKS == currentHostState) {
+            if (currentHostState == HostStatus.NO_REMARKS) {
                 return;
             }
 
-            ApplicationInstanceStatus appStatus = statusRegistry.getStatus();
-            if (appStatus == ApplicationInstanceStatus.NO_REMARKS) {
-                policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry);
+            // In 2 cases the resume will appear to succeed (no exception thrown),
+            // but the host status and content cluster states will not be changed accordingly:
+            //  1. When host is permanently down: the host will be removed from the application asap.
+            //  2. The whole application is down: the content cluster states are set to maintenance,
+            //     and the host may be taken down manually at any moment.
+            if (currentHostState == HostStatus.PERMANENTLY_DOWN ||
+                    statusRegistry.getStatus() == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
+                return;
             }
+
+            policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry);
         }
     }
 
@@ -183,7 +197,10 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstance appInstance = getApplicationInstance(hostName);
         NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
 
-        OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
+        boolean usePermanentlyDownStatus = retireWithPermanentlyDownFlag
+                .with(FetchVector.Dimension.HOSTNAME, hostName.s())
+                .value();
+        OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock, usePermanentlyDownStatus);
         try (MutableStatusRegistry statusRegistry = statusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
             ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, statusRegistry,

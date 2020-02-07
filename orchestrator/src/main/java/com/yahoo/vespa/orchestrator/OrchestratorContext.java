@@ -30,6 +30,7 @@ public class OrchestratorContext implements AutoCloseable {
     private final TimeBudget timeBudget;
     private final boolean probe;
     private final boolean largeLocks;
+    private final boolean usePermanentlyDownStatus;
 
     // The key set is the set of applications locked by this context tree: Only the
     // root context has a non-empty set. The value is an unlock callback to be called
@@ -38,24 +39,32 @@ public class OrchestratorContext implements AutoCloseable {
 
     /** Create an OrchestratorContext for operations on multiple applications. */
     public static OrchestratorContext createContextForMultiAppOp(Clock clock, boolean largeLocks) {
-        return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP), false, largeLocks);
+        return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP),
+                false, largeLocks, false);
     }
 
     /** Create an OrchestratorContext for an operation on a single application. */
     public static OrchestratorContext createContextForSingleAppOp(Clock clock) {
-        return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP), false, false);
+        return createContextForSingleAppOp(clock, false);
+    }
+
+    public static OrchestratorContext createContextForSingleAppOp(Clock clock, boolean usePermanentlyDownStatus) {
+        return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP),
+                false, false, usePermanentlyDownStatus);
     }
 
     private OrchestratorContext(OrchestratorContext parentOrNull,
                                 Clock clock,
                                 TimeBudget timeBudget,
                                 boolean probe,
-                                boolean largeLocks) {
+                                boolean largeLocks,
+                                boolean usePermanentlyDownStatus) {
         this.parent = Optional.ofNullable(parentOrNull);
         this.clock = clock;
         this.timeBudget = timeBudget;
         this.probe = probe;
         this.largeLocks = largeLocks;
+        this.usePermanentlyDownStatus = usePermanentlyDownStatus;
     }
 
     public Duration getTimeLeft() {
@@ -73,6 +82,9 @@ public class OrchestratorContext implements AutoCloseable {
 
     /** Whether application locks acquired during probing of a batch suspend should be closed after the non-probe is done. */
     public boolean largeLocks() { return largeLocks; }
+
+    /** Whether the PERMANENTLY_DOWN host status should be used (where appropriate). */
+    public boolean usePermanentlyDownStatus() { return usePermanentlyDownStatus; }
 
     /**
      * Returns true if 1. large locks is enabled, and 2.
@@ -111,7 +123,7 @@ public class OrchestratorContext implements AutoCloseable {
         // Move deadline towards past by a fixed amount to ensure there's time to process exceptions and
         // access ZooKeeper before the lock times out.
         TimeBudget subTimeBudget = timeBudget.withDeadline(timeBudget.deadline().get().minus(TIMEOUT_OVERHEAD));
-        return new OrchestratorContext(this, clock, subTimeBudget, probe, largeLocks);
+        return new OrchestratorContext(this, clock, subTimeBudget, probe, largeLocks, usePermanentlyDownStatus);
     }
 
     /** Create an OrchestratorContext for an operation on a single application, but limited to current timeout. */
@@ -124,7 +136,7 @@ public class OrchestratorContext implements AutoCloseable {
         }
 
         TimeBudget timeBudget = TimeBudget.from(clock, now, Optional.of(Duration.between(now, deadline)));
-        return new OrchestratorContext(this, clock, timeBudget, probe, largeLocks);
+        return new OrchestratorContext(this, clock, timeBudget, probe, largeLocks, usePermanentlyDownStatus);
     }
 
     @Override

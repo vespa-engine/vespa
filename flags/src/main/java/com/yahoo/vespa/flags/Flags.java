@@ -122,6 +122,13 @@ public class Flags {
             "Takes immediate effect for new batch suspensions.",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag RETIRE_WITH_PERMANENTLY_DOWN = defineFeatureFlag(
+            "retire-with-permanently-down", true,
+            "If enabled, retirement will end with setting the host status to PERMANENTLY_DOWN, " +
+            "instead of ALLOWED_TO_BE_DOWN (old behavior).",
+            "Takes effect on the next run of RetiredExpirer.",
+            HOSTNAME);
+
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
             "enable-dynamic-provisioning", false,
             "Provision a new docker host when we otherwise can't allocate a docker node",
