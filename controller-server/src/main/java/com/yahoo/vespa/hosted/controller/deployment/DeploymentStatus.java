@@ -52,8 +52,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 public class DeploymentStatus {
 
     public static List<JobId> jobsFor(Application application, SystemName system) {
-        if (   DeploymentSpec.empty.equals(application.deploymentSpec())
-            || application.projectId().isEmpty())
+        if (DeploymentSpec.empty.equals(application.deploymentSpec()))
             return List.of();
 
         return application.deploymentSpec().instances().stream()
