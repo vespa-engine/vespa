@@ -15,6 +15,8 @@ import java.util.List;
 
 class MockDispatcher extends Dispatcher {
 
+    public final ClusterMonitor clusterMonitor;
+
     public static MockDispatcher create(List<Node> nodes) {
         var rpcResourcePool = new RpcResourcePool(toDispatchConfig(nodes));
 
@@ -22,18 +24,19 @@ class MockDispatcher extends Dispatcher {
     }
 
     public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool,
-            int containerClusterSize, VipStatus vipStatus) {
+                                        int containerClusterSize, VipStatus vipStatus) {
         var dispatchConfig = toDispatchConfig(nodes);
         var searchCluster = new SearchCluster("a", dispatchConfig, containerClusterSize, vipStatus, new RpcPingFactory(rpcResourcePool));
-        return new MockDispatcher(searchCluster, dispatchConfig, rpcResourcePool);
+        return new MockDispatcher(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, rpcResourcePool);
     }
 
-    private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcResourcePool rpcResourcePool) {
-        this(searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster));
+    private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcResourcePool rpcResourcePool) {
+        this(clusterMonitor, searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster));
     }
 
-    private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
-        super(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, invokerFactory, new MockMetric());
+    private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
+        super(clusterMonitor, searchCluster, dispatchConfig, invokerFactory, new MockMetric());
+        this.clusterMonitor = clusterMonitor;
     }
 
     static DispatchConfig toDispatchConfig(List<Node> nodes) {
