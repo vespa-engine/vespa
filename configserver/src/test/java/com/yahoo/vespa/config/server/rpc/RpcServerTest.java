@@ -1,18 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
-import com.google.common.base.Joiner;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.SentinelConfig;
-import com.yahoo.config.SimpletypesConfig;
-import com.yahoo.config.codegen.DefParser;
-import com.yahoo.config.codegen.InnerCNode;
-import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.component.Version;
-import com.yahoo.jrt.Request;
+import com.yahoo.config.SimpletypesConfig;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadApplier;
@@ -24,12 +21,11 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
 import com.yahoo.vespa.config.protocol.Trace;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.util.ConfigUtils;
-
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,11 +33,14 @@ import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -161,11 +160,7 @@ public class RpcServerTest {
         builder.intval(123);
         SimpletypesConfig responseConfig = new SimpletypesConfig(builder);
         ConfigPayload responsePayload = ConfigPayload.fromInstance(responseConfig);
-        InnerCNode targetDef = new DefParser(SimpletypesConfig.CONFIG_DEF_NAME,
-                                             new StringReader(Joiner.on("\n").join(SimpletypesConfig.CONFIG_DEF_SCHEMA)))
-                                       .getTree();
         return SlimeConfigResponse.fromConfigPayload(responsePayload,
-                                                     targetDef,
                                                      3L,
                                                      true, /* internalRedeploy */
                                                      ConfigUtils.getMd5(responsePayload));
