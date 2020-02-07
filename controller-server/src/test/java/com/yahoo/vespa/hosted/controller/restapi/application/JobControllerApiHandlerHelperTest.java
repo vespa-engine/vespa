@@ -5,15 +5,12 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -26,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
@@ -37,13 +35,10 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsCentral1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -56,6 +51,9 @@ public class JobControllerApiHandlerHelperTest {
     public void testResponses() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .stagingTest()
+                .blockChange(true, true, "mon,tue", "7-13", "UTC")
+                .blockChange(false, true, "sun", "0-23", "CET")
+                .blockChange(true, false, "fri-sat", "8", "America/Los_Angeles")
                 .region("us-central-1")
                 .test("us-central-1")
                 .parallel("us-west-1", "us-east-3")
