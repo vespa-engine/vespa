@@ -194,7 +194,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_CONFIG_SERVER_FOR_TESTER_API_CALLS = defineFeatureFlag(
-            "use-config-server-for-tester-api-calls", false,
+            "use-config-server-for-tester-api-calls", true,
             "Whether controller should send requests to tester API through config server (if false) or tester endpoint (if true)",
             "Takes effect immediately",
             ZONE_ID);
