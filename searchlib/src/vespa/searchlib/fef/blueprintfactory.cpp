@@ -5,8 +5,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.blueprintfactory");
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 BlueprintFactory::BlueprintFactory()
     : _blueprintMap()
@@ -20,7 +19,7 @@ BlueprintFactory::addPrototype(Blueprint::SP proto)
     if (_blueprintMap.find(name) != _blueprintMap.end()) {
         LOG(warning, "Blueprint prototype overwritten: %s", name.c_str());
     }
-    _blueprintMap[name] = proto;
+    _blueprintMap[name] = std::move(proto);
 }
 
 void
@@ -41,9 +40,7 @@ BlueprintFactory::createBlueprint(const vespalib::string &name) const
     if (itr == _blueprintMap.end()) {
         return Blueprint::SP();
     }
-    Blueprint::UP bp = itr->second->createInstance();
-    return Blueprint::SP(bp.release());
+    return itr->second->createInstance();
 }
 
-} // namespace fef
-} // namespace search
+}
