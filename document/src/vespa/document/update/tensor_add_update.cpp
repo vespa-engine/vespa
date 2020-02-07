@@ -93,6 +93,7 @@ TensorAddUpdate::applyTo(FieldValue& value) const
 {
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
+        tensorFieldValue.make_empty_if_not_existing();
         auto &oldTensor = tensorFieldValue.getAsTensorPtr();
         auto newTensor = applyTo(*oldTensor);
         if (newTensor) {

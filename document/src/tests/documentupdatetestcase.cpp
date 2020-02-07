@@ -872,6 +872,13 @@ struct TensorUpdateFixture {
         EXPECT_EQ(actTensor, expTensor);
     }
 
+    void assertTensorNull() {
+        auto field = getTensor();
+        auto tensor_field = dynamic_cast<TensorFieldValue*>(field.get());
+        ASSERT_TRUE(tensor_field);
+        EXPECT_TRUE(tensor_field->getAsTensorPtr().get() == nullptr);
+    }
+
     void assertTensor(const TensorSpec &expSpec) {
         auto expTensor = makeTensor(expSpec);
         assertTensor(*expTensor);
@@ -884,6 +891,19 @@ struct TensorUpdateFixture {
         applyUpdate(update);
         assertDocumentUpdated();
         assertTensor(expTensor);
+    }
+
+    void assertApplyUpdateNonExisting(const ValueUpdate &update,
+                                      const TensorSpec &expTensor) {
+        applyUpdate(update);
+        assertDocumentUpdated();
+        assertTensor(expTensor);
+    }
+
+    void assertApplyUpdateNonExisting(const ValueUpdate &update) {
+        applyUpdate(update);
+        assertDocumentUpdated();
+        assertTensorNull();
     }
 
     template <typename ValueUpdateType>
@@ -933,6 +953,16 @@ TEST(DocumentUpdateTest, tensor_add_update_can_be_applied)
                                 .add({{"x", "c"}}, 7));
 }
 
+TEST(DocumentUpdateTest, tensor_add_update_can_be_applied_to_nonexisting_tensor)
+{
+    TensorUpdateFixture f;
+    f.assertApplyUpdateNonExisting(TensorAddUpdate(f.makeTensor(f.spec().add({{"x", "b"}}, 5)
+                                                                        .add({{"x", "c"}}, 7))),
+
+                        f.spec().add({{"x", "b"}}, 5)
+                                .add({{"x", "c"}}, 7));
+}
+
 TEST(DocumentUpdateTest, tensor_remove_update_can_be_applied)
 {
     TensorUpdateFixture f;
@@ -942,6 +972,12 @@ TEST(DocumentUpdateTest, tensor_remove_update_can_be_applied)
                         TensorRemoveUpdate(f.makeTensor(f.spec().add({{"x", "b"}}, 1))),
 
                         f.spec().add({{"x", "a"}}, 2));
+}
+
+TEST(DocumentUpdateTest, tensor_remove_update_can_be_applied_to_nonexisting_tensor)
+{
+    TensorUpdateFixture f;
+    f.assertApplyUpdateNonExisting(TensorRemoveUpdate(f.makeTensor(f.spec().add({{"x", "b"}}, 1))));
 }
 
 TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied)
@@ -968,6 +1004,13 @@ TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied)
                                            f.makeTensor(f.spec().add({{"x", "b"}}, 5))),
                         f.spec().add({{"x", "a"}}, 2)
                                 .add({{"x", "b"}}, 15));
+}
+
+TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied_to_nonexisting_tensor)
+{
+    TensorUpdateFixture f;
+    f.assertApplyUpdateNonExisting(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD,
+                                                      f.makeTensor(f.spec().add({{"x", "b"}}, 5))));
 }
 
 TEST(DocumentUpdateTest, tensor_assign_update_can_be_roundtrip_serialized)

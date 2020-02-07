@@ -28,6 +28,8 @@ public:
     TensorFieldValue &operator=(const TensorFieldValue &rhs);
     TensorFieldValue &operator=(std::unique_ptr<vespalib::tensor::Tensor> rhs);
 
+    void make_empty_if_not_existing();
+
     virtual void accept(FieldValueVisitor &visitor) override;
     virtual void accept(ConstFieldValueVisitor &visitor) const override;
     virtual const DataType *getDataType() const override;
