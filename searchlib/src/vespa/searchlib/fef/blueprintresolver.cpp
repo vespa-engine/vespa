@@ -44,13 +44,13 @@ struct Compiler : public Blueprint::DependencyHandler {
         ExecutorSpec spec;
         const FeatureNameParser &parser;
         Frame(Blueprint::SP blueprint, const FeatureNameParser &parser_in)
-            : spec(blueprint), parser(parser_in) {}
+            : spec(std::move(blueprint)), parser(parser_in) {}
     };
     using Stack = std::vector<Frame>;
 
     struct FrameGuard {
         Stack &stack;
-        FrameGuard(Stack &stack_in) : stack(stack_in) {}
+        explicit FrameGuard(Stack &stack_in) : stack(stack_in) {}
         ~FrameGuard() { stack.pop_back(); }
     };
 
@@ -101,11 +101,11 @@ struct Compiler : public Blueprint::DependencyHandler {
 
     FeatureRef setup_feature(const FeatureNameParser &parser, Accept accept_type) {
         Blueprint::SP blueprint = factory.createBlueprint(parser.baseName());
-        if (blueprint.get() == nullptr) {
+        if ( ! blueprint) {
             return failed(parser.featureName(),
                           vespalib::make_string("unknown basename: '%s'", parser.baseName().c_str()));
         }
-        resolve_stack.emplace_back(blueprint, parser);
+        resolve_stack.emplace_back(std::move(blueprint), parser);
         FrameGuard frame_guard(resolve_stack);
         self().spec.blueprint->setName(parser.executorName());
         self().spec.blueprint->attach_dependency_handler(*this);
@@ -172,13 +172,13 @@ struct Compiler : public Blueprint::DependencyHandler {
 } // namespace search::fef::<unnamed>
 
 BlueprintResolver::ExecutorSpec::ExecutorSpec(Blueprint::SP blueprint_in)
-    : blueprint(blueprint_in),
+    : blueprint(std::move(blueprint_in)),
       inputs(),
       output_types()
 { }
 
-BlueprintResolver::ExecutorSpec::~ExecutorSpec() { }
-BlueprintResolver::~BlueprintResolver() { }
+BlueprintResolver::ExecutorSpec::~ExecutorSpec() = default;
+BlueprintResolver::~BlueprintResolver() = default;
 
 BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
                                      const IIndexEnvironment &indexEnv)
@@ -194,7 +194,7 @@ BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
 void
 BlueprintResolver::addSeed(vespalib::stringref feature)
 {
-    _seeds.push_back(feature);
+    _seeds.emplace_back(feature);
 }
 
 bool
