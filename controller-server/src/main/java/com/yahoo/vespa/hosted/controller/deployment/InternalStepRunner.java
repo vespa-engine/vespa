@@ -714,8 +714,7 @@ public class InternalStepRunner implements StepRunner {
         ZoneId zone = id.type().zone(controller.system());
         boolean useTesterCertificate = controller.system().isPublic() && id.type().environment().isTest();
 
-        byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
-                                         ! controller.system().isPublic(),
+        byte[] servicesXml = servicesXml(! controller.system().isPublic(),
                                          useTesterCertificate,
                                          testerResourcesFor(zone, spec.requireInstance(id.application().instance())));
         byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
@@ -766,8 +765,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(AthenzDomain domain, boolean systemUsesAthenz, boolean useTesterCertificate,
-                              NodeResources resources) {
+    static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate, NodeResources resources) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
@@ -778,7 +776,6 @@ public class InternalStepRunner implements StepRunner {
                                               "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\"/>",
                                               resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name());
 
-        AthenzDomain idDomain = ("vespa.vespa.cd".equals(domain.value()) ? AthenzDomain.from("vespa.vespa") : domain);
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
@@ -796,51 +793,6 @@ public class InternalStepRunner implements StepRunner {
                 "        <handler id=\"com.yahoo.vespa.hosted.testrunner.TestRunnerHandler\" bundle=\"vespa-testrunner-components\">\n" +
                 "            <binding>http://*/tester/v1/*</binding>\n" +
                 "        </handler>\n" +
-                "\n" +
-                "        <http>\n" +
-                "            <!-- Make sure 4080 is the first port. This will be used by the config server. -->\n" +
-                "            <server id='default' port='4080'/>\n" +
-                "            <server id='testertls4443' port='4443'>\n" +
-                "                <config name=\"jdisc.http.connector\">\n" +
-                "                    <tlsClientAuthEnforcer>\n" +
-                "                        <enable>true</enable>\n" +
-                "                        <pathWhitelist>\n" +
-                "                            <item>/status.html</item>\n" +
-                "                            <item>/state/v1/config</item>\n" +
-                "                        </pathWhitelist>\n" +
-                "                    </tlsClientAuthEnforcer>\n" +
-                "                </config>\n" +
-                "                <ssl>\n" +
-                "                    <private-key-file>/var/lib/sia/keys/" + idDomain.value() + ".tenant.key.pem</private-key-file>\n" +
-                "                    <certificate-file>/var/lib/sia/certs/" + idDomain.value() + ".tenant.cert.pem</certificate-file>\n" +
-                "                    <ca-certificates-file>/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem</ca-certificates-file>\n" +
-                "                    <client-authentication>want</client-authentication>\n" +
-                "                </ssl>\n" +
-                "            </server>\n" +
-                "            <filtering>\n" +
-                (systemUsesAthenz ?
-                "                <access-control domain='" + domain.value() + "'>\n" + // Set up dummy access control to pass validation :/
-                "                    <exclude>\n" +
-                "                        <binding>http://*/tester/v1/*</binding>\n" +
-                "                    </exclude>\n" +
-                "                </access-control>\n"
-                : "") +
-                "                <request-chain id=\"testrunner-api\">\n" +
-                "                    <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle=\"jdisc-security-filters\">\n" +
-                "                        <config name=\"jdisc.http.filter.security.athenz.athenz-authorization-filter\">\n" +
-                "                            <credentialsToVerify>TOKEN_ONLY</credentialsToVerify>\n" +
-                "                            <roleTokenHeaderName>Yahoo-Role-Auth</roleTokenHeaderName>\n" +
-                "                        </config>\n" +
-                "                        <component id=\"com.yahoo.jdisc.http.filter.security.athenz.StaticRequestResourceMapper\" bundle=\"jdisc-security-filters\">\n" +
-                "                            <config name=\"jdisc.http.filter.security.athenz.static-request-resource-mapper\">\n" +
-                "                                <resourceName>" + domain.value() + ":tester-application</resourceName>\n" +
-                "                                <action>deploy</action>\n" +
-                "                            </config>\n" +
-                "                        </component>\n" +
-                "                    </filter>\n" +
-                "                </request-chain>\n" +
-                "            </filtering>\n" +
-                "        </http>\n" +
                 "\n" +
                 "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
                 "            " + resourceString + "\n" +
