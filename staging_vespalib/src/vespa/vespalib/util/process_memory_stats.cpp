@@ -196,7 +196,7 @@ ProcessMemoryStats::create(uint64_t sizeEpsilon)
             i, (samples.rbegin()+1)->toString().c_str(), samples.back().toString().c_str());
     }
     std::sort(samples.begin(), samples.end());
-    LOG(warning, "We failed to find 2 consecutive samples that where similar with epsilon of %lu.\nSmallest is '%s',\n median is '%s',\n largest is '%s'",
+    LOG(warning, "We failed to find 2 consecutive samples that where similar with epsilon of %" PRIu64 ".\nSmallest is '%s',\n median is '%s',\n largest is '%s'",
                  sizeEpsilon, samples.front().toString().c_str(), samples[samples.size()/2].toString().c_str(), samples.back().toString().c_str());
     return samples[samples.size()/2];
 }
