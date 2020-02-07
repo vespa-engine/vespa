@@ -125,7 +125,8 @@ private:
     size_t                 _softDoomed;
     Avg                    _doomOvertime;
     double                 _softDoomFactor;
-    Avg                    _queryCollateralTime;
+    Avg                    _queryCollateralTime; // TODO: Remove in Vespa 8
+    Avg                    _querySetupTime;
     Avg                    _queryLatency;
     Avg                    _matchTime;
     Avg                    _groupingTime;
@@ -168,11 +169,18 @@ public:
     double softDoomFactor() const { return _softDoomFactor; }
     MatchingStats &updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit, vespalib::duration duration);
 
+    // TODO: Remove in Vespa 8
     MatchingStats &queryCollateralTime(double time_s) { _queryCollateralTime.set(time_s); return *this; }
     double queryCollateralTimeAvg() const { return _queryCollateralTime.avg(); }
     size_t queryCollateralTimeCount() const { return _queryCollateralTime.count(); }
     double queryCollateralTimeMin() const { return _queryCollateralTime.min(); }
     double queryCollateralTimeMax() const { return _queryCollateralTime.max(); }
+
+    MatchingStats &querySetupTime(double time_s) { _querySetupTime.set(time_s); return *this; }
+    double querySetupTimeAvg() const { return _querySetupTime.avg(); }
+    size_t querySetupTimeCount() const { return _querySetupTime.count(); }
+    double querySetupTimeMin() const { return _querySetupTime.min(); }
+    double querySetupTimeMax() const { return _querySetupTime.max(); }
 
     MatchingStats &queryLatency(double time_s) { _queryLatency.set(time_s); return *this; }
     double queryLatencyAvg() const { return _queryLatency.avg(); }

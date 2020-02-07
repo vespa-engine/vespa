@@ -456,10 +456,13 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.average")); // TODO: Remove in Vespa 8
-        metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.max"));
-        metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.sum"));
-        metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.count"));
+        metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.max")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.sum")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.count")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("content.proton.documentdb.matching.query_collateral_time.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.documentdb.matching.query_setup_time.max"));
+        metrics.add(new Metric("content.proton.documentdb.matching.query_setup_time.sum"));
+        metrics.add(new Metric("content.proton.documentdb.matching.query_setup_time.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.queries.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doomed_queries.rate"));
@@ -471,10 +474,13 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.average")); // TODO: Remove in Vespa 8
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.max"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.sum"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.count"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.max")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.sum")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.count")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.max"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.sum"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.max"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.count"));
