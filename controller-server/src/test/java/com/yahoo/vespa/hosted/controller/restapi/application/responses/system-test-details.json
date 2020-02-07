@@ -83,36 +83,6 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "Endpoints not yet ready."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "--- platform 6.1"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Found endpoints:"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "- test.us-east-1"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": " |-- https://instance1-t--application1--tenant1.us-east-1.test.vespa:43 (cluster 'default')"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
         "message": "Tester container successfully installed!"
       }
     ],
@@ -224,7 +194,7 @@
       }
     ]
   },
-  "lastId": 40,
+  "lastId": 34,
   "steps": {
     "deployTester": {
       "status": "succeeded",

@@ -409,11 +409,6 @@ public class DeploymentContext {
         return this;
     }
 
-    /** Sets a single endpoint in the routing layer for the instance in this */
-    public DeploymentContext setEndpoints(ZoneId zone) {
-        return setEndpoints(zone, false);
-    }
-
     /** Deploy default application package, start a run for that change and return its ID */
     public RunId newRun(JobType type) {
         submit();
@@ -439,7 +434,6 @@ public class DeploymentContext {
         configServer().convergeServices(instanceId, JobType.systemTest.zone(tester.controller().system()));
         configServer().convergeServices(testerId.id(), JobType.systemTest.zone(tester.controller().system()));
         setEndpoints(JobType.systemTest.zone(tester.controller().system()));
-        setTesterEndpoints(JobType.systemTest.zone(tester.controller().system()));
         runner.run();
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
         assertTrue(jobs.run(id).get().steps().get(Step.endTests).startTime().isPresent());
@@ -464,15 +458,6 @@ public class DeploymentContext {
 
         // Provision load balancers in directly routed zones, unless explicitly deferred
         if (provisionLoadBalancerIn(zone)) {
-            if (job.type().isTest()) {
-                var testerDeployment = new DeploymentId(testerId.id(), zone);
-                configServer().putLoadBalancers(zone, List.of(new LoadBalancer(testerDeployment.toString(),
-                                                                               testerDeployment.applicationId(),
-                                                                               ClusterSpec.Id.from("default"),
-                                                                               HostName.from("lb-0--" + testerId.id().serializedForm() + "--" + zone.toString()),
-                                                                               LoadBalancer.State.active,
-                                                                               Optional.of("dns-zone-1"))));
-            }
             configServer().putLoadBalancers(zone, List.of(new LoadBalancer(deployment.toString(),
                                                                            deployment.applicationId(),
                                                                            ClusterSpec.Id.from("default"),
@@ -529,18 +514,10 @@ public class DeploymentContext {
         return run;
     }
 
-    /** Sets a single endpoint in the routing layer for the tester instance in this */
-    private DeploymentContext setTesterEndpoints(ZoneId zone) {
-        return setEndpoints(zone, true);
-    }
-
-    /** Sets a single endpoint in the routing layer; this matches that required for the tester */
-    private DeploymentContext setEndpoints(ZoneId zone, boolean tester) {
+    /** Sets a single endpoint in the routing layer */
+    DeploymentContext setEndpoints(ZoneId zone) {
         if (!supportsRoutingMethod(RoutingMethod.shared, zone)) return this;
         var id = instanceId;
-        if (tester) {
-            id = testerId.id();
-        }
         routing.putEndpoints(new DeploymentId(id, zone),
                              Collections.singletonList(new RoutingEndpoint(String.format("https://%s--%s--%s.%s.%s.vespa:43",
                                                                                          id.instance().value(),
@@ -586,12 +563,7 @@ public class DeploymentContext {
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().convergeServices(TesterId.of(id.application()).id(), zone);
         runner.advance(currentRun(job));
-        if (provisionLoadBalancerIn(zone)) { // Endpoints are available immediately after deployment in directly routed zones
-            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
-        } else {
-            assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
-            setTesterEndpoints(zone);
-        }
+        assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
         runner.advance(currentRun(job));
     }
 

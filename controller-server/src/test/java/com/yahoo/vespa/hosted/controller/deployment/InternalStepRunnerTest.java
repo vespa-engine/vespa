@@ -187,7 +187,6 @@ public class InternalStepRunnerTest {
         tester.clock().advance(InternalStepRunner.endpointTimeout.plus(Duration.ofSeconds(1)));
         tester.runner().run();
         assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
-        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installTester));
     }
 
     @Test
@@ -316,8 +315,6 @@ public class InternalStepRunnerTest {
         RunId id = app.startSystemTestTests();
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
-        assertEquals(URI.create(tester.routing().endpoints(new DeploymentId(app.testerId().id(), JobType.systemTest.zone(system()))).get(0).endpoint()),
-                     tester.cloud().testerUrl());
         Inspector configObject = SlimeUtils.jsonToSlime(tester.cloud().config()).get();
         assertEquals(app.instanceId().serializedForm(), configObject.field("application").asString());
         assertEquals(JobType.systemTest.zone(system()).value(), configObject.field("zone").asString());

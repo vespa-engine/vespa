@@ -7,9 +7,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -183,18 +180,8 @@ public class JobController {
             if (step.isEmpty())
                 return run;
 
-            List<LogEntry> entries;
-            ZoneId zone = id.type().zone(controller.system());
-            if (useConfigServerForTesterAPI(zone)) {
-                var testerId = new DeploymentId(id.tester().id(), zone);
-                entries = cloud.getLog(testerId, run.lastTestLogEntry());
-            } else {
-                Optional<URI> testerEndpoint = testerEndpoint(id);
-                if (testerEndpoint.isEmpty())
-                    return run;
-
-                entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
-            }
+            List<LogEntry> entries = cloud.getLog(new DeploymentId(id.tester().id(), id.type().zone(controller.system())),
+                                                  run.lastTestLogEntry());
             if (entries.isEmpty())
                 return run;
 
@@ -593,11 +580,6 @@ public class JobController {
 
             action.accept(new LockedStep(lock, step));
         }
-    }
-
-    private boolean useConfigServerForTesterAPI(ZoneId zoneId) {
-        BooleanFlag useConfigServerForTesterAPI = Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.bindTo(controller.flagSource());
-        return useConfigServerForTesterAPI.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value();
     }
 
 }
