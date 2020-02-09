@@ -28,31 +28,32 @@ public class GenericConfigSubscriberTest {
     @Test
     public void testSubscribeGeneric() {
         ConfigSourceSet sourceSet = new ConfigSourceSet("blabla");
-        GenericConfigSubscriber sub = new GenericConfigSubscriber(new JRTConfigRequester(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues()));
+        GenericConfigSubscriber subscriber = createSubscriber();
         final List<String> defContent = List.of("myVal int");
-        GenericConfigHandle handle = sub.subscribe(new ConfigKey<>("simpletypes", "id", "config"), defContent, sourceSet, JRTConfigRequesterTest.getTestTimingValues());
-        assertTrue(sub.nextConfig());
+        GenericConfigHandle handle = subscriber.subscribe(new ConfigKey<>("simpletypes", "id", "config"), defContent, sourceSet, JRTConfigRequesterTest.getTestTimingValues());
+        assertTrue(subscriber.nextConfig());
         assertTrue(handle.isChanged());
         assertThat(handle.getRawConfig().getPayload().withCompression(CompressionType.UNCOMPRESSED).toString(), is("{}")); // MockConnection returns empty string
-        assertFalse(sub.nextConfig());
+        assertFalse(subscriber.nextConfig());
         assertFalse(handle.isChanged());
     }
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid1() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null);
+        createSubscriber().subscribe(null, null);
     }
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid2() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null, 0L);
+        createSubscriber().subscribe(null, null, 0L);
     }
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid3() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null, "");
+        createSubscriber().subscribe(null, null, "");
+    }
+
+    private GenericConfigSubscriber createSubscriber() {
+        return new GenericConfigSubscriber(new JRTConfigRequester(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues()));
     }
 }
