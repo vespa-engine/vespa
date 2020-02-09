@@ -154,10 +154,10 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     private JRTConfigRequester getRequester() {
-        JRTConfigRequester requester = subscriber.requesters().get(sources);
+        JRTConfigRequester requester = subscriber.requester();
         if (requester == null) {
             requester = new JRTConfigRequester(new JRTConnectionPool(sources), timingValues);
-            subscriber.requesters().put(sources, requester);
+            subscriber.requester(requester);
         }
         return requester;
     }
