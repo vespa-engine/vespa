@@ -35,14 +35,6 @@ public abstract class SearchCluster extends AbstractSearchCluster
         super(parent, clusterName, index);
     }
 
-    public void writeFiles(File directory) throws java.io.IOException {
-        if (!directory.isDirectory() && !directory.mkdirs()) {
-            throw new java.io.IOException("Cannot create directory: "+ directory);
-        }
-        writeSdFiles(directory);
-        super.writeFiles(directory);
-    }
-
    /**
      * Must be called after cluster is built, to derive SD configs
      * Derives the search definitions from the application package..
