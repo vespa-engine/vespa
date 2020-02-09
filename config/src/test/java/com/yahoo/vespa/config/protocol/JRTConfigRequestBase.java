@@ -239,7 +239,7 @@ public abstract class JRTConfigRequestBase {
         });
 
         ConfigSourceSet src = new ConfigSourceSet();
-        ConfigSubscriber subscriber = new GenericConfigSubscriber(JRTConfigRequester.get(connection, new TimingValues()));
+        ConfigSubscriber subscriber = new GenericConfigSubscriber(new JRTConfigRequester(connection, new TimingValues()));
         JRTConfigSubscription<SimpletypesConfig> sub = new JRTConfigSubscription<>(new ConfigKey<>(SimpletypesConfig.class, configId), subscriber, src, new TimingValues());
         sub.subscribe(120_0000);
         assertTrue(sub.nextConfig(120_0000));

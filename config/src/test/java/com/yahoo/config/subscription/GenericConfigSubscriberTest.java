@@ -10,7 +10,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -29,8 +28,8 @@ public class GenericConfigSubscriberTest {
     @Test
     public void testSubscribeGeneric() {
         ConfigSourceSet sourceSet = new ConfigSourceSet("blabla");
-        GenericConfigSubscriber sub = new GenericConfigSubscriber(JRTConfigRequester.get(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues()));
-        final List<String> defContent = Arrays.asList("myVal int");
+        GenericConfigSubscriber sub = new GenericConfigSubscriber(new JRTConfigRequester(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues()));
+        final List<String> defContent = List.of("myVal int");
         GenericConfigHandle handle = sub.subscribe(new ConfigKey<>("simpletypes", "id", "config"), defContent, sourceSet, JRTConfigRequesterTest.getTestTimingValues());
         assertTrue(sub.nextConfig());
         assertTrue(handle.isChanged());

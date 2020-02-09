@@ -58,7 +58,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         this.timingValues = timingValues;
         checkConfigSources();
         exec = Executors.newCachedThreadPool(new DaemonThreadFactory("subscriber-"));
-        requester = JRTConfigRequester.get(new JRTConnectionPool(configSourceSet), timingValues);
+        requester = new JRTConfigRequester(new JRTConnectionPool(configSourceSet), timingValues);
     }
 
     /**
