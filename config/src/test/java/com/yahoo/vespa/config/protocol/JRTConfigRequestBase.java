@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.config.subscription.ConfigSet;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
@@ -9,6 +8,7 @@ import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
 import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.config.subscription.impl.MockConnection;
+import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
@@ -24,7 +24,6 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -240,7 +239,7 @@ public abstract class JRTConfigRequestBase {
         });
 
         ConfigSourceSet src = new ConfigSourceSet();
-        ConfigSubscriber subscriber = new GenericConfigSubscriber(Collections.singletonMap(src, JRTConfigRequester.get(connection, new TimingValues())));
+        ConfigSubscriber subscriber = new GenericConfigSubscriber(new JRTConfigRequester(connection, new TimingValues()));
         JRTConfigSubscription<SimpletypesConfig> sub = new JRTConfigSubscription<>(new ConfigKey<>(SimpletypesConfig.class, configId), subscriber, src, new TimingValues());
         sub.subscribe(120_0000);
         assertTrue(sub.nextConfig(120_0000));

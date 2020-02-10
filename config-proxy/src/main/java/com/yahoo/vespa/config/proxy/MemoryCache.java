@@ -124,8 +124,8 @@ public class MemoryCache {
             // First three lines are meta-data about config as comment lines, fourth line is empty
             writer.write("# defMd5:" + config.getDefMd5() + "\n");
             writer.write("# configMd5:" + config.getConfigMd5() + "\n");
-            writer.write("# generation:" + Long.toString(config.getGeneration()) + "\n");
-            writer.write("# protocolVersion:" + Long.toString(protocolVersion) + "\n");
+            writer.write("# generation:" + config.getGeneration() + "\n");
+            writer.write("# protocolVersion:" + protocolVersion + "\n");
             writer.write("\n");
             writer.write(payload.withCompression(CompressionType.UNCOMPRESSED).toString());
             writer.write("\n");

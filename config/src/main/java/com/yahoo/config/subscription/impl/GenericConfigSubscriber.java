@@ -2,42 +2,33 @@
 package com.yahoo.config.subscription.impl;
 
 import java.util.List;
-import java.util.Map;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigHandle;
 import com.yahoo.config.subscription.ConfigSource;
-import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 
 /**
- * A subscriber that can subscribe without the class. Used by configproxy.
+ * A subscriber that can subscribe without supplying a config class. Used by config proxy.
  *
  * @author Vegard Havdal
  */
 public class GenericConfigSubscriber extends ConfigSubscriber {
 
     /**
-     * Constructs a new subscriber using the given pool of requesters (JRTConfigRequester holds 1 connection which in
-     * turn is subject to failover across the elems in the source set.)
-     * The behaviour is undefined if the map key is different from the source set the requester was built with.
-     * See also {@link JRTConfigRequester#get(com.yahoo.vespa.config.ConnectionPool, com.yahoo.vespa.config.TimingValues)}
+     * Constructs a new subscriber using the given requester
      *
-     * @param requesters a map from config source set to config requester
+     * @param requester a config requester
      */
-    public GenericConfigSubscriber(Map<ConfigSourceSet, JRTConfigRequester> requesters) {
-        this.requesters = requesters;
-    }
-
-    public GenericConfigSubscriber() {
-        super();
+    public GenericConfigSubscriber(JRTConfigRequester requester) {
+        this.requester = requester;
     }
 
     /**
-     * Subscribes to config without using the class. For internal use in config proxy.
+     * Subscribes to config without using a config class. For internal use in config proxy.
      *
      * @param key the {@link ConfigKey to subscribe to}
      * @param defContent the config definition content for the config to subscribe to
@@ -66,12 +57,6 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
     @Override
     public <T extends ConfigInstance> ConfigHandle<T> subscribe(SingleSubscriber<T> singleSubscriber, Class<T> configClass, String configId) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Do nothing, since we share requesters
-     */
-    public void closeRequesters() {
     }
 
 }
