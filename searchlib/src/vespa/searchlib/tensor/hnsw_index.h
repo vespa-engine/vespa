@@ -25,28 +25,10 @@ class RandomLevelGenerator;
  */
 template <typename FloatType = float>
 class HnswIndex : public HnswIndexBase {
-private:
-    using TypedCells = vespalib::tensor::TypedCells;
-
-    inline TypedCells get_vector(uint32_t docid) const {
-        return _vectors.get_vector(docid);
-    }
-
-    double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const override;
-    double calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const;
-    /**
-     * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
-     */
-    HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level);
-    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level);
-
 public:
     HnswIndex(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
               RandomLevelGenerator& level_generator, const Config& cfg);
     ~HnswIndex() override;
-
-    void add_document(uint32_t docid) override;
-    void remove_document(uint32_t docid) override;
 };
 
 template class HnswIndex<float>;

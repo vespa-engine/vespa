@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "doc_vector_access.h"
 #include "hnsw_index_utils.h"
 #include "hnsw_node.h"
 #include "nearest_neighbor_index.h"
+#include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
@@ -14,7 +16,6 @@
 namespace search::tensor {
 
 class DistanceFunction;
-class DocVectorAccess;
 class RandomLevelGenerator;
 
 /**
@@ -78,6 +79,8 @@ protected:
     using LinkArrayRef = LinkStore::ConstArrayRef;
     using LinkArray = vespalib::Array<uint32_t>;
 
+    using TypedCells = vespalib::tensor::TypedCells;
+
     const DocVectorAccess& _vectors;
     const DistanceFunction& _distance_func;
     RandomLevelGenerator& _level_generator;
@@ -97,8 +100,6 @@ protected:
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const;
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links);
 
-    virtual double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const = 0;
-
     /**
      * Returns true if the distance between the candidate and a node in the current result
      * is less than the distance between the candidate and the node we want to add to the graph.
@@ -113,10 +114,26 @@ protected:
     void connect_new_node(uint32_t docid, const LinkArray& neighbors, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
+    inline TypedCells get_vector(uint32_t docid) const {
+        return _vectors.get_vector(docid);
+    }
+
+    double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const;
+    double calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const;
+
+    /**
+     * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
+     */
+    HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level);
+    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level);
+
 public:
     HnswIndexBase(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
                   RandomLevelGenerator& level_generator, const Config& cfg);
     ~HnswIndexBase() override;
+
+    void add_document(uint32_t docid) override;
+    void remove_document(uint32_t docid) override;
 
     // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)
 

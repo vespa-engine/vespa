@@ -2,81 +2,8 @@
 
 #include "distance_function.h"
 #include "hnsw_index.h"
-#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::tensor {
-
-template <typename FloatType>
-double
-HnswIndex<FloatType>::calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const
-{
-    auto lhs = get_vector(lhs_docid);
-    return calc_distance(lhs, rhs_docid);
-}
-
-template <typename FloatType>
-double
-HnswIndex<FloatType>::calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const
-{
-    auto rhs = get_vector(rhs_docid);
-    return _distance_func.calc(lhs, rhs);
-}
-
-template <typename FloatType>
-HnswCandidate
-HnswIndex<FloatType>::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level)
-{
-    HnswCandidate nearest = entry_point;
-    bool keep_searching = true;
-    while (keep_searching) {
-        keep_searching = false;
-        for (uint32_t neighbor_docid : get_link_array(nearest.docid, level)) {
-            double dist = calc_distance(input, neighbor_docid);
-            if (dist < nearest.distance) {
-                nearest = HnswCandidate(neighbor_docid, dist);
-                keep_searching = true;
-            }
-        }
-    }
-    return nearest;
-}
-
-template <typename FloatType>
-void
-HnswIndex<FloatType>::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level)
-{
-    NearestPriQ candidates;
-    // TODO: Add proper handling of visited set.
-    auto visited = BitVector::create(_node_refs.size());
-    for (const auto &entry : best_neighbors.peek()) {
-        candidates.push(entry);
-        visited->setBit(entry.docid);
-    }
-    double limit_dist = std::numeric_limits<double>::max();
-
-    while (!candidates.empty()) {
-        auto cand = candidates.top();
-        if (cand.distance > limit_dist) {
-            break;
-        }
-        candidates.pop();
-        for (uint32_t neighbor_docid : get_link_array(cand.docid, level)) {
-            if (visited->testBit(neighbor_docid)) {
-                continue;
-            }
-            visited->setBit(neighbor_docid);
-            double dist_to_input = calc_distance(input, neighbor_docid);
-            if (dist_to_input < limit_dist) {
-                candidates.emplace(neighbor_docid, dist_to_input);
-                best_neighbors.emplace(neighbor_docid, dist_to_input);
-                if (best_neighbors.size() > neighbors_to_find) {
-                    best_neighbors.pop();
-                    limit_dist = best_neighbors.top().distance;
-                }
-            }
-        }
-    }
-}
 
 template <typename FloatType>
 HnswIndex<FloatType>::HnswIndex(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
@@ -87,75 +14,6 @@ HnswIndex<FloatType>::HnswIndex(const DocVectorAccess& vectors, const DistanceFu
 
 template <typename FloatType>
 HnswIndex<FloatType>::~HnswIndex() = default;
-
-template <typename FloatType>
-void
-HnswIndex<FloatType>::add_document(uint32_t docid)
-{
-    auto input = get_vector(docid);
-    _node_refs.ensure_size(docid + 1, AtomicEntryRef());
-    // A document cannot be added twice.
-    assert(!_node_refs[docid].load_acquire().valid());
-    int level = make_node_for_document(docid);
-    if (_entry_docid == 0) {
-        _entry_docid = docid;
-        _entry_level = level;
-        return;
-    }
-
-    int search_level = _entry_level;
-    double entry_dist = calc_distance(input, _entry_docid);
-    HnswCandidate entry_point(_entry_docid, entry_dist);
-    while (search_level > level) {
-        entry_point = find_nearest_in_layer(input, entry_point, search_level);
-        --search_level;
-    }
-
-    FurthestPriQ best_neighbors;
-    best_neighbors.push(entry_point);
-    search_level = std::min(level, _entry_level);
-
-    // Insert the added document in each level it should exist in.
-    while (search_level >= 0) {
-        // TODO: Rename to search_level?
-        search_layer(input, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
-        auto neighbors = select_neighbors(best_neighbors.peek(), max_links_for_level(search_level));
-        connect_new_node(docid, neighbors, search_level);
-        // TODO: Shrink neighbors if needed
-        --search_level;
-    }
-    if (level > _entry_level) {
-        _entry_docid = docid;
-        _entry_level = level;
-    }
-}
-
-template <typename FloatType>
-void
-HnswIndex<FloatType>::remove_document(uint32_t docid)
-{
-    bool need_new_entrypoint = (docid == _entry_docid);
-    LinkArray empty;
-    LevelArrayRef node_levels = get_level_array(docid);
-    for (int level = node_levels.size(); level-- > 0; ) {
-        LinkArrayRef my_links = get_link_array(docid, level);
-        for (uint32_t neighbor_id : my_links) {
-            if (need_new_entrypoint) {
-                _entry_docid = neighbor_id;
-                _entry_level = level;
-                need_new_entrypoint = false;
-            }
-            remove_link_to(neighbor_id, docid, level);
-        }
-        set_link_array(docid, level, empty);
-    }
-    if (need_new_entrypoint) {
-        _entry_docid = 0;
-        _entry_level = -1;
-    }
-    search::datastore::EntryRef invalid;
-    _node_refs[docid].store_release(invalid);
-}
 
 }
 
