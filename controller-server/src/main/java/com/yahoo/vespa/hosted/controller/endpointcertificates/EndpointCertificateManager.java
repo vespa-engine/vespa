@@ -154,6 +154,11 @@ public class EndpointCertificateManager {
             var hashedCn = Endpoint.createHashedCn(applicationId, zoneRegistry.system()); // use as join key
             EndpointCertificateMetadata providerMetadata = sanToEndpointCertificate.get(hashedCn);
 
+            if(providerMetadata == null) {
+                log.log(LogLevel.INFO, "No matching certificate provider metadata found for application " + applicationId.serializedForm());
+                return;
+            }
+
             EndpointCertificateMetadata backfilledMetadata =
                     new EndpointCertificateMetadata(
                             storedMetaData.keyName(),
