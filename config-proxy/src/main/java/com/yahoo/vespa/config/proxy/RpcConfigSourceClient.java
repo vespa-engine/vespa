@@ -171,26 +171,17 @@ class RpcConfigSourceClient implements ConfigSourceClient {
             activeSubscribers.clear();
         }
         exec.shutdown();
-        if (requester != null)
-            requester.close();
+        requester.close();
     }
 
     @Override
     public String getActiveSourceConnection() {
-        if (requester != null) {
-            return requester.getConnectionPool().getCurrent().getAddress();
-        } else {
-            return "";
-        }
+        return requester.getConnectionPool().getCurrent().getAddress();
     }
 
     @Override
     public List<String> getSourceConnections() {
-        ArrayList<String> ret = new ArrayList<>();
-        if (requester != null) {
-            ret.addAll(configSourceSet.getSources());
-        }
-        return ret;
+        return new ArrayList<>(configSourceSet.getSources());
     }
 
     /**
