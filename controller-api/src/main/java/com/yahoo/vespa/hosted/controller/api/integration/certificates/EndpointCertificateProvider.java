@@ -14,4 +14,5 @@ public interface EndpointCertificateProvider  {
 
     EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames);
 
+    List<EndpointCertificateMetadata> listCertificates();
 }

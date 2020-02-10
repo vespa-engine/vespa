@@ -40,7 +40,9 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -512,7 +514,7 @@ public class CuratorDb {
                                                      .orElse(new ZoneRoutingPolicy(zone, GlobalRouting.DEFAULT_STATUS));
     }
 
-    // -------------- Application web certificates ----------------------------
+    // -------------- Application endpoint certificates ----------------------------
 
     public void writeEndpointCertificateMetadata(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
         curator.set(endpointCertificatePath(applicationId), asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
@@ -521,6 +523,17 @@ public class CuratorDb {
     public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
         Optional<String> zkData = curator.getData(endpointCertificatePath(applicationId)).map(String::new);
         return zkData.map(EndpointCertificateMetadataSerializer::fromJsonOrTlsSecretsKeysString);
+    }
+
+    public Map<ApplicationId, EndpointCertificateMetadata> readAllEndpointCertificateMetadata() {
+        Map<ApplicationId, EndpointCertificateMetadata> allEndpointCertificateMetadata = new HashMap<>();
+        Iterator<String> zkNodes = endpointCertificateRoot.iterator();
+        while(zkNodes.hasNext()) {
+            ApplicationId applicationId = ApplicationId.fromSerializedForm(zkNodes.next());
+            Optional<EndpointCertificateMetadata> endpointCertificateMetadata = readEndpointCertificateMetadata(applicationId);
+            allEndpointCertificateMetadata.put(applicationId, endpointCertificateMetadata.orElseThrow());
+        }
+        return allEndpointCertificateMetadata;
     }
 
     // -------------- Paths ---------------------------------------------------

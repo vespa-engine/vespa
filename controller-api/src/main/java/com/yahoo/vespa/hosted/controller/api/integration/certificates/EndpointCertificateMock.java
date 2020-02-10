@@ -29,4 +29,9 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
         return new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0);
     }
 
+    @Override
+    public List<EndpointCertificateMetadata> listCertificates() {
+        return Collections.emptyList();
+    }
+
 }

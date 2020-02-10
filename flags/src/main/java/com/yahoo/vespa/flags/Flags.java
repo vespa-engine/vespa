@@ -217,6 +217,12 @@ public class Flags {
             "Takes effect on the next deployment of the application",
             APPLICATION_ID);
 
+    public static final UnboundStringFlag ENDPOINT_CERTIFICATE_BACKFILL = defineStringFlag(
+            "endpoint-certificate-backfill", "disable",
+            "Whether the endpoint certificate maintainer should backfill missing certificate data from cameo",
+            "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\""
+    );
+
     public static final UnboundBooleanFlag USE_NEW_ATHENZ_FILTER = defineFeatureFlag(
             "use-new-athenz-filter", false,
             "Use new Athenz filter that supports access-tokens",
