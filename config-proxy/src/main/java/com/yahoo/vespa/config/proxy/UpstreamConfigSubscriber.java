@@ -2,15 +2,17 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.config.subscription.ConfigSource;
+import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.impl.GenericConfigHandle;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
-import com.yahoo.yolean.Exceptions;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -24,24 +26,24 @@ public class UpstreamConfigSubscriber implements Subscriber {
     private final ConfigSourceClient configSourceClient;
     private final ConfigSource configSourceSet;
     private final TimingValues timingValues;
-    private final JRTConfigRequester requester;
+    private final Map<ConfigSourceSet, JRTConfigRequester> requesterPool;
     private final MemoryCache memoryCache;
     private GenericConfigSubscriber subscriber;
     private GenericConfigHandle handle;
 
     UpstreamConfigSubscriber(RawConfig config, ConfigSourceClient configSourceClient, ConfigSource configSourceSet,
-                             TimingValues timingValues, JRTConfigRequester requester,
+                             TimingValues timingValues, Map<ConfigSourceSet, JRTConfigRequester> requesterPool,
                              MemoryCache memoryCache) {
         this.config = config;
         this.configSourceClient = configSourceClient;
         this.configSourceSet = configSourceSet;
         this.timingValues = timingValues;
-        this.requester = requester;
+        this.requesterPool = requesterPool;
         this.memoryCache = memoryCache;
     }
 
     void subscribe() {
-        subscriber = new GenericConfigSubscriber(requester);
+        subscriber = new GenericConfigSubscriber(requesterPool);
         ConfigKey<?> key = config.getKey();
         handle = subscriber.subscribe(new ConfigKey<>(key.getName(), key.getConfigId(), key.getNamespace()),
                                       config.getDefContent(), configSourceSet, timingValues);

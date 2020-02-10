@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -18,8 +19,8 @@ import java.util.logging.Logger;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Used for subscribing to one or more configs using the default config source. Can optionally be given a
- * {@link ConfigSource} for the configs that will be used when {@link #subscribe(Class, String)} is called.
+ * Used for subscribing to one or more configs. Can optionally be given a {@link ConfigSource} for the configs
+ * that will be used when {@link #subscribe(Class, String)} is called.
  *
  * {@link #subscribe(Class, String)} on the configs needed, call {@link #nextConfig(long)} and get the config from the
  * {@link ConfigHandle} which {@link #subscribe(Class, String)} returned.
@@ -42,15 +43,9 @@ public class ConfigSubscriber implements AutoCloseable {
     private boolean internalRedeploy = false;
 
     /**
-     * Reuse requester, limit number if many subscriptions.
-     *
-     * @deprecated use {@link #requester}
+     * Reuse requesters for equal source sets, limit number if many subscriptions.
      */
-    @Deprecated
-    // TODO: Remove in Vespa 8
-    protected Map<ConfigSourceSet, JRTConfigRequester> requesters = Map.of();
-
-    protected JRTConfigRequester requester = null;
+    protected Map<ConfigSourceSet, JRTConfigRequester> requesters = new HashMap<>();
 
     /**
      * The states of the subscriber. Affects the validity of calling certain methods.
@@ -329,28 +324,17 @@ public class ConfigSubscriber implements AutoCloseable {
         for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
             h.subscription().close();
         }
-        closeRequester();
+        closeRequesters();
         log.log(LogLevel.DEBUG, "Config subscriber has been closed.");
     }
 
-
     /**
-     * Closes requester
-     * @deprecated use {@link #closeRequester()} instead
-     *
+     * Closes all open requesters
      */
-    @Deprecated
-    // TODO: Remove in Vespa 8
     protected void closeRequesters() {
-        closeRequester();
-    }
-
-    /**
-     * Closes requester
-     */
-    protected void closeRequester() {
-        if (requester != null)
+        for (JRTConfigRequester requester : requesters.values()) {
             requester.close();
+        }
     }
 
     @Override
@@ -410,24 +394,9 @@ public class ConfigSubscriber implements AutoCloseable {
     /**
      * Implementation detail, do not use.
      * @return requesters
-     * @deprecated use {@link #requester()}
      */
-    @Deprecated
-    // TODO: Remove in Vespa 8
     public Map<ConfigSourceSet, JRTConfigRequester> requesters() {
-        return Map.of((ConfigSourceSet)source, requester);
-    }
-
-    /**
-     * Implementation detail, do not use.
-     * @return requesters
-     */
-    public JRTConfigRequester requester() {
-        return requester;
-    }
-
-    public void requester(JRTConfigRequester requester) {
-        this.requester = requester;
+        return requesters;
     }
 
     public boolean isClosed() {
