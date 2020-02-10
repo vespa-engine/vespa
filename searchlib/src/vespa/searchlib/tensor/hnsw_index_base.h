@@ -13,6 +13,7 @@
 
 namespace search::tensor {
 
+class DistanceFunction;
 class DocVectorAccess;
 class RandomLevelGenerator;
 
@@ -78,6 +79,7 @@ protected:
     using LinkArray = vespalib::Array<uint32_t>;
 
     const DocVectorAccess& _vectors;
+    const DistanceFunction& _distance_func;
     RandomLevelGenerator& _level_generator;
     Config _cfg;
     NodeRefVector _node_refs;
@@ -112,7 +114,8 @@ protected:
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
 public:
-    HnswIndexBase(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg);
+    HnswIndexBase(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
+                  RandomLevelGenerator& level_generator, const Config& cfg);
     ~HnswIndexBase() override;
 
     // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)

@@ -1,5 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "distance_function.h"
 #include "hnsw_index.h"
 #include <vespa/vespalib/util/rcuvector.hpp>
 
@@ -15,23 +16,15 @@ HnswIndex<FloatType>::calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) cons
 
 template <typename FloatType>
 double
-HnswIndex<FloatType>::calc_distance(const Vector& lhs, uint32_t rhs_docid) const
+HnswIndex<FloatType>::calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const
 {
-    // TODO: Make it possible to specify the distance function from the outside and make it hardware optimized.
     auto rhs = get_vector(rhs_docid);
-    double result = 0.0;
-    size_t sz = lhs.size();
-    assert(sz == rhs.size());
-    for (size_t i = 0; i < sz; ++i) {
-        double diff = lhs[i] - rhs[i];
-        result += diff * diff;
-    }
-    return result;
+    return _distance_func.calc(lhs, rhs);
 }
 
 template <typename FloatType>
 HnswCandidate
-HnswIndex<FloatType>::find_nearest_in_layer(const Vector& input, const HnswCandidate& entry_point, uint32_t level)
+HnswIndex<FloatType>::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level)
 {
     HnswCandidate nearest = entry_point;
     bool keep_searching = true;
@@ -50,7 +43,7 @@ HnswIndex<FloatType>::find_nearest_in_layer(const Vector& input, const HnswCandi
 
 template <typename FloatType>
 void
-HnswIndex<FloatType>::search_layer(const Vector& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level)
+HnswIndex<FloatType>::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level)
 {
     NearestPriQ candidates;
     // TODO: Add proper handling of visited set.
@@ -86,8 +79,9 @@ HnswIndex<FloatType>::search_layer(const Vector& input, uint32_t neighbors_to_fi
 }
 
 template <typename FloatType>
-HnswIndex<FloatType>::HnswIndex(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg)
-    : HnswIndexBase(vectors, level_generator, cfg)
+HnswIndex<FloatType>::HnswIndex(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
+                                RandomLevelGenerator& level_generator, const Config& cfg)
+    : HnswIndexBase(vectors, distance_func, level_generator, cfg)
 {
 }
 

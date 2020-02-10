@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/tensor/dense/typed_cells.h>
+#include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
@@ -41,12 +42,14 @@ struct LevelGenerator : public RandomLevelGenerator {
 };
 
 using FloatVectors = MyDocVectorAccess<float>;
+using FloatSqEuclideanDistance = SquaredEuclideanDistance<float>;
 using FloatIndex = HnswIndex<float>;
 using FloatIndexUP = std::unique_ptr<FloatIndex>;
 
 class HnswIndexTest : public ::testing::Test {
 public:
     FloatVectors vectors;
+    FloatSqEuclideanDistance distance_func;
     LevelGenerator level_generator;
     FloatIndexUP index;
 
@@ -60,7 +63,7 @@ public:
                .set(7, {3, 5});
     }
     void init(bool heuristic_select_neighbors) {
-        index = std::make_unique<FloatIndex>(vectors, level_generator,
+        index = std::make_unique<FloatIndex>(vectors, distance_func, level_generator,
                                              HnswIndexBase::Config(2, 1, 10, heuristic_select_neighbors));
     }
     void add_document(uint32_t docid, uint32_t max_level = 0) {

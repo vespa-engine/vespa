@@ -156,8 +156,10 @@ HnswIndexBase::remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t
     set_link_array(remove_from, level, new_links);
 }
 
-HnswIndexBase::HnswIndexBase(const DocVectorAccess& vectors, RandomLevelGenerator& level_generator, const Config& cfg)
+HnswIndexBase::HnswIndexBase(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
+                             RandomLevelGenerator& level_generator, const Config& cfg)
     : _vectors(vectors),
+      _distance_func(distance_func),
       _level_generator(level_generator),
       _cfg(cfg),
       _node_refs(),
