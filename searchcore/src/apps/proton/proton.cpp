@@ -8,7 +8,6 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/app.h>
@@ -25,15 +24,21 @@ struct Params
     std::string identity;
     std::string serviceidentity;
     uint64_t subscribeTimeout;
+    Params();
     ~Params();
 };
 
+Params::Params()
+    : identity(),
+      serviceidentity(),
+      subscribeTimeout(60)
+{}
 Params::~Params() = default;
 
 class App : public FastOS_Application
 {
 private:
-    void setupSignals();
+    static void setupSignals();
     Params parseParams();
 public:
     int Main() override;
@@ -73,7 +78,7 @@ App::parseParams()
     vespalib::ProgramOptions parser(_argc, _argv);
     parser.setSyntaxMessage("proton -- the nextgen search core");
     parser.addOption("identity", params.identity, "Node identity and config id");
-    std::string empty("");
+    std::string empty;
     parser.addOption("serviceidentity", params.serviceidentity, empty, "Service node identity and config id");
     parser.addOption("subscribeTimeout", params.subscribeTimeout, UINT64_C(600000), "Initial config subscribe timeout");
     try {
@@ -102,7 +107,7 @@ public:
     ProtonServiceLayerProcess(const config::ConfigUri & configUri,
                               proton::Proton & proton,
                               PersistenceProvider *downPersistence);
-    ~ProtonServiceLayerProcess() { shutdown(); }
+    ~ProtonServiceLayerProcess() override { shutdown(); }
 
     void shutdown() override;
     void setupProvider() override;
@@ -126,7 +131,7 @@ ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri &
                                                      downPersistence)
     : ServiceLayerProcess(configUri),
       _proton(proton),
-      _metricManager(0),
+      _metricManager(nullptr),
       _downPersistence(downPersistence)
 {
     if (!downPersistence) {
@@ -143,7 +148,7 @@ ProtonServiceLayerProcess::shutdown()
 void
 ProtonServiceLayerProcess::setupProvider()
 {
-    if (_metricManager != 0) {
+    if (_metricManager != nullptr) {
         _context.getComponentRegister().setMetricManager(*_metricManager);
     }
 }
@@ -269,6 +274,9 @@ App::Main()
         return 1;
     } catch (const vespalib::NetworkSetupFailureException & e) {
         LOG(warning, "Network failure: '%s'", e.what());
+        return 1;
+    } catch (const config::InvalidConfigException & e) {
+        LOG(warning, "Invalid config failure: '%s'", e.what());
         return 1;
     } catch (const vespalib::IllegalStateException & e) {
         LOG(error, "Unknown IllegalStateException: '%s'", e.what());
