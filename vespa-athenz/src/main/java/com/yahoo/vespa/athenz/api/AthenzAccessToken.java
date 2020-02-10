@@ -32,6 +32,7 @@ public class AthenzAccessToken {
     }
 
     public String value() { return value; }
+    public String valueWithBearerPrefix() { return BEARER_TOKEN_PREFIX + value; }
 
     @Override public String toString() { return "AthenzAccessToken{value='" + value + "'}"; }
 
