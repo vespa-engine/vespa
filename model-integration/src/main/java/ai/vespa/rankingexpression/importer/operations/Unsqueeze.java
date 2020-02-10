@@ -1,13 +1,12 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.operations;
 
-import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode;
-import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.ScalarFunctions;
@@ -16,44 +15,44 @@ import com.yahoo.tensor.functions.TensorFunction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-public class ExpandDims extends IntermediateOperation {
+public class Unsqueeze extends IntermediateOperation {
 
+    private final AttributeMap attributeMap;
     private List<String> expandDimensions;
 
-    public ExpandDims(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+    public Unsqueeze(String modelName, String nodeName, List<IntermediateOperation> inputs, AttributeMap attributeMap) {
         super(modelName, nodeName, inputs);
+        this.attributeMap = attributeMap;
+        if (attributeMap.getList("axes").isEmpty()) {
+            throw new IllegalArgumentException("Unsqueeze in " + name + ": Required attribute 'axes' is missing.");
+        }
     }
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        if ( ! allInputTypesPresent(2)) return null;
-
-        IntermediateOperation axisOperation = inputs().get(1);
-        if ( ! axisOperation.getConstantValue().isPresent()) {
-            throw new IllegalArgumentException("ExpandDims in " + name + ": Axis must be a constant.");
-        }
-        Tensor axis = axisOperation.getConstantValue().get().asTensor();
-        if (axis.type().rank() != 0)
-            throw new IllegalArgumentException("ExpandDims in " + name + ": Axis argument must be a scalar.");
+        if ( ! allInputTypesPresent(1)) return null;
 
         OrderedTensorType inputType = inputs.get(0).type().get();
-        int dimensionToInsert = (int)axis.asDouble();
-        if (dimensionToInsert < 0) {
-            dimensionToInsert = inputType.dimensions().size() + dimensionToInsert;
-        }
+        Set<Integer> dimensionsToInsert = attributeMap.getList("axes").get().stream().
+                map(d -> (int)d.asDouble()).collect(Collectors.toSet());
 
-        OrderedTensorType.Builder typeBuilder = new OrderedTensorType.Builder(resultValueType());
+        // handle negative dimension indexes
+        int rank = inputType.rank() + dimensionsToInsert.size();
+        dimensionsToInsert = dimensionsToInsert.stream().map(d -> d < 0 ? rank + d : d).collect(Collectors.toSet());
+
         expandDimensions = new ArrayList<>();
-        int dimensionIndex = 0;
-        for (TensorType.Dimension dimension : inputType.dimensions()) {
-            if (dimensionIndex == dimensionToInsert)
-                addDimension(dimensionIndex, typeBuilder);
-            typeBuilder.add(dimension);
-            dimensionIndex++;
-        }
-        if (dimensionToInsert == inputType.dimensions().size()) { // Insert last dimension
-            addDimension(dimensionIndex, typeBuilder);
+        OrderedTensorType.Builder typeBuilder = new OrderedTensorType.Builder(resultValueType());
+        int inputDimensionIndex = 0;
+        for (int expandedDimensionIndex = 0; expandedDimensionIndex < rank; ++expandedDimensionIndex) {
+            if (dimensionsToInsert.contains(expandedDimensionIndex)) {
+                addDimension(expandedDimensionIndex, typeBuilder);
+            } else {
+                typeBuilder.add(inputType.dimensions().get(inputDimensionIndex));
+                inputDimensionIndex++;
+            }
         }
         return typeBuilder.build();
     }
@@ -66,9 +65,9 @@ public class ExpandDims extends IntermediateOperation {
 
     @Override
     protected TensorFunction lazyGetFunction() {
-        if ( ! allInputFunctionsPresent(2)) return null;
+        if ( ! allInputFunctionsPresent(1)) return null;
 
-        // multiply with a generated tensor created from the reduced dimensions
+        // multiply with a generated tensor created from the expanded dimensions
         TensorType.Builder typeBuilder = new TensorType.Builder(resultValueType());
         for (String name : expandDimensions) {
             typeBuilder.indexed(name, 1);
@@ -91,7 +90,7 @@ public class ExpandDims extends IntermediateOperation {
         List<String> renamedDimensions = new ArrayList<>(expandDimensions.size());
         for (String name : expandDimensions) {
             Optional<String> newName = renamer.dimensionNameOf(name);
-            if ( ! newName.isPresent()) {
+            if (newName.isEmpty()) {
                 return;  // presumably, already renamed
             }
             renamedDimensions.add(newName.get());
@@ -100,11 +99,11 @@ public class ExpandDims extends IntermediateOperation {
     }
 
     @Override
-    public ExpandDims withInputs(List<IntermediateOperation> inputs) {
-        return new ExpandDims(modelName(), name(), inputs);
+    public Unsqueeze withInputs(List<IntermediateOperation> inputs) {
+        return new Unsqueeze(modelName(), name(), inputs, attributeMap);
     }
 
     @Override
-    public String operationName() { return "ExpandDims"; }
+    public String operationName() { return "Unsqueeze"; }
 
 }
