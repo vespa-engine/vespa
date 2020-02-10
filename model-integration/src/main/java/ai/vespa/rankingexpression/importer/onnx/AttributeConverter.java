@@ -5,6 +5,7 @@ import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import onnx.Onnx;
 
@@ -37,6 +38,7 @@ class AttributeConverter implements IntermediateOperation.AttributeMap {
                     case INT: return Optional.of(DoubleValue.frozen(attr.getI()));
                     case FLOAT: return Optional.of(DoubleValue.frozen(attr.getF()));
                     case STRING: return Optional.of(StringValue.frozen(attr.getS().toString()));
+                    case TENSOR: return Optional.of(new TensorValue(TensorConverter.toVespaTensor(attr.getT(), TypeConverter.typeFrom(attr.getT()))));
                     default:
                         return Optional.empty();
                 }

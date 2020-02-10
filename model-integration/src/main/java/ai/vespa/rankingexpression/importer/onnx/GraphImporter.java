@@ -2,13 +2,18 @@
 
 package ai.vespa.rankingexpression.importer.onnx;
 
+import ai.vespa.rankingexpression.importer.operations.ExpandDims;
+import ai.vespa.rankingexpression.importer.operations.Gather;
+import ai.vespa.rankingexpression.importer.operations.OnnxCast;
 import ai.vespa.rankingexpression.importer.operations.Gemm;
 import ai.vespa.rankingexpression.importer.operations.ConcatReduce;
 import ai.vespa.rankingexpression.importer.operations.OnnxConcat;
 import ai.vespa.rankingexpression.importer.operations.Reduce;
 import ai.vespa.rankingexpression.importer.operations.Select;
+import ai.vespa.rankingexpression.importer.operations.Slice;
 import ai.vespa.rankingexpression.importer.operations.Softmax;
 import ai.vespa.rankingexpression.importer.operations.Squeeze;
+import ai.vespa.rankingexpression.importer.operations.Unsqueeze;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import ai.vespa.rankingexpression.importer.IntermediateGraph;
@@ -67,6 +72,7 @@ class GraphImporter {
             case "add":         return new Join(modelName, nodeName, inputs, ScalarFunctions.add());
             case "asin":        return new Map(modelName, nodeName, inputs, ScalarFunctions.asin());
             case "atan":        return new Map(modelName, nodeName, inputs, ScalarFunctions.atan());
+            case "cast":        return new OnnxCast(modelName, nodeName, inputs, attributes);
             case "ceil":        return new Map(modelName, nodeName, inputs, ScalarFunctions.ceil());
             case "concat":      return new OnnxConcat(modelName, nodeName, inputs, attributes);
             case "cos":         return new Map(modelName, nodeName, inputs, ScalarFunctions.cos());
@@ -75,6 +81,7 @@ class GraphImporter {
             case "equal":       return new Join(modelName, nodeName, inputs, ScalarFunctions.equal());
             case "exp":         return new Map(modelName, nodeName, inputs, ScalarFunctions.exp());
             case "floor":       return new Map(modelName, nodeName, inputs, ScalarFunctions.floor());
+            case "gather":      return new Gather(modelName, nodeName, inputs, attributes);
             case "gemm":        return new Gemm(modelName, nodeName, inputs, attributes);
             case "greater":     return new Join(modelName, nodeName, inputs, ScalarFunctions.greater());
             case "identity":    return new Identity(modelName, nodeName, inputs);
@@ -105,6 +112,7 @@ class GraphImporter {
             case "shape":       return new Shape(modelName, nodeName, inputs);
             case "sigmoid":     return new Map(modelName, nodeName, inputs, ScalarFunctions.sigmoid());
             case "sin":         return new Map(modelName, nodeName, inputs, ScalarFunctions.sin());
+            case "slice":       return new Slice(modelName, nodeName, inputs, attributes);
             case "softmax":     return new Softmax(modelName, nodeName, inputs, attributes);
             case "sub":         return new Join(modelName, nodeName, inputs, ScalarFunctions.subtract());
             case "squeeze":     return new Squeeze(modelName, nodeName, inputs, attributes);
@@ -113,6 +121,7 @@ class GraphImporter {
             case "where":       return new Select(modelName, nodeName, inputs);
             case "tan":         return new Map(modelName, nodeName, inputs, ScalarFunctions.tan());
             case "tanh":        return new Map(modelName, nodeName, inputs, ScalarFunctions.tanh());
+            case "unsqueeze":   return new Unsqueeze(modelName, nodeName, inputs, attributes);
         }
 
         IntermediateOperation op = new NoOp(modelName, nodeName, inputs);
