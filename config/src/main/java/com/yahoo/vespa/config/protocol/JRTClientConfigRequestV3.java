@@ -115,13 +115,12 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                                 sub.getDefContent(),
                                 ConfigUtils.getCanonicalHostName(),
                                 config != null ? config.getConfigMd5() : "",
-                                configState.getGeneration() != null ? configState.getGeneration() : 0L,
+                                configState.getGeneration(),
                                 sub.timingValues().getSubscribeTimeout(),
                                 trace,
                                 compressionType,
                                 vespaVersion);
     }
-
 
     public static JRTClientConfigRequest createFromRaw(RawConfig config,
                                                        long serverTimeout,
@@ -139,7 +138,6 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                 compressionType,
                 vespaVersion);
     }
-
 
     public static JRTClientConfigRequest createWithParams(ConfigKey<?> reqKey,
                                                           DefContent defContent,
