@@ -27,10 +27,10 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -645,6 +645,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case admin: return "admin";
             case content: return "content";
             case container: return "container";
+            case combined: return "combined";
             default: throw new IllegalArgumentException("Unexpected node cluster type '" + type + "'.");
         }
     }
