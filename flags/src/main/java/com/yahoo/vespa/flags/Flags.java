@@ -194,12 +194,6 @@ public class Flags {
             "Takes effect when routing container asks for new config",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_IN_PLACE_RESIZE = defineFeatureFlag(
-            "enable-in-place-resize", false,
-            "Whether nodes can be resized in-place when certain conditions are met",
-            "Takes effect on next deployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_CONFIG_SERVER_FOR_TESTER_API_CALLS = defineFeatureFlag(
             "use-config-server-for-tester-api-calls", true,
             "Whether controller should send requests to tester API through config server (if false) or tester endpoint (if true)",

@@ -46,13 +46,13 @@ public class NodePrioritizer {
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final boolean isTopologyChange;
-    private final boolean inPlaceResizeEnabled;
+    private final boolean dynamicProvisioningEnabled;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                     int spares, int wantedGroups, NameResolver nameResolver, HostResourcesCalculator hostResourcesCalculator,
-                    boolean inPlaceResizeEnabled) {
+                    boolean dynamicProvisioningEnabled) {
         this.allNodes = allNodes;
         this.capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
@@ -60,7 +60,7 @@ public class NodePrioritizer {
         this.application = application;
         this.nameResolver = nameResolver;
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
-        this.inPlaceResizeEnabled = inPlaceResizeEnabled;
+        this.dynamicProvisioningEnabled = dynamicProvisioningEnabled;
 
         NodeList nodesInCluster = allNodes.owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
@@ -117,20 +117,15 @@ public class NodePrioritizer {
         }
     }
 
-    /**
-     * Add a node on each docker host with enough capacity for the requested flavor
-     *
-     * @param exclusively whether the ready docker nodes should only be added on hosts that
-     *                    already have nodes allocated to this tenant
-     */
-    void addNewDockerNodes(boolean exclusively) {
+    /** Add a node on each docker host with enough capacity for the requested flavor  */
+    void addNewDockerNodes() {
         if ( ! isDocker) return;
 
         LockedNodeList candidates = allNodes
                 .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()))
                 .filter(node -> node.reservedTo().isEmpty() || node.reservedTo().get().equals(application.tenant()));
 
-        if (exclusively) {
+        if (dynamicProvisioningEnabled) {
             Set<String> candidateHostnames = candidates.asList().stream()
                                                        .filter(node -> node.type() == NodeType.tenant)
                                                        .filter(node -> node.allocation()
@@ -218,7 +213,7 @@ public class NodePrioritizer {
             builder.parent(parent).freeParentCapacity(parentCapacity);
 
             if (!isNewNode)
-                builder.resizable(inPlaceResizeEnabled && requestedNodes.canResize(
+                builder.resizable(!dynamicProvisioningEnabled && requestedNodes.canResize(
                         node.flavor().resources(), parentCapacity, isTopologyChange, currentClusterSize));
 
             if (spareHosts.contains(parent))
