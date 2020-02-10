@@ -29,7 +29,7 @@ import static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode.wrap
  *
  * Opset 1 to 9 accepts starts, ends, and axes tensors as attributes
  *
- * Opset >= 10 accepts starts, ends, axes, and steps tensors as inputs. Here we assume these are
+ * Opset 10 and up accepts starts, ends, axes, and steps tensors as inputs. Here we assume these are
  * constants, otherwise we can't import this model because that would mean we
  * would not know the resulting tensor type until run-time, and that is currently
  * not supported in Vespa.
