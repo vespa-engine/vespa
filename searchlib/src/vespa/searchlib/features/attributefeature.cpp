@@ -108,6 +108,13 @@ public:
      * @param attribute The attribute vector to use.
      */
     SingleAttributeExecutor(const T & attribute) : _attribute(attribute) { }
+    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+        fef::FeatureExecutor::handle_bind_outputs(outputs_in);
+        auto o = outputs().get_bound();
+        o[1].as_number = 0;  // weight
+        o[2].as_number = 0;  // contains
+        o[3].as_number = 1;  // count
+    }
     void execute(uint32_t docId) override;
 };
 
@@ -120,13 +127,15 @@ private:
     const T & _attribute;
     uint32_t  _idx;
 public:
-    /**
-     * Constructs an executor.
-     *
-     * @param attribute The attribute vector to use.
-     */
     MultiAttributeExecutor(const T & attribute, uint32_t idx) : _attribute(attribute), _idx(idx) { }
     void execute(uint32_t docId) override;
+    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+        fef::FeatureExecutor::handle_bind_outputs(outputs_in);
+        auto o = outputs().get_bound();
+        o[1].as_number = 0;  // weight
+        o[2].as_number = 0;  // contains
+        o[3].as_number = 0;  // count
+    }
 };
 
 class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
@@ -134,13 +143,15 @@ private:
     const attribute::IAttributeVector & _attribute;
 
 public:
-    /**
-     * Constructs an executor.
-     *
-     * @param attribute The attribute vector to use.
-     */
     CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
     void execute(uint32_t docId) override;
+    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+        fef::FeatureExecutor::handle_bind_outputs(outputs_in);
+        auto o = outputs().get_bound();
+        o[0].as_number = 0;  // value
+        o[1].as_number = 0;  // weight
+        o[2].as_number = 0;  // contains
+    }
 };
 /**
  * Implements the executor for fetching values from a single or array attribute vector
@@ -150,8 +161,8 @@ class AttributeExecutor : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector * _attribute;
     attribute::BasicType::Type _attrType;
-    uint32_t _idx;
-    T _buffer; // used when fetching values from the attribute
+    uint32_t  _idx;
+    T         _buffer; // used when fetching values from the attribute
     feature_t _defaultCount;
 
 public:
@@ -163,6 +174,13 @@ public:
      */
     AttributeExecutor(const attribute::IAttributeVector * attribute, uint32_t idx);
     void execute(uint32_t docId) override;
+    void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
+        fef::FeatureExecutor::handle_bind_outputs(outputs_in);
+        auto o = outputs().get_bound();
+        o[1].as_number = 0;  // weight
+        o[2].as_number = 0;  // contains
+        o[3].as_number = _defaultCount; // count
+    }
 };
 
 
@@ -200,9 +218,6 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
     o[0].as_number = __builtin_expect(attribute::isUndefined(v), false)
                      ? attribute::getUndefined<feature_t>()
                      : util::getAsFeature(v);
-    o[1].as_number = 0;  // weight
-    o[2].as_number = 0;  // contains
-    o[3].as_number = 1;  // contains
 }
 
 template <typename T>
@@ -214,18 +229,12 @@ MultiAttributeExecutor<T>::execute(uint32_t docId)
 
     auto o = outputs().get_bound();
     o[0].as_number = __builtin_expect(_idx < numValues, true) ? values[_idx].value() : 0;
-    o[1].as_number = 0;  // weight
-    o[2].as_number = 0;  // contains
-    o[3].as_number = 0;  // count
 }
 
 void
 CountOnlyAttributeExecutor::execute(uint32_t docId)
 {
     auto o = outputs().get_bound();
-    o[0].as_number = 0;  // value
-    o[1].as_number = 0;  // weight
-    o[2].as_number = 0;  // contains
     o[3].as_number = _attribute.getValueCount(docId); // count
 }
 
@@ -252,9 +261,6 @@ AttributeExecutor<T>::execute(uint32_t docId)
     }
     auto o = outputs().get_bound();
     o[0].as_number = value;  // value
-    o[1].as_number = 0;  // weight
-    o[2].as_number = 0;  // contains
-    o[3].as_number = _defaultCount; // count
 }
 
 
