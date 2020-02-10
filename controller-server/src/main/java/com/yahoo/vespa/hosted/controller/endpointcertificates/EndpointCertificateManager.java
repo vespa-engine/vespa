@@ -14,6 +14,7 @@ import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
@@ -27,11 +28,15 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,6 +57,7 @@ public class EndpointCertificateManager {
     private final EndpointCertificateProvider endpointCertificateProvider;
     private final Clock clock;
     private final BooleanFlag useRefreshedEndpointCertificate;
+    private final StringFlag endpointCertificateBackfill;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
                                       CuratorDb curator,
@@ -64,6 +70,8 @@ public class EndpointCertificateManager {
         this.endpointCertificateProvider = endpointCertificateProvider;
         this.clock = clock;
         this.useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
+        this.endpointCertificateBackfill = Flags.ENDPOINT_CERTIFICATE_BACKFILL.bindTo(flagSource);
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(this::backfillCertificateMetadata, 1, 10, TimeUnit.MINUTES);
     }
 
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone) {
@@ -95,6 +103,76 @@ public class EndpointCertificateManager {
         verifyEndpointCertificate(endpointCertificateMetadata, instance, zone, "Problems while verifying certificate: ");
 
         return Optional.of(endpointCertificateMetadata);
+    }
+
+    enum BackfillMode {
+        DISABLE,
+        DRYRUN,
+        ENABLE;
+
+        BackfillMode fromString(String backfillMode) {
+            switch (backfillMode) {
+                case "disable":
+                    return DISABLE;
+                case "dryrun":
+                    return DRYRUN;
+                case "enable":
+                    return ENABLE;
+                default:
+                    throw new RuntimeException("Uknown backfill mode!");
+            }
+        }
+    }
+
+    private void backfillCertificateMetadata() {
+        BackfillMode mode = BackfillMode.valueOf(endpointCertificateBackfill.value());
+        if (mode == BackfillMode.DISABLE) return;
+
+        List<EndpointCertificateMetadata> allProviderCertificateMetadata = endpointCertificateProvider.listCertificates();
+        Map<String, EndpointCertificateMetadata> sanToEndpointCertificate = new HashMap<>();
+
+        allProviderCertificateMetadata.forEach((providerMetadata -> {
+            if (providerMetadata.request_id().isEmpty())
+                throw new RuntimeException("Backfill failed - provider metadata missing request_id");
+            if (providerMetadata.requestedDnsSans().isEmpty())
+                throw new RuntimeException("Backfill failed - provider metadata missing DNS SANs for " + providerMetadata.request_id().get());
+            providerMetadata.requestedDnsSans().get().forEach(san -> {
+                        var previous = sanToEndpointCertificate.put(san, providerMetadata);
+                        if (previous != null)
+                            throw new RuntimeException("Backfill failed - Overlapping SANs in certificates " +
+                                    providerMetadata.request_id() + " and " + previous.request_id());
+                    }
+            );
+        }));
+
+        Map<ApplicationId, EndpointCertificateMetadata> allEndpointCertificateMetadata = curator.readAllEndpointCertificateMetadata();
+
+        allEndpointCertificateMetadata.forEach((applicationId, storedMetaData) -> {
+            if (storedMetaData.requestedDnsSans().isPresent() && storedMetaData.request_id().isPresent())
+                return;
+
+            var hashedCn = Endpoint.createHashedCn(applicationId, zoneRegistry.system()); // use as join key
+            EndpointCertificateMetadata providerMetadata = sanToEndpointCertificate.get(hashedCn);
+
+            if(providerMetadata == null) {
+                log.log(LogLevel.INFO, "No matching certificate provider metadata found for application " + applicationId.serializedForm());
+                return;
+            }
+
+            EndpointCertificateMetadata backfilledMetadata =
+                    new EndpointCertificateMetadata(
+                            storedMetaData.keyName(),
+                            storedMetaData.certName(),
+                            storedMetaData.version(),
+                            providerMetadata.request_id(),
+                            providerMetadata.requestedDnsSans());
+
+            if (mode == BackfillMode.DRYRUN) {
+                log.log(LogLevel.INFO, "Would update stored metadata " + storedMetaData + " with data from provider: " + backfilledMetadata);
+            } else if (mode == BackfillMode.ENABLE) {
+                curator.writeEndpointCertificateMetadata(applicationId, backfilledMetadata);
+            }
+        });
     }
 
     private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
@@ -140,7 +218,7 @@ public class EndpointCertificateManager {
                     .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
                     .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
 
-            if(Sets.intersection(subjectAlternativeNames, Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))).isEmpty()) {
+            if (Sets.intersection(subjectAlternativeNames, Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))).isEmpty()) {
                 return logWarning(warningPrefix, "No overlap between SANs in certificate and expected SANs");
             }
 
