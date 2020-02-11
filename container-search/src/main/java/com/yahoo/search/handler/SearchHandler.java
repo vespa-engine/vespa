@@ -159,10 +159,10 @@ public class SearchHandler extends LoggingRequestHandler {
         this.maxThreads = examineExecutor(executor);
 
         searchConnections = new Value(SEARCH_CONNECTIONS, statistics,
-                new Value.Parameters().setLogRaw(true).setLogMax(true)
-                        .setLogMean(true).setLogMin(true)
-                        .setNameExtension(true)
-                        .setCallback(new MeanConnections()));
+                                      new Value.Parameters().setLogRaw(true).setLogMax(true)
+                                                            .setLogMean(true).setLogMin(true)
+                                                            .setNameExtension(true)
+                                                            .setCallback(new MeanConnections()));
 
         this.hostResponseHeaderKey = hostResponseHeaderKey;
         this.numRequestsLeftToTrace = new AtomicLong(numQueriesToTraceOnDebugAfterStartup);
