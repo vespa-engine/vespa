@@ -109,21 +109,18 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                                                                                   Trace trace,
                                                                                   CompressionType compressionType,
                                                                                   Optional<VespaVersion> vespaVersion) {
-        String hostname = ConfigUtils.getCanonicalHostName();
-        ConfigKey<T> key = sub.getKey();
         ConfigSubscription.ConfigState<T> configState = sub.getConfigState();
-        T i = configState.getConfig();
-        return createWithParams(key,
-                sub.getDefContent(),
-                hostname,
-                i != null ? i.getConfigMd5() : "",
-                configState.getGeneration() != null ? configState.getGeneration() : 0L,
-                sub.timingValues().getSubscribeTimeout(),
-                trace,
-                compressionType,
-                vespaVersion);
+        T config = configState.getConfig();
+        return createWithParams(sub.getKey(),
+                                sub.getDefContent(),
+                                ConfigUtils.getCanonicalHostName(),
+                                config != null ? config.getConfigMd5() : "",
+                                configState.getGeneration(),
+                                sub.timingValues().getSubscribeTimeout(),
+                                trace,
+                                compressionType,
+                                vespaVersion);
     }
-
 
     public static JRTClientConfigRequest createFromRaw(RawConfig config,
                                                        long serverTimeout,
@@ -141,7 +138,6 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                 compressionType,
                 vespaVersion);
     }
-
 
     public static JRTClientConfigRequest createWithParams(ConfigKey<?> reqKey,
                                                           DefContent defContent,
