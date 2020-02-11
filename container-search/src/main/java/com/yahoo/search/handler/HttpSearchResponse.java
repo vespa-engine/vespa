@@ -69,14 +69,14 @@ public class HttpSearchResponse extends ExtendedResponse {
         }
     }
 
-    public ListenableFuture<Boolean> waitableRender(OutputStream stream) {
+    public ListenableFuture<Boolean> waitableRender(OutputStream stream) throws IOException {
         return waitableRender(result, query, rendererCopy, stream);
     }
 
     public static ListenableFuture<Boolean> waitableRender(Result result,
                                                            Query query,
                                                            Renderer<Result> renderer,
-                                                           OutputStream stream) {
+                                                           OutputStream stream) throws IOException {
         SearchResponse.trimHits(result);
         SearchResponse.removeEmptySummaryFeatureFields(result);
         return renderer.render(stream, result, query.getModel().getExecution(), query);
