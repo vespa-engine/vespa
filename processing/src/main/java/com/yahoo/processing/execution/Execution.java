@@ -206,7 +206,7 @@ public class Execution {
          * Creates an empty environment. Only useful for some limited testing
          */
         public static <C extends Processor> Environment<C> createEmpty() {
-            return new Environment<C>(new ChainRegistry<C>());
+            return new Environment<>(new ChainRegistry<>());
         }
 
         /**
@@ -254,7 +254,7 @@ public class Execution {
         /**
          * If true, do timing logic, even though trace level is low.
          */
-        private boolean forceTimestamps = false;
+        private boolean forceTimestamps;
 
         /**
          * Creates an empty root trace with a given level of tracing

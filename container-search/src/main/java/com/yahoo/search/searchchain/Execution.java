@@ -3,7 +3,6 @@ package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Linguistics;
-import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
@@ -11,7 +10,6 @@ import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
-import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;

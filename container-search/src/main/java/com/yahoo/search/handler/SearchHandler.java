@@ -58,6 +58,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,6 +99,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private final ExecutionFactory executionFactory;
 
+    private final AtomicLong numRequestsLeftToTrace;
+
     private final class MeanConnections implements Callback {
 
         @Override
@@ -125,6 +128,7 @@ public class SearchHandler extends LoggingRequestHandler {
              accessLog,
              QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
              executionFactory,
+             containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
              Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
     }
@@ -136,6 +140,17 @@ public class SearchHandler extends LoggingRequestHandler {
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
                          Optional<String> hostResponseHeaderKey) {
+        this(statistics, metric, executor, accessLog, queryProfileRegistry, executionFactory, 0, hostResponseHeaderKey);
+    }
+
+    private SearchHandler(Statistics statistics,
+                         Metric metric,
+                         Executor executor,
+                         AccessLog accessLog,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ExecutionFactory executionFactory,
+                         long numQueriesToTraceOnDebugAfterStartup,
+                         Optional<String> hostResponseHeaderKey) {
         super(executor, accessLog, metric, true);
         log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
@@ -144,12 +159,13 @@ public class SearchHandler extends LoggingRequestHandler {
         this.maxThreads = examineExecutor(executor);
 
         searchConnections = new Value(SEARCH_CONNECTIONS, statistics,
-                                      new Value.Parameters().setLogRaw(true).setLogMax(true)
-                                                            .setLogMean(true).setLogMin(true)
-                                                            .setNameExtension(true)
-                                                            .setCallback(new MeanConnections()));
+                new Value.Parameters().setLogRaw(true).setLogMax(true)
+                        .setLogMean(true).setLogMin(true)
+                        .setNameExtension(true)
+                        .setCallback(new MeanConnections()));
 
         this.hostResponseHeaderKey = hostResponseHeaderKey;
+        this.numRequestsLeftToTrace = new AtomicLong(numQueriesToTraceOnDebugAfterStartup);
     }
 
     /** @deprecated use the other constructor */
@@ -215,7 +231,6 @@ public class SearchHandler extends LoggingRequestHandler {
 
     }
 
-    @SuppressWarnings("unchecked")
     private HttpResponse errorResponse(HttpRequest request, ErrorMessage errorMessage) {
         Query query = new Query();
         Result result = new Result(query, errorMessage);
@@ -330,7 +345,13 @@ public class SearchHandler extends LoggingRequestHandler {
 
         Execution execution = executionFactory.newExecution(searchChain);
         query.getModel().setExecution(execution);
-        execution.trace().setForceTimestamps(query.properties().getBoolean(FORCE_TIMESTAMPS, false));
+        if (log.isLoggable(Level.FINE) && (numRequestsLeftToTrace.getAndDecrement() > 0)) {
+            query.setTraceLevel(Math.max(1, query.getTraceLevel()));
+            execution.trace().setForceTimestamps(true);
+
+        } else {
+            execution.trace().setForceTimestamps(query.properties().getBoolean(FORCE_TIMESTAMPS, false));
+        }
         if (query.properties().getBoolean(DETAILED_TIMING_LOGGING, false)) {
             // check and set (instead of set directly) to avoid overwriting stuff from prepareForBreakdownAnalysis()
             execution.context().setDetailedDiagnostics(true);
