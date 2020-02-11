@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.controller.api.integration.resource;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 
+import java.time.YearMonth;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Consumes and retrieves snapshots of resources allocated per application.
@@ -15,6 +17,8 @@ public interface MeteringClient {
 
     void consume(Collection<ResourceSnapshot> resources);
 
-    MeteringInfo getResourceSnapshots(TenantName tenantName, ApplicationName applicationName);
+    MeteringData getMeteringData(TenantName tenantName, ApplicationName applicationName);
+
+    List<ResourceSnapshot> getSnapshotHistoryForTenant(TenantName tenantName, YearMonth yearMonth);
 
 }

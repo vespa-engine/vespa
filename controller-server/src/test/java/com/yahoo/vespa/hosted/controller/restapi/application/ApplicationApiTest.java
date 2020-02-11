@@ -40,7 +40,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
@@ -944,7 +944,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246), ZoneId.defaultId()),
                 new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492), ZoneId.defaultId())));
 
-        mockMeteringClient.setMeteringInfo(new MeteringInfo(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
+        mockMeteringClient.setMeteringData(new MeteringData(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
 
         tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
                                       .userIdentity(USER_ID)
