@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -91,13 +90,6 @@ public class RoutingPolicies {
         }
     }
 
-    /** Returns whether global DNS records should be updated for given application and zone */
-    private boolean updateGlobalDnsOf(ApplicationId application, ZoneId zone) {
-        if (application.instance().isTester()) return false;
-        if (!zone.environment().isProduction()) return false;
-        return true;
-    }
-
     /** Set the status of all global endpoints in given zone */
     public void setGlobalRoutingStatus(ZoneId zone, GlobalRouting.Status status) {
         try (var lock = db.lockRoutingPolicies()) {
@@ -141,12 +133,17 @@ public class RoutingPolicies {
                 // - zone level (ZoneRoutingPolicy)
                 // - deployment level (RoutingPolicy)
                 // - application package level (deployment.xml)
-                if (anyOut(zonePolicy.globalRouting(), policy.status().globalRouting()) ||
-                    inactiveZones.contains(policy.id().zone())) {
+                if (isConfiguredOut(policy, zonePolicy, inactiveZones)) {
                     staleTargets.add(target);
                 } else {
                     targets.add(target);
                 }
+            }
+            // If all targets are configured out, all targets are set in. We do this because otherwise removing 100% of
+            // the ALIAS records would cause the global endpoint to stop resolving entirely (NXDOMAIN).
+            if (targets.isEmpty() && !staleTargets.isEmpty()) {
+                targets.addAll(staleTargets);
+                staleTargets.clear();
             }
             if (!targets.isEmpty()) {
                 var endpoint = RoutingPolicy.globalEndpointOf(routeEntry.getKey().application(),
@@ -238,10 +235,15 @@ public class RoutingPolicies {
         return Collections.unmodifiableMap(routingTable);
     }
 
-    private static boolean anyOut(GlobalRouting... globalRouting) {
-        return Arrays.stream(globalRouting)
-                     .map(GlobalRouting::status)
-                     .anyMatch(status -> status == GlobalRouting.Status.out);
+    /** Returns whether the global routing status of given policy is configured to be {@link GlobalRouting.Status#out} */
+    private static boolean isConfiguredOut(RoutingPolicy policy, ZoneRoutingPolicy zonePolicy, Set<ZoneId> inactiveZones) {
+        // A deployment is can be configured out at any of the following levels:
+        // - zone level (ZoneRoutingPolicy)
+        // - deployment level (RoutingPolicy)
+        // - application package level (deployment.xml)
+        return zonePolicy.globalRouting().status() == GlobalRouting.Status.out ||
+               policy.status().globalRouting().status() == GlobalRouting.Status.out ||
+               inactiveZones.contains(policy.id().zone());
     }
 
     private static boolean isActive(LoadBalancer loadBalancer) {
