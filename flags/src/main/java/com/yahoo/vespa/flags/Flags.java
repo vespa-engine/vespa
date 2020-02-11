@@ -194,12 +194,6 @@ public class Flags {
             "Takes effect when routing container asks for new config",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_CONFIG_SERVER_FOR_TESTER_API_CALLS = defineFeatureFlag(
-            "use-config-server-for-tester-api-calls", true,
-            "Whether controller should send requests to tester API through config server (if false) or tester endpoint (if true)",
-            "Takes effect immediately",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
             "generate-l4-routing-config", false,
             "Whether routing nodes should generate L4 routing config",
