@@ -74,8 +74,8 @@ public class EndpointCertificateManager {
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             try {
                 this.backfillCertificateMetadata();
-            } catch (Exception e) {
-                log.log(LogLevel.INFO, "Unexpected exception while backfilling certificate metadata", e);
+            } catch (Throwable t) {
+                log.log(LogLevel.INFO, "Unexpected Throwable caught while backfilling certificate metadata", t);
             }
         }, 1, 10, TimeUnit.MINUTES);
     }
