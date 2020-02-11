@@ -378,6 +378,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
+        if ( ! hasInformationAboutAllNodes()) return; // Be silent until we know what we are talking about.
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
         if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
             nextLogTime = System.currentTimeMillis() + 30 * 1000;
