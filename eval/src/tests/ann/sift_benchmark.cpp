@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <chrono>
+#include <cstdlib>
 
 #define NUM_DIMS 128
 #define NUM_DOCS 1000000
@@ -28,7 +29,10 @@ struct PointVector {
 };
 
 static PointVector *aligned_alloc(size_t num) {
-    char *mem = (char *)malloc(num * sizeof(PointVector) + 512);
+    size_t sz = num * sizeof(PointVector);
+    double mega_bytes = sz / (1024.0*1024.0);
+    fprintf(stderr, "allocate %.2f MB of vectors\n", mega_bytes);
+    char *mem = (char *)malloc(sz + 512);
     mem += 512;
     size_t val = (size_t)mem;
     size_t unalign = val % 512;
@@ -169,7 +173,7 @@ void verifyBF(uint32_t qid) {
             fprintf(stderr, "WARN dist %.9g < mindist %.9g\n", dist, min_distance);
         }
         EXPECT_FALSE(dist+0.000001 < min_distance);
-        if (qid == 6) all_c2.push_back(dist / min_distance);
+        if (min_distance > 0) all_c2.push_back(dist / min_distance);
     }
     if (all_c2.size() != NUM_DOCS) return;
     std::sort(all_c2.begin(), all_c2.end());
