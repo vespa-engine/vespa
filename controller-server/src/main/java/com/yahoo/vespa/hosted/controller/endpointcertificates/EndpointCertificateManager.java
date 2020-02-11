@@ -71,7 +71,13 @@ public class EndpointCertificateManager {
         this.clock = clock;
         this.useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
         this.endpointCertificateBackfill = Flags.ENDPOINT_CERTIFICATE_BACKFILL.bindTo(flagSource);
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(this::backfillCertificateMetadata, 1, 10, TimeUnit.MINUTES);
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
+            try {
+                this.backfillCertificateMetadata();
+            } catch (Throwable t) {
+                log.log(LogLevel.INFO, "Unexpected Throwable caught while backfilling certificate metadata", t);
+            }
+        }, 1, 10, TimeUnit.MINUTES);
     }
 
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone) {
@@ -108,20 +114,7 @@ public class EndpointCertificateManager {
     enum BackfillMode {
         DISABLE,
         DRYRUN,
-        ENABLE;
-
-        BackfillMode fromString(String backfillMode) {
-            switch (backfillMode) {
-                case "disable":
-                    return DISABLE;
-                case "dryrun":
-                    return DRYRUN;
-                case "enable":
-                    return ENABLE;
-                default:
-                    throw new RuntimeException("Uknown backfill mode!");
-            }
-        }
+        ENABLE
     }
 
     private void backfillCertificateMetadata() {
