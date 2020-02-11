@@ -527,9 +527,9 @@ public class CuratorDb {
 
     public Map<ApplicationId, EndpointCertificateMetadata> readAllEndpointCertificateMetadata() {
         Map<ApplicationId, EndpointCertificateMetadata> allEndpointCertificateMetadata = new HashMap<>();
-        Iterator<String> zkNodes = endpointCertificateRoot.iterator();
-        while(zkNodes.hasNext()) {
-            ApplicationId applicationId = ApplicationId.fromSerializedForm(zkNodes.next());
+
+        for (String appIdString : curator.getChildren(endpointCertificateRoot)) {
+            ApplicationId applicationId = ApplicationId.fromSerializedForm(appIdString);
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata = readEndpointCertificateMetadata(applicationId);
             allEndpointCertificateMetadata.put(applicationId, endpointCertificateMetadata.orElseThrow());
         }
