@@ -30,15 +30,15 @@ struct PointVector {
 };
 
 static PointVector *aligned_alloc(size_t num) {
-    size_t num_bytes = num * sizeof(PointVector);
-    double mega_bytes = num_bytes / (1024.0*1024.0);
+    size_t sz = num * sizeof(PointVector);
+    double mega_bytes = sz / (1024.0*1024.0);
     fprintf(stderr, "allocate %.2f MB of vectors\n", mega_bytes);
-    char *mem = (char *)malloc(num_bytes + 512);
+    char *mem = (char *)malloc(sz + 512);
     mem += 512;
     size_t val = (size_t)mem;
     size_t unalign = val % 512;
     mem -= unalign;
-    return (PointVector *)mem;
+    return reinterpret_cast<PointVector *>(mem);
 }
 
 static PointVector *generatedQueries = aligned_alloc(NUM_Q);

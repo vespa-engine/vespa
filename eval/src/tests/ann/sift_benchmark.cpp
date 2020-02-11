@@ -30,11 +30,13 @@ struct PointVector {
 
 static PointVector *aligned_alloc(size_t num) {
     size_t sz = num * sizeof(PointVector);
-    size_t align = 512;
-    while ((sz % align) != 0) { align /= 2; }
     double mega_bytes = sz / (1024.0*1024.0);
-    fprintf(stderr, "allocate %.2f MB of vectors (align %zu)\n", mega_bytes, align);
-    void *mem = std::aligned_alloc(align, sz);
+    fprintf(stderr, "allocate %.2f MB of vectors\n", mega_bytes);
+    char *mem = (char *)malloc(sz + 512);
+    mem += 512;
+    size_t val = (size_t)mem;
+    size_t unalign = val % 512;
+    mem -= unalign;
     return reinterpret_cast<PointVector *>(mem);
 }
 
