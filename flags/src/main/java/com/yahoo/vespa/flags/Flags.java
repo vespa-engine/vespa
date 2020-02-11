@@ -206,12 +206,6 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID, HOSTNAME);
 
-    public static final UnboundBooleanFlag GENERATE_ROUTING_CONFIG_FOR_TESTER_APPLICATIONS = defineFeatureFlag(
-            "generate-routing-config-for-tester-applications", false,
-            "Whether config server should generate routing config (lb-services) for tester applications",
-            "Takes effect on the next deployment of the routing (zone) application",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag USE_REFRESHED_ENDPOINT_CERTIFICATE = defineFeatureFlag(
             "use-refreshed-endpoint-certificate", false,
             "Whether an application should start using a newer certificate/key pair if available",
