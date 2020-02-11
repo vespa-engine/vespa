@@ -48,43 +48,12 @@ public class JRTConfigRequestV3Test {
     private JRTClientConfigRequest clientReq;
     private JRTServerConfigRequest serverReq;
 
-    private static Payload createPayload() {
-        return createPayload("bar");
+    @Before
+    public void setupRequest() {
+        clientReq = createReq();
+        serverReq = createReq(clientReq.getRequest());
+        assertTrue(serverReq.validateParameters());
     }
-
-    private static Payload createPayload(String value) {
-        Slime slime = new Slime();
-        slime.setObject().setString("myfield", value);
-        return Payload.from(new ConfigPayload(slime));
-    }
-
-    private JRTClientConfigRequest createReq(String defName, String defNamespace, String defMd5,
-                                               String hostname, String configId, String configMd5,
-                                               long currentGeneration, long timeout, Trace trace) {
-        return JRTClientConfigRequestV3.createWithParams(ConfigKey.createFull(defName, configId, defNamespace, defMd5),
-                DefContent.fromList(Arrays.asList("namespace=my.name.space", "myfield string")),
-                hostname,
-                configMd5,
-                currentGeneration,
-                timeout,
-                trace,
-                CompressionType.LZ4,
-                vespaVersion);
-    }
-
-    private JRTServerConfigRequest createReq(Request request) {
-        return JRTServerConfigRequestV3.createFromRequest(request);
-    }
-
-    private JRTClientConfigRequest createReq(JRTConfigSubscription<SimpletypesConfig> sub, Trace aNew) {
-        return JRTClientConfigRequestV3.createFromSub(sub, aNew, CompressionType.LZ4, vespaVersion);
-    }
-
-    private JRTClientConfigRequest createFromRaw(RawConfig rawConfig, long serverTimeout, Trace aNew) {
-        return JRTClientConfigRequestV3.createFromRaw(rawConfig, serverTimeout, aNew, CompressionType.LZ4, vespaVersion);
-    }
-
-    private String getProtocolVersion() { return "3"; }
 
     @Test
     public void request_is_parsed() {
@@ -109,66 +78,13 @@ public class JRTConfigRequestV3Test {
         assertFalse(clientReq.responseIsInternalRedeploy());
     }
 
-    @Before
-    public void setupRequest() {
-        clientReq = createReq();
-        serverReq = createReq(clientReq.getRequest());
-        assertTrue(serverReq.validateParameters());
-    }
-
-    private JRTClientConfigRequest createReq() {
-        trace = Trace.createNew(3, new ManualClock());
-        trace.trace(1, "hei");
-        return createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace);
-    }
-
-    private JRTClientConfigRequest createReq(Payload payload) {
-        trace = Trace.createNew(3, new ManualClock());
-        trace.trace(1, "hei");
-        return createReq(defName, defNamespace, defMd5, hostname, configId, ConfigUtils.getMd5(payload.getData()), currentGeneration, timeout, trace);
-    }
-
-    private void request_is_parsed_base() {
-        String [] expectedContent = new String[]{
-                "namespace=my.name.space",
-                "myfield string"
-        };
-        System.out.println(serverReq.toString());
-        assertThat(serverReq.getConfigKey().getName(), is(defName));
-        assertThat(serverReq.getConfigKey().getNamespace(), is(defNamespace));
-        assertThat(serverReq.getConfigKey().getMd5(), is(defMd5));
-        assertThat(serverReq.getConfigKey().getConfigId(), is(configId));
-        assertThat(serverReq.getDefContent().asStringArray(), is(expectedContent));
-        assertFalse(serverReq.noCache());
-        assertTrue(serverReq.getRequestTrace().toString().contains("hi"));
-        assertThat(serverReq.getRequestConfigMd5(), is(configMd5));
-        assertThat(serverReq.getRequestGeneration(), is(currentGeneration));
-    }
-
     @Test
-    public void delay_mechanisms_functions() {
+    public void delay_mechanisms_function() {
         assertFalse(serverReq.isDelayedResponse());
         serverReq.setDelayedResponse(true);
         assertTrue(serverReq.isDelayedResponse());
         serverReq.setDelayedResponse(false);
         assertFalse(serverReq.isDelayedResponse());
-    }
-
-    public JRTServerConfigRequest next_request_is_correct_base() {
-        String [] expectedContent = new String[]{
-                "namespace=my.name.space",
-                "myfield string"
-        };
-        JRTServerConfigRequest next = createReq(clientReq.nextRequest(6).getRequest());
-        assertThat(next.getConfigKey().getName(), is(defName));
-        assertThat(next.getConfigKey().getNamespace(), is(defNamespace));
-        assertThat(next.getConfigKey().getMd5(), is(defMd5));
-        assertThat(next.getConfigKey().getConfigId(), is(configId));
-        assertThat(next.getDefContent().asStringArray(), is(expectedContent));
-        assertFalse(next.noCache());
-        assertThat(next.getTimeout(), is(6L));
-        assertThat(next.getTimeout(), is(6L));
-        return next;
     }
 
     @Test
@@ -270,7 +186,6 @@ public class JRTConfigRequestV3Test {
 
     @Test
     public void created_from_existing_subscription() {
-        System.setProperty("VESPA_CONFIG_PROTOCOL_VERSION", getProtocolVersion());
         MockConnection connection = new MockConnection(new MockConnection.AbstractResponseHandler() {
             @Override
             public void createResponse() {
@@ -289,7 +204,6 @@ public class JRTConfigRequestV3Test {
         SimpletypesConfig config = sub.getConfigState().getConfig();
         assertThat(nextReq.getRequestConfigMd5(), is(config.getConfigMd5()));
         assertThat(nextReq.getRequestGeneration(), is(currentGeneration));
-        System.setProperty("VESPA_CONFIG_PROTOCOL_VERSION", "");
     }
 
     @Test
@@ -319,4 +233,87 @@ public class JRTConfigRequestV3Test {
     private void assertValidationFail(JRTClientConfigRequest req) {
         assertFalse(createReq(req.getRequest()).validateParameters());
     }
+
+    private static Payload createPayload() {
+        return createPayload("bar");
+    }
+
+    private static Payload createPayload(String value) {
+        Slime slime = new Slime();
+        slime.setObject().setString("myfield", value);
+        return Payload.from(new ConfigPayload(slime));
+    }
+
+    private JRTClientConfigRequest createReq(String defName, String defNamespace, String defMd5,
+                                             String hostname, String configId, String configMd5,
+                                             long currentGeneration, long timeout, Trace trace) {
+        return JRTClientConfigRequestV3.createWithParams(ConfigKey.createFull(defName, configId, defNamespace, defMd5),
+                                                         DefContent.fromList(Arrays.asList("namespace=my.name.space", "myfield string")),
+                                                         hostname,
+                                                         configMd5,
+                                                         currentGeneration,
+                                                         timeout,
+                                                         trace,
+                                                         CompressionType.LZ4,
+                                                         vespaVersion);
+    }
+
+    private JRTServerConfigRequest createReq(Request request) {
+        return JRTServerConfigRequestV3.createFromRequest(request);
+    }
+
+    private JRTClientConfigRequest createReq(JRTConfigSubscription<SimpletypesConfig> sub, Trace aNew) {
+        return JRTClientConfigRequestV3.createFromSub(sub, aNew, CompressionType.LZ4, vespaVersion);
+    }
+
+    private JRTClientConfigRequest createFromRaw(RawConfig rawConfig, long serverTimeout, Trace aNew) {
+        return JRTClientConfigRequestV3.createFromRaw(rawConfig, serverTimeout, aNew, CompressionType.LZ4, vespaVersion);
+    }
+
+    private JRTClientConfigRequest createReq() {
+        trace = Trace.createNew(3, new ManualClock());
+        trace.trace(1, "hei");
+        return createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace);
+    }
+
+    private JRTClientConfigRequest createReq(Payload payload) {
+        trace = Trace.createNew(3, new ManualClock());
+        trace.trace(1, "hei");
+        return createReq(defName, defNamespace, defMd5, hostname, configId, ConfigUtils.getMd5(payload.getData()), currentGeneration, timeout, trace);
+    }
+
+    private void request_is_parsed_base() {
+        String [] expectedContent = new String[]{
+                "namespace=my.name.space",
+                "myfield string"
+        };
+        System.out.println(serverReq.toString());
+        assertThat(serverReq.getConfigKey().getName(), is(defName));
+        assertThat(serverReq.getConfigKey().getNamespace(), is(defNamespace));
+        assertThat(serverReq.getConfigKey().getMd5(), is(defMd5));
+        assertThat(serverReq.getConfigKey().getConfigId(), is(configId));
+        assertThat(serverReq.getDefContent().asStringArray(), is(expectedContent));
+        assertFalse(serverReq.noCache());
+        assertTrue(serverReq.getRequestTrace().toString().contains("hi"));
+        assertThat(serverReq.getRequestConfigMd5(), is(configMd5));
+        assertThat(serverReq.getRequestGeneration(), is(currentGeneration));
+    }
+
+    private JRTServerConfigRequest next_request_is_correct_base() {
+        String [] expectedContent = new String[]{
+                "namespace=my.name.space",
+                "myfield string"
+        };
+        JRTServerConfigRequest next = createReq(clientReq.nextRequest(6).getRequest());
+        assertThat(next.getConfigKey().getName(), is(defName));
+        assertThat(next.getConfigKey().getNamespace(), is(defNamespace));
+        assertThat(next.getConfigKey().getMd5(), is(defMd5));
+        assertThat(next.getConfigKey().getConfigId(), is(configId));
+        assertThat(next.getDefContent().asStringArray(), is(expectedContent));
+        assertFalse(next.noCache());
+        assertThat(next.getTimeout(), is(6L));
+        assertThat(next.getTimeout(), is(6L));
+        return next;
+    }
+
 }
