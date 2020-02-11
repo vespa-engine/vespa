@@ -9,14 +9,14 @@ import java.util.Map;
 /**
  * @author olaa
  */
-public class MeteringInfo {
+public class MeteringData {
 
     private final ResourceAllocation thisMonth;
     private final ResourceAllocation lastMonth;
     private final ResourceAllocation currentSnapshot;
     Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory;
 
-    public MeteringInfo(ResourceAllocation thisMonth, ResourceAllocation lastMonth, ResourceAllocation currentSnapshot, Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory) {
+    public MeteringData(ResourceAllocation thisMonth, ResourceAllocation lastMonth, ResourceAllocation currentSnapshot, Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory) {
         this.thisMonth = thisMonth;
         this.lastMonth = lastMonth;
         this.currentSnapshot = currentSnapshot;

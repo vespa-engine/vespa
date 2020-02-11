@@ -56,7 +56,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -1272,33 +1272,34 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse metering(String tenant, String application, HttpRequest request) {
+
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        MeteringInfo meteringInfo = controller.serviceRegistry()
+        MeteringData meteringData = controller.serviceRegistry()
                 .meteringService()
-                .getResourceSnapshots(TenantName.from(tenant), ApplicationName.from(application));
+                .getMeteringData(TenantName.from(tenant), ApplicationName.from(application));
 
-        ResourceAllocation currentSnapshot = meteringInfo.getCurrentSnapshot();
+        ResourceAllocation currentSnapshot = meteringData.getCurrentSnapshot();
         Cursor currentRate = root.setObject("currentrate");
         currentRate.setDouble("cpu", currentSnapshot.getCpuCores());
         currentRate.setDouble("mem", currentSnapshot.getMemoryGb());
         currentRate.setDouble("disk", currentSnapshot.getDiskGb());
 
-        ResourceAllocation thisMonth = meteringInfo.getThisMonth();
+        ResourceAllocation thisMonth = meteringData.getThisMonth();
         Cursor thismonth = root.setObject("thismonth");
         thismonth.setDouble("cpu", thisMonth.getCpuCores());
         thismonth.setDouble("mem", thisMonth.getMemoryGb());
         thismonth.setDouble("disk", thisMonth.getDiskGb());
 
-        ResourceAllocation lastMonth = meteringInfo.getLastMonth();
+        ResourceAllocation lastMonth = meteringData.getLastMonth();
         Cursor lastmonth = root.setObject("lastmonth");
         lastmonth.setDouble("cpu", lastMonth.getCpuCores());
         lastmonth.setDouble("mem", lastMonth.getMemoryGb());
         lastmonth.setDouble("disk", lastMonth.getDiskGb());
 
 
-        Map<ApplicationId, List<ResourceSnapshot>> history = meteringInfo.getSnapshotHistory();
+        Map<ApplicationId, List<ResourceSnapshot>> history = meteringData.getSnapshotHistory();
         Cursor details = root.setObject("details");
 
         Cursor detailsCpu = details.setObject("cpu");
