@@ -132,6 +132,14 @@ public class Dispatcher extends AbstractComponent {
                 Thread.sleep(1);
             }
         } catch (InterruptedException e) {}
+
+        /*
+         * No we have information from all nodes and a ping iteration has completed.
+         * Instead of waiting until next ping interval to update coverage and group state,
+         * we should compute the state ourselves, so that when the dispatcher is ready the state
+         * of its groups are also known.
+         */
+        searchCluster.pingIterationCompleted();
     }
 
     /** Returns the search cluster this dispatches to */
