@@ -16,7 +16,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
@@ -146,7 +145,6 @@ public class LbServicesProducerTest {
 
     @Test
     public void testRoutingConfigForTesterApplication() throws IOException, SAXException {
-        flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.GENERATE_ROUTING_CONFIG_FOR_TESTER_APPLICATIONS.id(), false);
         assumeFalse(useGlobalServiceId);
 
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
