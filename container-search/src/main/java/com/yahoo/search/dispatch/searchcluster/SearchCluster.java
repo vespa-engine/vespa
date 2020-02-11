@@ -269,8 +269,6 @@ public class SearchCluster implements NodeManager<Node> {
     /** Used by the cluster monitor to manage node status */
     @Override
     public void ping(ClusterMonitor clusterMonitor, Node node, Executor executor) {
-        if (pingFactory == null) return; // not initialized yet
-
         Pinger pinger = pingFactory.createPinger(node, clusterMonitor, new PongCallback(node, clusterMonitor));
         pinger.ping();
     }
