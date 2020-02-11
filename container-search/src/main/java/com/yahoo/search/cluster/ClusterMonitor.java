@@ -101,7 +101,7 @@ public class ClusterMonitor<T> {
         Boolean wasWorking = monitor.isKnownWorking();
         monitor.responded();
         if (wasWorking != monitor.isKnownWorking())
-            nodeManager.working(monitor.getNode());
+            nodeManager.working(node);
     }
 
     /**
