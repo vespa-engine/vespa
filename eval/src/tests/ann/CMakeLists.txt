@@ -10,6 +10,16 @@ vespa_add_executable(eval_sift_benchmark_app
     vespaeval
 )
 
+vespa_add_executable(eval_gist_benchmark_app
+    SOURCES
+    gist_benchmark.cpp
+    xp-annoy-nns.cpp
+    xp-hnswlike-nns.cpp
+    xp-lsh-nns.cpp
+    DEPENDS
+    vespaeval
+)
+
 vespa_add_executable(eval_remove_bm_app
     SOURCES
     remove-bm.cpp

@@ -10,9 +10,7 @@
 #include <chrono>
 
 #define NUM_DIMS 960
-#define NUM_DOCS 250000
-#define NUM_DOCS_REMOVE 50000
-#define EFFECTIVE_DOCS (NUM_DOCS - NUM_DOCS_REMOVE)
+#define NUM_DOCS 200000
 #define NUM_REACH 10000
 #define NUM_Q 1000
 
@@ -22,7 +20,6 @@
 #include "for-sift-top-k.h"
 
 std::vector<TopK> bruteforceResults;
-std::vector<float> tmp_v(NUM_DIMS);
 
 struct PointVector {
     float v[NUM_DIMS];
@@ -55,7 +52,7 @@ struct DocVectorAdapter : public DocVectorAccess<float>
 
 double computeDistance(const PointVector &query, uint32_t docid) {
     const PointVector &docvector = generatedDocs[docid];
-    return l2distCalc.l2sq_dist(query, docvector, tmp_v);
+    return l2distCalc.l2sq_dist(query, docvector);
 }
 
 void read_queries(std::string fn) {
@@ -150,9 +147,9 @@ public:
 TopK bruteforce_nns(const PointVector &query) {
     TopK result;
     BfHitHeap heap(result.K);
-    for (uint32_t docid = 0; docid < EFFECTIVE_DOCS; ++docid) {
+    for (uint32_t docid = 0; docid < NUM_DOCS; ++docid) {
         const PointVector &docvector = generatedDocs[docid];
-        double d = l2distCalc.l2sq_dist(query, docvector, tmp_v);
+        double d = l2distCalc.l2sq_dist(query, docvector);
         Hit h(docid, d);
         heap.maybe_use(h);
     }
@@ -168,7 +165,7 @@ void verifyBF(uint32_t qid) {
     TopK &result = bruteforceResults[qid];
     double min_distance = result.hits[0].distance;
     std::vector<double> all_c2;
-    for (uint32_t i = 0; i < EFFECTIVE_DOCS; ++i) {
+    for (uint32_t i = 0; i < NUM_DOCS; ++i) {
         double dist = computeDistance(query, i);
         if (dist < min_distance) {
             fprintf(stderr, "WARN dist %.9g < mindist %.9g\n", dist, min_distance);
@@ -176,35 +173,14 @@ void verifyBF(uint32_t qid) {
         EXPECT_FALSE(dist+0.000001 < min_distance);
         if (min_distance > 0.0) all_c2.push_back(dist / min_distance);
     }
-    if (all_c2.size() != EFFECTIVE_DOCS) return;
+    if (all_c2.size() != NUM_DOCS) return;
     std::sort(all_c2.begin(), all_c2.end());
-    for (uint32_t idx : { 1, 3, 10, 30, 100, 300, 1000, 3000, EFFECTIVE_DOCS/2, EFFECTIVE_DOCS-1}) {
+    for (uint32_t idx : { 1, 3, 10, 30, 100, 300, 1000, 3000, NUM_DOCS/2, NUM_DOCS-1}) {
         fprintf(stderr, "c2-factor[%u] = %.3f\n", idx, all_c2[idx]);
     }
 }
 
 using NNS_API = NNS<float>;
-
-#if 1
-TEST("require that HNSW via NNS api remove all works") {
-    DocVectorAdapter adapter;
-    std::unique_ptr<NNS_API> nns = make_hnsw_nns(NUM_DIMS, adapter);
-    fprintf(stderr, "adding and removing all docs forward...\n");
-    for (uint32_t i = 0; i < 1000; ++i) {
-        nns->addDoc(i);
-    }
-    for (uint32_t i = 0; i < 1000; ++i) {
-        nns->removeDoc(i);
-    }
-    fprintf(stderr, "adding and removing all docs reverse...\n");
-    for (uint32_t i = 1000; i < 2000; ++i) {
-        nns->addDoc(i);
-    }
-    for (uint32_t i = 2000; i-- > 1000; ) {
-        nns->removeDoc(i);
-    }
-}
-#endif
 
 TEST("require that brute force works") {
     TimePoint bef = std::chrono::steady_clock::now();
@@ -245,102 +221,19 @@ void bm_nns_simple(const char *name, FUNC creator, std::vector<uint32_t> sk_list
     NNS_API &nns = *nnsp;
     fprintf(stderr, "trying %s indexing...\n", name);
     TimePoint bef = std::chrono::steady_clock::now();
-    for (uint32_t i = 0; i < EFFECTIVE_DOCS; ++i) {
+    for (uint32_t i = 0; i < NUM_DOCS; ++i) {
         nns.addDoc(i);
     }
     TimePoint aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "build %s index with %u docs: %.3f ms\n", name, EFFECTIVE_DOCS, to_ms(aft - bef));
+    fprintf(stderr, "build %s index with %u docs: %.3f ms\n", name, NUM_DOCS, to_ms(aft - bef));
     timing_nns(name, nns, sk_list);
-    fprintf(stderr, "Quality for %s [A] clean build with %u documents:\n", name, EFFECTIVE_DOCS);
-    quality_nns(nns, sk_list);
-    bef = std::chrono::steady_clock::now();
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.addDoc(EFFECTIVE_DOCS + i);
-    }
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.removeDoc(EFFECTIVE_DOCS + i);
-    }
-    aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "build %s index add then remove %u docs: %.3f ms\n",
-            name, NUM_DOCS_REMOVE, to_ms(aft - bef));
-    timing_nns(name, nns, sk_list);
-    fprintf(stderr, "Quality for %s [B] remove-damaged build with %u documents:\n", name, EFFECTIVE_DOCS);
-    quality_nns(nns, sk_list);
-}
-
-template <typename FUNC>
-void bm_nns_remove_old(const char *name, FUNC creator, std::vector<uint32_t> sk_list) {
-    std::unique_ptr<NNS_API> nnsp = creator();
-    NNS_API &nns = *nnsp;
-    TimePoint bef = std::chrono::steady_clock::now();
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.addDoc(EFFECTIVE_DOCS + i);
-    }
-    for (uint32_t i = 0; i < EFFECTIVE_DOCS; ++i) {
-        nns.addDoc(i);
-    }
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.removeDoc(EFFECTIVE_DOCS + i);
-    }
-    TimePoint aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "build %s index with %u docs: %.3f ms\n", name, EFFECTIVE_DOCS, to_ms(aft - bef));
-    timing_nns(name, nns, sk_list);
-    fprintf(stderr, "Quality for %s [C] remove-oldest build with %u documents:\n", name, EFFECTIVE_DOCS);
-    quality_nns(nns, sk_list);
-}
-
-template <typename FUNC>
-void bm_nns_interleave(const char *name, FUNC creator, std::vector<uint32_t> sk_list) {
-    std::unique_ptr<NNS_API> nnsp = creator();
-    NNS_API &nns = *nnsp;
-    TimePoint bef = std::chrono::steady_clock::now();
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.addDoc(EFFECTIVE_DOCS + i);
-    }
-    for (uint32_t i = 0; i < EFFECTIVE_DOCS - NUM_DOCS_REMOVE; ++i) {
-        nns.addDoc(i);
-    }
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.removeDoc(EFFECTIVE_DOCS + i);
-        nns.addDoc(EFFECTIVE_DOCS - NUM_DOCS_REMOVE + i);
-    }
-    TimePoint aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "build %s index with %u docs: %.3f ms\n", name, EFFECTIVE_DOCS, to_ms(aft - bef));
-    timing_nns(name, nns, sk_list);
-    fprintf(stderr, "Quality for %s [D] realistic build with %u documents:\n", name, EFFECTIVE_DOCS);
-    quality_nns(nns, sk_list);
-}
-
-template <typename FUNC>
-void bm_nns_remove_old_add_new(const char *name, FUNC creator, std::vector<uint32_t> sk_list) {
-    std::unique_ptr<NNS_API> nnsp = creator();
-    NNS_API &nns = *nnsp;
-    TimePoint bef = std::chrono::steady_clock::now();
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.addDoc(EFFECTIVE_DOCS + i);
-    }
-    for (uint32_t i = 0; i < EFFECTIVE_DOCS - NUM_DOCS_REMOVE; ++i) {
-        nns.addDoc(i);
-    }
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.removeDoc(EFFECTIVE_DOCS + i);
-    }
-    for (uint32_t i = 0; i < NUM_DOCS_REMOVE; ++i) {
-        nns.addDoc(EFFECTIVE_DOCS - NUM_DOCS_REMOVE + i);
-    }
-    TimePoint aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "build %s index with %u docs: %.3f ms\n", name, EFFECTIVE_DOCS, to_ms(aft - bef));
-    timing_nns(name, nns, sk_list);
-    fprintf(stderr, "Quality for %s [E] remove old, add new build with %u documents:\n", name, EFFECTIVE_DOCS);
+    fprintf(stderr, "Quality for %s [A] clean build with %u documents:\n", name, NUM_DOCS);
     quality_nns(nns, sk_list);
 }
 
 template <typename FUNC>
 void benchmark_nns(const char *name, FUNC creator, std::vector<uint32_t> sk_list) {
     bm_nns_simple(name, creator, sk_list);
-    bm_nns_remove_old(name, creator, sk_list);
-    bm_nns_interleave(name, creator, sk_list);
-    bm_nns_remove_old_add_new(name, creator, sk_list);
 }
 
 #if 0
