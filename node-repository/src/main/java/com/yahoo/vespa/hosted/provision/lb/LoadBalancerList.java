@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -27,11 +26,6 @@ public class LoadBalancerList implements Iterable<LoadBalancer> {
     /** Returns the subset of load balancers that are in given state */
     public LoadBalancerList in(LoadBalancer.State state) {
         return of(loadBalancers.stream().filter(lb -> lb.state() == state));
-    }
-
-    /** Returns the subset of load balancers that last changed before given instant */
-    public LoadBalancerList changedBefore(Instant instant) {
-        return of(loadBalancers.stream().filter(lb -> lb.changedAt().isBefore(instant)));
     }
 
     public List<LoadBalancer> asList() {

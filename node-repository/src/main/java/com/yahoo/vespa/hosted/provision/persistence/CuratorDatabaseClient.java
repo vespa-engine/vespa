@@ -521,8 +521,13 @@ public class CuratorDatabaseClient {
         transaction.commit();
     }
 
+    // TODO(mpolden): Remove this and all usages once migration to per-application lock is complete
     public Lock lockLoadBalancers() {
         return lock(lockRoot.append("loadBalancersLock"), defaultLockTimeout);
+    }
+
+    public Lock lockLoadBalancers(ApplicationId application) {
+        return lock(lockRoot.append("loadBalancersLock2").append(application.serializedForm()), defaultLockTimeout);
     }
 
     private Path loadBalancerPath(LoadBalancerId id) {
