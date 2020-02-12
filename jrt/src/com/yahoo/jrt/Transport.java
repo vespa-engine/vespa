@@ -68,14 +68,26 @@ public class Transport {
     }
 
     /**
-     * Use the underlying CryptoEngine to create a CryptoSocket.
+     * Use the underlying CryptoEngine to create a CryptoSocket for
+     * the client side of a connection.
      *
      * @return CryptoSocket handling appropriate encryption
      * @param channel low-level socket channel to be wrapped by the CryptoSocket
-     * @param isServer flag indicating which end of the connection we are
+     * @param spec who we are connecting to, for hostname validation
      **/
-    CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
-        return cryptoEngine.createCryptoSocket(channel, isServer);
+    CryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec) {
+        return cryptoEngine.createClientCryptoSocket(channel, spec);
+    }
+
+    /**
+     * Use the underlying CryptoEngine to create a CryptoSocket for
+     * the server side of a connection.
+     *
+     * @return CryptoSocket handling appropriate encryption
+     * @param channel low-level socket channel to be wrapped by the CryptoSocket
+     **/
+    CryptoSocket createServerCryptoSocket(SocketChannel channel) {
+        return cryptoEngine.createServerCryptoSocket(channel);
     }
 
     /**

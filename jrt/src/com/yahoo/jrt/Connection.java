@@ -93,7 +93,7 @@ class Connection extends Target {
 
         this.parent = parent;
         this.owner = owner;
-        this.socket = parent.transport().createCryptoSocket(channel, true);
+        this.socket = parent.transport().createServerCryptoSocket(channel);
         this.spec = null;
         server = true;
         owner.sessionInit(this);
@@ -171,7 +171,7 @@ class Connection extends Target {
             return this;
         }
         try {
-            socket = parent.transport().createCryptoSocket(SocketChannel.open(spec.resolveAddress()), false);
+            socket = parent.transport().createClientCryptoSocket(SocketChannel.open(spec.resolveAddress()), spec);
         } catch (Exception e) {
             setLostReason(e);
         }
