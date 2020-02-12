@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Vtag;
@@ -39,7 +39,7 @@ public class LoadBalancerExpirerTest {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
                                                               tester.loadBalancerService());
-        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
+        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers((ignored) -> true);
 
         // Deploy two applications with a total of three load balancers
         ClusterSpec.Id cluster1 = ClusterSpec.Id.from("qrs");
@@ -67,7 +67,7 @@ public class LoadBalancerExpirerTest {
         // Expirer prunes reals before expiration time of load balancer itself
         expirer.maintain();
         assertEquals(Set.of(), tester.loadBalancerService().instances().get(lb1).reals());
-        assertEquals(Set.of(), tester.nodeRepository().loadBalancers().owner(lb1.application()).asList().get(0).instance().reals());
+        assertEquals(Set.of(), tester.nodeRepository().loadBalancers(lb1.application()).asList().get(0).instance().reals());
 
         // Expirer defers removal of load balancer until expiration time passes
         expirer.maintain();
@@ -103,7 +103,7 @@ public class LoadBalancerExpirerTest {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
                                                               tester.loadBalancerService());
-        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
+        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers((ignored) -> true);
 
 
         // Prepare application

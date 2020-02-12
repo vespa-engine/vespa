@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -109,15 +109,14 @@ public class LoadBalancerProvisioner {
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (var applicationLock = nodeRepository.lock(application)) {
             try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
-                deactivate(nodeRepository.loadBalancers().owner(application).asList(), transaction);
+                deactivate(nodeRepository.loadBalancers(application).asList(), transaction);
             }
         }
     }
 
     /** Returns load balancers of given application that are no longer referenced by given clusters */
     private List<LoadBalancer> surplusLoadBalancersOf(ApplicationId application, Set<ClusterSpec.Id> activeClusters) {
-        var activeLoadBalancersByCluster = nodeRepository.loadBalancers()
-                                                         .owner(application)
+        var activeLoadBalancersByCluster = nodeRepository.loadBalancers(application)
                                                          .in(LoadBalancer.State.active)
                                                          .asList()
                                                          .stream()

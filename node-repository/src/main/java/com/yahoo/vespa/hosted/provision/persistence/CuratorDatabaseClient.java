@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -38,6 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -483,18 +484,16 @@ public class CuratorDatabaseClient {
 
     // Load balancers
     public List<LoadBalancerId> readLoadBalancerIds() {
-        return curatorDatabase.getChildren(loadBalancersRoot).stream()
-                              .map(LoadBalancerId::fromSerializedForm)
-                              .collect(Collectors.toUnmodifiableList());
+        return readLoadBalancerIds((ignored) -> true);
     }
 
-    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {
-        return readLoadBalancerIds().stream()
-                                    .map(this::readLoadBalancer)
-                                    .filter(Optional::isPresent)
-                                    .map(Optional::get)
-                                    .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
-                                                           Collections::unmodifiableMap));
+    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers(Predicate<LoadBalancerId> filter) {
+        return readLoadBalancerIds(filter).stream()
+                                          .map(this::readLoadBalancer)
+                                          .filter(Optional::isPresent)
+                                          .map(Optional::get)
+                                          .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
+                                                                     Collections::unmodifiableMap));
     }
 
     public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
@@ -528,6 +527,13 @@ public class CuratorDatabaseClient {
 
     private Path loadBalancerPath(LoadBalancerId id) {
         return loadBalancersRoot.append(id.serializedForm());
+    }
+
+    private List<LoadBalancerId> readLoadBalancerIds(Predicate<LoadBalancerId> predicate) {
+        return curatorDatabase.getChildren(loadBalancersRoot).stream()
+                              .map(LoadBalancerId::fromSerializedForm)
+                              .filter(predicate)
+                              .collect(Collectors.toUnmodifiableList());
     }
 
     private Transaction.Operation createOrSet(Path path, byte[] data) {

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.common.collect.Iterators;
@@ -47,8 +47,8 @@ public class LoadBalancerProvisionerTest {
 
     @Test
     public void provision_load_balancer() {
-        Supplier<List<LoadBalancer>> lbApp1 = () -> tester.nodeRepository().loadBalancers().owner(app1).asList();
-        Supplier<List<LoadBalancer>> lbApp2 = () -> tester.nodeRepository().loadBalancers().owner(app2).asList();
+        Supplier<List<LoadBalancer>> lbApp1 = () -> tester.nodeRepository().loadBalancers(app1).asList();
+        Supplier<List<LoadBalancer>> lbApp2 = () -> tester.nodeRepository().loadBalancers(app2).asList();
         ClusterSpec.Id containerCluster1 = ClusterSpec.Id.from("qrs1");
         ClusterSpec.Id contentCluster = ClusterSpec.Id.from("content");
 
@@ -80,7 +80,7 @@ public class LoadBalancerProvisionerTest {
         tester.activate(app1, prepare(app1,
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
-        LoadBalancer loadBalancer = tester.nodeRepository().loadBalancers().owner(app1).asList().get(0);
+        LoadBalancer loadBalancer = tester.nodeRepository().loadBalancers(app1).asList().get(0);
         assertEquals(2, loadBalancer.instance().reals().size());
         assertTrue("Failed node is removed", loadBalancer.instance().reals().stream()
                                                          .map(Real::hostname)
@@ -158,7 +158,7 @@ public class LoadBalancerProvisionerTest {
         var nodes = prepare(app1, Capacity.fromCount(2, new NodeResources(1, 4, 10, 0.3), false, true),
                                            true,
                                            clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")));
-        Supplier<LoadBalancer> lb = () -> tester.nodeRepository().loadBalancers().owner(app1).asList().get(0);
+        Supplier<LoadBalancer> lb = () -> tester.nodeRepository().loadBalancers(app1).asList().get(0);
         assertTrue("Load balancer provisioned with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
         assignIps(tester.nodeRepository().getNodes(app1));
         tester.activate(app1, nodes);
@@ -189,7 +189,7 @@ public class LoadBalancerProvisionerTest {
                                            clusterRequest(ClusterSpec.Type.container,
                                                           ClusterSpec.Id.from("tenant-host"))));
         assertTrue("No load balancer provisioned", tester.loadBalancerService().instances().isEmpty());
-        assertEquals(List.of(), tester.nodeRepository().loadBalancers().owner(infraApp1).asList());
+        assertEquals(List.of(), tester.nodeRepository().loadBalancers(infraApp1).asList());
     }
 
     @Test
@@ -197,12 +197,12 @@ public class LoadBalancerProvisionerTest {
         tester.activate(app1, prepare(app1, clusterRequest(ClusterSpec.Type.content,
                                                            ClusterSpec.Id.from("tenant-host"))));
         assertTrue("No load balancer provisioned", tester.loadBalancerService().instances().isEmpty());
-        assertEquals(List.of(), tester.nodeRepository().loadBalancers().owner(app1).asList());
+        assertEquals(List.of(), tester.nodeRepository().loadBalancers(app1).asList());
     }
 
     @Test
     public void provision_load_balancer_combined_cluster() {
-        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers().owner(app1).asList();
+        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(app1).asList();
         ClusterSpec.Id cluster = ClusterSpec.Id.from("foo");
 
         var nodes = prepare(app1, clusterRequest(ClusterSpec.Type.combined, cluster));
