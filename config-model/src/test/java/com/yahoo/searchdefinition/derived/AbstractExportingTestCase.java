@@ -10,6 +10,8 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
+import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,6 +55,7 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         String path = exportConfig(name, config);
         DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), new DocumentmanagerConfig.Builder()), path);
         DerivedConfiguration.exportDocuments(new DocumentTypes().produce(builder.getModel(), new DocumenttypesConfig.Builder()), path);
+        DerivedConfiguration.exportQueryProfiles(builder.getQueryProfileRegistry(), path);
         return config;
     }
 

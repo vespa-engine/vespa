@@ -1,0 +1,3 @@
+<query-profile-type id="type1">
+    <field name="ranking.features.query(tensor_1)" type="tensor&lt;float&gt;(x[1])" />
+</query-profile-type>
