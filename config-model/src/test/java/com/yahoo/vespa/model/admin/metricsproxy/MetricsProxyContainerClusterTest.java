@@ -67,6 +67,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class MetricsProxyContainerClusterTest {
 
+    private static int numPublicDefaultMetrics = defaultPublicMetricSet.getMetrics().size();
     private static int numDefaultVespaMetrics = defaultVespaMetricSet.getMetrics().size();
     private static int numVespaMetrics = vespaMetricSet.getMetrics().size();
     private static int numSystemMetrics = systemMetricSet.getMetrics().size();
@@ -238,6 +239,25 @@ public class MetricsProxyContainerClusterTest {
     }
 
     @Test
+    public void non_existent_metric_set_causes_exception() {
+        String services = String.join("\n",
+                                      "<services>",
+                                      "    <admin version='2.0'>",
+                                      "        <adminserver hostalias='node1'/>",
+                                      "        <metrics>",
+                                      "            <consumer id='consumer-with-non-existent-default-set'>",
+                                      "                <metric-set id='non-existent'/>",
+                                      "            </consumer>",
+                                      "        </metrics>",
+                                      "    </admin>",
+                                      "</services>"
+        );
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("No such metric-set: non-existent");
+        consumersConfigFromXml(services, self_hosted);
+    }
+
+    @Test
     public void consumer_with_no_metric_set_has_its_own_metrics_plus_system_metrics_plus_default_vespa_metrics() {
         String services = String.join("\n",
                 "<services>",
@@ -260,6 +280,29 @@ public class MetricsProxyContainerClusterTest {
         Metric customMetric2 = new Metric("custom.metric2");
         assertTrue("Did not contain metric: " + customMetric1, checkMetric(consumer, customMetric1));
         assertTrue("Did not contain metric: " + customMetric2, checkMetric(consumer, customMetric2));
+    }
+
+    @Test
+    public void consumer_with_default_public_metric_set_has_all_public_metrics_plus_all_system_metrics_plus_its_own() {
+        String services = String.join("\n",
+                                      "<services>",
+                                      "    <admin version='2.0'>",
+                                      "        <adminserver hostalias='node1'/>",
+                                      "        <metrics>",
+                                      "            <consumer id='consumer-with-public-default-set'>",
+                                      "                <metric-set id='public'/>",
+                                      "                <metric id='custom.metric'/>",
+                                      "            </consumer>",
+                                      "        </metrics>",
+                                      "    </admin>",
+                                      "</services>"
+        );
+        ConsumersConfig.Consumer consumer = getCustomConsumer(services);
+
+        assertEquals(numPublicDefaultMetrics + numSystemMetrics + 1, consumer.metric().size());
+
+        Metric customMetric = new Metric("custom.metric");
+        assertTrue("Did not contain metric: " + customMetric, checkMetric(consumer, customMetric));
     }
 
     @Test
