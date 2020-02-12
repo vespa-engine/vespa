@@ -24,9 +24,8 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public class QueryProfileType extends FreezableSimpleComponent {
 
-    private static final String simpleClassName = QueryProfileType.class.getSimpleName();
-
     private final CompoundName componentIdAsCompoundName;
+
     /** The fields of this query profile type */
     private Map<String, FieldDescription> fields;
 
@@ -307,6 +306,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
     private QueryProfileType extendOrCreateQueryProfileType(String name, QueryProfileTypeRegistry registry) {
         QueryProfileType type = null;
         FieldDescription fieldDescription = getField(name);
+        System.out.println("Extending/creating " + name + ". Description: " + fieldDescription + " (is frozen " + isFrozen() + ")");
         if (fieldDescription != null) {
             if ( ! (fieldDescription.getType() instanceof QueryProfileFieldType))
                 throw new IllegalArgumentException("Cannot use name '" + name + "' as a prefix because it is " +
@@ -317,11 +317,13 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
         if (type == null) {
             type = registry.getComponent(name);
-            if (type != null) { // found in registry but not already added in this type: extend it
-                type = new QueryProfileType(ComponentId.createAnonymousComponentId(type.getIdString()),
-                                            new HashMap<>(),
-                                            List.of(type));
-            }
+        }
+
+        // found in registry but not already added in *this* type (getField also checks parents): extend it
+        if (type != null && ! fields.containsKey(name)) {
+            type = new QueryProfileType(ComponentId.createAnonymousComponentId(type.getIdString()),
+                                        new HashMap<>(),
+                                        List.of(type));
         }
 
         if (type == null) { // create it
