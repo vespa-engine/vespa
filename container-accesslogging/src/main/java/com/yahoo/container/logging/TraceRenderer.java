@@ -1,5 +1,8 @@
 package com.yahoo.container.logging;
 
+import com.yahoo.data.access.Inspectable;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -33,7 +36,16 @@ public class TraceRenderer extends TraceVisitor {
 
         @Override
         public void consume(Object object) throws IOException {
-            generator.writeObject(object);
+            if (object instanceof Inspectable) {
+                renderInspectorDirect(((Inspectable) object).inspect());
+            } else {
+                generator.writeObject(object);
+            }
+        }
+        private void renderInspectorDirect(Inspector data) throws IOException {
+            StringBuilder intermediate = new StringBuilder();
+            JsonRender.render(data, intermediate, true);
+            generator.writeRawValue(intermediate.toString());
         }
     }
 
