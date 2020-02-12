@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -531,6 +532,62 @@ public class RoutingPoliciesTest {
         // Deployment completes
         context.completeRollout();
         tester.assertTargets(context.instanceId(), endpointId, 0, prodZone);
+    }
+
+    @Test
+    public void changing_global_routing_status_never_removes_all_members() {
+        var tester = new RoutingPoliciesTester();
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+
+        // Provision load balancers and deploy application
+        tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
+                .build();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+
+        // Global DNS record is created, pointing to all configured zones
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // Global routing status is overridden for one deployment
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.out,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
+
+        // Setting other deployment out implicitly sets all deployments in
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone2), GlobalRouting.Status.out,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // One inactive deployment is put back in. Global DNS record now points to the only active deployment
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.in,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
+
+        // Setting zone (containing active deployment) out puts all deployments in
+        tester.routingPolicies().setGlobalRoutingStatus(zone1, GlobalRouting.Status.out);
+        context.flushDnsUpdates();
+        assertEquals(GlobalRouting.Status.out, tester.routingPolicies().get(zone1).globalRouting().status());
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // Setting zone back in removes the currently inactive deployment
+        tester.routingPolicies().setGlobalRoutingStatus(zone1, GlobalRouting.Status.in);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
+
+        // Inactive deployment is set in
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone2), GlobalRouting.Status.in,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        for (var policy : tester.routingPolicies().get(context.instanceId()).values()) {
+            assertSame(GlobalRouting.Status.in, policy.status().globalRouting().status());
+        }
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
     }
     
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count) {
