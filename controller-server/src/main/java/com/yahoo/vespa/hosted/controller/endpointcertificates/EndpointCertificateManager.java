@@ -129,12 +129,7 @@ public class EndpointCertificateManager {
                 throw new RuntimeException("Backfill failed - provider metadata missing request_id");
             if (providerMetadata.requestedDnsSans().isEmpty())
                 throw new RuntimeException("Backfill failed - provider metadata missing DNS SANs for " + providerMetadata.request_id().get());
-            providerMetadata.requestedDnsSans().get().forEach(san -> {
-                        var previous = sanToEndpointCertificate.put(san, providerMetadata);
-                        if (previous != null)
-                            throw new RuntimeException("Backfill failed - Overlapping SANs in certificates " +
-                                    providerMetadata.request_id() + " and " + previous.request_id());
-                    }
+            providerMetadata.requestedDnsSans().get().forEach(san -> sanToEndpointCertificate.put(san, providerMetadata)
             );
         }));
 
