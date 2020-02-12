@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class LoadBalancerExpirerTest {
 
-    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void expire_inactive() {
@@ -67,10 +67,11 @@ public class LoadBalancerExpirerTest {
         // Expirer prunes reals before expiration time of load balancer itself
         expirer.maintain();
         assertEquals(Set.of(), tester.loadBalancerService().instances().get(lb1).reals());
-        assertEquals(Set.of(), tester.nodeRepository().loadBalancers(lb1.application()).asList().get(0).instance().reals());
+        assertEquals(Set.of(), loadBalancers.get().get(lb1).instance().reals());
 
         // Expirer defers removal of load balancer until expiration time passes
         expirer.maintain();
+        assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb1).state());
         assertTrue("Inactive load balancer not removed", tester.loadBalancerService().instances().containsKey(lb1));
 
         // Expirer removes load balancers once expiration time passes
@@ -85,7 +86,7 @@ public class LoadBalancerExpirerTest {
         // A single cluster is removed
         deployApplication(app2, cluster1);
         expirer.maintain();
-        assertEquals(LoadBalancer.State.inactive, loadBalancers.get().get(lb3).state());
+        assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb3).state());
 
         // Expirer defers removal while nodes are still allocated to cluster
         expirer.maintain();

@@ -40,10 +40,9 @@ public class LoadBalancerProvisionerTest {
 
     private final ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
     private final ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
-
     private final ApplicationId infraApp1 = ApplicationId.from("vespa", "tenant-host", "default");
 
-    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void provision_load_balancer() {
