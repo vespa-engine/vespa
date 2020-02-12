@@ -73,13 +73,13 @@ public class AthenzRoleFilterTest {
     public void testTranslations() {
 
         // Hosted operators are always members of the hostedOperator role.
-        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner()),
+        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner(), Role.hostedSupporter()),
                      filter.roles(HOSTED_OPERATOR, NO_CONTEXT_PATH));
 
-        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner()),
+        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner(), Role.hostedSupporter()),
                      filter.roles(HOSTED_OPERATOR, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner()),
+        assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner(), Role.hostedSupporter()),
                      filter.roles(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH));
 
         // Tenant admins are members of the athenzTenantAdmin role within their tenant subtree.

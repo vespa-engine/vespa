@@ -28,6 +28,11 @@ public abstract class Role {
         return new UnboundRole(RoleDefinition.hostedOperator);
     }
 
+    /** Returns a {@link RoleDefinition#hostedSupporter for the current system. */
+    public static UnboundRole hostedSupporter() {
+        return new UnboundRole(RoleDefinition.hostedSupporter);
+    }
+
     /** Returns a {@link RoleDefinition#everyone} for the current system. */
     public static UnboundRole everyone() {
         return new UnboundRole(RoleDefinition.everyone);

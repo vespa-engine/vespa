@@ -215,6 +215,10 @@ public class AthenzFacade implements AccessControl {
         return hasAccess("modify", service.getDomain().getName() + ":hosted-vespa", identity);
     }
 
+    public boolean hasHostedSupporterAccess(AthenzIdentity identity) {
+        return hasAccess("read", service.getDomain().getName() + ":hosted-vespa", identity);
+    }
+
     public boolean canLaunch(AthenzIdentity principal, AthenzService service) {
         return hasAccess("launch", service.getDomain().getName() + ":service."+service.getName(), principal);
     }

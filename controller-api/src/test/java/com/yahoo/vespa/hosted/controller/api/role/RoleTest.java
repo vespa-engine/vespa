@@ -33,6 +33,27 @@ public class RoleTest {
     }
 
     @Test
+    public void supporter_membership() {
+        Role role = Role.hostedSupporter();
+
+        // No create update or delete
+        assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
+        assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/controller/v1/foo")));
+        assertFalse(mainEnforcer.allows(role, Action.update, URI.create("/os/v1/bar")));
+        assertFalse(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
+        assertFalse(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
+
+        // But reads is ok (but still only for valid paths)
+        assertFalse(mainEnforcer.allows(role, Action.read, URI.create("/not/explicitly/defined")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/os/v1/bar")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t1/application/a1")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
+    }
+
+    @Test
     public void tenant_membership() {
         Role role = Role.athenzTenantAdmin(TenantName.from("t1"));
         assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
@@ -133,12 +154,14 @@ public class RoleTest {
         Action action = Action.update;
         assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, deployUri));
         assertTrue(mainEnforcer.allows(Role.hostedOperator(), action, deployUri));
+        assertFalse(mainEnforcer.allows(Role.hostedSupporter(), action, deployUri));
         assertFalse(mainEnforcer.allows(Role.systemFlagsDryrunner(), action, deployUri));
         assertFalse(mainEnforcer.allows(Role.everyone(), action, deployUri));
 
         URI dryrunUri = URI.create("/system-flags/v1/dryrun");
         assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, dryrunUri));
         assertTrue(mainEnforcer.allows(Role.hostedOperator(), action, dryrunUri));
+        assertFalse(mainEnforcer.allows(Role.hostedSupporter(), action, dryrunUri));
         assertTrue(mainEnforcer.allows(Role.systemFlagsDryrunner(), action, dryrunUri));
         assertFalse(mainEnforcer.allows(Role.everyone(), action, dryrunUri));
     }
