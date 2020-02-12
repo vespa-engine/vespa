@@ -32,10 +32,6 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
         this.requesters = requesters;
     }
 
-    public GenericConfigSubscriber() {
-        super();
-    }
-
     /**
      * Subscribes to config without using the class. For internal use in config proxy.
      *

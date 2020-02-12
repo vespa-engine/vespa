@@ -61,19 +61,23 @@ public class GenericConfigSubscriberTest {
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid1() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null);
+        createSubscriber().subscribe(null, null);
     }
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid2() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null, 0L);
+        createSubscriber().subscribe(null, null, 0L);
     }
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid3() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null, "");
+        createSubscriber().subscribe(null, null, "");
     }
+
+    private GenericConfigSubscriber createSubscriber() {
+        return new GenericConfigSubscriber(Map.of(
+                new ConfigSourceSet("blabla"),
+                new JRTConfigRequester(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues())));
+    }
+
 }
