@@ -306,7 +306,6 @@ public class QueryProfileType extends FreezableSimpleComponent {
     private QueryProfileType extendOrCreateQueryProfileType(String name, QueryProfileTypeRegistry registry) {
         QueryProfileType type = null;
         FieldDescription fieldDescription = getField(name);
-        System.out.println("Extending/creating " + name + ". Description: " + fieldDescription + " (is frozen " + isFrozen() + ")");
         if (fieldDescription != null) {
             if ( ! (fieldDescription.getType() instanceof QueryProfileFieldType))
                 throw new IllegalArgumentException("Cannot use name '" + name + "' as a prefix because it is " +
