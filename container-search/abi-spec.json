@@ -6937,7 +6937,8 @@
   "com.yahoo.search.rendering.JsonRenderer$FieldConsumer": {
     "superClass": "java.lang.Object",
     "interfaces": [
-      "com.yahoo.search.result.Hit$RawUtf8Consumer"
+      "com.yahoo.search.result.Hit$RawUtf8Consumer",
+      "com.yahoo.container.logging.TraceRenderer$FieldConsumer"
     ],
     "attributes": [
       "public"
@@ -6949,6 +6950,7 @@
       "protected boolean shouldRender(java.lang.String, java.lang.Object)",
       "protected boolean shouldRenderUtf8Value(java.lang.String, int)",
       "protected void renderFieldContents(java.lang.Object)",
+      "public void consume(java.lang.Object)",
       "public bridge synthetic void accept(java.lang.Object, java.lang.Object)"
     ],
     "fields": []

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -55,8 +56,7 @@ public class JSONFormatter {
             generator.writeStartObject();
             generator.writeStringField("ip", accessLogEntry.getIpV4Address());
             generator.writeNumberField("time", toTimestampInSeconds(accessLogEntry.getTimeStampMillis()));
-            generator.writeNumberField("duration",
-                                       durationAsSeconds(accessLogEntry.getDurationBetweenRequestResponseMillis()));
+            generator.writeNumberField("duration", durationAsSeconds(accessLogEntry.getDurationBetweenRequestResponseMillis()));
             generator.writeNumberField("responsesize", accessLogEntry.getReturnedContentSize());
             generator.writeNumberField("code", accessLogEntry.getStatusCode());
             generator.writeStringField("method", accessLogEntry.getHttpMethod());
@@ -93,6 +93,15 @@ public class JSONFormatter {
                 if (peerPort > 0 && peerPort != accessLogEntry.getRemotePort()) {
                     generator.writeNumberField("peerport", peerPort);
                 }
+            }
+
+            TraceNode trace = accessLogEntry.getTrace();
+            if (trace != null) {
+                long timestamp = trace.timestamp();
+                if (timestamp == 0L) {
+                    timestamp = accessLogEntry.getTimeStampMillis();
+                }
+                trace.accept(new TraceRenderer(generator, timestamp));
             }
 
             // Only add search sub block of this is a search request
