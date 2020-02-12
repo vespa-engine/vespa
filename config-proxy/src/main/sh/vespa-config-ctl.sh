@@ -122,6 +122,7 @@ case $1 in
             java ${jvmopts} \
                  -XX:+ExitOnOutOfMemoryError $(getJavaOptionsIPV46) \
                  -Dproxyconfigsources="${configsources}" ${userargs} \
+                 -XX:ActiveProcessorCount=2 \
                  -cp $cp com.yahoo.vespa.config.proxy.ProxyServer 19090
 
         echo "Waiting for config proxy to start"
