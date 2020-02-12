@@ -6950,7 +6950,7 @@
       "protected boolean shouldRender(java.lang.String, java.lang.Object)",
       "protected boolean shouldRenderUtf8Value(java.lang.String, int)",
       "protected void renderFieldContents(java.lang.Object)",
-      "public void consume(java.lang.Object)",
+      "public void accept(java.lang.Object)",
       "public bridge synthetic void accept(java.lang.Object, java.lang.Object)"
     ],
     "fields": []

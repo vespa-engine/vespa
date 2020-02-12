@@ -24,7 +24,7 @@ public class TraceRenderer extends TraceVisitor {
     private boolean insideOpenObject = false;
 
     public interface FieldConsumer {
-        void consume(Object object) throws IOException;
+        void accept(Object object) throws IOException;
     }
 
     private static class Consumer implements FieldConsumer {
@@ -35,7 +35,7 @@ public class TraceRenderer extends TraceVisitor {
         }
 
         @Override
-        public void consume(Object object) throws IOException {
+        public void accept(Object object) throws IOException {
             if (object instanceof Inspectable) {
                 renderInspectorDirect(((Inspectable) object).inspect());
             } else {
@@ -101,7 +101,7 @@ public class TraceRenderer extends TraceVisitor {
                 generator.writeStartObject();
             }
             generator.writeFieldName(TRACE_MESSAGE);
-            fieldConsumer.consume(payload);
+            fieldConsumer.accept(payload);
             dirty = true;
         }
         if (dirty) {

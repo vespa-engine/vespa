@@ -642,11 +642,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             if (field instanceof Inspectable && ! (field instanceof FeatureData)) {
                 renderInspector(((Inspectable)field).inspect());
             } else {
-                consume(field);
+                accept(field);
             }
         }
 
-        public void consume(Object field) throws IOException {
+        @Override
+        public void accept(Object field) throws IOException {
             if (field == null) {
                 generator.writeNull();
             } else if (field instanceof Boolean) {
