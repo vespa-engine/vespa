@@ -413,7 +413,7 @@ public class SearchHandler extends LoggingRequestHandler {
         } catch (ParseException e) {
             ErrorMessage error = ErrorMessage.createIllegalQuery("Could not parse query [" + request + "]: "
                                                                  + Exceptions.toMessageString(e));
-            log.log(LogLevel.DEBUG, error.getDetailedMessage());
+            log.log(LogLevel.DEBUG, error::getDetailedMessage);
             return new Result(query, error);
         } catch (IllegalArgumentException e) {
             if ("Comparison method violates its general contract!".equals(e.getMessage())) {
@@ -425,7 +425,7 @@ public class SearchHandler extends LoggingRequestHandler {
             else {
                 ErrorMessage error = ErrorMessage.createBadRequest("Invalid search request [" + request + "]: "
                                                                    + Exceptions.toMessageString(e));
-                log.log(LogLevel.DEBUG, error.getDetailedMessage());
+                log.log(LogLevel.DEBUG, error::getDetailedMessage);
                 return new Result(query, error);
             }
         } catch (LinkageError | StackOverflowError e) {
