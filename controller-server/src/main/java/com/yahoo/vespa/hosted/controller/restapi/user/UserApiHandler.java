@@ -134,9 +134,9 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         // List of operator roles, currently only one available, but possible to extend
         List<Role> operatorRoles = roles.stream()
-                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator))
+                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator) ||
+                        role.definition().equals(RoleDefinition.hostedSupporter))
                 .collect(Collectors.toList());
-
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
