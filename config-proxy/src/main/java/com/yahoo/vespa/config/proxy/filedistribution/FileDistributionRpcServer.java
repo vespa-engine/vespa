@@ -35,7 +35,7 @@ class FileDistributionRpcServer {
 
     private final Supervisor supervisor;
     private final FileDownloader downloader;
-    private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
+    private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                                      new DaemonThreadFactory("Rpc executor"));
 
     FileDistributionRpcServer(Supervisor supervisor, FileDownloader downloader) {
