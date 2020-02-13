@@ -21,6 +21,9 @@ public enum RoleDefinition {
     /** Deus ex machina. */
     hostedOperator(Policy.operator),
 
+    /** Machina autem exspiravit. */
+    hostedSupporter(Policy.supporter),
+
     /** Base role which every user is part of. */
     everyone(Policy.classifiedRead,
              Policy.classifiedApiRead,

@@ -35,6 +35,7 @@ public class Roles {
     public static Role toRole(String value) {
         String[] parts = value.split("\\.");
         if (parts.length == 1 && parts[0].equals("hostedOperator")) return Role.hostedOperator();
+        if (parts.length == 1 && parts[0].equals("hostedSupporter")) return Role.hostedSupporter();
         if (parts.length == 2) return toRole(TenantName.from(parts[0]), parts[1]);
         if (parts.length == 3) return toRole(TenantName.from(parts[0]), ApplicationName.from(parts[1]), parts[2]);
         throw new IllegalArgumentException("Malformed or illegal role value '" + value + "'.");

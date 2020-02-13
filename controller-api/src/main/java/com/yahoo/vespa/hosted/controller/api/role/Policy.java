@@ -23,6 +23,11 @@ enum Policy {
                       .on(PathGroup.all())
                       .in(SystemName.all())),
 
+    /** Full access to everything. */
+    supporter(Privilege.grant(Action.read)
+                     .on(PathGroup.all())
+                     .in(SystemName.all())),
+
     /** Full access to user management for a tenant in select systems. */
     tenantManager(Privilege.grant(Action.all())
                            .on(PathGroup.tenantUsers)
