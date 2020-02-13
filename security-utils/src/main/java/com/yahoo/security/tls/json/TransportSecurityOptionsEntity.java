@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 /**
  * Jackson bindings for transport security options
@@ -20,6 +21,7 @@ class TransportSecurityOptionsEntity {
     @JsonProperty("files") Files files;
     @JsonProperty("authorized-peers") @JsonInclude(NON_EMPTY) List<AuthorizedPeer> authorizedPeers;
     @JsonProperty("accepted-ciphers") @JsonInclude(NON_EMPTY) List<String> acceptedCiphers;
+    @JsonProperty("disable-hostname-validation") @JsonInclude(NON_NULL) Boolean isHostnameValidationDisabled;
 
     static class Files {
         @JsonProperty("private-key") String privateKeyFile;
