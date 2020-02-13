@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -51,12 +51,10 @@ public class LoadBalancerProvisioner {
         this.db = nodeRepository.database();
         this.service = service;
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
-        try (var legacyLock = db.lockLoadBalancers()) {
+        try (var lock = db.lockLoadBalancers()) {
             for (var id : db.readLoadBalancerIds()) {
-                try (var lock = db.lockLoadBalancers(id.application())) {
-                    var loadBalancer = db.readLoadBalancer(id);
-                    loadBalancer.ifPresent(db::writeLoadBalancer);
-                }
+                var loadBalancer = db.readLoadBalancer(id);
+                loadBalancer.ifPresent(db::writeLoadBalancer);
             }
         }
     }
@@ -75,10 +73,8 @@ public class LoadBalancerProvisioner {
         if (requestedNodes.type() != NodeType.tenant) return; // Nothing to provision for this node type
         if (!cluster.type().isContainer()) return; // Nothing to provision for this cluster type
         if (application.instance().isTester()) return; // Do not provision for tester instances
-        try (var legacyLock = db.lockLoadBalancers()) {
-            try (var lock = db.lockLoadBalancers(application)) {
-                provision(application, cluster.id(), false, lock);
-            }
+        try (var loadBalancersLock = db.lockLoadBalancers()) {
+            provision(application, cluster.id(), false, loadBalancersLock);
         }
     }
 
@@ -94,17 +90,15 @@ public class LoadBalancerProvisioner {
      */
     public void activate(ApplicationId application, Set<ClusterSpec> clusters,
                          @SuppressWarnings("unused") Mutex applicationLock, NestedTransaction transaction) {
-        try (var legacyLock = db.lockLoadBalancers()) {
-            try (var lock = db.lockLoadBalancers(application)) {
-                var containerClusters = containerClusterOf(clusters);
-                for (var clusterId : containerClusters) {
-                    // Provision again to ensure that load balancer instance is re-configured with correct nodes
-                    provision(application, clusterId, true, lock);
-                }
-                // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
-                var surplusLoadBalancers = surplusLoadBalancersOf(application, containerClusters);
-                deactivate(surplusLoadBalancers, transaction);
+        try (var loadBalancersLock = db.lockLoadBalancers()) {
+            var containerClusters = containerClusterOf(clusters);
+            for (var clusterId : containerClusters) {
+                // Provision again to ensure that load balancer instance is re-configured with correct nodes
+                provision(application, clusterId, true, loadBalancersLock);
             }
+            // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
+            var surplusLoadBalancers = surplusLoadBalancersOf(application, containerClusters);
+            deactivate(surplusLoadBalancers, transaction);
         }
     }
 
@@ -114,17 +108,16 @@ public class LoadBalancerProvisioner {
      */
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (var applicationLock = nodeRepository.lock(application)) {
-            try (var legacyLock = db.lockLoadBalancers()) {
-                try (var lock = db.lockLoadBalancers(application)) {
-                    deactivate(nodeRepository.loadBalancers(application).asList(), transaction);
-                }
+            try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
+                deactivate(nodeRepository.loadBalancers().owner(application).asList(), transaction);
             }
         }
     }
 
     /** Returns load balancers of given application that are no longer referenced by given clusters */
     private List<LoadBalancer> surplusLoadBalancersOf(ApplicationId application, Set<ClusterSpec.Id> activeClusters) {
-        var activeLoadBalancersByCluster = nodeRepository.loadBalancers(application)
+        var activeLoadBalancersByCluster = nodeRepository.loadBalancers()
+                                                         .owner(application)
                                                          .in(LoadBalancer.State.active)
                                                          .asList()
                                                          .stream()

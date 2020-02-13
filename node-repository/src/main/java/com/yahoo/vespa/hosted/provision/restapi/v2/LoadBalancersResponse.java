@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -37,14 +37,10 @@ public class LoadBalancersResponse extends HttpResponse {
     }
 
     private List<LoadBalancer> loadBalancers() {
-        LoadBalancerList loadBalancers;
-        var application = application();
-        if (application.isPresent()) {
-            loadBalancers = nodeRepository.loadBalancers(application.get());
-        } else {
-            loadBalancers = nodeRepository.loadBalancers();
-        }
-        return loadBalancers.asList();
+        LoadBalancerList loadBalancers = nodeRepository.loadBalancers();
+        return application().map(loadBalancers::owner)
+                            .map(LoadBalancerList::asList)
+                            .orElseGet(loadBalancers::asList);
     }
 
     @Override
