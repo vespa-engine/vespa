@@ -86,10 +86,13 @@ FBench::init_crypto_engine(const std::string &ca_certs_file_name,
         return false;
     }
     bool load_failed = false;
-    vespalib::net::tls::TransportSecurityOptions
-        tls_opts(maybe_load(ca_certs_file_name, load_failed),
-                 maybe_load(cert_chain_file_name, load_failed),
-                 maybe_load(private_key_file_name, load_failed));
+    auto ts_builder = vespalib::net::tls::TransportSecurityOptions::Params().
+            ca_certs_pem(maybe_load(ca_certs_file_name, load_failed)).
+            cert_chain_pem(maybe_load(cert_chain_file_name, load_failed)).
+            private_key_pem(maybe_load(private_key_file_name, load_failed)).
+            authorized_peers(vespalib::net::tls::AuthorizedPeers::allow_all_authenticated()).
+            disable_hostname_validation(true); // TODO configurable or default false!
+    vespalib::net::tls::TransportSecurityOptions tls_opts(std::move(ts_builder));
     if (load_failed) {
         fprintf(stderr, "failed to load transport security options\n");
         return false;

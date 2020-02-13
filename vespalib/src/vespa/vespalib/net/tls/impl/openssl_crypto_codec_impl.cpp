@@ -172,9 +172,11 @@ void log_ssl_error(const char* source, const SocketAddress& peer_address, int ss
 } // anon ns
 
 OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx,
+                                               const SocketSpec& peer_spec,
                                                const SocketAddress& peer_address,
                                                Mode mode)
     : _ctx(std::move(ctx)),
+      _peer_spec(peer_spec),
       _peer_address(peer_address),
       _ssl(::SSL_new(_ctx->native_context())),
       _mode(mode),
@@ -219,6 +221,8 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
     _output_bio = tmp_output_bio.release();
     if (_mode == Mode::Client) {
         ::SSL_set_connect_state(_ssl.get());
+        enable_hostname_validation_if_requested();
+        set_server_name_indication_extension();
     } else {
         ::SSL_set_accept_state(_ssl.get());
     }
@@ -229,6 +233,59 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
 }
 
 OpenSslCryptoCodecImpl::~OpenSslCryptoCodecImpl() = default;
+
+std::unique_ptr<OpenSslCryptoCodecImpl>
+OpenSslCryptoCodecImpl::make_client_codec(std::shared_ptr<OpenSslTlsContextImpl> ctx,
+                                          const SocketSpec& peer_spec,
+                                          const SocketAddress& peer_address)
+{
+    // Naked new due to private ctor
+    return std::unique_ptr<OpenSslCryptoCodecImpl>(
+            new OpenSslCryptoCodecImpl(std::move(ctx), peer_spec, peer_address, Mode::Client));
+}
+std::unique_ptr<OpenSslCryptoCodecImpl>
+OpenSslCryptoCodecImpl::make_server_codec(std::shared_ptr<OpenSslTlsContextImpl> ctx,
+                                          const SocketAddress& peer_address)
+{
+    // Naked new due to private ctor
+    return std::unique_ptr<OpenSslCryptoCodecImpl>(
+            new OpenSslCryptoCodecImpl(std::move(ctx), SocketSpec::invalid, peer_address, Mode::Server));
+}
+
+void OpenSslCryptoCodecImpl::enable_hostname_validation_if_requested() {
+    if (_peer_spec.valid() && !_ctx->transport_security_options().disable_hostname_validation()) {
+        auto* verify_param = SSL_get0_param(_ssl.get()); // Internal ptr, no refcount bump or alloc. We must not free.
+        LOG_ASSERT(verify_param != nullptr);
+        vespalib::string host = _peer_spec.host();
+        if (X509_VERIFY_PARAM_set1_host(verify_param, host.c_str(), host.size()) != 1) {
+            throw CryptoException("X509_VERIFY_PARAM_set1_host() failed");
+        }
+        // TODO should we set expected IP based on peer address as well?
+    }
+}
+
+void OpenSslCryptoCodecImpl::set_server_name_indication_extension() {
+    if (_peer_spec.valid()) {
+        vespalib::string host = _peer_spec.host();
+        // OpenSSL tries to cast const char* to void* in a macro, even on 1.1.1. GCC is not overly impressed,
+        // so to satiate OpenSSL's quirks we pre-cast away the constness.
+        auto* host_cstr_that_trusts_openssl_not_to_mess_up = const_cast<char*>(host.c_str());
+        if (SSL_set_tlsext_host_name(_ssl.get(), host_cstr_that_trusts_openssl_not_to_mess_up) != 1) {
+            throw CryptoException("SSL_set_tlsext_host_name() failed");
+        }
+    }
+}
+
+std::optional<vespalib::string> OpenSslCryptoCodecImpl::client_provided_sni_extension() const {
+    if ((_mode != Mode::Server) || (SSL_get_servername_type(_ssl.get()) != TLSEXT_NAMETYPE_host_name)) {
+        return {};
+    }
+    const char* sni_host_raw = SSL_get_servername(_ssl.get(), TLSEXT_NAMETYPE_host_name);
+    if (sni_host_raw == nullptr) {
+        return {};
+    }
+    return vespalib::string(sni_host_raw);
+}
 
 HandshakeResult OpenSslCryptoCodecImpl::handshake(const char* from_peer, size_t from_peer_buf_size,
                                                   char* to_peer, size_t to_peer_buf_size) noexcept
@@ -428,3 +485,5 @@ EncodeResult OpenSslCryptoCodecImpl::half_close(char* ciphertext, size_t ciphert
 // External references:
 //  [0] http://openssl.6102.n7.nabble.com/nonblocking-implementation-question-tp1728p1732.html
 //  [1] https://github.com/grpc/grpc/blob/master/src/core/tsi/ssl_transport_security.cc
+//  [2] https://wiki.openssl.org/index.php/Hostname_validation
+//  [3] https://wiki.openssl.org/index.php/SSL/TLS_Client
