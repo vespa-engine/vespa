@@ -5,7 +5,6 @@ import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
-import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.InvokerResult;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.rpc.Client.ProtobufResponse;
