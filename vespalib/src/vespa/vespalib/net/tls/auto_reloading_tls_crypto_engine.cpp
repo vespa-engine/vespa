@@ -91,13 +91,22 @@ AutoReloadingTlsCryptoEngine::EngineSP AutoReloadingTlsCryptoEngine::acquire_cur
     return _current_engine;
 }
 
-CryptoSocket::UP AutoReloadingTlsCryptoEngine::create_crypto_socket(SocketHandle socket, bool is_server) {
-    return acquire_current_engine()->create_crypto_socket(std::move(socket), is_server);
+CryptoSocket::UP AutoReloadingTlsCryptoEngine::create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) {
+    return acquire_current_engine()->create_client_crypto_socket(std::move(socket), spec);
+}
+
+CryptoSocket::UP AutoReloadingTlsCryptoEngine::create_server_crypto_socket(SocketHandle socket) {
+    return acquire_current_engine()->create_server_crypto_socket(std::move(socket));
 }
 
 std::unique_ptr<TlsCryptoSocket>
-AutoReloadingTlsCryptoEngine::create_tls_crypto_socket(SocketHandle socket, bool is_server) {
-    return acquire_current_engine()->create_tls_crypto_socket(std::move(socket), is_server);
+AutoReloadingTlsCryptoEngine::create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) {
+    return acquire_current_engine()->create_tls_client_crypto_socket(std::move(socket), spec);
+}
+
+std::unique_ptr<TlsCryptoSocket>
+AutoReloadingTlsCryptoEngine::create_tls_server_crypto_socket(SocketHandle socket) {
+    return acquire_current_engine()->create_tls_server_crypto_socket(std::move(socket));
 }
 
 }

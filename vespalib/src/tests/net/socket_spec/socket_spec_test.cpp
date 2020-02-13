@@ -123,4 +123,8 @@ TEST("require that replace_host gives invalid spec when used with less than 2 ho
     TEST_DO(verify_invalid(SocketSpec("ipc/name:my_socket").replace_host("foo")));
 }
 
+TEST("require that invalid socket spec is not valid") {
+    EXPECT_FALSE(SocketSpec::invalid.valid());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

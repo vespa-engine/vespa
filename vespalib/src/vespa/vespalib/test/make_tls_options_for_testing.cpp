@@ -67,6 +67,8 @@ npxYSKVCyo3a/Vo33V8/H0WgOXioKEZJxA==
 
 namespace vespalib::test {
 
+SocketSpec local_spec("tcp/localhost:123");
+
 vespalib::net::tls::TransportSecurityOptions make_tls_options_for_testing() {
     return vespalib::net::tls::TransportSecurityOptions(ca_pem, cert_pem, key_pem);
 }

@@ -9,6 +9,7 @@
 #include "config.h"
 #include "transport_thread.h"
 #include "transport.h"
+#include <vespa/vespalib/net/socket_spec.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
@@ -472,7 +473,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _streamer(streamer),
       _serverAdapter(serverAdapter),
       _adminChannel(nullptr),
-      _socket(owner->owner().create_crypto_socket(std::move(socket), true)),
+      _socket(owner->owner().create_server_crypto_socket(std::move(socket))),
       _resolve_handler(nullptr),
       _context(),
       _state(FNET_CONNECTING),
@@ -579,7 +580,7 @@ FNET_Connection::handle_add_event()
 {
     if (_resolve_handler) {
         auto tweak = [this](vespalib::SocketHandle &handle) { return Owner()->tune(handle); };
-        _socket = Owner()->owner().create_crypto_socket(_resolve_handler->address.connect(tweak), false);
+        _socket = Owner()->owner().create_client_crypto_socket(_resolve_handler->address.connect(tweak), vespalib::SocketSpec(GetSpec()));
         _ioc_socket_fd = _socket->get_fd();
         _resolve_handler.reset();
     }

@@ -65,7 +65,11 @@ struct BlockingCryptoEngine : public CryptoEngine {
     Gate handshake_work_enter;
     Gate handshake_work_exit;
     Gate handshake_socket_deleted;
-    CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool) override {
+    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &) override {
+        return std::make_unique<BlockingCryptoSocket>(std::move(socket),
+                handshake_work_enter, handshake_work_exit, handshake_socket_deleted);
+    }
+    CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override {
         return std::make_unique<BlockingCryptoSocket>(std::move(socket),
                 handshake_work_enter, handshake_work_exit, handshake_socket_deleted);
     }

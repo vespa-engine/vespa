@@ -45,8 +45,10 @@ public:
 
     EngineSP acquire_current_engine() const;
 
-    CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) override;
-    std::unique_ptr<TlsCryptoSocket> create_tls_crypto_socket(SocketHandle socket, bool is_server) override;
+    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
+    CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override;
+    std::unique_ptr<TlsCryptoSocket> create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
+    std::unique_ptr<TlsCryptoSocket> create_tls_server_crypto_socket(SocketHandle socket) override;
 };
 
 }
