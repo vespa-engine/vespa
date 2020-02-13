@@ -294,7 +294,7 @@ public class QueryProperties extends Properties {
                 super.set(key,value,context);
         }
         catch (Exception e) { // Make sure error messages are informative. This should be moved out of this properties implementation
-            if (e.getMessage().startsWith("Could not set"))
+            if (e.getMessage() != null && e.getMessage().startsWith("Could not set"))
                 throw e;
             else
                 throw new IllegalArgumentException("Could not set '" + key + "' to '" + value + "'", e);
