@@ -2,7 +2,6 @@
 package com.yahoo.prelude.cluster;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrConfig;
@@ -516,7 +515,6 @@ public class ClusterSearcherTestCase {
 
         Dispatcher dispatcher = new Dispatcher(new ComponentId("test-id"),
                                                new DispatchConfig.Builder().build(),
-                                               createClusterInfoConfig(),
                                                vipStatus,
                                                new MockMetric());
         ComponentRegistry<Dispatcher> dispatchers = new ComponentRegistry<>();
@@ -529,13 +527,6 @@ public class ClusterSearcherTestCase {
                                    dispatchers,
                                    new FS4ResourcePool(new QrConfig.Builder().build()),
                                    vipStatus);
-    }
-
-    private static ClusterInfoConfig createClusterInfoConfig() {
-        ClusterInfoConfig.Builder clusterInfoConfigBuilder = new ClusterInfoConfig.Builder();
-        clusterInfoConfigBuilder.clusterId("containerCluster1");
-        clusterInfoConfigBuilder.nodeCount(1);
-        return new ClusterInfoConfig(clusterInfoConfigBuilder);
     }
 
     private static class QueryTimeoutFixture {

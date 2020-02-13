@@ -50,7 +50,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     private final Optional<Node> localCorpusDispatchTarget;
 
-    public SearchCluster(String clusterId, DispatchConfig dispatchConfig, int containerClusterSize,
+    public SearchCluster(String clusterId, DispatchConfig dispatchConfig,
                          VipStatus vipStatus, PingFactory pingFactory) {
         this.clusterId = clusterId;
         this.dispatchConfig = dispatchConfig;
@@ -77,11 +77,7 @@ public class SearchCluster implements NodeManager<Node> {
             nodesByHostBuilder.put(node.hostname(), node);
         this.nodesByHost = nodesByHostBuilder.build();
 
-        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(),
-                size,
-                containerClusterSize,
-                nodesByHost,
-                groups);
+        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodesByHost, groups);
     }
     public void addMonitoring(ClusterMonitor clusterMonitor) {
         for (var group : orderedGroups) {
@@ -91,8 +87,6 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private static Optional<Node> findLocalCorpusDispatchTarget(String selfHostname,
-                                                                int searchClusterSize,
-                                                                int containerClusterSize,
                                                                 ImmutableMultimap<String, Node> nodesByHost,
                                                                 ImmutableMap<Integer, Group> groups) {
         // A search node in the search cluster in question is configured on the same host as the currently running container.
@@ -108,12 +102,6 @@ public class SearchCluster implements NodeManager<Node> {
 
         // Only use direct dispatch if the local search node has the entire corpus
         if (localSearchGroup.nodes().size() != 1) return Optional.empty();
-
-        // Only use direct dispatch if this container cluster has at least as many nodes as the search cluster
-        // to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers.
-        // This disregards the case where the search and container clusters are partially overlapping.
-        // Such configurations produce skewed load in any case.
-        if (containerClusterSize < searchClusterSize) return Optional.empty();
 
         return Optional.of(localSearchNode);
     }

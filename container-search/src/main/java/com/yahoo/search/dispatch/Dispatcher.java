@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.handler.VipStatus;
@@ -18,7 +17,6 @@ import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.dispatch.searchcluster.PingFactory;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
@@ -87,19 +85,17 @@ public class Dispatcher extends AbstractComponent {
     @Inject
     public Dispatcher(ComponentId clusterId,
                       DispatchConfig dispatchConfig,
-                      ClusterInfoConfig clusterInfoConfig,
                       VipStatus vipStatus,
                       Metric metric) {
-        this(new RpcResourcePool(dispatchConfig), clusterId, dispatchConfig, clusterInfoConfig, vipStatus, metric);
+        this(new RpcResourcePool(dispatchConfig), clusterId, dispatchConfig, vipStatus, metric);
     }
 
     private Dispatcher(RpcResourcePool resourcePool,
                        ComponentId clusterId,
                        DispatchConfig dispatchConfig,
-                       ClusterInfoConfig clusterInfoConfig,
                        VipStatus vipStatus,
                        Metric metric) {
-        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(),
+        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,
                                              vipStatus, new RpcPingFactory(resourcePool)),
              dispatchConfig, metric);
 

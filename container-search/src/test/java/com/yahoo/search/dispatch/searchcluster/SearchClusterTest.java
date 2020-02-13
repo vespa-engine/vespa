@@ -14,7 +14,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +58,7 @@ public class SearchClusterTest {
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
-            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPerGroup,
+            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes),
                                               vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
             clusterMonitor = new ClusterMonitor(searchCluster, false);
             searchCluster.addMonitoring(clusterMonitor);

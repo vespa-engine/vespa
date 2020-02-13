@@ -20,13 +20,12 @@ class MockDispatcher extends Dispatcher {
     public static MockDispatcher create(List<Node> nodes) {
         var rpcResourcePool = new RpcResourcePool(toDispatchConfig(nodes));
 
-        return create(nodes, rpcResourcePool, 1, new VipStatus());
+        return create(nodes, rpcResourcePool, new VipStatus());
     }
 
-    public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool,
-                                        int containerClusterSize, VipStatus vipStatus) {
+    public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool, VipStatus vipStatus) {
         var dispatchConfig = toDispatchConfig(nodes);
-        var searchCluster = new SearchCluster("a", dispatchConfig, containerClusterSize, vipStatus, new RpcPingFactory(rpcResourcePool));
+        var searchCluster = new SearchCluster("a", dispatchConfig, vipStatus, new RpcPingFactory(rpcResourcePool));
         return new MockDispatcher(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, rpcResourcePool);
     }
 
