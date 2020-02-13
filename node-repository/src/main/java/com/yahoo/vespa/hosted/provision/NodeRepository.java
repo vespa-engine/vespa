@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.google.inject.Inject;
@@ -17,7 +17,6 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
@@ -51,7 +50,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -196,16 +194,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns a filterable list of all load balancers in this repository */
     public LoadBalancerList loadBalancers() {
-        return loadBalancers((ignored) -> true);
-    }
-
-    /** Returns a filterable list of load balancers belonging to given application */
-    public LoadBalancerList loadBalancers(ApplicationId application) {
-        return loadBalancers((id) -> id.application().equals(application));
-    }
-
-    private LoadBalancerList loadBalancers(Predicate<LoadBalancerId> predicate) {
-        return LoadBalancerList.copyOf(db.readLoadBalancers(predicate).values());
+        return LoadBalancerList.copyOf(database().readLoadBalancers().values());
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }
@@ -232,7 +221,7 @@ public class NodeRepository extends AbstractComponent {
         candidates.parentOf(node).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
-            loadBalancers.asList().stream()
+            loadBalancers.owner(allocation.owner()).asList().stream()
                          .map(LoadBalancer::instance)
                          .map(LoadBalancerInstance::networks)
                          .forEach(trustedNetworks::addAll);
@@ -304,12 +293,7 @@ public class NodeRepository extends AbstractComponent {
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
         NodeList candidates = list();
-        LoadBalancerList loadBalancers;
-        if (node.allocation().isPresent()) {
-            loadBalancers = loadBalancers(node.allocation().get().owner());
-        } else {
-            loadBalancers = LoadBalancerList.EMPTY;
-        }
+        LoadBalancerList loadBalancers = loadBalancers();
         if (children) {
             return candidates.childrenOf(node).asList().stream()
                              .map(childNode -> getNodeAcl(childNode, candidates, loadBalancers))

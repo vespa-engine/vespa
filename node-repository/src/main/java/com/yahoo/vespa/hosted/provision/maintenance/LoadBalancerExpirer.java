@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -53,31 +51,37 @@ public class LoadBalancerExpirer extends Maintainer {
 
     /** Move reserved load balancer that have expired to inactive */
     private void expireReserved() {
-        var now = nodeRepository().clock().instant();
-        withLoadBalancersIn(State.reserved, lb -> {
-            var gracePeriod = now.minus(reservedExpiry);
-            if (!lb.changedAt().isBefore(gracePeriod)) return; // Should not move to inactive yet
-            db.writeLoadBalancer(lb.with(State.inactive, now));
-        });
+        try (var lock = db.lockLoadBalancers()) {
+            var now = nodeRepository().clock().instant();
+            var expirationTime = now.minus(reservedExpiry);
+            var expired = nodeRepository().loadBalancers()
+                                          .in(State.reserved)
+                                          .changedBefore(expirationTime);
+            expired.forEach(lb -> db.writeLoadBalancer(lb.with(State.inactive, now)));
+        }
     }
 
     /** Deprovision inactive load balancers that have expired */
     private void removeInactive() {
         var failed = new ArrayList<LoadBalancerId>();
-        var lastException = new AtomicReference<Exception>();
-        var now = nodeRepository().clock().instant();
-        withLoadBalancersIn(State.inactive, lb -> {
-            var gracePeriod = now.minus(inactiveExpiry);
-            if (!lb.changedAt().isBefore(gracePeriod)) return; // Should not be removed yet
-            if (!allocatedNodes(lb.id()).isEmpty()) return;    // Still has nodes, do not remove
-            try {
-                service.remove(lb.id().application(), lb.id().cluster());
-                db.removeLoadBalancer(lb.id());
-            } catch (Exception e){
-                failed.add(lb.id());
-                lastException.set(e);
+        Exception lastException = null;
+        try (var lock = db.lockLoadBalancers()) {
+            var now = nodeRepository().clock().instant();
+            var expirationTime = now.minus(inactiveExpiry);
+            var expired = nodeRepository().loadBalancers()
+                                          .in(State.inactive)
+                                          .changedBefore(expirationTime);
+            for (var lb : expired) {
+                if (!allocatedNodes(lb.id()).isEmpty()) continue; // Defer removal if there are still nodes allocated to application
+                try {
+                    service.remove(lb.id().application(), lb.id().cluster());
+                    db.removeLoadBalancer(lb.id());
+                } catch (Exception e) {
+                    failed.add(lb.id());
+                    lastException = e;
+                }
             }
-        });
+        }
         if (!failed.isEmpty()) {
             log.log(LogLevel.WARNING, String.format("Failed to remove %d load balancers: %s, retrying in %s",
                                                     failed.size(),
@@ -85,27 +89,30 @@ public class LoadBalancerExpirer extends Maintainer {
                                                           .map(LoadBalancerId::serializedForm)
                                                           .collect(Collectors.joining(", ")),
                                                     interval()),
-                    lastException.get());
+                    lastException);
         }
     }
 
     /** Remove reals from inactive load balancers */
     private void pruneReals() {
         var failed = new ArrayList<LoadBalancerId>();
-        var lastException = new AtomicReference<Exception>();
-        withLoadBalancersIn(State.inactive, lb -> {
-            var allocatedNodes = allocatedNodes(lb.id()).stream().map(Node::hostname).collect(Collectors.toSet());
-            var reals = new LinkedHashSet<>(lb.instance().reals());
-            // Remove any real no longer allocated to this application
-            reals.removeIf(real -> !allocatedNodes.contains(real.hostname().value()));
-            try {
-                service.create(lb.id().application(), lb.id().cluster(), reals, true);
-                db.writeLoadBalancer(lb.with(lb.instance().withReals(reals)));
-            } catch (Exception e) {
-                failed.add(lb.id());
-                lastException.set(e);
+        Exception lastException = null;
+        try (var lock = db.lockLoadBalancers()) {
+            var deactivated = nodeRepository().loadBalancers().in(State.inactive);
+            for (var lb : deactivated) {
+                var allocatedNodes = allocatedNodes(lb.id()).stream().map(Node::hostname).collect(Collectors.toSet());
+                var reals = new LinkedHashSet<>(lb.instance().reals());
+                // Remove any real no longer allocated to this application
+                reals.removeIf(real -> !allocatedNodes.contains(real.hostname().value()));
+                try {
+                    service.create(lb.id().application(), lb.id().cluster(), reals, true);
+                    db.writeLoadBalancer(lb.with(lb.instance().withReals(reals)));
+                } catch (Exception e) {
+                    failed.add(lb.id());
+                    lastException = e;
+                }
             }
-        });
+        }
         if (!failed.isEmpty()) {
             log.log(LogLevel.WARNING, String.format("Failed to remove reals from %d load balancers: %s, retrying in %s",
                                                     failed.size(),
@@ -113,21 +120,7 @@ public class LoadBalancerExpirer extends Maintainer {
                                                           .map(LoadBalancerId::serializedForm)
                                                           .collect(Collectors.joining(", ")),
                                                     interval()),
-                    lastException.get());
-        }
-    }
-
-    /** Apply operation to all load balancers that exist in given state, while holding lock */
-    private void withLoadBalancersIn(LoadBalancer.State state, Consumer<LoadBalancer> operation) {
-        try (var legacyLock = db.lockLoadBalancers()) {
-            for (var id : db.readLoadBalancerIds()) {
-                try (var lock = db.lockLoadBalancers(id.application())) {
-                    var loadBalancer = db.readLoadBalancer(id);
-                    if (loadBalancer.isEmpty()) continue;              // Load balancer was removed during loop
-                    if (loadBalancer.get().state() != state) continue; // Wrong state
-                    operation.accept(loadBalancer.get());
-                }
-            }
+                    lastException);
         }
     }
 
