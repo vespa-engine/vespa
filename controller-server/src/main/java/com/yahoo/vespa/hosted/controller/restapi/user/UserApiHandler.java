@@ -136,6 +136,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         List<Role> operatorRoles = roles.stream()
                 .filter(role -> role.definition().equals(RoleDefinition.hostedOperator) ||
                         role.definition().equals(RoleDefinition.hostedSupporter))
+                .sorted(Comparator.comparing(Role::definition))
                 .collect(Collectors.toList());
 
         Slime slime = new Slime();
