@@ -29,6 +29,25 @@ void set_blocking(int fd) {
 
 } // namespace vespalib::<unnamed>
 
+SyncCryptoSocket::UP
+SyncCryptoSocket::create(CryptoSocket::UP socket)
+{
+    set_blocking(socket->get_fd());
+    for (;;) {
+        switch (socket->handshake()) {
+        case CryptoSocket::HandshakeResult::FAIL:
+            return std::unique_ptr<SyncCryptoSocket>(nullptr);
+        case CryptoSocket::HandshakeResult::DONE:
+            return UP(new SyncCryptoSocket(std::move(socket)));
+        case CryptoSocket::HandshakeResult::NEED_READ:
+        case CryptoSocket::HandshakeResult::NEED_WRITE:
+            break;
+        case CryptoSocket::HandshakeResult::NEED_WORK:
+            socket->do_handshake_work();
+        }
+    }
+}
+
 SyncCryptoSocket::~SyncCryptoSocket() = default;
 
 ssize_t
@@ -90,23 +109,15 @@ SyncCryptoSocket::half_close()
 }
 
 SyncCryptoSocket::UP
-SyncCryptoSocket::create(CryptoEngine &engine, SocketHandle socket, bool is_server)
+SyncCryptoSocket::create_client(CryptoEngine &engine, SocketHandle socket, const SocketSpec &spec)
 {
-    auto crypto_socket = engine.create_crypto_socket(std::move(socket), is_server);
-    set_blocking(crypto_socket->get_fd());
-    for (;;) {
-        switch (crypto_socket->handshake()) {
-        case CryptoSocket::HandshakeResult::FAIL:
-            return std::unique_ptr<SyncCryptoSocket>(nullptr);
-        case CryptoSocket::HandshakeResult::DONE:
-            return UP(new SyncCryptoSocket(std::move(crypto_socket)));
-        case CryptoSocket::HandshakeResult::NEED_READ:
-        case CryptoSocket::HandshakeResult::NEED_WRITE:
-            break;
-        case CryptoSocket::HandshakeResult::NEED_WORK:
-            crypto_socket->do_handshake_work();
-        }
-    }
+    return create(engine.create_client_crypto_socket(std::move(socket), spec));
+}
+
+SyncCryptoSocket::UP
+SyncCryptoSocket::create_server(CryptoEngine &engine, SocketHandle socket)
+{
+    return create(engine.create_server_crypto_socket(std::move(socket)));
 }
 
 } // namespace vespalib

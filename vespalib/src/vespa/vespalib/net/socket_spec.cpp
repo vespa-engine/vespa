@@ -41,6 +41,8 @@ SocketSpec::address(bool server) const
     return SocketAddress();
 }
 
+SocketSpec SocketSpec::invalid;
+
 SocketSpec::SocketSpec(const vespalib::string &spec)
     : SocketSpec()
 {
