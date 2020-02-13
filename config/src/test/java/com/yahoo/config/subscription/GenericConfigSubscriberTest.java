@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.yahoo.config.subscription.impl.GenericConfigHandle;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
@@ -14,7 +17,10 @@ import com.yahoo.vespa.config.protocol.CompressionType;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -28,9 +34,9 @@ public class GenericConfigSubscriberTest {
     public void testSubscribeGeneric() {
         Map<ConfigSourceSet, JRTConfigRequester> requesters = new HashMap<>();
         ConfigSourceSet sourceSet = new ConfigSourceSet("blabla");
-        requesters.put(sourceSet, JRTConfigRequester.get(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues()));
+        requesters.put(sourceSet, new JRTConfigRequester(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues()));
         GenericConfigSubscriber sub = new GenericConfigSubscriber(requesters);
-        final List<String> defContent = Arrays.asList("myVal int");
+        final List<String> defContent = List.of("myVal int");
         GenericConfigHandle handle = sub.subscribe(new ConfigKey<>("simpletypes", "id", "config"), defContent, sourceSet, JRTConfigRequesterTest.getTestTimingValues());
         assertTrue(sub.nextConfig());
         assertTrue(handle.isChanged());
@@ -43,8 +49,8 @@ public class GenericConfigSubscriberTest {
     public void testGenericRequesterPooling() {
         ConfigSourceSet source1 = new ConfigSourceSet("tcp/foo:78");
         ConfigSourceSet source2 = new ConfigSourceSet("tcp/bar:79");
-        JRTConfigRequester req1 = JRTConfigRequester.get(new JRTConnectionPool(source1), JRTConfigRequesterTest.getTestTimingValues());
-        JRTConfigRequester req2 = JRTConfigRequester.get(new JRTConnectionPool(source2), JRTConfigRequesterTest.getTestTimingValues());
+        JRTConfigRequester req1 = new JRTConfigRequester(new JRTConnectionPool(source1), JRTConfigRequesterTest.getTestTimingValues());
+        JRTConfigRequester req2 = new JRTConfigRequester(new JRTConnectionPool(source2), JRTConfigRequesterTest.getTestTimingValues());
         Map<ConfigSourceSet, JRTConfigRequester> requesters = new LinkedHashMap<>();
         requesters.put(source1, req1);
         requesters.put(source2, req2);
@@ -55,19 +61,23 @@ public class GenericConfigSubscriberTest {
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid1() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null);
+        createSubscriber().subscribe(null, null);
     }
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid2() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null, 0L);
+        createSubscriber().subscribe(null, null, 0L);
     }
 
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid3() {
-        GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null, "");
+        createSubscriber().subscribe(null, null, "");
     }
+
+    private GenericConfigSubscriber createSubscriber() {
+        return new GenericConfigSubscriber(Map.of(
+                new ConfigSourceSet("blabla"),
+                new JRTConfigRequester(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues())));
+    }
+
 }

@@ -52,20 +52,11 @@ public class JRTConfigRequester implements RequestWaiter {
 
     /**
      * Returns a new requester
-     * @param connectionPool The connectionPool to use
-     * @param timingValues The timing values
-     * @return new requester object
+     *
+     * @param connectionPool the connectionPool this requester should use
+     * @param timingValues   timeouts and delays used when sending JRT config requests
      */
-    public static JRTConfigRequester get(ConnectionPool connectionPool, TimingValues timingValues) {
-        return new JRTConfigRequester(connectionPool, timingValues);
-    }
-
-    /**
-     * New requester
-     *  @param connectionPool the connectionPool this requester should use
-     * @param timingValues timeouts and delays used when sending JRT config requests
-     */
-    JRTConfigRequester(ConnectionPool connectionPool, TimingValues timingValues) {
+    public JRTConfigRequester(ConnectionPool connectionPool, TimingValues timingValues) {
         this.connectionPool = connectionPool;
         this.timingValues = timingValues;
     }

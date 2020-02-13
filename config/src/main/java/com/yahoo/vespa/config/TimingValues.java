@@ -38,7 +38,6 @@ public class TimingValues {
                         long configuredErrorDelay,
                         long fixedDelay,
                         int maxDelayMultiplier) {
-
         this.successTimeout = successTimeout;
         this.errorTimeout = errorTimeout;
         this.initialTimeout = initialTimeout;
@@ -51,15 +50,14 @@ public class TimingValues {
     }
 
     private TimingValues(long successTimeout,
-                        long errorTimeout,
-                        long initialTimeout,
-                        long subscribeTimeout,
-                        long unconfiguredDelay,
-                        long configuredErrorDelay,
-                        long fixedDelay,
-                        int maxDelayMultiplier,
-                        Random rand) {
-
+                         long errorTimeout,
+                         long initialTimeout,
+                         long subscribeTimeout,
+                         long unconfiguredDelay,
+                         long configuredErrorDelay,
+                         long fixedDelay,
+                         int maxDelayMultiplier,
+                         Random rand) {
         this.successTimeout = successTimeout;
         this.errorTimeout = errorTimeout;
         this.initialTimeout = initialTimeout;
@@ -69,18 +67,6 @@ public class TimingValues {
         this.fixedDelay = fixedDelay;
         this.maxDelayMultiplier = maxDelayMultiplier;
         this.rand = rand;
-    }
-
-    public TimingValues(TimingValues tv) {
-        this(tv.successTimeout,
-                tv.errorTimeout,
-                tv.initialTimeout,
-                tv.subscribeTimeout,
-                tv.unconfiguredDelay,
-                tv.configuredErrorDelay,
-                tv.fixedDelay,
-                tv.maxDelayMultiplier,
-                tv.getRandom());
     }
 
     public TimingValues(TimingValues tv, Random random) {
