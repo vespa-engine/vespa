@@ -49,7 +49,7 @@ class MetricsProxyModelTester {
         return tester.createModel(servicesXml, true);
     }
 
-    static String configId(VespaModel model, MetricsProxyModelTester.TestMode mode) {
+    static String containerConfigId(VespaModel model, MetricsProxyModelTester.TestMode mode) {
         return (mode == hosted)
                 ? CLUSTER_CONFIG_ID + "/" + model.getHosts().iterator().next().getHostname()
                 : CONTAINER_CONFIG_ID;

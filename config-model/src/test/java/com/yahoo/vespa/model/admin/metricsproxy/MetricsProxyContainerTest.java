@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metricsproxy.http.metrics.NodeInfoConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
@@ -10,10 +11,10 @@ import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Test;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CONTAINER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.containerConfigId;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
@@ -90,13 +91,23 @@ public class MetricsProxyContainerTest {
         String services = servicesWithContent();
         VespaModel hostedModel = getModel(services, hosted);
         assertEquals(1, hostedModel.getHosts().size());
-        String configId = CLUSTER_CONFIG_ID + "/" + hostedModel.getHosts().iterator().next().getHostname();
+        String configId = containerConfigId(hostedModel, hosted);
         NodeDimensionsConfig config = getNodeDimensionsConfig(hostedModel, configId);
 
         assertEquals("content", config.dimensions(PublicDimensions.INTERNAL_CLUSTER_TYPE));
         assertEquals("my-content", config.dimensions(PublicDimensions.INTERNAL_CLUSTER_ID));
     }
 
+    @Test
+    public void node_info_config_is_generated() {
+        String services = servicesWithContent();
+        VespaModel hostedModel = getModel(services, hosted);
+        String configId = containerConfigId(hostedModel, hosted);
+
+        NodeInfoConfig config = hostedModel.getConfig(NodeInfoConfig.class, configId);
+        assertTrue(config.role().startsWith("content/my-content/0/"));
+        assertTrue(config.hostname().startsWith("node-1-3-9-"));
+    }
 
     @Test
     public void vespa_services_config_has_all_services() {

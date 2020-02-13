@@ -46,6 +46,16 @@ public class ValuesFetcher {
                 .collect(Collectors.toList());
     }
 
+    public List<MetricsPacket.Builder> fetchMetricsAsBuilders(String requestedConsumer) throws JsonRenderingException {
+        ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
+
+        return metricsManager.getMetricsAsBuilders(vespaServices.getVespaServices(), Instant.now())
+                .stream()
+                .filter(builder -> builder.hasConsumer(consumer))
+                .collect(Collectors.toList());
+    }
+
+
     public List<MetricsPacket> fetchAllMetrics() throws JsonRenderingException {
         return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now());
     }

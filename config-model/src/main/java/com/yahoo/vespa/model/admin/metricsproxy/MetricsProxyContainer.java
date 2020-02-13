@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metricsproxy.http.metrics.NodeInfoConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
@@ -28,6 +29,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
  */
 public class MetricsProxyContainer extends Container implements
         NodeDimensionsConfig.Producer,
+        NodeInfoConfig.Producer,
         RpcConnectorConfig.Producer,
         VespaServicesConfig.Producer
 {
@@ -121,7 +123,21 @@ public class MetricsProxyContainer extends Container implements
         }
     }
 
-    private void  addMetricsProxyComponent(Class<?> componentClass) {
+    @Override
+    public void getConfig(NodeInfoConfig.Builder builder) {
+        builder.role(getNodeRole())
+                .hostname(getHostName());
+    }
+
+    private String getNodeRole() {
+        String hostConfigId = getHost().getConfigId();
+        if (! isHostedVespa) return hostConfigId;
+        return getHostResource().spec().membership()
+                    .map(ClusterMembership::stringValue)
+                    .orElse(hostConfigId);
+    }
+
+    private void addMetricsProxyComponent(Class<?> componentClass) {
         addSimpleComponent(componentClass.getName(), null, METRICS_PROXY_BUNDLE_NAME);
     }
 
