@@ -2036,7 +2036,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
         Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
-        long projectId = Math.max(1, submitOptions.field("projectId").asLong());
+        long projectId = Math.max(1, submitOptions.field("projectId").asLong()); // Absence of this means it's not a prod app :/
         Optional<String> repository = optional("repository", submitOptions);
         Optional<String> branch = optional("branch", submitOptions);
         Optional<String> commit = optional("commit", submitOptions);
