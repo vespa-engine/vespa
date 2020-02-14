@@ -30,7 +30,7 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     public MockSearchCluster(String clusterId, DispatchConfig dispatchConfig, int groups, int nodesPerGroup) {
-        super(clusterId, dispatchConfig, 1, null, null);
+        super(clusterId, dispatchConfig, null, null);
 
         ImmutableList.Builder<Group> orderedGroupBuilder = ImmutableList.builder();
         ImmutableMap.Builder<Integer, Group> groupBuilder = ImmutableMap.builder();
