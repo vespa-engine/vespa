@@ -195,7 +195,7 @@ public class StorageClusterTest {
             StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
             stc.getConfig(builder);
             StorFilestorConfig config = new StorFilestorConfig(builder);
-            assertEquals(6, config.num_threads());
+            assertEquals(8, config.num_threads());
         }
         {
             assertEquals(1, stc.getChildren().size());
