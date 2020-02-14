@@ -69,7 +69,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
-import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -194,7 +193,7 @@ class JobControllerApiHandlerHelper {
 
                   Cursor jobObject = jobsArray.addObject();
                   jobObject.setString("name", job.type().jobName());
-                  toSlime(jobObject.setArray("runs"), runs, baseUriForJobs.toString());
+                  toSlime(jobObject.setArray("runs"), runs, baseUriForJobs);
               });
 
         return new SlimeJsonResponse(slime);
@@ -629,10 +628,10 @@ class JobControllerApiHandlerHelper {
 
             stepStatus.job().ifPresent(job -> {
                 stepObject.setString("jobName", job.type().jobName());
-                String baseUriForJob = baseUriForDeployments.resolve(baseUriForDeployments.getPath() +
+                URI baseUriForJob = baseUriForDeployments.resolve(baseUriForDeployments.getPath() +
                                                                      "/../instance/" + job.application().instance().value() +
-                                                                     "/job/" + job.type().jobName()).normalize().toString();
-                stepObject.setString("url", baseUriForJob);
+                                                                     "/job/" + job.type().jobName()).normalize();
+                stepObject.setString("url", baseUriForJob.toString());
                 stepObject.setString("environment", job.type().environment().value());
                 stepObject.setString("region", job.type().zone(controller.system()).value());
 
@@ -707,11 +706,11 @@ class JobControllerApiHandlerHelper {
         return Optional.of(versions.get(i));
     }
 
-    private static void toSlime(Cursor runsArray, Collection<Run> runs, String baseUriForJob) {
+    private static void toSlime(Cursor runsArray, Collection<Run> runs, URI baseUriForJob) {
         runs.stream().limit(10).forEach(run -> {
             Cursor runObject = runsArray.addObject();
             runObject.setLong("id", run.id().number());
-            runObject.setString("url", baseUriForJob + "/run/" + run.id());
+            runObject.setString("url", baseUriForJob.resolve(baseUriForJob.getPath() + "/run/" + run.id().number()).toString());
             runObject.setLong("start", run.start().toEpochMilli());
             run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
             runObject.setString("status", run.status().name());

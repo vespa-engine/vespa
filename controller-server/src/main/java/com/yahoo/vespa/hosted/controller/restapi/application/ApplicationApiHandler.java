@@ -733,7 +733,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
         Cursor instancesArray = object.setArray("instances");
-        for (Instance instance : application.instances().values())
+        for (Instance instance : showOnlyProductionInstances(request) ? application.productionInstances().values()
+                                                                      : application.instances().values())
             toSlime(instancesArray.addObject(), status, instance, application.deploymentSpec(), request);
 
         application.deployKeys().stream().map(KeyUtils::toPem).forEach(object.setArray("pemDeployKeys")::addString);
@@ -1779,7 +1780,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor applicationArray = object.setArray("applications");
         for (Application application : applications) {
             DeploymentStatus status = controller.jobController().deploymentStatus(application);
-            for (Instance instance : application.instances().values())
+            for (Instance instance : showOnlyProductionInstances(request) ? application.productionInstances().values()
+                                                                          : application.instances().values())
                 if (recurseOverApplications(request))
                     toSlime(applicationArray.addObject(), instance, status, request);
                 else
@@ -2009,6 +2011,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static boolean recurseOverDeployments(HttpRequest request) {
         return ImmutableSet.of("all", "true", "deployment").contains(request.getProperty("recursive"));
+    }
+
+    private static boolean showOnlyProductionInstances(HttpRequest request) {
+        return "true".equals(request.getProperty("production"));
     }
 
     private static String tenantType(Tenant tenant) {
