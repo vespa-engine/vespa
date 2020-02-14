@@ -119,11 +119,16 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     }
 
     private void addHttpHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {
+        Handler<AbstractConfigProducer<?>> metricsHandler = createMetricsHandler(clazz, bindingPath);
+        addComponent(metricsHandler);
+    }
+
+    static Handler<AbstractConfigProducer<?>> createMetricsHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {
         Handler<AbstractConfigProducer<?>> metricsHandler = new Handler<>(
                 new ComponentModel(clazz.getName(), null, METRICS_PROXY_BUNDLE_NAME, null));
         metricsHandler.addServerBindings("http://*" + bindingPath,
                                          "http://*" + bindingPath + "/*");
-        addComponent(metricsHandler);
+        return metricsHandler;
     }
 
     @Override

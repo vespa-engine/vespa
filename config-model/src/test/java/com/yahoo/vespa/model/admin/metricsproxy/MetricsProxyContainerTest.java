@@ -99,12 +99,17 @@ public class MetricsProxyContainerTest {
     }
 
     @Test
-    public void node_info_config_is_generated() {
+    public void metrics_v2_handler_is_set_up_with_node_info_config() {
         String services = servicesWithContent();
         VespaModel hostedModel = getModel(services, hosted);
-        String configId = containerConfigId(hostedModel, hosted);
 
-        NodeInfoConfig config = hostedModel.getConfig(NodeInfoConfig.class, configId);
+        var container = (MetricsProxyContainer)hostedModel.id2producer().get(containerConfigId(hostedModel, hosted));
+        var handlers = container.getHandlers().getComponents();
+
+        assertEquals(1, handlers.size());
+        var metricsV2Handler = handlers.iterator().next();
+
+        NodeInfoConfig config = hostedModel.getConfig(NodeInfoConfig.class, metricsV2Handler.getConfigId());
         assertTrue(config.role().startsWith("content/my-content/0/"));
         assertTrue(config.hostname().startsWith("node-1-3-9-"));
     }

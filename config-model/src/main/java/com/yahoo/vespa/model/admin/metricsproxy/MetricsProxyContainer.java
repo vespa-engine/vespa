@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metricsproxy.http.metrics.MetricsV2Handler;
 import ai.vespa.metricsproxy.http.metrics.NodeInfoConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
@@ -21,6 +22,7 @@ import java.util.Map;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_NAME;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.createMetricsHandler;
 
 /**
  * Container running a metrics proxy.
@@ -33,6 +35,7 @@ public class MetricsProxyContainer extends Container implements
         RpcConnectorConfig.Producer,
         VespaServicesConfig.Producer
 {
+    public static final int BASEPORT = 19092;
 
     final boolean isHostedVespa;
 
@@ -48,14 +51,13 @@ public class MetricsProxyContainer extends Container implements
         addMetricsProxyComponent(NodeDimensions.class);
         addMetricsProxyComponent(RpcConnector.class);
         addMetricsProxyComponent(VespaServices.class);
+        addHandler(createMetricsHandler(MetricsV2Handler.class, MetricsV2Handler.V2_PATH));
     }
 
     @Override
     protected ContainerServiceType myServiceType() {
         return METRICS_PROXY_CONTAINER;
     }
-
-    static public int BASEPORT = 19092;
 
     @Override
     public int getWantedPort() {
