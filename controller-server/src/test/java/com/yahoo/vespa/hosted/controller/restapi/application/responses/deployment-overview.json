@@ -50,7 +50,7 @@
       "runs": [
         {
           "id": 2,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/run 2 of system-test for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/2",
           "start": "(ignore)",
           "status": "running",
           "versions": {
@@ -107,7 +107,7 @@
         },
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/run 1 of system-test for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/1",
           "start": "(ignore)",
           "end": "(ignore)",
           "status": "success",
@@ -179,7 +179,7 @@
       "runs": [
         {
           "id": 2,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/run 2 of staging-test for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/2",
           "start": "(ignore)",
           "status": "running",
           "versions": {
@@ -252,7 +252,7 @@
         },
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/run 1 of staging-test for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/1",
           "start": "(ignore)",
           "end": "(ignore)",
           "status": "success",
@@ -353,7 +353,7 @@
       "runs": [
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/run/run 1 of production-us-central-1 for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/run/1",
           "start": "(ignore)",
           "end": "(ignore)",
           "status": "success",
@@ -410,7 +410,7 @@
       "runs": [
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1/run/run 1 of production-us-west-1 for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1/run/1",
           "start": "(ignore)",
           "status": "aborted",
           "versions": {
@@ -465,7 +465,7 @@
       "runs": [
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/run 1 of production-us-east-3 for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/1",
           "start": "(ignore)",
           "status": "aborted",
           "versions": {

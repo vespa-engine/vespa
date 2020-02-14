@@ -126,7 +126,7 @@
       "runs": [
         {
           "id": 3,
-          "url": "https://some.url:43/instance/default/job/system-test/run/run 3 of system-test for tenant.application",
+          "url": "https://some.url:43/instance/default/job/system-test/run/3",
           "start": 3603000,
           "end": 3603000,
           "status": "success",
@@ -191,7 +191,7 @@
         },
         {
           "id": 2,
-          "url": "https://some.url:43/instance/default/job/system-test/run/run 2 of system-test for tenant.application",
+          "url": "https://some.url:43/instance/default/job/system-test/run/2",
           "start": 1000,
           "end": 1000,
           "status": "success",
@@ -256,7 +256,7 @@
         },
         {
           "id": 1,
-          "url": "https://some.url:43/instance/default/job/system-test/run/run 1 of system-test for tenant.application",
+          "url": "https://some.url:43/instance/default/job/system-test/run/1",
           "start": 0,
           "end": 0,
           "status": "success",
@@ -349,7 +349,7 @@
       "runs": [
         {
           "id": 5,
-          "url": "https://some.url:43/instance/default/job/staging-test/run/run 5 of staging-test for tenant.application",
+          "url": "https://some.url:43/instance/default/job/staging-test/run/5",
           "start": 3703000,
           "end": 3703000,
           "status": "installationFailed",
@@ -430,7 +430,7 @@
         },
         {
           "id": 4,
-          "url": "https://some.url:43/instance/default/job/staging-test/run/run 4 of staging-test for tenant.application",
+          "url": "https://some.url:43/instance/default/job/staging-test/run/4",
           "start": 3603000,
           "end": 3603000,
           "status": "installationFailed",
@@ -511,7 +511,7 @@
         },
         {
           "id": 3,
-          "url": "https://some.url:43/instance/default/job/staging-test/run/run 3 of staging-test for tenant.application",
+          "url": "https://some.url:43/instance/default/job/staging-test/run/3",
           "start": 3603000,
           "end": 3603000,
           "status": "success",
@@ -592,7 +592,7 @@
         },
         {
           "id": 2,
-          "url": "https://some.url:43/instance/default/job/staging-test/run/run 2 of staging-test for tenant.application",
+          "url": "https://some.url:43/instance/default/job/staging-test/run/2",
           "start": 1000,
           "end": 1000,
           "status": "success",
@@ -673,7 +673,7 @@
         },
         {
           "id": 1,
-          "url": "https://some.url:43/instance/default/job/staging-test/run/run 1 of staging-test for tenant.application",
+          "url": "https://some.url:43/instance/default/job/staging-test/run/1",
           "start": 0,
           "end": 0,
           "status": "success",
@@ -771,7 +771,7 @@
       "runs": [
         {
           "id": 3,
-          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/run 3 of production-us-central-1 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/3",
           "start": 3603000,
           "status": "running",
           "versions": {
@@ -807,7 +807,7 @@
         },
         {
           "id": 2,
-          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/run 2 of production-us-central-1 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/2",
           "start": 1000,
           "end": 1000,
           "status": "success",
@@ -844,7 +844,7 @@
         },
         {
           "id": 1,
-          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/run 1 of production-us-central-1 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/1",
           "start": 0,
           "end": 0,
           "status": "success",
@@ -908,7 +908,7 @@
       "runs": [
         {
           "id": 2,
-          "url": "https://some.url:43/instance/default/job/test-us-central-1/run/run 2 of test-us-central-1 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/test-us-central-1/run/2",
           "start": 1000,
           "end": 1000,
           "status": "success",
@@ -957,7 +957,7 @@
         },
         {
           "id": 1,
-          "url": "https://some.url:43/instance/default/job/test-us-central-1/run/run 1 of test-us-central-1 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/test-us-central-1/run/1",
           "start": 0,
           "end": 0,
           "status": "success",
@@ -1047,7 +1047,7 @@
       "runs": [
         {
           "id": 2,
-          "url": "https://some.url:43/instance/default/job/production-us-west-1/run/run 2 of production-us-west-1 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/production-us-west-1/run/2",
           "start": 1000,
           "end": 3602000,
           "status": "installationFailed",
@@ -1084,7 +1084,7 @@
         },
         {
           "id": 1,
-          "url": "https://some.url:43/instance/default/job/production-us-west-1/run/run 1 of production-us-west-1 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/production-us-west-1/run/1",
           "start": 0,
           "end": 0,
           "status": "success",
@@ -1155,7 +1155,7 @@
       "runs": [
         {
           "id": 2,
-          "url": "https://some.url:43/instance/default/job/production-us-east-3/run/run 2 of production-us-east-3 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/production-us-east-3/run/2",
           "start": 1000,
           "end": 1000,
           "status": "deploymentFailed",
@@ -1192,7 +1192,7 @@
         },
         {
           "id": 1,
-          "url": "https://some.url:43/instance/default/job/production-us-east-3/run/run 1 of production-us-east-3 for tenant.application",
+          "url": "https://some.url:43/instance/default/job/production-us-east-3/run/1",
           "start": 0,
           "end": 0,
           "status": "success",

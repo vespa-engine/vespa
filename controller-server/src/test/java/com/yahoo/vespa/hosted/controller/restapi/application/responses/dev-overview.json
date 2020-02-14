@@ -36,7 +36,7 @@
       "runs": [
         {
           "id": 1,
-          "url": "https://some.url:43/root/run/run 1 of dev-us-east-1 for tenant.application",
+          "url": "https://some.url:43/root/run/1",
           "start": 0,
           "end": 0,
           "status": "success",

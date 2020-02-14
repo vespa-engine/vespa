@@ -57,7 +57,7 @@
       "runs": [
         {
           "id": 1,
-          "url": "https://some.url:43/root//run/run 1 of dev-aws-us-east-2a for tenant.application.user",
+          "url": "https://some.url:43/root//run/1",
           "start": 3703000,
           "end": 3703000,
           "status": "success",

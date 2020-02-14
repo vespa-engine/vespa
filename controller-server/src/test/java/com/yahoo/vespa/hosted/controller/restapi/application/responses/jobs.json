@@ -335,7 +335,7 @@
       "runs": [
         {
           "id": 1,
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job?/run/run 1 of dev-us-east-1 for tenant1.application1.instance1",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/run/1",
           "start": "(ignore)",
           "end": "(ignore)",
           "status": "success",
