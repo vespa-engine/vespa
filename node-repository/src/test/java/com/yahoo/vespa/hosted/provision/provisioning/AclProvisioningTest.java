@@ -164,12 +164,33 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_application_with_load_balancer() {
-        // Populate repo
-        tester.makeReadyNodes(10, nodeResources);
+        // Provision hosts and containers
+        var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
+        tester.deployZoneApp();
+        for (var host : hosts) {
+            tester.makeReadyVirtualDockerNodes(2, new NodeResources(2, 8, 50, 1),
+                                               host.hostname());
+        }
 
-        // Allocate 2 nodes
-        List<Node> activeNodes = deploy(2);
+        // Deploy application
+        var application = tester.makeApplicationId();
+        List<Node> activeNodes = deploy(application, 2);
         assertEquals(2, activeNodes.size());
+
+        // Load balancer is allocated to application
+        var loadBalancers = tester.nodeRepository().loadBalancers(application);
+        assertEquals(1, loadBalancers.asList().size());
+        var lbNetworks = loadBalancers.asList().get(0).instance().networks();
+        assertEquals(2, lbNetworks.size());
+
+        // ACL for nodes with allocation trust their respective load balancer networks, if any
+        for (var host : hosts) {
+            var acls = tester.nodeRepository().getNodeAcls(host, true);
+            assertEquals(2, acls.size());
+            assertEquals(Set.of(), acls.get(0).trustedNetworks());
+            assertEquals(application, acls.get(1).node().allocation().get().owner());
+            assertEquals(lbNetworks, acls.get(1).trustedNetworks());
+        }
     }
 
     @Test
