@@ -267,7 +267,7 @@ Fixture::assertBools(std::vector<bool> expVals, const vespalib::string &attribut
 {
     auto node = makeNode(attributeName, false, preserveAccurateTypes);
     uint32_t docId = 0;
-    for (const auto &expDocVal : expVals) {
+    for (const auto expDocVal : expVals) {
         ++docId;
         node->setDocId(docId);
         node->execute();
