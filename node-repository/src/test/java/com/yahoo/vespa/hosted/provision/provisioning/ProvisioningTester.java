@@ -87,7 +87,7 @@ public class ProvisioningTester {
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
-                DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true, flagSource);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
@@ -418,19 +418,18 @@ public class ProvisioningTester {
         activate(applicationId, Set.copyOf(list));
     }
 
+    public List<Node> deploy(ApplicationId application, Capacity capacity) {
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
+                                                  Version.fromString("6.42"), false);
+        List<HostSpec> prepared = prepare(application, cluster, capacity, 1);
+        activate(application, Set.copyOf(prepared));
+        return getNodes(application, Node.State.active).asList();
+    }
+
+
     /** Returns the hosts from the input list which are not retired */
     public List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
         return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());
-    }
-
-    public void assertNumberOfNodesWithFlavor(List<HostSpec> hostSpecs, String flavor, int expectedCount) {
-        long actualNodesWithFlavor = hostSpecs.stream()
-                .map(HostSpec::hostname)
-                .map(this::getNodeFlavor)
-                .map(Flavor::name)
-                .filter(name -> name.equals(flavor))
-                .count();
-        assertEquals(expectedCount, actualNodesWithFlavor);
     }
 
     public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
@@ -440,26 +439,11 @@ public class ProvisioningTester {
         }
     }
 
-    public void printFreeResources() {
-        for (Node host : nodeRepository().getNodes(NodeType.host)) {
-            NodeResources free = host.flavor().resources();
-            for (Node child : nodeRepository().getNodes(NodeType.tenant)) {
-                if (child.parentHostname().get().equals(host.hostname()))
-                    free = free.subtract(child.flavor().resources());
-            }
-            System.out.println(host.flavor().name() + " node. Free resources: " + free);
-        }
-    }
-
     public int hostFlavorCount(String hostFlavor, ApplicationId app) {
         return (int)nodeRepository().getNodes(app).stream()
                                                   .map(n -> nodeRepository().getNode(n.parentHostname().get()).get())
                                                   .filter(p -> p.flavor().name().equals(hostFlavor))
                                                   .count();
-    }
-
-    private Flavor getNodeFlavor(String hostname) {
-        return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
     }
 
     public static final class Builder {

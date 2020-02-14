@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -40,14 +38,14 @@ public class AclProvisioningTest {
         tester.makeReadyNodes(10, new NodeResources(1, 4, 10, 1));
         List<Node> dockerHost = tester.makeReadyNodes(1, new NodeResources(1, 4, 10, 1), NodeType.host);
         ApplicationId zoneApplication = tester.makeApplicationId();
-        deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
+        tester.deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
         tester.makeReadyVirtualDockerNodes(1,new NodeResources(1, 4, 10, 1),
                                            dockerHost.get(0).hostname());
         List<Node> proxyNodes = tester.makeReadyNodes(3, new NodeResources(1, 4, 10, 1), NodeType.proxy);
 
         // Allocate 2 nodes
         ApplicationId application = tester.makeApplicationId();
-        List<Node> activeNodes = deploy(application, Capacity.fromCount(2, new NodeResources(1, 4, 10, 1), false, true));
+        List<Node> activeNodes = tester.deploy(application, Capacity.fromCount(2, new NodeResources(1, 4, 10, 1), false, true));
         assertEquals(2, activeNodes.size());
 
         // Get trusted nodes for the first active node
@@ -112,7 +110,7 @@ public class AclProvisioningTest {
 
         // Deploy zone application
         ApplicationId zoneApplication = tester.makeApplicationId();
-        deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.proxy));
+        tester.deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.proxy));
 
         // Get trusted nodes for first proxy node
         List<Node> proxyNodes = tester.nodeRepository().getNodes(zoneApplication);
@@ -154,7 +152,7 @@ public class AclProvisioningTest {
 
         // Allocate
         ApplicationId controllerApplication = tester.makeApplicationId();
-        List<Node> controllers = deploy(controllerApplication, Capacity.fromRequiredNodeType(NodeType.controller));
+        List<Node> controllers = tester.deploy(controllerApplication, Capacity.fromRequiredNodeType(NodeType.controller));
 
         // Controllers and hosts all trust each other
         List<NodeAcl> controllerAcls = tester.nodeRepository().getNodeAcls(controllers.get(0), false);
@@ -191,15 +189,7 @@ public class AclProvisioningTest {
     }
 
     private List<Node> deploy(ApplicationId application, int nodeCount) {
-        return deploy(application, Capacity.fromCount(nodeCount, nodeResources));
-    }
-
-    private List<Node> deploy(ApplicationId application, Capacity capacity) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false);
-        List<HostSpec> prepared = tester.prepare(application, cluster, capacity, 1);
-        tester.activate(application, Set.copyOf(prepared));
-        return tester.getNodes(application, Node.State.active).asList();
+        return tester.deploy(application, Capacity.fromCount(nodeCount, nodeResources));
     }
 
     private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {

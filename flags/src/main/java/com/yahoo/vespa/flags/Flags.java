@@ -224,6 +224,11 @@ public class Flags {
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag DOCKER_IMAGE_OVERRIDE = defineStringFlag(
+            "docker-image-override", "",
+            "Override the Docker image to use for deployments. This must containing the image name only, without tag",
+            "Takes effect on next host-admin tick", APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
