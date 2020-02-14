@@ -169,7 +169,7 @@ public:
             state.store(s, std::memory_order_relaxed);
         }
 
-        Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numThreads);
+        Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numStripes);
         Disk(Disk &&) noexcept;
         ~Disk();
 
