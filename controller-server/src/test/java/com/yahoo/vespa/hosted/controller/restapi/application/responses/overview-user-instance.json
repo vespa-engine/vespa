@@ -50,5 +50,37 @@
       ],
       "url": "https://some.url:43/root/dev-aws-us-east-2a"
     }
-  }
+  },
+  "deployment": [
+    {
+      "name": "dev-aws-us-east-2a",
+      "runs": [
+        {
+          "id": 1,
+          "url": "https://some.url:43/root//run/run 1 of dev-aws-us-east-2a for tenant.application.user",
+          "start": 3703000,
+          "end": 3703000,
+          "status": "success",
+          "versions": {
+            "targetPlatform": "7.1.0",
+            "targetApplication": {}
+          },
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

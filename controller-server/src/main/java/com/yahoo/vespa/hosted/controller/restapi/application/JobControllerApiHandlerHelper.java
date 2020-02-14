@@ -45,6 +45,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.format.TextStyle;
 import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -180,6 +182,20 @@ class JobControllerApiHandlerHelper {
                                          baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize());
                               devJobObject.setString("url", baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize().toString());
                           });
+
+        Cursor jobsArray = responseObject.setArray("deployment");
+        Arrays.stream(JobType.values())
+              .filter(type -> type.environment().isManuallyDeployed())
+              .map(devType -> new JobId(instance.id(), devType))
+              .forEach(job -> {
+                  Collection<Run> runs = controller.jobController().runs(job).descendingMap().values();
+                  if (runs.isEmpty())
+                      return;
+
+                  Cursor jobObject = jobsArray.addObject();
+                  jobObject.setString("name", job.type().jobName());
+                  toSlime(jobObject.setArray("runs"), runs, baseUriForJobs.toString());
+              });
 
         return new SlimeJsonResponse(slime);
     }
@@ -592,7 +608,7 @@ class JobControllerApiHandlerHelper {
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");
                 List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
-                latestVersionPreferablyWithNormalConfidenceNAndotNewerThanSystem(controller.versionStatus().versions())
+                latestVersionPreferablyWithNormalConfidenceAndNotNewerThanSystem(controller.versionStatus().versions())
                           .ifPresent(latestPlatform -> {
                               Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
                               latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
@@ -642,22 +658,7 @@ class JobControllerApiHandlerHelper {
                     toSlime(runObject.setObject("versions"), versions);
                 }
 
-                Cursor runsArray = stepObject.setArray("runs");
-                jobStatus.runs().descendingMap().values().stream().limit(10).forEach(run -> {
-                    Cursor runObject = runsArray.addObject();
-                    runObject.setLong("id", run.id().number());
-                    runObject.setString("url", baseUriForJob + "/run/" + run.id());
-                    runObject.setLong("start", run.start().toEpochMilli());
-                    run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
-                    runObject.setString("status", run.status().name());
-                    toSlime(runObject.setObject("versions"), run.versions());
-                    Cursor runStepsArray = runObject.setArray("steps");
-                    run.steps().forEach((step, info) -> {
-                        Cursor runStepObject = runStepsArray.addObject();
-                        runStepObject.setString("name", step.name());
-                        runStepObject.setString("status", info.status().name());
-                    });
-                });
+                toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), baseUriForJob);
             });
         }
 
@@ -690,7 +691,7 @@ class JobControllerApiHandlerHelper {
         });
     }
 
-    private static Optional<VespaVersion> latestVersionPreferablyWithNormalConfidenceNAndotNewerThanSystem(List<VespaVersion> versions) {
+    private static Optional<VespaVersion> latestVersionPreferablyWithNormalConfidenceAndNotNewerThanSystem(List<VespaVersion> versions) {
         int i;
         for (i = versions.size(); i-- > 0; )
             if (versions.get(i).isSystemVersion())
@@ -706,5 +707,22 @@ class JobControllerApiHandlerHelper {
         return Optional.of(versions.get(i));
     }
 
-}
+    private static void toSlime(Cursor runsArray, Collection<Run> runs, String baseUriForJob) {
+        runs.stream().limit(10).forEach(run -> {
+            Cursor runObject = runsArray.addObject();
+            runObject.setLong("id", run.id().number());
+            runObject.setString("url", baseUriForJob + "/run/" + run.id());
+            runObject.setLong("start", run.start().toEpochMilli());
+            run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
+            runObject.setString("status", run.status().name());
+            toSlime(runObject.setObject("versions"), run.versions());
+            Cursor runStepsArray = runObject.setArray("steps");
+            run.steps().forEach((step, info) -> {
+                Cursor runStepObject = runStepsArray.addObject();
+                runStepObject.setString("name", step.name());
+                runStepObject.setString("status", info.status().name());
+            });
+        });
+    }
 
+}

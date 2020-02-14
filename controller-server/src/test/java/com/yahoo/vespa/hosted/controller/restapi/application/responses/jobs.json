@@ -328,5 +328,37 @@
       ],
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1"
     }
-  }
+  },
+  "deployment": [
+    {
+      "name": "dev-us-east-1",
+      "runs": [
+        {
+          "id": 1,
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/run/run 1 of dev-us-east-1 for tenant1.application1.instance1",
+          "start": "(ignore)",
+          "end": "(ignore)",
+          "status": "success",
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {}
+          },
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
