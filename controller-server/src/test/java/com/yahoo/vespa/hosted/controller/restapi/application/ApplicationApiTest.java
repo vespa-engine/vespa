@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
 import ai.vespa.hosted.api.Signatures;
+import com.yahoo.application.container.handler.Headers;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
@@ -75,6 +76,7 @@ import org.junit.Test;
 import java.io.File;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -90,12 +92,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -235,6 +241,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET tenant applications (instances of "application1" only)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/", GET).userIdentity(USER_ID),
                               new File("instance-list.json"));
+        // GET at a tenant, with "&recursive=true&production=true", recurses over no instances yet, as they are not in deployment spec.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/", GET)
+                                      .userIdentity(USER_ID)
+                                      .properties(Map.of("recursive", "true",
+                                                         "production", "true")),
+                              new File("tenant-without-applications.json"));
+        // GET at an application, with "&recursive=true&production=true", recurses over no instances yet, as they are not in deployment spec.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
+                                      .userIdentity(USER_ID)
+                                      .properties(Map.of("recursive", "true",
+                                                         "production", "true")),
+                              new File("application-without-instances.json"));
 
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
@@ -482,7 +500,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Triggered pin to 6.1 for tenant1.application1.instance1\"}");
         assertTrue("Action is logged to audit log",
                    tester.controller().auditLogger().readLog().entries().stream()
-                         .anyMatch(entry -> entry.resource().equals("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin")));
+                         .anyMatch(entry -> entry.resource().equals("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin?")));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":true}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", GET)
@@ -558,7 +576,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Requested restart of tenant1.application1.instance1 in dev.us-central-1\"}");
 
         // POST a 'restart application' command with a host filter (other filters not supported yet)
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart?hostname=node-1-tenant-host-prod.us-central-1", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
+                                      .properties(Map.of("hostname", "node-1-tenant-host-prod.us-central-1"))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Requested restart of tenant1.application1.instance1 in prod.us-central-1\"}", 200);
 
@@ -662,7 +681,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               200);
 
         // GET application package for previous build
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=1", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
+                                      .properties(Map.of("build", "1"))
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
                               (response) -> {
                                   assertEquals("attachment; filename=\"tenant1.application1-build1.zip\"", response.getHeaders().getFirst("Content-Disposition"));
                                   assertArrayEquals(applicationPackageInstance1.zippedContent(), response.getBody());
@@ -862,19 +883,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               400);
 
         // GET global rotation status for us-west-1 in default endpoint
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation?endpointId=default", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
+                                      .properties(Map.of("endpointId", "default"))
                                       .userIdentity(USER_ID),
                               "{\"bcpStatus\":{\"rotationStatus\":\"IN\"}}",
                               200);
 
         // GET global rotation status for us-west-1 in eu endpoint
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation?endpointId=eu", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
+                                      .properties(Map.of("endpointId", "eu"))
                                       .userIdentity(USER_ID),
                               "{\"bcpStatus\":{\"rotationStatus\":\"UNKNOWN\"}}",
                               200);
 
         // GET global rotation status for eu-west-1 in eu endpoint
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/eu-west-1/global-rotation?endpointId=eu", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/eu-west-1/global-rotation", GET)
+                                      .properties(Map.of("endpointId", "eu"))
                                       .userIdentity(USER_ID),
                               "{\"bcpStatus\":{\"rotationStatus\":\"IN\"}}",
                               200);
@@ -1089,12 +1113,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               404);
 
         // GET non-existent application package of specific build
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=42", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
+                                      .properties(Map.of("build", "42"))
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"No application package found for 'tenant1.application1' with build number 42\"}",
                               404);
 
         // GET non-existent application package of invalid build
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=foobar", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
+                                      .properties(Map.of("build", "foobar"))
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid build number: For input string: \\\"foobar\\\"\"}",
                               400);
         
@@ -1628,7 +1656,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private OktaAccessToken oktaAccessToken;
         private String contentType = "application/json";
         private Map<String, List<String>> headers = new HashMap<>();
-        private String recursive;
+        private Map<String, String> properties = new HashMap<>();
 
         private RequestBuilder(String path, Request.Method method) {
             this.path = path;
@@ -1636,7 +1664,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         }
 
         private RequestBuilder data(byte[] data) { this.data = data; return this; }
-        private RequestBuilder data(String data) { return data(data.getBytes(StandardCharsets.UTF_8)); }
+        private RequestBuilder data(String data) { return data(data.getBytes(UTF_8)); }
         private RequestBuilder data(MultiPartStreamer streamer) {
             return Exceptions.uncheck(() -> data(streamer.data().readAllBytes()).contentType(streamer.contentType()));
         }
@@ -1646,7 +1674,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private RequestBuilder oktaIdentityToken(OktaIdentityToken oktaIdentityToken) { this.oktaIdentityToken = oktaIdentityToken; return this; }
         private RequestBuilder oktaAccessToken(OktaAccessToken oktaAccessToken) { this.oktaAccessToken = oktaAccessToken; return this; }
         private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
-        private RequestBuilder recursive(String recursive) { this.recursive = recursive; return this; }
+        private RequestBuilder recursive(String recursive) {return properties(Map.of("recursive", recursive)); }
+        private RequestBuilder properties(Map<String, String> properties) { this.properties.putAll(properties); return this; }
         private RequestBuilder header(String name, String value) {
             this.headers.putIfAbsent(name, new ArrayList<>());
             this.headers.get(name).add(value);
@@ -1656,11 +1685,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         @Override
         public Request get() {
             Request request = new Request("http://localhost:8080" + path +
-                                          // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
-                                          (recursive == null ? "" : "?recursive=" + recursive),
+                                          properties.entrySet().stream()
+                                                    .map(entry -> encode(entry.getKey(), UTF_8) + "=" + encode(entry.getValue(), UTF_8))
+                                                    .collect(joining("&", "?", "")),
                                           data, method);
             request.getHeaders().addAll(headers);
             request.getHeaders().put("Content-Type", contentType);
+            // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
             if (identity != null) {
                 addIdentityToRequest(request, identity);
             }

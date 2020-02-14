@@ -107,6 +107,12 @@ public class Application {
     /** Returns the instances of this application */
     public Map<InstanceName, Instance> instances() { return instances; }
 
+    /** Returns the instances of this application which are defined in its deployment spec. */
+    public Map<InstanceName, Instance> productionInstances() {
+        return deploymentSpec.instanceNames().stream()
+                .collect(Collectors.toUnmodifiableMap(Function.identity(), instances::get));
+    }
+
     /** Returns the instance with the given name, if it exists. */
     public Optional<Instance> get(InstanceName instance) { return Optional.ofNullable(instances.get(instance)); }
 
