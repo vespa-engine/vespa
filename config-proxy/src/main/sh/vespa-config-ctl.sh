@@ -113,7 +113,7 @@ case $1 in
         if [ "$userargs" == "" ]; then
             userargs=$services__jvmargs_configproxy
         fi
-        jvmopts="-Xms32M -Xmx256M -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000"
+        jvmopts="-Xms32M -Xmx256M -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000000"
 
         VESPA_SERVICE_NAME=configproxy
         export VESPA_SERVICE_NAME
@@ -122,7 +122,6 @@ case $1 in
             java ${jvmopts} \
                  -XX:+ExitOnOutOfMemoryError $(getJavaOptionsIPV46) \
                  -Dproxyconfigsources="${configsources}" ${userargs} \
-                 -XX:ActiveProcessorCount=2 \
                  -cp $cp com.yahoo.vespa.config.proxy.ProxyServer 19090
 
         echo "Waiting for config proxy to start"
