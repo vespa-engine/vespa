@@ -75,7 +75,7 @@ public class LoadBalancerExpirerTest {
         assertTrue("Inactive load balancer not removed", tester.loadBalancerService().instances().containsKey(lb1));
 
         // Expirer removes load balancers once expiration time passes
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertFalse("Inactive load balancer removed", tester.loadBalancerService().instances().containsKey(lb1));
 
@@ -94,7 +94,7 @@ public class LoadBalancerExpirerTest {
         dirtyNodesOf(app2, cluster2);
 
         // Expirer removes load balancer for removed cluster
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertFalse("Inactive load balancer removed", tester.loadBalancerService().instances().containsKey(lb3));
     }
@@ -122,7 +122,7 @@ public class LoadBalancerExpirerTest {
 
         // Application never activates and nodes are dirtied. Expirer moves load balancer to inactive after timeout
         dirtyNodesOf(app, cluster);
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb).state());
 
@@ -131,7 +131,7 @@ public class LoadBalancerExpirerTest {
         assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb).state());
 
         // Expirer removes inactive load balancer
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertFalse("Inactive load balancer removed", loadBalancers.get().containsKey(lb));
     }
