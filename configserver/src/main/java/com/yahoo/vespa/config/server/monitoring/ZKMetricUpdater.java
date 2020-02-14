@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.monitoring;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.concurrent.DaemonThreadFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,6 +18,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,7 +29,7 @@ import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.config.server.monitoring.Metrics.getMetricName;
 
-public class ZKMetricUpdater extends TimerTask {
+public class ZKMetricUpdater implements Runnable {
     private static final Logger log = Logger.getLogger(ZKMetricUpdater.class.getName());
 
     public static final String METRIC_ZK_ZNODES = getMetricName("zkZNodes");
@@ -35,19 +38,19 @@ public class ZKMetricUpdater extends TimerTask {
     public static final String METRIC_ZK_CONNECTIONS = getMetricName("zkConnections");
     public static final String METRIC_ZK_OUTSTANDING_REQUESTS = getMetricName("zkOutstandingRequests");
 
-    private final int CONNECTION_TIMEOUT_MS = 500;
-    private final int WRITE_TIMEOUT_MS = 250;
-    private final int READ_TIMEOUT_MS = 500;
+    private static final int CONNECTION_TIMEOUT_MS = 500;
+    private static final int WRITE_TIMEOUT_MS = 250;
+    private static final int READ_TIMEOUT_MS = 500;
 
     private AtomicReference<Map<String, Long>> zkMetrics = new AtomicReference<>(new HashMap<>());
-    private final Timer timer = new Timer();
+    private final ScheduledExecutorService executorService;
     private final int zkPort;
 
     public ZKMetricUpdater(ZookeeperServerConfig zkServerConfig, long delayMS, long intervalMS) {
         this.zkPort = zkServerConfig.clientPort();
-        if (intervalMS > 0) {
-            timer.scheduleAtFixedRate(this, delayMS, intervalMS);
-        }
+        if (intervalMS <= 0 ) throw new IllegalArgumentException("interval must be positive, was " + intervalMS + " ms");
+        this.executorService = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("zkmetricupdater"));
+        this.executorService.scheduleAtFixedRate(this, delayMS, intervalMS, TimeUnit.MILLISECONDS);
     }
 
     private void setMetricAttribute(String attribute, long value, Map<String, Long> data) {
@@ -74,7 +77,10 @@ public class ZKMetricUpdater extends TimerTask {
     public void run() {
         Optional<String> report = retrieveReport();
         report.ifPresent(this::parseReport);
-        timer.purge();
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
     }
 
     private Optional<String> retrieveReport() {
