@@ -9,7 +9,8 @@
       "cluster": "default",
       "tls": true,
       "url": "https://instance1--application1--tenant1.us-east-1.dev.vespa:43",
-      "scope": "zone"
+      "scope": "zone",
+      "routingMethod": "shared"
     }
   ],
   "serviceUrls": [

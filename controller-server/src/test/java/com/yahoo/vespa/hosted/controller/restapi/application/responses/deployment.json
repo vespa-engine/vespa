@@ -9,13 +9,15 @@
       "cluster": "default",
       "tls": true,
       "url": "https://instance1--application1--tenant1.us-central-1.prod.vespa:43",
-      "scope": "zone"
+      "scope": "zone",
+      "routingMethod": "shared"
     },
     {
       "cluster": "foo",
       "tls": true,
       "url": "https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/",
-      "scope": "global"
+      "scope": "global",
+      "routingMethod": "shared"
     }
   ],
   "serviceUrls": [

@@ -13,6 +13,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -1041,6 +1042,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 endpointObject.setBool("tls", endpoint.tls());
                 endpointObject.setString("url", endpoint.url().toString());
                 endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+                endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.exclusive));
             }
             // Add global endpoints that point to this policy
             for (var endpoint : policy.globalEndpointsIn(controller.system()).asList()) {
@@ -1049,6 +1051,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 endpointObject.setBool("tls", endpoint.tls());
                 endpointObject.setString("url", endpoint.url().toString());
                 endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+                endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.exclusive));
             }
         }
         // Add zone endpoints served by shared routing layer
@@ -1058,6 +1061,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             endpointObject.setBool("tls", true);
             endpointObject.setString("url", clusterAndUrl.getValue().toString());
             endpointObject.setString("scope", endpointScopeString(Endpoint.Scope.zone));
+            endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.shared));
         }
         // Add global endpoints served by shared routing layer
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
@@ -1074,6 +1078,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     endpointObject.setBool("tls", true);
                     endpointObject.setString("url", endpoint.url().toString());
                     endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+                    endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.shared));
                 }
             }
         }
@@ -2121,6 +2126,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case zone: return "zone";
         }
         throw new IllegalArgumentException("Unknown endpoint scope " + scope);
+    }
+
+    private static String routingMethodString(RoutingMethod method) {
+        switch (method) {
+            case exclusive: return "exclusive";
+            case shared: return "shared";
+        }
+        throw new IllegalArgumentException("Unknown routing method " + method);
     }
 
     private static <T> T getAttribute(HttpRequest request, String attributeName, Class<T> cls) {
