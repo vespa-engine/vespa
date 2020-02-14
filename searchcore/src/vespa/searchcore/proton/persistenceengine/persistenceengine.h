@@ -75,9 +75,13 @@ private:
     mutable ExtraModifiedBuckets            _extraModifiedBuckets;
     mutable std::shared_timed_mutex         _rwMutex;
 
-    IPersistenceHandler::SP getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const;
-    HandlerSnapshot::UP getHandlerSnapshot() const;
-    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
+    using ReadGuard = std::shared_lock<std::shared_timed_mutex>;
+    using WriteGuard = std::unique_lock<std::shared_timed_mutex>;
+
+    IPersistenceHandler::SP getHandler(const ReadGuard & guard, document::BucketSpace bucketSpace, const DocTypeName &docType) const;
+    HandlerSnapshot::UP getHandlerSnapshot(const WriteGuard & guard) const;
+    HandlerSnapshot::UP getHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
+    HandlerSnapshot::UP getHandlerSnapshot(const WriteGuard & guard, document::BucketSpace bucketSpace) const;
 
     void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
     ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;
@@ -89,9 +93,8 @@ public:
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);
     ~PersistenceEngine() override;
 
-    IPersistenceHandler::SP putHandler(document::BucketSpace bucketSpace, const DocTypeName &docType,
-                                       const IPersistenceHandler::SP &handler);
-    IPersistenceHandler::SP removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType);
+    IPersistenceHandler::SP putHandler(const WriteGuard &, document::BucketSpace bucketSpace, const DocTypeName &docType, const IPersistenceHandler::SP &handler);
+    IPersistenceHandler::SP removeHandler(const WriteGuard &, document::BucketSpace bucketSpace, const DocTypeName &docType);
 
     // Implements PersistenceProvider
     Result initialize() override;
@@ -121,8 +124,8 @@ public:
     void destroyIterators();
     void propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler);
-    void populateInitialBucketDB(BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
-    std::unique_lock<std::shared_timed_mutex> getWLock() const;
+    void populateInitialBucketDB(const WriteGuard & guard, BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
+    WriteGuard getWLock() const;
 };
 
 }

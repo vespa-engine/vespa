@@ -331,7 +331,7 @@ public:
             LOG(info, "putHandler(%s)", itr->first.toString().c_str());
             IPersistenceHandler::SP proxy(
                     new PersistenceHandlerProxy(itr->second));
-            putHandler(itr->second->getBucketSpace(), itr->first, proxy);
+            putHandler(getWLock(), itr->second->getBucketSpace(), itr->first, proxy);
         }
     }
 
@@ -343,7 +343,7 @@ public:
         const DocumentDBMap &docDbs = _docDbRepo->getDocDbs();
         for (DocumentDBMap::const_iterator itr = docDbs.begin();
              itr != docDbs.end(); ++itr) {
-            IPersistenceHandler::SP proxy(removeHandler(itr->second->getBucketSpace(), itr->first));
+            IPersistenceHandler::SP proxy(removeHandler(getWLock(), itr->second->getBucketSpace(), itr->first));
         }
     }
 
