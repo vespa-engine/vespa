@@ -79,6 +79,16 @@ public class MetricsManager {
      * @return Metrics for all matching services.
      */
     public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime) {
+        return getMetricsAsBuilders(services, startTime).stream()
+                .map(MetricsPacket.Builder::build)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the metrics for the given services, in mutable state for further processing.
+     * NOTE: Use {@link #getMetrics(List, Instant)} instead, unless further processing of the metrics is necessary.
+     */
+    public List<MetricsPacket.Builder> getMetricsAsBuilders(List<VespaService> services, Instant startTime) {
         if (services.isEmpty()) return Collections.emptyList();
 
         log.log(DEBUG, () -> "Updating services prior to fetching metrics, number of services= " + services.size());
@@ -99,7 +109,6 @@ public class MetricsManager {
                 .map(builder -> builder.putDimensionsIfAbsent(getGlobalDimensions()))
                 .map(builder -> builder.putDimensionsIfAbsent(extraDimensions))
                 .map(builder -> adjustTimestamp(builder, startTime))
-                .map(MetricsPacket.Builder::build)
                 .collect(Collectors.toList());
     }
 

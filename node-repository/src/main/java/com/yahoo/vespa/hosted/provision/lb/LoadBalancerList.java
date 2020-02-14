@@ -15,8 +15,6 @@ import java.util.stream.Stream;
  */
 public class LoadBalancerList implements Iterable<LoadBalancer> {
 
-    public static LoadBalancerList EMPTY = new LoadBalancerList(List.of());
-
     private final List<LoadBalancer> loadBalancers;
 
     private LoadBalancerList(Collection<LoadBalancer> loadBalancers) {

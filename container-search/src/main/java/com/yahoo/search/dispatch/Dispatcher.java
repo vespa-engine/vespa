@@ -83,18 +83,11 @@ public class Dispatcher extends AbstractComponent {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     @Inject
-    public Dispatcher(ComponentId clusterId,
+    public Dispatcher(RpcResourcePool resourcePool,
+                      ComponentId clusterId,
                       DispatchConfig dispatchConfig,
                       VipStatus vipStatus,
                       Metric metric) {
-        this(new RpcResourcePool(dispatchConfig), clusterId, dispatchConfig, vipStatus, metric);
-    }
-
-    private Dispatcher(RpcResourcePool resourcePool,
-                       ComponentId clusterId,
-                       DispatchConfig dispatchConfig,
-                       VipStatus vipStatus,
-                       Metric metric) {
         this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,
                                              vipStatus, new RpcPingFactory(resourcePool)),
              dispatchConfig, metric);

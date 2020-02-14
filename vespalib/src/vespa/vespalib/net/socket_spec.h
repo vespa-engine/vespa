@@ -24,6 +24,7 @@ private:
         : _type(type), _node(node), _port(port) {}
     SocketAddress address(bool server) const;
 public:
+    static SocketSpec invalid;
     explicit SocketSpec(const vespalib::string &spec);
     vespalib::string spec() const;
     SocketSpec replace_host(const vespalib::string &new_host) const;

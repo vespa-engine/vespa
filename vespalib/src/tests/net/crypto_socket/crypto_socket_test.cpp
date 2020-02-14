@@ -17,6 +17,7 @@
 #include <fcntl.h>
 
 using namespace vespalib;
+using namespace vespalib::test;
 
 struct SocketPair {
     SocketHandle client;
@@ -204,7 +205,9 @@ void verify_crypto_socket(SocketPair &sockets, CryptoEngine &engine, bool is_ser
     SocketHandle &my_handle = is_server ? sockets.server : sockets.client;
     my_handle.set_blocking(false);
     SmartBuffer read_buffer(4096);
-    CryptoSocket::UP my_socket = engine.create_crypto_socket(std::move(my_handle), is_server);
+    CryptoSocket::UP my_socket = is_server
+                                 ? engine.create_server_crypto_socket(std::move(my_handle))
+                                 : engine.create_client_crypto_socket(std::move(my_handle), local_spec);
     TEST_DO(verify_handshake(*my_socket));
     drain(*my_socket, read_buffer);
     TEST_DO(verify_socket_io(*my_socket, read_buffer, is_server));
@@ -226,19 +229,19 @@ TEST_MT_FFF("require that encrypted async socket io works with XorCryptoEngine",
 }
 
 TEST_MT_FFF("require that encrypted async socket io works with TlsCryptoEngine",
-            2, SocketPair(), TlsCryptoEngine(vespalib::test::make_tls_options_for_testing()), TimeBomb(60))
+            2, SocketPair(), TlsCryptoEngine(make_tls_options_for_testing()), TimeBomb(60))
 {
     TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
 }
 
 TEST_MT_FFF("require that encrypted async socket io works with MaybeTlsCryptoEngine(true)",
-            2, SocketPair(), MaybeTlsCryptoEngine(std::make_shared<TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing()), true), TimeBomb(60))
+            2, SocketPair(), MaybeTlsCryptoEngine(std::make_shared<TlsCryptoEngine>(make_tls_options_for_testing()), true), TimeBomb(60))
 {
     TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
 }
 
 TEST_MT_FFF("require that encrypted async socket io works with MaybeTlsCryptoEngine(false)",
-            2, SocketPair(), MaybeTlsCryptoEngine(std::make_shared<TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing()), false), TimeBomb(60))
+            2, SocketPair(), MaybeTlsCryptoEngine(std::make_shared<TlsCryptoEngine>(make_tls_options_for_testing()), false), TimeBomb(60))
 {
     TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
 }

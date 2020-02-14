@@ -79,17 +79,25 @@ public:
                        vespalib::AsyncResolver::ResultHandler::WP result_handler);
 
     /**
-     * Wrap a plain socket endpoint in a CryptoSocket. The
+     * Wrap a plain socket endpoint (client side) in a CryptoSocket. The
      * implementation will be determined by the CryptoEngine used by
      * this Transport.
      *
      * @return socket abstraction able to perform encryption and decryption
      * @param socket low-level socket
-     * @param is_server which end of the connection the socket
-     *                  represents. This is needed to support
-     *                  asymmetrical handshaking.
+     * @param spec who we are connecting to
      **/
-    vespalib::CryptoSocket::UP create_crypto_socket(vespalib::SocketHandle socket, bool is_server);
+    vespalib::CryptoSocket::UP create_client_crypto_socket(vespalib::SocketHandle socket, const vespalib::SocketSpec &spec);
+
+    /**
+     * Wrap a plain socket endpoint (server side) in a CryptoSocket. The
+     * implementation will be determined by the CryptoEngine used by
+     * this Transport.
+     *
+     * @return socket abstraction able to perform encryption and decryption
+     * @param socket low-level socket
+     **/
+    vespalib::CryptoSocket::UP create_server_crypto_socket(vespalib::SocketHandle socket);
 
     /**
      * Select one of the underlying transport threads. The selection

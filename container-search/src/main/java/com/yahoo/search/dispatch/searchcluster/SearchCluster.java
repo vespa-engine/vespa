@@ -79,6 +79,13 @@ public class SearchCluster implements NodeManager<Node> {
 
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodesByHost, groups);
     }
+
+    /* Testing only */
+    public SearchCluster(String clusterId, DispatchConfig dispatchConfig,
+                         VipStatus vipStatus, PingFactory pingFactory) {
+        this(clusterId, dispatchConfig, 1, vipStatus, pingFactory);
+    }
+
     public void addMonitoring(ClusterMonitor clusterMonitor) {
         for (var group : orderedGroups) {
             for (var node : group.nodes())

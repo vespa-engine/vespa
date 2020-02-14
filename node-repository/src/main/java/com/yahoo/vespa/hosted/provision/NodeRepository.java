@@ -215,7 +215,7 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Returns the ACL for the node (trusted nodes, networks and ports)
      */
-    private NodeAcl getNodeAcl(Node node, NodeList candidates, LoadBalancerList loadBalancers) {
+    private NodeAcl getNodeAcl(Node node, NodeList candidates) {
         Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
         Set<Integer> trustedPorts = new LinkedHashSet<>();
         Set<String> trustedNetworks = new LinkedHashSet<>();
@@ -232,10 +232,10 @@ public class NodeRepository extends AbstractComponent {
         candidates.parentOf(node).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
-            loadBalancers.asList().stream()
-                         .map(LoadBalancer::instance)
-                         .map(LoadBalancerInstance::networks)
-                         .forEach(trustedNetworks::addAll);
+            loadBalancers(allocation.owner()).asList().stream()
+                                             .map(LoadBalancer::instance)
+                                             .map(LoadBalancerInstance::networks)
+                                             .forEach(trustedNetworks::addAll);
         });
 
         switch (node.type()) {
@@ -304,18 +304,12 @@ public class NodeRepository extends AbstractComponent {
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
         NodeList candidates = list();
-        LoadBalancerList loadBalancers;
-        if (node.allocation().isPresent()) {
-            loadBalancers = loadBalancers(node.allocation().get().owner());
-        } else {
-            loadBalancers = LoadBalancerList.EMPTY;
-        }
         if (children) {
             return candidates.childrenOf(node).asList().stream()
-                             .map(childNode -> getNodeAcl(childNode, candidates, loadBalancers))
+                             .map(childNode -> getNodeAcl(childNode, candidates))
                              .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
         }
-        return Collections.singletonList(getNodeAcl(node, candidates, loadBalancers));
+        return Collections.singletonList(getNodeAcl(node, candidates));
     }
 
     public NodeFlavors getAvailableFlavors() {

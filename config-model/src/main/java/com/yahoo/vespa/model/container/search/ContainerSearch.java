@@ -59,6 +59,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         for (AbstractSearchCluster searchCluster : searchClusters) {
             if ( ! ( searchCluster instanceof IndexedSearchCluster)) continue;
             owningCluster.addComponent(new DispatcherComponent((IndexedSearchCluster)searchCluster));
+            owningCluster.addComponent(new RpcResourcePoolComponent((IndexedSearchCluster)searchCluster));
         }
     }
 

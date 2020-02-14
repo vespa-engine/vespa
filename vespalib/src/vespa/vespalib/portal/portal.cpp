@@ -143,7 +143,7 @@ Portal::handle_accept(portal::HandleGuard guard, SocketHandle socket)
 {
     socket.set_blocking(false);
     socket.set_keepalive(true);
-    new HttpConnection(std::move(guard), _reactor, _crypto->create_crypto_socket(std::move(socket), true),
+    new HttpConnection(std::move(guard), _reactor, _crypto->create_server_crypto_socket(std::move(socket)),
                        [this](HttpConnection *conn)
                        {
                            handle_http(conn);

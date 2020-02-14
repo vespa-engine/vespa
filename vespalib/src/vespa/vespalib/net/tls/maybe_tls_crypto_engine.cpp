@@ -6,15 +6,19 @@
 namespace vespalib {
 
 CryptoSocket::UP
-MaybeTlsCryptoEngine::create_crypto_socket(SocketHandle socket, bool is_server)
+MaybeTlsCryptoEngine::create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec)
 {
-    if (is_server) {
-        return std::make_unique<MaybeTlsCryptoSocket>(std::move(socket), _tls_engine);
-    } else if (_use_tls_when_client) {
-        return _tls_engine->create_crypto_socket(std::move(socket), false);
+    if (_use_tls_when_client) {
+        return _tls_engine->create_client_crypto_socket(std::move(socket), spec);
     } else {
-        return _null_engine->create_crypto_socket(std::move(socket), false);
+        return _null_engine->create_client_crypto_socket(std::move(socket), spec);
     }
+}
+
+CryptoSocket::UP
+MaybeTlsCryptoEngine::create_server_crypto_socket(SocketHandle socket)
+{
+    return std::make_unique<MaybeTlsCryptoSocket>(std::move(socket), _tls_engine);
 }
 
 } // namespace vespalib
