@@ -77,17 +77,22 @@ CfHandler::doConfigure()
     fclose(fp);
     rename(tmpPath.c_str(), path.c_str());
 
-    path = cfFilePath(config.splunkHome, "inputs.conf");
-    tmpPath = path + ".new";
-    fp = fopen(tmpPath.c_str(), "w");
-    if (fp == NULL) return;
-
-    fprintf(fp, "[default]\n");
-    fprintf(fp, "host = %s\n", getenv("HOSTNAME"));
-    fprintf(fp, "_meta = vespa_tenant::%s vespa_application::%s vespa_instance::%s\n", getenv("VESPA_TENANT"), getenv("VESPA_APPLICATION"), getenv("VESPA_INSTANCE"));
-    fclose(fp);
-    rename(tmpPath.c_str(), path.c_str());
-
+    if (getenv("VESPA_HOSTNAME") != NULL &&
+        getenv("VESPA_TENANT") != NULL &&
+        getenv("VESPA_APPLICATION")!= NULL &&
+        getenv("VESPA_INSTANCE") != NULL )
+        {
+        path = cfFilePath(config.splunkHome, "inputs.conf");
+        tmpPath = path + ".new";
+        fp = fopen(tmpPath.c_str(), "w");
+        if (fp != NULL) {
+            fprintf(fp, "[default]\n");
+            fprintf(fp, "host = %s\n", getenv("VESPA_HOSTNAME"));
+            fprintf(fp, "_meta = vespa_tenant::%s vespa_application::%s vespa_instance::%s\n", getenv("VESPA_TENANT"), getenv("VESPA_APPLICATION"), getenv("VESPA_INSTANCE"));
+            fclose(fp);
+            rename(tmpPath.c_str(), path.c_str());
+        }
+    }
     if (config.clientName.size() == 0 ||
         config.deploymentServer.size() == 0)
     {
