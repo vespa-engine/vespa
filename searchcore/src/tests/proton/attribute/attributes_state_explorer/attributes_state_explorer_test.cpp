@@ -10,6 +10,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributes_state_explorer_test");

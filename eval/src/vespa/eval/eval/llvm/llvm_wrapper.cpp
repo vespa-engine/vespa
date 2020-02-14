@@ -12,12 +12,12 @@
 #include <llvm/Analysis/Passes.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/Transforms/Scalar.h>
-#if LLVM_VERSION_MAJOR == 9 && defined(__clang__)
+#if LLVM_VERSION_MAJOR >= 9 && defined(__clang__)
 // Avoid reference to undefined symbol llvm::cfg::Update<llvm::BasicBlock*>::dump() const
 #define NDEBUG
 #endif
 #include <llvm/LinkAllPasses.h>
-#if LLVM_VERSION_MAJOR == 9 && defined(__clang__)
+#if LLVM_VERSION_MAJOR >= 9 && defined(__clang__)
 #undef NDEBUG
 #endif
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
