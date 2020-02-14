@@ -1,0 +1,30 @@
+# Configuration for telegraf agent
+[agent]
+  interval = "${intervalSeconds}s"
+  round_interval = true
+  metric_batch_size = 1000
+  metric_buffer_limit = 10000
+  collection_jitter = "0s"
+  flush_interval = "${intervalSeconds}s"
+  flush_jitter = "0s"
+  precision = ""
+
+# Configuration for AWS CloudWatch output.
+[[outputs.cloudwatch]]
+  region = "$cloudwatchRegion"
+  namespace = "$cloudwatchNamespace"
+#if( $isHosted )
+  access_key = "$cloudwatchSecretKey"
+  secret_key = "$cloudwatchAccessKey"
+#else
+  profile = "$cloudwatchProfile"
+#end
+
+# Configuration for Vespa input plugin
+[[inputs.vespa]]
+  url = "http://localhost:19092/metrics/v2/values?consumer=$vespaConsumer"
+#if( $isHosted )
+  tls_cert = "${VESPA_CERTIFICATE_PATH}"
+  tls_key = "${VESPA_KEY_PATH}"
+  insecure_skip_verify = true
+#end
