@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.controller.restapi.routing;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -9,21 +12,26 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.yolean.Exceptions;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * This implements the /routing/v1 API, which provides operator with global routing control at both zone- and
@@ -45,7 +53,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         try {
             var path = new Path(request.getUri());
             switch (request.getMethod()) {
-                case GET: return get(path);
+                case GET: return get(path, request.getUri());
                 case POST: return post(path);
                 case DELETE: return delete(path);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
@@ -70,10 +78,60 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse get(Path path) {
-        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deploymentStatus(path);
-        if (path.matches("/routing/v1/status/environment/{environment}/region/{region}")) return zoneStatus(path);
+    private HttpResponse get(Path path, URI requestUrl) {
+        if (path.matches("/routing/v1/")) return status(requestUrl);
+        if (path.matches("/routing/v1/status/tenant/{tenant}")) return tenant(path, requestUrl);
+        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}")) return application(path, requestUrl);
+        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}")) return instance(path, requestUrl);
+        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path);
+        if (path.matches("/routing/v1/status/environment")) return environment(requestUrl);
+        if (path.matches("/routing/v1/status/environment/{environment}/region/{region}")) return zone(path);
         return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse environment(URI requestUrl) {
+        var resources = controller.zoneRegistry().zones().all().ids().stream()
+                                  .map(zone -> zone.environment().value() +
+                                               "/region/" + zone.region().value())
+                                  .sorted()
+                                  .collect(Collectors.toList());
+        return new ResourceResponse(requestUrl, resources);
+    }
+
+    private HttpResponse status(URI requestUrl) {
+        return new ResourceResponse(requestUrl, "status/tenant", "status/environment");
+    }
+
+    private HttpResponse tenant(Path path, URI requestUrl) {
+        var tenantName = tenantFrom(path);
+        var resources = controller.applications().asList(tenantName).stream()
+                                  .map(Application::id)
+                                  .map(TenantAndApplicationId::application)
+                                  .map(ApplicationName::value)
+                                  .map(application -> "application/" + application)
+                                  .sorted()
+                                  .collect(Collectors.toList());
+        return new ResourceResponse(requestUrl, resources);
+    }
+
+    private HttpResponse application(Path path, URI requestUrl) {
+        var tenantAndApplicationId = tenantAndApplicationIdFrom(path);
+        var resources = controller.applications().requireApplication(tenantAndApplicationId).instances().keySet().stream()
+                                  .map(InstanceName::value)
+                                  .map(instance -> "instance/" + instance)
+                                  .sorted()
+                                  .collect(Collectors.toList());
+        return new ResourceResponse(requestUrl, resources);
+    }
+
+    private HttpResponse instance(Path path, URI requestUrl) {
+        var instanceId = instanceFrom(path);
+        var resources = controller.applications().requireInstance(instanceId).deployments().keySet().stream()
+                                  .map(zone -> "environment/" + zone.environment().value() +
+                                               "/region/" + zone.region().value())
+                                  .sorted()
+                                  .collect(Collectors.toList());
+        return new ResourceResponse(requestUrl, resources);
     }
 
     private HttpResponse setZoneStatus(Path path, boolean in) {
@@ -88,7 +146,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                    (in ? "IN" : "OUT"));
     }
 
-    private HttpResponse zoneStatus(Path path) {
+    private HttpResponse zone(Path path) {
         var zone = zoneFrom(path);
         var slime = new Slime();
         var root = slime.setObject();
@@ -124,7 +182,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         return new MessageResponse("Set global routing status for " + deployment + " to " + (in ? "IN" : "OUT"));
     }
 
-    private HttpResponse deploymentStatus(Path path) {
+    private HttpResponse deployment(Path path) {
         var deployment = deploymentFrom(path);
         var instance = controller.applications().requireInstance(deployment.applicationId());
         var slime = new Slime();
@@ -190,9 +248,24 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                 policy.status().globalRouting(), RoutingMethod.exclusive);
     }
 
+    private TenantName tenantFrom(Path path) {
+        return TenantName.from(path.get("tenant"));
+    }
+
+    private ApplicationName applicationFrom(Path path) {
+        return ApplicationName.from(path.get("application"));
+    }
+
+    private TenantAndApplicationId tenantAndApplicationIdFrom(Path path) {
+       return TenantAndApplicationId.from(tenantFrom(path), applicationFrom(path));
+    }
+
+    private ApplicationId instanceFrom(Path path) {
+        return ApplicationId.from(tenantFrom(path), applicationFrom(path), InstanceName.from(path.get("instance")));
+    }
+
     private DeploymentId deploymentFrom(Path path) {
-        return new DeploymentId(ApplicationId.from(path.get("tenant"), path.get("application"), path.get("instance")),
-                                zoneFrom(path));
+        return new DeploymentId(instanceFrom(path), zoneFrom(path));
     }
 
     private ZoneId zoneFrom(Path path) {
