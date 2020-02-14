@@ -40,6 +40,7 @@ public class Telegraf extends AbstractComponent {
         context.put("cloudwatchNamespace", telegrafConfig.cloudWatch().namespace());
         context.put("cloudwatchSecretKey", telegrafConfig.cloudWatch().secretKeyName());
         context.put("cloudwatchAccessKey", telegrafConfig.cloudWatch().accessKeyName());
+        context.put("hasCloudwatchProfile", !telegrafConfig.cloudWatch().profile().isBlank());
         context.put("cloudwatchProfile", telegrafConfig.cloudWatch().profile());
         context.put("isHosted", !telegrafConfig.cloudWatch().secretKeyName().isBlank());
         context.put("vespaConsumer", telegrafConfig.vespa().consumer());
@@ -64,7 +65,7 @@ public class Telegraf extends AbstractComponent {
                 .successExitCodes(0)
                 .build();
         uncheck(() -> processExecutor.execute(command))
-                .orElseThrow(() -> new RuntimeException("Running " + command + " timed out"));
+                .orElseThrow(() -> new RuntimeException("Timed out running command: " + command));
     }
 
     @Override

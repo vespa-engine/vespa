@@ -135,7 +135,6 @@
     <dependency>
       <groupId>org.apache.velocity</groupId>
       <artifactId>velocity</artifactId>
-      <scope>compile</scope>
     </dependency>
 
     <!-- test scope -->

@@ -16,7 +16,7 @@
 #if( $isHosted )
   access_key = "$cloudwatchSecretKey"
   secret_key = "$cloudwatchAccessKey"
-#else
+#elseif( $hasCloudwatchProfile )
   profile = "$cloudwatchProfile"
 #end
 
