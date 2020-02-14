@@ -173,14 +173,7 @@ public class SearchClusterTest {
         model.getConfig(dispatchConfigBuilder, "j1/component/dispatcher." + cluster);
         assertEquals(host, dispatchConfigBuilder.build().node(0).host());
 
-        Component<?,?> rpcResourcePool = (Component<?, ?>)containerCluster.getComponentsMap().get(new ComponentId("rpcresourcepool." + cluster));
-        assertNotNull(dispatcher);
-        assertEquals("rpcresourcepool." + cluster, rpcResourcePool.getComponentId().stringValue());
-        assertEquals("com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getClassId().stringValue());
-        assertEquals("j1/component/rpcresourcepool."+cluster, rpcResourcePool.getConfigId());
-        DispatchConfig.Builder rpcResourcePoolDispatchConfigBuilder = new DispatchConfig.Builder();
-        model.getConfig(rpcResourcePoolDispatchConfigBuilder, "j1/component/rpcresourcepool." + cluster);
-        assertEquals(host, rpcResourcePoolDispatchConfigBuilder.build().node(0).host());
+        assertTrue(dispatcher.getInjectedComponentIds().contains("rpcresourcepool.dispatcher." + cluster));
     }
 
 }
