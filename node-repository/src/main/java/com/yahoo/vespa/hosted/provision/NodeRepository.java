@@ -16,6 +16,8 @@ import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
@@ -101,8 +103,8 @@ public class NodeRepository extends AbstractComponent {
      * This will use the system time to make time-sensitive decisions
      */
     @Inject
-    public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache());
+    public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone, FlagSource flagSource) {
+        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache(), flagSource);
     }
 
     /**
@@ -110,7 +112,7 @@ public class NodeRepository extends AbstractComponent {
      * which will be used for time-sensitive decisions.
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
-                          DockerImage dockerImage, boolean useCuratorClientCache) {
+                          DockerImage dockerImage, boolean useCuratorClientCache, FlagSource flagSource) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
@@ -119,7 +121,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.dockerImages = new DockerImages(db, dockerImage);
+        this.dockerImages = new DockerImages(db, dockerImage, Flags.DOCKER_IMAGE_OVERRIDE.bindTo(flagSource));
         this.jobControl = new JobControl(db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
@@ -130,8 +132,8 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the curator database client used by this */
     public CuratorDatabaseClient database() { return db; }
 
-    /** Returns the Docker image to use for nodes in this */
-    public DockerImage dockerImage(NodeType nodeType) { return dockerImages.dockerImageFor(nodeType); }
+    /** Returns the Docker image to use for given node */
+    public DockerImage dockerImage(Node node) { return dockerImages.dockerImageFor(node); }
 
     /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }

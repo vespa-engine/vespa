@@ -13,6 +13,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -56,7 +57,7 @@ public class MetricsReporterTest {
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                           true);
+                                                           true, new InMemoryFlagSource());
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(List.of(node));
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
@@ -121,7 +122,7 @@ public class MetricsReporterTest {
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                           true);
+                                                           true, new InMemoryFlagSource());
 
         // Allow 4 containers
         Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
