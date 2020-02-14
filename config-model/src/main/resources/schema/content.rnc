@@ -57,6 +57,9 @@ PersistenceThread = element thread {
 
 ## Declare which storage threads each disk should have.
 PersistenceThreads = element persistence-threads {
+  ## The number of threads to create
+  attribute count { xsd:integer }? &
+  ## All of the below settings are deprecated.
   ## Operations with priority worse than this can be blocked
   attribute highest-priority-to-block { xsd:string } ? &
   ## Operations with priority better than this can block others
