@@ -879,15 +879,15 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(MessageEntry && entry) noexcept
       _priority(entry._priority)
 { }
 
-FileStorHandlerImpl::MessageEntry::~MessageEntry() { }
+FileStorHandlerImpl::MessageEntry::~MessageEntry() = default;
 
-FileStorHandlerImpl::Disk::Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numThreads)
+FileStorHandlerImpl::Disk::Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numStripes)
     : metrics(0),
       _nextStripeId(0),
-      _stripes(numThreads, Stripe(owner, messageSender)),
+      _stripes(numStripes, Stripe(owner, messageSender)),
       state(FileStorHandler::AVAILABLE)
 {
-    assert(numThreads > 0);
+    assert(numStripes > 0);
 }
 
 FileStorHandlerImpl::Disk::Disk(Disk && rhs) noexcept
