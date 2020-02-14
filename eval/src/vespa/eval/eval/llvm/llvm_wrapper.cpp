@@ -21,6 +21,9 @@
 #undef NDEBUG
 #endif
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#if LLVM_VERSION_MAJOR > 9
+#include <llvm/Support/ManagedStatic.h>
+#endif
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/approx.h>

@@ -81,7 +81,7 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc32}
-BuildRequires: llvm-devel >= 9.0.0
+BuildRequires: llvm-devel >= 10.0.0
 BuildRequires: boost-devel >= 1.69
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -174,8 +174,8 @@ Requires: llvm-libs >= 9.0.0
 %define _vespa_llvm_version 9
 %endif
 %if 0%{?fc32}
-Requires: llvm-libs >= 9.0.0
-%define _vespa_llvm_version 9
+Requires: llvm-libs >= 10.0.0
+%define _vespa_llvm_version 10
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
