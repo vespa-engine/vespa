@@ -45,6 +45,8 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -342,6 +344,61 @@ public class QueryTestCase {
         profile.set("timeout", 318, (QueryProfileRegistry)null);
         Query q = new Query(QueryTestCase.httpEncode("/search?timeout=500"), profile.compile(null));
         assertEquals(500000L, q.getTimeout());
+    }
+
+    @Test
+    public void testQueryProfileClearAndSet() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("b", "b-value", null);
+        Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+        assertEquals("b-value", q.properties().get("b"));
+        assertContains(q.properties().listProperties("b"), "b-value");
+
+        q.properties().set("b", null, null);
+        assertContains(q.properties().listProperties("b"), (Object)null);
+
+        q.properties().set("b", "b-value", null);
+        assertEquals("b-value", q.properties().get("b"));
+        assertContains(q.properties().listProperties("b"), "b-value");
+    }
+
+    @Test
+    public void testQueryProfileClearValue() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("a", "a-value", null);
+        profile.set("b", "b-value", null);
+        profile.set("b.c", "b.c-value", null);
+        profile.set("b.d", "b.d-value", null);
+        Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+        assertEquals("a-value", q.properties().get("a"));
+        assertEquals("b-value", q.properties().get("b"));
+        assertEquals("b.c-value", q.properties().get("b.c"));
+        assertEquals("b.d-value", q.properties().get("b.d"));
+        assertContains(q.properties().listProperties("b"), "b-value", "b.c-value", "b.d-value");
+
+        q.properties().set("a", null, null);
+        assertEquals(null, q.properties().get("a"));
+
+        q.properties().set("b", null, null);
+        assertEquals(null, q.properties().get("b"));
+        assertEquals("b.c-value", q.properties().get("b.c"));
+        assertEquals("b.d-value", q.properties().get("b.d"));
+        assertContains(q.properties().listProperties("b"), null, "b.c-value", "b.d-value");
+
+        q.properties().set("b", "b-value", null);
+        q.properties().set("b.e", "b.e-value", null);
+        q.properties().set("b.f", "b.f-value", null);
+        assertEquals("b-value", q.properties().get("b"));
+        assertEquals("b.e-value", q.properties().get("b.e"));
+        assertContains(q.properties().listProperties("b"), "b-value", "b.c-value", "b.d-value", "b.e-value", "b.f-value");
+
+        q.properties().clearAll("b");
+        assertEquals(null, q.properties().get("b"));
+        assertEquals(null, q.properties().get("b.c"));
+        assertEquals(null, q.properties().get("b.d"));
+        assertEquals(null, q.properties().get("b.e"));
+        assertEquals(null, q.properties().get("b.f"));
+        assertContains(q.properties().listProperties("b"), (Object)null);
     }
 
     @Test
@@ -983,6 +1040,19 @@ public class QueryTestCase {
         q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, indexFacts, mockLinguistics)));
         q.getModel().getQueryTree(); // cause parsing
         assertEquals(expectedDetectionText, mockLinguistics.detector.lastDetectionText);
+    }
+
+    private void assertContains(Map<String, Object> properties, Object ... expectedValues) {
+        if (expectedValues == null) {
+            assertEquals(1, properties.size());
+            assertTrue("Contains value null", properties.containsValue(null));
+        }
+        else {
+            assertEquals(properties + " contains values " + Arrays.toString(expectedValues),
+                         expectedValues.length, properties.size());
+            for (Object expectedValue : expectedValues)
+                assertTrue("Contains value " + expectedValue, properties.containsValue(expectedValue));
+        }
     }
 
     /** A linguistics instance which records the last language detection text passed to it */

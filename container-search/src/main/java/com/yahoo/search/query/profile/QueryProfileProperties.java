@@ -32,7 +32,12 @@ public class QueryProfileProperties extends Properties {
 
     /** Values which has been overridden at runtime, or null if none */
     private Map<CompoundName, Object> values = null;
-    /** Query profile references which has been overridden at runtime, or null if none. Earlier values has precedence */
+
+    /**
+     * Query profile references which has been overridden at runtime, possibly to the null value to clear values,
+     * or null if none (i.e this is lazy).
+     * Earlier values has precedence
+     */
     private List<Pair<CompoundName, CompiledQueryProfile>> references = null;
 
     /** Creates an instance from a profile, throws an exception if the given profile is null */
@@ -49,20 +54,21 @@ public class QueryProfileProperties extends Properties {
     public Object get(CompoundName name, Map<String, String> context,
                       com.yahoo.processing.request.Properties substitution) {
         name = unalias(name, context);
-        Object value = null;
-        if (values != null)
-            value = values.get(name);
-        if (value == null) {
-            Pair<CompoundName, CompiledQueryProfile> reference = findReference(name);
-            if (reference != null)
-                return reference.getSecond().get(name.rest(reference.getFirst().size()), context, substitution); // yes; even if null
+        if (values != null && values.containsKey(name))
+            return values.get(name); // Returns this value, even if null
+
+        Pair<CompoundName, CompiledQueryProfile> reference = findReference(name);
+        if (reference != null) {
+            if (reference.getSecond() == null)
+                return null; // cleared
+            else
+                return reference.getSecond().get(name.rest(reference.getFirst().size()), context, substitution); // even if null
         }
 
-        if (value == null)
-            value = profile.get(name, context, substitution);
-        if (value == null)
-            value = super.get(name, context, substitution);
-        return value;
+        Object value = profile.get(name, context, substitution);
+        if (value != null)
+            return value;
+        return super.get(name, context, substitution);
     }
 
     /**
@@ -143,12 +149,26 @@ public class QueryProfileProperties extends Properties {
     }
 
     @Override
-    public Map<String, Object> listProperties(CompoundName path, Map<String,String> context,
+    public void clearAll(CompoundName name, Map<String, String> context) {
+        if (references == null)
+            references = new ArrayList<>();
+        references.add(new Pair<>(name, null));
+
+        if (values != null)
+            values.keySet().removeIf(key -> key.hasPrefix(name));
+    }
+
+    @Override
+    public Map<String, Object> listProperties(CompoundName path, Map<String, String> context,
                                               com.yahoo.processing.request.Properties substitution) {
         path = unalias(path, context);
         if (context == null) context = Collections.emptyMap();
 
-        Map<String, Object> properties = profile.listValues(path, context, substitution);
+        Map<String, Object> properties = new HashMap<>();
+        for (var entry : profile.listValues(path, context, substitution).entrySet()) {
+            if (references != null && containsNullParentOf(path, references)) continue;
+            properties.put(entry.getKey(), entry.getValue());
+        }
         properties.putAll(super.listProperties(path, context, substitution));
 
         if (references != null) {
@@ -165,8 +185,14 @@ public class QueryProfileProperties extends Properties {
                     pathInReference = path.rest(refEntry.getFirst().size());
                     prefixToReferenceKeys = CompoundName.empty;
                 }
-                for (Map.Entry<String, Object> valueEntry : refEntry.getSecond().listValues(pathInReference, context, substitution).entrySet()) {
-                    properties.put(prefixToReferenceKeys.append(new CompoundName(valueEntry.getKey())).toString(), valueEntry.getValue());
+                if (refEntry.getSecond() == null) {
+                    if (refEntry.getFirst().hasPrefix(path))
+                        properties.put(prefixToReferenceKeys.toString(), null);
+                }
+                else {
+                    for (Map.Entry<String, Object> valueEntry : refEntry.getSecond().listValues(pathInReference, context, substitution).entrySet()) {
+                        properties.put(prefixToReferenceKeys.append(new CompoundName(valueEntry.getKey())).toString(), valueEntry.getValue());
+                    }
                 }
             }
 
@@ -239,6 +265,12 @@ public class QueryProfileProperties extends Properties {
             if (name.hasPrefix(entry.getFirst())) return entry;
         }
         return null;
+    }
+
+    private boolean containsNullParentOf(CompoundName path, List<Pair<CompoundName, CompiledQueryProfile>> properties) {
+        if (properties.contains(new Pair<>(path, (CompiledQueryProfile)null))) return true;
+        if (path.size() > 0 && containsNullParentOf(path.first(path.size() - 1), properties)) return true;
+        return false;
     }
 
     CompoundName unalias(CompoundName name, Map<String,String> context) {

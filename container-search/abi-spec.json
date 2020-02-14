@@ -5790,6 +5790,7 @@
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
+      "public void clearAll(com.yahoo.processing.request.CompoundName, java.util.Map)",
       "public java.util.Map listProperties(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public boolean isComplete(java.lang.StringBuilder, java.util.Map)",
       "public com.yahoo.search.query.profile.QueryProfileProperties clone()",

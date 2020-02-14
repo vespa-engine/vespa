@@ -504,7 +504,8 @@ public class QueryProfileTestCase {
         p.set("a","a-value", null);
         p.set("a.b","a.b-value", null);
         Map<String, Object> values = p.compile(null).listValues("a");
-        assertEquals(1, values.size());
+        assertEquals(2, values.size());
+        p.set("a","a-value", null);
         assertEquals("a.b-value", values.get("b"));
     }
 
