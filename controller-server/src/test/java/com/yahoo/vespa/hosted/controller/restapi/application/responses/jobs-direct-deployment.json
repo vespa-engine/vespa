@@ -3,5 +3,6 @@
   "deployments": [],
   "lastVersions": {},
   "deploying": {},
-  "jobs": {}
+  "jobs": {},
+  "deployment": []
 }
