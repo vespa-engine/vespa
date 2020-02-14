@@ -16,7 +16,6 @@ import javax.net.ssl.X509ExtendedTrustManager;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.WeakReference;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.time.Duration;
@@ -110,12 +109,13 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                                                              MutableX509TrustManager mutableTrustManager,
                                                              MutableX509KeyManager mutableKeyManager,
                                                              PeerAuthentication peerAuthentication) {
+
+        PeerAuthorizerTrustManager authorizerTrustManager = options.getAuthorizedPeers()
+                .map(authorizedPeers -> new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
+                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)));
         SSLContext sslContext = new SslContextBuilder()
                 .withKeyManager(mutableKeyManager)
-                .withTrustManagerFactory(
-                        ignoredTruststore -> options.getAuthorizedPeers()
-                                .map(authorizedPeers -> (X509ExtendedTrustManager) new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
-                                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)))
+                .withTrustManager(authorizerTrustManager)
                 .build();
         List<String> acceptedCiphers = options.getAcceptedCiphers();
         Set<String> ciphers = acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers);
