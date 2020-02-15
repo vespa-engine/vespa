@@ -128,13 +128,13 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
         if (searchHandler) {
             ret = searchHandler->match(searchHandler, *searchRequest, *threadBundle);
         } else {
-            HandlerMap<ISearchHandler>::Snapshot::UP snapshot;
+            HandlerMap<ISearchHandler>::Snapshot snapshot;
             {
                 std::lock_guard<std::mutex> guard(_lock);
                 snapshot = _handlers.snapshot();
             }
-            if (snapshot->valid()) {
-                ISearchHandler::SP handler = snapshot->getSP();
+            if (snapshot.valid()) {
+                ISearchHandler::SP handler = snapshot.getSP();
                 ret = handler->match(handler, *searchRequest, *threadBundle); // use the first handler
             }
         }

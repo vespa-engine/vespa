@@ -18,7 +18,7 @@ class IPersistenceEngineOwner;
 
 class PersistenceEngine : public storage::spi::AbstractPersistenceProvider {
 private:
-    using PersistenceHandlerSequence = vespalib::Sequence<IPersistenceHandler *>;
+    using PersistenceHandlerSequence = PersistenceHandlerMap::PersistenceHandlerSequence;
     using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
     using DocumentUpdate = document::DocumentUpdate;
     using Bucket = storage::spi::Bucket;
@@ -43,7 +43,7 @@ private:
     using UpdateResult = storage::spi::UpdateResult;
 
     struct IteratorEntry {
-        PersistenceHandlerSequence::UP handler_sequence;
+        PersistenceHandlerSequence  handler_sequence;
         DocumentIterator it;
         bool in_use;
         std::vector<BucketGuard::UP> bucket_guards;

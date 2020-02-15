@@ -38,8 +38,7 @@ public:
         size_t                 _offset;
 
     public:
-        typedef std::unique_ptr<Snapshot> UP;
-
+        Snapshot() : _handlers(), _offset(0) { }
         Snapshot(const StdMap &map) : _handlers(), _offset(0) {
             _handlers.reserve(map.size());
             for (auto itr : map) {
@@ -47,6 +46,11 @@ public:
             }
         }
         Snapshot(std::vector<HandlerSP> &&handlers) : _handlers(std::move(handlers)), _offset(0) {}
+        Snapshot(Snapshot &&) noexcept = default;
+        Snapshot & operator = (Snapshot &&) noexcept = default;
+        Snapshot(const Snapshot &) = delete;
+        Snapshot & operator = (const Snapshot &) = delete;
+
         bool valid() const override { return (_offset < _handlers.size()); }
         T *get() const override { return _handlers[_offset].get(); }
         HandlerSP getSP() const { return _handlers[_offset]; }
@@ -62,11 +66,7 @@ public:
     /**
      * Constructs a new instance of this class.
      */
-    HandlerMap()
-        : _handlers()
-    {
-        // empty
-    }
+    HandlerMap() = default;
 
     /**
      * Registers a new handler for the given document type. If another handler
@@ -160,11 +160,7 @@ public:
     /**
      * Clear all handlers.
      */
-    void
-    clear()
-    {
-        _handlers.clear();
-    }
+    void clear() { _handlers.clear(); }
 
     /**
      * Create a snapshot of the handlers currently contained in this
@@ -173,68 +169,15 @@ public:
      *
      * @return handler sequence
      **/
-    std::unique_ptr<Snapshot>
-    snapshot() const
-    {
-        return std::make_unique<Snapshot>(_handlers);
-    }
+    Snapshot snapshot() const { return Snapshot(_handlers); }
 
 // we want to use snapshots rather than direct iteration to reduce locking;
 // the below functions should be deprecated when possible.
 
-    /**
-     * Returns a bidirectional iterator that points at the first element of the
-     * sequence (or just beyond the end of an empty sequence).
-     *
-     * @return The beginning of this map.
-     */
-    iterator
-    begin()
-    {
-        return _handlers.begin();
-    }
-
-    /**
-     * Returns a const bidirectional iterator that points at the first element
-     * of the sequence (or just beyond the end of an empty sequence).
-     *
-     * @return The beginning of this map.
-     */
-    const_iterator
-    begin() const
-    {
-        return _handlers.begin();
-    }
-
-    /**
-     * Returns a bidirectional iterator that points just beyond the end of the
-     * sequence.
-     *
-     * @return The end of this map.
-     */
-    iterator
-    end()
-    {
-        return _handlers.end();
-    }
-
-    /**
-     * Returns a const bidirectional iterator that points just beyond the end of
-     * the sequence.
-     *
-     * @return The end of this map.
-     */
-    const_iterator
-    end() const
-    {
-        return _handlers.end();
-    }
-
-    /**
-     * Returns the number of handlers in this map.
-     *
-     * @return the number of handlers.
-     */
+    iterator begin() { return _handlers.begin(); }
+    const_iterator begin() const { return _handlers.begin(); }
+    iterator end() { return _handlers.end(); }
+    const_iterator end() const { return _handlers.end(); }
     size_t size() const { return _handlers.size(); }
 };
 
