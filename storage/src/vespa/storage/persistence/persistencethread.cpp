@@ -795,8 +795,8 @@ PersistenceThread::handleCommand(api::StorageCommand& msg)
 {
     _context = spi::Context(msg.getLoadType(), msg.getPriority(), msg.getTrace().getLevel());
     MessageTracker::UP mtracker(handleCommandSplitByType(msg));
-    if (mtracker.get() != 0) {
-        if (mtracker->getReply().get() != 0) {
+    if (mtracker) {
+        if (mtracker->getReply()) {
             mtracker->getReply()->getTrace().getRoot().addChild(_context.getTrace().getRoot());
         } else {
             msg.getTrace().getRoot().addChild(_context.getTrace().getRoot());

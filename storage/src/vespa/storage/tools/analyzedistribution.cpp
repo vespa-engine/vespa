@@ -132,7 +132,7 @@ Node::Node(const lib::NodeState& dstate, const lib::NodeState& sstate, uint32_t 
         disks.push_back(Disk(storageState.getDiskState(i)));
     }
 }
-Node::~Node() {}
+Node::~Node() = default;
 
 struct Distribution {
     std::vector<Node> nodes;
