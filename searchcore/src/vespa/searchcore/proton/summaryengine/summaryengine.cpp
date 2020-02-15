@@ -128,13 +128,13 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         if (searchHandler) {
             reply = searchHandler->getDocsums(*req);
         } else {
-            vespalib::Sequence<ISearchHandler*>::UP snapshot;
+            HandlerMap<ISearchHandler>::Snapshot snapshot;
             {
                 std::lock_guard<std::mutex> guard(_lock);
                 snapshot = _handlers.snapshot();
             }
-            if (snapshot->valid()) {
-                reply = snapshot->get()->getDocsums(*req); // use the first handler
+            if (snapshot.valid()) {
+                reply = snapshot.get()->getDocsums(*req); // use the first handler
             }
         }
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));

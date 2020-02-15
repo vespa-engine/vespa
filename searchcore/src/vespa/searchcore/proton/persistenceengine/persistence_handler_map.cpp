@@ -52,20 +52,7 @@ PersistenceHandlerMap::getHandlerSnapshot() const
         }
     }
     size_t handlersSize = handlers.size();
-    return HandlerSnapshot
-            (std::make_unique<DocTypeToHandlerMap::Snapshot>(std::move(handlers)),
-             handlersSize);
-}
-
-namespace {
-
-struct EmptySequence : public vespalib::Sequence<IPersistenceHandler *> {
-    virtual bool valid() const override { return false; }
-    virtual IPersistenceHandler *get() const override { return nullptr; }
-    virtual void next() override { }
-    static EmptySequence::UP make() { return std::make_unique<EmptySequence>(); }
-};
-
+    return HandlerSnapshot(DocTypeToHandlerMap::Snapshot(std::move(handlers)), handlersSize);
 }
 
 HandlerSnapshot
@@ -75,24 +62,7 @@ PersistenceHandlerMap::getHandlerSnapshot(document::BucketSpace bucketSpace) con
     if (itr != _map.end()) {
         return HandlerSnapshot(itr->second.snapshot(), itr->second.size());
     }
-    return HandlerSnapshot(EmptySequence::make(), 0);
-}
-
-namespace {
-
-class SequenceOfOne : public vespalib::Sequence<IPersistenceHandler *> {
-private:
-    bool _done;
-    IPersistenceHandler *_value;
-public:
-    SequenceOfOne(IPersistenceHandler *value) : _done(false), _value(value) {}
-
-    virtual bool valid() const override { return !_done; }
-    virtual IPersistenceHandler *get() const override { return _value; }
-    virtual void next() override { _done = true; }
-    static SequenceOfOne::UP make(IPersistenceHandler *value) { return std::make_unique<SequenceOfOne>(value); }
-};
-
+    return HandlerSnapshot();
 }
 
 }
