@@ -53,7 +53,7 @@
   },
   "deployment": [
     {
-      "name": "dev-aws-us-east-2a",
+      "jobName": "dev-aws-us-east-2a",
       "runs": [
         {
           "id": 1,

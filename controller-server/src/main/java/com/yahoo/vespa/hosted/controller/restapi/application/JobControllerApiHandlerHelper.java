@@ -192,7 +192,7 @@ class JobControllerApiHandlerHelper {
                       return;
 
                   Cursor jobObject = jobsArray.addObject();
-                  jobObject.setString("name", job.type().jobName());
+                  jobObject.setString("jobName", job.type().jobName());
                   toSlime(jobObject.setArray("runs"), runs, baseUriForJobs);
               });
 
