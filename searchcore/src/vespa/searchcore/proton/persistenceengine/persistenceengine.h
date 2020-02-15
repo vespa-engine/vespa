@@ -78,7 +78,7 @@ private:
     using ReadGuard = std::shared_lock<std::shared_timed_mutex>;
     using WriteGuard = std::unique_lock<std::shared_timed_mutex>;
 
-    IPersistenceHandler::SP getHandler(const ReadGuard & guard, document::BucketSpace bucketSpace, const DocTypeName &docType) const;
+    IPersistenceHandler * getHandler(const ReadGuard & guard, document::BucketSpace bucketSpace, const DocTypeName &docType) const;
     HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard) const;
     HandlerSnapshot getHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
     HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard, document::BucketSpace bucketSpace) const;

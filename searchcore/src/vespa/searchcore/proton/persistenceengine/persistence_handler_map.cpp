@@ -20,15 +20,15 @@ PersistenceHandlerMap::putHandler(document::BucketSpace bucketSpace,
     return _map[bucketSpace].putHandler(docType, handler);
 }
 
-IPersistenceHandler::SP
+IPersistenceHandler *
 PersistenceHandlerMap::getHandler(document::BucketSpace bucketSpace,
                                   const DocTypeName &docType) const
 {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
-        return itr->second.getHandler(docType);
+        return itr->second.getHandlerPtr(docType);
     }
-    return IPersistenceHandler::SP();
+    return nullptr;
 }
 
 IPersistenceHandler::SP

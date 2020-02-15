@@ -5,7 +5,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sequence.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <map>
 #include <vector>
 
@@ -18,9 +17,8 @@ namespace proton {
 template <typename T>
 class HandlerMap {
 private:
-    typedef typename std::shared_ptr<T>    HandlerSP;
-    typedef std::map<DocTypeName, HandlerSP> StdMap;
-    typedef typename StdMap::iterator        MapIterator;
+    using HandlerSP = typename std::shared_ptr<T>;
+    using StdMap = std::map<DocTypeName, HandlerSP>;
 
     StdMap _handlers;
 
@@ -83,7 +81,7 @@ public:
     putHandler(const DocTypeName &docTypeNameVer,
                const HandlerSP &handler)
     {
-        if (handler.get() == NULL) {
+        if ( ! handler) {
             throw vespalib::IllegalArgumentException(vespalib::make_string(
                             "Handler is null for docType '%s'",
                             docTypeNameVer.toString().c_str()));
@@ -113,6 +111,20 @@ public:
             return it->second;
         }
         return HandlerSP();
+    }
+
+    /**
+     * Returns the handler for the given document type. If no handler was
+     * registered, this method returns a null pointer.
+     *
+     * @param docType The document type whose handler to return.
+     * @return The registered handler, if any.
+     */
+    T *
+    getHandlerPtr(const DocTypeName &docTypeNameVer) const
+    {
+        const_iterator it = _handlers.find(docTypeNameVer);
+        return (it != _handlers.end()) ? it->second.get() : nullptr;
     }
 
     bool hasHandler(const HandlerSP &handler) const {
