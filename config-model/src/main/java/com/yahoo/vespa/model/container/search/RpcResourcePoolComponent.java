@@ -7,15 +7,12 @@ import com.yahoo.vespa.model.container.xml.BundleMapper;
 
 public class RpcResourcePoolComponent extends Component<RpcResourcePoolComponent, ComponentModel> {
 
-    public RpcResourcePoolComponent(DispatcherComponent dispatcher) {
-        super(toComponentModel(dispatcher));
+    public RpcResourcePoolComponent() {
+        super(toComponentModel());
     }
 
-    private static ComponentModel toComponentModel(DispatcherComponent dispatcherComponent) {
-        String componentId = "rpcresourcepool." + dispatcherComponent.getComponentId().getName();
-        return new ComponentModel(componentId,
-                "com.yahoo.search.dispatch.rpc.RpcResourcePool",
-                BundleMapper.searchAndDocprocBundle,
-                null);
+    private static ComponentModel toComponentModel() {
+        String className = "com.yahoo.search.dispatch.rpc.RpcResourcePool";
+        return new ComponentModel(className, className, BundleMapper.searchAndDocprocBundle, null);
     }
 }

@@ -22,7 +22,11 @@ import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 
 /**
  * Unit tests for SearchCluster. Please use this instead of SearchModelTestCase if possible and
@@ -170,10 +174,19 @@ public class SearchClusterTest {
         assertEquals("com.yahoo.search.dispatch.Dispatcher", dispatcher.getClassId().stringValue());
         assertEquals("j1/component/dispatcher." + cluster, dispatcher.getConfigId());
         DispatchConfig.Builder dispatchConfigBuilder = new DispatchConfig.Builder();
-        model.getConfig(dispatchConfigBuilder, "j1/component/dispatcher." + cluster);
+        model.getConfig(dispatchConfigBuilder, dispatcher.getConfigId());
         assertEquals(host, dispatchConfigBuilder.build().node(0).host());
 
-        assertTrue(dispatcher.getInjectedComponentIds().contains("rpcresourcepool.dispatcher." + cluster));
+        assertTrue(dispatcher.getInjectedComponentIds().contains("com.yahoo.search.dispatch.rpc.RpcResourcePool"));
+
+        Component<?,?> rpcResourcePool = (Component<?, ?>)dispatcher.getChildren().get("com.yahoo.search.dispatch.rpc.RpcResourcePool");
+        assertNotNull(rpcResourcePool);
+        assertEquals("com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getComponentId().stringValue());
+        assertEquals("com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getClassId().stringValue());
+        assertEquals("j1/component/dispatcher." + cluster + "/com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getConfigId());
+        dispatchConfigBuilder = new DispatchConfig.Builder();
+        model.getConfig(dispatchConfigBuilder, rpcResourcePool.getConfigId());
+        assertEquals(host, dispatchConfigBuilder.build().node(0).host());
     }
 
 }
