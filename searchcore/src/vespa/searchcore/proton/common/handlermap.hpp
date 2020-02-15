@@ -115,7 +115,7 @@ public:
 
     /**
      * Returns the handler for the given document type. If no handler was
-     * registered, this method returns an empty shared pointer.
+     * registered, this method returns a null pointer.
      *
      * @param docType The document type whose handler to return.
      * @return The registered handler, if any.
