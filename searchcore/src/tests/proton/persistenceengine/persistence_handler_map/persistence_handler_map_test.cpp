@@ -46,16 +46,24 @@ DummyPersistenceHandler::SP handler_c(std::make_shared<DummyPersistenceHandler>(
 DummyPersistenceHandler::SP handler_a_new(std::make_shared<DummyPersistenceHandler>());
 
 
+
+void
+assertHandler(const IPersistenceHandler::SP & lhs, const IPersistenceHandler * rhs)
+{
+    EXPECT_EQUAL(lhs.get(), rhs);
+}
+
 void
 assertHandler(const IPersistenceHandler::SP &lhs, const IPersistenceHandler::SP &rhs)
 {
     EXPECT_EQUAL(lhs.get(), rhs.get());
 }
 
+template <typename T>
 void
-assertNullHandler(const IPersistenceHandler::SP &handler)
+assertNullHandler(const T & handler)
 {
-    EXPECT_TRUE(handler.get() == nullptr);
+    EXPECT_TRUE(! handler);
 }
 
 void

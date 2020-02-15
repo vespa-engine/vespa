@@ -212,7 +212,7 @@ PersistenceEngine::putHandler(const WriteGuard &, document::BucketSpace bucketSp
 }
 
 
-IPersistenceHandler::SP
+IPersistenceHandler *
 PersistenceEngine::getHandler(const ReadGuard &, document::BucketSpace bucketSpace, const DocTypeName &docType) const
 {
     return _handlers.getHandler(bucketSpace, docType);
@@ -338,7 +338,7 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
         return Result(Result::ErrorType::PERMANENT_ERROR,
                       make_string("Old id scheme not supported in elastic mode (%s)", doc->getId().toString().c_str()));
     }
-    IPersistenceHandler::SP handler = getHandler(rguard, b.getBucketSpace(), docType);
+    IPersistenceHandler * handler = getHandler(rguard, b.getBucketSpace(), docType);
     if (!handler) {
         return Result(Result::ErrorType::PERMANENT_ERROR,
                       make_string("No handler for document type '%s'", docType.toString().c_str()));
@@ -360,7 +360,7 @@ PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, C
                             make_string("Old id scheme not supported in elastic mode (%s)", did.toString().c_str()));
     }
     DocTypeName docType(did.getDocType());
-    IPersistenceHandler::SP handler = getHandler(rguard, b.getBucketSpace(), docType);
+    IPersistenceHandler * handler = getHandler(rguard, b.getBucketSpace(), docType);
     if (!handler) {
         return RemoveResult(Result::ErrorType::PERMANENT_ERROR,
                             make_string("No handler for document type '%s'", docType.toString().c_str()));
@@ -414,7 +414,7 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
         return UpdateResult(Result::ErrorType::PERMANENT_ERROR,
                             make_string("Update operation rejected due to bad id (%s, %s)", upd->getId().toString().c_str(), docType.getName().c_str()));
     }
-    IPersistenceHandler::SP handler = getHandler(rguard, b.getBucketSpace(), docType);
+    IPersistenceHandler * handler = getHandler(rguard, b.getBucketSpace(), docType);
 
     if (handler) {
         TransportLatch latch(1);

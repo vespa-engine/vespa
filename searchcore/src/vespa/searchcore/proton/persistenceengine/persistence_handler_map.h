@@ -55,10 +55,8 @@ public:
     PersistenceHandlerSP putHandler(document::BucketSpace bucketSpace,
                                     const DocTypeName &docType,
                                     const PersistenceHandlerSP &handler);
-    PersistenceHandlerSP removeHandler(document::BucketSpace bucketSpace,
-                                       const DocTypeName &docType);
-    PersistenceHandlerSP getHandler(document::BucketSpace bucketSpace,
-                                    const DocTypeName &docType) const;
+    PersistenceHandlerSP removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType);
+    IPersistenceHandler * getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const;
     HandlerSnapshot getHandlerSnapshot() const;
     HandlerSnapshot getHandlerSnapshot(document::BucketSpace bucketSpace) const;
 };
