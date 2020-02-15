@@ -28,7 +28,6 @@ public:
         PersistenceHandlerSequence::UP _handlers;
         size_t                         _size;
     public:
-        using UP = std::unique_ptr<HandlerSnapshot>;
         HandlerSnapshot(PersistenceHandlerSequence::UP handlers_, size_t size_)
             : _handlers(std::move(handlers_)),
               _size(size_)
@@ -60,8 +59,8 @@ public:
                                        const DocTypeName &docType);
     PersistenceHandlerSP getHandler(document::BucketSpace bucketSpace,
                                     const DocTypeName &docType) const;
-    HandlerSnapshot::UP getHandlerSnapshot() const;
-    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
+    HandlerSnapshot getHandlerSnapshot() const;
+    HandlerSnapshot getHandlerSnapshot(document::BucketSpace bucketSpace) const;
 };
 
 }

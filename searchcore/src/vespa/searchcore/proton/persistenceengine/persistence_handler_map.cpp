@@ -42,7 +42,7 @@ PersistenceHandlerMap::removeHandler(document::BucketSpace bucketSpace,
     return IPersistenceHandler::SP();
 }
 
-HandlerSnapshot::UP
+HandlerSnapshot
 PersistenceHandlerMap::getHandlerSnapshot() const
 {
     std::vector<IPersistenceHandler::SP> handlers;
@@ -52,7 +52,7 @@ PersistenceHandlerMap::getHandlerSnapshot() const
         }
     }
     size_t handlersSize = handlers.size();
-    return std::make_unique<HandlerSnapshot>
+    return HandlerSnapshot
             (std::make_unique<DocTypeToHandlerMap::Snapshot>(std::move(handlers)),
              handlersSize);
 }
@@ -68,14 +68,14 @@ struct EmptySequence : public vespalib::Sequence<IPersistenceHandler *> {
 
 }
 
-HandlerSnapshot::UP
+HandlerSnapshot
 PersistenceHandlerMap::getHandlerSnapshot(document::BucketSpace bucketSpace) const
 {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
-        return std::make_unique<HandlerSnapshot>(itr->second.snapshot(), itr->second.size());
+        return HandlerSnapshot(itr->second.snapshot(), itr->second.size());
     }
-    return std::make_unique<HandlerSnapshot>(EmptySequence::make(), 0);
+    return HandlerSnapshot(EmptySequence::make(), 0);
 }
 
 namespace {
