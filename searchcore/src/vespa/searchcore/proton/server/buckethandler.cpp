@@ -116,7 +116,7 @@ BucketHandler::handleGetBucketInfo(const Bucket &bucket,
     // Called by SPI thread.
     // BucketDBOwner ensures synchronization between SPI thread and
     // master write thread in document database.
-    BucketInfo bucketInfo = _ready->getBucketDB().takeGuard()->cachedGet(bucket);
+    BucketInfo bucketInfo = _ready->getBucketDB().takeGuard()->cachedGetBucketInfo(bucket);
     LOG(spam, "handleGetBucketInfo(%s): %s",
         bucket.toString().c_str(), bucketInfo.toString().c_str());
     resultHandler.handle(BucketInfoResult(bucketInfo));
