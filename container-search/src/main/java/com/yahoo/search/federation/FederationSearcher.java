@@ -78,7 +78,6 @@ public class FederationSearcher extends ForkingSearcher {
     /** The name of the query property containing the source name added to the query to each source by this */
     public final static CompoundName SOURCENAME = new CompoundName("sourceName");
     public final static CompoundName PROVIDERNAME = new CompoundName("providerName");
-
     /** Logging field name constants */
     public static final String LOG_COUNT_PREFIX = "count_";
 
