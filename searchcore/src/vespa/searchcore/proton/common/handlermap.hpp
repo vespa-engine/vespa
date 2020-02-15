@@ -164,7 +164,7 @@ public:
     std::unique_ptr<Snapshot>
     snapshot() const
     {
-        return std::unique_ptr<Snapshot>(new Snapshot(_handlers));
+        return std::make_unique<Snapshot>(_handlers);
     }
 
 // we want to use snapshots rather than direct iteration to reduce locking;

@@ -79,9 +79,9 @@ private:
     using WriteGuard = std::unique_lock<std::shared_timed_mutex>;
 
     IPersistenceHandler::SP getHandler(const ReadGuard & guard, document::BucketSpace bucketSpace, const DocTypeName &docType) const;
-    HandlerSnapshot::UP getHandlerSnapshot(const WriteGuard & guard) const;
-    HandlerSnapshot::UP getHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
-    HandlerSnapshot::UP getHandlerSnapshot(const WriteGuard & guard, document::BucketSpace bucketSpace) const;
+    HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard) const;
+    HandlerSnapshot getHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
+    HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard, document::BucketSpace bucketSpace) const;
 
     void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
     ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;

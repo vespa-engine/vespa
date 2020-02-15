@@ -59,10 +59,10 @@ assertNullHandler(const IPersistenceHandler::SP &handler)
 }
 
 void
-assertSnapshot(const std::vector<IPersistenceHandler::SP> &exp, const HandlerSnapshot::UP &snapshot)
+assertSnapshot(const std::vector<IPersistenceHandler::SP> &exp, HandlerSnapshot snapshot)
 {
-    EXPECT_EQUAL(exp.size(), snapshot->size());
-    auto &sequence = snapshot->handlers();
+    EXPECT_EQUAL(exp.size(), snapshot.size());
+    auto &sequence = snapshot.handlers();
     for (size_t i = 0; i < exp.size() && sequence.valid(); ++i, sequence.next()) {
         EXPECT_EQUAL(exp[i].get(), sequence.get());
     }
