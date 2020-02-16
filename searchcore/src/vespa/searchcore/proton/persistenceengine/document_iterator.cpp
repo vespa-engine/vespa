@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_iterator.h"
+#include <vespa/searchcore/proton/common/cachedselect.h>
+#include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/document/select/gid_filter.h>
 #include <vespa/document/select/node.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -40,13 +42,6 @@ DocEntry *createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ss
 }
 
 } // namespace proton::<unnamed>
-
-bool
-DocumentIterator::useDocumentSelection() const
-{
-    return (!_metaOnly &&
-            !_selection.getDocumentSelection().getDocumentSelection().empty());
-}
 
 bool
 DocumentIterator::checkMeta(const search::DocumentMetaData &meta) const

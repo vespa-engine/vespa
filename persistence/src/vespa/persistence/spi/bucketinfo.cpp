@@ -3,8 +3,7 @@
 #include "bucketinfo.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 BucketInfo::BucketInfo()
     : _checksum(0),
@@ -73,5 +72,4 @@ std::ostream& operator<<(std::ostream& out, const BucketInfo& info) {
     return out << info.toString();
 }
 
-} // spi
-} // storage
+}

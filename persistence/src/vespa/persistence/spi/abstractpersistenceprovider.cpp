@@ -6,9 +6,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/document.h>
 
-namespace storage {
-
-namespace spi {
+namespace storage::spi {
 
 UpdateResult
 AbstractPersistenceProvider::update(const Bucket& bucket, Timestamp ts,
@@ -63,8 +61,6 @@ AbstractPersistenceProvider::move(const Bucket& source, PartitionId target, Cont
     spi::Bucket to(source.getBucket(), spi::PartitionId(target));
 
     return join(source, source, to, context);
-}
-
 }
 
 }

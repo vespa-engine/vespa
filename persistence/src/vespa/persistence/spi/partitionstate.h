@@ -16,8 +16,7 @@
 
 #include <persistence/spi/types.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 struct PartitionState {
     enum State { UP, DOWN };
@@ -49,6 +48,4 @@ public:
     PartitionId size() const { return PartitionId(_states.size()); }
 };
 
-} // spi
-} // storage
-
+}

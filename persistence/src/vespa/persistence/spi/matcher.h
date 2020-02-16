@@ -8,12 +8,11 @@
 
 #pragma once
 
-#include <vespa/persistence/spi/docentry.h>
+#include "docentry.h"
 #include <persistence/spi/documentsubset.h>
 #include <persistence/spi/types.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 class Matcher {
     DocumentSubset _subset;
@@ -37,6 +36,4 @@ struct AllMatcher : public Matcher {
     bool match(const DocEntry&) const { return true; }
 };
 
-} // spi
-} // storage
-
+}
