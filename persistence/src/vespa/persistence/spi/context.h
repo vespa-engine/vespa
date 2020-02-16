@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include <persistence/spi/types.h>
 #include "read_consistency.h"
 #include <vespa/vespalib/trace/trace.h>
 
