@@ -1688,12 +1688,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteInstance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
-        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-                ? Optional.empty()
-                : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
         controller.applications().deleteInstance(id.instance(instanceName));
-        if (controller.applications().requireApplication(id).instances().isEmpty())
+        if (controller.applications().requireApplication(id).instances().isEmpty()) {
+            Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+                                                ? Optional.empty()
+                                                : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
             controller.applications().deleteApplication(id, credentials);
+        }
         return new MessageResponse("Deleted instance " + id.instance(instanceName).toFullString());
     }
 
