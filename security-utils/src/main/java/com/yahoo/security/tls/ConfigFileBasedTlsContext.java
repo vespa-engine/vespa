@@ -12,7 +12,6 @@ import com.yahoo.security.tls.policy.AuthorizedPeers;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
-import javax.net.ssl.X509ExtendedTrustManager;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.WeakReference;
@@ -110,9 +109,10 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                                                              MutableX509KeyManager mutableKeyManager,
                                                              PeerAuthentication peerAuthentication) {
 
+        HostnameVerification hostnameVerification = options.isHostnameValidationDisabled() ? HostnameVerification.DISABLED : HostnameVerification.ENABLED;
         PeerAuthorizerTrustManager authorizerTrustManager = options.getAuthorizedPeers()
-                .map(authorizedPeers -> new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
-                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)));
+                .map(authorizedPeers -> new PeerAuthorizerTrustManager(authorizedPeers, mode, hostnameVerification, mutableTrustManager))
+                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, hostnameVerification, mutableTrustManager));
         SSLContext sslContext = new SslContextBuilder()
                 .withKeyManager(mutableKeyManager)
                 .withTrustManager(authorizerTrustManager)
