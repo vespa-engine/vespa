@@ -9,6 +9,7 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 
 import java.io.FileWriter;
+import java.io.Writer;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -25,28 +26,20 @@ public class Telegraf extends AbstractComponent {
     public Telegraf(TelegrafRegistry telegrafRegistry, TelegrafConfig telegrafConfig) {
         this.telegrafRegistry = telegrafRegistry;
         telegrafRegistry.addInstance(this);
-        writeConfig(telegrafConfig);
+        writeConfig(telegrafConfig, uncheck(() -> new FileWriter(TELEGRAF_CONFIG_PATH)));
         restartTelegraf();
     }
 
-    private void writeConfig(TelegrafConfig telegrafConfig) {
+    protected static void writeConfig(TelegrafConfig telegrafConfig, Writer writer) {
         VelocityEngine velocityEngine = new VelocityEngine();
         velocityEngine.init();
         Template template = velocityEngine.getTemplate(TELEGRAF_CONFIG_TEMPLATE_PATH);
-
         VelocityContext context = new VelocityContext();
         context.put("intervalSeconds", telegrafConfig.intervalSeconds());
-        context.put("cloudwatchRegion", telegrafConfig.cloudWatch().region());
-        context.put("cloudwatchNamespace", telegrafConfig.cloudWatch().namespace());
-        context.put("cloudwatchSecretKey", telegrafConfig.cloudWatch().secretKeyName());
-        context.put("cloudwatchAccessKey", telegrafConfig.cloudWatch().accessKeyName());
-        context.put("hasCloudwatchProfile", !telegrafConfig.cloudWatch().profile().isBlank());
-        context.put("cloudwatchProfile", telegrafConfig.cloudWatch().profile());
-        context.put("isHosted", !telegrafConfig.cloudWatch().secretKeyName().isBlank());
         context.put("vespaConsumer", telegrafConfig.vespa().consumer());
+        context.put("cloudwatchPlugins", telegrafConfig.cloudWatch());
         // TODO: Add node cert if hosted
 
-        FileWriter writer = uncheck(() -> new FileWriter(TELEGRAF_CONFIG_PATH));
         template.merge(context, writer);
         uncheck(writer::close);
     }

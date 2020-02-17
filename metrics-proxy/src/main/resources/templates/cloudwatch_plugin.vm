@@ -9,22 +9,26 @@
   flush_jitter = "0s"
   precision = ""
 
+#foreach( $cloudwatch in $cloudwatchPlugins )
 # Configuration for AWS CloudWatch output.
 [[outputs.cloudwatch]]
-  region = "$cloudwatchRegion"
-  namespace = "$cloudwatchNamespace"
-#if( $isHosted )
-  access_key = "$cloudwatchSecretKey"
-  secret_key = "$cloudwatchAccessKey"
-#elseif( $hasCloudwatchProfile )
-  profile = "$cloudwatchProfile"
+  region = "$cloudwatch.region()"
+  namespace = "$cloudwatch.namespace()"
+#if( $cloudwatch.accessKeyName() != "" )
+  access_key = "$cloudwatch.accessKeyName()"
+  secret_key = "$cloudwatch.secretKeyName()"
+#elseif( $cloudwatch.profile() != "" )
+  profile = "$cloudwatch.profile()"
 #end
 
+#end
 # Configuration for Vespa input plugin
 [[inputs.vespa]]
   url = "http://localhost:19092/metrics/v2/values?consumer=$vespaConsumer"
+#* TODO: Add node cert if hosted
 #if( $isHosted )
   tls_cert = "${VESPA_CERTIFICATE_PATH}"
   tls_key = "${VESPA_KEY_PATH}"
   insecure_skip_verify = true
 #end
+*###
