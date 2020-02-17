@@ -13,6 +13,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
@@ -25,7 +26,9 @@ import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
@@ -224,6 +227,13 @@ public class InternalStepRunner implements StepRunner {
                                        Instant startTime, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
+            if (prepareResponse.log != null)
+                logger.logAll(prepareResponse.log.stream()
+                                                 .map(entry -> new LogEntry(0, // Sequenced by BufferedLogStore.
+                                                                            Instant.ofEpochMilli(entry.time),
+                                                                            LogEntry.typeOf(LogLevel.parse(entry.level)),
+                                                                            entry.message))
+                                                 .collect(toList()));
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {
                 List<String> messages = new ArrayList<>();
                 messages.add("Deploy failed due to non-compatible changes that require re-feed.");
@@ -237,10 +247,6 @@ public class InternalStepRunner implements StepRunner {
                                                                  .filter(action -> ! action.allowed)
                                                                  .flatMap(action -> action.messages.stream())
                                                                  .forEach(messages::add);
-                messages.add("Details:");
-                prepareResponse.log.stream()
-                                   .map(entry -> entry.message)
-                                   .forEach(messages::add);
                 logger.log(messages);
                 return Optional.of(deploymentFailed);
             }
@@ -828,6 +834,10 @@ public class InternalStepRunner implements StepRunner {
 
         private void log(String... messages) {
             log(List.of(messages));
+        }
+
+        private void logAll(List<LogEntry> messages) {
+            controller.jobController().log(id, step, messages);
         }
 
         private void log(List<String> messages) {
