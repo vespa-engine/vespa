@@ -188,12 +188,6 @@ public class Flags {
             "Whether to disable CM3.", "Takes effect on next host admin tick",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_4443_UPSTREAM = defineFeatureFlag(
-            "use-4443-upstream", false,
-            "Use port 4443 for nginx upstream",
-            "Takes effect when routing container asks for new config",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
             "generate-l4-routing-config", false,
             "Whether routing nodes should generate L4 routing config",
