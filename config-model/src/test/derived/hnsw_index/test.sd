@@ -1,0 +1,13 @@
+search test {
+  document test {
+    field t1 type tensor(x[128]) {
+      indexing: attribute | index
+      index {
+        hnsw {
+          max-links-per-node: 32
+          neighbors-to-explore-at-insert: 300
+        }
+      }
+    }
+  }
+}

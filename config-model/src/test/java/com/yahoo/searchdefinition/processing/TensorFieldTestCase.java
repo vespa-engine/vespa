@@ -1,11 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
+
+import static com.yahoo.searchdefinition.SearchBuilder.createFromString;
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -16,7 +21,7 @@ public class TensorFieldTestCase {
     @Test
     public void requireThatTensorFieldCannotBeOfCollectionType() throws ParseException {
         try {
-            SearchBuilder.createFromString(getSd("field f1 type array<tensor(x{})> {}"));
+            createFromString(getSd("field f1 type array<tensor(x{})> {}"));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
@@ -28,11 +33,12 @@ public class TensorFieldTestCase {
     @Test
     public void requireThatTensorFieldCannotBeIndexField() throws ParseException {
         try {
-            SearchBuilder.createFromString(getSd("field f1 type tensor(x{}) { indexing: index }"));
+            createFromString(getSd("field f1 type tensor(x{}) { indexing: index }"));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'f1': A field of type 'tensor' cannot be specified as an 'index' field.",
+            assertEquals("For search 'test', field 'f1': A tensor of type 'tensor(x{})' does not support having an 'index'. " +
+                            "Currently, only tensors with 1 indexed dimension supports that.",
                          e.getMessage());
         }
     }
@@ -40,7 +46,7 @@ public class TensorFieldTestCase {
     @Test
     public void requireThatTensorAttributeCannotBeFastSearch() throws ParseException {
         try {
-            SearchBuilder.createFromString(getSd("field f1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }"));
+            createFromString(getSd("field f1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }"));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
@@ -51,7 +57,7 @@ public class TensorFieldTestCase {
     @Test
     public void requireThatIllegalTensorTypeSpecThrowsException() throws ParseException {
         try {
-            SearchBuilder.createFromString(getSd("field f1 type tensor(invalid) { indexing: attribute }"));
+            createFromString(getSd("field f1 type tensor(invalid) { indexing: attribute }"));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
@@ -59,8 +65,67 @@ public class TensorFieldTestCase {
         }
     }
 
+    @Test
+    public void hnsw_index_is_default_turned_off() throws ParseException {
+        var attr = createFromString(getSd("field t1 type tensor(x[64]) { indexing: attribute }"))
+                .getSearch().getAttribute("t1");
+        assertFalse(attr.hnswIndexParams().isPresent());
+    }
+
+    @Test
+    public void hnsw_index_gets_default_parameters_if_not_specified() throws ParseException {
+        assertHnswIndexParams("", 16, 200);
+        assertHnswIndexParams("index: hnsw", 16, 200);
+    }
+
+    @Test
+    public void hnsw_index_parameters_can_be_specified() throws ParseException {
+        assertHnswIndexParams("index { hnsw { max-links-per-node: 32 } }", 32, 200);
+        assertHnswIndexParams("index { hnsw { neighbors-to-explore-at-insert: 300 } }", 16, 300);
+        assertHnswIndexParams(joinLines("index {",
+                "  hnsw {",
+                "    max-links-per-node: 32",
+                "    neighbors-to-explore-at-insert: 300",
+                "  }",
+                "}"),
+                32, 300);
+    }
+
+    @Test
+    public void tensor_with_hnsw_index_must_be_an_attribute() throws ParseException {
+        try {
+            createFromString(getSd("field t1 type tensor(x[64]) { indexing: index }"));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("For search 'test', field 't1': A tensor that has an index must also be an attribute.", e.getMessage());
+        }
+    }
+
     private static String getSd(String field) {
-        return "search test {\n document test {\n" + field + "}\n}\n";
+        return joinLines("search test {",
+                "  document test {",
+                "    " + field,
+                "  }",
+                "}");
+    }
+
+    private void assertHnswIndexParams(String indexSpec, int maxLinksPerNode, int neighborsToExploreAtInsert) throws ParseException {
+        var sd = getSdWithIndexSpec(indexSpec);
+        System.out.println(sd);
+        var search = createFromString(sd).getSearch();
+        var attr = search.getAttribute("t1");
+        var params = attr.hnswIndexParams();
+        assertTrue(params.isPresent());
+        assertEquals(maxLinksPerNode, params.get().maxLinksPerNode());
+        assertEquals(neighborsToExploreAtInsert, params.get().neighborsToExploreAtInsert());
+    }
+
+    private String getSdWithIndexSpec(String indexSpec) {
+        return getSd(joinLines("field t1 type tensor(x[64]) {",
+                "  indexing: attribute | index",
+                "  " + indexSpec,
+                "}"));
     }
 
     private void assertStartsWith(String prefix, String string) {

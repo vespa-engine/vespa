@@ -66,6 +66,8 @@ public final class Attribute implements Cloneable, Serializable {
     /** This is set if the type of this is REFERENCE */
     private final Optional<StructuredDataType> referenceDocumentType;
 
+    private Optional<HnswIndexParams> hnswIndexParams;
+
     private boolean isPosition = false;
     private final Sorting sorting = new Sorting();
 
@@ -150,6 +152,7 @@ public final class Attribute implements Cloneable, Serializable {
         setCollectionType(collectionType);
         this.tensorType = tensorType;
         this.referenceDocumentType = referenceDocumentType;
+        this.hnswIndexParams = Optional.empty();
     }
 
     public Attribute convertToArray() {
@@ -194,6 +197,7 @@ public final class Attribute implements Cloneable, Serializable {
     public double densePostingListThreshold() { return densePostingListThreshold; }
     public Optional<TensorType> tensorType() { return tensorType; }
     public Optional<StructuredDataType> referenceDocumentType() { return referenceDocumentType; }
+    public Optional<HnswIndexParams> hnswIndexParams() { return hnswIndexParams; }
 
     public Sorting getSorting() { return sorting; }
 
@@ -217,6 +221,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setUpperBound(long upperBound)                   { this.upperBound = upperBound; }
     public void setDensePostingListThreshold(double threshold)   { this.densePostingListThreshold = threshold; }
     public void setTensorType(TensorType tensorType)             { this.tensorType = Optional.of(tensorType); }
+    public void setHnswIndexParams(HnswIndexParams params)       { this.hnswIndexParams = Optional.of(params); }
 
     public String         getName()                     { return name; }
     public Type           getType()                     { return type; }
@@ -335,7 +340,7 @@ public final class Attribute implements Cloneable, Serializable {
     public int hashCode() {
         return Objects.hash(
                 name, type, collectionType, sorting, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
-                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType);
+                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType, hnswIndexParams);
     }
 
     @Override
@@ -362,6 +367,7 @@ public final class Attribute implements Cloneable, Serializable {
         if ( ! this.sorting.equals(other.sorting)) return false;
         if (!this.tensorType.equals(other.tensorType)) return false;
         if (!this.referenceDocumentType.equals(other.referenceDocumentType)) return false;
+        if (!this.hnswIndexParams.equals(other.hnswIndexParams)) return false;
 
         return true;
     }
