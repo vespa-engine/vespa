@@ -32,7 +32,7 @@
   },
   "deployment": [
     {
-      "name": "dev-us-east-1",
+      "jobName": "dev-us-east-1",
       "runs": [
         {
           "id": 1,
