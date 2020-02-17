@@ -37,7 +37,7 @@ public class DockerHostCapacityTest {
 
     @Before
     public void setup() {
-        doAnswer(invocation -> invocation.getArguments()[0]).when(hostResourcesCalculator).availableCapacityOf(any());
+        doAnswer(invocation -> invocation.getArguments()[1]).when(hostResourcesCalculator).availableCapacityOf(any(), any());
 
         // Create flavors
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
@@ -95,9 +95,9 @@ public class DockerHostCapacityTest {
                      capacity.freeCapacityOf(host3, false));
 
         doAnswer(invocation -> {
-            NodeResources totalHostResources = (NodeResources) invocation.getArguments()[0];
+            NodeResources totalHostResources = (NodeResources) invocation.getArguments()[1];
             return totalHostResources.subtract(new NodeResources(1, 2, 3, 0.5, NodeResources.DiskSpeed.any));
-        }).when(hostResourcesCalculator).availableCapacityOf(any());
+        }).when(hostResourcesCalculator).availableCapacityOf(any(), any());
 
         assertEquals(new NodeResources(4, 2, 5, 1.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
                      capacity.freeCapacityOf(host1, false));
