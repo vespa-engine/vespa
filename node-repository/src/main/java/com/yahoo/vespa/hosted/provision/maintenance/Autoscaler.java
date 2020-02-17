@@ -10,14 +10,10 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeMetricsDb;
 
-import java.math.BigDecimal;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,9 +23,11 @@ import java.util.stream.Collectors;
  */
 public class Autoscaler extends Maintainer {
 
+    private static final int minimumMeasurements = 1000;
     private static final double idealRatioLowWatermark = 0.75;
     private static final double idealRatioHighWatermark = 1.25;
 
+    // We only depend on the ratios between these values
     private static final double cpuUnitCost = 12.0;
     private static final double memoryUnitCost = 1.2;
     private static final double diskUnitCost = 0.045;
@@ -47,44 +45,36 @@ public class Autoscaler extends Maintainer {
 
     @Override
     protected void maintain() {
-        if (nodeRepository().zone().environment().isTest()) return;
+        if ( ! nodeRepository().zone().environment().isProduction()) return;
 
         nodesByApplication().forEach((applicationId, nodes) -> autoscale(applicationId, nodes));
     }
 
     private void autoscale(ApplicationId applicationId, List<Node> applicationNodes) {
         nodesByCluster(applicationNodes).forEach((clusterSpec, clusterNodes) -> {
-            Optional<Pair<Integer, NodeResources>> target = autoscaleTo(applicationId, clusterSpec, clusterNodes);
-            if (target.isPresent())
-                log.info("Autoscale: Application " + applicationId + " cluster " + clusterSpec +
-                         " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
-                         " to " +   target.get().getFirst() + " * " + target.get().getSecond());
+            Optional<ClusterResources> target = autoscaleTo(applicationId, clusterSpec, clusterNodes);
+            target.ifPresent(t -> log.info("Autoscale: Application " + applicationId + " cluster " + clusterSpec +
+                                           " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
+                                           " to " + t.count() + " * " + t.resources()));
         });
     }
 
-    private Optional<Pair<Integer, NodeResources>> autoscaleTo(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
+    private Optional<ClusterResources> autoscaleTo(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
         double targetTotalCpu =    targetAllocation(Resource.cpu,    applicationId, cluster, clusterNodes);
         double targetTotalMemory = targetAllocation(Resource.memory, applicationId, cluster, clusterNodes);
         double targetTotalDisk =   targetAllocation(Resource.disk,   applicationId, cluster, clusterNodes);
 
-        int count = clusterNodes.size();
         NodeResources currentResources = clusterNodes.get(0).flavor().resources();
 
-        NodeResources targetResourcesAtCount =
-                targetResources(count, targetTotalCpu, targetTotalMemory, targetTotalDisk, currentResources);
-        if (targetResourcesAtCount.equals(currentResources)) return Optional.empty();
-
-        // Consider 3 options: Maintain current node count, increase by 1, decrease by 1
-        NodeResources targetResourcesAtCountPlus1 =
-                targetResources(count + 1, targetTotalCpu, targetTotalMemory, targetTotalDisk, currentResources);
-        NodeResources targetResourcesAtCountMinus1 =
-                targetResources(count + 1, targetTotalCpu, targetTotalMemory, targetTotalDisk, currentResources);
-
-
-
-        NodeResources practicalTargetResourcesAtCount =       findPracticalTargetNodeResources(targetResourcesAtCount, count);
-        NodeResources practicalTargetResourcesAtCountPlus1 =  findPracticalTargetNodeResources(targetResourcesAtCountPlus1, count + 1);
-        NodeResources practicalTargetResourcesAtCountMinus1 = findPracticalTargetNodeResources(targetResourcesAtCountMinus1, count - 1);
+        Optional<Pair<ClusterResources, Double>> bestTarget = Optional.empty();
+        for (int targetCount = minimumNodesPerCluster; targetCount <= maximumNodesPerCluster; targetCount++ ) {
+            NodeResources targetResources = targetResources(targetCount, targetTotalCpu, targetTotalMemory, targetTotalDisk, currentResources);
+            var target = considerTarget(targetResources, targetCount);
+            if (target.isEmpty()) continue;
+            if (target.get().getSecond() < bestTarget.get().getSecond()) // second is the waste
+                bestTarget = target;
+        }
+        return bestTarget.map(target -> target.getFirst());
     }
 
     /**
@@ -92,15 +82,19 @@ public class Autoscaler extends Maintainer {
      * as well as a measure of the waste incurred by using these resources to satisfy the given target,
      * or empty if this target is illegal
      */
-    private Optional<Pair<NodeResources, Double>> considerTarget(NodeResources resources, int targetCount) {
-        if (targetCount < minimumNodesPerCluster || targetCount > maximumNodesPerCluster) return Optional.empty();
+    private Optional<Pair<ClusterResources, Double>> considerTarget(NodeResources targetResources, int targetCount) {
 
-        NodeResources practicalResources = findPracticalResources(resources);
-        if ( ! practicalResources.satisfies(resources)) return Optional.empty();
+        NodeResources effectiveResources = findEffectiveResources(targetResources);
+        int effectiveCount = targetCount + 1; // need one extra node for redundancy
+
+        // Verify invariants - not expected to fail
+        if ( ! effectiveResources.satisfies(targetResources)) return Optional.empty();
+        if (effectiveCount < minimumNodesPerCluster || effectiveCount > maximumNodesPerCluster) return Optional.empty();
 
 
     }
 
+    /** Convert the given resources to resources having the given total values divided by a node count */
     private NodeResources targetResources(int nodeCount,
                                           double targetTotalCpu, double targetTotalMemory, double targetTotalDisk,
                                           NodeResources currentResources) {
@@ -114,19 +108,17 @@ public class Autoscaler extends Maintainer {
     private double targetAllocation(Resource resource, ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
         double currentAllocation = resource.valueFrom(clusterNodes.get(0).flavor().resources()) * clusterNodes.size();
 
-        // TODO: Scaling window is cluster type dependent
-        List<Measurement> measurements = metricsDb.getSince(nodeRepository().clock().instant().minus(scalingWindow),
+        List<Measurement> measurements = metricsDb.getSince(nodeRepository().clock().instant().minus(scalingWindow(cluster.type())),
                                                             resource.metric(),
                                                             applicationId,
                                                             cluster);
-        measurements = keepFromNodes(clusterNodes, measurements); // Disregard nodes currently not in cluster
         if (measurements.size() < minimumMeasurements) return currentAllocation;
-        // TODO: Return here if there was a change to the allocations in this cluster (or better: The entire app) in the last N seconds
-        // TODO: Here we assume that enough measurements --> measurements will be across nodes. Is this sufficient?
+        if ( ! nodesIn(measurements).equals(clusterNodes)); // Regulate only when all nodes are measured and no others
+        // TODO: Bail out if allocations have changed
 
         double averageLoad = average(measurements);
         double idealRatio = 1 + (averageLoad - resource.idealAverageLoad() / resource.idealAverageLoad());
-        if (idealRatio > idealRatioLowWatermark && idealRatio < idealRatioHighWatermark) currentAllocation;
+        if (idealRatio > idealRatioLowWatermark && idealRatio < idealRatioHighWatermark) return currentAllocation;
         return currentAllocation * idealRatio;
     }
 
@@ -139,25 +131,54 @@ public class Autoscaler extends Maintainer {
         return applicationNodes.stream().collect(Collectors.groupingBy(n -> n.allocation().get().membership().cluster()));
     }
 
+    /** The duration of the window we need to consider to make a scaling decision */
+    private Duration scalingWindow(ClusterSpec.Type clusterType) {
+        if (clusterType.isContent()) return Duration.ofHours(12); // Ideally we should use observed redistribution time
+        return Duration.ofMinutes(3); // Ideally we should take node startup time into account
+    }
+
     private enum Resource {
 
         cpu {
             String metric() { return "cpu"; } // TODO: Full metric name
             double idealAverageLoad() { return 0.2; }
+            double valueFrom(NodeResources resources) { return resources.vcpu(); }
         },
 
         memory {
             String metric() { return "memory"; } // TODO: Full metric name
             double idealAverageLoad() { return 0.7; }
+            double valueFrom(NodeResources resources) { return resources.memoryGb(); }
         },
 
         disk {
             String metric() { return "disk"; } // TODO: Full metric name
             double idealAverageLoad() { return 0.7; }
+            double valueFrom(NodeResources resources) { return resources.diskGb(); }
         };
 
         abstract String metric();
         abstract double idealAverageLoad();
+        abstract double valueFrom(NodeResources resources);
+
+    }
+
+    /** A secription of the resources of a cluster */
+    private static class ClusterResources {
+
+        /** The node count in the cluster */
+        private final int count;
+
+        /** The resources of each node in the cluster */
+        private final NodeResources resources;
+
+        public ClusterResources(int count, NodeResources resources) {
+            this.count = count;
+            this.resources = resources;
+        }
+
+        public int count() { return count; }
+        public NodeResources resources() { return resources; }
 
     }
 
