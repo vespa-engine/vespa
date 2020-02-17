@@ -114,9 +114,10 @@ public class OrchestratorImpl implements Orchestrator {
                 .filter(serviceInstance -> hostName.equals(serviceInstance.hostName()))
                 .collect(Collectors.toList());
 
+        HostInfo hostInfo = statusService.getHostInfo(applicationInstance.reference(), hostName);
         HostStatus hostStatus = getNodeStatus(applicationInstance.reference(), hostName);
 
-        return new Host(hostName, hostStatus, applicationInstance.reference(), serviceInstances);
+        return new Host(hostName, hostInfo, applicationInstance.reference(), serviceInstances);
     }
 
     @Override

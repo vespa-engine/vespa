@@ -31,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -72,7 +73,8 @@ public class HostResource implements HostApi {
 
             return new GetHostResponse(
                     host.getHostName().s(),
-                    host.getHostStatus().name(),
+                    host.getHostInfo().status().name(),
+                    host.getHostInfo().suspendedSince().map(Instant::toString).orElse(null),
                     applicationUri.toString(),
                     hostServices);
         } catch (UncheckedTimeoutException e) {

@@ -14,6 +14,8 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
+import com.yahoo.vespa.orchestrator.restapi.wire.WireHostInfo;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.manager.MonitorManager;
@@ -29,9 +31,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
@@ -82,11 +85,21 @@ public class InstanceResource {
                 .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build()));
 
         HostInfos hostInfos = statusService.getHostInfosByApplicationResolver().apply(applicationInstance.reference());
-        Map<HostName, String> hostStatusMap = getHostsUsedByApplicationInstance(applicationInstance)
-                .stream()
-                .collect(Collectors.toMap(hostName -> hostName,
-                                          hostName -> hostInfos.getOrNoRemarks(hostName).status().asString()));
+        TreeMap<HostName, WireHostInfo> hostStatusMap =
+                getHostsUsedByApplicationInstance(applicationInstance)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                hostName -> hostName,
+                                hostName -> hostInfoToWire(hostInfos.getOrNoRemarks(hostName)),
+                                (u, v) -> { throw new IllegalStateException(); },
+                                TreeMap::new));
         return InstanceStatusResponse.create(applicationInstance, hostStatusMap);
+    }
+
+    private WireHostInfo hostInfoToWire(HostInfo hostInfo) {
+        String hostStatusString = hostInfo.status().asString();
+        String suspendedSinceUtcOrNull = hostInfo.suspendedSince().map(Instant::toString).orElse(null);
+        return new WireHostInfo(hostStatusString, suspendedSinceUtcOrNull);
     }
 
     @GET
