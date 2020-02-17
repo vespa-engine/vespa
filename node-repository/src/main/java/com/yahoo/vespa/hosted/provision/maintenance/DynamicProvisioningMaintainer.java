@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
@@ -44,13 +45,15 @@ public class DynamicProvisioningMaintainer extends Maintainer {
     private static final ApplicationId preprovisionAppId = ApplicationId.from("hosted-vespa", "tenant-host", "preprovision");
 
     private final HostProvisioner hostProvisioner;
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabled;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
-    DynamicProvisioningMaintainer(NodeRepository nodeRepository, Duration interval,
-                                  HostProvisioner hostProvisioner, FlagSource flagSource) {
+    DynamicProvisioningMaintainer(NodeRepository nodeRepository, Duration interval, HostProvisioner hostProvisioner,
+                                  HostResourcesCalculator hostResourcesCalculator, FlagSource flagSource) {
         super(nodeRepository, interval);
         this.hostProvisioner = hostProvisioner;
+        this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabled = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
@@ -112,7 +115,7 @@ public class DynamicProvisioningMaintainer extends Maintainer {
             NodeResources resources = it.next();
             removableHosts.stream()
                     .filter(host -> NodePrioritizer.ALLOCATABLE_HOST_STATES.contains(host.state()))
-                    .filter(host -> host.flavor().resources().satisfies(resources))
+                    .filter(host -> hostResourcesCalculator.availableCapacityOf(host.flavor().name(), host.flavor().resources()).satisfies(resources))
                     .min(Comparator.comparingInt(n -> n.flavor().cost()))
                     .ifPresent(host -> {
                         removableHosts.remove(host);

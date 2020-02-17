@@ -26,9 +26,11 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -49,6 +51,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -64,11 +67,12 @@ public class DynamicProvisioningMaintainerTest {
 
     private final HostProvisionerTester tester = new HostProvisionerTester();
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
+    private final HostResourcesCalculator hostResourcesCalculator = mock(HostResourcesCalculator.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
             .withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true)
             .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), PreprovisionCapacity.class);
     private final DynamicProvisioningMaintainer maintainer = new DynamicProvisioningMaintainer(
-            tester.nodeRepository, Duration.ofDays(1), hostProvisioner, flagSource);
+            tester.nodeRepository, Duration.ofDays(1), hostProvisioner, hostResourcesCalculator, flagSource);
 
     @Test
     public void delegates_to_host_provisioner_and_writes_back_result() {
@@ -127,7 +131,7 @@ public class DynamicProvisioningMaintainerTest {
 
     @Test
     public void provision_deficit_and_deprovision_excess() {
-        flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new PreprovisionCapacity(1, 3, 2, 1), new PreprovisionCapacity(2, 3, 2, 2)), PreprovisionCapacity.class);
+        flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new PreprovisionCapacity(2, 4, 8, 1), new PreprovisionCapacity(2, 3, 2, 2)), PreprovisionCapacity.class);
         addNodes();
 
         maintainer.convergeToCapacity(tester.nodeRepository.list());
@@ -148,6 +152,15 @@ public class DynamicProvisioningMaintainerTest {
         assertEquals(1, tester.nodeRepository.getNodes().size());
         verify(hostProvisioner).deprovision(eq(host2));
         verifyNoMoreInteractions(hostProvisioner);
+    }
+
+    @Before
+    public void setup() {
+        doAnswer(invocation ->  {
+            String flavorName = invocation.getArgument(0, String.class);
+            if ("default".equals(flavorName)) return new NodeResources(2, 4, 8, 1);
+            return invocation.getArguments()[1];
+        }).when(hostResourcesCalculator).availableCapacityOf(any(), any());
     }
 
     public void addNodes() {
