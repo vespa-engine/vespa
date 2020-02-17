@@ -59,7 +59,7 @@ public:
     {
         vectors.set(1, {2, 2}).set(2, {3, 2}).set(3, {2, 3})
                .set(4, {1, 2}).set(5, {8, 3}).set(6, {7, 2})
-               .set(7, {3, 5});
+               .set(7, {3, 5}).set(8, {0, 3}).set(9, {4, 5});
     }
     void init(bool heuristic_select_neighbors) {
         index = std::make_unique<HnswIndex>(vectors, distance_func, level_generator,
@@ -85,6 +85,16 @@ public:
         auto act_node = index->get_node(docid);
         ASSERT_EQ(exp_levels.size(), act_node.size());
         EXPECT_EQ(exp_levels, act_node.levels());
+    }
+    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits) {
+        auto rv = index->find_top_k(vectors.get_vector(docid), 3);
+        size_t idx = 0;
+        for (const auto & hit : rv) {
+            // fprintf(stderr, "found docid %u dist %.1f\n", hit.docid, hit.distance);
+            if (idx < exp_hits.size()) {
+                EXPECT_EQ(hit.docid, exp_hits[idx++]);
+            }
+        }
     }
 };
 
@@ -134,6 +144,16 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_select_ne
     expect_level_0(5, {2, 3, 6});
     expect_level_0(6, {2, 5});
     expect_level_0(7, {2, 3});
+
+    expect_top_3(1, {1});
+    expect_top_3(2, {2, 1, 3});
+    expect_top_3(3, {3});
+    expect_top_3(4, {4, 1, 3});
+    expect_top_3(5, {5, 6, 2});
+    expect_top_3(6, {6, 5, 2});
+    expect_top_3(7, {7, 3, 2});
+    expect_top_3(8, {4, 3, 1});
+    expect_top_3(9, {7, 3, 2});
 }
 
 TEST_F(HnswIndexTest, 2d_vectors_inserted_and_removed)
