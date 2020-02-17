@@ -30,7 +30,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
     public static class NoopHostResourcesCalculator implements HostResourcesCalculator {
 
         @Override
-        public NodeResources availableCapacityOf(NodeResources hostResources) {
+        public NodeResources availableCapacityOf(String flavorName, NodeResources hostResources) {
             return hostResources;
         }
     }

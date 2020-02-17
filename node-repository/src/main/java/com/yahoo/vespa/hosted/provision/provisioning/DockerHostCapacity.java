@@ -26,12 +26,6 @@ public class DockerHostCapacity {
         this.hostResourcesCalculator = Objects.requireNonNull(hostResourcesCalculator, "hostResourcesCalculator must be non-null");
     }
 
-    /** Returns the allocation skew of this host */
-    public double skew(Node host) {
-        NodeResources free = freeCapacityOf(host, false);
-        return Node.skew(host.flavor().resources(), free);
-    }
-
     int compareWithoutInactive(Node hostA, Node hostB) {
         int result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
         if (result != 0) return result;
@@ -72,7 +66,7 @@ public class DockerHostCapacity {
     NodeResources freeCapacityOf(Node host, boolean excludeInactive) {
         // Only hosts have free capacity
         if (!host.type().canRun(NodeType.tenant)) return new NodeResources(0, 0, 0, 0);
-        NodeResources hostResources = hostResourcesCalculator.availableCapacityOf(host.flavor().resources());
+        NodeResources hostResources = hostResourcesCalculator.availableCapacityOf(host.flavor().name(), host.flavor().resources());
 
         return allNodes.childrenOf(host).asList().stream()
                 .filter(node -> !(excludeInactive && isInactiveOrRetired(node)))
