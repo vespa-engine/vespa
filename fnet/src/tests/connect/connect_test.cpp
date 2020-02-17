@@ -65,6 +65,8 @@ struct BlockingCryptoEngine : public CryptoEngine {
     Gate handshake_work_enter;
     Gate handshake_work_exit;
     Gate handshake_socket_deleted;
+    bool use_tls_when_client() const override { return false; }
+    bool always_use_tls_when_server() const override { return false; }
     CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &) override {
         return std::make_unique<BlockingCryptoSocket>(std::move(socket),
                 handshake_work_enter, handshake_work_exit, handshake_socket_deleted);
