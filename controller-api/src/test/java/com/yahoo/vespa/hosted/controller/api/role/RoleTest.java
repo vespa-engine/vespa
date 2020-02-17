@@ -8,6 +8,7 @@ import com.yahoo.config.provision.TenantName;
 import org.junit.Test;
 
 import java.net.URI;
+import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -30,6 +31,10 @@ public class RoleTest {
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/os/v1/bar")));
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/status/environment/")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/status/environment/prod")));
+        assertTrue(mainEnforcer.allows(role, Action.create, URI.create("/routing/v1/inactive/environment/prod/region/us-north-1")));
     }
 
     @Test
@@ -165,4 +170,31 @@ public class RoleTest {
         assertTrue(mainEnforcer.allows(Role.systemFlagsDryrunner(), action, dryrunUri));
         assertFalse(mainEnforcer.allows(Role.everyone(), action, dryrunUri));
     }
+
+    @Test
+    public void routing() {
+        var tenantUrl = URI.create("/routing/v1/status/tenant/t1");
+        var applicationUrl = URI.create("/routing/v1/status/tenant/t1/application/a1");
+        var instanceUrl = URI.create("/routing/v1/status/tenant/t1/application/a1/instance/i1");
+        var deploymentUrl = URI.create("/routing/v1/status/tenant/t1/application/a1/instance/i1/environment/prod/region/us-north-1");
+        // Read
+        for (var url : List.of(tenantUrl, applicationUrl, instanceUrl, deploymentUrl)) {
+            var allowedRole = Role.reader(TenantName.from("t1"));
+            var disallowedRole = Role.reader(TenantName.from("t2"));
+            assertTrue(allowedRole + " can read " + url, mainEnforcer.allows(allowedRole, Action.read, url));
+            assertFalse(disallowedRole + " cannot read " + url, mainEnforcer.allows(disallowedRole, Action.read, url));
+        }
+
+        // Write
+        {
+            var url = URI.create("/routing/v1/inactive/tenant/t1/application/a1/instance/i1/environment/prod/region/us-north-1");
+            var allowedRole = Role.applicationAdmin(TenantName.from("t1"), ApplicationName.from("a1"));
+            var disallowedRole = Role.applicationAdmin(TenantName.from("t2"), ApplicationName.from("a2"));
+            assertTrue(allowedRole + " can override status at " + url, mainEnforcer.allows(allowedRole, Action.create, url));
+            assertTrue(allowedRole + " can clear status at " + url, mainEnforcer.allows(allowedRole, Action.delete, url));
+            assertFalse(disallowedRole + " cannot override status at " + url, mainEnforcer.allows(disallowedRole, Action.create, url));
+            assertFalse(disallowedRole + " cannot clear status at " + url, mainEnforcer.allows(disallowedRole, Action.delete, url));
+        }
+    }
+
 }
