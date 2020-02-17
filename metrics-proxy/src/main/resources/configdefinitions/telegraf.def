@@ -9,12 +9,12 @@ intervalSeconds int default=60
 vespa.consumer string default="default"
 
 
-cloudWatch.region string default="us-east-1"
-cloudWatch.namespace string
+cloudWatch[].region string default="us-east-1"
+cloudWatch[].namespace string
 
 # Only valid and required for hosted Vespa
-cloudWatch.accessKeyName string default=""
-cloudWatch.secretKeyName string default=""
+cloudWatch[].accessKeyName string default=""
+cloudWatch[].secretKeyName string default=""
 
 # Only valid and optional for self-hosted Vespa
-cloudWatch.profile string default=""
+cloudWatch[].profile string default=""
