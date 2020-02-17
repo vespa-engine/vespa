@@ -756,11 +756,11 @@ DocumentDB::getNewestFlushedSerial()
 }
 
 std::unique_ptr<SearchReply>
-DocumentDB::match(const ISearchHandler::SP &, const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const
+DocumentDB::match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const
 {
     // Ignore input searchhandler. Use readysubdb's searchhandler instead.
     ISearchHandler::SP view(_subDBs.getReadySubDB()->getSearchView());
-    return view->match(view, req, threadBundle);
+    return view->match(req, threadBundle);
 }
 
 std::unique_ptr<DocsumReply>

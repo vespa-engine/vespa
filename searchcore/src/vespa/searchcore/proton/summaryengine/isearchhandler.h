@@ -39,7 +39,7 @@ public:
     virtual std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & request) = 0;
 
     virtual std::unique_ptr<SearchReply>
-    match(const ISearchHandler::SP &self, const SearchRequest &req, ThreadBundle &threadBundle) const = 0;
+    match(const SearchRequest &req, ThreadBundle &threadBundle) const = 0;
 };
 
 } // namespace proton
