@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import java.util.concurrent.Executors;
 
+import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.REASON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -83,7 +84,7 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
     @Test
     public void service_metrics_have_configured_dimensions() {
         String dummy0 = getLine(valuesResponse, DummyService.NAME + "0");
-        assertTrue(dummy0.contains("consumer_dim=\"default-val\""));
+        assertTrue(dummy0.contains(REASON + "=\"default-val\""));
     }
 
     @Test

@@ -2,6 +2,8 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metricsproxy.http.metrics.MetricsV2Handler;
+import ai.vespa.metricsproxy.http.metrics.NodeInfoConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
@@ -20,6 +22,7 @@ import java.util.Map;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_NAME;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.createMetricsHandler;
 
 /**
  * Container running a metrics proxy.
@@ -28,9 +31,11 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
  */
 public class MetricsProxyContainer extends Container implements
         NodeDimensionsConfig.Producer,
+        NodeInfoConfig.Producer,
         RpcConnectorConfig.Producer,
         VespaServicesConfig.Producer
 {
+    public static final int BASEPORT = 19092;
 
     final boolean isHostedVespa;
 
@@ -46,14 +51,13 @@ public class MetricsProxyContainer extends Container implements
         addMetricsProxyComponent(NodeDimensions.class);
         addMetricsProxyComponent(RpcConnector.class);
         addMetricsProxyComponent(VespaServices.class);
+        addHandler(createMetricsHandler(MetricsV2Handler.class, MetricsV2Handler.V2_PATH));
     }
 
     @Override
     protected ContainerServiceType myServiceType() {
         return METRICS_PROXY_CONTAINER;
     }
-
-    static public int BASEPORT = 19092;
 
     @Override
     public int getWantedPort() {
@@ -121,7 +125,21 @@ public class MetricsProxyContainer extends Container implements
         }
     }
 
-    private void  addMetricsProxyComponent(Class<?> componentClass) {
+    @Override
+    public void getConfig(NodeInfoConfig.Builder builder) {
+        builder.role(getNodeRole())
+                .hostname(getHostName());
+    }
+
+    private String getNodeRole() {
+        String hostConfigId = getHost().getConfigId();
+        if (! isHostedVespa) return hostConfigId;
+        return getHostResource().spec().membership()
+                    .map(ClusterMembership::stringValue)
+                    .orElse(hostConfigId);
+    }
+
+    private void addMetricsProxyComponent(Class<?> componentClass) {
         addSimpleComponent(componentClass.getName(), null, METRICS_PROXY_BUNDLE_NAME);
     }
 

@@ -25,7 +25,7 @@ public class Node {
     }
 
     public Node(String role, String hostname, int port, String path) {
-        Objects.requireNonNull(role, "Null configId is not allowed");
+        Objects.requireNonNull(role, "Null role is not allowed");
         Objects.requireNonNull(hostname, "Null hostname is not allowed");
         Objects.requireNonNull(path, "Null path is not allowed");
 

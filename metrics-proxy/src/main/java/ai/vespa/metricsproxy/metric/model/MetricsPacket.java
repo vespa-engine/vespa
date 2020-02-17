@@ -179,6 +179,10 @@ public class MetricsPacket {
             return this;
         }
 
+        public boolean hasConsumer(ConsumerId id) {
+            return consumers.contains(id);
+        }
+
         public MetricsPacket build() {
             return new MetricsPacket(statusCode, statusMessage, timestamp, service, metrics, dimensions, consumers);
         }
