@@ -310,8 +310,23 @@ HnswIndex::remove_document(uint32_t docid)
     _node_refs[docid].store_release(invalid);
 }
 
+std::vector<uint32_t>
+HnswIndex::find_top_k(TypedCells vector, uint32_t k)
+{
+    std::vector<uint32_t> result;
+    std::vector<HnswCandidate> candidates = top_k_candidates(vector, k + 100);
+    result.reserve(std::min((size_t)k, candidates.size()));
+    for (const HnswCandidate & hit : candidates) {
+        result.emplace_back(hit.docid);
+        if (result.size() == k) break;
+    }
+    std::sort(result.begin(), result.end());
+    return result;
+}
+
+
 std::vector<HnswCandidate>
-HnswIndex::find_top_k(const TypedCells &vector, uint32_t k)
+HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k)
 {
     std::vector<HnswCandidate> result;
     if (_entry_level < 0) {

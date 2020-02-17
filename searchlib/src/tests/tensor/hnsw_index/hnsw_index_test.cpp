@@ -87,7 +87,7 @@ public:
         EXPECT_EQ(exp_levels, act_node.levels());
     }
     void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits) {
-        auto rv = index->find_top_k(vectors.get_vector(docid), 3);
+        auto rv = index->top_k_candidates(vectors.get_vector(docid), 3);
         size_t idx = 0;
         for (const auto & hit : rv) {
             // fprintf(stderr, "found docid %u dist %.1f\n", hit.docid, hit.distance);
