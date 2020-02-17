@@ -77,9 +77,13 @@ public class DynamicProvisioningMaintainerTest {
     @Test
     public void delegates_to_host_provisioner_and_writes_back_result() {
         addNodes();
+        Node host3 = tester.nodeRepository.getNode("host3").orElseThrow();
         Node host4 = tester.nodeRepository.getNode("host4").orElseThrow();
         Node host41 = tester.nodeRepository.getNode("host4-1").orElseThrow();
-        assertTrue(Stream.of(host4, host41).map(Node::ipAddresses).allMatch(Set::isEmpty));
+        assertTrue(Stream.of(host3, host4, host41).map(Node::ipAddresses).allMatch(Set::isEmpty));
+
+        Node host3new = host3.with(host3.ipConfig().with(Set.of("::5")));
+        when(hostProvisioner.provision(eq(host3), eq(Set.of()))).thenReturn(List.of(host3new));
 
         Node host4new = host4.with(host4.ipConfig().with(Set.of("::2")));
         Node host41new = host41.with(host4.ipConfig().with(Set.of("::4", "10.0.0.1")));
@@ -87,8 +91,10 @@ public class DynamicProvisioningMaintainerTest {
 
         maintainer.updateProvisioningNodes(tester.nodeRepository.list(), () -> {});
         verify(hostProvisioner).provision(eq(host4), eq(Set.of(host41)));
+        verify(hostProvisioner).provision(eq(host3), eq(Set.of()));
         verifyNoMoreInteractions(hostProvisioner);
 
+        assertEquals(Optional.of(host3new), tester.nodeRepository.getNode("host3"));
         assertEquals(Optional.of(host4new), tester.nodeRepository.getNode("host4"));
         assertEquals(Optional.of(host41new), tester.nodeRepository.getNode("host4-1"));
     }
@@ -170,6 +176,7 @@ public class DynamicProvisioningMaintainerTest {
 
                 createNode("host2", Optional.empty(), NodeType.host, Node.State.failed, Optional.of(tenantApp)),
                 createNode("host2-1", Optional.of("host2"), NodeType.tenant, Node.State.failed, Optional.empty()),
+
                 createNode("host3", Optional.empty(), NodeType.host, Node.State.provisioned, Optional.empty()),
 
                 createNode("host4", Optional.empty(), NodeType.host, Node.State.provisioned, Optional.empty()),
