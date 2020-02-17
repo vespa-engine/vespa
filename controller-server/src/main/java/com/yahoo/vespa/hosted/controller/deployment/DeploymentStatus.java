@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -579,8 +578,12 @@ public class DeploymentStatus {
                     Versions versions = Versions.from(change, status.application, status.deploymentFor(job.id()), status.systemVersion);
                     return job.lastSuccess()
                               .filter(run -> versions.targetsMatch(run.versions()))
-                              .filter(run -> status.instanceJobs(instance).get(prodType).lastCompleted()
-                                                   .map(last -> ! last.end().get().isAfter(run.start())).orElse(false))
+                              .filter(run -> ! status.jobs()
+                                                     .instance(instance)
+                                                     .type(prodType)
+                                                     .successOn(versions)
+                                                     .lastCompleted().endedNoLaterThan(run.start())
+                                                     .isEmpty())
                               .map(run -> run.end().get());
                 }
             };

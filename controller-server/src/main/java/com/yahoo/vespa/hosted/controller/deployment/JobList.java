@@ -141,24 +141,9 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
             return mapToList(Function.identity());
         }
 
-        /** Returns the subset of jobs where the run of the given type occurred before the given instant */
-        public JobList endedBefore(Instant threshold) {
-            return matching(run -> run.end().orElse(Instant.MAX).isBefore(threshold));
-        }
-
-        /** Returns the subset of jobs where the run of the given type occurred after the given instant */
-        public JobList endedAfter(Instant threshold) {
-            return matching(run -> run.end().orElse(Instant.MIN).isAfter(threshold));
-        }
-
-        /** Returns the subset of jobs where the run of the given type occurred before the given instant */
-        public JobList startedBefore(Instant threshold) {
-            return matching(run -> run.start().isBefore(threshold));
-        }
-
-        /** Returns the subset of jobs where the run of the given type occurred after the given instant */
-        public JobList startedAfter(Instant threshold) {
-            return matching(run -> run.start().isAfter(threshold));
+        /** Returns the subset of jobs where the run of the given type occurred at or before the given instant */
+        public JobList endedNoLaterThan(Instant threshold) {
+            return matching(run -> ! run.end().orElse(Instant.MAX).isAfter(threshold));
         }
 
         /** Returns the subset of jobs where the run of the given type was on the given version */
