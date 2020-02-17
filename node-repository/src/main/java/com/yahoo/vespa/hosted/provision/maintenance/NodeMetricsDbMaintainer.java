@@ -2,10 +2,11 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.node.NodeMetrics;
+import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,6 +18,8 @@ import java.util.logging.Level;
  * active nodes.
  */
 public class NodeMetricsDbMaintainer extends Maintainer {
+
+    private static final int maxWarningsPerInvocation = 2;
 
     private final NodeMetrics nodeMetrics;
     private final NodeMetricsDb nodeMetricsDb;
@@ -32,16 +35,19 @@ public class NodeMetricsDbMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
+        int warnings = 0;
         for (Node node : nodeRepository().list().nodeType(NodeType.tenant).state(Node.State.active).asList()) {
             try {
                 Collection<NodeMetrics.Metric> metrics = nodeMetrics.fetchMetrics(node.hostname());
                 Instant timestamp = nodeRepository().clock().instant();
-                metrics.forEach(metric -> nodeMetricsDb.update(metric.name(), metric.value(), node.hostname(), timestamp));
+                metrics.forEach(metric -> nodeMetricsDb.add(node, Resource.fromMetric(metric.name()), timestamp, metric.value()));
             }
             catch (Exception e) {
-                log.log(Level.WARNING, "Could not fetch metrics from " + node, e); // TODO: Exclude allowed to be down nodes
+                if (warnings++ < maxWarningsPerInvocation)
+                    log.log(Level.WARNING, "Could not update metrics from " + node, e); // TODO: Exclude allowed to be down nodes
             }
         }
+        nodeMetricsDb.gc(nodeRepository().clock());
     }
 
 }

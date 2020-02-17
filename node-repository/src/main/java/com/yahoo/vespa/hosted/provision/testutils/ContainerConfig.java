@@ -24,6 +24,8 @@ public class ContainerConfig {
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDuperModel'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeMetrics'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>\n" +

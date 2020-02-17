@@ -1,5 +1,5 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.provision.node;
+package com.yahoo.vespa.hosted.provision.autoscale;
 
 import java.util.Collection;
 
@@ -20,16 +20,16 @@ public interface NodeMetrics {
     final class Metric {
 
         private String name;
-        private double value;
+        private float value;
 
-        public Metric(String name, double value) {
+        public Metric(String name, float value) {
             this.name = name;
             this.value = value;
         }
 
         public String name() { return name; }
 
-        public double value() { return value; }
+        public float value() { return value; }
 
     }
 
