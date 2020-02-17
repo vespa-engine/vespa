@@ -649,7 +649,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.visitor.sum.latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("vds.distributor.visitor.sum.ok.rate"));
         metrics.add(new Metric("vds.distributor.visitor.sum.failures.total.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.sum.failures.notfound.rate"));
 
         metrics.add(new Metric("vds.distributor.docsstored.average"));
         metrics.add(new Metric("vds.distributor.bytesstored.average"));
