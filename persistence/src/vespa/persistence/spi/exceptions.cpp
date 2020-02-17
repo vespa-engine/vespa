@@ -2,11 +2,8 @@
 
 #include "exceptions.h"
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 VESPA_IMPLEMENT_EXCEPTION(HandledException, vespalib::Exception);
 
-} // spi
-} // storage
-
+}

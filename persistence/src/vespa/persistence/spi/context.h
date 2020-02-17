@@ -29,13 +29,10 @@
 
 #pragma once
 
-#include <persistence/spi/types.h>
-#include <vespa/persistence/spi/read_consistency.h>
+#include "read_consistency.h"
 #include <vespa/vespalib/trace/trace.h>
 
-namespace metrics {
-    class LoadType;
-}
+namespace metrics { class LoadType; }
 
 namespace storage::spi {
 
@@ -62,10 +59,6 @@ public:
 
     const LoadType& getLoadType() const { return *_loadType; }
     Priority getPriority() const { return _priority; }
-    int getMaxTraceLevel() const { return _trace.getLevel(); }
-    void addTrace(const vespalib::TraceNode& traceNode) {
-        _trace.getRoot().addChild(traceNode);
-    }
 
     /**
      * A read operation might choose to relax its consistency requirements,

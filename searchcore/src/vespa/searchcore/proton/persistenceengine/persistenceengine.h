@@ -5,12 +5,9 @@
 #include "i_resource_write_filter.h"
 #include "persistence_handler_map.h"
 #include "ipersistencehandler.h"
-#include <vespa/document/bucket/bucketspace.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <mutex>
 #include <shared_mutex>
-#include <unordered_map>
 
 namespace proton {
 

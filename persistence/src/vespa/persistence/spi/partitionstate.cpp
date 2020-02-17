@@ -4,8 +4,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 PartitionState::PartitionState()
     : _state(UP),
@@ -21,7 +20,7 @@ PartitionStateList::PartitionStateList(PartitionId::Type partitionCount)
     : _states(partitionCount)
 { }
 
-PartitionStateList::~PartitionStateList() { }
+PartitionStateList::~PartitionStateList() = default;
 
 PartitionState&
 PartitionStateList::operator[](PartitionId::Type index)
@@ -34,5 +33,4 @@ PartitionStateList::operator[](PartitionId::Type index)
     return _states[index];
 }
 
-} // spi
-} // storage
+}
