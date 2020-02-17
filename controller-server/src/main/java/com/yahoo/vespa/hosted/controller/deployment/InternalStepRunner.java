@@ -261,7 +261,7 @@ public class InternalStepRunner implements StepRunner {
                                                                   .map(Hostname::new)
                                                                   .forEach(hostname -> {
                                                                       controller.applications().restart(new DeploymentId(id, type.zone(controller.system())), Optional.of(hostname));
-                                                                      logger.log("Restarting services on host " + hostname.id() + ".");
+                                                                      logger.log("Schedule service restart on host " + hostname.id() + ".");
                                                                   });
             logger.log("Deployment successful.");
             if (prepareResponse.message != null)
