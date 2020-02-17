@@ -88,7 +88,7 @@ CfHandler::doConfigure()
         if (fp != NULL) {
             fprintf(fp, "[default]\n");
             fprintf(fp, "host = %s\n", getenv("VESPA_HOSTNAME"));
-            fprintf(fp, "_meta = vespa_tenant::%s vespa_application::%s vespa_instance::%s\n", getenv("VESPA_TENANT"), getenv("VESPA_APPLICATION"), getenv("VESPA_INSTANCE"));
+            fprintf(fp, "_meta = vespa_tenant::%s vespa_app::%s.%s\n", getenv("VESPA_TENANT"), getenv("VESPA_APPLICATION"), getenv("VESPA_INSTANCE"));
             fclose(fp);
             rename(tmpPath.c_str(), path.c_str());
         }
