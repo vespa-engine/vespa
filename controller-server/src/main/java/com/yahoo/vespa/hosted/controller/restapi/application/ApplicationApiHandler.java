@@ -1699,13 +1699,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
-        Instance instance = controller.applications().requireInstance(ApplicationId.from(tenantName, applicationName, instanceName));
-
+        DeploymentId id = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
+                                           ZoneId.from(environment, region));
         // Attempt to deactivate application even if the deployment is not known by the controller
-        DeploymentId deploymentId = new DeploymentId(instance.id(), ZoneId.from(environment, region));
-        controller.applications().deactivate(deploymentId.applicationId(), deploymentId.zoneId());
-
-        return new MessageResponse("Deactivated " + deploymentId);
+        controller.applications().deactivate(id.applicationId(), id.zoneId());
+        return new MessageResponse("Deactivated " + id);
     }
 
     /** Returns test config for indicated job, with production deployments of the default instance. */
