@@ -11,7 +11,7 @@ enum OutputVariable {
     CA_CERTIFICATE("VESPA_TLS_CA_CERT", "Path to CA certificates file"),
     CERTIFICATE("VESPA_TLS_CERT", "Path to certificate file"),
     PRIVATE_KEY("VESPA_TLS_PRIVATE_KEY", "Path to private key file"),
-    DISABLE_HOSTNAME_VALIDATION("VESPA_TLS_DISABLE_HOSTNAME_VALIDATION", "Set to '1' if TLS hostname validation is disabled");
+    DISABLE_HOSTNAME_VALIDATION("VESPA_TLS_HOSTNAME_VALIDATION_DISABLED", "Set to '1' if TLS hostname validation is disabled");
 
     private final String variableName;
     private final String description;

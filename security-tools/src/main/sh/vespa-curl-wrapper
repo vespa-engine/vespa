@@ -88,7 +88,7 @@ then
   CURL_PARAMETERS=("${CURL_PARAMETERS[@]/http:/https:}")
 fi
 
-if [ -n "${VESPA_TLS_DISABLE_HOSTNAME_VALIDATION}" ]
+if [ -n "${VESPA_TLS_HOSTNAME_VALIDATION_DISABLED}" ]
 then
   CURL_PARAMETERS=("--insecure" "${CURL_PARAMETERS[@]}")
 fi
