@@ -267,6 +267,15 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
         app1.runJob(JobType.devUsEast1);
 
+        // GET dev application package
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1/package", GET)
+                                      .userIdentity(USER_ID),
+                              (response) -> {
+                                  assertEquals("attachment; filename=\"tenant1.application1.instance1.dev.us-east-1.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals(applicationPackageInstance1.zippedContent(), response.getBody());
+                              },
+                              200);
+
         // POST an application package is not generally allowed under user instance
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/otheruser/deploy/dev-us-east-1", POST)
                                       .userIdentity(OTHER_USER_ID)
