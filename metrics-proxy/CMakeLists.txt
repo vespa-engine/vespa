@@ -8,3 +8,4 @@ install_config_definition(src/main/resources/configdefinitions/metrics-nodes.def
 install_config_definition(src/main/resources/configdefinitions/node-dimensions.def ai.vespa.metricsproxy.metric.dimensions.node-dimensions.def)
 install_config_definition(src/main/resources/configdefinitions/rpc-connector.def ai.vespa.metricsproxy.rpc.rpc-connector.def)
 install_config_definition(src/main/resources/configdefinitions/vespa-services.def ai.vespa.metricsproxy.service.vespa-services.def)
+install_config_definition(src/main/resources/configdefinitions/telegraf.def ai.vespa.metricsproxy.telegraf.telegraf.def)
