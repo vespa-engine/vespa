@@ -29,6 +29,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -53,7 +54,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         try {
             var path = new Path(request.getUri());
             switch (request.getMethod()) {
-                case GET: return get(path, request.getUri());
+                case GET: return get(path, request);
                 case POST: return post(path);
                 case DELETE: return delete(path);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
@@ -78,32 +79,48 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse get(Path path, URI requestUrl) {
-        if (path.matches("/routing/v1/")) return status(requestUrl);
-        if (path.matches("/routing/v1/status/tenant/{tenant}")) return tenant(path, requestUrl);
-        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}")) return application(path, requestUrl);
-        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}")) return instance(path, requestUrl);
+    private HttpResponse get(Path path, HttpRequest request) {
+        if (path.matches("/routing/v1/")) return status(request.getUri());
+        if (path.matches("/routing/v1/status/tenant/{tenant}")) return tenant(path, request);
+        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}")) return application(path, request);
+        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}")) return instance(path, request);
         if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path);
-        if (path.matches("/routing/v1/status/environment")) return environment(requestUrl);
+        if (path.matches("/routing/v1/status/environment")) return environment(request);
         if (path.matches("/routing/v1/status/environment/{environment}/region/{region}")) return zone(path);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse environment(URI requestUrl) {
+    private HttpResponse environment(HttpRequest request) {
+        var zones = controller.zoneRegistry().zones().all().ids();
+        if (isRecursive(request)) {
+            var slime = new Slime();
+            var root = slime.setObject();
+            var zonesArray = root.setArray("zones");
+            for (var zone : zones) {
+                toSlime(zone, zonesArray.addObject());
+            }
+            return new SlimeJsonResponse(slime);
+        }
         var resources = controller.zoneRegistry().zones().all().ids().stream()
                                   .map(zone -> zone.environment().value() +
                                                "/region/" + zone.region().value())
                                   .sorted()
                                   .collect(Collectors.toList());
-        return new ResourceResponse(requestUrl, resources);
+        return new ResourceResponse(request.getUri(), resources);
     }
 
     private HttpResponse status(URI requestUrl) {
         return new ResourceResponse(requestUrl, "status/tenant", "status/environment");
     }
 
-    private HttpResponse tenant(Path path, URI requestUrl) {
+    private HttpResponse tenant(Path path, HttpRequest request) {
         var tenantName = tenantFrom(path);
+        if (isRecursive(request)) {
+            var slime = new Slime();
+            var root = slime.setObject();
+            toSlime(controller.applications().asList(tenantName), null, null, root);
+            return new SlimeJsonResponse(slime);
+        }
         var resources = controller.applications().asList(tenantName).stream()
                                   .map(Application::id)
                                   .map(TenantAndApplicationId::application)
@@ -111,27 +128,41 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(application -> "application/" + application)
                                   .sorted()
                                   .collect(Collectors.toList());
-        return new ResourceResponse(requestUrl, resources);
+        return new ResourceResponse(request.getUri(), resources);
     }
 
-    private HttpResponse application(Path path, URI requestUrl) {
+    private HttpResponse application(Path path, HttpRequest request) {
         var tenantAndApplicationId = tenantAndApplicationIdFrom(path);
+        if (isRecursive(request)) {
+            var slime = new Slime();
+            var root = slime.setObject();
+            toSlime(List.of(controller.applications().requireApplication(tenantAndApplicationId)), null,
+                    null, root);
+            return new SlimeJsonResponse(slime);
+        }
         var resources = controller.applications().requireApplication(tenantAndApplicationId).instances().keySet().stream()
                                   .map(InstanceName::value)
                                   .map(instance -> "instance/" + instance)
                                   .sorted()
                                   .collect(Collectors.toList());
-        return new ResourceResponse(requestUrl, resources);
+        return new ResourceResponse(request.getUri(), resources);
     }
 
-    private HttpResponse instance(Path path, URI requestUrl) {
+    private HttpResponse instance(Path path, HttpRequest request) {
         var instanceId = instanceFrom(path);
+        if (isRecursive(request)) {
+            var slime = new Slime();
+            var root = slime.setObject();
+            toSlime(List.of(controller.applications().requireApplication(TenantAndApplicationId.from(instanceId))),
+                    instanceId, null, root);
+            return new SlimeJsonResponse(slime);
+        }
         var resources = controller.applications().requireInstance(instanceId).deployments().keySet().stream()
                                   .map(zone -> "environment/" + zone.environment().value() +
                                                "/region/" + zone.region().value())
                                   .sorted()
                                   .collect(Collectors.toList());
-        return new ResourceResponse(requestUrl, resources);
+        return new ResourceResponse(request.getUri(), resources);
     }
 
     private HttpResponse setZoneStatus(Path path, boolean in) {
@@ -150,17 +181,21 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var zone = zoneFrom(path);
         var slime = new Slime();
         var root = slime.setObject();
+        toSlime(zone, root);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private void toSlime(ZoneId zone, Cursor zoneObject) {
         if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
             var zonePolicy = controller.routingController().policies().get(zone);
-            zoneStatusToSlime(root, zonePolicy.zone(), zonePolicy.globalRouting(), RoutingMethod.exclusive);
+            zoneStatusToSlime(zoneObject, zonePolicy.zone(), zonePolicy.globalRouting(), RoutingMethod.exclusive);
         } else {
             // Rotation status per zone only exposes in/out status, no agent or time of change.
             var in = controller.serviceRegistry().configServer().getGlobalRotationStatus(zone);
             var globalRouting = new GlobalRouting(in ? GlobalRouting.Status.in : GlobalRouting.Status.out,
                                                   GlobalRouting.Agent.operator, Instant.EPOCH);
-            zoneStatusToSlime(root, zone, globalRouting, RoutingMethod.shared);
+            zoneStatusToSlime(zoneObject, zone, globalRouting, RoutingMethod.shared);
         }
-        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse setDeploymentStatus(Path path, boolean in) {
@@ -183,40 +218,55 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse deployment(Path path) {
-        var deployment = deploymentFrom(path);
-        var instance = controller.applications().requireInstance(deployment.applicationId());
         var slime = new Slime();
-        var deploymentsObject = slime.setObject().setArray("deployments");
+        var root = slime.setObject();
+        var deploymentId = deploymentFrom(path);
+        var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
+        toSlime(List.of(application), deploymentId.applicationId(), deploymentId.zoneId(), root);
+        return new SlimeJsonResponse(slime);
+    }
 
-        // Include status from rotation
-        if (rotationCanRouteTo(deployment.zoneId(), instance)) {
-            var rotationStatus = controller.routingController().globalRotationStatus(deployment);
-            // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
-            var endpointStatus = rotationStatus.values().stream().findFirst();
-            if (endpointStatus.isPresent()) {
-                var changedAt = Instant.ofEpochSecond(endpointStatus.get().getEpoch());
-                GlobalRouting.Agent agent;
-                try {
-                    agent = GlobalRouting.Agent.valueOf(endpointStatus.get().getAgent());
-                } catch (IllegalArgumentException e) {
-                    agent = GlobalRouting.Agent.unknown;
+    private void toSlime(List<Application> applications, ApplicationId instanceId, ZoneId zoneId, Cursor root) {
+        var deploymentsArray = root.setArray("deployments");
+        for (var application : applications) {
+            var instances = instanceId == null
+                    ? application.instances().values()
+                    : List.of(application.instances().get(instanceId.instance()));
+            for (var instance : instances) {
+                var zones = zoneId == null ? instance.deployments().keySet() : List.of(zoneId);
+                for (var zone : zones) {
+                    var deploymentId = new DeploymentId(instance.id(), zone);
+                    // Include status from rotation
+                    if (rotationCanRouteTo(zone, instance)) {
+                        var rotationStatus = controller.routingController().globalRotationStatus(deploymentId);
+                        // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
+                        var endpointStatus = rotationStatus.values().stream().findFirst();
+                        if (endpointStatus.isPresent()) {
+                            var changedAt = Instant.ofEpochSecond(endpointStatus.get().getEpoch());
+                            GlobalRouting.Agent agent;
+                            try {
+                                agent = GlobalRouting.Agent.valueOf(endpointStatus.get().getAgent());
+                            } catch (IllegalArgumentException e) {
+                                agent = GlobalRouting.Agent.unknown;
+                            }
+                            var status = endpointStatus.get().getStatus() == EndpointStatus.Status.in
+                                    ? GlobalRouting.Status.in
+                                    : GlobalRouting.Status.out;
+                            deploymentStatusToSlime(deploymentsArray.addObject(), deploymentId,
+                                                    new GlobalRouting(status, agent, changedAt),
+                                                    RoutingMethod.shared);
+                        }
+                    }
+
+                    // Include status from routing policies
+                    var routingPolicies = controller.routingController().policies().get(deploymentId);
+                    for (var policy : routingPolicies.values()) {
+                        deploymentStatusToSlime(deploymentsArray.addObject(), policy);
+                    }
                 }
-                var status = endpointStatus.get().getStatus() == EndpointStatus.Status.in
-                        ? GlobalRouting.Status.in
-                        : GlobalRouting.Status.out;
-                deploymentStatusToSlime(deploymentsObject.addObject(), deployment,
-                                        new GlobalRouting(status, agent, changedAt),
-                                        RoutingMethod.shared);
             }
         }
 
-        // Include status from routing policies
-        var routingPolicies = controller.routingController().policies().get(deployment);
-        for (var policy : routingPolicies.values()) {
-            deploymentStatusToSlime(deploymentsObject.addObject(), policy);
-        }
-
-        return new SlimeJsonResponse(slime);
     }
 
     /** Returns whether instance has an assigned rotation and a deployment in given zone */
@@ -274,6 +324,10 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("No such zone: " + zone);
         }
         return zone;
+    }
+
+    private static boolean isRecursive(HttpRequest request) {
+        return "true".equals(request.getProperty("recursive"));
     }
 
     private static String asString(GlobalRouting.Status status) {

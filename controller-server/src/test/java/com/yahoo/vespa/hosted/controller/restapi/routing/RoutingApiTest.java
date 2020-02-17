@@ -76,6 +76,47 @@ public class RoutingApiTest extends ControllerContainerTest {
     }
 
     @Test
+    public void recursion() {
+        var context1 = deploymentTester.newDeploymentContext("t1", "a1", "default");
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+        var package1 = new ApplicationPackageBuilder()
+                .region(westZone.region())
+                .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .build();
+        context1.submit(package1).deploy();
+
+        var context2 = deploymentTester.newDeploymentContext("t1", "a2", "default");
+        var package2 = new ApplicationPackageBuilder()
+                .region(westZone.region())
+                .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .build();
+        context2.submit(package2).deploy();
+
+        // GET tenant recursively
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1?recursive=true", "",
+                                              Request.Method.GET),
+                              new File("recursion/tenant.json"));
+
+        // GET application recursively
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1/application/a1?recursive=true", "",
+                                              Request.Method.GET),
+                              new File("recursion/application.json"));
+
+        // GET instance recursively
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1/application/a1/instance/default?recursive=true", "",
+                                              Request.Method.GET),
+                              new File("recursion/application.json"));
+
+        // GET environment recursively
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment?recursive=true", "",
+                                              Request.Method.GET),
+                              new File("recursion/environment.json"));
+    }
+
+    @Test
     public void exclusive_routing() {
         var context = deploymentTester.newDeploymentContext();
         // Zones support direct routing
