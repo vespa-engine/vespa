@@ -1028,5 +1028,14 @@ public class DocumentGenPluginTest {
         assertTrue(book.getDataType().fieldSetAll().contains(posZcurve));
         assertTrue(book.getDataType().getFields().contains(posZcurve));
     }
+
+    @Test
+    public void imported_fields_are_enumerated_in_document_type() {
+        var docType = getBook().getDataType();
+        assertEquals(2, docType.getImportedFieldNames().size());
+        assertTrue(docType.hasImportedField("my_dummy"));
+        assertTrue(docType.hasImportedField("my_foo"));
+        assertFalse(docType.hasImportedField("some_field_that_does_not_exist"));
+    }
     
 }
