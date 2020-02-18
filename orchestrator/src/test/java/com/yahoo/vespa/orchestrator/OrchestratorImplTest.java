@@ -435,7 +435,8 @@ public class OrchestratorImplTest {
         Host host = orchestrator.getHost(hostName);
         assertEquals(reference, host.getApplicationInstanceReference());
         assertEquals(hostName, host.getHostName());
-        assertEquals(HostStatus.ALLOWED_TO_BE_DOWN, host.getHostStatus());
+        assertEquals(HostStatus.ALLOWED_TO_BE_DOWN, host.getHostInfo().status());
+        assertTrue(host.getHostInfo().suspendedSince().isPresent());
         assertEquals(2, host.getServiceInstances().size());
     }
 

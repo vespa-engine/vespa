@@ -37,6 +37,7 @@ import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
@@ -348,7 +349,7 @@ public class HostResourceTest {
 
         Host host = new Host(
                 hostName,
-                HostStatus.ALLOWED_TO_BE_DOWN,
+                HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.EPOCH),
                 new ApplicationInstanceReference(
                         new TenantId("tenantId"),
                         new ApplicationInstanceId("applicationId")),
@@ -358,6 +359,7 @@ public class HostResourceTest {
         assertEquals("https://foo.com/bar", response.applicationUrl());
         assertEquals("hostname", response.hostname());
         assertEquals("ALLOWED_TO_BE_DOWN", response.state());
+        assertEquals("1970-01-01T00:00:00Z", response.suspendedSince());
         assertEquals(1, response.services().size());
         assertEquals("clusterId", response.services().get(0).clusterId);
         assertEquals("configId", response.services().get(0).configId);
