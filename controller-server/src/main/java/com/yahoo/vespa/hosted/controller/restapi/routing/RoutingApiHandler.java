@@ -29,6 +29,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -233,7 +234,10 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                     ? application.instances().values()
                     : List.of(application.instances().get(instanceId.instance()));
             for (var instance : instances) {
-                var zones = zoneId == null ? instance.deployments().keySet() : List.of(zoneId);
+                var zones = zoneId == null
+                        ? instance.deployments().keySet().stream().sorted(Comparator.comparing(ZoneId::value))
+                                  .collect(Collectors.toList())
+                        : List.of(zoneId);
                 for (var zone : zones) {
                     var deploymentId = new DeploymentId(instance.id(), zone);
                     // Include status from rotation

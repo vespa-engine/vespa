@@ -4,7 +4,7 @@
       "routingMethod": "shared",
       "instance": "t1:a1:default",
       "environment": "prod",
-      "region": "us-west-1",
+      "region": "us-east-3",
       "status": "in",
       "agent": "unknown",
       "changedAt": "(ignore)"
@@ -13,15 +13,6 @@
       "routingMethod": "shared",
       "instance": "t1:a1:default",
       "environment": "prod",
-      "region": "us-east-3",
-      "status": "in",
-      "agent": "unknown",
-      "changedAt": "(ignore)"
-    },
-    {
-      "routingMethod": "shared",
-      "instance": "t1:a2:default",
-      "environment": "prod",
       "region": "us-west-1",
       "status": "in",
       "agent": "unknown",
@@ -32,6 +23,15 @@
       "instance": "t1:a2:default",
       "environment": "prod",
       "region": "us-east-3",
+      "status": "in",
+      "agent": "unknown",
+      "changedAt": "(ignore)"
+    },
+    {
+      "routingMethod": "shared",
+      "instance": "t1:a2:default",
+      "environment": "prod",
+      "region": "us-west-1",
       "status": "in",
       "agent": "unknown",
       "changedAt": "(ignore)"
