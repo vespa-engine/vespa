@@ -62,7 +62,8 @@ public class GroupPreparer {
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount, int wantedGroups) {
         boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                .value() && preprovisionCapacityFlag.value().isEmpty();
+                .value();
+        boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
 
         try (Mutex lock = nodeRepository.lock(application)) {
 
@@ -73,7 +74,7 @@ public class GroupPreparer {
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
                                                                   spareCount, wantedGroups, nodeRepository.nameResolver(),
-                                                                  hostResourcesCalculator, dynamicProvisioningEnabled);
+                                                                  hostResourcesCalculator, allocateFully);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
