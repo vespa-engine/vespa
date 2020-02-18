@@ -7,6 +7,8 @@ import com.yahoo.system.execution.ProcessExecutor;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 
 import java.io.FileWriter;
 import java.io.Writer;
@@ -19,7 +21,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class Telegraf extends AbstractComponent {
 
     private static final String TELEGRAF_CONFIG_PATH = "/etc/telegraf/telegraf.conf";
-    private static final String TELEGRAF_CONFIG_TEMPLATE_PATH = "src/main/resources/templates/cloudwatch_plugin.vm";
+    private static final String TELEGRAF_CONFIG_TEMPLATE_PATH = "templates/telegraf.conf.vm";
     private final TelegrafRegistry telegrafRegistry;
 
     @Inject
@@ -31,9 +33,7 @@ public class Telegraf extends AbstractComponent {
     }
 
     protected static void writeConfig(TelegrafConfig telegrafConfig, Writer writer) {
-        VelocityEngine velocityEngine = new VelocityEngine();
-        velocityEngine.init();
-        Template template = velocityEngine.getTemplate(TELEGRAF_CONFIG_TEMPLATE_PATH);
+        Template template = loadTemplate();
         VelocityContext context = new VelocityContext();
         context.put("intervalSeconds", telegrafConfig.intervalSeconds());
         context.put("vespaConsumer", telegrafConfig.vespa().consumer());
@@ -59,6 +59,14 @@ public class Telegraf extends AbstractComponent {
                 .build();
         uncheck(() -> processExecutor.execute(command))
                 .orElseThrow(() -> new RuntimeException("Timed out running command: " + command));
+    }
+
+    private static Template loadTemplate() {
+        VelocityEngine velocityEngine = new VelocityEngine();
+        velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
+        velocityEngine.setProperty("classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
+        velocityEngine.init();
+        return velocityEngine.getTemplate(TELEGRAF_CONFIG_TEMPLATE_PATH);
     }
 
     @Override
