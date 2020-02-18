@@ -704,6 +704,23 @@ public class DocumentSelectorTestCase {
     }
 
     @Test
+    public void using_non_commutative_comparison_operator_with_field_value_is_well_defined() throws ParseException {
+        var documents = createDocs();
+        // Doc 0 contains 24 in `hint` field.
+        assertEquals(Result.FALSE, evaluate("25 <= test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("24 <= test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("25 > test.hint", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("24 > test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("24 >= test.hint", documents.get(0)));
+
+        assertEquals(Result.FALSE, evaluate("test.hint <= 23", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint <= 24", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint > 23", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.hint > 24", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint >= 24", documents.get(0)));
+    }
+
+    @Test
     public void imported_field_references_are_treated_as_valid_field_with_missing_value() throws ParseException {
         var documents = createDocs();
         assertEquals(Result.TRUE, evaluate("test.my_imported_field == null", documents.get(0)));

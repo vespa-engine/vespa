@@ -551,6 +551,22 @@ TEST_F(DocumentSelectParserTest, operators_0)
     PARSE("30 = 30", *_doc[0], True);
 }
 
+TEST_F(DocumentSelectParserTest, using_non_commutative_comparison_operator_with_field_value_is_well_defined) {
+    auto doc = createDoc("testdoctype1", "id:foo:testdoctype1::bar", 24, 0.0, "foo", "bar", 0);
+    // Document's `headerval` field has value of 24.
+    PARSE("25 <= testdoctype1.headerval", *doc, False);
+    PARSE("24 <= testdoctype1.headerval", *doc, True);
+    PARSE("25 > testdoctype1.headerval", *doc, True);
+    PARSE("24 > testdoctype1.headerval", *doc, False);
+    PARSE("24 >= testdoctype1.headerval", *doc, True);
+
+    PARSE("testdoctype1.headerval <= 23", *doc, False);
+    PARSE("testdoctype1.headerval <= 24", *doc, True);
+    PARSE("testdoctype1.headerval > 23", *doc, True);
+    PARSE("testdoctype1.headerval > 24", *doc, False);
+    PARSE("testdoctype1.headerval >= 24", *doc, True);
+}
+
 TEST_F(DocumentSelectParserTest, regex_matching_does_not_bind_anchors_to_newlines) {
     createDocs();
 
