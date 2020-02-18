@@ -61,6 +61,12 @@ public class Flags {
             "Takes effect on next host admin tick.",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
+            "fleet-canary", false,
+            "Whether the host is a fleet canary.",
+            "Takes effect on next host admin tick.",
+            HOSTNAME);
+
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
