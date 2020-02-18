@@ -407,6 +407,7 @@ public class JobRunnerTest {
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.convergenceFailure).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.deploymentFailure).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.outOfCapacity).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.endpointCertificateTimeout).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.testFailure).get().intValue());
     }
 

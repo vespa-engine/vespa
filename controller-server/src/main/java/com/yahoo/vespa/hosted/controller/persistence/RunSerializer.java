@@ -31,6 +31,7 @@ import java.util.TreeMap;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
@@ -346,14 +347,15 @@ class RunSerializer {
 
     static String valueOf(RunStatus status) {
         switch (status) {
-            case running            : return "running";
-            case outOfCapacity      : return "outOfCapacity";
-            case deploymentFailed   : return "deploymentFailed";
-            case installationFailed : return "installationFailed";
-            case testFailure        : return "testFailure";
-            case error              : return "error";
-            case success            : return "success";
-            case aborted            : return "aborted";
+            case running                    : return "running";
+            case outOfCapacity              : return "outOfCapacity";
+            case endpointCertificateTimeout : return "endpointCertificateTimeout";
+            case deploymentFailed           : return "deploymentFailed";
+            case installationFailed         : return "installationFailed";
+            case testFailure                : return "testFailure";
+            case error                      : return "error";
+            case success                    : return "success";
+            case aborted                    : return "aborted";
 
             default: throw new AssertionError("No value defined for '" + status + "'!");
         }
@@ -361,14 +363,15 @@ class RunSerializer {
 
     static RunStatus runStatusOf(String status) {
         switch (status) {
-            case "running"            : return running;
-            case "outOfCapacity"      : return outOfCapacity;
-            case "deploymentFailed"   : return deploymentFailed;
-            case "installationFailed" : return installationFailed;
-            case "testFailure"        : return testFailure;
-            case "error"              : return error;
-            case "success"            : return success;
-            case "aborted"            : return aborted;
+            case "running"                    : return running;
+            case "outOfCapacity"              : return outOfCapacity;
+            case "endpointCertificateTimeout" : return endpointCertificateTimeout;
+            case "deploymentFailed"           : return deploymentFailed;
+            case "installationFailed"         : return installationFailed;
+            case "testFailure"                : return testFailure;
+            case "error"                      : return error;
+            case "success"                    : return success;
+            case "aborted"                    : return aborted;
 
             default: throw new IllegalArgumentException("No run status defined by '" + status + "'!");
         }
