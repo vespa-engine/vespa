@@ -114,6 +114,10 @@ public class NodeAdminStateUpdater {
             // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
             adjustNodeAgentsToRunFromNodeRepository();
             nodeAdmin.setFrozen(false);
+
+            NodeState currentNodeState = nodeRepository.getNode(hostHostname).state();
+            if (currentNodeState == NodeState.active) orchestrator.resume(hostHostname);
+
             throw new ConvergenceException("Timed out trying to freeze all nodes: will force an unfrozen tick");
         }
 
