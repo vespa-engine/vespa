@@ -338,6 +338,25 @@ public class JobRunnerTest {
     }
 
     @Test
+    public void onlySuccessfulRunExpiresThenAnotherFails() {
+        DeploymentTester tester = new DeploymentTester();
+        JobController jobs = tester.controller().jobController();
+        var app = tester.newDeploymentContext().submit();
+        JobId jobId = new JobId(app.instanceId(), systemTest);
+        assertFalse(jobs.lastSuccess(jobId).isPresent());
+
+        app.runJob(systemTest);
+        assertTrue(jobs.lastSuccess(jobId).isPresent());
+        assertEquals(1, jobs.runs(jobId).size());
+
+        tester.clock().advance(JobController.maxHistoryAge.plusSeconds(1));
+        app.submit();
+        app.failDeployment(systemTest);
+        assertFalse(jobs.lastSuccess(jobId).isPresent());
+        assertEquals(1, jobs.runs(jobId).size());
+    }
+
+    @Test
     public void timeout() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();

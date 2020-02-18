@@ -73,8 +73,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class JobController {
 
-    private static final int historyLength = 64;
-    private static final Duration maxHistoryAge = Duration.ofDays(60);
+    public static final int historyLength = 64;
+    public static final Duration maxHistoryAge = Duration.ofDays(60);
 
     private final Controller controller;
     private final CuratorDb curator;
@@ -356,7 +356,9 @@ public class JobController {
                      old = oldEntries.next()) {
 
                     // Make sure we keep the last success and the first failing
-                    if (successes == 1 && old.getValue().status() == RunStatus.success) {
+                    if (     successes == 1
+                        &&   old.getValue().status() == RunStatus.success
+                        && ! old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
                         oldEntries.next();
                         continue;
                     }
