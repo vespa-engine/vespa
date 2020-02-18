@@ -716,7 +716,7 @@ public class ControllerTest {
         assertEquals(Stream.concat(Stream.of("vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
                                              "app1.tenant1.global.vespa.oath.cloud",
                                              "*.app1.tenant1.global.vespa.oath.cloud"),
-                                   tester.controller().zoneRegistry().zones().directlyRouted().ids().stream()
+                                   tester.controller().zoneRegistry().zones().controllerUpgraded().ids().stream()
                                          .flatMap(zone -> Stream.of("", "*.")
                                                                 .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
                                                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
