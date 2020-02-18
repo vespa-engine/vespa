@@ -151,7 +151,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    @Ignore // TODO: Enable when turning the port check on
     public void fail_if_http_port_is_not_default_in_hosted_vespa() throws Exception {
         try {
             String servicesXml =
