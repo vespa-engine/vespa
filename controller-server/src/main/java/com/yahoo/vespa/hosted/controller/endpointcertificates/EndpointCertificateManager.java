@@ -58,6 +58,7 @@ public class EndpointCertificateManager {
     private final Clock clock;
     private final BooleanFlag useRefreshedEndpointCertificate;
     private final StringFlag endpointCertificateBackfill;
+    private final BooleanFlag endpointCertInSharedRouting;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
                                       CuratorDb curator,
@@ -71,6 +72,7 @@ public class EndpointCertificateManager {
         this.clock = clock;
         this.useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
         this.endpointCertificateBackfill = Flags.ENDPOINT_CERTIFICATE_BACKFILL.bindTo(flagSource);
+        this.endpointCertInSharedRouting = Flags.ENDPOINT_CERT_IN_SHARED_ROUTING.bindTo(flagSource);
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             try {
                 this.backfillCertificateMetadata();
@@ -82,7 +84,8 @@ public class EndpointCertificateManager {
 
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone) {
 
-        if (!zoneRegistry.zones().directlyRouted().ids().contains(zone)) return Optional.empty();
+        boolean endpointCertInSharedRouting = this.endpointCertInSharedRouting.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value();
+        if (!zoneRegistry.zones().directlyRouted().ids().contains(zone) && !endpointCertInSharedRouting) return Optional.empty();
 
         // Re-use existing certificate if already provisioned
         var endpointCertificateMetadata =

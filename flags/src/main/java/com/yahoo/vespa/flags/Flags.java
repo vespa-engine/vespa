@@ -229,6 +229,11 @@ public class Flags {
             "Override the Docker image to use for deployments. This must containing the image name only, without tag",
             "Takes effect on next host-admin tick", APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENDPOINT_CERT_IN_SHARED_ROUTING = defineFeatureFlag(
+            "endpoint-cert-in-shared-routing", false,
+            "Whether to provision and use endpoint certs for apps in shared routing zones",
+            "Takes effect on next deployment of the application", APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
