@@ -71,17 +71,14 @@ public class DynamicProvisioningMaintainer extends Maintainer {
     }
 
     void updateProvisioningNodes(NodeList nodes, Mutex lock) {
-        Map<String, Node> provisionedHostsByHostname = nodes.state(Node.State.provisioned).nodeType(NodeType.host)
-                .asList().stream()
-                .collect(Collectors.toMap(Node::hostname, Function.identity()));
-
-        Map<Node, Set<Node>> nodesByProvisionedParent = nodes.asList().stream()
-                .filter(node -> node.parentHostname().map(provisionedHostsByHostname::containsKey).orElse(false))
+        Map<String, Set<Node>> nodesByProvisionedParentHostname = nodes.nodeType(NodeType.tenant).asList().stream()
+                .filter(node -> node.parentHostname().isPresent())
                 .collect(Collectors.groupingBy(
-                        node -> provisionedHostsByHostname.get(node.parentHostname().get()),
+                        node -> node.parentHostname().get(),
                         Collectors.toSet()));
 
-        nodesByProvisionedParent.forEach((host, children) -> {
+        nodes.state(Node.State.provisioned).nodeType(NodeType.host).forEach(host -> {
+            Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
             try {
                 List<Node> updatedNodes = hostProvisioner.provision(host, children);
                 nodeRepository().write(updatedNodes, lock);
