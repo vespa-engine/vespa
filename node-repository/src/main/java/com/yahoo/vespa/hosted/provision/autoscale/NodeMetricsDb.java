@@ -104,16 +104,18 @@ public class NodeMetricsDb {
 
         public double average() {
             synchronized (lock) {
-                int count = 0;
                 double sum = 0;
+                int count = 0;
                 for (MeasurementKey key : keys) {
                     List<Measurement> measurements = db.get(key);
                     if (measurements == null) continue;
 
                     int index = measurements.size() - 1;
                     while (index >= 0 && measurements.get(index).timestamp >= startTime) {
-                        count++;
                         sum += measurements.get(index).value;
+                        count++;
+
+                        index--;
                     }
                 }
                 return sum / count;

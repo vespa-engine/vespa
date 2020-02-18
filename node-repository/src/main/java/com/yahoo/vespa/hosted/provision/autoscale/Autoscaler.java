@@ -10,10 +10,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * The autoscaler makes decisions about the flavor and node count that should be allocated to a cluster
@@ -23,7 +21,7 @@ import java.util.Set;
  */
 public class Autoscaler {
 
-    private static final int minimumMeasurements = 1000;
+    private static final int minimumMeasurements = 500; // TODO: Per node instead? Also say something about interval?
 
     // We only depend on the ratios between these values
     private static final double cpuUnitCost = 12.0;
@@ -32,7 +30,7 @@ public class Autoscaler {
 
     // Configured min and max nodes TODO: These should come from the application package
     private int minimumNodesPerCluster = 3;
-    private int maximumNodesPerCluster = 1000;
+    private int maximumNodesPerCluster = 10;
 
     private final NodeMetricsDb metricsDb;
     private final NodeRepository nodeRepository;
@@ -43,7 +41,7 @@ public class Autoscaler {
     }
 
     public Optional<ClusterResources> autoscale(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
-        Optional<Double> totalCpuSpent    = averageUseOf(Resource.cpu, applicationId, cluster, clusterNodes);
+        Optional<Double> totalCpuSpent    = averageUseOf(Resource.cpu,    applicationId, cluster, clusterNodes);
         Optional<Double> totalMemorySpent = averageUseOf(Resource.memory, applicationId, cluster, clusterNodes);
         Optional<Double> totalDiskSpent   = averageUseOf(Resource.disk,   applicationId, cluster, clusterNodes);
         if (totalCpuSpent.isEmpty() || totalMemorySpent.isEmpty() || totalDiskSpent.isEmpty()) return Optional.empty();
@@ -56,8 +54,8 @@ public class Autoscaler {
             NodeResources targetResources = targetResources(targetCount,
                                                             totalCpuSpent.get(), totalMemorySpent.get(), totalDiskSpent.get(),
                                                             clusterNodes.get(0).flavor().resources());
-
             Optional<ClusterResources> target = toEffectiveResources(targetCount, targetResources);
+            System.out.println("Trying " + targetCount + " nodes: " + targetResources + ", effective: " + target);
             if (target.isEmpty()) continue;
 
             if (bestTarget.isEmpty() || target.get().cost() < bestTarget.get().cost())
@@ -86,8 +84,9 @@ public class Autoscaler {
     private Optional<NodeResources> toEffectiveResources(NodeResources nodeResources) {
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // Return the requested resources, or empty if they cannot fit on existing hosts
-            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
+            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
                 if (flavor.resources().satisfies(nodeResources)) return Optional.of(nodeResources);
+            }
             return Optional.empty();
         }
         else {
@@ -137,7 +136,7 @@ public class Autoscaler {
     /** The duration of the window we need to consider to make a scaling decision */
     private Duration scalingWindow(ClusterSpec.Type clusterType) {
         if (clusterType.isContent()) return Duration.ofHours(12); // Ideally we should use observed redistribution time
-        return Duration.ofMinutes(3); // Ideally we should take node startup time into account
+        return Duration.ofHours(12); // TODO: Measure much more often to get this down to minutes. And, ideally we should take node startup time into account
     }
 
     // TODO: Put this in zone config instead?
