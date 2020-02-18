@@ -174,9 +174,9 @@ public class EndpointCertificateManager {
     }
 
     private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance) {
-        List<ZoneId> directlyRoutedZones = zoneRegistry.zones().directlyRouted().zones().stream().map(ZoneApi::getId).collect(Collectors.toUnmodifiableList());
+        List<ZoneId> zones = zoneRegistry.zones().controllerUpgraded().zones().stream().map(ZoneApi::getId).collect(Collectors.toUnmodifiableList());
         EndpointCertificateMetadata provisionedCertificateMetadata = endpointCertificateProvider
-                .requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), directlyRoutedZones));
+                .requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), zones));
         curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
         return provisionedCertificateMetadata;
     }
