@@ -13,7 +13,6 @@
   <version>7-SNAPSHOT</version>
   <modules>
     <module>zookeeper-server-common</module>
-    <module>zookeeper-server-3.4</module>
     <module>zookeeper-server-3.5</module>
   </modules>
   <dependencies>
