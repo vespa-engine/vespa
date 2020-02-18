@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
+import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.document.Stemming;
 
@@ -9,7 +10,10 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+
 
 /**
  * An index definition in a search definition.
@@ -56,6 +60,8 @@ public class Index implements Cloneable, Serializable {
 
     /** The boolean index definition, if set */
     private BooleanIndexDefinition boolIndex;
+
+    private Optional<HnswIndexParams> hnswIndexParams;
 
     /** Whether the posting lists of this index field should have interleaved features (num occs, field length) in document id stream. */
     private boolean interleavedFeatures = false;
@@ -115,20 +121,25 @@ public class Index implements Cloneable, Serializable {
     }
 
     @Override
-    public int hashCode() {
-            return name.hashCode() + ( prefix ? 17 : 0 );
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Index index = (Index) o;
+        return prefix == index.prefix &&
+                normalized == index.normalized &&
+                interleavedFeatures == index.interleavedFeatures &&
+                Objects.equals(name, index.name) &&
+                rankType == index.rankType &&
+                Objects.equals(aliases, index.aliases) &&
+                stemming == index.stemming &&
+                type == index.type &&
+                Objects.equals(boolIndex, index.boolIndex) &&
+                Objects.equals(hnswIndexParams, index.hnswIndexParams);
     }
 
     @Override
-    public boolean equals(Object object) {
-            if ( ! (object instanceof Index)) return false;
-
-            Index other=(Index)object;
-            return
-                this.name.equals(other.name) &&
-                this.prefix==other.prefix &&
-                this.stemming==other.stemming &&
-                this.normalized==other.normalized;
+    public int hashCode() {
+        return Objects.hash(name, rankType, prefix, aliases, stemming, normalized, type, boolIndex, hnswIndexParams, interleavedFeatures);
     }
 
     public String toString() {
@@ -174,6 +185,14 @@ public class Index implements Cloneable, Serializable {
     /** Sets the boolean index definition */
     public void setBooleanIndexDefiniton(BooleanIndexDefinition def) {
         boolIndex = def;
+    }
+
+    public Optional<HnswIndexParams> getHnswIndexParams() {
+        return hnswIndexParams;
+    }
+
+    public void setHnswIndexParams(HnswIndexParams params) {
+        hnswIndexParams = Optional.of(params);
     }
 
     public void setInterleavedFeatures(boolean value) {

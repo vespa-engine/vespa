@@ -332,6 +332,9 @@ TOKEN :
 | < UPPERBOUND: "upper-bound" >
 | < DENSEPOSTINGLISTTHRESHOLD: "dense-posting-list-threshold" >
 | < ENABLE_BM25: "enable-bm25" >
+| < HNSW: "hnsw" >
+| < MAXLINKSPERNODE: "max-links-per-node" >
+| < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
@@ -1811,8 +1814,31 @@ Object indexBody(IndexOperation index) :
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
       | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
       | <ENABLE_BM25>                                                  { index.setEnableBm25(true); }
+      | hnswIndex(index)                                               { }
     )
     { return null; }
+}
+
+void hnswIndex(IndexOperation index) :
+{
+    HnswIndexParams.Builder params = new HnswIndexParams.Builder();
+}
+{
+    ( LOOKAHEAD(<HNSW> lbrace())
+      <HNSW> ( (lbrace() (hnswIndexBody(params) (<NL>)*)* <RBRACE>) ) |
+      <HNSW> )
+    {
+        index.setHnswIndexParams(params);
+    }
+}
+
+void hnswIndexBody(HnswIndexParams.Builder params) :
+{
+    int num;
+}
+{
+    ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
+      | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); } )
 }
 
 /**

@@ -155,4 +155,9 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         assertCorrectConfigFiles("tensor2");
     }
 
+    @Test
+    public void testHnswIndex() throws IOException, ParseException {
+        assertCorrectDeriving("hnsw_index");
+    }
+
 }

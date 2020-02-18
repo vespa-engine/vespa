@@ -30,3 +30,8 @@ attribute[].densepostinglistthreshold   double default=0.40
 attribute[].tensortype         string default=""
 # Whether this is an imported attribute (from parent document db) or not.
 attribute[].imported           bool default=false
+
+# Configuration parameters for a hnsw index used together with a 1-dimensional indexed tensor for approximate nearest neighbor search.
+attribute[].index.hnsw.enabled bool default=false
+attribute[].index.hnsw.maxlinkspernode int default=16
+attribute[].index.hnsw.neighborstoexploreatinsert int default=200
