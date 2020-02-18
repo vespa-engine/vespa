@@ -6,9 +6,9 @@
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
-import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
+import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -59,6 +59,7 @@ import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -105,7 +106,7 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(512, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());
-        assertEquals(false, qrStartConfig.jvm().verbosegc());
+        assertFalse(qrStartConfig.jvm().verbosegc());
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());

@@ -20,6 +20,7 @@ import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcServer;
 import ai.vespa.metricsproxy.service.ConfigSentinelClient;
 import ai.vespa.metricsproxy.service.SystemPollerProvider;
+import ai.vespa.metricsproxy.telegraf.TelegrafConfig;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -67,6 +68,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         ApplicationDimensionsConfig.Producer,
         ConsumersConfig.Producer,
         MonitoringConfig.Producer,
+        TelegrafConfig.Producer,
         ThreadpoolConfig.Producer,
         MetricsNodesConfig.Producer
 {
@@ -157,6 +159,25 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     public void getConfig(ApplicationDimensionsConfig.Builder builder) {
         if (isHostedVespa()) {
             builder.dimensions(applicationDimensions());
+        }
+    }
+
+    @Override
+    public void getConfig(TelegrafConfig.Builder builder) {
+        var userConsumers = getUserMetricsConsumers();
+        for (var consumer : userConsumers.values()) {
+            for (var cloudWatch : consumer.cloudWatches()) {
+                var cloudWatchBuilder  = new TelegrafConfig.CloudWatch.Builder();
+                cloudWatchBuilder
+                        .region(cloudWatch.region())
+                        .namespace(cloudWatch.namespace())
+                        .consumer(cloudWatch.consumer());
+                cloudWatch.hostedAuth().ifPresent(hostedAuth -> cloudWatchBuilder
+                        .accessKeyName(hostedAuth.accessKeyName)
+                        .secretKeyName(hostedAuth.secretKeyName));
+                cloudWatch.profile().ifPresent(cloudWatchBuilder::profile);
+                builder.cloudWatch(cloudWatchBuilder);
+            }
         }
     }
 
