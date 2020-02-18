@@ -8,7 +8,7 @@
 %define _vespa_deps_prefix /opt/vespa-deps
 
 Name:           vespa
-Version:        _VESPA_VERSION_
+Version:        7.179.11
 Release:        1%{?dist}
 Summary:        Vespa - The open big data serving engine
 Group:          Applications/Databases
