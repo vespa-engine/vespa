@@ -21,7 +21,23 @@ import java.util.Optional;
  */
 public class Autoscaler {
 
+    /*
+     TODO:
+     - X Don't always go for more, smaller nodes
+     - X Test gc
+     - X Test AutoscalingMaintainer
+     - X Implement node metrics fetch
+     - X Avoid making decisions for the same app at multiple config servers
+     - X Multiple groups
+     - Have a better idea about whether we have sufficient information to make decisions
+     - Consider taking spikes/variance into account
+     - Measure observed regulation lag (startup+redistribution) into account when deciding regulation observation window
+     */
+
     private static final int minimumMeasurements = 500; // TODO: Per node instead? Also say something about interval?
+
+    /** Only change if the difference between the current and best ratio is larger than this */
+    private static final double resourceDifferenceRatioWorthReallocation = 0.1;
 
     // We only depend on the ratios between these values
     private static final double cpuUnitCost = 12.0;
@@ -41,27 +57,57 @@ public class Autoscaler {
     }
 
     public Optional<ClusterResources> autoscale(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
+        if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
+                                                   node.allocation().get().membership().retired() ||
+                                                   node.allocation().get().isRemovable()))
+            return Optional.empty(); // Don't autoscale clusters that are in flux
+
+        ClusterResources currentAllocation = new ClusterResources(clusterNodes.size(),
+                                                                  clusterNodes.get(0).flavor().resources());
         Optional<Double> totalCpuSpent    = averageUseOf(Resource.cpu,    applicationId, cluster, clusterNodes);
         Optional<Double> totalMemorySpent = averageUseOf(Resource.memory, applicationId, cluster, clusterNodes);
         Optional<Double> totalDiskSpent   = averageUseOf(Resource.disk,   applicationId, cluster, clusterNodes);
         if (totalCpuSpent.isEmpty() || totalMemorySpent.isEmpty() || totalDiskSpent.isEmpty()) return Optional.empty();
 
-        Optional<ClusterResources> bestTarget = Optional.empty();
+        Optional<ClusterResources> bestAllocation = findBestAllocation(totalCpuSpent.get(),
+                                                                       totalMemorySpent.get(),
+                                                                       totalDiskSpent.get(),
+                                                                       currentAllocation.resources());
+        if (bestAllocation.isPresent() && isSimilar(bestAllocation.get(), currentAllocation))
+            return Optional.empty(); // Avoid small changes
+        return bestAllocation;
+    }
+
+    private Optional<ClusterResources> findBestAllocation(double totalCpuSpent,
+                                                          double totalMemorySpent,
+                                                          double totalDiskSpent,
+                                                          NodeResources currentResources) {
+        Optional<ClusterResources> bestAllocation = Optional.empty();
         // Try all the node counts allowed by the configuration -
         // -1 to translate from true allocated counts to counts allowing for a node to be down
         for (int targetCount = minimumNodesPerCluster - 1; targetCount <= maximumNodesPerCluster - 1; targetCount++ ) {
             // The resources per node we need if we distribute the total spent over targetCount nodes at ideal load:
             NodeResources targetResources = targetResources(targetCount,
-                                                            totalCpuSpent.get(), totalMemorySpent.get(), totalDiskSpent.get(),
-                                                            clusterNodes.get(0).flavor().resources());
-            Optional<ClusterResources> target = toEffectiveResources(targetCount, targetResources);
-            System.out.println("Trying " + targetCount + " nodes: " + targetResources + ", effective: " + target);
-            if (target.isEmpty()) continue;
+                                                            totalCpuSpent, totalMemorySpent, totalDiskSpent,
+                                                            currentResources);
+            Optional<ClusterResources> allocation = toEffectiveResources(targetCount, targetResources);
+            if (allocation.isEmpty()) continue;
 
-            if (bestTarget.isEmpty() || target.get().cost() < bestTarget.get().cost())
-                bestTarget = target;
+            if (bestAllocation.isEmpty() || allocation.get().cost() < bestAllocation.get().cost())
+                bestAllocation = allocation;
         }
-        return bestTarget;
+        return bestAllocation;
+    }
+
+    private boolean isSimilar(ClusterResources a1, ClusterResources a2) {
+        if (a1.count() != a2.count()) return false; // A full node is always a significant difference
+        return isSimilar(a1.resources().vcpu(), a2.resources().vcpu()) &&
+               isSimilar(a1.resources().memoryGb(), a2.resources().memoryGb()) &&
+               isSimilar(a1.resources().diskGb(), a2.resources().diskGb());
+    }
+
+    private boolean isSimilar(double r1, double r2) {
+        return Math.abs(r1 - r2) / r1 < resourceDifferenceRatioWorthReallocation;
     }
 
     /**
@@ -84,9 +130,8 @@ public class Autoscaler {
     private Optional<NodeResources> toEffectiveResources(NodeResources nodeResources) {
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // Return the requested resources, or empty if they cannot fit on existing hosts
-            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
+            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
                 if (flavor.resources().satisfies(nodeResources)) return Optional.of(nodeResources);
-            }
             return Optional.empty();
         }
         else {
@@ -128,7 +173,6 @@ public class Autoscaler {
 
         if (window.measurementCount() < minimumMeasurements) return Optional.empty();
         if (window.hostnames() != clusterNodes.size()) return Optional.empty(); // Regulate only when all nodes are measured
-        // TODO: Bail also if allocations have changed in the time window
 
         return Optional.of(window.average() * resource.valueFrom(currentResources) * clusterNodes.size());
     }

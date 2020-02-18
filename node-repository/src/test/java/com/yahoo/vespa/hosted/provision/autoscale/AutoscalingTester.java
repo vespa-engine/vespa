@@ -8,10 +8,12 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -29,12 +31,12 @@ class AutoscalingTester {
     private final Autoscaler autoscaler;
     private final NodeMetricsDb db;
 
-    public AutoscalingTester(NodeResources... resources) {
+    public AutoscalingTester(NodeResources hostResources) {
         provisioningTester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
-                                                             .flavorsConfig(asConfig(resources))
+                                                             .flavorsConfig(asConfig(hostResources))
                                                              .build();
-        for (NodeResources nodeResources : resources)
-            provisioningTester.makeReadyNodes(20, nodeResources);
+        provisioningTester.makeReadyNodes(20, "flavor0", NodeType.host, 8);
+        provisioningTester.deployZoneApp();
 
         db = new NodeMetricsDb();
         autoscaler = new Autoscaler(db, nodeRepository());
@@ -51,35 +53,59 @@ class AutoscalingTester {
                                    false);
     }
 
+    public void deploy(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
+        deploy(application, cluster, resources.count(), resources.resources());
+    }
+
     public void deploy(ApplicationId application, ClusterSpec cluster, int count, NodeResources resources) {
         List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.fromCount(count, resources), 1);
         provisioningTester.activate(application, hosts);
+
     }
 
-    public void addMeasurements(float value, int count, ApplicationId applicationId) {
-        List<Node> nodes = nodeRepository().getNodes(applicationId);
+    public void deactivateRetired(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
+        try (Mutex lock = nodeRepository().lock(application)){
+            for (Node node : nodeRepository().getNodes(application, Node.State.active)) {
+                if (node.allocation().get().membership().retired())
+                    nodeRepository().write(node.with(node.allocation().get().removable()), lock);
+            }
+        }
+        deploy(application, cluster, resources);
+    }
+
+    /**
+     * Adds measurements with the given cpu value and ideal values for the other resources,
+     * scaled to take one node redundancy into account.
+     * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
+     * wanting to see the ideal load with one node missing.)
+     */
+    public void addMeasurements(float cpuValue, int count, ApplicationId applicationId) {
+        List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
+        float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
                 for (Resource resource : Resource.values())
-                    db.add(node, resource, clock().instant(), value);
+                    db.add(node, resource, clock().instant(),
+                           (resource == Resource.cpu ? cpuValue : (float)resource.idealAverageLoad()) * oneExtraNodeFactor);
             }
         }
     }
 
     public Optional<ClusterResources> autoscale(ApplicationId application, ClusterSpec cluster) {
-        return autoscaler.autoscale(application, cluster, nodeRepository().getNodes(application));
+        return autoscaler.autoscale(application, cluster, nodeRepository().getNodes(application, Node.State.active));
     }
 
-    public void assertResources(String message,
-                                int nodeCount, double approxCpu, double approxMemory, double approxDisk,
-                                Optional<ClusterResources> actualResources) {
+    public ClusterResources assertResources(String message,
+                                            int nodeCount, double approxCpu, double approxMemory, double approxDisk,
+                                            Optional<ClusterResources> actualResources) {
         double delta = 0.0000000001;
         assertTrue(message, actualResources.isPresent());
         assertEquals("Node count " + message, nodeCount, actualResources.get().count());
         assertEquals("Cpu: "    + message, approxCpu,    Math.round(actualResources.get().resources().vcpu()     * 10) / 10.0, delta);
         assertEquals("Memory: " + message, approxMemory, Math.round(actualResources.get().resources().memoryGb() * 10) / 10.0, delta);
         assertEquals("Disk: "   + message, approxDisk,   Math.round(actualResources.get().resources().diskGb()   * 10) / 10.0, delta);
+        return actualResources.get();
     }
 
     public ManualClock clock() {
