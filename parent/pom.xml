@@ -768,8 +768,7 @@
         <protobuf.version>3.7.0</protobuf.version>
         <surefire.version>2.22.0</surefire.version>
         <tensorflow.version>1.12.0</tensorflow.version>
-        <zookeeper.client.version>3.5.7</zookeeper.client.version>
-        <zookeeper.server.version>3.5.7</zookeeper.server.version>
+        <zookeeper.client.version>3.5.6</zookeeper.client.version>
 
         <doclint>all</doclint>
         <test.hide>true</test.hide>
