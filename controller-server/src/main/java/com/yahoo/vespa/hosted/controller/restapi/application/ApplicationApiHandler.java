@@ -434,9 +434,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor array = slime.setArray();
         for (Application application : controller.applications().asList(tenant)) {
-            if (applicationName.map(application.id().application().value()::equals).orElse(true))
-                for (InstanceName instance : application.instances().keySet())
+            if (applicationName.map(application.id().application().value()::equals).orElse(true)) {
+                for (InstanceName instance : showOnlyProductionInstances(request) ? application.productionInstances().keySet()
+                                                                                  : application.instances().keySet())
                     toSlime(application.id().instance(instance), array.addObject(), request);
+            }
         }
         return new SlimeJsonResponse(slime);
     }
