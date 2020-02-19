@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class AutoscalingTest {
 
     @Test
-    public void testAutoscaling() {
+    public void testAutoscalingSingleGroup() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         AutoscalingTester tester = new AutoscalingTester(resources);
 
@@ -22,7 +22,7 @@ public class AutoscalingTest {
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
-        tester.deploy(application1, cluster1, 5, resources);
+        tester.deploy(application1, cluster1, 5, 1, resources);
 
         assertTrue("No measurements -> No change", tester.autoscale(application1, cluster1).isEmpty());
 
@@ -31,7 +31,7 @@ public class AutoscalingTest {
 
         tester.addMeasurements( 0.25f, 60, application1);
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                 10, 1.7,  44.4, 44.4,
+                                                                 10, 1, 1.7,  44.4, 44.4,
                                                                   tester.autoscale(application1, cluster1));
 
         tester.deploy(application1, cluster1, scaledResources);
@@ -47,7 +47,39 @@ public class AutoscalingTest {
 
         tester.addMeasurements( 0.1f, 120, application1);
         tester.assertResources("Scaling down since resource usage has gone down significantly",
-                               10, 1.2, 44.4, 44.4,
+                               10, 1, 1.2, 44.4, 44.4,
+                               tester.autoscale(application1, cluster1));
+    }
+
+    @Test
+    public void testAutoscalingGroupSize1() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 5, 5, resources);
+        tester.addMeasurements( 0.25f, 120, application1);
+        tester.assertResources("Scaling up since resource usage is too high",
+                               10, 10, 1.7,  44.4, 44.4,
+                               tester.autoscale(application1, cluster1));
+    }
+
+    @Test
+    public void testAutoscalingGroupSize3() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 6, 2, resources);
+        tester.addMeasurements( 0.22f, 120, application1);
+        tester.assertResources("Scaling up since resource usage is too high",
+                               9, 3, 2.7,  83.3, 83.3,
                                tester.autoscale(application1, cluster1));
     }
 

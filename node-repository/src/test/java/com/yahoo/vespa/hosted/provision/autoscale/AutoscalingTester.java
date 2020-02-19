@@ -54,11 +54,11 @@ class AutoscalingTester {
     }
 
     public void deploy(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
-        deploy(application, cluster, resources.count(), resources.resources());
+        deploy(application, cluster, resources.nodes(), resources.groups(), resources.resources());
     }
 
-    public void deploy(ApplicationId application, ClusterSpec cluster, int count, NodeResources resources) {
-        List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.fromCount(count, resources), 1);
+    public void deploy(ApplicationId application, ClusterSpec cluster, int nodes, int groups, NodeResources resources) {
+        List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.fromCount(nodes, resources), groups);
         provisioningTester.activate(application, hosts);
 
     }
@@ -97,11 +97,13 @@ class AutoscalingTester {
     }
 
     public ClusterResources assertResources(String message,
-                                            int nodeCount, double approxCpu, double approxMemory, double approxDisk,
+                                            int nodeCount, int groupCount,
+                                            double approxCpu, double approxMemory, double approxDisk,
                                             Optional<ClusterResources> actualResources) {
         double delta = 0.0000000001;
         assertTrue(message, actualResources.isPresent());
-        assertEquals("Node count " + message, nodeCount, actualResources.get().count());
+        assertEquals("Node count " + message, nodeCount, actualResources.get().nodes());
+        assertEquals("Group count " + message, groupCount, actualResources.get().groups());
         assertEquals("Cpu: "    + message, approxCpu,    Math.round(actualResources.get().resources().vcpu()     * 10) / 10.0, delta);
         assertEquals("Memory: " + message, approxMemory, Math.round(actualResources.get().resources().memoryGb() * 10) / 10.0, delta);
         assertEquals("Disk: "   + message, approxDisk,   Math.round(actualResources.get().resources().diskGb()   * 10) / 10.0, delta);

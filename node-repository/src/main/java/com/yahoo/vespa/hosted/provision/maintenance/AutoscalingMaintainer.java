@@ -42,7 +42,7 @@ public class AutoscalingMaintainer extends Maintainer {
             Optional<ClusterResources> target = autoscaler.autoscale(applicationId, clusterSpec, clusterNodes);
             target.ifPresent(t -> log.info("Autoscale: Application " + applicationId + " cluster " + clusterSpec +
                                            " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
-                                           " to " + t.count() + " * " + t.resources()));
+                                           " to " + t.nodes() + " * " + t.resources()));
         });
     }
 
