@@ -432,12 +432,27 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
         Slime slime = new Slime();
-        Cursor array = slime.setArray();
+        Cursor applicationArray = slime.setArray();
         for (Application application : controller.applications().asList(tenant)) {
             if (applicationName.map(application.id().application().value()::equals).orElse(true)) {
+                Cursor applicationObject = applicationArray.addObject();
+                applicationObject.setString("tenant", application.id().tenant().value());
+                applicationObject.setString("application", application.id().application().value());
+                applicationObject.setString("url", withPath("/application/v4" +
+                                                            "/tenant/" + application.id().tenant().value() +
+                                                            "/application/" + application.id().application().value(),
+                                                            request.getUri()).toString());
+                Cursor instanceArray = applicationObject.setArray("instances");
                 for (InstanceName instance : showOnlyProductionInstances(request) ? application.productionInstances().keySet()
-                                                                                  : application.instances().keySet())
-                    toSlime(application.id().instance(instance), array.addObject(), request);
+                                                                                  : application.instances().keySet()) {
+                    Cursor instanceObject = instanceArray.addObject();
+                    instanceObject.setString("instance", instance.value());
+                    instanceObject.setString("url", withPath("/application/v4" +
+                                                             "/tenant/" + application.id().tenant().value() +
+                                                             "/application/" + application.id().application().value() +
+                                                             "/instance/" + instance.value(),
+                                                             request.getUri()).toString());
+                }
             }
         }
         return new SlimeJsonResponse(slime);
@@ -1793,6 +1808,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
+        // TODO jonmv: This should list applications, not instances.
         Cursor applicationArray = object.setArray("applications");
         for (Application application : applications) {
             DeploymentStatus status = controller.jobController().deploymentStatus(application);
