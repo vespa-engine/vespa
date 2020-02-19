@@ -8,7 +8,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Deserializes config payload (cfg format) to a ConfigPayload.
@@ -33,15 +34,10 @@ public class CfgConfigPayloadBuilder {
         int lineNum = 1;
         ConfigPayloadBuilder payloadBuilder = new ConfigPayloadBuilder();
         for (String line : lines) {
-            if (log.isLoggable(LogLevel.SPAM)) {
-               log.log(LogLevel.SPAM, "line " + lineNum + ": '" + line + "'");
-            }
             parseLine(line, lineNum, payloadBuilder);
             lineNum++;
         }
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "payload=" + payloadBuilder.toString());
-        }
+        log.log(LogLevel.SPAM, () -> "payload=" + payloadBuilder.toString());
         return payloadBuilder;
     }
 
@@ -52,16 +48,13 @@ public class CfgConfigPayloadBuilder {
         String field = fieldAndValue.getFirst();
         String value = fieldAndValue.getSecond();
         if (field==null || value==null) {
-            log.log(LogLevel.DEBUG, "Got field without value in line " + lineNum + ": " + line + ", skipping");
+            log.log(LogLevel.DEBUG, () -> "Got field without value in line " + lineNum + ": " + line + ", skipping");
             return;
         }
         field=field.trim();
         value=value.trim();
         validateField(field, trimmedLine, lineNum);
         validateValue(value, trimmedLine, lineNum);
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "field=" + field + ",value=" + value);
-        }
         List<String> fields = parseFieldList(field);
         ConfigPayloadBuilder currentBuilder = payloadBuilder;
         for (int fieldNum = 0; fieldNum < fields.size(); fieldNum++) {

@@ -7,7 +7,6 @@ import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Value;
-import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ErrorCode;
@@ -92,9 +91,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
             }
             compressionInfo.serialize(jsonGenerator);
             jsonGenerator.writeEndObject();
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, getConfigKey() + ": response dataXXXXX" + payload.withCompression(CompressionType.UNCOMPRESSED) + "XXXXX");
-            }
+
             jsonGenerator.writeEndObject();
             jsonGenerator.close();
         } catch (IOException e) {

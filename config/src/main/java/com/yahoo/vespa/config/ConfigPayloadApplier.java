@@ -479,15 +479,11 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private void debug(String message) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, message);
-        }
+        log.log(LogLevel.DEBUG, () -> message);
     }
 
     private void trace(String message) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, message);
-        }
+        log.log(LogLevel.SPAM, () -> message);
     }
 
     private void printStack() {
