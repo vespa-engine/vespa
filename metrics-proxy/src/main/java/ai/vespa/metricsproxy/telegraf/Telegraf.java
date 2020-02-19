@@ -36,7 +36,6 @@ public class Telegraf extends AbstractComponent {
         Template template = loadTemplate();
         VelocityContext context = new VelocityContext();
         context.put("intervalSeconds", telegrafConfig.intervalSeconds());
-        context.put("vespaConsumer", telegrafConfig.vespa().consumer());
         context.put("cloudwatchPlugins", telegrafConfig.cloudWatch());
         // TODO: Add node cert if hosted
 

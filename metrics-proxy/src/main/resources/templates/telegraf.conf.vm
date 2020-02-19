@@ -20,11 +20,15 @@
 #elseif( $cloudwatch.profile() != "" )
   profile = "$cloudwatch.profile()"
 #end
+  tagexclude = ["vespa_consumer"]
+  [outputs.cloudwatch.tagpass]
+    vespa_consumer = ["$cloudwatch.consumer()"]
 
-#end
 # Configuration for Vespa input plugin
 [[inputs.vespa]]
-  url = "http://localhost:19092/metrics/v2/values?consumer=$vespaConsumer"
+  url = "http://localhost:19092/metrics/v2/values?consumer=$cloudwatch.consumer()"
+  [inputs.vespa.tags]
+    vespa_consumer = "$cloudwatch.consumer()"
 #* TODO: Add node cert if hosted
 #if( $isHosted )
   tls_cert = "${VESPA_CERTIFICATE_PATH}"
@@ -32,3 +36,4 @@
   insecure_skip_verify = true
 #end
 *###
+#end

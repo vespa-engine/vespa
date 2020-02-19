@@ -23,18 +23,16 @@ public class TelegrafTest {
                                 .namespace("namespace1")
                                 .secretKeyName("secretKey1")
                                 .region("us-east-1")
+                                .consumer("consumer1")
                 )
                 .cloudWatch(
                         new TelegrafConfig.CloudWatch.Builder()
                                 .namespace("namespace2")
                                 .profile("awsprofile")
                                 .region("us-east-2")
+                                .consumer("consumer2")
                 )
                 .intervalSeconds(300)
-                .vespa(
-                        new TelegrafConfig.Vespa.Builder()
-                                .consumer("custom-consumer")
-                )
                 .build();
         StringWriter stringWriter = new StringWriter();
         Telegraf.writeConfig(telegrafConfig, stringWriter);
