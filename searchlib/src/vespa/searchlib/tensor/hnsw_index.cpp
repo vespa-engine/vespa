@@ -314,7 +314,7 @@ std::vector<uint32_t>
 HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k)
 {
     std::vector<uint32_t> result;
-    FurthestPriQ candidates = top_k_candidates(vector, explore_k);
+    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k));
     while (candidates.size() > k) {
         candidates.pop();
     }
