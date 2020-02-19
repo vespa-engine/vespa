@@ -77,11 +77,10 @@ public class Autoscaler {
         Optional<ClusterResources> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(totalCpu, totalMemory, totalDisk, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
-            System.out.println("  Considering " + allocation);
             Optional<NodeResources> allocatableResources = toAllocatableResources(allocation.resources());
             if (allocatableResources.isEmpty()) continue;
-            ClusterResources effectiveAllocation = i.addRedundancyTo(allocation.with(allocatableResources.get()));
 
+            ClusterResources effectiveAllocation = allocation.with(allocatableResources.get());
             if (bestAllocation.isEmpty() || effectiveAllocation.cost() < bestAllocation.get().cost())
                 bestAllocation = Optional.of(effectiveAllocation);
         }

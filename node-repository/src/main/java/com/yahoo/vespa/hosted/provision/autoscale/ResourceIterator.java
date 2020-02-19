@@ -10,7 +10,7 @@ import com.yahoo.config.provision.NodeResources;
 public class ResourceIterator {
 
     // Configured min and max nodes TODO: These should come from the application package
-    private static final int minimumNodesPerCluster = 3;
+    private static final int minimumNodesPerCluster = 3; // Since this is with redundancy it cannot be lower than 2
     private static final int maximumNodesPerCluster = 10;
 
     private final double totalCpu;
@@ -40,23 +40,22 @@ public class ResourceIterator {
         nodeIncrement = singleGroupMode ? 1 : groupSize;
 
         currentNodes = currentAllocation.nodes();
-        while (currentNodes - nodeIncrement >= minimumNodesPerCluster)
-            currentNodes -= nodeIncrement;
-        if (currentNodes - nodeIncrement > 0) // Decrease once more since we'll increment for redundancy later
+        while (currentNodes - nodeIncrement >= minimumNodesPerCluster
+               && (singleGroupMode || currentNodes - nodeIncrement > groupSize)) // group level redundancy
             currentNodes -= nodeIncrement;
     }
 
     public ClusterResources next() {
+        int nodesWithRedundancy = currentNodes - (singleGroupMode ? 1 : groupSize);
         ClusterResources next = new ClusterResources(currentNodes,
                                                      singleGroupMode ? 1 : currentNodes / groupSize,
-                                                     resourcesFor(currentNodes));
+                                                     resourcesFor(nodesWithRedundancy));
         currentNodes += nodeIncrement;
         return next;
     }
 
     public boolean hasNext() {
-        // Add node increment for redundancy
-        return currentNodes + nodeIncrement <= maximumNodesPerCluster;
+        return currentNodes <= maximumNodesPerCluster;
     }
 
     /** Returns the resources needed per node to be at ideal load given a target node count and total resource allocation */
@@ -65,12 +64,5 @@ public class ResourceIterator {
                                  .withMemoryGb(totalMemory / nodeCount / Resource.memory.idealAverageLoad())
                                  .withDiskGb(totalDisk / nodeCount / Resource.disk.idealAverageLoad());
     }
-
-    public ClusterResources addRedundancyTo(ClusterResources resources) {
-        return new ClusterResources(resources.nodes() + nodeIncrement,
-                                    singleGroupMode ? 1 : resources.groups() + 1,
-                                    resources.resources());
-    }
-
 
 }
