@@ -9,7 +9,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContexts;
@@ -128,7 +127,6 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
         CloseableHttpResponse requestStatusHtml() throws IOException {
             HttpGet request = new HttpGet("https://localhost:" + port + HEALTH_CHECK_PATH);
-            request.setHeader("Connection", "Close");
             return client().execute(request);
         }
 
@@ -139,7 +137,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                     if (client == null) {
                         client = HttpClientBuilder.create()
                                 .disableAutomaticRetries()
-                                .setConnectionReuseStrategy(NoConnectionReuseStrategy.INSTANCE)
+                                .setMaxConnPerRoute(4)
                                 .setSSLContext(getSslContext(sslContextFactory))
                                 .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                                 .setUserTokenHandler(context -> null) // https://stackoverflow.com/a/42112034/1615280
