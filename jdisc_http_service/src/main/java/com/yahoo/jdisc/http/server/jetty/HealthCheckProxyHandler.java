@@ -5,6 +5,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -24,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +144,12 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                                 .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                                 .setUserTokenHandler(context -> null) // https://stackoverflow.com/a/42112034/1615280
                                 .setUserAgent("health-check-proxy-client")
+                                .setDefaultRequestConfig(
+                                        RequestConfig.custom()
+                                                .setConnectTimeout((int) Duration.ofSeconds(4).toMillis())
+                                                .setConnectionRequestTimeout((int) Duration.ofSeconds(4).toMillis())
+                                                .setSocketTimeout((int) Duration.ofSeconds(8).toMillis())
+                                                .build())
                                 .build();
                     }
                 }
