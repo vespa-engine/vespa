@@ -14,13 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -29,11 +31,13 @@ import static org.junit.Assert.*;
 public class ClusterMetricsRetrieverTest {
 
     @Rule
-    public final WireMockRule wireMock = new WireMockRule(options().port(8080), true);
+    public final WireMockRule wireMock = new WireMockRule(options().dynamicPort(), true);
 
     @Test
     public void testMetricAggregation() throws IOException {
-        List<URI> hosts = List.of(URI.create("http://localhost:8080/1"), URI.create("http://localhost:8080/2"), URI.create("http://localhost:8080/3"));
+        List<URI> hosts = Stream.of(1, 2, 3)
+                .map(item -> URI.create("http://localhost:" + wireMock.port() + "/" + item))
+                .collect(Collectors.toList());
 
         stubFor(get(urlEqualTo("/1"))
                 .willReturn(aResponse()
