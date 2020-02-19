@@ -74,18 +74,14 @@ public class JRTConnectionPool implements ConnectionPool {
     public synchronized JRTConnection setNewCurrentConnection() {
         List<JRTConnection> sources = getSources();
         currentConnection = sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Choosing new connection: " + currentConnection);
-        }
+        log.log(LogLevel.DEBUG, () -> "Choosing new connection: " + currentConnection);
         return currentConnection;
     }
 
     List<JRTConnection> getSources() {
-        List<JRTConnection> ret = new ArrayList<>();
+        List<JRTConnection> ret;
         synchronized (connections) {
-            for (JRTConnection source : connections.values()) {
-                ret.add(source);
-            }
+            ret = new ArrayList<>(connections.values());
         }
         return ret;
     }

@@ -325,7 +325,7 @@ public class ConfigSubscriber implements AutoCloseable {
             h.subscription().close();
         }
         closeRequesters();
-        log.log(LogLevel.DEBUG, "Config subscriber has been closed.");
+        log.log(LogLevel.DEBUG, () -> "Config subscriber has been closed.");
     }
 
     /**
