@@ -2,6 +2,7 @@
 
 #include "dense_tensor_attribute.h"
 #include "dense_tensor_attribute_saver.h"
+#include "nearest_neighbor_index.h"
 #include "tensor_attribute.hpp"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
@@ -55,11 +56,15 @@ TensorReader::is_present() {
 
 }
 
-DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName,
-                                 const Config &cfg)
+DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
+                                           const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
-      _denseTensorStore(cfg.tensorType())
+      _denseTensorStore(cfg.tensorType()),
+      _index()
 {
+    if (cfg.hnsw_index_params().has_value()) {
+        _index = index_factory.make(*this, cfg.tensorType().cell_type(), cfg.hnsw_index_params().value());
+    }
 }
 
 
@@ -152,6 +157,14 @@ uint32_t
 DenseTensorAttribute::getVersion() const
 {
     return DENSE_TENSOR_ATTRIBUTE_VERSION;
+}
+
+vespalib::tensor::TypedCells
+DenseTensorAttribute::get_vector(uint32_t docid) const
+{
+    MutableDenseTensorView tensor_view(_denseTensorStore.type());
+    getTensor(docid, tensor_view);
+    return tensor_view.cellsRef();
 }
 
 }

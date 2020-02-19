@@ -48,8 +48,7 @@ using HnswIndexUP = std::unique_ptr<HnswIndex>;
 class HnswIndexTest : public ::testing::Test {
 public:
     FloatVectors vectors;
-    FloatSqEuclideanDistance distance_func;
-    LevelGenerator level_generator;
+    LevelGenerator* level_generator;
     HnswIndexUP index;
 
     HnswIndexTest()
@@ -62,11 +61,14 @@ public:
                .set(7, {3, 5}).set(8, {0, 3}).set(9, {4, 5});
     }
     void init(bool heuristic_select_neighbors) {
-        index = std::make_unique<HnswIndex>(vectors, distance_func, level_generator,
+        auto generator = std::make_unique<LevelGenerator>();
+        level_generator = generator.get();
+        index = std::make_unique<HnswIndex>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
+                                            std::move(generator),
                                             HnswIndex::Config(2, 1, 10, heuristic_select_neighbors));
     }
     void add_document(uint32_t docid, uint32_t max_level = 0) {
-        level_generator.level = max_level;
+        level_generator->level = max_level;
         index->add_document(docid);
     }
     void remove_document(uint32_t docid) {

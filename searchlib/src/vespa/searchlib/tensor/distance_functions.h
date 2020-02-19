@@ -3,6 +3,7 @@
 #pragma once
 
 #include "distance_function.h"
+#include <vespa/eval/tensor/dense/typed_cells.h>
 
 namespace search::tensor {
 

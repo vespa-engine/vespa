@@ -1,41 +1,43 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/base/exceptions.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/searchlib/tensor/generic_tensor_attribute.h>
-#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastos/file.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
+#include <vespa/searchlib/tensor/generic_tensor_attribute.h>
+#include <vespa/searchlib/tensor/hnsw_index.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("tensorattribute_test");
 
 using document::WrongTensorTypeException;
-using search::tensor::TensorAttribute;
-using search::tensor::DenseTensorAttribute;
-using search::tensor::GenericTensorAttribute;
 using search::AttributeGuard;
 using search::AttributeVector;
-using vespalib::eval::ValueType;
+using search::attribute::HnswIndexParams;
+using search::tensor::DenseTensorAttribute;
+using search::tensor::GenericTensorAttribute;
+using search::tensor::HnswIndex;
+using search::tensor::TensorAttribute;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::DenseTensor;
+using vespalib::eval::ValueType;
 using vespalib::tensor::DefaultTensorEngine;
+using vespalib::tensor::DenseTensor;
+using vespalib::tensor::Tensor;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 static bool operator==(const Tensor &lhs, const Tensor &rhs)
 {
     return lhs.equals(rhs);
 }
 
-}
 }
 
 vespalib::string sparseSpec("tensor(x{},y{})");
@@ -67,7 +69,8 @@ struct Fixture
     bool _useDenseTensorAttribute;
 
     Fixture(const vespalib::string &typeSpec,
-            bool useDenseTensorAttribute = false)
+            bool useDenseTensorAttribute = false,
+            bool enable_hnsw_index = false)
         : _cfg(BasicType::TENSOR, CollectionType::SINGLE),
           _name("test"),
           _typeSpec(typeSpec),
@@ -79,6 +82,9 @@ struct Fixture
         _cfg.setTensorType(ValueType::from_spec(typeSpec));
         if (_cfg.tensorType().is_dense()) {
             _denseTensors = true;
+        }
+        if (enable_hnsw_index) {
+            _cfg.set_hnsw_index_params(HnswIndexParams(4, 20));
         }
         _tensorAttr = makeAttr();
         _attr = _tensorAttr;
@@ -92,6 +98,12 @@ struct Fixture
         } else {
             return std::make_shared<GenericTensorAttribute>(_name, _cfg);
         }
+    }
+
+    const DenseTensorAttribute& as_dense_tensor() const {
+        auto result = dynamic_cast<const DenseTensorAttribute*>(_tensorAttr.get());
+        assert(result != nullptr);
+        return *result;
     }
 
     void ensureSpace(uint32_t docId) {
@@ -355,6 +367,28 @@ TEST("Test dense tensors with generic tensor attribute")
 TEST("Test dense tensors with dense tensor attribute")
 {
     testAll([]() { return std::make_shared<Fixture>(denseSpec, true); });
+}
+
+TEST_F("Hnsw index is NOT instantiated in dense tensor attribute by default",
+       Fixture("tensor(x[2])", true, false))
+{
+    const auto& tensor = f.as_dense_tensor();
+    EXPECT_TRUE(tensor.nearest_neighbor_index() == nullptr);
+}
+
+TEST_F("Hnsw index is instantiated in dense tensor attribute when specified in config",
+       Fixture("tensor(x[2])", true, true))
+{
+    const auto& tensor = f.as_dense_tensor();
+    ASSERT_TRUE(tensor.nearest_neighbor_index() != nullptr);
+    auto hnsw_index = dynamic_cast<const HnswIndex*>(tensor.nearest_neighbor_index());
+    ASSERT_TRUE(hnsw_index != nullptr);
+
+    const auto& cfg = hnsw_index->config();
+    EXPECT_EQUAL(8u, cfg.max_links_at_level_0());
+    EXPECT_EQUAL(4u, cfg.max_links_at_hierarchic_levels());
+    EXPECT_EQUAL(20u, cfg.neighbors_to_explore_at_construction());
+    EXPECT_TRUE(cfg.heuristic_select_neighbors());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); vespalib::unlink("test.dat"); }
