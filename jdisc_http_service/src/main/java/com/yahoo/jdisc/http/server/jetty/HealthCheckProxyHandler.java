@@ -19,6 +19,7 @@ import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -128,8 +129,14 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         }
 
         CloseableHttpResponse requestStatusHtml() throws IOException {
-            HttpGet request = new HttpGet("https://localhost:" + port + HEALTH_CHECK_PATH);
-            return client().execute(request);
+            try {
+                HttpGet request = new HttpGet("https://localhost:" + port + HEALTH_CHECK_PATH);
+                return client().execute(request);
+            } catch (SSLException e) {
+                log.log(Level.SEVERE, "SSL connection failed. Closing existing client, a new client will be created on next request", e);
+                close();
+                throw e;
+            }
         }
 
         // Client construction must be delayed to ensure that the SslContextFactory is started before calling getSslContext().
@@ -181,6 +188,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             synchronized (this) {
                 if (client != null) {
                     client.close();
+                    client = null;
                 }
             }
         }
