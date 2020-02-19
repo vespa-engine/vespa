@@ -76,6 +76,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Nod
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
@@ -115,6 +116,7 @@ public class InternalStepRunner implements StepRunner {
             new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
+    static final Duration endpointCertificateTimeout = Duration.ofMinutes(15);
     static final Duration testerTimeout = Duration.ofMinutes(30);
     static final Duration installationTimeout = Duration.ofMinutes(60);
     static final Duration certificateTimeout = Duration.ofMinutes(300);
@@ -273,9 +275,14 @@ public class InternalStepRunner implements StepRunner {
             Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
                                          ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.getErrorCode()) {
+                case CERTIFICATE_NOT_READY:
+                    if (startTime.plus(endpointCertificateTimeout).isBefore(controller.clock().instant())) {
+                        logger.log("Deployment failed to find provisioned endpoint certificate after " + endpointCertificateTimeout);
+                        return Optional.of(RunStatus.endpointCertificateTimeout);
+                    }
+                    return result;
                 case ACTIVATION_CONFLICT:
                 case APPLICATION_LOCK_FAILURE:
-                case CERTIFICATE_NOT_READY:
                     logger.log("Deployment failed with possibly transient error " + e.getErrorCode() +
                             ", will retry: " + e.getMessage());
                     return result;

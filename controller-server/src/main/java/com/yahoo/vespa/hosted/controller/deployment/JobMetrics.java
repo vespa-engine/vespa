@@ -16,6 +16,7 @@ public class JobMetrics {
 
     public static final String start = "deployment.start";
     public static final String outOfCapacity = "deployment.outOfCapacity";
+    public static final String endpointCertificateTimeout = "deployment.endpointCertificateTimeout";
     public static final String deploymentFailure = "deployment.deploymentFailure";
     public static final String convergenceFailure = "deployment.convergenceFailure";
     public static final String testFailure = "deployment.testFailure";
@@ -50,6 +51,7 @@ public class JobMetrics {
     static String valueOf(RunStatus status) {
         switch (status) {
             case outOfCapacity: return outOfCapacity;
+            case endpointCertificateTimeout: return endpointCertificateTimeout;
             case deploymentFailed: return deploymentFailure;
             case installationFailed: return convergenceFailure;
             case testFailure: return testFailure;
