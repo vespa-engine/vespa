@@ -59,10 +59,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private void initializeDispatchers(Collection<AbstractSearchCluster> searchClusters) {
         for (AbstractSearchCluster searchCluster : searchClusters) {
             if ( ! ( searchCluster instanceof IndexedSearchCluster)) continue;
-            Component dispatcher = new DispatcherComponent((IndexedSearchCluster)searchCluster);
-            var rpcResoucePool = new RpcResourcePoolComponent();
-            dispatcher.inject(rpcResoucePool);
-            dispatcher.addComponent(rpcResoucePool);
+            var dispatcher = new DispatcherComponent((IndexedSearchCluster)searchCluster);
             owningCluster.addComponent(dispatcher);
         }
     }

@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.model.container.component.Component;
@@ -13,7 +14,7 @@ import com.yahoo.vespa.model.search.IndexedSearchCluster;
  *
  * @author bratseth
  */
-public class DispatcherComponent extends Component<DispatcherComponent, ComponentModel>
+public class DispatcherComponent extends Component<AbstractConfigProducer<?>, ComponentModel>
         implements DispatchConfig.Producer {
 
     private final IndexedSearchCluster indexedSearchCluster;
@@ -21,14 +22,17 @@ public class DispatcherComponent extends Component<DispatcherComponent, Componen
     public DispatcherComponent(IndexedSearchCluster indexedSearchCluster) {
         super(toComponentModel(indexedSearchCluster));
         this.indexedSearchCluster = indexedSearchCluster;
+        String clusterName = indexedSearchCluster.getClusterName();
+        var rpcResoucePool = new RpcResourcePoolComponent(clusterName);
+        inject(rpcResoucePool);
+        addComponent(rpcResoucePool);
     }
 
     private static ComponentModel toComponentModel(IndexedSearchCluster indexedSearchCluster) {
         String dispatcherComponentId = "dispatcher." + indexedSearchCluster.getClusterName(); // used by ClusterSearcher
         return new ComponentModel(dispatcherComponentId,
                                   com.yahoo.search.dispatch.Dispatcher.class.getName(),
-                                  BundleMapper.searchAndDocprocBundle,
-                                  null);
+                                  BundleMapper.searchAndDocprocBundle);
     }
 
     @Override

@@ -177,13 +177,13 @@ public class SearchClusterTest {
         model.getConfig(dispatchConfigBuilder, dispatcher.getConfigId());
         assertEquals(host, dispatchConfigBuilder.build().node(0).host());
 
-        assertTrue(dispatcher.getInjectedComponentIds().contains("com.yahoo.search.dispatch.rpc.RpcResourcePool"));
+        assertTrue(dispatcher.getInjectedComponentIds().contains("rpcresourcepool." + cluster));
 
-        Component<?,?> rpcResourcePool = (Component<?, ?>)dispatcher.getChildren().get("com.yahoo.search.dispatch.rpc.RpcResourcePool");
+        Component<?,?> rpcResourcePool = (Component<?, ?>)dispatcher.getChildren().get("rpcresourcepool." + cluster);
         assertNotNull(rpcResourcePool);
-        assertEquals("com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getComponentId().stringValue());
+        assertEquals("rpcresourcepool." + cluster, rpcResourcePool.getComponentId().stringValue());
         assertEquals("com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getClassId().stringValue());
-        assertEquals("j1/component/dispatcher." + cluster + "/com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getConfigId());
+        assertEquals("j1/component/dispatcher." + cluster + "/rpcresourcepool." + cluster, rpcResourcePool.getConfigId());
         dispatchConfigBuilder = new DispatchConfig.Builder();
         model.getConfig(dispatchConfigBuilder, rpcResourcePool.getConfigId());
         assertEquals(host, dispatchConfigBuilder.build().node(0).host());
