@@ -8,7 +8,6 @@ import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
@@ -59,11 +58,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private void initializeDispatchers(Collection<AbstractSearchCluster> searchClusters) {
         for (AbstractSearchCluster searchCluster : searchClusters) {
             if ( ! ( searchCluster instanceof IndexedSearchCluster)) continue;
-            Component dispatcher = new DispatcherComponent((IndexedSearchCluster)searchCluster);
-            var rpcResoucePool = new RpcResourcePoolComponent();
-            dispatcher.inject(rpcResoucePool);
-            dispatcher.addComponent(rpcResoucePool);
-            owningCluster.addComponent(dispatcher);
+            owningCluster.addComponent(new DispatcherComponent((IndexedSearchCluster)searchCluster));
         }
     }
 

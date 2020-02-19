@@ -26,7 +26,7 @@ public class DispatcherComponent extends Component<DispatcherComponent, Componen
     private static ComponentModel toComponentModel(IndexedSearchCluster indexedSearchCluster) {
         String dispatcherComponentId = "dispatcher." + indexedSearchCluster.getClusterName(); // used by ClusterSearcher
         return new ComponentModel(dispatcherComponentId,
-                                  com.yahoo.search.dispatch.Dispatcher.class.getName(),
+                                  "com.yahoo.search.dispatch.Dispatcher",
                                   BundleMapper.searchAndDocprocBundle,
                                   null);
     }

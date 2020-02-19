@@ -4,12 +4,7 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
+import java.util.*;
 
 /**
  * A group of config producers that have a component id.

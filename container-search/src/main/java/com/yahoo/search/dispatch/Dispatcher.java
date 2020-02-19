@@ -18,6 +18,7 @@ import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.PingFactory;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
@@ -84,13 +85,21 @@ public class Dispatcher extends AbstractComponent {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     @Inject
-    public Dispatcher(RpcResourcePool resourcePool,
-                      ComponentId clusterId,
+    public Dispatcher(ComponentId clusterId,
                       DispatchConfig dispatchConfig,
                       ClusterInfoConfig clusterInfoConfig,
                       VipStatus vipStatus,
                       Metric metric) {
-        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,clusterInfoConfig.nodeCount(),
+        this(new RpcResourcePool(dispatchConfig), clusterId, dispatchConfig, clusterInfoConfig, vipStatus, metric);
+    }
+
+    private Dispatcher(RpcResourcePool resourcePool,
+                       ComponentId clusterId,
+                       DispatchConfig dispatchConfig,
+                       ClusterInfoConfig clusterInfoConfig,
+                       VipStatus vipStatus,
+                       Metric metric) {
+        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(),
                                              vipStatus, new RpcPingFactory(resourcePool)),
              dispatchConfig, metric);
 
