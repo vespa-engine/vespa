@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
 import ai.vespa.hosted.api.Signatures;
-import com.yahoo.application.container.handler.Headers;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
@@ -76,8 +75,6 @@ import org.junit.Test;
 import java.io.File;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.YearMonth;
@@ -92,7 +89,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
@@ -237,10 +233,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET tenant applications
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/", GET).userIdentity(USER_ID),
-                              new File("instance-list.json"));
+                              new File("application-list.json"));
         // GET tenant applications (instances of "application1" only)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/", GET).userIdentity(USER_ID),
-                              new File("instance-list.json"));
+                              new File("application-list.json"));
         // GET at a tenant, with "&recursive=true&production=true", recurses over no instances yet, as they are not in deployment spec.
         tester.assertResponse(request("/application/v4/tenant/tenant1/", GET)
                                       .userIdentity(USER_ID)

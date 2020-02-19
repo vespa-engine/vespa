@@ -79,7 +79,7 @@ public class ApplicationPackage {
 
         Optional<Inspector> buildMetaObject = files.get("build-meta.json").map(SlimeUtils::jsonToSlime).map(Slime::get);
         if (requireFiles && buildMetaObject.isEmpty())
-            throw new IllegalArgumentException("Missing required file 'deployment.xml'");
+            throw new IllegalArgumentException("Missing required file 'build-meta.json'");
         this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
 
