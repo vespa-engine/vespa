@@ -4,13 +4,12 @@ package ai.vespa.metricsproxy.telegraf;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.system.execution.ProcessExecutor;
-import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 
 import java.io.FileWriter;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.Writer;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -33,13 +32,14 @@ public class Telegraf extends AbstractComponent {
     }
 
     protected static void writeConfig(TelegrafConfig telegrafConfig, Writer writer) {
-        Template template = loadTemplate();
         VelocityContext context = new VelocityContext();
         context.put("intervalSeconds", telegrafConfig.intervalSeconds());
         context.put("cloudwatchPlugins", telegrafConfig.cloudWatch());
         // TODO: Add node cert if hosted
 
-        template.merge(context, writer);
+        VelocityEngine velocityEngine = new VelocityEngine();
+        velocityEngine.init();
+        velocityEngine.evaluate(context, writer, "TelegrafConfigWriter", getTemplateReader());
         uncheck(writer::close);
     }
 
@@ -60,12 +60,12 @@ public class Telegraf extends AbstractComponent {
                 .orElseThrow(() -> new RuntimeException("Timed out running command: " + command));
     }
 
-    private static Template loadTemplate() {
-        VelocityEngine velocityEngine = new VelocityEngine();
-        velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
-        velocityEngine.setProperty("classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
-        velocityEngine.init();
-        return velocityEngine.getTemplate(TELEGRAF_CONFIG_TEMPLATE_PATH);
+    @SuppressWarnings("ConstantConditions")
+    private static Reader getTemplateReader() {
+        return new InputStreamReader(Telegraf.class.getClassLoader()
+                                        .getResourceAsStream(TELEGRAF_CONFIG_TEMPLATE_PATH)
+        );
+
     }
 
     @Override
