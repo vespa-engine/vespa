@@ -18,12 +18,15 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 
 /**
  * Unit tests for SearchCluster. Please use this instead of SearchModelTestCase if possible and
@@ -160,23 +163,30 @@ public class SearchClusterTest {
         AbstractSearchCluster searchCluster2 = model.getSearchClusters().get(xbulkIndex);
         assertEquals("xbulk", searchCluster2.getClusterName());
 
-        Component<?,?> normalDispatcher = (Component<?, ?>)containerCluster1.getComponentsMap().get(new ComponentId("dispatcher.normal"));
-        assertNotNull(normalDispatcher);
-        assertEquals("dispatcher.normal", normalDispatcher.getComponentId().stringValue());
-        assertEquals("com.yahoo.search.dispatch.Dispatcher", normalDispatcher.getClassId().stringValue());
-        assertEquals("j1/component/dispatcher.normal", normalDispatcher.getConfigId());
-        DispatchConfig.Builder normalDispatchConfigBuilder = new DispatchConfig.Builder();
-        model.getConfig(normalDispatchConfigBuilder, "j1/component/dispatcher.normal");
-        assertEquals("node2host", normalDispatchConfigBuilder.build().node(0).host());
+        verifyDispatch(model, containerCluster1, "normal", "node2host");
+        verifyDispatch(model, containerCluster1, "xbulk", "node0host");
+    }
 
-        Component<?,?> xbulkDispatcher = (Component<?, ?>)containerCluster1.getComponentsMap().get(new ComponentId("dispatcher.xbulk"));
-        assertNotNull(xbulkDispatcher);
-        assertEquals("dispatcher.xbulk", xbulkDispatcher.getComponentId().stringValue());
-        assertEquals("com.yahoo.search.dispatch.Dispatcher", xbulkDispatcher.getClassId().stringValue());
-        assertEquals("j1/component/dispatcher.xbulk", xbulkDispatcher.getConfigId());
-        DispatchConfig.Builder xbulkDispatchConfigBuilder = new DispatchConfig.Builder();
-        model.getConfig(xbulkDispatchConfigBuilder, "j1/component/dispatcher.xbulk");
-        assertEquals("node0host", xbulkDispatchConfigBuilder.build().node(0).host());
+    private void verifyDispatch(VespaModel model, ContainerCluster containerCluster, String cluster, String host) {
+        Component<?,?> dispatcher = (Component<?, ?>)containerCluster.getComponentsMap().get(new ComponentId("dispatcher." + cluster));
+        assertNotNull(dispatcher);
+        assertEquals("dispatcher." + cluster, dispatcher.getComponentId().stringValue());
+        assertEquals("com.yahoo.search.dispatch.Dispatcher", dispatcher.getClassId().stringValue());
+        assertEquals("j1/component/dispatcher." + cluster, dispatcher.getConfigId());
+        DispatchConfig.Builder dispatchConfigBuilder = new DispatchConfig.Builder();
+        model.getConfig(dispatchConfigBuilder, dispatcher.getConfigId());
+        assertEquals(host, dispatchConfigBuilder.build().node(0).host());
+
+        assertTrue(dispatcher.getInjectedComponentIds().contains("rpcresourcepool." + cluster));
+
+        Component<?,?> rpcResourcePool = (Component<?, ?>)dispatcher.getChildren().get("rpcresourcepool." + cluster);
+        assertNotNull(rpcResourcePool);
+        assertEquals("rpcresourcepool." + cluster, rpcResourcePool.getComponentId().stringValue());
+        assertEquals("com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getClassId().stringValue());
+        assertEquals("j1/component/dispatcher." + cluster + "/rpcresourcepool." + cluster, rpcResourcePool.getConfigId());
+        dispatchConfigBuilder = new DispatchConfig.Builder();
+        model.getConfig(dispatchConfigBuilder, rpcResourcePool.getConfigId());
+        assertEquals(host, dispatchConfigBuilder.build().node(0).host());
     }
 
 }

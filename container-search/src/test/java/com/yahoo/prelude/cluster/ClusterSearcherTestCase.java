@@ -22,6 +22,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.dispatch.Dispatcher;
+import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -514,8 +515,10 @@ public class ClusterSearcherTestCase {
         DocumentdbInfoConfig.Builder documentDbConfig = new DocumentdbInfoConfig.Builder();
         documentDbConfig.documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("type1"));
 
-        Dispatcher dispatcher = new Dispatcher(new ComponentId("test-id"),
-                                               new DispatchConfig.Builder().build(),
+        DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
+        Dispatcher dispatcher = new Dispatcher(new RpcResourcePool(dispatchConfig),
+                                               ComponentId.createAnonymousComponentId("test-id"),
+                                               dispatchConfig,
                                                createClusterInfoConfig(),
                                                vipStatus,
                                                new MockMetric());
