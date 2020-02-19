@@ -311,26 +311,27 @@ HnswIndex::remove_document(uint32_t docid)
 }
 
 std::vector<uint32_t>
-HnswIndex::find_top_k(TypedCells vector, uint32_t k)
+HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k)
 {
     std::vector<uint32_t> result;
-    std::vector<HnswCandidate> candidates = top_k_candidates(vector, k + 100);
-    result.reserve(std::min((size_t)k, candidates.size()));
-    for (const HnswCandidate & hit : candidates) {
+    FurthestPriQ candidates = top_k_candidates(vector, explore_k);
+    while (candidates.size() > k) {
+        candidates.pop();
+    }
+    result.reserve(candidates.size());
+    for (const HnswCandidate & hit : candidates.peek()) {
         result.emplace_back(hit.docid);
-        if (result.size() == k) break;
     }
     std::sort(result.begin(), result.end());
     return result;
 }
 
-
-std::vector<HnswCandidate>
+FurthestPriQ
 HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k)
 {
-    std::vector<HnswCandidate> result;
+    FurthestPriQ best_neighbors;
     if (_entry_level < 0) {
-        return result;
+        return best_neighbors;
     }
     double entry_dist = calc_distance(vector, _entry_docid);
     HnswCandidate entry_point(_entry_docid, entry_dist);
@@ -339,12 +340,9 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k)
         entry_point = find_nearest_in_layer(vector, entry_point, search_level);
         --search_level;
     }
-    FurthestPriQ best_neighbors;
     best_neighbors.push(entry_point);
     search_layer(vector, k, best_neighbors, 0);
-    result = best_neighbors.peek();
-    std::sort(result.begin(), result.end(), LesserDistance());
-    return result;
+    return best_neighbors;
 }
 
 HnswNode

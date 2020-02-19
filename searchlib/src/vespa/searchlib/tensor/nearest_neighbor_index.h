@@ -16,7 +16,7 @@ public:
     virtual ~NearestNeighborIndex() {}
     virtual void add_document(uint32_t docid) = 0;
     virtual void remove_document(uint32_t docid) = 0;
-    virtual std::vector<uint32_t> find_top_k(vespalib::tensor::TypedCells vector, uint32_t k) = 0;
+    virtual std::vector<uint32_t> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) = 0;
 };
 
 }

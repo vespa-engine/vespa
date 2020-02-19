@@ -89,10 +89,10 @@ public:
     void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits) {
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid);
-        auto rv = index->top_k_candidates(qv, k);
+        auto rv = index->top_k_candidates(qv, k).peek();
+        std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
-            // fprintf(stderr, "found docid %u dist %.1f\n", hit.docid, hit.distance);
             if (idx < exp_hits.size()) {
                 EXPECT_EQ(hit.docid, exp_hits[idx++]);
             }
@@ -100,7 +100,7 @@ public:
         if (exp_hits.size() == k) {
             std::vector<uint32_t> expected_by_docid = exp_hits;
             std::sort(expected_by_docid.begin(), expected_by_docid.end());
-            std::vector<uint32_t> got_by_docid = index->find_top_k(qv, k);
+            std::vector<uint32_t> got_by_docid = index->find_top_k(k, qv, k);
             EXPECT_EQ(expected_by_docid, got_by_docid);
         }
     }
