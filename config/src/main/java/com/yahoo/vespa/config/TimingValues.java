@@ -12,12 +12,11 @@ public class TimingValues {
     public static final long defaultNextConfigTimeout = 1000;
     // See getters below for an explanation of how these values are used and interpreted
     // All time values in milliseconds.
-    private long successTimeout = 600000;
-    private long errorTimeout = 20000;
-    private long initialTimeout = 15000;
+    private final long successTimeout;
+    private final long errorTimeout;
+    private final long initialTimeout;
     private long subscribeTimeout = 55000;
     private long configuredErrorTimeout = -1;  // Don't ever timeout (and do not use error response) when we are already configured
-    private long nextConfigTimeout = defaultNextConfigTimeout;
 
     private long fixedDelay = 5000;
     private long unconfiguredDelay = 1000;
@@ -26,6 +25,9 @@ public class TimingValues {
     private final Random rand;
 
     public TimingValues() {
+        successTimeout = 600000;
+        errorTimeout = 20000;
+        initialTimeout = 15000;
         this.rand = new Random(System.currentTimeMillis());
     }
 
@@ -100,20 +102,6 @@ public class TimingValues {
     }
 
     /**
-     * Returns initial timeout to use as server timeout when a config is requested for the first time.
-     *
-     * @return timeout in milliseconds.
-     */
-    public long getInitialTimeout() {
-        return initialTimeout;
-    }
-
-    public TimingValues setInitialTimeout(long t) {
-        initialTimeout = t;
-        return this;
-    }
-
-    /**
      * Returns timeout to use as server timeout when subscribing for the first time.
      *
      * @return timeout in milliseconds.
@@ -127,34 +115,8 @@ public class TimingValues {
         return this;
     }
 
-    /**
-     * Returns the time to retry getting config from the remote sources, until the next error response will
-     * be set as config. Counted from the last ok request was received. A negative value means that
-     * we will always retry getting config and never set an error response as config.
-     *
-     * @return timeout in milliseconds.
-     */
-    public long getConfiguredErrorTimeout() {
-        return configuredErrorTimeout;
-    }
-
     public TimingValues setConfiguredErrorTimeout(long t) {
         configuredErrorTimeout = t;
-        return this;
-    }
-
-    /**
-     * Returns timeout used when calling {@link com.yahoo.config.subscription.ConfigSubscriber#nextConfig()} or
-     * {@link com.yahoo.config.subscription.ConfigSubscriber#nextGeneration()}
-     *
-     * @return timeout in milliseconds.
-     */
-    public long getNextConfigTimeout() {
-        return nextConfigTimeout;
-    }
-
-    public TimingValues setNextConfigTimeout(long t) {
-        nextConfigTimeout = t;
         return this;
     }
 
@@ -201,12 +163,6 @@ public class TimingValues {
         return maxDelayMultiplier;
     }
 
-
-    public TimingValues setSuccessTimeout(long successTimeout) {
-        this.successTimeout = successTimeout;
-        return this;
-    }
-
     /**
      * Returns fixed delay that is used when retrying getting config no matter if it was a success or an error
      * and independent of number of retries.
@@ -226,10 +182,6 @@ public class TimingValues {
      */
     public long getPlusMinusFractionRandom(long val, float fraction) {
         return Math.round(val - (val * fraction) + (rand.nextFloat() * 2L * val * fraction));
-    }
-
-    Random getRandom() {
-        return rand;
     }
 
     @Override

@@ -128,6 +128,7 @@ public class ConfigSetSubscriptionTest {
         assertEquals(hA0.getConfig().times(), 8800);
         assertEquals(hA1.getConfig().times(), 890);
         assertEquals(hS.getConfig().stringVal(), "new StringVal");
+        subscriber.close();
     }
 
     @Test
