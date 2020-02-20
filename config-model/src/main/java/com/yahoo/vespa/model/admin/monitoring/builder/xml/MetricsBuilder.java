@@ -42,7 +42,11 @@ public class MetricsBuilder {
             throwIfIllegalConsumerId(metrics, consumerId);
 
             MetricSet metricSet = buildMetricSet(consumerId, consumerElement);
-            metrics.addConsumer(new MetricsConsumer(consumerId, metricSet));
+            var consumer = new MetricsConsumer(consumerId, metricSet);
+            for (Element cloudwatchElement : XML.getChildren(consumerElement, "cloudwatch")) {
+                consumer.addCloudWatch(CloudWatchBuilder.buildCloudWatch(cloudwatchElement, consumer));
+            }
+            metrics.addConsumer(consumer);
         }
         return metrics;
     }
@@ -58,7 +62,7 @@ public class MetricsBuilder {
 
     private MetricSet buildMetricSet(String consumerId, Element consumerElement) {
         List<Metric> metrics = XML.getChildren(consumerElement, "metric").stream()
-                .map(metricElement -> metricFromElement(metricElement))
+                .map(MetricsBuilder::metricFromElement)
                 .collect(Collectors.toCollection(LinkedList::new));
 
         List<MetricSet> metricSets = XML.getChildren(consumerElement, "metric-set").stream()

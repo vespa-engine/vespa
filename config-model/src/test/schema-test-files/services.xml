@@ -15,14 +15,25 @@
       <slobrok hostalias="rtc-1" />
     </slobroks>
     <metrics>
-      <consumer id="my-consumer">
+      <consumer id="cloudwatch-hosted">
         <metric-set id="my-set" />
         <metric id="my-metric"/>
         <metric id="my-metric2" display-name="my-metric3"/>
         <metric display-name="my-metric4" id="my-metric4.avg"/>
+        <cloudwatch region="us-east1" namespace="my-namespace">
+          <access-key-name>my-access-key</access-key-name>
+          <secret-key-name>my-secret-key</secret-key-name>
+        </cloudwatch>
       </consumer>
-      <consumer id="my-consumer2">
-        <metric-set id="my-set2" />
+      <consumer id="cloudwatch-self-hosted-with-default-auth">
+        <metric-set id="public" />
+        <cloudwatch region="us-east1" namespace="my-namespace" />
+      </consumer>
+      <consumer id="cloudwatch-self-hosted-with-profile">
+        <metric id="my-custom-metric" />
+        <cloudwatch region="us-east1" namespace="another-namespace">
+          <profile>profile-in-credentials-file</profile>
+        </cloudwatch>
       </consumer>
     </metrics>
     <logforwarding>
