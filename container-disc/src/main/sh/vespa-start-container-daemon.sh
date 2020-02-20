@@ -93,7 +93,7 @@ configure_memory() {
     memory_options="${memory_options} -XX:MaxDirectMemorySize=${maxDirectMemorySize}m"
 
     if ((jvm_compressedClassSpaceSize != 0)); then
-        memory_options="${memory_options} -XX:CompressedClassSpaceSize=${compressedClassSpaceSize}m"
+        memory_options="${memory_options} -XX:CompressedClassSpaceSize=${jvm_compressedClassSpaceSize}m"
     fi
 
     if [ "${VESPA_USE_HUGEPAGES}" ]; then
