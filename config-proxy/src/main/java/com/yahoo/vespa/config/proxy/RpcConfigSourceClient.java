@@ -12,7 +12,6 @@ import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigCacheKey;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -59,7 +58,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         this.timingValues = timingValues;
         checkConfigSources();
         exec = Executors.newCachedThreadPool(new DaemonThreadFactory("subscriber-"));
-        requester = new JRTConfigRequester(new JRTConnectionPool(configSourceSet), timingValues);
+        requester = JRTConfigRequester.create(configSourceSet, timingValues);
     }
 
     /**
