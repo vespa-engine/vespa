@@ -310,6 +310,41 @@ HnswIndex::remove_document(uint32_t docid)
     _node_refs[docid].store_release(invalid);
 }
 
+std::vector<uint32_t>
+HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k)
+{
+    std::vector<uint32_t> result;
+    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k));
+    while (candidates.size() > k) {
+        candidates.pop();
+    }
+    result.reserve(candidates.size());
+    for (const HnswCandidate & hit : candidates.peek()) {
+        result.emplace_back(hit.docid);
+    }
+    std::sort(result.begin(), result.end());
+    return result;
+}
+
+FurthestPriQ
+HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k)
+{
+    FurthestPriQ best_neighbors;
+    if (_entry_level < 0) {
+        return best_neighbors;
+    }
+    double entry_dist = calc_distance(vector, _entry_docid);
+    HnswCandidate entry_point(_entry_docid, entry_dist);
+    int search_level = _entry_level;
+    while (search_level > 0) {
+        entry_point = find_nearest_in_layer(vector, entry_point, search_level);
+        --search_level;
+    }
+    best_neighbors.push(entry_point);
+    search_layer(vector, k, best_neighbors, 0);
+    return best_neighbors;
+}
+
 HnswNode
 HnswIndex::get_node(uint32_t docid) const
 {
