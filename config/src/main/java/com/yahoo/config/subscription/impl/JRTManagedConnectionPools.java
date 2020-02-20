@@ -26,31 +26,38 @@ public class JRTManagedConnectionPools {
         final ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, new JRTSourceThreadFactory());
         CountedPool(JRTConnectionPool requester) {
             this.pool = requester;
-            count = 1;
+            count = 0;
         }
     }
     private Map<ConfigSourceSet, CountedPool> pools = new HashMap<>();
 
-    public synchronized JRTConfigRequester acquire(ConfigSourceSet sourceSet, TimingValues timingValues) {
-        CountedPool countedPool = pools.get(sourceSet);
-        if (countedPool == null) {
-            countedPool = new CountedPool(new JRTConnectionPool(sourceSet));
-            pools.put(sourceSet, countedPool);
+    public JRTConfigRequester acquire(ConfigSourceSet sourceSet, TimingValues timingValues) {
+        CountedPool countedPool;
+        synchronized (pools) {
+            countedPool = pools.get(sourceSet);
+            if (countedPool == null) {
+                countedPool = new CountedPool(new JRTConnectionPool(sourceSet));
+                pools.put(sourceSet, countedPool);
+            }
+            countedPool.count++;
         }
-        countedPool.count++;
         return new JRTConfigRequester(sourceSet, countedPool.scheduler, countedPool.pool, timingValues);
     }
     public synchronized void release(ConfigSourceSet sourceSet) {
-        CountedPool countedPool = pools.get(sourceSet);
-        countedPool.count--;
-        if (countedPool.count == 0) {
-            countedPool.pool.close();
-            countedPool.scheduler.shutdown();
-           try {
-               countedPool.scheduler.awaitTermination(30, TimeUnit.SECONDS);
-           } catch (InterruptedException e) {
-               throw new RuntimeException("Failed shutting down scheduler:", e);
-           }
+        CountedPool countedPool;
+        synchronized (pools) {
+            countedPool = pools.get(sourceSet);
+            countedPool.count--;
+            if (countedPool.count > 0) return;
+            pools.remove(sourceSet);
+        }
+
+        countedPool.pool.close();
+        countedPool.scheduler.shutdown();
+        try {
+            countedPool.scheduler.awaitTermination(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Failed shutting down scheduler:", e);
         }
     }
 }
