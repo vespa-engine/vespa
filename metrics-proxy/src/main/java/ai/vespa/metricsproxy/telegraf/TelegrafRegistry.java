@@ -23,7 +23,7 @@ public class TelegrafRegistry {
     }
 
     public void removeInstance(Telegraf telegraf) {
-        logger.log(LogLevel.DEBUG, () -> "Removing Telegraf instance from registry");
+        logger.log(LogLevel.DEBUG, () -> "Removing Telegraf instance from registry: " + telegraf);
         telegrafInstances.remove(telegraf);
     }
 
