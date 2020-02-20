@@ -28,7 +28,7 @@ import com.yahoo.vespa.config.protocol.Payload;
 public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
 
     private JRTConfigRequester requester;
-    private TimingValues timingValues;
+    private final TimingValues timingValues;
 
     // Last time we got an OK JRT callback
     private Instant lastOK = Instant.MIN;
@@ -156,7 +156,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     private JRTConfigRequester getRequester() {
         JRTConfigRequester requester = subscriber.requesters().get(sources);
         if (requester == null) {
-            requester = new JRTConfigRequester(new JRTConnectionPool(sources), timingValues);
+            requester = JRTConfigRequester.create(sources, timingValues);
             subscriber.requesters().put(sources, requester);
         }
         return requester;

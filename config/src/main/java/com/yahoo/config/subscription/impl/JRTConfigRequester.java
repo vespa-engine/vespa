@@ -20,7 +20,6 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,15 +36,17 @@ public class JRTConfigRequester implements RequestWaiter {
 
     private static final Logger log = Logger.getLogger(JRTConfigRequester.class.getName());
     public static final ConfigSourceSet defaultSourceSet = ConfigSourceSet.createDefault();
+    private static final JRTManagedConnectionPools managedPool = new JRTManagedConnectionPools();
     private static final int TRACELEVEL = 6;
     private final TimingValues timingValues;
     private int fatalFailures = 0; // independent of transientFailures
     private int transientFailures = 0;  // independent of fatalFailures
-    private final ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, new JRTSourceThreadFactory());
+    private final ScheduledThreadPoolExecutor scheduler;
     private Instant suspendWarningLogged = Instant.MIN;
     private Instant noApplicationWarningLogged = Instant.MIN;
     private static final Duration delayBetweenWarnings = Duration.ofSeconds(60);
     private final ConnectionPool connectionPool;
+    private final ConfigSourceSet configSourceSet;
     static final float randomFraction = 0.2f;
     /* Time to be added to server timeout to create client timeout. This is the time allowed for the server to respond after serverTimeout has elapsed. */
     private static final Double additionalTimeForClientTimeout = 10.0;
@@ -56,9 +57,21 @@ public class JRTConfigRequester implements RequestWaiter {
      * @param connectionPool the connectionPool this requester should use
      * @param timingValues   timeouts and delays used when sending JRT config requests
      */
-    public JRTConfigRequester(ConnectionPool connectionPool, TimingValues timingValues) {
+    JRTConfigRequester(ConfigSourceSet configSourceSet, ScheduledThreadPoolExecutor scheduler,
+                       ConnectionPool connectionPool, TimingValues timingValues) {
+        this.configSourceSet = configSourceSet;
+        this.scheduler = scheduler;
         this.connectionPool = connectionPool;
         this.timingValues = timingValues;
+    }
+
+    /** Only for testing */
+    public JRTConfigRequester(ConnectionPool connectionPool, TimingValues timingValues) {
+        this(null, new ScheduledThreadPoolExecutor(1), connectionPool, timingValues);
+    }
+
+    public static JRTConfigRequester create(ConfigSourceSet sourceSet, TimingValues timingValues) {
+        return managedPool.acquire(sourceSet, timingValues);
     }
 
     /**
@@ -273,18 +286,8 @@ public class JRTConfigRequester implements RequestWaiter {
         // Fake that we have logged to avoid printing warnings after this
         suspendWarningLogged = Instant.now();
         noApplicationWarningLogged = Instant.now();
-
-        connectionPool.close();
-        scheduler.shutdown();
-    }
-
-    private static class JRTSourceThreadFactory implements ThreadFactory {
-        @Override
-        public Thread newThread(Runnable runnable) {
-            Thread t = new Thread(runnable, String.format("jrt-config-requester-%d", System.currentTimeMillis()));
-            // We want a daemon thread to avoid hanging threads in case something goes wrong in the config system
-            t.setDaemon(true);
-            return t;
+        if (configSourceSet != null) {
+            managedPool.release(configSourceSet);
         }
     }
 
