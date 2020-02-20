@@ -17,6 +17,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.log.LogLevel;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -91,6 +92,11 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         if (endpoint != null) {
             dimensions.put("endpoint", endpoint);
         }
+        URI uri = request.getUri();
+        dimensions.put("scheme", uri.getScheme());
+        dimensions.put("port", Integer.toString(uri.getPort()));
+        String handlerClassName = getClass().getName();
+        dimensions.put("handler-name", handlerClassName);
         return this.metric.createContext(dimensions);
     }
 
