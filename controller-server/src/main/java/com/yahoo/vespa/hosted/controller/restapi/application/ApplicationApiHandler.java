@@ -1157,6 +1157,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         deployment.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
         // Cost
+        // TODO(mpolden): Unused, remove this field and related code.
         DeploymentCost appCost = new DeploymentCost(Map.of());
         Cursor costObject = response.setObject("cost");
         toSlime(appCost, costObject);
