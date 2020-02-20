@@ -55,6 +55,16 @@ class MetricsProxyModelTester {
                 : CONTAINER_CONFIG_ID;
     }
 
+    static String servicesWithAdminOnly() {
+        return String.join("\n",
+                           "<services>",
+                           "    <admin version='4.0'>",
+                           "        <adminserver hostalias='node1'/>",
+                           "    </admin>",
+                           "</services>"
+        );
+    }
+
     static boolean checkMetric(ConsumersConfig.Consumer consumer, Metric metric) {
         for (ConsumersConfig.Consumer.Metric m : consumer.metric()) {
             if (metric.name.equals(m.name()) && metric.outputName.equals(m.outputname()))
