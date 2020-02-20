@@ -28,12 +28,12 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class CostCalculator {
 
     private static final double SELF_HOSTED_DISCOUNT = .5;
+    private static final CloudName cloudName = CloudName.from("yahoo");
 
     public static String resourceShareByPropertyToCsv(NodeRepository nodeRepository,
                                                       Controller controller,
                                                       Clock clock,
-                                                      Map<Property, ResourceAllocation> fixedAllocations,
-                                                      CloudName cloudName) {
+                                                      Map<Property, ResourceAllocation> fixedAllocations) {
 
         var date = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.of("UTC")).format(clock.instant());
 
@@ -61,14 +61,12 @@ public class CostCalculator {
         }
 
         // Add fixed allocations from config
-        if (cloudName.equals(CloudName.from("yahoo"))) {
-            for (var kv : fixedAllocations.entrySet()) {
-                var property = kv.getKey();
-                var allocation = allocationByProperty.getOrDefault(property, ResourceAllocation.ZERO);
-                var discountedFixedAllocation = kv.getValue().multiply(SELF_HOSTED_DISCOUNT);
-                allocationByProperty.put(property, allocation.plus(discountedFixedAllocation));
-                totalAllocation = totalAllocation.plus(discountedFixedAllocation);
-            }
+        for (var kv : fixedAllocations.entrySet()) {
+            var property = kv.getKey();
+            var allocation = allocationByProperty.getOrDefault(property, ResourceAllocation.ZERO);
+            var discountedFixedAllocation = kv.getValue().multiply(SELF_HOSTED_DISCOUNT);
+            allocationByProperty.put(property, allocation.plus(discountedFixedAllocation));
+            totalAllocation = totalAllocation.plus(discountedFixedAllocation);
         }
 
         return toCsv(allocationByProperty, date, totalAllocation);
