@@ -255,6 +255,7 @@
         </profile>
 
         <profile> <!-- Alias vespaversion with a more descriptive vespa.compile.version -->
+            <id>set-vespa-compile-version</id>
             <activation>
                 <property>
                     <name>vespa.compile.version</name>
@@ -266,6 +267,7 @@
         </profile>
 
         <profile> <!-- Alias vespaVersion with a more descriptive vespa.runtime.version -->
+            <id>set-vespa-runtime-version</id>
             <activation>
                 <property>
                     <name>vespa.runtime.version</name>
