@@ -3,6 +3,7 @@
 
 #include "blueprint.h"
 #include "nearest_neighbor_distance_heap.h"
+#include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 
 namespace vespalib::tensor { class DenseTensorView; }
 namespace search::tensor { class DenseTensorAttribute; }
@@ -21,7 +22,9 @@ private:
     std::unique_ptr<vespalib::tensor::DenseTensorView> _query_tensor;
     uint32_t _target_num_hits;
     mutable NearestNeighborDistanceHeap _distance_heap;
+    std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
 
+    void perform_top_k();
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              const tensor::DenseTensorAttribute& attr_tensor,
@@ -38,6 +41,7 @@ public:
                                                      bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
+    void fetchPostings(const ExecuteInfo &execInfo) override;
 };
 
 }

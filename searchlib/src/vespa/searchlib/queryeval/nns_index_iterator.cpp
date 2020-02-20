@@ -41,7 +41,7 @@ public:
             } else {
                 _idx = _hits.size();
             }
-	}
+        }
         setAtEnd();
     }
 

@@ -123,8 +123,8 @@ protected:
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
-    HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level);
-    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level);
+    HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
+    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level) const;
 
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
@@ -135,8 +135,8 @@ public:
 
     void add_document(uint32_t docid) override;
     void remove_document(uint32_t docid) override;
-    std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) override;
-    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k);
+    std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
+    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
 
     // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)
 
