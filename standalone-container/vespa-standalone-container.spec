@@ -72,7 +72,6 @@ cp vespajlib/target/vespajlib.jar "$jars_dir"
 
 # Copy from submodules, so must be done separately
 cp zookeeper-server/zookeeper-server-common/target/zookeeper-server-common-jar-with-dependencies.jar "$jars_dir"
-cp zookeeper-server/zookeeper-server-3.4/target/zookeeper-server-3.4-jar-with-dependencies.jar "$jars_dir"
 cp zookeeper-server/zookeeper-server-3.5/target/zookeeper-server-3.5-jar-with-dependencies.jar "$jars_dir"
 # Symlink to default version
 ln -s zookeeper-server-3.5-jar-with-dependencies.jar "$jars_dir"/zookeeper-server-jar-with-dependencies.jar
