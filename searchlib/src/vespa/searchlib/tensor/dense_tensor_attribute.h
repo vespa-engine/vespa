@@ -23,18 +23,21 @@ private:
     DenseTensorStore _denseTensorStore;
     std::unique_ptr<NearestNeighborIndex> _index;
 
+    void consider_remove_from_index(DocId docid);
+
 public:
     DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     virtual ~DenseTensorAttribute();
     // Implements TensorAttribute
-    virtual void setTensor(DocId docId, const Tensor &tensor) override;
-    virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;
-    virtual void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
-    virtual bool onLoad() override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    virtual void compactWorst() override;
-    virtual uint32_t getVersion() const override;
+    uint32_t clearDoc(DocId docId) override;
+    void setTensor(DocId docId, const Tensor &tensor) override;
+    std::unique_ptr<Tensor> getTensor(DocId docId) const override;
+    void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
+    bool onLoad() override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    void compactWorst() override;
+    uint32_t getVersion() const override;
 
     // Implements DocVectorAccess
     vespalib::tensor::TypedCells get_vector(uint32_t docid) const override;

@@ -56,6 +56,14 @@ TensorReader::is_present() {
 
 }
 
+void
+DenseTensorAttribute::consider_remove_from_index(DocId docid)
+{
+    if (_index && _refVector[docid].valid()) {
+        _index->remove_document(docid);
+    }
+}
+
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
@@ -74,12 +82,23 @@ DenseTensorAttribute::~DenseTensorAttribute()
     _tensorStore.clearHoldLists();
 }
 
+uint32_t
+DenseTensorAttribute::clearDoc(DocId docId)
+{
+    consider_remove_from_index(docId);
+    return TensorAttribute::clearDoc(docId);
+}
+
 void
 DenseTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
     checkTensorType(tensor);
+    consider_remove_from_index(docId);
     EntryRef ref = _denseTensorStore.setTensor(tensor);
     setTensorRef(docId, ref);
+    if (_index) {
+        _index->add_document(docId);
+    }
 }
 
 
@@ -125,6 +144,11 @@ DenseTensorAttribute::onLoad()
             auto raw = _denseTensorStore.allocRawBuffer();
             tensorReader.readTensor(raw.data, _denseTensorStore.getBufSize());
             _refVector.push_back(raw.ref);
+            if (_index) {
+                // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
+                setCommittedDocIdLimit(lid + 1);
+                _index->add_document(lid);
+            }
         } else {
             _refVector.push_back(EntryRef());
         }
