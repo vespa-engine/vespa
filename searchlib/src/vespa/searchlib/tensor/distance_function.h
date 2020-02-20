@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <memory>
+
 namespace vespalib::tensor { struct TypedCells; }
 
 namespace search::tensor {
@@ -14,6 +16,7 @@ namespace search::tensor {
  */
 class DistanceFunction {
 public:
+    using UP = std::unique_ptr<DistanceFunction>;
     virtual ~DistanceFunction() {}
     virtual double calc(const vespalib::tensor::TypedCells& lhs, const vespalib::tensor::TypedCells& rhs) const = 0;
 };

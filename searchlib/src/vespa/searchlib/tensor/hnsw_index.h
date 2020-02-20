@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include "distance_function.h"
 #include "doc_vector_access.h"
 #include "hnsw_index_utils.h"
 #include "hnsw_node.h"
 #include "nearest_neighbor_index.h"
+#include "random_level_generator.h"
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
@@ -14,9 +16,6 @@
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::tensor {
-
-class DistanceFunction;
-class RandomLevelGenerator;
 
 /**
  * Implementation of a hierarchical navigable small world graph (HNSW)
@@ -82,8 +81,8 @@ protected:
     using TypedCells = vespalib::tensor::TypedCells;
 
     const DocVectorAccess& _vectors;
-    const DistanceFunction& _distance_func;
-    RandomLevelGenerator& _level_generator;
+    DistanceFunction::UP _distance_func;
+    RandomLevelGenerator::UP _level_generator;
     Config _cfg;
     NodeRefVector _node_refs;
     NodeStore _nodes;
@@ -128,9 +127,11 @@ protected:
     void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level);
 
 public:
-    HnswIndex(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
-              RandomLevelGenerator& level_generator, const Config& cfg);
+    HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
+              RandomLevelGenerator::UP level_generator, const Config& cfg);
     ~HnswIndex() override;
+
+    const Config& config() const { return _cfg; }
 
     void add_document(uint32_t docid) override;
     void remove_document(uint32_t docid) override;

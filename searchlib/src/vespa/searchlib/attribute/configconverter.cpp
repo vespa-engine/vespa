@@ -73,6 +73,10 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
     retval.setPredicateParams(predicateParams);
+    if (cfg.index.hnsw.enabled) {
+        retval.set_hnsw_index_params(HnswIndexParams(cfg.index.hnsw.maxlinkspernode,
+                                                     cfg.index.hnsw.neighborstoexploreatinsert));
+    }
     if (retval.basicType().type() == BasicType::Type::TENSOR) {
         if (!cfg.tensortype.empty()) {
             retval.setTensorType(ValueType::from_spec(cfg.tensortype));

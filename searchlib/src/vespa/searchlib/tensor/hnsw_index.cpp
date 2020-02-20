@@ -44,7 +44,7 @@ HnswIndex::max_links_for_level(uint32_t level) const
 uint32_t
 HnswIndex::make_node_for_document(uint32_t docid)
 {
-    uint32_t max_level = _level_generator.max_level();
+    uint32_t max_level = _level_generator->max_level();
     // TODO: Add capping on num_levels
     uint32_t num_levels = max_level + 1;
     // Note: The level array instance lives as long as the document is present in the index.
@@ -170,7 +170,7 @@ double
 HnswIndex::calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const
 {
     auto rhs = get_vector(rhs_docid);
-    return _distance_func.calc(lhs, rhs);
+    return _distance_func->calc(lhs, rhs);
 }
 
 HnswCandidate
@@ -227,11 +227,11 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, Fur
     }
 }
 
-HnswIndex::HnswIndex(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
-                     RandomLevelGenerator& level_generator, const Config& cfg)
+HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
+                     RandomLevelGenerator::UP level_generator, const Config& cfg)
     : _vectors(vectors),
-      _distance_func(distance_func),
-      _level_generator(level_generator),
+      _distance_func(std::move(distance_func)),
+      _level_generator(std::move(level_generator)),
       _cfg(cfg),
       _node_refs(),
       _nodes(make_default_node_store_config()),

@@ -2,6 +2,7 @@
 
 #include "dense_tensor_attribute.h"
 #include "dense_tensor_attribute_saver.h"
+#include "nearest_neighbor_index.h"
 #include "tensor_attribute.hpp"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
@@ -55,11 +56,23 @@ TensorReader::is_present() {
 
 }
 
-DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName,
-                                 const Config &cfg)
-    : TensorAttribute(baseFileName, cfg, _denseTensorStore),
-      _denseTensorStore(cfg.tensorType())
+void
+DenseTensorAttribute::consider_remove_from_index(DocId docid)
 {
+    if (_index && _refVector[docid].valid()) {
+        _index->remove_document(docid);
+    }
+}
+
+DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
+                                           const NearestNeighborIndexFactory& index_factory)
+    : TensorAttribute(baseFileName, cfg, _denseTensorStore),
+      _denseTensorStore(cfg.tensorType()),
+      _index()
+{
+    if (cfg.hnsw_index_params().has_value()) {
+        _index = index_factory.make(*this, cfg.tensorType().cell_type(), cfg.hnsw_index_params().value());
+    }
 }
 
 
@@ -69,12 +82,23 @@ DenseTensorAttribute::~DenseTensorAttribute()
     _tensorStore.clearHoldLists();
 }
 
+uint32_t
+DenseTensorAttribute::clearDoc(DocId docId)
+{
+    consider_remove_from_index(docId);
+    return TensorAttribute::clearDoc(docId);
+}
+
 void
 DenseTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
     checkTensorType(tensor);
+    consider_remove_from_index(docId);
     EntryRef ref = _denseTensorStore.setTensor(tensor);
     setTensorRef(docId, ref);
+    if (_index) {
+        _index->add_document(docId);
+    }
 }
 
 
@@ -120,6 +144,11 @@ DenseTensorAttribute::onLoad()
             auto raw = _denseTensorStore.allocRawBuffer();
             tensorReader.readTensor(raw.data, _denseTensorStore.getBufSize());
             _refVector.push_back(raw.ref);
+            if (_index) {
+                // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
+                setCommittedDocIdLimit(lid + 1);
+                _index->add_document(lid);
+            }
         } else {
             _refVector.push_back(EntryRef());
         }
@@ -152,6 +181,14 @@ uint32_t
 DenseTensorAttribute::getVersion() const
 {
     return DENSE_TENSOR_ATTRIBUTE_VERSION;
+}
+
+vespalib::tensor::TypedCells
+DenseTensorAttribute::get_vector(uint32_t docid) const
+{
+    MutableDenseTensorView tensor_view(_denseTensorStore.type());
+    getTensor(docid, tensor_view);
+    return tensor_view.cellsRef();
 }
 
 }
