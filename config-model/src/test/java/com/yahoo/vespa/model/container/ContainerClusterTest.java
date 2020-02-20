@@ -97,7 +97,6 @@ public class ContainerClusterTest {
         cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
         assertEquals(expectedMemoryPercentage, qsC.jvm().heapSizeAsPercentageOfPhysicalMemory());
-        assertEquals(0, qsC.jvm().compressedClassSpaceSize());
     }
 
     @Test
@@ -157,7 +156,6 @@ public class ContainerClusterTest {
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
         assertEquals(32, qrStartConfig.jvm().minHeapsize());
         assertEquals(512, qrStartConfig.jvm().heapsize());
-        assertEquals(32, qrStartConfig.jvm().compressedClassSpaceSize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
 
         ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();

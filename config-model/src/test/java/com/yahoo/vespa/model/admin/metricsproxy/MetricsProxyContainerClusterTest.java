@@ -60,7 +60,6 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -111,7 +110,6 @@ public class MetricsProxyContainerClusterTest {
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
-        assertEquals(32, qrStartConfig.jvm().compressedClassSpaceSize());
         assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());
     }
 
