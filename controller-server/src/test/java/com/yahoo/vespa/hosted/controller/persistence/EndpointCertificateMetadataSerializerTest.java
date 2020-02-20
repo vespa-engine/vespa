@@ -29,13 +29,6 @@ public class EndpointCertificateMetadataSerializerTest {
     }
 
     @Test
-    public void deserializeFromString() {
-        assertEquals(
-                new EndpointCertificateMetadata("foo-key", "foo-cert", 0),
-                EndpointCertificateMetadataSerializer.fromJsonString("foo"));
-    }
-
-    @Test
     public void deserializeFromJson() {
         assertEquals(
                 sample,
