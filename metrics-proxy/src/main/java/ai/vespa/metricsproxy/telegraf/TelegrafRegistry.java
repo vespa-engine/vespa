@@ -18,7 +18,7 @@ public class TelegrafRegistry {
     private static final Logger logger = Logger.getLogger(TelegrafRegistry.class.getName());
 
     public void addInstance(Telegraf telegraf) {
-        logger.log(LogLevel.DEBUG, () -> "Adding Telegraf instance to registry");
+        logger.log(LogLevel.DEBUG, () -> "Adding Telegraf instance to registry: " + telegraf);
         telegrafInstances.add(telegraf);
     }
 
