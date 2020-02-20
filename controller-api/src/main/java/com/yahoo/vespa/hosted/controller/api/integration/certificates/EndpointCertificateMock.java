@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -21,7 +22,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
     }
 
     @Override
-    public EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames) {
+    public EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata) {
         this.dnsNames.put(applicationId, dnsNames);
         String endpointCertificatePrefix = String.format("vespa.tls.%s.%s@%s", applicationId.tenant(),
                 applicationId.application(),

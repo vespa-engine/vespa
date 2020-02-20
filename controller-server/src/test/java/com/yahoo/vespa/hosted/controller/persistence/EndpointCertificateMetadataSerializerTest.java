@@ -32,14 +32,14 @@ public class EndpointCertificateMetadataSerializerTest {
     public void deserializeFromString() {
         assertEquals(
                 new EndpointCertificateMetadata("foo-key", "foo-cert", 0),
-                EndpointCertificateMetadataSerializer.fromJsonOrTlsSecretsKeysString("foo"));
+                EndpointCertificateMetadataSerializer.fromJsonString("foo"));
     }
 
     @Test
     public void deserializeFromJson() {
         assertEquals(
                 sample,
-                EndpointCertificateMetadataSerializer.fromJsonOrTlsSecretsKeysString(
+                EndpointCertificateMetadataSerializer.fromJsonString(
                         "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1}"));
     }
 
@@ -47,7 +47,7 @@ public class EndpointCertificateMetadataSerializerTest {
     public void deserializeFromJsonWithRequestMetadata() {
         assertEquals(
                 sampleWithRequestMetadata,
-                EndpointCertificateMetadataSerializer.fromJsonOrTlsSecretsKeysString(
+                EndpointCertificateMetadataSerializer.fromJsonString(
                         "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"]}"));
     }
 }
