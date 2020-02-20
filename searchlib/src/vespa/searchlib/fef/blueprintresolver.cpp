@@ -88,6 +88,17 @@ struct Compiler : public Blueprint::DependencyHandler {
         return FeatureRef();
     }
 
+    void fixup_feature_map() {
+        auto itr = feature_map.begin();
+        while (itr != feature_map.end()) {
+            if (itr->second.executor >= spec_list.size()) {
+                itr = feature_map.erase(itr);
+            } else {
+                ++itr;
+            }
+        }
+    }
+
     FeatureRef verify_type(const FeatureNameParser &parser, FeatureRef ref, Accept accept_type) {
         const auto &spec = spec_list[ref.executor];
         bool is_object = spec.output_types[ref.output];
@@ -110,13 +121,16 @@ struct Compiler : public Blueprint::DependencyHandler {
         self().spec.blueprint->setName(parser.executorName());
         self().spec.blueprint->attach_dependency_handler(*this);
         if (!self().spec.blueprint->setup(index_env, parser.parameters())) {
+            fixup_feature_map();
             return failed(parser.featureName(), "invalid parameters");
         }
         if (parser.output().empty() && self().spec.output_types.empty()) {
+            fixup_feature_map();
             return failed(parser.featureName(), "has no output value");
         }
         const auto &feature = feature_map.find(parser.featureName());
         if (feature == feature_map.end()) {
+            fixup_feature_map();
             return failed(parser.featureName(),
                           vespalib::make_string("unknown output: '%s'", parser.output().c_str()));
         }

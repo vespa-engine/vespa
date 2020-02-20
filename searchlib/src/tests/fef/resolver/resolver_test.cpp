@@ -4,9 +4,12 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/features/valuefeature.h>
+#include <vespa/searchlib/features/rankingexpressionfeature.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("resolver_test");
+
+using search::features::RankingExpressionBlueprint;
 
 namespace search {
 namespace fef {
@@ -58,6 +61,7 @@ class Test : public vespalib::TestApp {
 private:
     BlueprintFactory _factory;
     void requireThatWeGetUniqueBlueprints();
+    void require_that_bad_input_is_handled();
 public:
     Test();
     ~Test();
@@ -69,6 +73,7 @@ Test::Test() :
 {
     _factory.addPrototype(Blueprint::SP(new BaseBlueprint()));
     _factory.addPrototype(Blueprint::SP(new CombineBlueprint()));
+    _factory.addPrototype(std::make_shared<RankingExpressionBlueprint>());
 }
 Test::~Test() {}
 
@@ -85,12 +90,28 @@ Test::requireThatWeGetUniqueBlueprints()
     EXPECT_TRUE(dynamic_cast<CombineBlueprint *>(spec[1].blueprint.get()) != NULL);
 }
 
+void
+Test::require_that_bad_input_is_handled()
+{
+    test::IndexEnvironment ienv;
+    ienv.getProperties().add(indexproperties::eval::LazyExpressions::NAME, "false");
+    ienv.getProperties().add("rankingExpression(badinput).rankingScript", "base.foobad + base.bar");
+    BlueprintResolver::SP res(new BlueprintResolver(_factory, ienv));
+    res->addSeed("rankingExpression(badinput)");
+    EXPECT_FALSE(res->compile());
+    const BlueprintResolver::ExecutorSpecList & spec = res->getExecutorSpecs();
+    EXPECT_EQUAL(2u, spec.size());
+    EXPECT_TRUE(dynamic_cast<BaseBlueprint *>(spec[0].blueprint.get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<RankingExpressionBlueprint *>(spec[1].blueprint.get()) != nullptr);
+}
+
 int
 Test::Main()
 {
     TEST_INIT("resolver_test");
 
     requireThatWeGetUniqueBlueprints();
+    require_that_bad_input_is_handled();
 
     TEST_DONE();
 }
