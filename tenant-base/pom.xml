@@ -253,6 +253,28 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile> <!-- Alias vespaversion with a more descriptive vespa.compile.version -->
+            <activation>
+                <property>
+                    <name>vespa.compile.version</name>
+                </property>
+            </activation>
+            <properties>
+                <vespaversion>${vespa.compile.version}</vespaversion>
+            </properties>
+        </profile>
+
+        <profile> <!-- Alias vespaVersion with a more descriptive vespa.runtime.version -->
+            <activation>
+                <property>
+                    <name>vespa.runtime.version</name>
+                </property>
+            </activation>
+            <properties>
+                <vespaVersion>${vespa.runtime.version}</vespaVersion>
+            </properties>
+        </profile>
     </profiles>
 
     <build>
