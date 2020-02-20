@@ -167,7 +167,7 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (MutableStatusRegistry statusRegistry = statusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
-            HostStatus currentHostState = statusRegistry.getHostInfo(hostName).status();
+            HostStatus currentHostState = statusRegistry.getHostInfos().getOrNoRemarks(hostName).status();
             if (currentHostState == HostStatus.NO_REMARKS) {
                 return;
             }
