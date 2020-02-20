@@ -64,18 +64,23 @@ public:
 class AuthorizedPeers {
     // A peer will be authorized iff it matches _one or more_ policies.
     std::vector<PeerPolicy> _peer_policies;
-    bool _allow_all_if_empty = false;
+    bool _allow_all_if_empty;
 
     explicit AuthorizedPeers(bool allow_all_if_empty)
         : _peer_policies(),
           _allow_all_if_empty(allow_all_if_empty)
     {}
 public:
-    AuthorizedPeers() = default;
+    AuthorizedPeers() : _peer_policies(), _allow_all_if_empty(false) {}
     explicit AuthorizedPeers(std::vector<PeerPolicy> peer_policies_)
         : _peer_policies(std::move(peer_policies_)),
           _allow_all_if_empty(false)
     {}
+
+    AuthorizedPeers(const AuthorizedPeers&) = default;
+    AuthorizedPeers& operator=(const AuthorizedPeers&) = default;
+    AuthorizedPeers(AuthorizedPeers&&) noexcept = default;
+    AuthorizedPeers& operator=(AuthorizedPeers&&) noexcept = default;
 
     static AuthorizedPeers allow_all_authenticated() {
         return AuthorizedPeers(true);

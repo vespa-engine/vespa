@@ -155,6 +155,47 @@ TEST("accepted cipher list is populated if specified") {
     EXPECT_EQUAL("bar", ciphers[1]);
 }
 
+// FIXME this is temporary until we know enabling it by default won't break the world!
+TEST("hostname validation is DISABLED by default when creating options from config file") {
+    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
+                                    "certificates":"dummy_certs.txt",
+                                    "ca-certificates":"dummy_ca_certs.txt"}})";
+    EXPECT_TRUE(read_options_from_json_string(json)->disable_hostname_validation());
+}
+
+TEST("TransportSecurityOptions builder does not disable hostname validation by default") {
+    auto ts_builder = vespalib::net::tls::TransportSecurityOptions::Params().
+            ca_certs_pem("foo").
+            cert_chain_pem("bar").
+            private_key_pem("fantonald");
+    TransportSecurityOptions ts_opts(std::move(ts_builder));
+    EXPECT_FALSE(ts_opts.disable_hostname_validation());
+}
+
+TEST("hostname validation can be explicitly disabled") {
+    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
+                                    "certificates":"dummy_certs.txt",
+                                    "ca-certificates":"dummy_ca_certs.txt"},
+                           "disable-hostname-validation": true})";
+    EXPECT_TRUE(read_options_from_json_string(json)->disable_hostname_validation());
+}
+
+TEST("hostname validation can be explicitly enabled") {
+    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
+                                    "certificates":"dummy_certs.txt",
+                                    "ca-certificates":"dummy_ca_certs.txt"},
+                           "disable-hostname-validation": false})";
+    EXPECT_FALSE(read_options_from_json_string(json)->disable_hostname_validation());
+}
+
+TEST("unknown fields are ignored at parse-time") {
+    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
+                                    "certificates":"dummy_certs.txt",
+                                    "ca-certificates":"dummy_ca_certs.txt"},
+                           "flipper-the-dolphin": "*weird dolphin noises*"})";
+    EXPECT_TRUE(read_options_from_json_string(json).get() != nullptr); // And no exception thrown.
+}
+
 // TODO test parsing of multiple policies
 
 TEST_MAIN() { TEST_RUN_ALL(); }

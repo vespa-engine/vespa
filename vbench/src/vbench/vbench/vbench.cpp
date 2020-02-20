@@ -29,11 +29,13 @@ CryptoEngine::SP setup_crypto(const vespalib::slime::Inspector &tls) {
     if (!tls.valid()) {
         return std::make_shared<vespalib::NullCryptoEngine>();
     }
-    vespalib::net::tls::TransportSecurityOptions
-        tls_opts(maybe_load(tls["ca-certificates"]),
-                 maybe_load(tls["certificates"]),
-                 maybe_load(tls["private-key"]));
-    return std::make_shared<vespalib::TlsCryptoEngine>(tls_opts);
+    auto ts_builder = vespalib::net::tls::TransportSecurityOptions::Params().
+            ca_certs_pem(maybe_load(tls["ca-certificates"])).
+            cert_chain_pem(maybe_load(tls["certificates"])).
+            private_key_pem(maybe_load(tls["private-key"])).
+            authorized_peers(vespalib::net::tls::AuthorizedPeers::allow_all_authenticated()).
+            disable_hostname_validation(true); // TODO configurable or default false!
+    return std::make_shared<vespalib::TlsCryptoEngine>(vespalib::net::tls::TransportSecurityOptions(std::move(ts_builder)));
 }
 
 } // namespace vbench::<unnamed>

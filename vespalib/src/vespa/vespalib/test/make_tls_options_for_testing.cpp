@@ -70,7 +70,13 @@ namespace vespalib::test {
 SocketSpec local_spec("tcp/localhost:123");
 
 vespalib::net::tls::TransportSecurityOptions make_tls_options_for_testing() {
-    return vespalib::net::tls::TransportSecurityOptions(ca_pem, cert_pem, key_pem);
+    auto ts_builder = vespalib::net::tls::TransportSecurityOptions::Params().
+            ca_certs_pem(ca_pem).
+            cert_chain_pem(cert_pem).
+            private_key_pem(key_pem).
+            authorized_peers(vespalib::net::tls::AuthorizedPeers::allow_all_authenticated()).
+            disable_hostname_validation(true); // FIXME this is to avoid mass breakage of TLS'd networking tests.
+    return vespalib::net::tls::TransportSecurityOptions(std::move(ts_builder));
 }
 
 } // namespace vespalib::test

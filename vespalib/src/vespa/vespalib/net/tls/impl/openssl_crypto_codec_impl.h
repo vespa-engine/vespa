@@ -3,6 +3,7 @@
 
 #include "openssl_typedefs.h"
 #include <vespa/vespalib/net/socket_address.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <memory>
@@ -46,16 +47,22 @@ class OpenSslCryptoCodecImpl : public CryptoCodec {
     // The context maintains shared verification callback state, so it must be
     // kept alive explictly for at least as long as any codecs.
     std::shared_ptr<OpenSslTlsContextImpl> _ctx;
+    SocketSpec    _peer_spec;
     SocketAddress _peer_address;
-    SslPtr _ssl;
-    ::BIO* _input_bio;  // Owned by _ssl
-    ::BIO* _output_bio; // Owned by _ssl
-    Mode _mode;
+    SslPtr        _ssl;
+    ::BIO*        _input_bio;  // Owned by _ssl
+    ::BIO*        _output_bio; // Owned by _ssl
+    Mode          _mode;
     std::optional<DeferredHandshakeParams> _deferred_handshake_params;
-    std::optional<HandshakeResult> _deferred_handshake_result;
+    std::optional<HandshakeResult>         _deferred_handshake_result;
 public:
-    OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, const SocketAddress& peer_address, Mode mode);
     ~OpenSslCryptoCodecImpl() override;
+
+    static std::unique_ptr<OpenSslCryptoCodecImpl> make_client_codec(std::shared_ptr<OpenSslTlsContextImpl> ctx,
+                                                                     const SocketSpec& peer_spec,
+                                                                     const SocketAddress& peer_address);
+    static std::unique_ptr<OpenSslCryptoCodecImpl> make_server_codec(std::shared_ptr<OpenSslTlsContextImpl> ctx,
+                                                                     const SocketAddress& peer_address);
 
     /*
      * From RFC 8449 (Record Size Limit Extension for TLS), section 1:
@@ -89,7 +96,20 @@ public:
     EncodeResult half_close(char* ciphertext, size_t ciphertext_size) noexcept override;
 
     const SocketAddress& peer_address() const noexcept { return _peer_address; }
+    /*
+     * If a client has sent a SNI extension field as part of the handshake,
+     * returns the raw string representation of this. It only makes sense to
+     * call this for codecs in server mode.
+     */
+    std::optional<vespalib::string> client_provided_sni_extension() const;
 private:
+    OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx,
+                           const SocketSpec& peer_spec,
+                           const SocketAddress& peer_address,
+                           Mode mode);
+
+    void enable_hostname_validation_if_requested();
+    void set_server_name_indication_extension();
     HandshakeResult do_handshake_and_consume_peer_input_bytes() noexcept;
     DecodeResult drain_and_produce_plaintext_from_ssl(char* plaintext, size_t plaintext_size) noexcept;
     // Precondition: read_result < 0
