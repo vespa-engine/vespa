@@ -33,6 +33,7 @@ NearestNeighborBlueprint::perform_top_k()
     if (nns_index) {
         auto lhs_type = _query_tensor->fast_type();
         auto rhs_type = _attr_tensor.getTensorType();
+        // XXX deal with different cell types later
         if (lhs_type == rhs_type) {
             auto lhs = _query_tensor->cellsRef();
             uint32_t k = _target_num_hits;

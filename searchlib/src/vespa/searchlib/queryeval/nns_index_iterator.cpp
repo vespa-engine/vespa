@@ -8,6 +8,11 @@ using Hit = search::tensor::NearestNeighborIndex::Neighbor;
 
 namespace search::queryeval {
 
+/**
+ * Search iterator for K nearest neighbor matching,
+ * where the actual search is done up front and this class
+ * just iterates over a vector held by the blueprint.
+ **/
 class NeighborVectorIterator : public NnsIndexIterator
 {
 private:
