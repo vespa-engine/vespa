@@ -14,4 +14,6 @@ public enum RoutingMethod {
     /** Routing happens through a dedicated layer 4 load balancer */
     exclusive,
 
+    /** Routing happens through a shared layer 4 load balancer */
+    shared_layer_4
 }
