@@ -1,12 +1,11 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.restapi.cost.CostCalculator;
+import com.yahoo.vespa.hosted.controller.metric.CostCalculator;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -34,7 +33,8 @@ public class CostReportMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        consumer.consume(CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller(), clock, consumer.fixedAllocations(), CloudName.from("yahoo")));
+        var csv = CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller(), clock, consumer.fixedAllocations());
+        consumer.consume(csv);
     }
 
 }
