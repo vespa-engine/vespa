@@ -12,6 +12,7 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/searchlib/queryeval/nns_index_iterator.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("nearest_neighbor_test");
@@ -188,6 +189,72 @@ TEST("require that NearestNeighborIterator sets expected rawscore") {
     TEST_DO(verify_iterator_sets_expected_rawscore(denseSpecFloat, denseSpecFloat));
     TEST_DO(verify_iterator_sets_expected_rawscore(denseSpecDouble, denseSpecFloat));
     TEST_DO(verify_iterator_sets_expected_rawscore(denseSpecFloat, denseSpecDouble));
+}
+
+TEST("require that NnsIndexIterator works as expected") {
+    std::vector<NnsIndexIterator::Hit> hits{{2,4.0}, {3,9.0}, {5,1.0}, {8,16.0}, {9,36.0}};
+    auto md = MatchData::makeTestInstance(2, 2);
+    auto &tfmd = *(md->resolveTermField(0));
+    auto search = NnsIndexIterator::create(true, tfmd, hits);
+    uint32_t docid = 1;
+    search->initFullRange();
+    bool match = search->seek(docid);
+    EXPECT_FALSE(match);
+    EXPECT_FALSE(search->isAtEnd());
+    EXPECT_EQUAL(2u, search->getDocId());
+    docid = 2;
+    match = search->seek(docid);
+    EXPECT_TRUE(match);
+    EXPECT_FALSE(search->isAtEnd());
+    EXPECT_EQUAL(docid, search->getDocId());
+    search->unpack(docid);
+    EXPECT_EQUAL(2.0, tfmd.getRawScore());
+
+    docid = 3;
+    match = search->seek(docid);
+    EXPECT_TRUE(match);
+    EXPECT_FALSE(search->isAtEnd());
+    EXPECT_EQUAL(docid, search->getDocId());
+    search->unpack(docid);
+    EXPECT_EQUAL(3.0, tfmd.getRawScore());
+
+    docid = 4;
+    match = search->seek(docid);
+    EXPECT_FALSE(match);
+    EXPECT_FALSE(search->isAtEnd());
+    EXPECT_EQUAL(5u, search->getDocId());
+
+    docid = 6;
+    match = search->seek(docid);
+    EXPECT_FALSE(match);
+    EXPECT_FALSE(search->isAtEnd());
+    EXPECT_EQUAL(8u, search->getDocId());
+    docid = 8;
+    search->unpack(docid);
+    EXPECT_EQUAL(4.0, tfmd.getRawScore());
+    docid = 9;
+    match = search->seek(docid);
+    EXPECT_TRUE(match);
+    EXPECT_FALSE(search->isAtEnd());
+    docid = 10;
+    match = search->seek(docid);
+    EXPECT_FALSE(match);
+    EXPECT_TRUE(search->isAtEnd());
+
+    docid = 4;
+    search->initRange(docid, 7);
+    match = search->seek(docid);
+    EXPECT_FALSE(match);
+    EXPECT_FALSE(search->isAtEnd());
+    EXPECT_EQUAL(5u, search->getDocId());
+    docid = 5;
+    search->unpack(docid);
+    EXPECT_EQUAL(1.0, tfmd.getRawScore());
+    EXPECT_FALSE(search->isAtEnd());
+    docid = 6;
+    match = search->seek(docid);
+    EXPECT_FALSE(match);
+    EXPECT_TRUE(search->isAtEnd());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
