@@ -8,8 +8,6 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 
-import java.util.Objects;
-
 /**
  * @author hmusum
  */

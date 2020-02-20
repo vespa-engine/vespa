@@ -20,6 +20,9 @@ jvm.minHeapsize int default=1536 restart
 ## Stack size (in kilobytes)
 jvm.stacksize int default=512 restart
 
+## CompressedOOps size in megabytes
+jvm.compressedClassSpaceSize int default=32 restart
+
 ## Base value of maximum direct memory size (in megabytes)
 jvm.baseMaxDirectMemorySize int default=75 restart
 

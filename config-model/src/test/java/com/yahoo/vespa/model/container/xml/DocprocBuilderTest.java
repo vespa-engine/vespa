@@ -28,7 +28,11 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
+
 
 /**
  * @author einarmr
@@ -204,24 +208,25 @@ public class DocprocBuilderTest extends DomBuilderTest {
 
     @Test
     public void testBundlesConfig() {
-        assertThat(bundlesConfig.bundle().size(), is(0));
+        assertTrue(bundlesConfig.bundle().isEmpty());
     }
 
     @Test
     public void testSchemaMappingConfig() {
-        assertThat(schemamappingConfig.fieldmapping().size(), is(0));
+        assertTrue(schemamappingConfig.fieldmapping().isEmpty());
     }
 
     @Test
     public void testQrStartConfig() {
         QrStartConfig.Jvm jvm = qrStartConfig.jvm();
-        assertThat(jvm.server(), is(true));
-        assertThat(jvm.verbosegc(), is(true));
-        assertThat(jvm.gcopts(), is("-XX:+UseG1GC -XX:MaxTenuringThreshold=15"));
-        assertThat(jvm.minHeapsize(), is(1536));
-        assertThat(jvm.heapsize(), is(1536));
-        assertThat(jvm.stacksize(), is(512));
-        assertThat(qrStartConfig.ulimitv(), is(""));
+        assertTrue(jvm.server());
+        assertTrue(jvm.verbosegc());
+        assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", jvm.gcopts());
+        assertEquals(1536, jvm.minHeapsize());
+        assertEquals(1536, jvm.heapsize());
+        assertEquals(512, jvm.stacksize());
+        assertTrue(qrStartConfig.ulimitv().isEmpty());
+        assertEquals(0, jvm.compressedClassSpaceSize());
     }
 
 }
