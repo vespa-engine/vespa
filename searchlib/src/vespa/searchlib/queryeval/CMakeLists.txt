@@ -32,6 +32,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     nearest_neighbor_blueprint.cpp
     nearest_neighbor_iterator.cpp
     nearsearch.cpp
+    nns_index_iterator.cpp
     orsearch.cpp
     predicate_blueprint.cpp
     predicate_search.cpp

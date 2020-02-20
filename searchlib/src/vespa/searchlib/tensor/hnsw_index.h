@@ -134,7 +134,7 @@ public:
 
     void add_document(uint32_t docid) override;
     void remove_document(uint32_t docid) override;
-    std::vector<uint32_t> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) override;
+    std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) override;
     FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k);
 
     // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)

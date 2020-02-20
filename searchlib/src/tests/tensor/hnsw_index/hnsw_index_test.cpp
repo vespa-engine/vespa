@@ -100,8 +100,10 @@ public:
         if (exp_hits.size() == k) {
             std::vector<uint32_t> expected_by_docid = exp_hits;
             std::sort(expected_by_docid.begin(), expected_by_docid.end());
-            std::vector<uint32_t> got_by_docid = index->find_top_k(k, qv, k);
-            EXPECT_EQ(expected_by_docid, got_by_docid);
+            auto got_by_docid = index->find_top_k(k, qv, k);
+            for (idx = 0; idx < k; ++idx) {
+                EXPECT_EQ(expected_by_docid[idx], got_by_docid[idx].docid);
+            }
         }
     }
 };

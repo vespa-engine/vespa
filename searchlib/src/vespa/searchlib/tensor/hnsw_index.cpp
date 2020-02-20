@@ -310,19 +310,27 @@ HnswIndex::remove_document(uint32_t docid)
     _node_refs[docid].store_release(invalid);
 }
 
-std::vector<uint32_t>
+struct NeighborsByDocId {
+    bool operator() (const NearestNeighborIndex::Neighbor &lhs,
+                     const NearestNeighborIndex::Neighbor &rhs)
+    {
+        return (lhs.docid < rhs.docid);
+    }
+};
+
+std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k)
 {
-    std::vector<uint32_t> result;
+    std::vector<Neighbor> result;
     FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k));
     while (candidates.size() > k) {
         candidates.pop();
     }
     result.reserve(candidates.size());
     for (const HnswCandidate & hit : candidates.peek()) {
-        result.emplace_back(hit.docid);
+        result.emplace_back(hit.docid, hit.distance);
     }
-    std::sort(result.begin(), result.end());
+    std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
 }
 
