@@ -1,52 +1,32 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "private_key.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/net/tls/impl/openssl_typedefs.h>
 #include <chrono>
 #include <memory>
 #include <vector>
 
-// TODOs
-//  - add unit testing
-//  - extend interfaces (separate PublicKey etc)
-//  - hide all OpenSSL details from header
-//  - move to appropriate new namespace/directory somewhere under vespalib
+namespace vespalib::crypto {
 
-namespace vespalib::net::tls::impl {
-
-class PrivateKey {
-public:
-    enum class Type {
-        EC,
-        RSA // TODO implement support..!
-    };
-private:
-    EvpPkeyPtr _pkey;
-    Type _type;
-public:
-    PrivateKey(EvpPkeyPtr pkey, Type type)
-            : _pkey(std::move(pkey)),
-              _type(type)
-    {}
-
-    ::EVP_PKEY* native_key() noexcept { return _pkey.get(); }
-    const ::EVP_PKEY* native_key() const noexcept { return _pkey.get(); }
-
-    Type type() const noexcept { return _type; }
-    vespalib::string private_to_pem() const;
-
-    static std::shared_ptr<PrivateKey> generate_p256_ec_key();
-};
-
-
+/**
+ * Represents an X509 certificate instance and provides utility methods
+ * for generating new certificates on the fly. Certificates can be created
+ * for both Certificate Authorities and regular hosts (leaves).
+ *
+ * This implementation aims to ensure that best cryptographic practices are
+ * followed automatically. In particular:
+ *   - The certificate digest is always SHA-256, never SHA-1 or MD5
+ *   - The certificate serial number is a 160-bit secure random sequence
+ *     (technically 159 bits since the MSB is always zero) rather than a
+ *     collision-prone or predictable sequence number.
+ *
+ */
 class X509Certificate {
-    X509Ptr _cert;
 public:
-    explicit X509Certificate(X509Ptr cert) : _cert(std::move(cert)) {}
+    virtual ~X509Certificate() = default;
 
-    ::X509* native_cert() noexcept { return _cert.get(); }
-    const ::X509* native_cert() const noexcept { return _cert.get(); }
+    virtual vespalib::string to_pem() const = 0;
 
     struct DistinguishedName {
         vespalib::string _country;             // "C"
@@ -61,9 +41,8 @@ public:
         DistinguishedName();
         DistinguishedName(const DistinguishedName&);
         DistinguishedName& operator=(const DistinguishedName&);
-        // TODO make these noexcept once vespalib::string has noexcept move.. or move at all!
-        DistinguishedName(DistinguishedName&&);
-        DistinguishedName& operator=(DistinguishedName&&);
+        DistinguishedName(DistinguishedName&&) noexcept;
+        DistinguishedName& operator=(DistinguishedName&&) noexcept;
         ~DistinguishedName();
 
         // TODO could add rvalue overloads as well...
@@ -101,8 +80,13 @@ public:
         Params();
         ~Params();
 
+        Params(const Params&);
+        Params& operator=(const Params&);
+        Params(Params&&) noexcept;
+        Params& operator=(Params&&) noexcept;
+
         SubjectInfo subject_info;
-        // TODO make public key, but private key has both and this is currently just for testing.
+        // TODO make public key, but private key has both.
         std::shared_ptr<PrivateKey> subject_key;
         std::shared_ptr<X509Certificate> issuer; // May be nullptr for self-signed certs
         std::shared_ptr<PrivateKey> issuer_key;
@@ -119,9 +103,14 @@ public:
 
     // Generates an X509 certificate using a SHA-256 digest
     static std::shared_ptr<X509Certificate> generate_from(Params params);
-    vespalib::string to_pem() const;
+protected:
+    X509Certificate() = default;
 };
 
+/*
+ * Simple wrapper for storing both a X509 certificate and the private key
+ * that signed it. Useful for testing.
+ */
 struct CertKeyWrapper {
     std::shared_ptr<X509Certificate> cert;
     std::shared_ptr<PrivateKey> key;

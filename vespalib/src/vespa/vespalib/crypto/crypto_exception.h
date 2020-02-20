@@ -3,7 +3,7 @@
 
 #include <vespa/vespalib/util/exception.h>
 
-namespace vespalib::net::tls {
+namespace vespalib::crypto {
 
 VESPA_DEFINE_EXCEPTION(CryptoException, Exception);
 

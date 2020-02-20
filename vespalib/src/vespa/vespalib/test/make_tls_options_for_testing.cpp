@@ -1,82 +1,77 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "make_tls_options_for_testing.h"
+#include <vespa/vespalib/crypto/private_key.h>
+#include <vespa/vespalib/crypto/x509_certificate.h>
 
-/*
- * Generated with the following commands:
- *
- * openssl ecparam -name prime256v1 -genkey -noout -out ca.key
- *
- * openssl req -new -x509 -nodes -key ca.key \
- *    -sha256 -out ca.pem \
- *    -subj '/C=US/L=LooneyVille/O=ACME/OU=ACME test CA/CN=acme.example.com' \
- *    -days 10000
- *
- * openssl ecparam -name prime256v1 -genkey -noout -out host.key
- *
- * openssl req -new -key host.key -out host.csr \
- *    -subj '/C=US/L=LooneyVille/O=Wile. E. Coyote, Ltd./CN=wile.example.com' \
- *    -sha256
- *
- * openssl x509 -req -in host.csr \
- *   -CA ca.pem \
- *   -CAkey ca.key \
- *   -CAcreateserial \
- *   -out host.pem \
- *   -days 10000 \
- *   -sha256
- *
- * TODO generate keypairs and certs at test-time to avoid any hard-coding
- * There certs are valid until 2046, so that buys us some time..!
- */
+namespace {
 
-// ca.pem
-constexpr const char* ca_pem = R"(-----BEGIN CERTIFICATE-----
-MIIBuDCCAV4CCQDpVjQIixTxvDAKBggqhkjOPQQDAjBkMQswCQYDVQQGEwJVUzEU
-MBIGA1UEBwwLTG9vbmV5VmlsbGUxDTALBgNVBAoMBEFDTUUxFTATBgNVBAsMDEFD
-TUUgdGVzdCBDQTEZMBcGA1UEAwwQYWNtZS5leGFtcGxlLmNvbTAeFw0xODA4MzEx
-MDU3NDVaFw00NjAxMTYxMDU3NDVaMGQxCzAJBgNVBAYTAlVTMRQwEgYDVQQHDAtM
-b29uZXlWaWxsZTENMAsGA1UECgwEQUNNRTEVMBMGA1UECwwMQUNNRSB0ZXN0IENB
-MRkwFwYDVQQDDBBhY21lLmV4YW1wbGUuY29tMFkwEwYHKoZIzj0CAQYIKoZIzj0D
-AQcDQgAE1L7IzCN5pbyVnBATIHieuxq+hf9kWyn5yfjkXMhD52T5ITz1huq4nbiN
-YtRoRP7XmipI60R/uiCHzERcsVz4rDAKBggqhkjOPQQDAgNIADBFAiEA6wmZDBca
-y0aJ6ABtjbjx/vlmVDxdkaSZSgO8h2CkvIECIFktCkbZhDFfSvbqUScPOGuwkdGQ
-L/EW2Bxp+1BPcYoZ
------END CERTIFICATE-----)";
+using namespace vespalib::crypto;
 
-// host.pem
-constexpr const char* cert_pem = R"(-----BEGIN CERTIFICATE-----
-MIIBsTCCAVgCCQD6GfDh0ltpsjAKBggqhkjOPQQDAjBkMQswCQYDVQQGEwJVUzEU
-MBIGA1UEBwwLTG9vbmV5VmlsbGUxDTALBgNVBAoMBEFDTUUxFTATBgNVBAsMDEFD
-TUUgdGVzdCBDQTEZMBcGA1UEAwwQYWNtZS5leGFtcGxlLmNvbTAeFw0xODA4MzEx
-MDU3NDVaFw00NjAxMTYxMDU3NDVaMF4xCzAJBgNVBAYTAlVTMRQwEgYDVQQHDAtM
-b29uZXlWaWxsZTEeMBwGA1UECgwVV2lsZS4gRS4gQ295b3RlLCBMdGQuMRkwFwYD
-VQQDDBB3aWxlLmV4YW1wbGUuY29tMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE
-e+Y4hxt66em0STviGUj6ZDbxzoLoubXWRml8JDFrEc2S2433KWw2npxYSKVCyo3a
-/Vo33V8/H0WgOXioKEZJxDAKBggqhkjOPQQDAgNHADBEAiAN+87hQuGv3z0Ja2BV
-b8PHq2vp3BJHjeMuxWu4BFPn0QIgYlvIHikspgGatXRNMZ1gPC0oCccsJFcie+Cw
-zL06UPI=
------END CERTIFICATE-----)";
+struct TransientCryptoCredentials {
+    CertKeyWrapper root_ca;
+    CertKeyWrapper host_creds;
+    vespalib::net::tls::TransportSecurityOptions cached_transport_options;
 
-// host.key
-constexpr const char* key_pem = R"(-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEID6di2PFYn8hPrxPbkFDGkSqF+K8L520In7nx3g0jwzOoAoGCCqGSM49
-AwEHoUQDQgAEe+Y4hxt66em0STviGUj6ZDbxzoLoubXWRml8JDFrEc2S2433KWw2
-npxYSKVCyo3a/Vo33V8/H0WgOXioKEZJxA==
------END EC PRIVATE KEY-----)";
+    TransientCryptoCredentials();
+    ~TransientCryptoCredentials();
+
+    static CertKeyWrapper make_root_ca() {
+        auto dn = X509Certificate::DistinguishedName()
+                .country("US").state("CA").locality("Sunnyvale")
+                .organization("ACME, Inc.")
+                .organizational_unit("ACME Root CA")
+                .add_common_name("acme.example.com");
+        auto subject = X509Certificate::SubjectInfo(std::move(dn));
+        auto key = PrivateKey::generate_p256_ec_key();
+        auto params = X509Certificate::Params::self_signed(std::move(subject), key);
+        auto cert = X509Certificate::generate_from(std::move(params));
+        return {std::move(cert), std::move(key)};
+    }
+
+    static CertKeyWrapper make_host_creds(const CertKeyWrapper& root_ca_creds) {
+        auto dn = X509Certificate::DistinguishedName()
+                .country("US").state("CA").locality("Sunnyvale")
+                .organization("Wile E. Coyote, Ltd.")
+                .organizational_unit("Unit Testing and Anvil Dropping Division")
+                .add_common_name("localhost"); // Should technically not be needed, but including it anyway.
+        auto subject = X509Certificate::SubjectInfo(std::move(dn));
+        subject.add_subject_alt_name("DNS:localhost");
+        auto key = PrivateKey::generate_p256_ec_key();
+        auto params = X509Certificate::Params::issued_by(std::move(subject), key, root_ca_creds.cert, root_ca_creds.key);
+        params.valid_for = std::chrono::hours(1);
+        auto cert = X509Certificate::generate_from(std::move(params));
+        return {std::move(cert), std::move(key)};
+    }
+
+    static const TransientCryptoCredentials& instance();
+};
+
+TransientCryptoCredentials::TransientCryptoCredentials()
+    : root_ca(make_root_ca()),
+      host_creds(make_host_creds(root_ca)),
+      cached_transport_options(vespalib::net::tls::TransportSecurityOptions::Params().
+            ca_certs_pem(root_ca.cert->to_pem()).
+            cert_chain_pem(host_creds.cert->to_pem()).
+            private_key_pem(host_creds.key->private_to_pem()).
+            authorized_peers(vespalib::net::tls::AuthorizedPeers::allow_all_authenticated()))
+{}
+
+TransientCryptoCredentials::~TransientCryptoCredentials() = default;
+
+const TransientCryptoCredentials& TransientCryptoCredentials::instance() {
+    static TransientCryptoCredentials test_creds;
+    return test_creds;
+}
+
+}
 
 namespace vespalib::test {
 
 SocketSpec local_spec("tcp/localhost:123");
 
 vespalib::net::tls::TransportSecurityOptions make_tls_options_for_testing() {
-    auto ts_builder = vespalib::net::tls::TransportSecurityOptions::Params().
-            ca_certs_pem(ca_pem).
-            cert_chain_pem(cert_pem).
-            private_key_pem(key_pem).
-            authorized_peers(vespalib::net::tls::AuthorizedPeers::allow_all_authenticated()).
-            disable_hostname_validation(true); // FIXME this is to avoid mass breakage of TLS'd networking tests.
-    return vespalib::net::tls::TransportSecurityOptions(std::move(ts_builder));
+    return TransientCryptoCredentials::instance().cached_transport_options;
 }
 
 } // namespace vespalib::test

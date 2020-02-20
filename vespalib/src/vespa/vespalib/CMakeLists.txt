@@ -3,6 +3,7 @@ vespa_add_library(vespalib
     SOURCES
     $<TARGET_OBJECTS:vespalib_vespalib_btree>
     $<TARGET_OBJECTS:vespalib_vespalib_component>
+    $<TARGET_OBJECTS:vespalib_vespalib_crypto>
     $<TARGET_OBJECTS:vespalib_vespalib_data>
     $<TARGET_OBJECTS:vespalib_vespalib_data_slime>
     $<TARGET_OBJECTS:vespalib_vespalib_datastore>
