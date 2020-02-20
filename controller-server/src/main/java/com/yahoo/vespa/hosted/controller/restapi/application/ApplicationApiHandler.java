@@ -1061,6 +1061,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Add zone endpoints defined by routing policies
         var endpointArray = response.setArray("endpoints");
         for (var policy : controller.routingController().policies().get(deploymentId).values()) {
+            // TODO(mpolden): Always add endpoints from all policies, independent of routing method. This allows removal
+            //                of RoutingGenerator and eliminates the external call to the routing layer below.
+            if (!controller.routingController().supportsRoutingMethod(RoutingMethod.exclusive, deployment.zone())) continue;
             if (!policy.status().isActive()) continue;
             {
                 var endpointObject = endpointArray.addObject();
