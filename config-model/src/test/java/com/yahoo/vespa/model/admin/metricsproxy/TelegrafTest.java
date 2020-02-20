@@ -1,13 +1,20 @@
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metricsproxy.telegraf.Telegraf;
 import ai.vespa.metricsproxy.telegraf.TelegrafConfig;
+import ai.vespa.metricsproxy.telegraf.TelegrafRegistry;
+import com.yahoo.component.ComponentId;
 import com.yahoo.vespa.model.VespaModel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -15,8 +22,33 @@ import static org.junit.Assert.assertEquals;
 public class TelegrafTest {
 
     @Test
+    public void telegraf_components_are_set_up() {
+        String services = servicesWithCloudwatch();
+        VespaModel hostedModel = getModel(services, hosted);
+
+        var clusterComponents = hostedModel.getAdmin().getMetricsProxyCluster().getComponentsMap();
+        assertThat(clusterComponents.keySet(), hasItem(ComponentId.fromString(Telegraf.class.getName())));
+        assertThat(clusterComponents.keySet(), hasItem(ComponentId.fromString(TelegrafRegistry.class.getName())));
+    }
+
+    @Test
     public void telegraf_config_is_generated_for_cloudwatch_in_services() {
-        String services = String.join("\n",
+        String services = servicesWithCloudwatch();
+        VespaModel hostedModel = getModel(services, hosted);
+        TelegrafConfig config = hostedModel.getConfig(TelegrafConfig.class, CLUSTER_CONFIG_ID);
+
+        var cloudWatch0 = config.cloudWatch(0);
+        assertEquals("cloudwatch-consumer", cloudWatch0.consumer());
+        assertEquals("us-east-1", cloudWatch0.region());
+        assertEquals("my-namespace", cloudWatch0.namespace());
+        assertEquals("my-access-key", cloudWatch0.accessKeyName());
+        assertEquals("my-secret-key", cloudWatch0.secretKeyName());
+        assertEquals("", cloudWatch0.profile());
+    }
+
+    @NotNull
+    private String servicesWithCloudwatch() {
+        return String.join("\n",
                                       "<services>",
                                       "    <admin version='2.0'>",
                                       "        <adminserver hostalias='node1'/>",
@@ -32,15 +64,6 @@ public class TelegrafTest {
                                       "    </admin>",
                                       "</services>"
         );
-        VespaModel hostedModel = getModel(services, hosted);
-        TelegrafConfig config = hostedModel.getConfig(TelegrafConfig.class, CLUSTER_CONFIG_ID);
-        var cloudWatch0 = config.cloudWatch(0);
-        assertEquals("cloudwatch-consumer", cloudWatch0.consumer());
-        assertEquals("us-east-1", cloudWatch0.region());
-        assertEquals("my-namespace", cloudWatch0.namespace());
-        assertEquals("my-access-key", cloudWatch0.accessKeyName());
-        assertEquals("my-secret-key", cloudWatch0.secretKeyName());
-        assertEquals("", cloudWatch0.profile());
     }
 
     @Test

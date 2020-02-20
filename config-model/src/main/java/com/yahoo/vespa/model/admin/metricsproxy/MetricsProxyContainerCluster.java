@@ -20,7 +20,9 @@ import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcServer;
 import ai.vespa.metricsproxy.service.ConfigSentinelClient;
 import ai.vespa.metricsproxy.service.SystemPollerProvider;
+import ai.vespa.metricsproxy.telegraf.Telegraf;
 import ai.vespa.metricsproxy.telegraf.TelegrafConfig;
+import ai.vespa.metricsproxy.telegraf.TelegrafRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -110,6 +112,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addMetricsProxyComponent(MetricsManager.class);
         addMetricsProxyComponent(RpcServer.class);
         addMetricsProxyComponent(SystemPollerProvider.class);
+        addMetricsProxyComponent(Telegraf.class);
+        addMetricsProxyComponent(TelegrafRegistry.class);
         addMetricsProxyComponent(VespaMetrics.class);
 
         addHttpHandler(MetricsV1Handler.class, MetricsV1Handler.V1_PATH);
