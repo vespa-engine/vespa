@@ -21,7 +21,7 @@ public class TlsCryptoEngine implements CryptoEngine {
 
     @Override
     public TlsCryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec)  {
-        SSLEngine sslEngine = tlsContext.createSslEngine();
+        SSLEngine sslEngine = tlsContext.createSslEngine(spec.host(), spec.port());
         sslEngine.setUseClientMode(true);
         return new TlsCryptoSocket(channel, sslEngine);
     }
