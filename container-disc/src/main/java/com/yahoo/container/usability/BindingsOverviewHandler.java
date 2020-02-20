@@ -3,9 +3,10 @@ package com.yahoo.container.usability;
 
 import com.google.inject.Inject;
 import com.yahoo.component.ComponentId;
-import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.Container;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
+import com.yahoo.container.jdisc.NavigableRequestHandler;
+import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -22,11 +23,14 @@ import org.json.JSONObject;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author gjoranv
@@ -49,7 +53,7 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
             json = errorMessageInJson();
             statusToReturn = com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
         } else {
-            json = new StatusResponse(bindingsConfig).render();
+            json = new StatusResponse(bindingsConfig, request.getUri()).render();
             statusToReturn = com.yahoo.jdisc.Response.Status.OK;
         }
 
@@ -97,6 +101,76 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
             ret.put(handlerJson);
         }
         return ret;
+    }
+
+    static JSONArray renderLinks(URI requestUri,
+                                 JdiscBindingsConfig bindingsConfig,
+                                 Map<ComponentId, ? extends RequestHandler> handlersById)
+    {
+        var entryPointSet = new LinkedHashSet<URI>();
+
+        for (var handlerEntry : handlersById.entrySet()) {
+            var requestHandler = handlerEntry.getValue();
+
+            if (! (requestHandler instanceof NavigableRequestHandler)) {
+                continue;
+            }
+
+            var navigableHandler = (NavigableRequestHandler) requestHandler;
+            var componentId = handlerEntry.getKey();
+            var bindings = bindingsConfig.handlers(componentId.stringValue());
+
+            // for each binding on the handler, try to construct a URL based on the binding that points to the
+            // handler entrypoint.  then we try to match the generated URL against the binding pattern to make
+            // sure we never created something that would not match.  if success, we add the URL to the list.
+            for (var binding : bindings.serverBindings()) {
+                var uriPattern = new UriPattern(binding);
+                var bindingPath = bindingPath(binding);
+
+                if (bindingPath == null) {
+                    continue;
+                }
+
+                for (var entryPoint : navigableHandler.entryPoints()) {
+                    var matchingUri = new com.yahoo.restapi.Uri(requestUri)
+                            .append(bindingPath)
+                            .append(entryPoint.path().getPath())
+                            .toURI()
+                            .normalize();
+                    var match = uriPattern.match(matchingUri);
+                    if (match != null)
+                        entryPointSet.add(matchingUri);
+                }
+            }
+        }
+
+        return entryPointSet.stream()
+                .map(URI::toString)
+                .map(uri -> {
+                    var obj = new JSONObject();
+                    putJson(obj, "url", uri);
+                    return obj;
+                })
+                .collect(Collectors.collectingAndThen(Collectors.toList(), JSONArray::new));
+    }
+
+    private static final Pattern bindingPathPattern = Pattern.compile("^.*://[^/]*(/.*)$");
+
+    private static String bindingPath(String binding) {
+        var match = bindingPathPattern.matcher(binding);
+
+        if (match.matches()) {
+            // binding paths will often end width wildcards.  trim it away so we can use the path binding glob in a
+            // URI construction context.
+            var pathMatch = match.group(1);
+            if (pathMatch.endsWith("*"))
+                return pathMatch.substring(0, pathMatch.length() - 1);
+            if (pathMatch.endsWith("*/"))
+                return pathMatch.substring(0, pathMatch.length() - 2);
+            return pathMatch;
+        }
+
+        return null;
     }
 
     private static void addBindings(JdiscBindingsConfig bindingsConfig, String id, JSONObject handlerJson) {
@@ -166,13 +240,18 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
     static final class StatusResponse {
 
         private final JdiscBindingsConfig bindingsConfig;
+        private final URI requestUri;
 
-        StatusResponse(JdiscBindingsConfig bindingsConfig) {
+        StatusResponse(JdiscBindingsConfig bindingsConfig, URI requestUri) {
             this.bindingsConfig = bindingsConfig;
+            this.requestUri = requestUri;
         }
 
         public JSONObject render() {
             JSONObject root = new JSONObject();
+
+            putJson(root, "links",
+                    renderLinks(requestUri, bindingsConfig, Container.get().getRequestHandlerRegistry().allComponentsById()));
 
             putJson(root, "handlers",
                     renderRequestHandlers(bindingsConfig, Container.get().getRequestHandlerRegistry().allComponentsById()));
