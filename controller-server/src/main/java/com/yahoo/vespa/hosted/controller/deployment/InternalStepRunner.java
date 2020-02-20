@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
@@ -77,7 +76,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Nod
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
