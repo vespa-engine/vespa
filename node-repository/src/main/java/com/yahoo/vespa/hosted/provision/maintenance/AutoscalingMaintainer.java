@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Duration;
 import java.util.List;
@@ -25,9 +26,12 @@ public class AutoscalingMaintainer extends Maintainer {
 
     private final Autoscaler autoscaler;
 
-    public AutoscalingMaintainer(NodeRepository nodeRepository, NodeMetricsDb metricsDb, Duration interval) {
+    public AutoscalingMaintainer(NodeRepository nodeRepository,
+                                 HostResourcesCalculator hostResourcesCalculator,
+                                 NodeMetricsDb metricsDb,
+                                 Duration interval) {
         super(nodeRepository, interval);
-        this.autoscaler = new Autoscaler(metricsDb, nodeRepository);
+        this.autoscaler = new Autoscaler(hostResourcesCalculator, metricsDb, nodeRepository);
     }
 
     @Override
@@ -42,7 +46,7 @@ public class AutoscalingMaintainer extends Maintainer {
             Optional<ClusterResources> target = autoscaler.autoscale(applicationId, clusterSpec, clusterNodes);
             target.ifPresent(t -> log.info("Autoscale: Application " + applicationId + " cluster " + clusterSpec +
                                            " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
-                                           " to " + t.nodes() + " * " + t.resources()));
+                                           " to " + t.nodes() + " * " + t.nodeResources()));
         });
     }
 

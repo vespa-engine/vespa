@@ -83,7 +83,7 @@ public final class Node {
         this.reservedTo = Objects.requireNonNull(reservedTo, "reservedTo cannot be null");
 
         if (state == State.active)
-            requireNonEmpty(ipConfig.primary(), "An active node must have at least one valid IP address");
+            requireNonEmpty(ipConfig.primary(), "Active node " + hostname + " must have at least one valid IP address");
 
         if (parentHostname.isPresent()) {
             if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");

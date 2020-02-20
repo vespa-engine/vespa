@@ -17,7 +17,7 @@ public class ClusterResources {
     private final int groups;
 
     /** The resources of each node in the cluster */
-    private final NodeResources resources;
+    private final NodeResources nodeResources;
 
     public ClusterResources(List<Node> nodes) {
         this(nodes.size(),
@@ -25,23 +25,19 @@ public class ClusterResources {
              nodes.get(0).flavor().resources());
     }
 
-    public ClusterResources(int nodes, int groups, NodeResources resources) {
+    public ClusterResources(int nodes, int groups, NodeResources nodeResources) {
         this.nodes = nodes;
         this.groups = groups;
-        this.resources = resources;
+        this.nodeResources = nodeResources;
     }
 
     /** Returns the total number of allocated nodes (over all groups) */
     public int nodes() { return nodes; }
     public int groups() { return groups; }
-    public NodeResources resources() { return resources; }
+    public NodeResources nodeResources() { return nodeResources; }
 
     public ClusterResources with(NodeResources resources) {
         return new ClusterResources(nodes, groups, resources);
-    }
-
-    public double cost() {
-        return Autoscaler.costOf(resources) * nodes;
     }
 
     @Override
@@ -52,18 +48,18 @@ public class ClusterResources {
         ClusterResources other = (ClusterResources)o;
         if (other.nodes != this.nodes) return false;
         if (other.groups != this.groups) return false;
-        if (other.resources != this.resources) return false;
+        if (other.nodeResources != this.nodeResources) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodes, groups, resources);
+        return Objects.hash(nodes, groups, nodeResources);
     }
 
     @Override
     public String toString() {
-        return "cluster resources: " + nodes + " * " + resources + (groups > 1 ? " in " + groups + " groups" : "");
+        return "cluster resources: " + nodes + " * " + nodeResources + (groups > 1 ? " in " + groups + " groups" : "");
     }
 
 }

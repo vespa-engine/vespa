@@ -62,7 +62,7 @@ public class DynamicDockerProvisionTest {
     @Test
     public void does_not_allocate_to_available_empty_hosts() {
         tester.makeReadyNodes(3, "small", NodeType.host, 10);
-        deployZoneApp(tester);
+        tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
@@ -82,7 +82,7 @@ public class DynamicDockerProvisionTest {
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
         verify(hostProvisioner).provisionHosts(expectedProvisionIndexes, flavor, application);
 
-        // Ready the provisioned hosts, add an IP addreses to pool and activate them
+        // Ready the provisioned hosts, add an IP addresses to pool and activate them
         for (Integer i : expectedProvisionIndexes) {
             String hostname = "host-" + i;
             var ipConfig = new IP.Config(Set.of("::" + i + ":0"), Set.of("::" + i + ":2"));
@@ -90,7 +90,7 @@ public class DynamicDockerProvisionTest {
             tester.nodeRepository().setReady(List.of(host), Agent.system, getClass().getSimpleName());
             nameResolver.addRecord(hostname + "-2", "::" + i + ":2");
         }
-        deployZoneApp(tester);
+        tester.deployZoneApp();
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("another-id"), 2, 1, flavor);
@@ -102,19 +102,6 @@ public class DynamicDockerProvisionTest {
         assertEquals(2, tester.nodeRepository().getNodes(NodeType.host, Node.State.active).size());
         assertEquals(4, tester.nodeRepository().getNodes(NodeType.tenant, Node.State.reserved).size());
     }
-
-    private static void deployZoneApp(ProvisioningTester tester) {
-        ApplicationId applicationId = tester.makeApplicationId();
-        List<HostSpec> list = tester.prepare(applicationId,
-                ClusterSpec.request(ClusterSpec.Type.container,
-                        ClusterSpec.Id.from("node-admin"),
-                        Version.fromString("6.42"),
-                        false),
-                Capacity.fromRequiredNodeType(NodeType.host),
-                1);
-        tester.activate(applicationId, ImmutableSet.copyOf(list));
-    }
-
 
     private static ClusterSpec clusterSpec(String clusterId) {
         return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false);

@@ -30,7 +30,7 @@ public class ResourceIterator {
 
         // ceil: If the division does not produce a whole number we assume some node is missing
         groupSize = (int)Math.ceil((double)currentAllocation.nodes() / currentAllocation.groups());
-        resourcesPrototype = currentAllocation.resources();
+        resourcesPrototype = currentAllocation.nodeResources();
 
         // What number of nodes is it effective to add or remove at the time from this cluster?
         // This is the group size, since we (for now) assume the group size is decided by someone wiser than us

@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Duration;
 import java.util.List;
@@ -43,10 +44,14 @@ public class Autoscaler {
     private static final double memoryUnitCost = 1.2;
     private static final double diskUnitCost = 0.045;
 
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final NodeMetricsDb metricsDb;
     private final NodeRepository nodeRepository;
 
-    public Autoscaler(NodeMetricsDb metricsDb, NodeRepository nodeRepository) {
+    public Autoscaler(HostResourcesCalculator hostResourcesCalculator,
+                      NodeMetricsDb metricsDb,
+                      NodeRepository nodeRepository) {
+        this.hostResourcesCalculator = hostResourcesCalculator;
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
     }
@@ -56,7 +61,6 @@ public class Autoscaler {
                                                    node.allocation().get().membership().retired() ||
                                                    node.allocation().get().isRemovable()))
             return Optional.empty(); // Don't autoscale clusters that are in flux
-
         ClusterResources currentAllocation = new ClusterResources(clusterNodes);
         Optional<Double> totalCpuSpent    = averageUseOf(Resource.cpu,    applicationId, cluster, clusterNodes);
         Optional<Double> totalMemorySpent = averageUseOf(Resource.memory, applicationId, cluster, clusterNodes);
@@ -74,24 +78,23 @@ public class Autoscaler {
 
     private Optional<ClusterResources> findBestAllocation(double totalCpu, double totalMemory, double totalDisk,
                                                           ClusterResources currentAllocation) {
-        Optional<ClusterResources> bestAllocation = Optional.empty();
+        Optional<ClusterResourcesWithCost> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(totalCpu, totalMemory, totalDisk, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
-            Optional<NodeResources> allocatableResources = toAllocatableResources(allocation.resources());
+            Optional<ClusterResourcesWithCost> allocatableResources = toAllocatableResources(allocation);
             if (allocatableResources.isEmpty()) continue;
 
-            ClusterResources effectiveAllocation = allocation.with(allocatableResources.get());
-            if (bestAllocation.isEmpty() || effectiveAllocation.cost() < bestAllocation.get().cost())
-                bestAllocation = Optional.of(effectiveAllocation);
+            if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
+                bestAllocation = allocatableResources;
         }
-        return bestAllocation;
+        return bestAllocation.map(a -> a.clusterResources());
     }
 
     private boolean isSimilar(ClusterResources a1, ClusterResources a2) {
         if (a1.nodes() != a2.nodes()) return false; // A full node is always a significant difference
-        return isSimilar(a1.resources().vcpu(), a2.resources().vcpu()) &&
-               isSimilar(a1.resources().memoryGb(), a2.resources().memoryGb()) &&
-               isSimilar(a1.resources().diskGb(), a2.resources().diskGb());
+        return isSimilar(a1.nodeResources().vcpu(), a2.nodeResources().vcpu()) &&
+               isSimilar(a1.nodeResources().memoryGb(), a2.nodeResources().memoryGb()) &&
+               isSimilar(a1.nodeResources().diskGb(), a2.nodeResources().diskGb());
     }
 
     private boolean isSimilar(double r1, double r2) {
@@ -102,11 +105,13 @@ public class Autoscaler {
      * Returns the smallest allocatable node resources larger than the given node resources,
      * or empty if none available.
      */
-    private Optional<NodeResources> toAllocatableResources(NodeResources nodeResources) {
+    private Optional<ClusterResourcesWithCost> toAllocatableResources(ClusterResources resources) {
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // Return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
-                if (flavor.resources().satisfies(nodeResources)) return Optional.of(nodeResources);
+                if (flavor.resources().satisfies(resources.nodeResources()))
+                    return Optional.of(new ClusterResourcesWithCost(resources,
+                                                                    costOf(resources.nodeResources()) * resources.nodes()));
             return Optional.empty();
         }
         else {
@@ -114,14 +119,17 @@ public class Autoscaler {
             double bestCost = Double.MAX_VALUE;
             Optional<Flavor> bestFlavor = Optional.empty();
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
-                // TODO: Use effective not advertised flavor resources
-                if ( ! flavor.resources().satisfies(nodeResources)) continue;
+                if ( ! flavor.resources().satisfies(resources.nodeResources())) continue;
                 if (bestFlavor.isEmpty() || bestCost > costOf(flavor.resources())) {
                     bestFlavor = Optional.of(flavor);
-                    bestCost = costOf(flavor.resources());
+                    bestCost = costOf(flavor);
                 }
             }
-            return bestFlavor.map(flavor -> flavor.resources());
+            if (bestFlavor.isEmpty())
+                return Optional.empty();
+            else
+                return Optional.of(new ClusterResourcesWithCost(resources.with(bestFlavor.get().resources()),
+                                                                bestCost * resources.nodes()));
         }
     }
 
@@ -152,6 +160,11 @@ public class Autoscaler {
     private boolean allowsHostSharing(CloudName cloudName) {
         if (cloudName.value().equals("aws")) return false;
         return true;
+    }
+
+    private double costOf(Flavor flavor) {
+        NodeResources chargedResources = hostResourcesCalculator.availableCapacityOf(flavor.name(), flavor.resources());
+        return costOf(chargedResources);
     }
 
     static double costOf(NodeResources resources) {
