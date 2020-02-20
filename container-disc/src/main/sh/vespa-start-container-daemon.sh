@@ -64,6 +64,7 @@ configure_memory() {
     consider_fallback jvm_heapsize 1536
     consider_fallback jvm_stacksize 512
     consider_fallback jvm_baseMaxDirectMemorySize 75
+    consider_fallback jvm_compressedClassSpaceSize 32
     consider_fallback jvm_directMemorySizeCache 0
 
     # Update jvm_heapsize only if percentage is explicitly set (default is 0).
@@ -80,16 +81,20 @@ configure_memory() {
     fi
 
     # Safety measure against bad min vs max heapsize.
-   if ((jvm_minHeapsize > jvm_heapsize)); then
+    if ((jvm_minHeapsize > jvm_heapsize)); then
         jvm_minHeapsize=${jvm_heapsize}
         echo "Misconfigured heap size, jvm_minHeapsize(${jvm_minHeapsize} is larger than jvm_heapsize(${jvm_heapsize}). It has been capped."
-   fi
+    fi
 
     maxDirectMemorySize=$(( jvm_baseMaxDirectMemorySize + jvm_heapsize / 8 + jvm_directMemorySizeCache ))
 
     memory_options="-Xms${jvm_minHeapsize}m -Xmx${jvm_heapsize}m"
     memory_options="${memory_options} -XX:ThreadStackSize=${jvm_stacksize}"
-    memory_options="${memory_options} -XX:MaxDirectMemorySize=${maxDirectMemorySize}m"    
+    memory_options="${memory_options} -XX:MaxDirectMemorySize=${maxDirectMemorySize}m"
+
+    if ((jvm_compressedClassSpaceSize != 0)); then
+        memory_options="${memory_options} -XX:CompressedClassSpaceSize=${jvm_compressedClassSpaceSize}m"
+    fi
 
     if [ "${VESPA_USE_HUGEPAGES}" ]; then
         memory_options="${memory_options} -XX:+UseLargePages"
