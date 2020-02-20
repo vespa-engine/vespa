@@ -55,6 +55,18 @@ public class Flags {
             "Whether to enable Nessus.", "Takes effect on next host admin tick",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag ENABLE_FLEET_SSHD_CONFIG = defineFeatureFlag(
+            "enable-fleet-sshd-config", false,
+            "Whether fleet should manage the /etc/ssh/sshd_config file.",
+            "Takes effect on next host admin tick.",
+            HOSTNAME);
+
+    public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
+            "fleet-canary", false,
+            "Whether the host is a fleet canary.",
+            "Takes effect on next host admin tick.",
+            HOSTNAME);
+
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
@@ -90,17 +102,6 @@ public class Flags {
             "Takes effect on the next deployment of the application",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag INCLUDE_SIS_IN_TRUSTSTORE = defineFeatureFlag(
-            "include-sis-in-truststore", false,
-            "Whether to use the trust store backed by Athenz and (in public) Service Identity certificates in " +
-            "host-admin and/or Docker containers",
-            "Takes effect on restart of host-admin (for host-admin), and restart of Docker container.",
-            // For host-admin, HOSTNAME and NODE_TYPE is available
-            // For Docker containers, HOSTNAME and APPLICATION_ID is available
-            // WARNING: Having different sets of dimensions is DISCOURAGED in general, but needed for here since
-            // trust store for host-admin is determined before having access to application ID from node repo.
-            HOSTNAME, NODE_TYPE, APPLICATION_ID);
-
     public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
             "tls-insecure-mixed-mode", "tls_client_mixed_server",
             "TLS insecure mixed mode. Allowed values: ['plaintext_client_mixed_server', 'tls_client_mixed_server', 'tls_client_tls_server']",
@@ -124,6 +125,21 @@ public class Flags {
             "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
             "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
             "Takes effect on next run of NodeRebooter");
+
+    public static final UnboundBooleanFlag ENABLE_LARGE_ORCHESTRATOR_LOCKS = defineFeatureFlag(
+            "enable-large-orchestrator-locks", true,
+            "If enabled, the orchestrator will accumulate application locks during probe in batch suspension, " +
+            "and release them in reverse order only after the non-probe is complete. Can be set depending on " +
+            "parent hostname.",
+            "Takes immediate effect for new batch suspensions.",
+            HOSTNAME);
+
+    public static final UnboundBooleanFlag RETIRE_WITH_PERMANENTLY_DOWN = defineFeatureFlag(
+            "retire-with-permanently-down", false,
+            "If enabled, retirement will end with setting the host status to PERMANENTLY_DOWN, " +
+            "instead of ALLOWED_TO_BE_DOWN (old behavior).",
+            "Takes effect on the next run of RetiredExpirer.",
+            HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
             "enable-dynamic-provisioning", false,
@@ -173,13 +189,6 @@ public class Flags {
             "Takes effect on restart of process",
             NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_OLD_METRICS_CHECKS = defineFeatureFlag(
-            "use-old-metrics-checks", true,
-            "Whether to use old metrics checks",
-             "Takes effect on next host admin tick",
-            NODE_TYPE, HOSTNAME, APPLICATION_ID);
-
-
     public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
             "enable-disk-write-test", false,
             "Regularly issue a small write to disk and fail the host if it is not successful",
@@ -191,40 +200,45 @@ public class Flags {
             "Whether to disable CM3.", "Takes effect on next host admin tick",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_4443_UPSTREAM = defineFeatureFlag(
-            "use-4443-upstream", false,
-            "Use port 4443 for nginx upstream",
-            "Takes effect when routing container asks for new config",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag ENABLE_IN_PLACE_RESIZE = defineFeatureFlag(
-            "enable-in-place-resize", false,
-            "Whether nodes can be resized in-place when certain conditions are met",
-            "Takes effect on next deployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag FAIL_STARTING_NODE_ON_IP_MISMATCH = defineFeatureFlag(
-            "fail-starting-node-on-ip-mismatch", false,
-            "Whether node-admin should refuse to start container when there is an IP mismatch between the DNS and node-repository",
-            "Takes effect on next node creation (f.ex. node reboot or vespa version upgrade)");
-
-    public static final UnboundBooleanFlag USE_CONFIG_SERVER_FOR_TESTER_API_CALLS = defineFeatureFlag(
-            "use-config-server-for-tester-api-calls", false,
-            "Whether controller should send requests to tester API through config server (if false) or tester endpoint (if true)",
-            "Takes effect immediately",
-            ZONE_ID);
-
-    public static final UnboundBooleanFlag INSTALL_L4_ROUTING_SUPPORT = defineFeatureFlag(
-            "install-l4-routing-support", false,
-            "Whether routing nodes should install package supporting L4 routing",
-            "Takes effect immediately",
-            ZONE_ID, HOSTNAME);
-
     public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
             "generate-l4-routing-config", false,
             "Whether routing nodes should generate L4 routing config",
             "Takes effect immediately",
             ZONE_ID, HOSTNAME);
+
+    public static final UnboundBooleanFlag USE_REFRESHED_ENDPOINT_CERTIFICATE = defineFeatureFlag(
+            "use-refreshed-endpoint-certificate", false,
+            "Whether an application should start using a newer certificate/key pair if available",
+            "Takes effect on the next deployment of the application",
+            APPLICATION_ID);
+
+    public static final UnboundStringFlag ENDPOINT_CERTIFICATE_BACKFILL = defineStringFlag(
+            "endpoint-certificate-backfill", "disable",
+            "Whether the endpoint certificate maintainer should backfill missing certificate data from cameo",
+            "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\""
+    );
+
+    public static final UnboundBooleanFlag USE_NEW_ATHENZ_FILTER = defineFeatureFlag(
+            "use-new-athenz-filter", false,
+            "Use new Athenz filter that supports access-tokens",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_RPM_PACKAGES_FOR_DATA_HIGHWAY = defineFeatureFlag(
+            "use-rpm-packages-for-data-highway", false,
+            "Whether RPM packages should be used for Data Highway",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundStringFlag DOCKER_IMAGE_OVERRIDE = defineStringFlag(
+            "docker-image-override", "",
+            "Override the Docker image to use for deployments. This must containing the image name only, without tag",
+            "Takes effect on next host-admin tick", APPLICATION_ID);
+
+    public static final UnboundBooleanFlag ENDPOINT_CERT_IN_SHARED_ROUTING = defineFeatureFlag(
+            "endpoint-cert-in-shared-routing", false,
+            "Whether to provision and use endpoint certs for apps in shared routing zones",
+            "Takes effect on next deployment of the application", APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

@@ -9,7 +9,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayInputStream;
@@ -79,7 +79,7 @@ public class ApplicationPackage {
 
         Optional<Inspector> buildMetaObject = files.get("build-meta.json").map(SlimeUtils::jsonToSlime).map(Slime::get);
         if (requireFiles && buildMetaObject.isEmpty())
-            throw new IllegalArgumentException("Missing required file 'deployment.xml'");
+            throw new IllegalArgumentException("Missing required file 'build-meta.json'");
         this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
 

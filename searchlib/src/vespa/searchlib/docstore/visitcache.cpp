@@ -66,7 +66,7 @@ BlobSet::get(uint32_t lid) const
     ConstBufferRef buf;
     for (LidPosition pos : _positions) {
         if (pos.lid() == lid) {
-            buf = ConstBufferRef(_buffer.c_str() + pos.offset(), pos.size());
+            buf = ConstBufferRef(_buffer.data() + pos.offset(), pos.size());
             break;
         }
     }

@@ -17,13 +17,11 @@ class SerializableArray;
 class ValueUpdate;
 class FieldPathUpdate;
 
-enum DocSerializationMode { COMPLETE, WITHOUT_BODY };
-
 class VespaDocumentSerializer : private ConstFieldValueVisitor,
                                 private UpdateVisitor,
                                 public FieldValueWriter {
 public:
-    VespaDocumentSerializer(vespalib::nbostream &stream);
+    explicit VespaDocumentSerializer(vespalib::nbostream &stream);
 
     static bool structNeedsReserialization(const StructFieldValue &value);
 
@@ -34,7 +32,7 @@ public:
 
     void write(const DocumentId &value);
     void write(const DocumentType &value);
-    void write(const Document &value, DocSerializationMode mode);
+    void write(const Document &value);
     void write(const AnnotationReferenceFieldValue &value);
     void write(const ArrayFieldValue &value);
     void write(const MapFieldValue &map);
@@ -60,8 +58,6 @@ public:
 private:
     static constexpr int serialize_version = 8;
     void writeUnchanged(const SerializableArray &val);
-    uint8_t getContentCode(bool hasHeader, bool hasBody) const;
-
     void write(const FieldPathUpdate &value);
 
     void write(const RemoveValueUpdate &value);
@@ -96,7 +92,7 @@ private:
     void visit(const ArrayFieldValue &value)               override { write(value); }
     void visit(const BoolFieldValue &value)                override { write(value); }
     void visit(const ByteFieldValue &value)                override { write(value); }
-    void visit(const Document &value)                      override { write(value, COMPLETE); }
+    void visit(const Document &value)                      override { write(value); }
     void visit(const DoubleFieldValue &value)              override { write(value); }
     void visit(const FloatFieldValue &value)               override { write(value); }
     void visit(const IntFieldValue &value)                 override { write(value); }

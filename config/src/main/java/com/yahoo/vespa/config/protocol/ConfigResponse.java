@@ -5,7 +5,6 @@ import com.yahoo.text.Utf8Array;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
 
 /**
  * A config response encapsulates the payload and some meta information. This makes it possible to
@@ -18,8 +17,6 @@ import java.util.List;
 public interface ConfigResponse {
 
     Utf8Array getPayload();
-
-    List<String> getLegacyPayload();
 
     long getGeneration();
 

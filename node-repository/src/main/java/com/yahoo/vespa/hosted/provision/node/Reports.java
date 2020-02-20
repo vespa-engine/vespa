@@ -71,6 +71,6 @@ public class Reports {
             return this;
         }
 
-        public Reports build() { return new Reports(Collections.unmodifiableMap(reportMap)); }
+        public Reports build() { return new Reports(reportMap); }
     }
 }

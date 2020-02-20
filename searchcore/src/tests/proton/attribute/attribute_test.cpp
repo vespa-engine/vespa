@@ -20,6 +20,7 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
@@ -588,8 +589,8 @@ struct FilterFixture
 
 TEST_F("require that filter attribute manager can filter attributes", FilterFixture)
 {
-    EXPECT_TRUE(f._filterMgr.getAttribute("a1").get() == NULL);
-    EXPECT_TRUE(f._filterMgr.getAttribute("a2").get() != NULL);
+    EXPECT_TRUE(f._filterMgr.getAttribute("a1").get() == nullptr);
+    EXPECT_TRUE(f._filterMgr.getAttribute("a2").get() != nullptr);
     std::vector<AttributeGuard> attrs;
     f._filterMgr.getAttributeList(attrs);
     EXPECT_EQUAL(1u, attrs.size());
@@ -605,6 +606,16 @@ TEST_F("require that filter attribute manager can return flushed serial number",
     f._baseMgr->flushAll(100);
     EXPECT_EQUAL(0u, f._filterMgr.getFlushedSerialNum("a1"));
     EXPECT_EQUAL(100u, f._filterMgr.getFlushedSerialNum("a2"));
+}
+
+TEST_F("readable_attribute_vector filters attributes", FilterFixture)
+{
+    auto av = f._filterMgr.readable_attribute_vector("a2");
+    ASSERT_TRUE(av);
+    EXPECT_EQUAL("a2", av->makeReadGuard(false)->attribute()->getName());
+
+    av = f._filterMgr.readable_attribute_vector("a1");
+    EXPECT_FALSE(av);
 }
 
 namespace {

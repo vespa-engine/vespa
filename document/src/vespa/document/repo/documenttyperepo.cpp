@@ -441,10 +441,10 @@ void addFieldSet(const DocumenttypesConfig::Documenttype::FieldsetsMap & fsv, Do
     for (const auto & entry : fsv) {
         const DocumenttypesConfig::Documenttype::Fieldsets & fs(entry.second);
         DocumentType::FieldSet::Fields fields;
-        for (size_t j(0); j < fs.fields.size(); j++) {
-            fields.insert(fs.fields[j]);
+        for (const auto& f : fs.fields) {
+            fields.insert(f);
         }
-        doc_type.addFieldSet(entry.first, fields);
+        doc_type.addFieldSet(entry.first, std::move(fields));
     }
 }
 
@@ -454,6 +454,14 @@ void addReferenceTypes(const vector<DocumenttypesConfig::Documenttype::Reference
     for (const auto& ref_type : ref_types) {
         const auto* target_doc_type = lookupRepo(ref_type.targetTypeId, doc_type_map).doc_type;
         data_type_repo.addDataType(std::make_unique<ReferenceDataType>(*target_doc_type, ref_type.id));
+    }
+}
+
+void add_imported_fields(const DocumenttypesConfig::Documenttype::ImportedfieldVector& imported_fields,
+                         DocumentType& doc_type)
+{
+    for (const auto& imported : imported_fields) {
+        doc_type.add_imported_field_name(imported.name);
     }
 }
 
@@ -467,6 +475,7 @@ void configureDataTypeRepo(const DocumenttypesConfig::Documenttype &doc_type, Do
     setAnnotationDataTypes(doc_type.annotationtype, data_types->annotations, data_types->repo);
     inheritDocumentTypes(doc_type.inherits, type_map, *data_types->doc_type);
     addFieldSet(doc_type.fieldsets, *data_types->doc_type);
+    add_imported_fields(doc_type.importedfield, *data_types->doc_type);
 }
 
 void addDataTypeRepo(DataTypeRepo::UP data_types, DocumentTypeMap &doc_types) {

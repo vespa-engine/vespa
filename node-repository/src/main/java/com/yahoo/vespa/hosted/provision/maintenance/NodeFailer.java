@@ -97,7 +97,7 @@ public class NodeFailer extends Maintainer {
         int throttledNodeFailures = 0;
 
         // Ready nodes
-        try (Mutex lock = nodeRepository().lockAllocation()) {
+        try (Mutex lock = nodeRepository().lockUnallocated()) {
             updateNodeLivenessEventsForReadyNodes(lock);
 
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
@@ -265,7 +265,7 @@ public class NodeFailer extends Maintainer {
 
     private boolean nodeSuspended(Node node) {
         try {
-            return orchestrator.getNodeStatus(new HostName(node.hostname())) == HostStatus.ALLOWED_TO_BE_DOWN;
+            return orchestrator.getNodeStatus(new HostName(node.hostname())).isSuspended();
         } catch (HostNameNotFoundException e) {
             // Treat it as not suspended
             return false;
@@ -323,7 +323,7 @@ public class NodeFailer extends Maintainer {
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            return nodeRepository().write(node.downAt(clock.instant()), lock);
+            return nodeRepository().write(node.downAt(clock.instant(), Agent.NodeFailer), lock);
         }
     }
 

@@ -94,8 +94,8 @@
   "3": {
     "id": 3,
     "status": "success",
-    "start": 2000,
-    "end": 2000,
+    "start": 3603000,
+    "end": 3603000,
     "wantedPlatform": "6.1",
     "wantedApplication": {
       "hash": "1.0.3-commit1",
@@ -146,8 +146,8 @@
   "4": {
     "id": 4,
     "status": "installationFailed",
-    "start": 2000,
-    "end": 2000,
+    "start": 3603000,
+    "end": 3603000,
     "wantedPlatform": "6.1",
     "wantedApplication": {
       "hash": "1.0.3-commit1",
@@ -194,8 +194,8 @@
   "5": {
     "id": 5,
     "status": "installationFailed",
-    "start": 102000,
-    "end": 102000,
+    "start": 3703000,
+    "end": 3703000,
     "wantedPlatform": "6.1",
     "wantedApplication": {
       "hash": "1.0.3-commit1",

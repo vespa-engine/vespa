@@ -62,7 +62,7 @@ public class PeriodicApplicationMaintainerTest {
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                  new MockNameResolver().mockAnyLookup(),
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                 true);
+                                                 true, new InMemoryFlagSource());
         this.fixture = new Fixture(zone, nodeRepository);
 
         createReadyNodes(15, fixture.nodeResources, nodeRepository);

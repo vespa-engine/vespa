@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -41,7 +40,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
@@ -52,8 +51,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -66,6 +63,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -77,10 +75,10 @@ import org.junit.Test;
 import java.io.File;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -97,6 +95,9 @@ import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -232,10 +233,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET tenant applications
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/", GET).userIdentity(USER_ID),
-                              new File("instance-list.json"));
+                              new File("application-list.json"));
         // GET tenant applications (instances of "application1" only)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/", GET).userIdentity(USER_ID),
-                              new File("instance-list.json"));
+                              new File("application-list.json"));
+        // GET at a tenant, with "&recursive=true&production=true", recurses over no instances yet, as they are not in deployment spec.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/", GET)
+                                      .userIdentity(USER_ID)
+                                      .properties(Map.of("recursive", "true",
+                                                         "production", "true")),
+                              new File("tenant-without-applications.json"));
+        // GET at an application, with "&recursive=true&production=true", recurses over no instances yet, as they are not in deployment spec.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
+                                      .userIdentity(USER_ID)
+                                      .properties(Map.of("recursive", "true",
+                                                         "production", "true")),
+                              new File("application-without-instances.json"));
 
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
@@ -249,6 +262,15 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
         app1.runJob(JobType.devUsEast1);
+
+        // GET dev application package
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1/package", GET)
+                                      .userIdentity(USER_ID),
+                              (response) -> {
+                                  assertEquals("attachment; filename=\"tenant1.application1.instance1.dev.us-east-1.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals(applicationPackageInstance1.zippedContent(), response.getBody());
+                              },
+                              200);
 
         // POST an application package is not generally allowed under user instance
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/otheruser/deploy/dev-us-east-1", POST)
@@ -483,7 +505,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Triggered pin to 6.1 for tenant1.application1.instance1\"}");
         assertTrue("Action is logged to audit log",
                    tester.controller().auditLogger().readLog().entries().stream()
-                         .anyMatch(entry -> entry.resource().equals("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin")));
+                         .anyMatch(entry -> entry.resource().equals("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin?")));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":true}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", GET)
@@ -559,8 +581,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Requested restart of tenant1.application1.instance1 in dev.us-central-1\"}");
 
         // POST a 'restart application' command with a host filter (other filters not supported yet)
-        deploymentTester.configServer().nodeRepository().addFixedNodes(ZoneId.from("prod", "us-central-1"));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart?hostname=hostA", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
+                                      .properties(Map.of("hostname", "node-1-tenant-host-prod.us-central-1"))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Requested restart of tenant1.application1.instance1 in prod.us-central-1\"}", 200);
 
@@ -664,7 +686,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               200);
 
         // GET application package for previous build
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=1", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
+                                      .properties(Map.of("build", "1"))
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
                               (response) -> {
                                   assertEquals("attachment; filename=\"tenant1.application1-build1.zip\"", response.getHeaders().getFirst("Content-Disposition"));
                                   assertArrayEquals(applicationPackageInstance1.zippedContent(), response.getBody());
@@ -766,16 +790,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testRotationOverride() {
         // Setup
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+        var applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
                 .globalServiceId("foo")
-                .region("us-west-1")
-                .region("us-east-3")
+                .region(westZone.region())
+                .region(eastZone.region())
                 .build();
 
         // Create tenant and deploy
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
-        app.submit(applicationPackage).runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
+        app.submit(applicationPackage).deploy();
+        app.addRoutingPolicy(westZone, true);
+        app.addRoutingPolicy(eastZone, true);
 
         // Invalid application fails
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation", GET)
@@ -784,16 +812,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               400);
 
         // Invalid deployment fails
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-east-3/global-rotation", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/global-rotation", GET)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-east-3\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-central-1\"}",
                               404);
 
         // Change status of non-existing deployment fails
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-east-3/global-rotation/override", PUT)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/global-rotation/override", PUT)
                                       .userIdentity(USER_ID)
                                       .data("{\"reason\":\"unit-test\"}"),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-east-3\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-central-1\"}",
                               404);
 
         // GET global rotation status
@@ -813,11 +841,23 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"reason\":\"unit-test\"}"),
                               new File("global-rotation-put.json"));
 
+        // Status of routing policy is changed
+        assertGlobalRouting(app.deploymentIdIn(westZone), GlobalRouting.Status.out, GlobalRouting.Agent.tenant);
+
         // DELETE global rotation override status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation/override", DELETE)
                                       .userIdentity(USER_ID)
                                       .data("{\"reason\":\"unit-test\"}"),
                               new File("global-rotation-delete.json"));
+        assertGlobalRouting(app.deploymentIdIn(westZone), GlobalRouting.Status.in, GlobalRouting.Agent.tenant);
+
+        // SET global rotation override status by operator
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation/override", PUT)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR)
+                                      .data("{\"reason\":\"unit-test\"}"),
+                              new File("global-rotation-put.json"));
+        assertGlobalRouting(app.deploymentIdIn(westZone), GlobalRouting.Status.out, GlobalRouting.Agent.operator);
     }
 
     @Test
@@ -848,19 +888,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               400);
 
         // GET global rotation status for us-west-1 in default endpoint
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation?endpointId=default", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
+                                      .properties(Map.of("endpointId", "default"))
                                       .userIdentity(USER_ID),
                               "{\"bcpStatus\":{\"rotationStatus\":\"IN\"}}",
                               200);
 
         // GET global rotation status for us-west-1 in eu endpoint
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation?endpointId=eu", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
+                                      .properties(Map.of("endpointId", "eu"))
                                       .userIdentity(USER_ID),
                               "{\"bcpStatus\":{\"rotationStatus\":\"UNKNOWN\"}}",
                               200);
 
         // GET global rotation status for eu-west-1 in eu endpoint
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/eu-west-1/global-rotation?endpointId=eu", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/eu-west-1/global-rotation", GET)
+                                      .properties(Map.of("endpointId", "eu"))
                                       .userIdentity(USER_ID),
                               "{\"bcpStatus\":{\"rotationStatus\":\"IN\"}}",
                               200);
@@ -930,7 +973,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246), ZoneId.defaultId()),
                 new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492), ZoneId.defaultId())));
 
-        mockMeteringClient.setMeteringInfo(new MeteringInfo(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
+        mockMeteringClient.setMeteringData(new MeteringData(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
 
         tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
                                       .userIdentity(USER_ID)
@@ -1075,12 +1118,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               404);
 
         // GET non-existent application package of specific build
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=42", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
+                                      .properties(Map.of("build", "42"))
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"No application package found for 'tenant1.application1' with build number 42\"}",
                               404);
 
         // GET non-existent application package of invalid build
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=foobar", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
+                                      .properties(Map.of("build", "foobar"))
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid build number: For input string: \\\"foobar\\\"\"}",
                               400);
         
@@ -1352,7 +1399,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .admin(HostedAthenzIdentities.from(userId));
 
         // POST (deploy) an application to a dev zone
-        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
+        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-east-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(userId),
                               new File("deploy-result.json"));
@@ -1434,18 +1481,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
         app.submit(applicationPackage).deploy();
-        Set<RoutingPolicy> policies = Set.of(new RoutingPolicy(app.instanceId(),
-                                                 ClusterSpec.Id.from("default"),
-                                                 ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
-                                                 HostName.from("lb-0-canonical-name"),
-                                                 Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")), true),
-                                           // Inactive policy is not included
-                                           new RoutingPolicy(app.instanceId(),
-                                                             ClusterSpec.Id.from("deleted-cluster"),
-                                                             ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
-                                                             HostName.from("lb-1-canonical-name"),
-                                                             Optional.of("dns-zone-1"), Set.of(), false));
-        tester.controller().curator().writeRoutingPolicies(app.instanceId(), policies);
+        app.addRoutingPolicy(ZoneId.from(Environment.prod, RegionName.from("us-west-1")), true);
+        app.addRoutingPolicy(ZoneId.from(Environment.prod, RegionName.from("us-west-1")), false);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
@@ -1604,6 +1641,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                   "queue", Optional.empty()));
     }
 
+    private void assertGlobalRouting(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
+        var changedAt = tester.controller().clock().instant();
+        var westPolicies = tester.controller().routingController().policies().get(deployment);
+        assertEquals(1, westPolicies.size());
+        var westPolicy = westPolicies.values().iterator().next();
+        assertEquals(status, westPolicy.status().globalRouting().status());
+        assertEquals(agent, westPolicy.status().globalRouting().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), westPolicy.status().globalRouting().changedAt());
+    }
+
     private static class RequestBuilder implements Supplier<Request> {
 
         private final String path;
@@ -1614,7 +1661,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private OktaAccessToken oktaAccessToken;
         private String contentType = "application/json";
         private Map<String, List<String>> headers = new HashMap<>();
-        private String recursive;
+        private Map<String, String> properties = new HashMap<>();
 
         private RequestBuilder(String path, Request.Method method) {
             this.path = path;
@@ -1622,7 +1669,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         }
 
         private RequestBuilder data(byte[] data) { this.data = data; return this; }
-        private RequestBuilder data(String data) { return data(data.getBytes(StandardCharsets.UTF_8)); }
+        private RequestBuilder data(String data) { return data(data.getBytes(UTF_8)); }
         private RequestBuilder data(MultiPartStreamer streamer) {
             return Exceptions.uncheck(() -> data(streamer.data().readAllBytes()).contentType(streamer.contentType()));
         }
@@ -1632,7 +1679,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private RequestBuilder oktaIdentityToken(OktaIdentityToken oktaIdentityToken) { this.oktaIdentityToken = oktaIdentityToken; return this; }
         private RequestBuilder oktaAccessToken(OktaAccessToken oktaAccessToken) { this.oktaAccessToken = oktaAccessToken; return this; }
         private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
-        private RequestBuilder recursive(String recursive) { this.recursive = recursive; return this; }
+        private RequestBuilder recursive(String recursive) {return properties(Map.of("recursive", recursive)); }
+        private RequestBuilder properties(Map<String, String> properties) { this.properties.putAll(properties); return this; }
         private RequestBuilder header(String name, String value) {
             this.headers.putIfAbsent(name, new ArrayList<>());
             this.headers.get(name).add(value);
@@ -1642,11 +1690,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         @Override
         public Request get() {
             Request request = new Request("http://localhost:8080" + path +
-                                          // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
-                                          (recursive == null ? "" : "?recursive=" + recursive),
+                                          properties.entrySet().stream()
+                                                    .map(entry -> encode(entry.getKey(), UTF_8) + "=" + encode(entry.getValue(), UTF_8))
+                                                    .collect(joining("&", "?", "")),
                                           data, method);
             request.getHeaders().addAll(headers);
             request.getHeaders().put("Content-Type", contentType);
+            // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
             if (identity != null) {
                 addIdentityToRequest(request, identity);
             }

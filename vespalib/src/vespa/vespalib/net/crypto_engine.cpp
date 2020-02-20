@@ -250,16 +250,29 @@ CryptoEngine::get_default()
 }
 
 CryptoSocket::UP
-NullCryptoEngine::create_crypto_socket(SocketHandle socket, bool is_server)
+NullCryptoEngine::create_client_crypto_socket(SocketHandle socket, const SocketSpec &)
 {
-    net::tls::ConnectionStatistics::get(is_server).inc_insecure_connections();
+    net::tls::ConnectionStatistics::get(false).inc_insecure_connections();
     return std::make_unique<NullCryptoSocket>(std::move(socket));
 }
 
 CryptoSocket::UP
-XorCryptoEngine::create_crypto_socket(SocketHandle socket, bool is_server)
+NullCryptoEngine::create_server_crypto_socket(SocketHandle socket)
 {
-    return std::make_unique<XorCryptoSocket>(std::move(socket), is_server);
+    net::tls::ConnectionStatistics::get(true).inc_insecure_connections();
+    return std::make_unique<NullCryptoSocket>(std::move(socket));
+}
+
+CryptoSocket::UP
+XorCryptoEngine::create_client_crypto_socket(SocketHandle socket, const SocketSpec &)
+{
+    return std::make_unique<XorCryptoSocket>(std::move(socket), false);
+}
+
+CryptoSocket::UP
+XorCryptoEngine::create_server_crypto_socket(SocketHandle socket)
+{
+    return std::make_unique<XorCryptoSocket>(std::move(socket), true);
 }
 
 } // namespace vespalib

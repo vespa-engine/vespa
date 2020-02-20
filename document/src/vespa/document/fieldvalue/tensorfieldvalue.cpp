@@ -104,6 +104,19 @@ TensorFieldValue::operator=(std::unique_ptr<Tensor> rhs)
 }
 
 
+void
+TensorFieldValue::make_empty_if_not_existing()
+{
+    if (!_tensor) {
+        TensorSpec empty_spec(_dataType.getTensorType().to_spec());
+        auto empty_value = Engine::ref().from_spec(empty_spec);
+        auto tensor_ptr = dynamic_cast<Tensor*>(empty_value.get());
+        assert(tensor_ptr != nullptr);
+        _tensor.reset(tensor_ptr);
+        empty_value.release();
+    }
+}
+
 
 void
 TensorFieldValue::accept(FieldValueVisitor &visitor)

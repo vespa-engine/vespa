@@ -8,14 +8,11 @@
 
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include "persistenceprovider.h"
 
-namespace document {
-    class DocumentTypeRepo;
-}
+namespace document { class DocumentTypeRepo; }
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 struct ProviderFactory {
     virtual ~ProviderFactory() {}

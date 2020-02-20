@@ -20,16 +20,17 @@ class IPersistenceHandler;
  */
 class PersistenceHandlerMap {
 public:
-    using PersistenceHandlerSequence = vespalib::Sequence<IPersistenceHandler *>;
+    using DocTypeToHandlerMap = HandlerMap<IPersistenceHandler>;
+    using PersistenceHandlerSequence = DocTypeToHandlerMap::Snapshot;
     using PersistenceHandlerSP = std::shared_ptr<IPersistenceHandler>;
 
     class HandlerSnapshot {
     private:
-        PersistenceHandlerSequence::UP _handlers;
-        size_t                         _size;
+        PersistenceHandlerSequence  _handlers;
+        size_t                      _size;
     public:
-        using UP = std::unique_ptr<HandlerSnapshot>;
-        HandlerSnapshot(PersistenceHandlerSequence::UP handlers_, size_t size_)
+        HandlerSnapshot() : _handlers(), _size(0) {}
+        HandlerSnapshot(DocTypeToHandlerMap::Snapshot handlers_, size_t size_)
             : _handlers(std::move(handlers_)),
               _size(size_)
         {}
@@ -37,12 +38,12 @@ public:
         HandlerSnapshot & operator = (const HandlerSnapshot &) = delete;
 
         size_t size() const { return _size; }
-        PersistenceHandlerSequence &handlers() { return *_handlers; }
-        static PersistenceHandlerSequence::UP release(HandlerSnapshot &&rhs) { return std::move(rhs._handlers); }
+        PersistenceHandlerSequence &handlers() { return _handlers; }
+        static PersistenceHandlerSequence release(HandlerSnapshot &&rhs) { return std::move(rhs._handlers); }
     };
 
 private:
-    using DocTypeToHandlerMap = HandlerMap<IPersistenceHandler>;
+
 
     struct BucketSpaceHash {
         std::size_t operator() (const document::BucketSpace &bucketSpace) const { return bucketSpace.getId(); }
@@ -53,15 +54,11 @@ private:
 public:
     PersistenceHandlerMap();
 
-    PersistenceHandlerSP putHandler(document::BucketSpace bucketSpace,
-                                    const DocTypeName &docType,
-                                    const PersistenceHandlerSP &handler);
-    PersistenceHandlerSP removeHandler(document::BucketSpace bucketSpace,
-                                       const DocTypeName &docType);
-    PersistenceHandlerSP getHandler(document::BucketSpace bucketSpace,
-                                    const DocTypeName &docType) const;
-    HandlerSnapshot::UP getHandlerSnapshot() const;
-    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
+    PersistenceHandlerSP putHandler(document::BucketSpace bucketSpace, const DocTypeName &docType, const PersistenceHandlerSP &handler);
+    PersistenceHandlerSP removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType);
+    IPersistenceHandler * getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const;
+    HandlerSnapshot getHandlerSnapshot() const;
+    HandlerSnapshot getHandlerSnapshot(document::BucketSpace bucketSpace) const;
 };
 
 }

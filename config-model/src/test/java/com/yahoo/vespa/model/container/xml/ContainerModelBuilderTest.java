@@ -5,7 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -25,6 +25,7 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.VipStatusHandler;
+import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.servlet.ServletConfigConfig;
@@ -39,7 +40,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainer;
-import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
@@ -71,7 +71,9 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -149,7 +151,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    @Ignore // TODO: Enable when turning the port check on
     public void fail_if_http_port_is_not_default_in_hosted_vespa() throws Exception {
         try {
             String servicesXml =
@@ -224,12 +225,13 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(defaultRootHandler.serverBindings(), contains("http://*/"));
 
         JdiscBindingsConfig.Handlers applicationStatusHandler = config.handlers(ApplicationStatusHandler.class.getName());
-        assertThat(applicationStatusHandler.serverBindings(),
-                   contains("http://*/ApplicationStatus"));
+        assertThat(applicationStatusHandler.serverBindings(), contains("http://*/ApplicationStatus"));
 
         JdiscBindingsConfig.Handlers fileRequestHandler = config.handlers(VipStatusHandler.class.getName());
-        assertThat(fileRequestHandler.serverBindings(),
-                   contains("http://*/status.html"));
+        assertThat(fileRequestHandler.serverBindings(), contains("http://*/status.html"));
+
+        JdiscBindingsConfig.Handlers metricsV2Handler = config.handlers(MetricsV2Handler.class.getName());
+        assertThat(metricsV2Handler.serverBindings(), contains("http://*/metrics/v2", "http://*/metrics/v2/*"));
     }
 
     @Test
@@ -693,7 +695,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                     .properties(
                         new TestProperties()
                                 .setHostedVespa(true)
-                                .setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY"))))
+                                .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
                     .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
                     .build();
             createModel(root, state, null, clusterElem);
@@ -772,13 +774,13 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatProvidingTlsSecretOpensPort4443() {
+    public void requireThatProvidingEndpointCertificateSecretsOpensPort4443() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 nodesXml,
                 "</container>" );
 
-        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))).build();
         createModel(root, state, null, clusterElem);
         ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
 
@@ -801,6 +803,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals("CERT", connectorConfig.ssl().certificate());
         assertEquals("KEY", connectorConfig.ssl().privateKey());
         assertEquals(4443, connectorConfig.listenPort());
+
+        assertThat("Connector must use Athenz truststore in a non-public system.",
+                   connectorConfig.ssl().caCertificateFile(), equalTo("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"));
+        assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
     }
 
 

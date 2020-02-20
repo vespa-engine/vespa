@@ -37,15 +37,15 @@ public class DockerHostCapacityTest {
 
     @Before
     public void setup() {
-        doAnswer(invocation -> invocation.getArguments()[0]).when(hostResourcesCalculator).availableCapacityOf(any());
+        doAnswer(invocation -> invocation.getArguments()[1]).when(hostResourcesCalculator).availableCapacityOf(any(), any());
 
         // Create flavors
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
 
         // Create three docker hosts
-        host1 = Node.create("host1", new IP.Config(Set.of("::1"), generateIPs(2, 4)), "host1", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
-        host2 = Node.create("host2", new IP.Config(Set.of("::11"), generateIPs(12, 3)), "host2", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
-        host3 = Node.create("host3", new IP.Config(Set.of("::21"), generateIPs(22, 1)), "host3", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        host1 = Node.create("host1", new IP.Config(Set.of("::1"), generateIPs(2, 4)), "host1", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
+        host2 = Node.create("host2", new IP.Config(Set.of("::11"), generateIPs(12, 3)), "host2", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
+        host3 = Node.create("host3", new IP.Config(Set.of("::21"), generateIPs(22, 1)), "host3", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
 
         // Add two containers to host1
         var nodeA = Node.createDockerNode(Set.of("::2"), "nodeA", "host1", resources1, NodeType.tenant);
@@ -95,9 +95,9 @@ public class DockerHostCapacityTest {
                      capacity.freeCapacityOf(host3, false));
 
         doAnswer(invocation -> {
-            NodeResources totalHostResources = (NodeResources) invocation.getArguments()[0];
+            NodeResources totalHostResources = (NodeResources) invocation.getArguments()[1];
             return totalHostResources.subtract(new NodeResources(1, 2, 3, 0.5, NodeResources.DiskSpeed.any));
-        }).when(hostResourcesCalculator).availableCapacityOf(any());
+        }).when(hostResourcesCalculator).availableCapacityOf(any(), any());
 
         assertEquals(new NodeResources(4, 2, 5, 1.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
                      capacity.freeCapacityOf(host1, false));
@@ -110,7 +110,7 @@ public class DockerHostCapacityTest {
         // Dev host can assign both configserver and tenant containers.
 
         var nodeFlavors = FlavorConfigBuilder.createDummies("devhost", "container");
-        var devHost = Node.create("devhost", new IP.Config(Set.of("::1"), generateIPs(2, 10)), "devhost", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("devhost"), NodeType.devhost);
+        var devHost = Node.create("devhost", new IP.Config(Set.of("::1"), generateIPs(2, 10)), "devhost", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("devhost"), Optional.empty(), NodeType.devhost);
 
         var cfg = Node.createDockerNode(Set.of("::2"), "cfg", "devhost", resources1, NodeType.config);
 

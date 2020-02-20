@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.VespaModel;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -60,7 +61,7 @@ public class ResourcesReductionValidator implements ChangeValidator {
     private static Optional<String> validateResource(String resourceName, double currentValue, double nextValue) {
         // don't allow more than 50% reduction, but always allow to reduce by 1
         if (nextValue >= currentValue * 0.5 || nextValue >= currentValue - 1) return Optional.empty();
-        return Optional.of(String.format("Current %s: %.2f, new: %.2f.", resourceName, currentValue, nextValue));
+        return Optional.of(String.format(Locale.ENGLISH ,"Current %s: %.2f, new: %.2f.", resourceName, currentValue, nextValue));
     }
 
     private static Map<Pair<ClusterSpec.Type, ClusterSpec.Id>, NodeResources> getRequestedResourcesByClusterId(VespaModel vespaModel) {

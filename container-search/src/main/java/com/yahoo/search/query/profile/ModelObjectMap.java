@@ -22,8 +22,7 @@ public class ModelObjectMap extends PropertyMap {
      */
     @Override
     protected boolean shouldSet(CompoundName name, Object value) {
-        if (value == null) return true;
-        return ! FieldType.isLegalFieldValue(value);
+        return value != null && ! FieldType.isLegalFieldValue(value);
     }
 
 }

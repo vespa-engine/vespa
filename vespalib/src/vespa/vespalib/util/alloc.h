@@ -59,13 +59,13 @@ public:
     bool resize_inplace(size_t newSize);
     Alloc(const Alloc &) = delete;
     Alloc & operator = (const Alloc &) = delete;
-    Alloc(Alloc && rhs) :
+    Alloc(Alloc && rhs) noexcept :
         _alloc(rhs._alloc),
         _allocator(rhs._allocator)
     {
         rhs.clear();
     }
-    Alloc & operator=(Alloc && rhs) {
+    Alloc & operator=(Alloc && rhs) noexcept {
         if (this != & rhs) {
             if (_alloc.first != nullptr) {
                 _allocator->free(_alloc);

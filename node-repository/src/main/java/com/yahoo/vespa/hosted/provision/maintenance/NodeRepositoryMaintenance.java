@@ -81,12 +81,12 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, defaults.dirtyExpiry);
         provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, defaults.provisionedExpiry);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, flagSource);
-        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval);
+        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval, clock);
         infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, defaults.infrastructureProvisionInterval);
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
                 new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService));
         dynamicProvisioningMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource));
+                new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, provisionServiceProvider.getHostResourcesCalculator(), flagSource));
         capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, defaults.capacityReportInterval);
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
         rebalancer = new Rebalancer(deployer, nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), provisionServiceProvider.getHostProvisioner(), metric, clock, defaults.rebalancerInterval);

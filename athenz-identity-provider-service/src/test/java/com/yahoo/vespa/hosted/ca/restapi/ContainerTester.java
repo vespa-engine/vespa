@@ -54,6 +54,7 @@ public class ContainerTester {
 
     private static String servicesXml() {
         return "<container version='1.0'>\n" +
+               "  <accesslog type=\"disabled\"/>\n" +
                "  <config name=\"container.handler.threadpool\">\n" +
                "    <maxthreads>10</maxthreads>\n" +
                "  </config>\n" +

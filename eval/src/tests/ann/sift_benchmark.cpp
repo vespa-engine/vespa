@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <chrono>
+#include <cstdlib>
 
 #define NUM_DIMS 128
 #define NUM_DOCS 1000000
@@ -28,12 +29,15 @@ struct PointVector {
 };
 
 static PointVector *aligned_alloc(size_t num) {
-    char *mem = (char *)malloc(num * sizeof(PointVector) + 512);
+    size_t sz = num * sizeof(PointVector);
+    double mega_bytes = sz / (1024.0*1024.0);
+    fprintf(stderr, "allocate %.2f MB of vectors\n", mega_bytes);
+    char *mem = (char *)malloc(sz + 512);
     mem += 512;
     size_t val = (size_t)mem;
     size_t unalign = val % 512;
     mem -= unalign;
-    return (PointVector *)mem;
+    return reinterpret_cast<PointVector *>(mem);
 }
 
 static PointVector *generatedQueries = aligned_alloc(NUM_Q);
@@ -92,13 +96,14 @@ double to_ms(Duration elapsed) {
     return ms.count();
 }
 
-void read_data(std::string dir) {
+void read_data(const std::string& dir, const std::string& data_set) {
+    fprintf(stderr, "read data set '%s' from directory '%s'\n", data_set.c_str(), dir.c_str());
     TimePoint bef = std::chrono::steady_clock::now();
-    read_queries(dir + "/sift_query.fvecs");
+    read_queries(dir + "/" + data_set + "_query.fvecs");
     TimePoint aft = std::chrono::steady_clock::now();
     fprintf(stderr, "read queries: %.3f ms\n", to_ms(aft - bef));
     bef = std::chrono::steady_clock::now();
-    read_docs(dir + "/sift_base.fvecs");
+    read_docs(dir + "/" + data_set + "_base.fvecs");
     aft = std::chrono::steady_clock::now();
     fprintf(stderr, "read docs: %.3f ms\n", to_ms(aft - bef));
 }
@@ -168,7 +173,7 @@ void verifyBF(uint32_t qid) {
             fprintf(stderr, "WARN dist %.9g < mindist %.9g\n", dist, min_distance);
         }
         EXPECT_FALSE(dist+0.000001 < min_distance);
-        if (qid == 6) all_c2.push_back(dist / min_distance);
+        if (min_distance > 0) all_c2.push_back(dist / min_distance);
     }
     if (all_c2.size() != NUM_DOCS) return;
     std::sort(all_c2.begin(), all_c2.end());
@@ -280,24 +285,56 @@ TEST("require that Annoy via NNS api mostly works") {
 TEST("require that HNSW via NNS api mostly works") {
     DocVectorAdapter adapter;
     std::unique_ptr<NNS_API> nns = make_hnsw_nns(NUM_DIMS, adapter);
-    benchmark_nns("HNSW", *nns, { 100, 200 });
+    benchmark_nns("HNSW-like", *nns, { 100, 150, 200 });
 }
 #endif
 
+#if 0
+TEST("require that HNSW wrapped api mostly works") {
+    DocVectorAdapter adapter;
+    std::unique_ptr<NNS_API> nns = make_hnsw_wrap(NUM_DIMS, adapter);
+    benchmark_nns("HNSW-wrap", *nns, { 100, 150, 200 });
+}
+#endif
 
+/**
+ * Before running the benchmark the ANN_SIFT1M data set must be downloaded and extracted:
+ *   wget ftp://ftp.irisa.fr/local/texmex/corpus/sift.tar.gz
+ *   tar -xf sift.tar.gz
+ *
+ * To run the program:
+ *   ./eval_sift_benchmark_app <data_dir>
+ *
+ * The benchmark program will load the data set from $HOME/sift if no directory is specified.
+ *
+ *
+ * The ANN_GIST1M data set can also be used (as it has the same file format):
+ *   wget ftp://ftp.irisa.fr/local/texmex/corpus/gist.tar.gz
+ *   tar -xf gist.tar.gz
+ *
+ * Note that #define NUM_DIMS must be changed to 960 before recompiling and running the program:
+ *   ./eval_sift_benchmark_app gist <data_dir>
+ *
+ *
+ * More information about the datasets is found here: http://corpus-texmex.irisa.fr/.
+ */
 int main(int argc, char **argv) {
     TEST_MASTER.init(__FILE__);
-    std::string sift_dir = ".";
-    if (argc > 1) {
-        sift_dir = argv[1];
+    std::string data_set = "sift";
+    std::string data_dir = ".";
+    if (argc > 2) {
+        data_set = argv[1];
+        data_dir = argv[2];
+    } else if (argc > 1) {
+        data_dir = argv[1];
     } else {
         char *home = getenv("HOME");
         if (home) {
-            sift_dir = home;
-            sift_dir += "/sift";
+            data_dir = home;
+            data_dir += "/" + data_set;
         }
     }
-    read_data(sift_dir);
+    read_data(data_dir, data_set);
     TEST_RUN_ALL();
     return (TEST_MASTER.fini() ? 0 : 1);
 }

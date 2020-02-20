@@ -616,7 +616,7 @@ TEST("require that grouping is performed (multi-threaded)") {
             Grouping grequest;
             grequest.setRoot(Group().addResult(SumAggregationResult().setExpression(createAttr())));
             grequest.serialize(os);
-            request->groupSpec.assign(buf.c_str(), buf.c_str() + buf.size());
+            request->groupSpec.assign(buf.data(), buf.data() + buf.size());
         }
         SearchReply::UP reply = world.performSearch(request, threads);
         {

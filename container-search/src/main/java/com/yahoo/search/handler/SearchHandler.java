@@ -29,7 +29,7 @@ import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -58,6 +58,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,6 +99,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private final ExecutionFactory executionFactory;
 
+    private final AtomicLong numRequestsLeftToTrace;
+
     private final class MeanConnections implements Callback {
 
         @Override
@@ -125,6 +128,7 @@ public class SearchHandler extends LoggingRequestHandler {
              accessLog,
              QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
              executionFactory,
+             containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
              Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
     }
@@ -135,6 +139,17 @@ public class SearchHandler extends LoggingRequestHandler {
                          AccessLog accessLog,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
+                         Optional<String> hostResponseHeaderKey) {
+        this(statistics, metric, executor, accessLog, queryProfileRegistry, executionFactory, 0, hostResponseHeaderKey);
+    }
+
+    private SearchHandler(Statistics statistics,
+                         Metric metric,
+                         Executor executor,
+                         AccessLog accessLog,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ExecutionFactory executionFactory,
+                         long numQueriesToTraceOnDebugAfterStartup,
                          Optional<String> hostResponseHeaderKey) {
         super(executor, accessLog, metric, true);
         log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
@@ -150,6 +165,7 @@ public class SearchHandler extends LoggingRequestHandler {
                                                             .setCallback(new MeanConnections()));
 
         this.hostResponseHeaderKey = hostResponseHeaderKey;
+        this.numRequestsLeftToTrace = new AtomicLong(numQueriesToTraceOnDebugAfterStartup);
     }
 
     /** @deprecated use the other constructor */
@@ -215,7 +231,6 @@ public class SearchHandler extends LoggingRequestHandler {
 
     }
 
-    @SuppressWarnings("unchecked")
     private HttpResponse errorResponse(HttpRequest request, ErrorMessage errorMessage) {
         Query query = new Query();
         Result result = new Result(query, errorMessage);
@@ -281,7 +296,10 @@ public class SearchHandler extends LoggingRequestHandler {
         // Transform result to response
         Renderer renderer = toRendererCopy(query.getPresentation().getRenderer());
         HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
-                                                             result, query, renderer);
+                                                             result, query, renderer,
+                                                             log.isLoggable(Level.FINE)
+                                                                     ? query.getContext(false).getTrace().traceNode()
+                                                                     : null);
         if (hostResponseHeaderKey.isPresent())
             response.headers().add(hostResponseHeaderKey.get(), selfHostname);
 
@@ -330,7 +348,13 @@ public class SearchHandler extends LoggingRequestHandler {
 
         Execution execution = executionFactory.newExecution(searchChain);
         query.getModel().setExecution(execution);
-        execution.trace().setForceTimestamps(query.properties().getBoolean(FORCE_TIMESTAMPS, false));
+        if (log.isLoggable(Level.FINE) && (numRequestsLeftToTrace.getAndDecrement() > 0)) {
+            query.setTraceLevel(Math.max(1, query.getTraceLevel()));
+            execution.trace().setForceTimestamps(true);
+
+        } else {
+            execution.trace().setForceTimestamps(query.properties().getBoolean(FORCE_TIMESTAMPS, false));
+        }
         if (query.properties().getBoolean(DETAILED_TIMING_LOGGING, false)) {
             // check and set (instead of set directly) to avoid overwriting stuff from prepareForBreakdownAnalysis()
             execution.context().setDetailedDiagnostics(true);
@@ -389,7 +413,7 @@ public class SearchHandler extends LoggingRequestHandler {
         } catch (ParseException e) {
             ErrorMessage error = ErrorMessage.createIllegalQuery("Could not parse query [" + request + "]: "
                                                                  + Exceptions.toMessageString(e));
-            log.log(LogLevel.DEBUG, () -> error.getDetailedMessage());
+            log.log(LogLevel.DEBUG, error::getDetailedMessage);
             return new Result(query, error);
         } catch (IllegalArgumentException e) {
             if ("Comparison method violates its general contract!".equals(e.getMessage())) {
@@ -401,7 +425,7 @@ public class SearchHandler extends LoggingRequestHandler {
             else {
                 ErrorMessage error = ErrorMessage.createBadRequest("Invalid search request [" + request + "]: "
                                                                    + Exceptions.toMessageString(e));
-                log.log(LogLevel.DEBUG, () -> error.getDetailedMessage());
+                log.log(LogLevel.DEBUG, error::getDetailedMessage);
                 return new Result(query, error);
             }
         } catch (LinkageError | StackOverflowError e) {

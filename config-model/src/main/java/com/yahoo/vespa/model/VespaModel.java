@@ -61,7 +61,6 @@ import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import com.yahoo.yolean.Exceptions;
 import org.xml.sax.SAXException;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -562,23 +561,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                             "collisions in the config.)");
         }
         id2producer.put(configId, descendant);
-    }
-
-    /**
-     * Writes MODEL.cfg files for all config producers.
-     *
-     * @param baseDirectory dir to write files to
-     */
-    public void writeFiles(File baseDirectory) throws IOException {
-        super.writeFiles(baseDirectory);
-        for (ConfigProducer cp : id2producer.values()) {
-            try {
-                File destination = new File(baseDirectory, cp.getConfigId().replace("/", File.separator));
-                cp.writeFiles(destination);
-            } catch (IOException e) {
-                throw new IOException(cp.getConfigId() + ": " + e.getMessage());
-            }
-        }
     }
 
     public Clients getClients() {

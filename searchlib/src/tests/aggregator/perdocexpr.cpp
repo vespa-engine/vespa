@@ -489,9 +489,9 @@ TEST("testResultNodes") {
     double d(786324.78);
     nbostream os;
     os << j << d;
-    RawResultNode r1(os.c_str(), sizeof(j));
+    RawResultNode r1(os.data(), sizeof(j));
     EXPECT_EQUAL(r1.getInteger(), 789);
-    RawResultNode r2(os.c_str() + sizeof(j), sizeof(d));
+    RawResultNode r2(os.data() + sizeof(j), sizeof(d));
     EXPECT_EQUAL(r2.getFloat(), 786324.78);
 
     StringResultNode s1, s2("a"), s3("a"), s4("b"), s5("bb");
@@ -560,7 +560,7 @@ void testStreaming(const Identifiable &v) {
 
     EXPECT_EQUAL(os2.size(), os3.size());
     ASSERT_TRUE(os2.size() == os3.size());
-    EXPECT_EQUAL(0, memcmp(os2.c_str(), os3.c_str(), os3.size()));
+    EXPECT_EQUAL(0, memcmp(os2.data(), os3.data(), os3.size()));
 }
 
 TEST("testTimeStamp") {
@@ -1209,7 +1209,7 @@ TEST("testArithmeticOperations") {
     testAdd(createScalarInt(I1), createScalarInt(I2), 3469774562ull, 3469774562ull);
     testAdd(createScalarInt(I1), createScalarFloat(F2), 1793253251ull, 1793253250.767681239);
     testAdd(createScalarFloat(F1), createScalarFloat(F2), 11, 10.878668839 );
-    testMultiply(createScalarInt(I1), createScalarInt(I2), 3006427292488851361ull, 3006427292488851361ull);
+    testMultiply(createScalarInt(I1), createScalarInt(I2), 3006427292488851361ull, static_cast<double>(3006427292488851361ull));
     testMultiply(createScalarInt(I1), createScalarFloat(F2), 17515926039ull, 1793253241.0*9.767681239);
     testMultiply(createScalarFloat(F1), createScalarFloat(F2), 11, 10.8517727372816364 );
 

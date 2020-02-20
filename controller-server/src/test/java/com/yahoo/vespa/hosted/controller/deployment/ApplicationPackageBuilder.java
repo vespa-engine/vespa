@@ -101,13 +101,19 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder region(RegionName regionName) {
-        return region(regionName.value());
+        return region(regionName, true);
     }
 
     public ApplicationPackageBuilder region(String regionName) {
-        environmentBody.append("      <region active='true'>");
-        environmentBody.append(regionName);
-        environmentBody.append("</region>\n");
+        return region(RegionName.from(regionName), true);
+    }
+
+    public ApplicationPackageBuilder region(RegionName regionName, boolean active) {
+        environmentBody.append("      <region active='")
+                       .append(active)
+                       .append("'>")
+                       .append(regionName.value())
+                       .append("</region>\n");
         return this;
     }
 
@@ -195,11 +201,11 @@ public class ApplicationPackageBuilder {
             xml.append("'/>\n");
         }
         xml.append(notifications);
-        xml.append(blockChange);
         if (explicitSystemTest)
             xml.append("    <test />\n");
         if (explicitStagingTest)
             xml.append("    <staging />\n");
+        xml.append(blockChange);
         xml.append("    <");
         xml.append(environment.value());
         if (globalServiceId != null) {

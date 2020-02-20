@@ -204,14 +204,6 @@ TEST_MT_FF("require that basic unix domain socket io works (path)", 2,
     TEST_DO(verify_socket_io(is_server, socket));
 }
 
-TEST_MT_FF("require that basic unix domain socket io works (name)", 2,
-           ServerSocket(make_string("ipc/name:my_socket-%d", int(getpid()))), TimeBomb(60))
-{
-    bool is_server = (thread_id == 0);
-    SocketHandle socket = connect_sockets(is_server, f1);
-    TEST_DO(verify_socket_io(is_server, socket));
-}
-
 TEST_MT_FF("require that server accept can be interrupted", 2, ServerSocket("tcp/0"), TimeBomb(60)) {
     bool is_server = (thread_id == 0);
     if (is_server) {
@@ -279,6 +271,15 @@ TEST("require that a server socket will remove an old socket file if it cannot b
     EXPECT_TRUE(!is_socket("my_socket"));
 }
 
+#ifdef __linux__
+TEST_MT_FF("require that basic unix domain socket io works (name)", 2,
+           ServerSocket(make_string("ipc/name:my_socket-%d", int(getpid()))), TimeBomb(60))
+{
+    bool is_server = (thread_id == 0);
+    SocketHandle socket = connect_sockets(is_server, f1);
+    TEST_DO(verify_socket_io(is_server, socket));
+}
+
 TEST("require that two server sockets cannot have the same abstract unix domain socket name") {
     vespalib::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
     ServerSocket server1(spec);
@@ -313,6 +314,7 @@ TEST_MT_FFF("require that abstract and file-based unix domain sockets are not in
     SocketHandle socket = connect_sockets(is_server, server_socket);
     TEST_DO(verify_socket_io(is_server, socket));
 }
+#endif
 
 TEST("require that sockets can be set blocking and non-blocking") {
     SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));

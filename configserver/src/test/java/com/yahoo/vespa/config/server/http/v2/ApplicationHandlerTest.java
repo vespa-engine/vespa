@@ -9,6 +9,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
@@ -31,10 +32,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.client.Client;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
@@ -79,7 +83,8 @@ public class ApplicationHandlerTest {
                                                           new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                           new MockLogRetriever(),
                                                           Clock.systemUTC(),
-                                                          new MockTesterClient());
+                                                          new MockTesterClient(),
+                                                          new NullMetric());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                               tenantRepository,
                                                               Zone.defaultZone());
@@ -177,7 +182,8 @@ public class ApplicationHandlerTest {
                                                                                 mockHttpProxy,
                                                                                 new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                                                 new OrchestratorMock(),
-                                                                                new MockTesterClient());
+                                                                                new MockTesterClient(),
+                                                                                new NullMetric());
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
@@ -236,6 +242,42 @@ public class ApplicationHandlerTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
         assertEquals("OK", baos.toString());
+    }
+
+    @Test
+    public void testTesterGetLog() throws IOException {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/log?after=1234";
+        ApplicationHandler mockHandler = createApplicationHandler();
+
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        assertEquals(200, response.getStatus());
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.render(baos);
+        assertEquals("log", baos.toString());
+    }
+
+    @Test
+    public void testTesterStartTests() {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/run/staging-test";
+        ApplicationHandler mockHandler = createApplicationHandler();
+
+        InputStream requestData =  new ByteArrayInputStream("foo".getBytes(StandardCharsets.UTF_8));
+        HttpRequest testRequest = HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.POST, requestData);
+        HttpResponse response = mockHandler.handle(testRequest);
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    public void testTesterReady() {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/ready";
+        ApplicationHandler mockHandler = createApplicationHandler();
+        HttpRequest testRequest = HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET);
+        HttpResponse response = mockHandler.handle(testRequest);
+        assertEquals(200, response.getStatus());
     }
 
     private void assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {

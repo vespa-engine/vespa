@@ -82,7 +82,7 @@ public class RotationStatusUpdater extends Maintainer {
     private RotationStatus getStatus(Instance instance) {
         var statusMap = new LinkedHashMap<RotationId, RotationStatus.Targets>();
         for (var assignedRotation : instance.rotations()) {
-            var rotation = applications.rotationRepository().getRotation(assignedRotation.rotationId());
+            var rotation = controller().routingController().rotations().getRotation(assignedRotation.rotationId());
             if (rotation.isEmpty()) continue;
             var targets = service.getHealthStatus(rotation.get().name()).entrySet().stream()
                                  .collect(Collectors.toMap(Map.Entry::getKey, (kv) -> from(kv.getValue())));

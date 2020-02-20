@@ -16,6 +16,7 @@ public class JobMetrics {
 
     public static final String start = "deployment.start";
     public static final String outOfCapacity = "deployment.outOfCapacity";
+    public static final String endpointCertificateTimeout = "deployment.endpointCertificateTimeout";
     public static final String deploymentFailure = "deployment.deploymentFailure";
     public static final String convergenceFailure = "deployment.convergenceFailure";
     public static final String testFailure = "deployment.testFailure";
@@ -40,17 +41,17 @@ public class JobMetrics {
     }
 
     Map<String, String> contextOf(JobId id) {
-        return Map.of("tenant", id.application().tenant().value(),
-                      "application", id.application().application().value(),
-                      "instance", id.application().instance().value(),
-                      "job", id.type().jobName(),
-                      "environment", id.type().environment().value(),
-                      "region", id.type().zone(system).region().value());
+        return Map.of("applicationId", id.application().toFullString(),
+                      "tenantName", id.application().tenant().value(),
+                      "app", id.application().application().value() + "." + id.application().instance().value(),
+                      "test", Boolean.toString(id.type().isTest()),
+                      "zone", id.type().zone(system).value());
     }
 
     static String valueOf(RunStatus status) {
         switch (status) {
             case outOfCapacity: return outOfCapacity;
+            case endpointCertificateTimeout: return endpointCertificateTimeout;
             case deploymentFailed: return deploymentFailure;
             case installationFailed: return convergenceFailure;
             case testFailure: return testFailure;

@@ -27,6 +27,8 @@ public class RolesTest {
 
         assertEquals(Role.hostedOperator(),
                      Roles.toRole("hostedOperator"));
+        assertEquals(Role.hostedSupporter(),
+                     Roles.toRole("hostedSupporter"));
         assertEquals(Role.tenantOperator(tenant),
                      Roles.toRole("my-tenant.tenantOperator"));
         assertEquals(Role.applicationReader(tenant, application),

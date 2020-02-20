@@ -27,11 +27,11 @@ public class DocumentCalculatorTestCase {
         docMan = new DocumentTypeManager();
         testDocType = new DocumentType("testdoc");
 
-        testDocType.addHeaderField("byteattr", DataType.BYTE);
-        testDocType.addHeaderField("intattr", DataType.INT);
-        testDocType.addHeaderField("longattr", DataType.LONG);
-        testDocType.addHeaderField("doubleattr", DataType.DOUBLE);
-        testDocType.addHeaderField("missingattr", DataType.INT);
+        testDocType.addField("byteattr", DataType.BYTE);
+        testDocType.addField("intattr", DataType.INT);
+        testDocType.addField("longattr", DataType.LONG);
+        testDocType.addField("doubleattr", DataType.DOUBLE);
+        testDocType.addField("missingattr", DataType.INT);
 
         docMan.registerDocumentType(testDocType);
         doc = new Document(testDocType, new DocumentId("id:ns:testdoc::testdoc:http://www.ntnu.no/"));

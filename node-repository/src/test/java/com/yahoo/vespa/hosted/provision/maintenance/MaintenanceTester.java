@@ -9,6 +9,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -35,7 +36,7 @@ public class MaintenanceTester {
     public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                                     new MockNameResolver().mockAnyLookup(),
                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                                    true);
+                                                                    true, new InMemoryFlagSource());
 
     public MaintenanceTester() {
         curator.setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");

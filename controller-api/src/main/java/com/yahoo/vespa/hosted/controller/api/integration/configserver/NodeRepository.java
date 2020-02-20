@@ -6,12 +6,14 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -37,11 +39,20 @@ public interface NodeRepository {
 
     NodeList listNodes(ZoneId zone, ApplicationId application);
 
+    NodeList listNodes(ZoneId zone, List<HostName> hostnames);
+
     /** List all nodes in given zone */
     default List<Node> list(ZoneId zone) {
         return listNodes(zone).nodes().stream()
                               .map(NodeRepository::toNode)
                               .collect(Collectors.toUnmodifiableList());
+    }
+
+    /** List all nodes in zone owned by given application */
+    default List<Node> list(ZoneId zone, List<HostName> hostnames) {
+        return listNodes(zone, hostnames).nodes().stream()
+                                         .map(NodeRepository::toNode)
+                                         .collect(Collectors.toUnmodifiableList());
     }
 
     /** List all nodes in zone owned by given application */
@@ -97,7 +108,10 @@ public interface NodeRepository {
                         versionFrom(node.getWantedVespaVersion()),
                         versionFrom(node.getCurrentOsVersion()),
                         versionFrom(node.getWantedOsVersion()),
+                        Optional.ofNullable(node.getCurrentFirmwareCheck()).map(Instant::ofEpochMilli),
+                        Optional.ofNullable(node.getWantedFirmwareCheck()).map(Instant::ofEpochMilli),
                         fromBoolean(node.getAllowedToBeDown()),
+                        Optional.ofNullable(node.suspendedSinceMillis()).map(Instant::ofEpochMilli),
                         toInt(node.getCurrentRestartGeneration()),
                         toInt(node.getRestartGeneration()),
                         toInt(node.getCurrentRebootGeneration()),
@@ -107,7 +121,8 @@ public interface NodeRepository {
                         clusterIdOf(node.getMembership()),
                         clusterTypeOf(node.getMembership()),
                         node.getWantToRetire(),
-                        node.getWantToDeprovision());
+                        node.getWantToDeprovision(),
+                        Optional.ofNullable(node.getReservedTo()).map(name -> TenantName.from(name)));
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {

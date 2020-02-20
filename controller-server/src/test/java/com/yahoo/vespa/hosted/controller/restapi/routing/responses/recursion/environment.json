@@ -1,0 +1,108 @@
+{
+  "zones": [
+    {
+      "routingMethod": "shared",
+      "environment": "test",
+      "region": "us-east-1",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "staging",
+      "region": "us-east-3",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "dev",
+      "region": "us-east-1",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "dev",
+      "region": "aws-us-east-2a",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "perf",
+      "region": "us-east-3",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "prod",
+      "region": "aws-us-east-1a",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "prod",
+      "region": "ap-northeast-1",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "prod",
+      "region": "ap-northeast-2",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "prod",
+      "region": "ap-southeast-1",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "prod",
+      "region": "us-east-3",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "prod",
+      "region": "us-west-1",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "prod",
+      "region": "us-central-1",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    },
+    {
+      "routingMethod": "shared",
+      "environment": "prod",
+      "region": "eu-west-1",
+      "status": "in",
+      "agent": "operator",
+      "changedAt": 0
+    }
+  ]
+}

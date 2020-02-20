@@ -30,7 +30,9 @@ public class HostedVespaPolicy implements Policy {
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final ApplicationApiFactory applicationApiFactory;
 
-    public HostedVespaPolicy(HostedVespaClusterPolicy clusterPolicy, ClusterControllerClientFactory clusterControllerClientFactory, ApplicationApiFactory applicationApiFactory) {
+    public HostedVespaPolicy(HostedVespaClusterPolicy clusterPolicy,
+                             ClusterControllerClientFactory clusterControllerClientFactory,
+                             ApplicationApiFactory applicationApiFactory) {
         this.clusterPolicy = clusterPolicy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.applicationApiFactory = applicationApiFactory;
@@ -60,10 +62,11 @@ public class HostedVespaPolicy implements Policy {
     public void releaseSuspensionGrant(OrchestratorContext context, ApplicationApi application)
             throws HostStateChangeDeniedException {
         // Always defer to Cluster Controller whether it's OK to resume storage node
-        for (StorageNode storageNode : application.getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder()) {
+        for (StorageNode storageNode : application.getSuspendedStorageNodesInGroupInReverseClusterOrder()) {
             storageNode.setNodeState(context, ClusterControllerNodeState.UP);
         }
 
+        // In particular, we're not modifying the state of PERMANENTLY_DOWN nodes.
         for (HostName hostName : application.getNodesInGroupWithStatus(HostStatus.ALLOWED_TO_BE_DOWN)) {
             application.setHostState(context, hostName, HostStatus.NO_REMARKS);
         }
@@ -92,9 +95,15 @@ public class HostedVespaPolicy implements Policy {
             storageNode.setNodeState(context, ClusterControllerNodeState.DOWN);
         }
 
-        // Ensure all nodes in the group are marked as allowed to be down
-        for (HostName hostName : applicationApi.getNodesInGroupWithStatus(HostStatus.NO_REMARKS)) {
-            applicationApi.setHostState(context, hostName, HostStatus.ALLOWED_TO_BE_DOWN);
+        if (context.usePermanentlyDownStatus()) {
+            // Ensure all nodes in the group are marked as permanently down
+            for (HostName hostName : applicationApi.getNodesInGroupWith(status -> status != HostStatus.PERMANENTLY_DOWN)) {
+                applicationApi.setHostState(context, hostName, HostStatus.PERMANENTLY_DOWN);
+            }
+        } else {
+            for (HostName hostName : applicationApi.getNodesInGroupWith(status -> status != HostStatus.ALLOWED_TO_BE_DOWN)) {
+                applicationApi.setHostState(context, hostName, HostStatus.ALLOWED_TO_BE_DOWN);
+            }
         }
     }
 

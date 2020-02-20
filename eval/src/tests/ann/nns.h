@@ -67,3 +67,7 @@ make_rplsh_nns(uint32_t numDims, const DocVectorAccess<float> &dva);
 extern
 std::unique_ptr<NNS<float>>
 make_hnsw_nns(uint32_t numDims, const DocVectorAccess<float> &dva);
+
+extern
+std::unique_ptr<NNS<float>>
+make_hnsw_wrap(uint32_t numDims, const DocVectorAccess<float> &dva);

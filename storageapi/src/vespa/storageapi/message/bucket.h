@@ -14,12 +14,12 @@
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vespalib/util/array.h>
 #include <vespa/storageapi/defs.h>
 
 namespace document { class DocumentTypeRepo; }
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class CreateBucketCommand
@@ -254,6 +254,8 @@ public:
         GetBucketDiffCommand::Entry _entry;
         vespalib::string _docName;
         std::vector<char> _headerBlob;
+        // TODO: In theory the body blob could be removed now as all is in one blob
+        // That will enable simplification of code in document.
         std::vector<char> _bodyBlob;
         const document::DocumentTypeRepo *_repo;
 
@@ -282,7 +284,7 @@ public:
     ApplyBucketDiffCommand(const document::Bucket &bucket,
                            const std::vector<Node>& nodes,
                            uint32_t maxBufferSize);
-    ~ApplyBucketDiffCommand();
+    ~ApplyBucketDiffCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     const std::vector<Entry>& getDiff() const { return _diff; }
@@ -482,5 +484,4 @@ public:
     DECLARE_STORAGEREPLY(SetBucketStateReply, onSetBucketStateReply)
 };
 
-} // api
-} // storage
+}

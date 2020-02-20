@@ -22,6 +22,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -54,7 +55,8 @@ public class CapacityCheckerTester {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
         nodeRepository = new NodeRepository(f, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
-                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true,
+                                            new InMemoryFlagSource());
     }
 
     private void updateCapacityChecker() {
@@ -133,8 +135,8 @@ public class CapacityCheckerTester {
             NodeResources nr = containingNodeResources(childResources,
                     excessCapacity);
             Node node = nodeRepository.createNode(hostname, hostname,
-                    new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                    new Flavor(nr), NodeType.host);
+                                                  new IP.Config(Set.of("::"), availableIps), Optional.empty(),
+                                                  new Flavor(nr), Optional.empty(), NodeType.host);
             hosts.add(node);
         }
         return hosts;
@@ -152,8 +154,8 @@ public class CapacityCheckerTester {
                     .mapToObj(n -> String.format("%04X::%04X", hostid, n))
                     .collect(Collectors.toSet());
             Node node = nodeRepository.createNode(hostname, hostname,
-                    new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                    new Flavor(capacity), NodeType.host);
+                                                  new IP.Config(Set.of("::"), availableIps), Optional.empty(),
+                                                  new Flavor(capacity), Optional.empty(), NodeType.host);
             hosts.add(node);
         }
         return hosts;
@@ -263,8 +265,8 @@ public class CapacityCheckerTester {
         Flavor f = new Flavor(nr);
 
         Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,
-                new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses),
-                nodeModel.parentHostname, f, nodeModel.type);
+                                              new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses),
+                                              nodeModel.parentHostname, f, Optional.empty(), nodeModel.type);
 
         if (membership != null) {
             return node.allocate(owner, membership, node.flavor().resources(), Instant.now());

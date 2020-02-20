@@ -87,7 +87,7 @@ public class ProvisioningTester {
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
-                DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true, flagSource);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
@@ -241,13 +241,16 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
-        return makeReadyNodes(n, asFlavor(flavor, type), type, 0);
+        return makeReadyNodes(n, asFlavor(flavor, type), Optional.empty(), type, 0);
     }
     public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type) {
-        return makeReadyNodes(n, new Flavor(resources), type, 0);
+        return makeReadyNodes(n, new Flavor(resources), Optional.empty(), type, 0);
     }
     public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type, int ipAddressPoolSize) {
-        return makeReadyNodes(n, new Flavor(resources), type, ipAddressPoolSize);
+        return makeReadyNodes(n, resources, Optional.empty(), type, ipAddressPoolSize);
+    }
+    public List<Node> makeReadyNodes(int n, NodeResources resources, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize) {
+        return makeReadyNodes(n, new Flavor(resources), reservedTo, type, ipAddressPoolSize);
     }
 
     public List<Node> makeProvisionedNodes(int count, String flavor, NodeType type, int ipAddressPoolSize) {
@@ -255,9 +258,9 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
-        return makeProvisionedNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize, dualStack);
+        return makeProvisionedNodes(n, asFlavor(flavor, type), Optional.empty(), type, ipAddressPoolSize, dualStack);
     }
-    public List<Node> makeProvisionedNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+    public List<Node> makeProvisionedNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = new ArrayList<>(n);
 
         for (int i = 0; i < n; i++) {
@@ -299,6 +302,7 @@ public class ProvisioningTester {
                                                 new IP.Config(hostIps, ipAddressPool),
                                                 Optional.empty(),
                                                 flavor,
+                                                reservedTo,
                                                 type));
         }
         nodes = nodeRepository.addNodes(nodes);
@@ -315,11 +319,12 @@ public class ProvisioningTester {
 
             nameResolver.addRecord(hostname, ipv4);
             Node node = nodeRepository.createNode(hostname,
-                    hostname,
-                    new IP.Config(Set.of(ipv4), Set.of()),
-                    Optional.empty(),
-                    nodeFlavors.getFlavorOrThrow(flavor),
-                    NodeType.config);
+                                                  hostname,
+                                                  new IP.Config(Set.of(ipv4), Set.of()),
+                                                  Optional.empty(),
+                                                  nodeFlavors.getFlavorOrThrow(flavor),
+                                                  Optional.empty(),
+                                                  NodeType.config);
             nodes.add(node);
         }
 
@@ -338,17 +343,20 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
-        return makeReadyNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize);
+        return makeReadyNodes(n, asFlavor(flavor, type), Optional.empty(), type, ipAddressPoolSize);
     }
-    public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize) {
-        return makeReadyNodes(n, flavor, type, ipAddressPoolSize, false);
+    public List<Node> makeReadyNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize) {
+        return makeReadyNodes(n, flavor, reservedTo, type, ipAddressPoolSize, false);
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         return makeReadyNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize, dualStack);
     }
     public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
-        List<Node> nodes = makeProvisionedNodes(n, flavor, type, ipAddressPoolSize, dualStack);
+        return makeReadyNodes(n, flavor, Optional.empty(), type, ipAddressPoolSize, dualStack);
+    }
+    public List<Node> makeReadyNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        List<Node> nodes = makeProvisionedNodes(n, flavor, reservedTo, type, ipAddressPoolSize, dualStack);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
@@ -410,19 +418,18 @@ public class ProvisioningTester {
         activate(applicationId, Set.copyOf(list));
     }
 
+    public List<Node> deploy(ApplicationId application, Capacity capacity) {
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
+                                                  Version.fromString("6.42"), false);
+        List<HostSpec> prepared = prepare(application, cluster, capacity, 1);
+        activate(application, Set.copyOf(prepared));
+        return getNodes(application, Node.State.active).asList();
+    }
+
+
     /** Returns the hosts from the input list which are not retired */
     public List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
         return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());
-    }
-
-    public void assertNumberOfNodesWithFlavor(List<HostSpec> hostSpecs, String flavor, int expectedCount) {
-        long actualNodesWithFlavor = hostSpecs.stream()
-                .map(HostSpec::hostname)
-                .map(this::getNodeFlavor)
-                .map(Flavor::name)
-                .filter(name -> name.equals(flavor))
-                .count();
-        assertEquals(expectedCount, actualNodesWithFlavor);
     }
 
     public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
@@ -432,26 +439,11 @@ public class ProvisioningTester {
         }
     }
 
-    public void printFreeResources() {
-        for (Node host : nodeRepository().getNodes(NodeType.host)) {
-            NodeResources free = host.flavor().resources();
-            for (Node child : nodeRepository().getNodes(NodeType.tenant)) {
-                if (child.parentHostname().get().equals(host.hostname()))
-                    free = free.subtract(child.flavor().resources());
-            }
-            System.out.println(host.flavor().name() + " node. Free resources: " + free);
-        }
-    }
-
     public int hostFlavorCount(String hostFlavor, ApplicationId app) {
         return (int)nodeRepository().getNodes(app).stream()
                                                   .map(n -> nodeRepository().getNode(n.parentHostname().get()).get())
                                                   .filter(p -> p.flavor().name().equals(hostFlavor))
                                                   .count();
-    }
-
-    private Flavor getNodeFlavor(String hostname) {
-        return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
     }
 
     public static final class Builder {

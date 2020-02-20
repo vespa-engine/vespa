@@ -1,0 +1,13 @@
+{
+  "deployments": [
+    {
+      "routingMethod": "shared",
+      "instance": "tenant:application:default",
+      "environment": "prod",
+      "region": "us-west-1",
+      "status": "out",
+      "agent": "operator",
+      "changedAt": "(ignore)"
+    }
+  ]
+}

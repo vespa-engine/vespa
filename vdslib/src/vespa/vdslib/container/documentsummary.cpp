@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentsummary.h"
+#include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <algorithm>
 
 namespace vdslib {
@@ -21,7 +23,7 @@ DocumentSummary::DocumentSummary(document::ByteBuffer& buf) :
     deserialize(buf);
 }
 
-DocumentSummary::~DocumentSummary() {}
+DocumentSummary::~DocumentSummary() = default;
 
 void DocumentSummary::deserialize(document::ByteBuffer& buf)
 {
@@ -47,18 +49,18 @@ void DocumentSummary::deserialize(document::ByteBuffer& buf)
     }
 }
 
-void DocumentSummary::serialize(document::ByteBuffer& buf) const
+void DocumentSummary::serialize(vespalib::GrowableByteBuffer& buf) const
 {
-    buf.putIntNetwork(0); // Just serialize dummy 4 byte field, to avoid versioning.
-    buf.putIntNetwork(_summary.size());
+    buf.putInt(0); // Just serialize dummy 4 byte field, to avoid versioning.
+    buf.putInt(_summary.size());
     if ( ! _summary.empty() ) {
-        buf.putIntNetwork(getSummarySize());
+        buf.putInt(getSummarySize());
         for (size_t i(0), m(_summary.size()); i < m; i++) {
             Summary s(_summary[i]);
             buf.putBytes(s.getDocId(_summaryBuffer->c_str()), s.getTotalSize());
         }
         for (size_t i(0), m(_summary.size()); i < m; i++) {
-            buf.putIntNetwork(_summary[i].getSummarySize());
+            buf.putInt(_summary[i].getSummarySize());
         }
     }
 }

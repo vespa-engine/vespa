@@ -338,6 +338,25 @@ public class JobRunnerTest {
     }
 
     @Test
+    public void onlySuccessfulRunExpiresThenAnotherFails() {
+        DeploymentTester tester = new DeploymentTester();
+        JobController jobs = tester.controller().jobController();
+        var app = tester.newDeploymentContext().submit();
+        JobId jobId = new JobId(app.instanceId(), systemTest);
+        assertFalse(jobs.lastSuccess(jobId).isPresent());
+
+        app.runJob(systemTest);
+        assertTrue(jobs.lastSuccess(jobId).isPresent());
+        assertEquals(1, jobs.runs(jobId).size());
+
+        tester.clock().advance(JobController.maxHistoryAge.plusSeconds(1));
+        app.submit();
+        app.failDeployment(systemTest);
+        assertFalse(jobs.lastSuccess(jobId).isPresent());
+        assertEquals(1, jobs.runs(jobId).size());
+    }
+
+    @Test
     public void timeout() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
@@ -375,12 +394,11 @@ public class JobRunnerTest {
             jobs.finish(jobs.last(id, systemTest).get().id());
         }
 
-        Map<String, String> context = Map.of("tenant", "tenant",
-                                             "application", "real",
-                                             "instance", "default",
-                                             "job", "system-test",
-                                             "environment", "test",
-                                             "region", "us-east-1");
+        Map<String, String> context = Map.of("applicationId", "tenant.real.default",
+                                             "tenantName", "tenant",
+                                             "app", "real.default",
+                                             "test", "true",
+                                             "zone", "test.us-east-1");
         MetricsMock metric = ((MetricsMock) tester.controller().metric());
         assertEquals(RunStatus.values().length - 1, metric.getMetric(context::equals, JobMetrics.start).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.abort).get().intValue());
@@ -389,6 +407,7 @@ public class JobRunnerTest {
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.convergenceFailure).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.deploymentFailure).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.outOfCapacity).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.endpointCertificateTimeout).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.testFailure).get().intValue());
     }
 

@@ -115,6 +115,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                         Cursor applicationObject = failingArray.addObject();
                         toSlime(applicationObject, id, request);
                         applicationObject.setString("failing", firstFailing.id().type().jobName());
+                        applicationObject.setString("status", firstFailing.status().name());
                     });
             }
 

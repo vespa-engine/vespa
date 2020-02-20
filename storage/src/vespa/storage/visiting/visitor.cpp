@@ -44,17 +44,12 @@ Visitor::HitCounter::addHit(const document::DocumentId& , uint32_t size)
 }
 
 void
-Visitor::HitCounter::updateVisitorStatistics(
-        vdslib::VisitorStatistics& statistics)
+Visitor::HitCounter::updateVisitorStatistics(vdslib::VisitorStatistics& statistics)
 {
-    statistics.setDocumentsReturned(
-            statistics.getDocumentsReturned() + _firstPassHits);
-    statistics.setBytesReturned(
-            statistics.getBytesReturned() + _firstPassBytes);
-    statistics.setSecondPassDocumentsReturned(
-            statistics.getSecondPassDocumentsReturned() + _secondPassHits);
-    statistics.setSecondPassBytesReturned(
-            statistics.getSecondPassBytesReturned() + _secondPassBytes);
+    statistics.setDocumentsReturned(statistics.getDocumentsReturned() + _firstPassHits);
+    statistics.setBytesReturned(statistics.getBytesReturned() + _firstPassBytes);
+    statistics.setSecondPassDocumentsReturned(statistics.getSecondPassDocumentsReturned() + _secondPassHits);
+    statistics.setSecondPassBytesReturned(statistics.getSecondPassBytesReturned() + _secondPassBytes);
 }
 
 Visitor::VisitorTarget::MessageMeta::MessageMeta(
@@ -68,8 +63,7 @@ Visitor::VisitorTarget::MessageMeta::MessageMeta(
 {
 }
 
-Visitor::VisitorTarget::MessageMeta::MessageMeta(
-        Visitor::VisitorTarget::MessageMeta&& rhs) noexcept
+Visitor::VisitorTarget::MessageMeta::MessageMeta(Visitor::VisitorTarget::MessageMeta&& rhs) noexcept
     : messageId(rhs.messageId),
       retryCount(rhs.retryCount),
       memoryUsage(rhs.memoryUsage),
@@ -78,9 +72,7 @@ Visitor::VisitorTarget::MessageMeta::MessageMeta(
 {
 }
 
-Visitor::VisitorTarget::MessageMeta::~MessageMeta()
-{
-}
+Visitor::VisitorTarget::MessageMeta::~MessageMeta() = default;
 
 Visitor::VisitorTarget::MessageMeta&
 Visitor::VisitorTarget::MessageMeta::operator=(

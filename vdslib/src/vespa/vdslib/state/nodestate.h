@@ -40,8 +40,8 @@ public:
     NodeState();
     NodeState(const NodeState &);
     NodeState & operator = (const NodeState &);
-    NodeState(NodeState &&);
-    NodeState & operator = (NodeState &&);
+    NodeState(NodeState &&) noexcept;
+    NodeState & operator = (NodeState &&) noexcept;
     NodeState(const NodeType& nodeType, const State&,
               vespalib::stringref description = "",
               double capacity = 1.0, uint16_t reliability = 1);

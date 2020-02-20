@@ -16,37 +16,6 @@ MessageMemoryUseMetricSet::MessageMemoryUseMetricSet(metrics::MetricSet* owner)
 
 MessageMemoryUseMetricSet::~MessageMemoryUseMetricSet() = default;
 
-DocumentSerializationMetricSet::DocumentSerializationMetricSet(metrics::MetricSet* owner)
-    : metrics::MetricSet("document_serialization", {{"docserialization"}},
-            "Counts of document serialization of various types", owner),
-      usedCachedSerializationCount(
-            "cached_serialization_count", {{"docserialization"}},
-            "Number of times we didn't need to serialize the document as "
-            "we already had serialized version cached", this),
-      compressedDocumentCount(
-            "compressed_serialization_count", {{"docserialization"}},
-            "Number of times we compressed document when serializing",
-            this),
-      compressionDidntHelpCount(
-            "compressed_didnthelp_count", {{"docserialization"}},
-            "Number of times we compressed document when serializing, but "
-            "the compressed version was bigger, so it was dumped", this),
-      uncompressableCount(
-            "uncompressable_serialization_count", {{"docserialization"}},
-            "Number of times we didn't attempt compression as document "
-            "had already been tagged uncompressable", this),
-      serializedUncompressed(
-            "uncompressed_serialization_count", {{"docserialization"}},
-            "Number of times we serialized a document uncompressed", this),
-      inputWronglySerialized(
-            "input_wrongly_serialized_count", {{"docserialization"}},
-            "Number of times we reserialized a document because the "
-            "compression it had in cache did not match what was configured",
-            this)
-{}
-
-DocumentSerializationMetricSet::~DocumentSerializationMetricSet() = default;
-
 StorageMetricSet::StorageMetricSet()
     : metrics::MetricSet("server", {{"memory"}},
           "Metrics for VDS applications"),
@@ -54,34 +23,20 @@ StorageMetricSet::StorageMetricSet()
       memoryUse_messages(this),
       memoryUse_visiting("memoryusage_visiting", {{"memory"}},
             "Message use from visiting", this),
-      documentSerialization(this),
-      tls_metrics(this)
+      tls_metrics(this),
+      fnet_metrics(this)
 {}
 
 StorageMetricSet::~StorageMetricSet() = default;
 
 void StorageMetricSet::updateMetrics() {
-    document::SerializableArray::Statistics stats(
-            document::SerializableArray::getStatistics());
-
-    documentSerialization.usedCachedSerializationCount.set(
-            stats._usedCachedSerializationCount);
-    documentSerialization.compressedDocumentCount.set(
-            stats._compressedDocumentCount);
-    documentSerialization.compressionDidntHelpCount.set(
-            stats._compressionDidntHelpCount);
-    documentSerialization.uncompressableCount.set(
-            stats._uncompressableCount);
-    documentSerialization.serializedUncompressed.set(
-            stats._serializedUncompressed);
-    documentSerialization.inputWronglySerialized.set(
-            stats._inputWronglySerialized);
 
     // Delta snapshotting is destructive, so if an explicit snapshot is triggered
     // (instead of just regular periodic snapshots), some events will effectively
     // be erased from history. This will no longer be a problem once we move to a
     // metrics system built around absolute (rather than derived) values.
     tls_metrics.update_metrics_with_snapshot_delta();
+    fnet_metrics.update_metrics();
 }
 
 } // storage

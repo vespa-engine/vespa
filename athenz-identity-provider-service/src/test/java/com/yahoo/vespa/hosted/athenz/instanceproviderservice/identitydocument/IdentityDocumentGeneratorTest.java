@@ -64,6 +64,7 @@ public class IdentityDocumentGeneratorTest {
                                       Optional.empty(),
                                       Optional.empty(),
                                       new MockNodeFlavors().getFlavorOrThrow("default"),
+                                      Optional.empty(),
                                       NodeType.host);
         Node containerNode = Node.createDockerNode(Set.of("::1"),
                                                    containerHostname,

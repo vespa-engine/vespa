@@ -247,6 +247,7 @@ public class GroupingParserTestCase {
         assertParse("all(group(predefined(foo, bucket(1, 2), bucket(3, 4), bucket(5, 6))))");
         assertParse("all(group(predefined(foo, bucket(1, 2), bucket(2, 3), bucket(3, 4))))");
         assertParse("all(group(predefined(foo, bucket(-100, 0), bucket(0), bucket<0, 100))))");
+        assertParse("all(group(predefined(foo, bucket[1, 2>, bucket[3, 4>)))");
 
         assertParse("all(group(predefined(foo, bucket[1, 2>)))");
         assertParse("all(group(predefined(foo, bucket[-1, 2>)))");

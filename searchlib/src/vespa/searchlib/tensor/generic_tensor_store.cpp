@@ -3,7 +3,6 @@
 #include "generic_tensor_store.h"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/document/util/serializable.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -15,9 +14,7 @@ using search::datastore::Handle;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TypedBinaryFormat;
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 
@@ -118,6 +115,4 @@ GenericTensorStore::setTensor(const Tensor &tensor)
     return raw.ref;
 }
 
-}  // namespace search::tensor
-
-}  // namespace search
+}

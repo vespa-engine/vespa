@@ -46,7 +46,7 @@ public class Transport {
             this.fatalHandler = fatalHandler; // NB: this must be set first
         }
         this.cryptoEngine = cryptoEngine;
-        connector = new Connector(this);
+        connector = new Connector();
         worker = new Worker(this);
         runCnt = new AtomicInteger(numThreads);
         for (int i = 0; i < numThreads; ++i) {
@@ -68,14 +68,26 @@ public class Transport {
     }
 
     /**
-     * Use the underlying CryptoEngine to create a CryptoSocket.
+     * Use the underlying CryptoEngine to create a CryptoSocket for
+     * the client side of a connection.
      *
      * @return CryptoSocket handling appropriate encryption
      * @param channel low-level socket channel to be wrapped by the CryptoSocket
-     * @param isServer flag indicating which end of the connection we are
+     * @param spec who we are connecting to, for hostname validation
      **/
-    CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
-        return cryptoEngine.createCryptoSocket(channel, isServer);
+    CryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec) {
+        return cryptoEngine.createClientCryptoSocket(channel, spec);
+    }
+
+    /**
+     * Use the underlying CryptoEngine to create a CryptoSocket for
+     * the server side of a connection.
+     *
+     * @return CryptoSocket handling appropriate encryption
+     * @param channel low-level socket channel to be wrapped by the CryptoSocket
+     **/
+    CryptoSocket createServerCryptoSocket(SocketChannel channel) {
+        return cryptoEngine.createServerCryptoSocket(channel);
     }
 
     /**
@@ -162,7 +174,7 @@ public class Transport {
      * @return this object, to enable chaining with join
      **/
     public Transport shutdown() {
-        connector.shutdown().waitDone();
+        connector.shutdown().join();
         for (TransportThread thread: threads) {
             thread.shutdown();
         }
@@ -181,7 +193,6 @@ public class Transport {
     void notifyDone(TransportThread self) {
         if (runCnt.decrementAndGet() == 0) {
             worker.shutdown().join();
-            connector.exit().join();
             try { cryptoEngine.close(); } catch (Exception e) {}
         }
     }

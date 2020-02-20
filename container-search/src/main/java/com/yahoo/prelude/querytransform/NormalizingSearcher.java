@@ -111,25 +111,17 @@ public class NormalizingSearcher extends Searcher {
     }
 
     private void normalizeAlternatives(Language language, Session indexFacts, WordAlternativesItem block) {
-        if (!block.isNormalizable()) {
-            return;
-        }
-        {
-            Index index = indexFacts.getIndex(block.getIndexName());
-            if (index.isAttribute()) {
-                return;
-            }
-            if (!index.getNormalize()) {
-                return;
-            }
-        }
+        if ( ! block.isNormalizable()) return;
+
+        Index index = indexFacts.getIndex(block.getIndexName());
+        if (index.isAttribute()) return;
+        if ( ! index.getNormalize()) return;
 
         List<Alternative> terms = block.getAlternatives();
         for (Alternative term : terms) {
             String accentDropped = linguistics.getTransformer().accentDrop(term.word, language);
-            if (!term.word.equals(accentDropped) && accentDropped.length() > 0) {
+            if ( ! term.word.equals(accentDropped) && accentDropped.length() > 0)
                 block.addTerm(accentDropped, term.exactness * .7d);
-            }
         }
     }
 

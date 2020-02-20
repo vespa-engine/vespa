@@ -6,7 +6,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -29,6 +31,9 @@ public class Node {
     private final Version currentOsVersion;
     private final Version wantedOsVersion;
     private final ServiceState serviceState;
+    private final Optional<Instant> suspendedSince;
+    private final Optional<Instant> currentFirmwareCheck;
+    private final Optional<Instant> wantedFirmwareCheck;
     private final long restartGeneration;
     private final long wantedRestartGeneration;
     private final long rebootGeneration;
@@ -39,11 +44,14 @@ public class Node {
     private final ClusterType clusterType;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
+    private final Optional<TenantName> reservedTo;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
-                Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
-                long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision) {
+                Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
+                Optional<Instant> currentFirmwareCheck, Optional<Instant> wantedFirmwareCheck, ServiceState serviceState,
+                Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
+                int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
+                Optional<TenantName> reservedTo) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -54,7 +62,10 @@ public class Node {
         this.wantedVersion = wantedVersion;
         this.currentOsVersion = currentOsVersion;
         this.wantedOsVersion = wantedOsVersion;
+        this.currentFirmwareCheck = currentFirmwareCheck;
+        this.wantedFirmwareCheck = wantedFirmwareCheck;
         this.serviceState = serviceState;
+        this.suspendedSince = suspendedSince;
         this.restartGeneration = restartGeneration;
         this.wantedRestartGeneration = wantedRestartGeneration;
         this.rebootGeneration = rebootGeneration;
@@ -65,6 +76,7 @@ public class Node {
         this.clusterType = clusterType;
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
+        this.reservedTo = reservedTo;
     }
 
     public HostName hostname() {
@@ -105,8 +117,20 @@ public class Node {
         return wantedOsVersion;
     }
 
+    public Optional<Instant> currentFirmwareCheck() {
+        return currentFirmwareCheck;
+    }
+
+    public Optional<Instant> wantedFirmwareCheck() {
+        return wantedFirmwareCheck;
+    }
+
     public ServiceState serviceState() {
         return serviceState;
+    }
+
+    public Optional<Instant> suspendedSince() {
+        return suspendedSince;
     }
 
     public long restartGeneration() {
@@ -148,6 +172,8 @@ public class Node {
     public boolean wantToDeprovision() {
         return wantToDeprovision;
     }
+
+    public Optional<TenantName> reservedTo() { return reservedTo; }
 
     @Override
     public boolean equals(Object o) {
@@ -202,7 +228,10 @@ public class Node {
         private Version wantedVersion;
         private Version currentOsVersion;
         private Version wantedOsVersion;
+        private Optional<Instant> currentFirmwareCheck = Optional.empty();
+        private Optional<Instant> wantedFirmwareCheck = Optional.empty();
         private ServiceState serviceState;
+        private Optional<Instant> suspendedSince = Optional.empty();
         private long restartGeneration;
         private long wantedRestartGeneration;
         private long rebootGeneration;
@@ -213,7 +242,8 @@ public class Node {
         private ClusterType clusterType;
         private boolean wantToRetire;
         private boolean wantToDeprovision;
-        
+        private Optional<TenantName> reservedTo = Optional.empty();
+
         public Builder() { }
 
         public Builder(Node node) {
@@ -227,7 +257,10 @@ public class Node {
             this.wantedVersion = node.wantedVersion;
             this.currentOsVersion = node.currentOsVersion;
             this.wantedOsVersion = node.wantedOsVersion;
+            this.currentFirmwareCheck = node.currentFirmwareCheck;
+            this.wantedFirmwareCheck = node.wantedFirmwareCheck;
             this.serviceState = node.serviceState;
+            this.suspendedSince = node.suspendedSince;
             this.restartGeneration = node.restartGeneration;
             this.wantedRestartGeneration = node.wantedRestartGeneration;
             this.rebootGeneration = node.rebootGeneration;
@@ -238,6 +271,7 @@ public class Node {
             this.clusterType = node.clusterType;
             this.wantToRetire = node.wantToRetire;
             this.wantToDeprovision = node.wantToDeprovision;
+            this.reservedTo = node.reservedTo;
         }
 
         public Builder hostname(HostName hostname) {
@@ -290,8 +324,23 @@ public class Node {
             return this;
         }
 
+        public Builder currentFirmwareCheck(Instant currentFirmwareCheck) {
+            this.currentFirmwareCheck = Optional.ofNullable(currentFirmwareCheck);
+            return this;
+        }
+
+        public Builder wantedFirmwareCheck(Instant wantedFirmwareCheck) {
+            this.wantedFirmwareCheck = Optional.ofNullable(wantedFirmwareCheck);
+            return this;
+        }
+
         public Builder serviceState(ServiceState serviceState) {
             this.serviceState = serviceState;
+            return this;
+        }
+
+        public Builder suspendedSince(Instant suspendedSince) {
+            this.suspendedSince = Optional.ofNullable(suspendedSince);
             return this;
         }
 
@@ -345,10 +394,17 @@ public class Node {
             return this;
         }
 
-        public Node build() {
-            return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion, currentOsVersion,
-                    wantedOsVersion, serviceState, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                    cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision);
+        public Builder reservedTo(TenantName tenant) {
+            this.reservedTo = Optional.of(tenant);
+            return this;
         }
+
+        public Node build() {
+            return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
+                            currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
+                            suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
+                            cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo);
+        }
+
     }
 }

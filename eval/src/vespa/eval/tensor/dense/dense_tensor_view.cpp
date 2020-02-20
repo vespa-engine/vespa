@@ -301,7 +301,7 @@ DenseTensorView::join(join_fun_t function, const Tensor &arg) const
         return joinDenseTensors(*this, arg, "join", function);
     }
     if (function == eval::operation::Mul::f) {
-        return dense::generic_join(*this, arg, [](double a, double b) { return (a * b); });
+        return dense::generic_join(*this, arg, [](auto a, auto b) { return (a * b); });
     }
     if (function == eval::operation::Add::f) {
         return dense::generic_join(*this, arg, [](double a, double b) { return (a + b); });
@@ -323,7 +323,7 @@ DenseTensorView::reduce_all(join_fun_t op, const std::vector<vespalib::string> &
         return dense::reduce(*this, dims, [](double a, double b) { return (a * b);});
     }
     if (op == eval::operation::Add::f) {
-        return dense::reduce(*this, dims, [](double a, double b) { return (a + b);});
+        return dense::reduce(*this, dims, [](auto a, auto b) { return (a + b);});
     }
     return dense::reduce(*this, dims, op);
 }

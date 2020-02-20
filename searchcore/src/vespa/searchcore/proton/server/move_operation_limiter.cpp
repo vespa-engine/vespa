@@ -41,9 +41,7 @@ MoveOperationLimiter::MoveOperationLimiter(IBlockableMaintenanceJob *job,
 {
 }
 
-MoveOperationLimiter::~MoveOperationLimiter()
-{
-}
+MoveOperationLimiter::~MoveOperationLimiter() = default;
 
 void
 MoveOperationLimiter::clearJob()

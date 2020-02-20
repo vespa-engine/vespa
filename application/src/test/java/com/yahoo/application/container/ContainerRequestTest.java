@@ -33,6 +33,7 @@ public class ContainerRequestTest {
                binding +
                "</binding>\n" +
                "  </handler>\n" +
+               "  <accesslog type=\"disabled\" />" +
                "</container>";
     }
 

@@ -93,7 +93,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
 
     /** Render and return whether the channel was closed */
     private void render(HttpRequest request, HttpResponse httpResponse,
-                        LazyContentChannel channel, long startTime) throws IOException {
+                        LazyContentChannel channel, long startTime) {
         LoggingCompletionHandler logOnCompletion = null;
         ContentChannelOutputStream output = null;
         try {
@@ -168,7 +168,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         @Override
         public void close(CompletionHandler completionHandler) {
             if ( closed ) return;
-            try { httpRequest.getData().close(); } catch (IOException e) {};
+            try { httpRequest.getData().close(); } catch (IOException e) {}
             if (channel == null)
                 channel = handleResponse();
             try {

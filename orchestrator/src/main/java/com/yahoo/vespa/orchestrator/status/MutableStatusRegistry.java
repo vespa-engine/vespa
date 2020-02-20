@@ -14,24 +14,16 @@ import java.util.Set;
  */
 public interface MutableStatusRegistry extends AutoCloseable {
 
-    /**
-     * Returns the status of this application.
-     */
+    /** Returns the status of this application. */
     ApplicationInstanceStatus getStatus();
 
-    /**
-     * Returns the status of the given host.
-     */
-    HostStatus getHostStatus(HostName hostName);
+    /** Returns the host info of the given host. */
+    HostInfo getHostInfo(HostName hostName);
 
-    /**
-     * Returns the set of all suspended hosts for this application.
-     */
-    Set<HostName> getSuspendedHosts();
+    /** Returns a snapshot of all host infos for this application. */
+    HostInfos getHostInfos();
 
-    /**
-     * Sets the state for the given host.
-     */
+    /** Sets the state for the given host. */
     void setHostState(HostName hostName, HostStatus status);
 
     /**

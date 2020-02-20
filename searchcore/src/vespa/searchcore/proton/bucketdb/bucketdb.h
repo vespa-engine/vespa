@@ -51,6 +51,7 @@ public:
     void cacheBucket(const BucketId &bucketId);
     void uncacheBucket();
     bool isCachedBucket(const BucketId &bucketId) const;
+    storage::spi::BucketInfo cachedGetBucketInfo(const BucketId &bucketId) const;
     BucketState cachedGet(const BucketId &bucketId) const;
     bool hasBucket(const BucketId &bucketId) const;
     void getBuckets(BucketId::List & buckets) const;

@@ -155,9 +155,11 @@ public class ApplicationSuspensionResourceTest {
 
         return "<services>\n" +
                 "    <container version=\"1.0\" jetty=\"true\">\n" +
+                "        <accesslog type=\"disabled\"/>\n" +
                 "        <config name=\"container.handler.threadpool\">\n" +
                 "            <maxthreads>10</maxthreads>\n" +
                 "        </config>\n" +
+                "        <component id=\"com.yahoo.vespa.flags.InMemoryFlagSource\" bundle=\"flags\" />\n" +
                 "        <component id=\"com.yahoo.vespa.curator.mock.MockCurator\" bundle=\"zkfacade\" />\n" +
                 "        <component id=\"com.yahoo.vespa.orchestrator.status.ZookeeperStatusService\" bundle=\"orchestrator\" />\n" +
                 "        <component id=\"com.yahoo.vespa.orchestrator.DummyInstanceLookupService\" bundle=\"orchestrator\" />\n" +

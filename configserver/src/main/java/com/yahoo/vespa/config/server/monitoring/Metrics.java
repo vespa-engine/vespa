@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.monitoring;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -14,14 +16,17 @@ import com.yahoo.statistics.Counter;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Statistics for server. The statistics framework takes care of logging.
+ * Metrics for config server. The statistics framework takes care of logging.
  *
  * @author Harald Musum
- * @since 4.2
  */
-public class Metrics extends TimerTask implements MetricUpdaterFactory {
+public class Metrics extends AbstractComponent implements MetricUpdaterFactory, Runnable {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Metrics.class.getName());
     private static final String METRIC_REQUESTS = getMetricName("requests");
@@ -33,23 +38,34 @@ public class Metrics extends TimerTask implements MetricUpdaterFactory {
     private final Counter failedRequests;
     private final Counter procTimeCounter;
     private final Metric metric;
-    private final ZKMetricUpdater zkMetricUpdater;
+    private final Optional<ZKMetricUpdater> zkMetricUpdater;
 
     // TODO The map is the key for now
     private final Map<Map<String, String>, MetricUpdater> metricUpdaters = new ConcurrentHashMap<>();
-    private final Timer timer = new Timer();
+    private final Optional<ScheduledExecutorService> executorService;
 
     @Inject
     public Metrics(Metric metric, Statistics statistics, HealthMonitorConfig healthMonitorConfig, ZookeeperServerConfig zkServerConfig) {
+        this(metric, statistics, healthMonitorConfig, zkServerConfig, true);
+    }
+
+    private Metrics(Metric metric, Statistics statistics, HealthMonitorConfig healthMonitorConfig,
+                    ZookeeperServerConfig zkServerConfig, boolean createZkMetricUpdater) {
         this.metric = metric;
         requests = createCounter(METRIC_REQUESTS, statistics);
         failedRequests = createCounter(METRIC_FAILED_REQUESTS, statistics);
         procTimeCounter = createCounter("procTime", statistics);
 
-        log.log(LogLevel.DEBUG, "Metric update interval is " + healthMonitorConfig.snapshot_interval() + " seconds");
-        long intervalMs = (long) (healthMonitorConfig.snapshot_interval() * 1000);
-        timer.scheduleAtFixedRate(this, 20000, intervalMs);
-        zkMetricUpdater = new ZKMetricUpdater(zkServerConfig, 19500, intervalMs);
+        if (createZkMetricUpdater) {
+            log.log(LogLevel.DEBUG, "Metric update interval is " + healthMonitorConfig.snapshot_interval() + " seconds");
+            long intervalMs = (long) (healthMonitorConfig.snapshot_interval() * 1000);
+            executorService = Optional.of(new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("configserver-metrics")));
+            executorService.get().scheduleAtFixedRate(this, 20000, intervalMs, TimeUnit.MILLISECONDS);
+            zkMetricUpdater = Optional.of(new ZKMetricUpdater(zkServerConfig, 19500, intervalMs));
+        } else {
+            executorService = Optional.empty();
+            zkMetricUpdater = Optional.empty();
+        }
     }
 
     public static Metrics createTestMetrics() {
@@ -58,13 +74,12 @@ public class Metrics extends TimerTask implements MetricUpdaterFactory {
         HealthMonitorConfig.Builder builder = new HealthMonitorConfig.Builder();
         builder.snapshot_interval(60.0);
         ZookeeperServerConfig.Builder zkBuilder = new ZookeeperServerConfig.Builder().myid(1);
-        return new Metrics(metric, statistics, new HealthMonitorConfig(builder), new ZookeeperServerConfig(zkBuilder));
+        return new Metrics(metric, statistics, new HealthMonitorConfig(builder), new ZookeeperServerConfig(zkBuilder), false);
     }
 
     private Counter createCounter(String name, Statistics statistics) {
         return new Counter(name, statistics, false);
     }
-
 
     void incrementRequests(Metric.Context metricContext) {
         requests.increment(1);
@@ -126,8 +141,12 @@ public class Metrics extends TimerTask implements MetricUpdaterFactory {
             }
         }
         setRegularMetrics();
-        zkMetricUpdater.getZKMetrics().forEach((attr, val) -> metric.set(attr, val, null));
-        timer.purge();
+        zkMetricUpdater.ifPresent(updater -> updater.getZKMetrics().forEach((attr, val) -> metric.set(attr, val, null)));
+    }
+
+    public void deconstruct() {
+        executorService.ifPresent(ExecutorService::shutdown);
+        zkMetricUpdater.ifPresent(ZKMetricUpdater::shutdown);
     }
 
     private void setRegularMetrics() {

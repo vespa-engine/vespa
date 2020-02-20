@@ -43,6 +43,16 @@ public class ControllerAuthorizationFilterTest {
     }
 
     @Test
+    public void supporter() {
+        ControllerTester tester = new ControllerTester();
+        SecurityContext securityContext = new SecurityContext(() -> "operator", Set.of(Role.hostedSupporter()));
+        ControllerAuthorizationFilter filter = createFilter(tester);
+
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", securityContext)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", securityContext)));
+    }
+
+    @Test
     public void unprivileged() {
         ControllerTester tester = new ControllerTester();
         SecurityContext securityContext = new SecurityContext(() -> "user", Set.of(Role.everyone()));

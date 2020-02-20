@@ -5,11 +5,12 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -75,6 +76,7 @@ public class RunSerializerTest {
 
         assertEquals(id, run.id());
         assertEquals(start, run.start());
+        assertEquals(Optional.of(Instant.ofEpochMilli(321321321321L)), run.noNodesDownSince());
         assertFalse(run.hasEnded());
         assertEquals(running, run.status());
         assertEquals(3, run.lastTestLogEntry());
@@ -98,6 +100,8 @@ public class RunSerializerTest {
                                                                 "badb17"),
                                              122),
                      run.versions().sourceApplication().get());
+        assertEquals(Optional.of(new ConvergenceSummary(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)),
+                     run.convergenceSummary());
         assertEquals(X509CertificateUtils.fromPem("-----BEGIN CERTIFICATE-----\n" +
                                                   "MIIBEzCBu6ADAgECAgEBMAoGCCqGSM49BAMEMBQxEjAQBgNVBAMTCW15c2Vydmlj\n" +
                                                   "ZTAeFw0xOTA5MDYwNzM3MDZaFw0xOTA5MDcwNzM3MDZaMBQxEjAQBgNVBAMTCW15\n" +
@@ -127,6 +131,7 @@ public class RunSerializerTest {
 
         run = run.with(1L << 50)
                  .with(Instant.now().truncatedTo(MILLIS))
+                 .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
                  .aborted()
                  .finished(Instant.now().truncatedTo(MILLIS));
         assertEquals(aborted, run.status());
@@ -138,6 +143,7 @@ public class RunSerializerTest {
         assertEquals(run.end(), phoenix.end());
         assertEquals(run.status(), phoenix.status());
         assertEquals(run.lastTestLogEntry(), phoenix.lastTestLogEntry());
+        assertEquals(run.noNodesDownSince(), phoenix.noNodesDownSince());
         assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());

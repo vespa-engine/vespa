@@ -5,6 +5,7 @@ import com.google.common.base.Joiner;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.DeploymentSpec.ChangeBlocker;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -27,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -40,21 +42,30 @@ import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.net.URI;
+import java.time.Instant;
+import java.time.format.TextStyle;
 import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.conservative;
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.defaultPolicy;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
@@ -170,6 +181,20 @@ class JobControllerApiHandlerHelper {
                                          baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize());
                               devJobObject.setString("url", baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize().toString());
                           });
+
+        Cursor jobsArray = responseObject.setArray("deployment");
+        Arrays.stream(JobType.values())
+              .filter(type -> type.environment().isManuallyDeployed())
+              .map(devType -> new JobId(instance.id(), devType))
+              .forEach(job -> {
+                  Collection<Run> runs = controller.jobController().runs(job).descendingMap().values();
+                  if (runs.isEmpty())
+                      return;
+
+                  Cursor jobObject = jobsArray.addObject();
+                  jobObject.setString("jobName", job.type().jobName());
+                  toSlime(jobObject.setArray("runs"), runs, baseUriForJobs);
+              });
 
         return new SlimeJsonResponse(slime);
     }
@@ -411,9 +436,11 @@ class JobControllerApiHandlerHelper {
 
         versionObject.setLong("build", version.buildNumber().getAsLong());
         Cursor sourceObject = versionObject.setObject("source");
-        sourceObject.setString("gitRepository", version.source().get().repository());
-        sourceObject.setString("gitBranch", version.source().get().branch());
-        sourceObject.setString("gitCommit", version.source().get().commit());
+        version.source().ifPresent(source -> {
+            sourceObject.setString("gitRepository", source.repository());
+            sourceObject.setString("gitBranch", source.branch());
+            sourceObject.setString("gitCommit", source.commit());
+        });
         version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));
         version.commit().ifPresent(commit -> versionObject.setString("commit", commit));
     }
@@ -429,9 +456,11 @@ class JobControllerApiHandlerHelper {
                                .orElseThrow(() -> new IllegalStateException("Unknown run '" + runId + "'"));
         detailsObject.setBool("active", ! run.hasEnded());
         detailsObject.setString("status", nameOf(run.status()));
-        jobController.updateTestLog(runId);
-        try { jobController.updateVespaLog(runId); }
-        catch (RuntimeException ignored) { } // May be perfectly fine, e.g., when logserver isn't up yet.
+        try {
+            jobController.updateTestLog(runId);
+            jobController.updateVespaLog(runId);
+        }
+        catch (RuntimeException ignored) { } // Return response when this fails, which it does when, e.g., logserver is booting.
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
                 .orElseThrow(() -> new NotExistsException(String.format(
@@ -450,9 +479,31 @@ class JobControllerApiHandlerHelper {
             Cursor stepCursor = stepsObject.setObject(step.name());
             stepCursor.setString("status", info.status().name());
             info.startTime().ifPresent(startTime -> stepCursor.setLong("startMillis", startTime.toEpochMilli()));
+            run.convergenceSummary().ifPresent(summary -> {
+                // If initial installation never succeeded, but is part of the job, summary concerns it.
+                // If initial succeeded, or is not part of this job, summary concerns upgrade installation.
+                if (   step == installInitialReal && info.status() != succeeded
+                    || step == installReal && run.stepStatus(installInitialReal).map(status -> status == succeeded).orElse(true))
+                    toSlime(stepCursor.setObject("convergence"), summary);
+            });
         });
 
         return new SlimeJsonResponse(slime);
+    }
+
+    private static void toSlime(Cursor summaryObject, ConvergenceSummary summary) {
+        summaryObject.setLong("nodes", summary.nodes());
+        summaryObject.setLong("down", summary.down());
+        summaryObject.setLong("needPlatformUpgrade", summary.needPlatformUpgrade());
+        summaryObject.setLong("upgrading", summary.upgradingPlatform());
+        summaryObject.setLong("needReboot", summary.needReboot());
+        summaryObject.setLong("rebooting", summary.rebooting());
+        summaryObject.setLong("needRestart", summary.needRestart());
+        summaryObject.setLong("restarting", summary.restarting());
+        summaryObject.setLong("upgradingOs", summary.upgradingOs());
+        summaryObject.setLong("upgradingFirmware", summary.upgradingFirmware());
+        summaryObject.setLong("services", summary.services());
+        summaryObject.setLong("needNewConfig", summary.needNewConfig());
     }
 
     private static void toSlime(Cursor entryArray, List<LogEntry> entries) {
@@ -539,12 +590,48 @@ class JobControllerApiHandlerHelper {
             stepObject.setBool("declared", stepStatus.isDeclared());
             stepObject.setString("instance", stepStatus.instance().value());
 
+            stepStatus.readyAt(change).ifPresent(ready -> stepObject.setLong("readyAt", ready.toEpochMilli()));
+            stepStatus.readyAt(change)
+                      .filter(controller.clock().instant()::isBefore)
+                      .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
+            stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
+            stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
+            stepStatus.blockedUntil(change).ifPresent(until -> stepObject.setLong("blockedUntil", until.toEpochMilli()));
+
+            if (stepStatus.type() == DeploymentStatus.StepType.instance) {
+                Cursor deployingObject = stepObject.setObject("deploying");
+                if ( ! change.isEmpty()) {
+                    change.platform().ifPresent(version -> deployingObject.setString("platform", version.toString()));
+                    change.application().ifPresent(version -> toSlime(deployingObject.setObject("application"), version));
+                }
+
+                Cursor latestVersionsObject = stepObject.setObject("latestVersions");
+                List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
+                latestVersionPreferablyWithNormalConfidenceAndNotNewerThanSystem(controller.versionStatus().versions())
+                          .ifPresent(latestPlatform -> {
+                              Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
+                              latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
+                              latestPlatformObject.setLong("at", latestPlatform.committedAt().toEpochMilli());
+                              latestPlatformObject.setBool("upgrade", application.require(stepStatus.instance()).productionDeployments().values().stream()
+                                                                                 .anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
+                              toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
+                          });
+                application.latestVersion().ifPresent(latestApplication -> {
+                    Cursor latestApplicationObject = latestVersionsObject.setObject("application");
+                    toSlime(latestApplicationObject.setObject("application"), latestApplication);
+                    latestApplicationObject.setLong("at", latestApplication.buildTime().orElse(Instant.EPOCH).toEpochMilli());
+                    latestApplicationObject.setBool("upgrade", application.require(stepStatus.instance()).productionDeployments().values().stream()
+                                                                          .anyMatch(deployment -> deployment.applicationVersion().compareTo(latestApplication) < 0));
+                    toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
+                });
+            }
+
             stepStatus.job().ifPresent(job -> {
                 stepObject.setString("jobName", job.type().jobName());
-                String baseUriForJob = baseUriForDeployments.resolve(baseUriForDeployments.getPath() +
+                URI baseUriForJob = baseUriForDeployments.resolve(baseUriForDeployments.getPath() +
                                                                      "/../instance/" + job.application().instance().value() +
-                                                                     "/job/" + job.type().jobName()).normalize().toString();
-                stepObject.setString("url", baseUriForJob);
+                                                                     "/job/" + job.type().jobName()).normalize();
+                stepObject.setString("url", baseUriForJob.toString());
                 stepObject.setString("environment", job.type().environment().value());
                 stepObject.setString("region", job.type().zone(controller.system()).value());
 
@@ -568,42 +655,17 @@ class JobControllerApiHandlerHelper {
 
                     Cursor runObject = toRunArray.addObject();
                     toSlime(runObject.setObject("versions"), versions);
-                    stepStatus.readyAt(change).ifPresent(ready -> runObject.setLong("readyAt", ready.toEpochMilli()));
-                    stepStatus.readyAt(change)
-                              .filter(controller.clock().instant()::isBefore)
-                              .ifPresent(until -> runObject.setLong("delayedUntil", until.toEpochMilli()));
-                    stepStatus.pausedUntil().ifPresent(until -> runObject.setLong("pausedUntil", until.toEpochMilli()));
-                    stepStatus.coolingDownUntil(change).ifPresent(until -> runObject.setLong("coolingDownUntil", until.toEpochMilli()));
-                    stepStatus.blockedUntil(change).ifPresent(until -> runObject.setLong("blockedUntil", until.toEpochMilli()));
                 }
 
-                Cursor runsArray = stepObject.setArray("runs");
-                jobStatus.runs().descendingMap().values().stream().limit(10).forEach(run -> {
-                    Cursor runObject = runsArray.addObject();
-                    runObject.setLong("id", run.id().number());
-                    runObject.setString("url", baseUriForJob + "/run/" + run.id());
-                    runObject.setLong("start", run.start().toEpochMilli());
-                    run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
-                    runObject.setString("status", run.status().name());
-                    toSlime(runObject.setObject("versions"), run.versions());
-                    Cursor runStepsArray = runObject.setArray("steps");
-                    run.steps().forEach((step, info) -> {
-                        Cursor runStepObject = runStepsArray.addObject();
-                        runStepObject.setString("name", step.name());
-                        runStepObject.setString("status", info.status().name());
-                    });
-                });
+                toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), baseUriForJob);
             });
         }
-
-        // TODO jonmv: Add latest platform and application status.
 
         return new SlimeJsonResponse(slime);
     }
 
     private static void toSlime(Cursor versionObject, ApplicationVersion version) {
-        version.buildNumber().ifPresent(id -> versionObject.setLong("id", id));
-        version.source().ifPresent(source -> versionObject.setString("commit", source.commit()));
+        version.buildNumber().ifPresent(id -> versionObject.setLong("build", id));
         version.compileVersion().ifPresent(platform -> versionObject.setString("compileVersion", platform.toFullString()));
         version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));
         version.commit().ifPresent(commit -> versionObject.setString("commit", commit));
@@ -616,5 +678,50 @@ class JobControllerApiHandlerHelper {
         versions.sourceApplication().ifPresent(application -> toSlime(versionsObject.setObject("sourceApplication"), application));
     }
 
-}
+    private static void toSlime(Cursor blockersArray, Stream<ChangeBlocker> blockers) {
+        blockers.forEach(blocker -> {
+            Cursor blockerObject = blockersArray.addObject();
+            blocker.window().days().stream()
+                   .map(day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH))
+                   .forEach(blockerObject.setArray("days")::addString);
+            blocker.window().hours()
+                   .forEach(blockerObject.setArray("hours")::addLong);
+            blockerObject.setString("zone", blocker.window().zone().toString());
+        });
+    }
 
+    private static Optional<VespaVersion> latestVersionPreferablyWithNormalConfidenceAndNotNewerThanSystem(List<VespaVersion> versions) {
+        int i;
+        for (i = versions.size(); i-- > 0; )
+            if (versions.get(i).isSystemVersion())
+                break;
+
+        if (i < 0)
+            return Optional.empty();
+
+        for (int j = i; j >= 0; j--)
+            if (versions.get(j).confidence().equalOrHigherThan(normal))
+                return Optional.of(versions.get(j));
+
+        return Optional.of(versions.get(i));
+    }
+
+    private static void toSlime(Cursor runsArray, Collection<Run> runs, URI baseUriForJob) {
+        runs.stream().limit(10).forEach(run -> {
+            Cursor runObject = runsArray.addObject();
+            runObject.setLong("id", run.id().number());
+            runObject.setString("url", baseUriForJob.resolve(baseUriForJob.getPath() + "/run/" + run.id().number()).toString());
+            runObject.setLong("start", run.start().toEpochMilli());
+            run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
+            runObject.setString("status", run.status().name());
+            toSlime(runObject.setObject("versions"), run.versions());
+            Cursor runStepsArray = runObject.setArray("steps");
+            run.steps().forEach((step, info) -> {
+                Cursor runStepObject = runStepsArray.addObject();
+                runStepObject.setString("name", step.name());
+                runStepObject.setString("status", info.status().name());
+            });
+        });
+    }
+
+}

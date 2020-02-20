@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Vtag;
@@ -32,14 +32,14 @@ import static org.junit.Assert.assertTrue;
  */
 public class LoadBalancerExpirerTest {
 
-    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void expire_inactive() {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
                                                               tester.loadBalancerService());
-        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
+        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers((ignored) -> true);
 
         // Deploy two applications with a total of three load balancers
         ClusterSpec.Id cluster1 = ClusterSpec.Id.from("qrs");
@@ -67,14 +67,15 @@ public class LoadBalancerExpirerTest {
         // Expirer prunes reals before expiration time of load balancer itself
         expirer.maintain();
         assertEquals(Set.of(), tester.loadBalancerService().instances().get(lb1).reals());
-        assertEquals(Set.of(), tester.nodeRepository().loadBalancers().owner(lb1.application()).asList().get(0).instance().reals());
+        assertEquals(Set.of(), loadBalancers.get().get(lb1).instance().reals());
 
         // Expirer defers removal of load balancer until expiration time passes
         expirer.maintain();
+        assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb1).state());
         assertTrue("Inactive load balancer not removed", tester.loadBalancerService().instances().containsKey(lb1));
 
         // Expirer removes load balancers once expiration time passes
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertFalse("Inactive load balancer removed", tester.loadBalancerService().instances().containsKey(lb1));
 
@@ -85,7 +86,7 @@ public class LoadBalancerExpirerTest {
         // A single cluster is removed
         deployApplication(app2, cluster1);
         expirer.maintain();
-        assertEquals(LoadBalancer.State.inactive, loadBalancers.get().get(lb3).state());
+        assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb3).state());
 
         // Expirer defers removal while nodes are still allocated to cluster
         expirer.maintain();
@@ -93,7 +94,7 @@ public class LoadBalancerExpirerTest {
         dirtyNodesOf(app2, cluster2);
 
         // Expirer removes load balancer for removed cluster
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertFalse("Inactive load balancer removed", tester.loadBalancerService().instances().containsKey(lb3));
     }
@@ -103,7 +104,7 @@ public class LoadBalancerExpirerTest {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
                                                               tester.loadBalancerService());
-        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
+        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers((ignored) -> true);
 
 
         // Prepare application
@@ -121,7 +122,7 @@ public class LoadBalancerExpirerTest {
 
         // Application never activates and nodes are dirtied. Expirer moves load balancer to inactive after timeout
         dirtyNodesOf(app, cluster);
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb).state());
 
@@ -130,7 +131,7 @@ public class LoadBalancerExpirerTest {
         assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb).state());
 
         // Expirer removes inactive load balancer
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertFalse("Inactive load balancer removed", loadBalancers.get().containsKey(lb));
     }

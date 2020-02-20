@@ -40,6 +40,8 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
 
 Config::Config(const Config &) = default;
 Config & Config::operator = (const Config &) = default;
+Config::Config(Config &&) noexcept = default;
+Config & Config::operator = (Config &&) noexcept = default;
 Config::~Config() = default;
 
 bool

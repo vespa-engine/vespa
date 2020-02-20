@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.Signatures;
@@ -13,6 +13,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -27,10 +28,10 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -56,9 +57,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -68,7 +72,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
@@ -81,6 +84,7 @@ import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -224,6 +228,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/package")) return devApplicationPackage(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/test-config")) return testConfig(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -427,13 +432,39 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
         Slime slime = new Slime();
-        Cursor array = slime.setArray();
+        Cursor applicationArray = slime.setArray();
         for (Application application : controller.applications().asList(tenant)) {
-            if (applicationName.map(application.id().application().value()::equals).orElse(true))
-                for (InstanceName instance : application.instances().keySet())
-                    toSlime(application.id().instance(instance), array.addObject(), request);
+            if (applicationName.map(application.id().application().value()::equals).orElse(true)) {
+                Cursor applicationObject = applicationArray.addObject();
+                applicationObject.setString("tenant", application.id().tenant().value());
+                applicationObject.setString("application", application.id().application().value());
+                applicationObject.setString("url", withPath("/application/v4" +
+                                                            "/tenant/" + application.id().tenant().value() +
+                                                            "/application/" + application.id().application().value(),
+                                                            request.getUri()).toString());
+                Cursor instanceArray = applicationObject.setArray("instances");
+                for (InstanceName instance : showOnlyProductionInstances(request) ? application.productionInstances().keySet()
+                                                                                  : application.instances().keySet()) {
+                    Cursor instanceObject = instanceArray.addObject();
+                    instanceObject.setString("instance", instance.value());
+                    instanceObject.setString("url", withPath("/application/v4" +
+                                                             "/tenant/" + application.id().tenant().value() +
+                                                             "/application/" + application.id().application().value() +
+                                                             "/instance/" + instance.value(),
+                                                             request.getUri()).toString());
+                }
+            }
         }
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse devApplicationPackage(ApplicationId id, JobType type) {
+        if ( ! type.environment().isManuallyDeployed())
+            throw new IllegalArgumentException("Only manually deployed zones have dev packages");
+
+        ZoneId zone = type.zone(controller.system());
+        byte[] applicationPackage = controller.applications().applicationStore().getDev(id, zone);
+        return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
     }
 
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
@@ -597,6 +628,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             Cursor nodeObject = nodesArray.addObject();
             nodeObject.setString("hostname", node.hostname().value());
             nodeObject.setString("state", valueOf(node.state()));
+            node.reservedTo().ifPresent(tenant -> nodeObject.setString("reservedTo", tenant.value()));
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
             nodeObject.setString("flavor", node.flavor());
@@ -641,6 +673,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case admin: return "admin";
             case content: return "content";
             case container: return "container";
+            case combined: return "combined";
             default: throw new IllegalArgumentException("Unexpected node cluster type '" + type + "'.");
         }
     }
@@ -728,7 +761,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
         Cursor instancesArray = object.setArray("instances");
-        for (Instance instance : application.instances().values())
+        for (Instance instance : showOnlyProductionInstances(request) ? application.productionInstances().values()
+                                                                      : application.instances().values())
             toSlime(instancesArray.addObject(), status, instance, application.deploymentSpec(), request);
 
         application.deployKeys().stream().map(KeyUtils::toPem).forEach(object.setArray("pemDeployKeys")::addString);
@@ -750,6 +784,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
+    // TODO: Eliminate duplicated code in this and toSlime(Cursor, Instance, DeploymentStatus, HttpRequest)
     private void toSlime(Cursor object, DeploymentStatus status, Instance instance, DeploymentSpec deploymentSpec, HttpRequest request) {
         object.setString("instance", instance.name().value());
 
@@ -792,35 +827,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // Global endpoints
-        var globalEndpointUrls = new LinkedHashSet<String>();
-
-        // Add default global endpoints. These are backed by rotations.
-        instance.endpointsIn(controller.system())
-                .scope(Endpoint.Scope.global)
-                .legacy(false) // Hide legacy names
-                .asList().stream()
-                .map(Endpoint::url)
-                .map(URI::toString)
-                .forEach(globalEndpointUrls::add);
-
-        // Per-cluster endpoints. These are backed by load balancers.
-        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
-        for (var policy : routingPolicies) {
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
-                  .map(Endpoint::url)
-                  .map(URI::toString)
-                  .forEach(globalEndpointUrls::add);
-        }
-
-        var globalRotationsArray = object.setArray("globalRotations");
-        globalEndpointUrls.forEach(globalRotationsArray::addString);
-
-        // Legacy field. Identifies the first assigned rotation, if any.
-        instance.rotations().stream()
-                .map(AssignedRotation::rotationId)
-                .findFirst()
-                .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
-
+        globalEndpointsToSlime(object, instance);
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = deploymentSpec.instance(instance.name())
@@ -848,6 +855,38 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                            request.getUri()).toString());
             }
         }
+    }
+
+    private void globalEndpointsToSlime(Cursor object, Instance instance) {
+        var globalEndpointUrls = new LinkedHashSet<String>();
+
+        // Add default global endpoints. These are backed by rotations.
+        instance.endpointsIn(controller.system())
+                .scope(Endpoint.Scope.global)
+                .legacy(false) // Hide legacy names
+                .asList().stream()
+                .map(Endpoint::url)
+                .map(URI::toString)
+                .forEach(globalEndpointUrls::add);
+
+        // Per-cluster endpoints. These are backed by load balancers.
+        var routingPolicies = controller.routingController().policies().get(instance.id()).values();
+        for (var policy : routingPolicies) {
+            policy.globalEndpointsIn(controller.system()).asList().stream()
+                  .map(Endpoint::url)
+                  .map(URI::toString)
+                  .forEach(globalEndpointUrls::add);
+        }
+
+        // TODO(mpolden): Remove once clients stop expecting this field
+        var globalRotationsArray = object.setArray("globalRotations");
+        globalEndpointUrls.forEach(globalRotationsArray::addString);
+
+        // Legacy field. Identifies the first assigned rotation, if any.
+        instance.rotations().stream()
+                .map(AssignedRotation::rotationId)
+                .findFirst()
+                .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
     }
 
     private void toSlime(Cursor object, Instance instance, DeploymentStatus status, HttpRequest request) {
@@ -913,30 +952,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
-        // Rotation
-        Cursor globalRotationsArray = object.setArray("globalRotations");
-        instance.endpointsIn(controller.system())
-                .scope(Endpoint.Scope.global)
-                .legacy(false) // Hide legacy names
-                .asList().stream()
-                .map(Endpoint::url)
-                .map(URI::toString)
-                .forEach(globalRotationsArray::addString);
-
-        instance.rotations().stream()
-                .map(AssignedRotation::rotationId)
-                .findFirst()
-                .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
-
-        // Per-cluster rotations
-        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
-        for (RoutingPolicy policy : routingPolicies) {
-            if (!policy.active()) continue;
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
-                  .map(Endpoint::url)
-                  .map(URI::toString)
-                  .forEach(globalRotationsArray::addString);
-        }
+        // Global endpoint
+        globalEndpointsToSlime(object, instance);
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments =
@@ -1041,22 +1058,64 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setString("environment", deploymentId.zoneId().environment().value());
         response.setString("region", deploymentId.zoneId().region().value());
 
-        // Add endpoint(s) defined by routing policies
+        // Add zone endpoints defined by routing policies
         var endpointArray = response.setArray("endpoints");
-        for (var policy : controller.applications().routingPolicies().get(deploymentId)) {
-            if (!policy.active()) continue;
-            Cursor endpointObject = endpointArray.addObject();
-            Endpoint endpoint = policy.endpointIn(controller.system());
-            endpointObject.setString("cluster", policy.cluster().value());
-            endpointObject.setBool("tls", endpoint.tls());
-            endpointObject.setString("url", endpoint.url().toString());
+        for (var policy : controller.routingController().policies().get(deploymentId).values()) {
+            if (!policy.status().isActive()) continue;
+            {
+                var endpointObject = endpointArray.addObject();
+                var endpoint = policy.endpointIn(controller.system());
+                endpointObject.setString("cluster", policy.id().cluster().value());
+                endpointObject.setBool("tls", endpoint.tls());
+                endpointObject.setString("url", endpoint.url().toString());
+                endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+                endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.exclusive));
+            }
+            // Add global endpoints that point to this policy
+            for (var endpoint : policy.globalEndpointsIn(controller.system()).asList()) {
+                var endpointObject = endpointArray.addObject();
+                endpointObject.setString("cluster", policy.id().cluster().value());
+                endpointObject.setBool("tls", endpoint.tls());
+                endpointObject.setString("url", endpoint.url().toString());
+                endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+                endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.exclusive));
+            }
+        }
+        // Add zone endpoints served by shared routing layer
+        for (var clusterAndUrl : controller.routingController().legacyZoneEndpointsOf(deploymentId).entrySet()) {
+            var endpointObject = endpointArray.addObject();
+            endpointObject.setString("cluster", clusterAndUrl.getKey().value());
+            endpointObject.setBool("tls", true);
+            endpointObject.setString("url", clusterAndUrl.getValue().toString());
+            endpointObject.setString("scope", endpointScopeString(Endpoint.Scope.zone));
+            endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.shared));
+        }
+        // Add global endpoints served by shared routing layer
+        var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
+        var instance = application.instances().get(deploymentId.applicationId().instance());
+        if (deploymentId.zoneId().environment().isProduction()) { // Global endpoints can only point to production deployments
+            for (var rotation : instance.rotations()) {
+                var endpoints = instance.endpointsIn(controller.system(), rotation.endpointId())
+                                        .legacy(false)
+                                        .scope(Endpoint.Scope.global)
+                                        .asList();
+                for (var endpoint : endpoints) {
+                    var endpointObject = endpointArray.addObject();
+                    endpointObject.setString("cluster", rotation.clusterId().value());
+                    endpointObject.setBool("tls", true);
+                    endpointObject.setString("url", endpoint.url().toString());
+                    endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
+                    endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.shared));
+                }
+            }
         }
 
-        // serviceUrls contains zone/cluster-specific endpoints for this deployment. The name of these endpoints may
-        // contain  the cluster name (if non-default) and since the controller has no knowledge of clusters, we have to
-        // ask the routing layer here
+        // serviceUrls contains all valid endpoints for this deployment, including global. The name of these endpoints
+        // may contain the cluster name (if non-default). Since the controller has no knowledge of clusters for legacy
+        // endpoints, we can't generate these URLs on-the-fly and we have to query the routing layer.
+        // TODO(mpolden): Remove this once all clients stop reading this.
         Cursor serviceUrlArray = response.setArray("serviceUrls");
-        controller.applications().getDeploymentEndpoints(deploymentId)
+        controller.routingController().legacyEndpointsOf(deploymentId)
                   .forEach(endpoint -> serviceUrlArray.addString(endpoint.toString()));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
@@ -1067,12 +1126,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
-        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
         DeploymentStatus status = controller.jobController().deploymentStatus(application);
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
-        Instance instance = application.instances().get(deploymentId.applicationId().instance());
         if (instance != null) {
             if (!instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
                 toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);
@@ -1186,29 +1243,40 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throw new NotExistsException(instance + " has no deployment in " + zone);
         }
 
-        Inspector requestData = toSlime(request.getData()).get();
-        String reason = mandatory("reason", requestData).asString();
-        String agent = requireUserPrincipal(request).getName();
+        // The order here matters because setGlobalRotationStatus involves an external request that may fail.
+        // TODO(mpolden): Set only one of these when only one kind of global endpoints are supported per zone.
+        var deploymentId = new DeploymentId(instance.id(), zone);
+        setGlobalRotationStatus(deploymentId, inService, request);
+        setGlobalEndpointStatus(deploymentId, inService, request);
+
+        return new MessageResponse(String.format("Successfully set %s in %s %s service",
+                                                 instance.id().toShortString(), zone, inService ? "in" : "out of"));
+    }
+
+    /** Set the global endpoint status for given deployment. This only applies to global endpoints backed by a cloud service */
+    private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
+        var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
+        var status = inService ? GlobalRouting.Status.in : GlobalRouting.Status.out;
+        controller.routingController().policies().setGlobalRoutingStatus(deployment, status, agent);
+    }
+
+    /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */
+    private void setGlobalRotationStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
+        var requestData = toSlime(request.getData()).get();
+        var reason = mandatory("reason", requestData).asString();
+        var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
         long timestamp = controller.clock().instant().getEpochSecond();
-        EndpointStatus.Status status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
-        EndpointStatus endpointStatus = new EndpointStatus(status, reason, agent, timestamp);
-        controller.applications().setGlobalRotationStatus(new DeploymentId(instance.id(), deployment.zone()),
-                                                          endpointStatus);
-        return new MessageResponse(String.format("Successfully set %s in %s.%s %s service",
-                                                 instance.id().toShortString(),
-                                                 deployment.zone().environment().value(),
-                                                 deployment.zone().region().value(),
-                                                 inService ? "in" : "out of"));
+        var status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
+        var endpointStatus = new EndpointStatus(status, reason, agent.name(), timestamp);
+        controller.routingController().setGlobalRotationStatus(deployment, endpointStatus);
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
-
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                      ZoneId.from(environment, region));
-
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("globalrotationoverride");
-        controller.applications().globalRotationStatus(deploymentId)
+        controller.routingController().globalRotationStatus(deploymentId)
                   .forEach((endpoint, status) -> {
                       array.addString(endpoint.upstreamName());
                       Cursor statusObject = array.addObject();
@@ -1217,7 +1285,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                       statusObject.setString("agent", status.getAgent() == null ? "" : status.getAgent());
                       statusObject.setLong("timestamp", status.getEpoch());
                   });
-
         return new SlimeJsonResponse(slime);
     }
 
@@ -1238,33 +1305,34 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse metering(String tenant, String application, HttpRequest request) {
+
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        MeteringInfo meteringInfo = controller.serviceRegistry()
+        MeteringData meteringData = controller.serviceRegistry()
                 .meteringService()
-                .getResourceSnapshots(TenantName.from(tenant), ApplicationName.from(application));
+                .getMeteringData(TenantName.from(tenant), ApplicationName.from(application));
 
-        ResourceAllocation currentSnapshot = meteringInfo.getCurrentSnapshot();
+        ResourceAllocation currentSnapshot = meteringData.getCurrentSnapshot();
         Cursor currentRate = root.setObject("currentrate");
         currentRate.setDouble("cpu", currentSnapshot.getCpuCores());
         currentRate.setDouble("mem", currentSnapshot.getMemoryGb());
         currentRate.setDouble("disk", currentSnapshot.getDiskGb());
 
-        ResourceAllocation thisMonth = meteringInfo.getThisMonth();
+        ResourceAllocation thisMonth = meteringData.getThisMonth();
         Cursor thismonth = root.setObject("thismonth");
         thismonth.setDouble("cpu", thisMonth.getCpuCores());
         thismonth.setDouble("mem", thisMonth.getMemoryGb());
         thismonth.setDouble("disk", thisMonth.getDiskGb());
 
-        ResourceAllocation lastMonth = meteringInfo.getLastMonth();
+        ResourceAllocation lastMonth = meteringData.getLastMonth();
         Cursor lastmonth = root.setObject("lastmonth");
         lastmonth.setDouble("cpu", lastMonth.getCpuCores());
         lastmonth.setDouble("mem", lastMonth.getMemoryGb());
         lastmonth.setDouble("disk", lastMonth.getDiskGb());
 
 
-        Map<ApplicationId, List<ResourceSnapshot>> history = meteringInfo.getSnapshotHistory();
+        Map<ApplicationId, List<ResourceSnapshot>> history = meteringData.getSnapshotHistory();
         Cursor details = root.setObject("details");
 
         Cursor detailsCpu = details.setObject("cpu");
@@ -1335,10 +1403,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse service(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath, HttpRequest request) {
-        Map<?,?> result = controller.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region, serviceName, restPath);
-        ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
-                                                             new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.zoneRegistry().getConfigServerApiUris(ZoneId.from(environment, region)),
+        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), ZoneId.from(environment, region));
+
+        if ("container-clustercontroller".equals((serviceName)) && restPath.contains("/status/")) {
+            String result = controller.serviceRegistry().configServer().getClusterControllerStatus(deploymentId, restPath);
+            return new HtmlResponse(result);
+        }
+
+        Map<?,?> result = controller.serviceRegistry().configServer().getServiceApiResponse(deploymentId, serviceName, restPath);
+        ServiceApiResponse response = new ServiceApiResponse(deploymentId.zoneId(),
+                                                             deploymentId.applicationId(),
+                                                             controller.zoneRegistry().getConfigServerApiUris(deploymentId.zoneId()),
                                                              request.getUri());
         response.setResponse(result, serviceName, restPath);
         return response;
@@ -1640,23 +1715,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteInstance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
-        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-                ? Optional.empty()
-                : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
         controller.applications().deleteInstance(id.instance(instanceName));
-        if (controller.applications().requireApplication(id).instances().isEmpty())
+        if (controller.applications().requireApplication(id).instances().isEmpty()) {
+            Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+                                                ? Optional.empty()
+                                                : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
             controller.applications().deleteApplication(id, credentials);
+        }
         return new MessageResponse("Deleted instance " + id.instance(instanceName).toFullString());
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
-        Instance instance = controller.applications().requireInstance(ApplicationId.from(tenantName, applicationName, instanceName));
-
+        DeploymentId id = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
+                                           ZoneId.from(environment, region));
         // Attempt to deactivate application even if the deployment is not known by the controller
-        DeploymentId deploymentId = new DeploymentId(instance.id(), ZoneId.from(environment, region));
-        controller.applications().deactivate(deploymentId.applicationId(), deploymentId.zoneId());
-
-        return new MessageResponse("Deactivated " + deploymentId);
+        controller.applications().deactivate(id.applicationId(), id.zoneId());
+        return new MessageResponse("Deactivated " + id);
     }
 
     /** Returns test config for indicated job, with production deployments of the default instance. */
@@ -1678,7 +1752,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
-                                                                      controller.applications().clusterEndpoints(deployments),
+                                                                      controller.routingController().zoneEndpointsOf(deployments),
                                                                       controller.applications().contentClustersByZone(deployments)));
     }
 
@@ -1734,10 +1808,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
+        // TODO jonmv: This should list applications, not instances.
         Cursor applicationArray = object.setArray("applications");
         for (Application application : applications) {
             DeploymentStatus status = controller.jobController().deploymentStatus(application);
-            for (Instance instance : application.instances().values())
+            for (Instance instance : showOnlyProductionInstances(request) ? application.productionInstances().values()
+                                                                          : application.instances().values())
                 if (recurseOverApplications(request))
                     toSlime(applicationArray.addObject(), instance, status, request);
                 else
@@ -1969,6 +2045,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return ImmutableSet.of("all", "true", "deployment").contains(request.getProperty("recursive"));
     }
 
+    private static boolean showOnlyProductionInstances(HttpRequest request) {
+        return "true".equals(request.getProperty("production"));
+    }
+
     private static String tenantType(Tenant tenant) {
         switch (tenant.type()) {
             case user: return "USER";
@@ -1994,7 +2074,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
         Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
-        long projectId = Math.max(1, submitOptions.field("projectId").asLong());
+        long projectId = Math.max(1, submitOptions.field("projectId").asLong()); // Absence of this means it's not a prod app :/
         Optional<String> repository = optional("repository", submitOptions);
         Optional<String> branch = optional("branch", submitOptions);
         Optional<String> commit = optional("commit", submitOptions);
@@ -2065,6 +2145,37 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case out: return "OUT";
         }
         return "UNKNOWN";
+    }
+
+    private static String endpointScopeString(Endpoint.Scope scope) {
+        switch (scope) {
+            case global: return "global";
+            case zone: return "zone";
+        }
+        throw new IllegalArgumentException("Unknown endpoint scope " + scope);
+    }
+
+    private static String routingMethodString(RoutingMethod method) {
+        switch (method) {
+            case exclusive: return "exclusive";
+            case shared: return "shared";
+        }
+        throw new IllegalArgumentException("Unknown routing method " + method);
+    }
+
+    private static <T> T getAttribute(HttpRequest request, String attributeName, Class<T> cls) {
+        return Optional.ofNullable(request.getJDiscRequest().context().get(attributeName))
+                       .filter(cls::isInstance)
+                       .map(cls::cast)
+                       .orElseThrow(() -> new IllegalArgumentException("Attribute '" + attributeName + "' was not set on request"));
+    }
+
+    /** Returns whether given request is by an operator */
+    private static boolean isOperator(HttpRequest request) {
+        var securityContext = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class);
+        return securityContext.roles().stream()
+                              .map(Role::definition)
+                              .anyMatch(definition -> definition == RoleDefinition.hostedOperator);
     }
 
 }

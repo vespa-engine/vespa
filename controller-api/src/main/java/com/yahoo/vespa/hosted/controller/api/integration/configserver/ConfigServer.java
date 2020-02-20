@@ -10,7 +10,8 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
@@ -32,7 +33,7 @@ public interface ConfigServer {
     }
 
     PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
-                               Set<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate,
+                               Set<ContainerEndpoint> containerEndpoints, Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                                byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
@@ -43,7 +44,9 @@ public interface ConfigServer {
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
 
-    Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
+    Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath);
+
+    String getClusterControllerStatus(DeploymentId deployment, String restPath);
 
     /**
      * Gets the Vespa logs of the given deployment.
@@ -59,22 +62,40 @@ public interface ConfigServer {
     List<String> getContentClusters(DeploymentId deployment);
 
     /**
-     * Set new status on en endpoint in one zone.
+     * Set new status for a endpoint of a single deployment.
      *
-     * @param deployment The application/zone pair
-     * @param endpoint The endpoint to modify
-     * @param status The new status with metadata
+     * @param deployment   The deployment to change
+     * @param upstreamName The upstream to modify. Upstream name is a unique identifier for the global route of a
+     *                     deployment in the shared routing layer
+     * @param status       The new status
      */
-    void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status);
+    void setGlobalRotationStatus(DeploymentId deployment, String upstreamName, EndpointStatus status);
 
     /**
-     * Get the endpoint status for an app in one zone
+     * Set the new status for an entire zone.
      *
-     * @param deployment The application/zone pair
-     * @param endpoint The endpoint to modify
+     * @param zone the zone
+     * @param in whether to set zone status to 'in' or 'out'
+     */
+    void setGlobalRotationStatus(ZoneId zone, boolean in);
+
+    /**
+     * Get the endpoint status for an app in one zone.
+     *
+     * @param deployment   The deployment to change
+     * @param upstreamName The upstream to query. Upstream name is a unique identifier for the global route of a
+     *                     deployment in the shared routing layer
      * @return The endpoint status with metadata
      */
-    EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint);
+    EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String upstreamName);
+
+    /**
+     * Get the status for an entire zone.
+     *
+     * @param zone the zone
+     * @return whether the zone status is 'in'
+     */
+    boolean getGlobalRotationStatus(ZoneId zone);
 
     /** The node repository on this config server */
     NodeRepository nodeRepository();
@@ -89,7 +110,15 @@ public interface ConfigServer {
     List<FlagData> listFlagData(ZoneId zone);
 
     /** Gets status for tester application */
-    // TODO: Remove default implementation when implemented in internal repo
-    default TesterCloud.Status getTesterStatus(DeploymentId deployment) { return TesterCloud.Status.SUCCESS; }
+    TesterCloud.Status getTesterStatus(DeploymentId deployment);
+
+    /** Starts tests on tester node */
+    String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config);
+
+    /** Gets log from tester node */
+    List<LogEntry> getTesterLog(DeploymentId deployment, long after);
+
+    /** Is tester node ready */
+    boolean isTesterReady(DeploymentId deployment);
 
 }

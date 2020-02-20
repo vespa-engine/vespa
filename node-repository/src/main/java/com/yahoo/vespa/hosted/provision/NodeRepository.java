@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.google.inject.Inject;
@@ -10,12 +10,16 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
@@ -49,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -98,8 +103,8 @@ public class NodeRepository extends AbstractComponent {
      * This will use the system time to make time-sensitive decisions
      */
     @Inject
-    public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache());
+    public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone, FlagSource flagSource) {
+        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache(), flagSource);
     }
 
     /**
@@ -107,7 +112,7 @@ public class NodeRepository extends AbstractComponent {
      * which will be used for time-sensitive decisions.
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
-                          DockerImage dockerImage, boolean useCuratorClientCache) {
+                          DockerImage dockerImage, boolean useCuratorClientCache, FlagSource flagSource) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
@@ -116,7 +121,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.dockerImages = new DockerImages(db, dockerImage);
+        this.dockerImages = new DockerImages(db, dockerImage, Flags.DOCKER_IMAGE_OVERRIDE.bindTo(flagSource));
         this.jobControl = new JobControl(db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
@@ -127,8 +132,8 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the curator database client used by this */
     public CuratorDatabaseClient database() { return db; }
 
-    /** Returns the Docker image to use for nodes in this */
-    public DockerImage dockerImage(NodeType nodeType) { return dockerImages.dockerImageFor(nodeType); }
+    /** Returns the Docker image to use for given node */
+    public DockerImage dockerImage(Node node) { return dockerImages.dockerImageFor(node); }
 
     /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }
@@ -193,7 +198,16 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns a filterable list of all load balancers in this repository */
     public LoadBalancerList loadBalancers() {
-        return LoadBalancerList.copyOf(database().readLoadBalancers().values());
+        return loadBalancers((ignored) -> true);
+    }
+
+    /** Returns a filterable list of load balancers belonging to given application */
+    public LoadBalancerList loadBalancers(ApplicationId application) {
+        return loadBalancers((id) -> id.application().equals(application));
+    }
+
+    private LoadBalancerList loadBalancers(Predicate<LoadBalancerId> predicate) {
+        return LoadBalancerList.copyOf(db.readLoadBalancers(predicate).values());
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }
@@ -203,7 +217,7 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Returns the ACL for the node (trusted nodes, networks and ports)
      */
-    private NodeAcl getNodeAcl(Node node, NodeList candidates, LoadBalancerList loadBalancers) {
+    private NodeAcl getNodeAcl(Node node, NodeList candidates) {
         Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
         Set<Integer> trustedPorts = new LinkedHashSet<>();
         Set<String> trustedNetworks = new LinkedHashSet<>();
@@ -220,10 +234,10 @@ public class NodeRepository extends AbstractComponent {
         candidates.parentOf(node).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
-            loadBalancers.owner(allocation.owner()).asList().stream()
-                         .map(LoadBalancer::instance)
-                         .map(LoadBalancerInstance::networks)
-                         .forEach(trustedNetworks::addAll);
+            loadBalancers(allocation.owner()).asList().stream()
+                                             .map(LoadBalancer::instance)
+                                             .map(LoadBalancerInstance::networks)
+                                             .forEach(trustedNetworks::addAll);
         });
 
         switch (node.type()) {
@@ -292,13 +306,12 @@ public class NodeRepository extends AbstractComponent {
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
         NodeList candidates = list();
-        LoadBalancerList loadBalancers = loadBalancers();
         if (children) {
             return candidates.childrenOf(node).asList().stream()
-                             .map(childNode -> getNodeAcl(childNode, candidates, loadBalancers))
+                             .map(childNode -> getNodeAcl(childNode, candidates))
                              .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
         }
-        return Collections.singletonList(getNodeAcl(node, candidates, loadBalancers));
+        return Collections.singletonList(getNodeAcl(node, candidates));
     }
 
     public NodeFlavors getAvailableFlavors() {
@@ -309,16 +322,15 @@ public class NodeRepository extends AbstractComponent {
 
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
     public Node createNode(String openStackId, String hostname, IP.Config ipConfig, Optional<String> parentHostname,
-                           Flavor flavor, NodeType type) {
+                           Flavor flavor, Optional<TenantName> reservedTo, NodeType type) {
         if (ipConfig.primary().isEmpty()) { // TODO: Remove this. Only test code hits this path
             ipConfig = ipConfig.with(nameResolver.getAllByNameOrThrow(hostname));
         }
-        return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, type);
+        return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, reservedTo, type);
     }
 
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor,
-                           NodeType type) {
-        return createNode(openStackId, hostname, IP.Config.EMPTY, parentHostname, flavor, type);
+    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return createNode(openStackId, hostname, IP.Config.EMPTY, parentHostname, flavor, Optional.empty(), type);
     }
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
@@ -341,7 +353,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
     public List<Node> addNodes(List<Node> nodes) {
-        try (Mutex lock = lockAllocation()) {
+        try (Mutex lock = lockUnallocated()) {
             for (int i = 0; i < nodes.size(); i++) {
                 var node = nodes.get(i);
                 var message = "Cannot add " + node.hostname() + ": A node with this name already exists";
@@ -361,7 +373,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Sets a list of nodes ready and returns the nodes in the ready state */
     public List<Node> setReady(List<Node> nodes, Agent agent, String reason) {
-        try (Mutex lock = lockAllocation()) {
+        try (Mutex lock = lockUnallocated()) {
             List<Node> nodesWithResetFields = nodes.stream()
                     .map(node -> {
                         if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
@@ -585,7 +597,7 @@ public class NodeRepository extends AbstractComponent {
     }
 
     public List<Node> removeRecursively(Node node, boolean force) {
-        try (Mutex lock = lockAllocation()) {
+        try (Mutex lock = lockUnallocated()) {
             List<Node> removed = new ArrayList<>();
 
              if (node.type().isDockerHost()) {
@@ -684,7 +696,7 @@ public class NodeRepository extends AbstractComponent {
      * Writes these nodes after they have changed some internal state but NOT changed their state field.
      * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
      *
-     * @param lock Already acquired lock
+     * @param lock already acquired lock
      * @return the written nodes for convenience
      */
     public List<Node> write(List<Node> nodes, @SuppressWarnings("unused") Mutex lock) {
@@ -713,7 +725,7 @@ public class NodeRepository extends AbstractComponent {
 
         // perform operation while holding locks
         List<Node> resultingNodes = new ArrayList<>();
-        try (Mutex lock = lockAllocation()) {
+        try (Mutex lock = lockUnallocated()) {
             for (Node node : unallocatedNodes)
                 resultingNodes.add(action.apply(node, lock));
         }
@@ -738,12 +750,12 @@ public class NodeRepository extends AbstractComponent {
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application, Duration timeout) { return db.lock(application, timeout); }
 
-    /** Create a lock which provides exclusive rights to allocating nodes */
-    public Mutex lockAllocation() { return db.lockInactive(); }
+    /** Create a lock which provides exclusive rights to modifying unallocated nodes */
+    public Mutex lockUnallocated() { return db.lockInactive(); }
 
     /** Acquires the appropriate lock for this node */
     public Mutex lock(Node node) {
-        return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockAllocation();
+        return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
     }
 
 }

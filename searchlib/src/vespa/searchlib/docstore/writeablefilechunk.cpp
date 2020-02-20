@@ -203,6 +203,13 @@ seek_past(LidInfoWithLidV::const_iterator begin, LidInfoWithLidV::const_iterator
    return begin;
 }
 
+struct LidAndBuffer {
+    LidAndBuffer(uint32_t lid, uint32_t sz, vespalib::alloc::Alloc buf) : _lid(lid), _size(sz), _buf(std::move(buf)) {}
+    uint32_t _lid;
+    uint32_t _size;
+    vespalib::alloc::Alloc _buf;
+};
+
 }
 
 void
@@ -211,6 +218,7 @@ WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IB
     if (count == 0) { return; }
     if (!frozen()) {
         vespalib::hash_map<uint32_t, ChunkInfo> chunksOnFile;
+        std::vector<LidAndBuffer> buffers;
         {
             LockGuard guard(_lock);
             for (size_t i(0); i < count; i++) {
@@ -225,11 +233,17 @@ WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IB
                         assert(chunk == _active->getId());
                         buffer = _active->getLid(li.getLid());
                     }
-                    visitor.visit(li.getLid(), buffer);
+                    auto copy = vespalib::alloc::Alloc::alloc(buffer.size());
+                    memcpy(copy.get(), buffer.data(), buffer.size());
+                    buffers.emplace_back(li.getLid(), buffer.size(), std::move(copy));
                 } else {
                     chunksOnFile[chunk] = _chunkInfo[chunk];
                 }
             }
+        }
+        for (auto & entry : buffers) {
+            visitor.visit(entry._lid, vespalib::ConstBufferRef(entry._buf.get(), entry._size));
+            entry._buf = vespalib::alloc::Alloc();
         }
         for (auto & it : chunksOnFile) {
             auto first = find_first(begin, it.first);
@@ -867,13 +881,13 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const vespalib::LockGuard 
             _pendingDat -= pc.getDataLen();
             lastSerial = pc.getLastSerial();
             const nbostream &os2(pc.getSerializedIdx());
-            os.write(os2.c_str(), os2.size());
+            os.write(os2.data(), os2.size());
         }
     }
     vespalib::system_time timeStamp(vespalib::system_clock::now());
     auto idxFile = openIdx();
     idxFile->SetPosition(idxFile->GetSize());
-    ssize_t wlen = idxFile->Write2(os.c_str(), os.size());
+    ssize_t wlen = idxFile->Write2(os.data(), os.size());
     updateCurrentDiskFootprint();
 
     if (wlen != static_cast<ssize_t>(os.size())) {

@@ -3,6 +3,8 @@
 #pragma once
 
 #include <cstddef>
+#include <limits>
+#include <cstdint>
 
 namespace search::attribute {
 
@@ -14,15 +16,20 @@ class IAttributeVector;
 class SearchContextParams {
 private:
     const IAttributeVector * _diversityAttribute;
-    size_t                   _diversityCutoffGroups;
+    uint32_t                 _diversityCutoffGroups;
     bool                     _useBitVector;
     bool                     _diversityCutoffStrict;
 
 public:
-    SearchContextParams();
+    SearchContextParams()
+        : _diversityAttribute(nullptr),
+          _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
+          _useBitVector(false),
+          _diversityCutoffStrict(false)
+    { }
     bool useBitVector() const { return _useBitVector; }
     const IAttributeVector * diversityAttribute() const { return _diversityAttribute; }
-    size_t diversityCutoffGroups() const { return _diversityCutoffGroups; }
+    uint32_t diversityCutoffGroups() const { return _diversityCutoffGroups; }
     bool diversityCutoffStrict() const { return _diversityCutoffStrict; }
 
     SearchContextParams &useBitVector(bool value) {
@@ -33,7 +40,7 @@ public:
         _diversityAttribute = value;
         return *this;
     }
-    SearchContextParams &diversityCutoffGroups(size_t groups) {
+    SearchContextParams &diversityCutoffGroups(uint32_t groups) {
         _diversityCutoffGroups = groups;
         return *this;
     }

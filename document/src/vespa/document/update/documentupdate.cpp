@@ -7,7 +7,6 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bufferexceptions.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -231,20 +230,18 @@ DocumentUpdate::serializeFlags(int size_) const
 }
 
 DocumentUpdate::UP
-DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, ByteBuffer& buffer)
+DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream && stream)
 {
-    vespalib::nbostream is(buffer.getBufferAtPos(), buffer.getRemaining());
     auto update = std::make_unique<DocumentUpdate>();
-    update->initHEAD(repo, is);
-    buffer.setPos(buffer.getPos() + is.rp());
+    update->initHEAD(repo, std::move(stream));
     return update;
 }
 
 DocumentUpdate::UP
-DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream stream)
+DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream & stream)
 {
     auto update = std::make_unique<DocumentUpdate>();
-    update->initHEAD(repo, std::move(stream));
+    update->initHEAD(repo, stream);
     return update;
 }
 

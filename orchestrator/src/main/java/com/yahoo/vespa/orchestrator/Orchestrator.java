@@ -7,6 +7,7 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.util.List;
@@ -49,12 +50,15 @@ public interface Orchestrator {
     HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException;
 
     /**
-     * Returns a not necessarily consistent mapping from host names to their statuses, for hosts known by this.
+     * Returns a lambda, which when invoked with a hostname, returns its current host info.
      *
-     * Prefer this to {@link #getNodeStatus(HostName)} when consistency is not required, and when doing bulk reads.
+     * <p>When invoked multiple times, the hostname/host info mapping is not necessarily consistent.
+     * Prefer this to {@link #getNodeStatus(HostName)} when consistency is not required,
+     * and when doing bulk reads.</p>
+     *
      * @return a mapping from host names to their statuses. Unknown hosts map to {@code Optional.empty()}.
      */
-    Function<HostName, Optional<HostStatus>> getNodeStatuses();
+    Function<HostName, Optional<HostInfo>> getHostResolver();
 
     void setNodeStatus(HostName hostName, HostStatus state) throws OrchestrationException;
 

@@ -21,9 +21,9 @@ import static org.junit.Assert.fail;
 /**
  * @author Ulf Lilleengen
  * @author Vegard Sjonfjell
- * @since 5.1
  */
 public class ConfigInstanceSerializerTest {
+
     @Test
     public void test_that_leaf_types_are_serialized_to_json_types() {
         SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
@@ -225,4 +225,5 @@ public class ConfigInstanceSerializerTest {
 
         assertJsonEquals(baos.toString(), expectedJson);
     }
+
 }

@@ -2,6 +2,7 @@
 package com.yahoo.application;
 
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
+import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
@@ -117,11 +118,13 @@ public final class Application implements AutoCloseable {
             List<MlModelImporter> modelImporters = List.of(new VespaImporter(),
                                                            new TensorFlowImporter(),
                                                            new OnnxImporter(),
+                                                           new LightGBMImporter(),
                                                            new XGBoostImporter());
             DeployState deployState = new DeployState.Builder()
                     .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), true))
                     .modelImporters(modelImporters)
                     .deployLogger((level, s) -> { })
+                    .accessLoggingEnabledByDefault(false)
                     .build();
             return new VespaModel(new NullConfigModelRegistry(), deployState);
         } catch (IOException | SAXException e) {
@@ -584,6 +587,7 @@ public final class Application implements AutoCloseable {
                     xml.println("</search>");
                 }
 
+                xml.println("<accesslog type=\"disabled\" />");
                 xml.println("</container>");
             }
 

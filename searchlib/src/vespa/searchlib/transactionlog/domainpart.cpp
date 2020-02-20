@@ -403,7 +403,7 @@ void
 DomainPart::commit(SerialNum firstSerial, const Packet &packet)
 {
     int64_t firstPos(_transLog->GetPosition());
-    nbostream_longlivedbuf h(packet.getHandle().c_str(), packet.getHandle().size());
+    nbostream_longlivedbuf h(packet.getHandle().data(), packet.getHandle().size());
     if (_range.from() == 0) {
         _range.from(firstSerial);
     }
@@ -495,7 +495,7 @@ DomainPart::visit(SerialNumRange &r, Packet &packet)
                 }
             } else {
                 const nbostream & tmp = start->second.getHandle();
-                nbostream_longlivedbuf h(tmp.c_str(), tmp.size());
+                nbostream_longlivedbuf h(tmp.data(), tmp.size());
                 LOG(debug, "Visit partial[%" PRIu64 ", %" PRIu64 "] (%zd, %zd, %zd)",
                            start->second.range().from(), start->second.range().to(), h.rp(), h.size(), h.capacity());
                 Packet newPacket(h.size());
@@ -585,13 +585,13 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
     size_t start(os.size());
     entry.serialize(os);
     size_t end(os.size());
-    crc = calcCrc(_defaultCrc, os.c_str()+start, end - start);
+    crc = calcCrc(_defaultCrc, os.data() + start, end - start);
     os << crc;
     size_t osSize = os.size();
     assert(osSize == len + sizeof(len) + sizeof(uint8_t));
 
     LockGuard guard(_writeLock);
-    if ( ! file.CheckedWrite(os.c_str(), osSize) ) {
+    if ( ! file.CheckedWrite(os.data(), osSize) ) {
         throw runtime_error(handleWriteError("Failed writing the entry.", file, lastKnownGoodPos, entry, end - start));
     }
     _writtenSerial = entry.serial();

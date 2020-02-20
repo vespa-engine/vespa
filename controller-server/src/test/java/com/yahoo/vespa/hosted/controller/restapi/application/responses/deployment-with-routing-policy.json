@@ -8,7 +8,23 @@
     {
       "cluster": "default",
       "tls": true,
-      "url": "https://instance1.application1.tenant1.us-west-1.vespa.oath.cloud/"
+      "url": "https://instance1.application1.tenant1.us-west-1.vespa.oath.cloud/",
+      "scope": "zone",
+      "routingMethod": "exclusive"
+    },
+    {
+      "cluster": "default",
+      "tls": true,
+      "url": "https://c0.instance1.application1.tenant1.global.vespa.oath.cloud/",
+      "scope": "global",
+      "routingMethod": "exclusive"
+    },
+    {
+      "cluster": "default",
+      "tls": true,
+      "url": "https://instance1--application1--tenant1.us-west-1.prod.vespa:43",
+      "scope": "zone",
+      "routingMethod": "shared"
     }
   ],
   "serviceUrls": [

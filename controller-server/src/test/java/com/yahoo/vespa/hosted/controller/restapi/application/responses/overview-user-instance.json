@@ -1,55 +1,86 @@
 {
+  "lastVersions": {
+    "platform": {
+      "platform": "7.1",
+      "at": 0,
+      "completed": "0 of 0 complete"
+    },
+    "application": {
+      "application": {
+        "hash": "1.0.3-commit1",
+        "build": 3,
+        "source": {
+          "gitRepository": "repository1",
+          "gitBranch": "master",
+          "gitCommit": "commit1"
+        },
+        "sourceUrl": "repository1/tree/commit1",
+        "commit": "commit1"
+      },
+      "at": 1000,
+      "completed": "0 of 0 complete"
+    }
+  },
+  "deploying": {},
+  "deployments": [],
+  "jobs": {},
   "devJobs": {
     "dev-aws-us-east-2a": {
       "runs": [
         {
+          "id": 1,
+          "status": "success",
+          "start": 3703000,
+          "end": 3703000,
           "wantedPlatform": "7.1",
-          "log": "https://some.url:43/root/dev-aws-us-east-2a/run/1",
           "wantedApplication": {
             "hash": "unknown"
           },
-          "start": 102000,
-          "end": 102000,
-          "id": 1,
           "steps": {
             "deployReal": "succeeded",
             "installReal": "succeeded",
             "copyVespaLogs": "succeeded"
           },
           "tasks": {
-            "install": "succeeded",
-            "deploy": "succeeded"
+            "deploy": "succeeded",
+            "install": "succeeded"
           },
-          "status": "success"
+          "log": "https://some.url:43/root/dev-aws-us-east-2a/run/1"
         }
       ],
       "url": "https://some.url:43/root/dev-aws-us-east-2a"
     }
   },
-  "deployments": [],
-  "lastVersions": {
-    "application": {
-      "at": 1000,
-      "application": {
-        "build": 3,
-        "source": {
-          "gitRepository": "repository1",
-          "gitCommit": "commit1",
-          "gitBranch": "master"
-        },
-        "sourceUrl": "repository1/tree/commit1",
-        "commit": "commit1",
-        "hash": "1.0.3-commit1"
-      },
-      "completed": "0 of 0 complete"
-    },
-    "platform": {
-      "at": 0,
-      "completed": "0 of 0 complete",
-      "platform": "7.1"
+  "deployment": [
+    {
+      "jobName": "dev-aws-us-east-2a",
+      "runs": [
+        {
+          "id": 1,
+          "url": "https://some.url:43/root//run/1",
+          "start": 3703000,
+          "end": 3703000,
+          "status": "success",
+          "versions": {
+            "targetPlatform": "7.1.0",
+            "targetApplication": {}
+          },
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            }
+          ]
+        }
+      ]
     }
-  },
-  "deploying": {},
-  "jobs": {}
+  ]
 }
-

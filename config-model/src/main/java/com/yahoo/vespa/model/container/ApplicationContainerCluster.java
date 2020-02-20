@@ -1,15 +1,17 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
-import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
+import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.jdisc.http.ServletPathsConfig;
@@ -18,8 +20,10 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
+import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
@@ -46,7 +50,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
         ServletPathsConfig.Producer,
-        ContainerMbusConfig.Producer {
+        ContainerMbusConfig.Producer,
+        MetricsProxyApiConfig.Producer {
+
+    public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
@@ -55,7 +62,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private ContainerModelEvaluation modelEvaluation;
 
-    private Optional<TlsSecrets> tlsSecrets;
     private Optional<String> tlsClientAuthority;
 
     private MbusParams mbusParams;
@@ -65,8 +71,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
-
-        this.tlsSecrets = deployState.tlsSecrets();
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
@@ -76,6 +80,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
+        addMetricsV2Handler();
         addTestrunnerComponentsIfTester(deployState);
     }
 
@@ -101,6 +106,14 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         for (Component<?, ?> component : getAllComponents()) {
             FileSender.sendUserConfiguredFiles(component, containers, deployState.getDeployLogger());
         }
+    }
+
+    public void addMetricsV2Handler() {
+        Handler<AbstractConfigProducer<?>> handler = new Handler<>(
+                new ComponentModel(METRICS_V2_HANDLER_CLASS, null, null, null));
+        handler.addServerBindings("http://*" + MetricsV2Handler.V2_PATH,
+                                  "http://*" + MetricsV2Handler.V2_PATH + "/*");
+        addComponent(handler);
     }
 
     private void addTestrunnerComponentsIfTester(DeployState deployState) {
@@ -192,6 +205,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     @Override
+    public void getConfig(MetricsProxyApiConfig.Builder builder) {
+        builder.metricsPort(MetricsProxyContainer.BASEPORT)
+                .metricsApiPath(ApplicationMetricsHandler.VALUES_PATH);
+    }
+
+    @Override
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
         builder.jvm.verbosegc(true)
@@ -203,10 +222,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         } else if (isHostedVespa()) {
             builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
         }
-    }
-
-    public Optional<TlsSecrets> getTlsSecrets() {
-        return tlsSecrets;
     }
 
     public Optional<String> getTlsClientAuthority() {

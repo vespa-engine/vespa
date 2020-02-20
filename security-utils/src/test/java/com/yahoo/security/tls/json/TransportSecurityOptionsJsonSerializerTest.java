@@ -22,7 +22,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
@@ -44,6 +43,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCaCertificates(Paths.get("/path/to/ca-certs.pem"))
                 .withCertificates(Paths.get("/path/to/cert.pem"), Paths.get("/path/to/key.pem"))
+                .withHostnameValidationDisabled(false)
                 .withAuthorizedPeers(
                         new AuthorizedPeers(
                                 new HashSet<>(Arrays.asList(
@@ -66,12 +66,31 @@ public class TransportSecurityOptionsJsonSerializerTest {
                 .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
                 .withCaCertificates(Paths.get("my_cas.pem"))
                 .withAcceptedCiphers(com.yahoo.vespa.jdk8compat.List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384" , "TLS_AES_256_GCM_SHA384"))
+                .withHostnameValidationDisabled(true)
                 .build();
         File outputFile = tempDirectory.newFile();
         try (OutputStream out = Files.newOutputStream(outputFile.toPath())) {
             new TransportSecurityOptionsJsonSerializer().serialize(out, options);
         }
         String expectedOutput = new String(Files.readAllBytes(TEST_CONFIG_FILE));
+        String actualOutput = new String(Files.readAllBytes(outputFile.toPath()));
+        assertJsonEquals(expectedOutput, actualOutput);
+    }
+
+    @Test
+    public void disable_hostname_validation_is_not_serialized_if_false() throws IOException {
+        TransportSecurityOptions options = new TransportSecurityOptions.Builder()
+                .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
+                .withCaCertificates(Paths.get("my_cas.pem"))
+                .withHostnameValidationDisabled(false)
+                .build();
+        File outputFile = tempDirectory.newFile();
+        try (OutputStream out = Files.newOutputStream(outputFile.toPath())) {
+            new TransportSecurityOptionsJsonSerializer().serialize(out, options);
+        }
+
+        String expectedOutput = new String(Files.readAllBytes(
+                Paths.get("src/test/resources/transport-security-options-with-disable-hostname-validation-set-to-false.json")));
         String actualOutput = new String(Files.readAllBytes(outputFile.toPath()));
         assertJsonEquals(expectedOutput, actualOutput);
     }

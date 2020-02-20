@@ -2,8 +2,11 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metricsproxy.http.metrics.MetricsV2Handler;
+import ai.vespa.metricsproxy.http.metrics.NodeInfoConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcConnector;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServices;
@@ -18,9 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames.CLUSTER_ID;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames.CLUSTER_TYPE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_NAME;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.createMetricsHandler;
 
 /**
  * Container running a metrics proxy.
@@ -29,14 +31,11 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
  */
 public class MetricsProxyContainer extends Container implements
         NodeDimensionsConfig.Producer,
+        NodeInfoConfig.Producer,
         RpcConnectorConfig.Producer,
         VespaServicesConfig.Producer
 {
-
-    static final class NodeDimensionNames {
-        static final String CLUSTER_TYPE = "clustertype";
-        static final String CLUSTER_ID = "clusterid";
-    }
+    public static final int BASEPORT = 19092;
 
     final boolean isHostedVespa;
 
@@ -52,14 +51,13 @@ public class MetricsProxyContainer extends Container implements
         addMetricsProxyComponent(NodeDimensions.class);
         addMetricsProxyComponent(RpcConnector.class);
         addMetricsProxyComponent(VespaServices.class);
+        addHandler(createMetricsHandler(MetricsV2Handler.class, MetricsV2Handler.V2_PATH));
     }
 
     @Override
     protected ContainerServiceType myServiceType() {
         return METRICS_PROXY_CONTAINER;
     }
-
-    static public int BASEPORT = 19092;
 
     @Override
     public int getWantedPort() {
@@ -119,15 +117,29 @@ public class MetricsProxyContainer extends Container implements
         Map<String, String> dimensions = new LinkedHashMap<>();
         if (isHostedVespa) {
             getHostResource().spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
-                dimensions.put(CLUSTER_TYPE, cluster.type().name());
-                dimensions.put(CLUSTER_ID, cluster.id().value());
+                dimensions.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, cluster.type().name());
+                dimensions.put(PublicDimensions.INTERNAL_CLUSTER_ID, cluster.id().value());
             });
 
             builder.dimensions(dimensions);
         }
     }
 
-    private void  addMetricsProxyComponent(Class<?> componentClass) {
+    @Override
+    public void getConfig(NodeInfoConfig.Builder builder) {
+        builder.role(getNodeRole())
+                .hostname(getHostName());
+    }
+
+    private String getNodeRole() {
+        String hostConfigId = getHost().getConfigId();
+        if (! isHostedVespa) return hostConfigId;
+        return getHostResource().spec().membership()
+                    .map(ClusterMembership::stringValue)
+                    .orElse(hostConfigId);
+    }
+
+    private void addMetricsProxyComponent(Class<?> componentClass) {
         addSimpleComponent(componentClass.getName(), null, METRICS_PROXY_BUNDLE_NAME);
     }
 

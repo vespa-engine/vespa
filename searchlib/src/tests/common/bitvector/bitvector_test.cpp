@@ -268,21 +268,21 @@ TEST("requireThatSequentialOperationsOnPartialWorks")
     p1.invalidateCachedCount();
     EXPECT_TRUE(p1.hasTrueBits());
     EXPECT_EQUAL(1u, p1.countTrueBits());
-    p1.slowSetBit(718);
-    p1.slowSetBit(739);
-    p1.slowSetBit(871);
-    p1.slowSetBit(903);
+    p1.setBitAndMaintainCount(718);
+    p1.setBitAndMaintainCount(739);
+    p1.setBitAndMaintainCount(871);
+    p1.setBitAndMaintainCount(903);
     EXPECT_EQUAL(5u, p1.countTrueBits());
     EXPECT_TRUE(assertBV("[718,719,739,871,903]", p1));
 
     PartialBitVector p2(717,919);
     EXPECT_FALSE(p1 == p2);
-    p2.slowSetBit(719);
-    p2.slowSetBit(718);
-    p2.slowSetBit(739);
-    p2.slowSetBit(871);
+    p2.setBitAndMaintainCount(719);
+    p2.setBitAndMaintainCount(718);
+    p2.setBitAndMaintainCount(739);
+    p2.setBitAndMaintainCount(871);
     EXPECT_FALSE(p1 == p2);
-    p2.slowSetBit(903);
+    p2.setBitAndMaintainCount(903);
     EXPECT_TRUE(p1 == p2);
 
     AllocatedBitVector full(1000);
@@ -422,10 +422,10 @@ TEST("requireThatSetWorks")
     EXPECT_EQUAL(4u, v1.countTrueBits());
     EXPECT_TRUE(assertBV("[7,39,80,103]", v1));
 
-    v1.slowSetBit(39);
+    v1.setBitAndMaintainCount(39);
     EXPECT_EQUAL(4u, v1.countTrueBits());
     EXPECT_TRUE(assertBV("[7,39,80,103]", v1));
-    v1.slowSetBit(57);
+    v1.setBitAndMaintainCount(57);
     EXPECT_EQUAL(5u, v1.countTrueBits());
     EXPECT_TRUE(assertBV("[7,39,57,80,103]", v1));
 }
@@ -542,15 +542,16 @@ TEST("requireThatGrowWorks")
 {
     vespalib::GenerationHolder g;
     GrowableBitVector v(200, 200, g);
+    EXPECT_EQUAL(0u, v.countTrueBits());
     
-    v.setBit(7);
-    v.setBit(39);
-    v.setBit(71);
-    v.setBit(103);
-   
-    EXPECT_EQUAL(200u, v.size()); 
+    v.setBitAndMaintainCount(7);
+    v.setBitAndMaintainCount(39);
+    v.setBitAndMaintainCount(71);
+    v.setBitAndMaintainCount(103);
+    EXPECT_EQUAL(4u, v.countTrueBits());
+
+    EXPECT_EQUAL(200u, v.size());
     EXPECT_EQUAL(1023u, v.capacity()); 
-    v.invalidateCachedCount();
     EXPECT_TRUE(assertBV("[7,39,71,103]", v));
     EXPECT_EQUAL(4u, v.countTrueBits());
     EXPECT_TRUE(v.reserve(1024));
@@ -584,6 +585,13 @@ TEST("requireThatGrowWorks")
     EXPECT_EQUAL(2047u, v.capacity()); 
     EXPECT_TRUE(assertBV("[7,39,71]", v));
     EXPECT_EQUAL(3u, v.countTrueBits());
+
+    v.invalidateCachedCount();
+    EXPECT_TRUE(v.reserve(3100));
+    EXPECT_EQUAL(100u, v.size());
+    EXPECT_EQUAL(4095u, v.capacity());
+    EXPECT_EQUAL(3u, v.countTrueBits());
+
     g.transferHoldLists(1);
     g.trimHoldLists(2);
 }

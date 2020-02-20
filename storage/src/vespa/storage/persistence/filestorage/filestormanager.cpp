@@ -38,11 +38,11 @@ FileStorManager(const config::ConfigUri & configUri, const spi::PartitionStateLi
       _bucketIdFactory(_component.getBucketIdFactory()),
       _configUri(configUri),
       _disks(),
-      _bucketOwnershipNotifier(new BucketOwnershipNotifier(_component, *this)),
+      _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
       _configFetcher(_configUri.getContext()),
       _threadLockCheckInterval(60),
       _failDiskOnError(false),
-      _metrics(new FileStorMetrics(_component.getLoadTypes()->getMetricLoadTypes())),
+      _metrics(std::make_unique<FileStorMetrics>(_component.getLoadTypes()->getMetricLoadTypes())),
       _threadMonitor(),
       _closed(false)
 {
@@ -105,10 +105,10 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _config = std::move(config);
         _disks.resize(_component.getDiskCount());
         size_t numThreads = _config->numThreads;
-        size_t numStripes = std::min(2ul, numThreads);
+        size_t numStripes = std::min(4ul, numThreads);
         _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);
 
-        _filestorHandler.reset(new FileStorHandler(numThreads, numStripes, *this, *_metrics, _partitions, _compReg));
+        _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _partitions, _compReg);
         for (uint32_t i=0; i<_component.getDiskCount(); ++i) {
             if (_partitions[i].isUp()) {
                 LOG(spam, "Setting up disk %u", i);
@@ -847,12 +847,6 @@ FileStorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPat
     }
 
     _filestorHandler->getStatus(out, path);
-}
-
-bool
-FileStorManager::isMerging(const document::Bucket& bucket) const
-{
-    return _filestorHandler->isMerging(bucket);
 }
 
 namespace {

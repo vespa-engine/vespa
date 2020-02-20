@@ -131,7 +131,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private boolean hasQuota(ApplicationId application, int requestedNodes) {
         if ( ! this.zone.system().isPublic()) return true; // no quota management
 
-        if (application.tenant().value().hashCode() == 3857) return requestedNodes <= 60;
+        if (application.tenant().value().hashCode() == 3857)        return requestedNodes <= 60;
+        if (application.tenant().value().hashCode() == -1271827001) return requestedNodes <= 75;
         return requestedNodes <= 5;
     }
 

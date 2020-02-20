@@ -69,7 +69,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     private Map<ConfigSourceSet, JRTConfigRequester> createRequesterPool(ConfigSourceSet ccs, TimingValues timingValues) {
         Map<ConfigSourceSet, JRTConfigRequester> ret = new HashMap<>();
         if (ccs.getSources().isEmpty()) return ret; // unit test, just skip creating any requester
-        ret.put(ccs, JRTConfigRequester.get(new JRTConnectionPool(ccs), timingValues));
+        ret.put(ccs, new JRTConfigRequester(new JRTConnectionPool(ccs), timingValues));
         return ret;
     }
 

@@ -100,6 +100,10 @@ public:
     void asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override {
         assert(!"Not implemented");
     }
+
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string&) const override {
+        return _attribute_vector;
+    }
 };
 
 constexpr uint32_t DOCID_LIMIT = 3;

@@ -7,9 +7,7 @@
 using namespace vespalib;
 using namespace vespalib::slime;
 
-namespace config {
-
-namespace internal {
+namespace config::internal {
 
 template<>
 int32_t convertValue(const ::vespalib::slime::Inspector & __inspector) {
@@ -64,4 +62,3 @@ requireValid(const vespalib::string & __fieldName, const ::vespalib::slime::Insp
 
 }
 
-}

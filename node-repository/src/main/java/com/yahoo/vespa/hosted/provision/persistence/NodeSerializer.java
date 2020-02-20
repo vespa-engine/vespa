@@ -19,7 +19,8 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.Type;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -77,6 +78,7 @@ public class NodeSerializer {
     private static final String firmwareCheckKey = "firmwareCheck";
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
+    private static final String reservedToKey = "reservedTo";
 
     // Node resource fields
     // ...for hosts and nodes allocated by legacy flavor specs
@@ -149,6 +151,7 @@ public class NodeSerializer {
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
+        node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -222,7 +225,8 @@ public class NodeSerializer {
                         historyFromSlime(object.field(historyKey)),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
-                        modelNameFromSlime(object));
+                        modelNameFromSlime(object),
+                        reservedToFromSlime(object.field(reservedToKey)));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -341,6 +345,13 @@ public class NodeSerializer {
         return Optional.empty();
     }
 
+    private Optional<TenantName> reservedToFromSlime(Inspector object) {
+        if (! object.valid()) return Optional.empty();
+        if (object.type() != Type.STRING)
+            throw new IllegalArgumentException("Expected 'reservedTo' to be a string but is " + object);
+        return Optional.of(TenantName.from(object.asString()));
+    }
+
     // ----------------- Enum <-> string mappings ----------------------------------------
     
     /** Returns the event type, or null if this event type should be ignored */
@@ -388,19 +399,31 @@ public class NodeSerializer {
 
     private Agent eventAgentFromSlime(Inspector eventAgentField) {
         switch (eventAgentField.asString()) {
+            case "operator" : return Agent.operator;
             case "application" : return Agent.application;
             case "system" : return Agent.system;
-            case "operator" : return Agent.operator;
             case "NodeFailer" : return Agent.NodeFailer;
+            case "Rebalancer" : return Agent.Rebalancer;
+            case "DirtyExpirer" : return Agent.DirtyExpirer;
+            case "FailedExpirer" : return Agent.FailedExpirer;
+            case "InactiveExpirer" : return Agent.InactiveExpirer;
+            case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
+            case "ReservationExpirer" : return Agent.ReservationExpirer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
     private String toString(Agent agent) {
         switch (agent) {
+            case operator : return "operator";
             case application : return "application";
             case system : return "system";
-            case operator : return "operator";
             case NodeFailer : return "NodeFailer";
+            case Rebalancer : return "Rebalancer";
+            case DirtyExpirer : return "DirtyExpirer";
+            case FailedExpirer : return "FailedExpirer";
+            case InactiveExpirer : return "InactiveExpirer";
+            case ProvisionedExpirer : return "ProvisionedExpirer";
+            case ReservationExpirer : return "ReservationExpirer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

@@ -6,7 +6,7 @@ import com.yahoo.jdisc.Metric;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @since 5.1.20
  */
 class DummyMetric implements Metric {

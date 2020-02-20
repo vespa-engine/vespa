@@ -21,11 +21,14 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
@@ -74,6 +77,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -109,6 +113,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Orchestrator orchestrator;
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
+    private final Metric metric;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -118,7 +123,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator,
-                                 TesterClient testerClient) {
+                                 TesterClient testerClient,
+                                 Metric metric) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
@@ -129,7 +135,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new LogRetriever(),
              new FileDistributionStatus(),
              Clock.systemUTC(),
-             testerClient);
+             testerClient,
+             metric);
     }
 
     // For testing
@@ -143,7 +150,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new ConfigserverConfig(new ConfigserverConfig.Builder()),
              new LogRetriever(),
              clock,
-             new TesterClient());
+             new TesterClient(),
+             new NullMetric());
     }
 
     // For testing
@@ -153,7 +161,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigserverConfig configserverConfig,
                                  LogRetriever logRetriever,
                                  Clock clock,
-                                 TesterClient testerClient) {
+                                 TesterClient testerClient,
+                                 Metric metric) {
         this(tenantRepository,
              Optional.of(hostProvisioner),
              Optional.empty(),
@@ -164,7 +173,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              logRetriever,
              new FileDistributionStatus(),
              clock,
-             testerClient);
+             testerClient,
+             metric);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -177,7 +187,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   LogRetriever logRetriever,
                                   FileDistributionStatus fileDistributionStatus,
                                   Clock clock,
-                                  TesterClient testerClient) {
+                                  TesterClient testerClient,
+                                  Metric metric) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
         this.infraDeployer = infraDeployer;
@@ -189,6 +200,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.fileDistributionStatus = fileDistributionStatus;
         this.clock = clock;
         this.testerClient = testerClient;
+        this.metric = metric;
     }
 
     // ---------------- Deploying ----------------------------------------------------------------
@@ -200,10 +212,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
         Slime deployLog = createDeployLog();
         DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
-        ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
-        logConfigChangeActions(actions, logger);
-        log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
-        return new PrepareResult(sessionId, actions, deployLog);
+        try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
+            ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
+            logConfigChangeActions(actions, logger);
+            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+            return new PrepareResult(sessionId, actions, deployLog);
+        }
     }
 
     public PrepareResult prepareAndActivate(Tenant tenant, long sessionId, PrepareParams prepareParams,
@@ -361,15 +375,23 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             // until the config server where the deployment happened picks it up and deletes
             // the local session
             long sessionId = activeSession.get();
-            RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
-            remoteSession.createDeleteTransaction().commit();
-            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
 
+            RemoteSession remoteSession;
+            try {
+                remoteSession = getRemoteSession(tenant, sessionId);
+                Transaction deleteTransaction = remoteSession.createDeleteTransaction();
+                deleteTransaction.commit();
+                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
 
-            if ( ! waitTime.isZero() && localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
-                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
-            } else {
-                throw new InternalServerException("Session " + sessionId + " was not deleted (waited " + waitTime + ")");
+                if ( ! waitTime.isZero() && localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
+                    log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
+                } else {
+                    deleteTransaction.rollbackOrLog();
+                    throw new InternalServerException(applicationId + " was not deleted (waited " + waitTime + "), session " + sessionId);
+                }
+            } catch (NotFoundException e) {
+                // For the case where waiting timed out in a previous attempt at deleting the application, continue and do the steps below
+                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
             }
 
             NestedTransaction transaction = new NestedTransaction();
@@ -417,12 +439,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         Set<String> fileReferencesInUse = new HashSet<>();
         // Intentionally skip applications that we for some reason do not find
-        listApplications().stream()
-                .map(this::getOptionalApplication)
-                .map(Optional::get)
-                .forEach(application -> fileReferencesInUse.addAll(application.getModel().fileReferences().stream()
-                                                                           .map(FileReference::value)
-                                                                           .collect(Collectors.toSet())));
+        // or that we fail to get file references for (they will be retried on the next run)
+        for (var application : listApplications()) {
+            try {
+                Optional<Application> app = getOptionalApplication(application);
+                if (app.isEmpty()) continue;
+                fileReferencesInUse.addAll(app.get().getModel().fileReferences().stream()
+                                                   .map(FileReference::value)
+                                                   .collect(Collectors.toSet()));
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING, "Getting file references in use for '" + application + "' failed", e);
+            }
+        }
         log.log(LogLevel.DEBUG, "File references in use : " + fileReferencesInUse);
 
         // Find those on disk that are not in use
@@ -468,6 +496,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
             long sessionId = getSessionIdForApplication(tenant, applicationId);
             RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId);
+            if (session == null) throw new NotFoundException("Remote session " + sessionId + " not found");
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
         } catch (NotFoundException e) {
             log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
@@ -543,9 +572,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return testerClient.getLog(getTesterHostname(applicationId), getTesterPort(applicationId), after);
     }
 
-    // TODO: Not implemented in TesterClient yet
-    public HttpResponse startTests(ApplicationId applicationId, String suite, String config) {
-        return testerClient.startTests(getTesterHostname(applicationId), suite, config);
+    public HttpResponse startTests(ApplicationId applicationId, String suite, byte[] config) {
+        return testerClient.startTests(getTesterHostname(applicationId), getTesterPort(applicationId), suite, config);
+    }
+
+    public HttpResponse isTesterReady(ApplicationId applicationId) {
+        return testerClient.isTesterReady(getTesterHostname(applicationId), getTesterPort(applicationId));
     }
 
     private String getTesterHostname(ApplicationId applicationId) {
@@ -830,6 +862,43 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return new Zone(SystemName.from(configserverConfig.system()),
                         Environment.from(configserverConfig.environment()),
                         RegionName.from(configserverConfig.region()));
+    }
+
+    /** Emits as a metric the time in millis spent while holding this timer, with deployment ID as dimensions. */
+    public ActionTimer timerFor(ApplicationId id, String metricName) {
+        return new ActionTimer(metric, clock, id, configserverConfig.environment(), configserverConfig.region(), metricName);
+    }
+
+    public static class ActionTimer implements AutoCloseable {
+
+        private final Metric metric;
+        private final Clock clock;
+        private final ApplicationId id;
+        private final String environment;
+        private final String region;
+        private final String name;
+        private final Instant start;
+
+        private ActionTimer(Metric metric, Clock clock, ApplicationId id, String environment, String region, String name) {
+            this.metric = metric;
+            this.clock = clock;
+            this.id = id;
+            this.environment = environment;
+            this.region = region;
+            this.name = name;
+            this.start = clock.instant();
+        }
+
+        @Override
+        public void close() {
+            metric.set(name,
+                       Duration.between(start, clock.instant()).toMillis(),
+                       metric.createContext(Map.of("applicationId", id.toFullString(),
+                                                   "tenantName", id.tenant().value(),
+                                                   "app", id.application().value() + "." + id.instance().value(),
+                                                   "zone", environment + "." + region)));
+        }
+
     }
 
 }

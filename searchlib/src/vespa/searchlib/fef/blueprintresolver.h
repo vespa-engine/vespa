@@ -8,8 +8,7 @@
 #include "blueprint.h"
 #include "feature_type.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class BlueprintFactory;
 class IIndexEnvironment;
@@ -147,5 +146,4 @@ public:
     const FeatureMap &getSeedMap() const;
 };
 
-} // namespace fef
-} // namespace search
+}

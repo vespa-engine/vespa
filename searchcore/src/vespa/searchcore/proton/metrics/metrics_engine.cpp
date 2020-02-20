@@ -106,7 +106,7 @@ void
 doCleanAttributes(AttributeMetrics &attributes)
 {
     auto entries = attributes.release();
-    for (const auto entry : entries) {
+    for (const auto &entry : entries) {
         attributes.parent()->unregisterMetric(*entry);
     }
 }

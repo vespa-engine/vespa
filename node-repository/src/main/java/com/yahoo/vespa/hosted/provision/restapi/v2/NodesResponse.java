@@ -16,11 +16,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -46,7 +45,7 @@ class NodesResponse extends HttpResponse {
 
     private final NodeFilter filter;
     private final boolean recursive;
-    private final Function<HostName, Optional<HostStatus>> orchestrator;
+    private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
     private final Slime slime;
     private final NodeSerializer serializer = new NodeSerializer();
@@ -58,7 +57,7 @@ class NodesResponse extends HttpResponse {
         this.nodeParentUrl = toNodeParentUrl(request);
         filter = NodesApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
-        this.orchestrator = orchestrator.getNodeStatuses();
+        this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
 
         slime = new Slime();
@@ -146,6 +145,7 @@ class NodesResponse extends HttpResponse {
         }
         object.setString("openStackId", node.id());
         object.setString("flavor", node.flavor().name());
+        node.reservedTo().ifPresent(reservedTo -> object.setString("reservedTo", reservedTo.value()));
         if (node.flavor().isConfigured())
             object.setDouble("cpuCores", node.flavor().getMinCpuCores());
         toSlime(node.flavor().resources(), object.setObject("resources"));
@@ -157,13 +157,15 @@ class NodesResponse extends HttpResponse {
             toSlime(allocation.membership(), object.setObject("membership"));
             object.setLong("restartGeneration", allocation.restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
-            object.setString("wantedDockerImage", dockerImageFor(node.type()).withTag(allocation.membership().cluster().vespaVersion()).asString());
+            object.setString("wantedDockerImage", nodeRepository.dockerImage(node).withTag(allocation.membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
             toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
-                        .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN)
-                        .ifPresent(allowedToBeDown -> object.setBool("allowedToBeDown", allowedToBeDown));
+                        .ifPresent(info -> {
+                            object.setBool("allowedToBeDown", info.status().isSuspended());
+                            info.suspendedSince().ifPresent(since -> object.setLong("suspendedSinceMillis", since.toEpochMilli()));
+                        });
         });
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
@@ -220,16 +222,10 @@ class NodesResponse extends HttpResponse {
     // TODO: Remove current + wanted docker image from response for non-docker types
     private Optional<DockerImage> currentDockerImage(Node node) {
         return node.status().dockerImage()
-                .or(() -> Optional.of(node)
-                        .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
-                        .flatMap(n -> n.status().vespaVersion()
-                                .map(version -> dockerImageFor(n.type()).withTag(version))));
-    }
-
-    // Docker hosts are not running in an image, but return the image of the node type running on it anyway,
-    // this allows the docker host to pre-download the (likely) image its node will run
-    private DockerImage dockerImageFor(NodeType nodeType) {
-        return nodeRepository.dockerImage(nodeType.isDockerHost() ? nodeType.childNodeType() : nodeType);
+                   .or(() -> Optional.of(node)
+                                     .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                                     .flatMap(n -> n.status().vespaVersion()
+                                                    .map(version -> nodeRepository.dockerImage(n).withTag(version))));
     }
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {

@@ -17,19 +17,7 @@ import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
  */
 public class AthenzX509CertificateUtils {
 
-    private static final String COMMON_NAME_ROLE_DELIMITER = ":role.";
-
     private AthenzX509CertificateUtils() {}
-
-    public static boolean isAthenzRoleCertificate(X509Certificate certificate) {
-        return isAthenzIssuedCertificate(certificate) &&
-                com.yahoo.security.X509CertificateUtils.getSubjectCommonNames(certificate).get(0).contains(COMMON_NAME_ROLE_DELIMITER);
-    }
-
-    public static boolean isAthenzIssuedCertificate(X509Certificate certificate) {
-        return com.yahoo.security.X509CertificateUtils.getIssuerCommonNames(certificate).stream()
-                .anyMatch(cn -> cn.equalsIgnoreCase("Yahoo Athenz CA") || cn.equalsIgnoreCase("Athenz AWS CA"));
-    }
 
     public static AthenzIdentity getIdentityFromRoleCertificate(X509Certificate certificate) {
         List<com.yahoo.security.SubjectAlternativeName> sans = com.yahoo.security.X509CertificateUtils.getSubjectAlternativeNames(certificate);
@@ -43,10 +31,7 @@ public class AthenzX509CertificateUtils {
 
     public static AthenzRole getRolesFromRoleCertificate(X509Certificate certificate) {
         String commonName = com.yahoo.security.X509CertificateUtils.getSubjectCommonNames(certificate).get(0);
-        int delimiterIndex = commonName.indexOf(COMMON_NAME_ROLE_DELIMITER);
-        String domain = commonName.substring(0, delimiterIndex);
-        String roleName = commonName.substring(delimiterIndex + COMMON_NAME_ROLE_DELIMITER.length());
-        return new AthenzRole(domain, roleName);
+        return AthenzRole.fromResourceNameString(commonName);
     }
 
     private static AthenzIdentity getIdentityFromSanEmail(String email) {

@@ -33,7 +33,7 @@ ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const 
     const size_t oldPos(compressed.getDataLen());
     compressed.writeInt8(compression.type);
     compressed.writeInt32(os.size());
-    CompressionConfig::Type type(compress(compression, vespalib::ConstBufferRef(os.c_str(), os.size()), compressed, false));
+    CompressionConfig::Type type(compress(compression, vespalib::ConstBufferRef(os.data(), os.size()), compressed, false));
     if (compression.type != type) {
         compressed.getData()[oldPos] = type;
     }

@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.FreezableSimpleComponent;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.OverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 public class QueryProfileType extends FreezableSimpleComponent {
 
     private final CompoundName componentIdAsCompoundName;
+
     /** The fields of this query profile type */
     private Map<String, FieldDescription> fields;
 
@@ -217,10 +219,23 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
     /** Returns the type of the given query profile type declared as a field in this */
     public QueryProfileType getType(String localName) {
-        FieldDescription fieldDescription=getField(localName);
-        if (fieldDescription ==null) return null;
+        FieldDescription fieldDescription = getField(localName);
+        if (fieldDescription == null) return null;
         if ( ! (fieldDescription.getType() instanceof QueryProfileFieldType)) return null;
         return ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
+    }
+
+    /** Returns the field type of the given name under this, of null if none */
+    public FieldType getFieldType(CompoundName name) {
+        FieldDescription field = getField(name.first());
+        if (field == null) return null;
+
+        FieldType fieldType = field.getType();
+        if (name.size() == 1) return fieldType;
+
+        if ( ! (fieldType instanceof QueryProfileFieldType)) return null;
+
+        return ((QueryProfileFieldType)fieldType).getQueryProfileType().getFieldType(name.rest());
     }
 
     /**
@@ -228,14 +243,14 @@ public class QueryProfileType extends FreezableSimpleComponent {
      * (depth first left to right search). Returns null if the field is not defined in this or an inherited profile.
      */
     public FieldDescription getField(String name) {
-        FieldDescription field=fields.get(name);
-        if ( field!=null ) return field;
+        FieldDescription field = fields.get(name);
+        if ( field != null ) return field;
 
         if ( isFrozen() ) return null; // Inherited are collapsed into this
 
         for (QueryProfileType inheritedType : this.inherited() ) {
-            field=inheritedType.getField(name);
-            if (field!=null) return field;
+            field = inheritedType.getField(name);
+            if (field != null) return field;
         }
 
         return null;
@@ -276,7 +291,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
             // Add (/to) a query profile type containing the rest of the name.
             // (we do not need the field description settings for intermediate query profile types
             // as the leaf entry will enforce them)
-            QueryProfileType type = getOrCreateQueryProfileType(name.first(), registry);
+            QueryProfileType type = extendOrCreateQueryProfileType(name.first(), registry);
             type.addField(fieldDescription.withName(name.rest()), registry);
         }
         else {
@@ -288,27 +303,42 @@ public class QueryProfileType extends FreezableSimpleComponent {
             addAlias(alias, fieldDescription.getName());
     }
 
-    private QueryProfileType getOrCreateQueryProfileType(String name, QueryProfileTypeRegistry registry) {
+    private QueryProfileType extendOrCreateQueryProfileType(String name, QueryProfileTypeRegistry registry) {
+        QueryProfileType type = null;
         FieldDescription fieldDescription = getField(name);
         if (fieldDescription != null) {
-            if ( ! ( fieldDescription.getType() instanceof QueryProfileFieldType))
+            if ( ! (fieldDescription.getType() instanceof QueryProfileFieldType))
                 throw new IllegalArgumentException("Cannot use name '" + name + "' as a prefix because it is " +
                                                    "already a " + fieldDescription.getType());
             QueryProfileFieldType fieldType = (QueryProfileFieldType) fieldDescription.getType();
-            QueryProfileType type = fieldType.getQueryProfileType();
-            if (type == null) { // an as-yet untyped reference; add type
-                type = new QueryProfileType(name);
-                registry.register(type.getId(), type);
-                fields.put(name, fieldDescription.withType(new QueryProfileFieldType(type)));
-            }
-            return type;
+            type = fieldType.getQueryProfileType();
+        }
+
+        if (type == null) {
+            type = registry.getComponent(name);
+        }
+
+        // found in registry but not already added in *this* type (getField also checks parents): extend it
+        if (type != null && ! fields.containsKey(name)) {
+            type = new QueryProfileType(ComponentId.createAnonymousComponentId(type.getIdString()),
+                                        new HashMap<>(),
+                                        List.of(type));
+        }
+
+        if (type == null) { // create it
+            type = new QueryProfileType(ComponentId.createAnonymousComponentId(name));
+        }
+
+        if (fieldDescription == null) {
+            fieldDescription = new FieldDescription(name, new QueryProfileFieldType(type));
         }
         else {
-            QueryProfileType type = new QueryProfileType(name);
-            registry.register(type.getId(), type);
-            fields.put(name, new FieldDescription(name, new QueryProfileFieldType(type)));
-            return type;
+            fieldDescription = fieldDescription.withType(new QueryProfileFieldType(type));
         }
+
+        registry.register(type);
+        fields.put(name, fieldDescription);
+        return type;
     }
 
     private void addAlias(String alias, String field) {
@@ -362,6 +392,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
         return other.getId().equals(this.getId());
     }
 
+    @Override
     public String toString() {
         return "query profile type '" + getId() + "'";
     }

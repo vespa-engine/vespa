@@ -17,7 +17,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeStream;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
@@ -134,9 +134,10 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         // List of operator roles, currently only one available, but possible to extend
         List<Role> operatorRoles = roles.stream()
-                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator))
+                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator) ||
+                        role.definition().equals(RoleDefinition.hostedSupporter))
+                .sorted(Comparator.comparing(Role::definition))
                 .collect(Collectors.toList());
-
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();

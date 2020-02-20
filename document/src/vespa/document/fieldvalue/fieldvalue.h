@@ -19,15 +19,11 @@
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/util/polymorphicarraybase.h>
 
-namespace vespalib {
-    class nbostream;
-}
+namespace vespalib { class nbostream; }
 
 namespace document {
 
-namespace fieldvalue {
-    class IteratorHandler;
-}
+namespace fieldvalue { class IteratorHandler; }
 
 class ByteBuffer;
 class DataType;
@@ -37,6 +33,8 @@ class FieldValue : public vespalib::Identifiable
 protected:
     FieldValue(const FieldValue&) = default;
     FieldValue& operator=(const FieldValue&) = default;
+    FieldValue(FieldValue &&) = default;
+    FieldValue& operator=(FieldValue &&) = default;
     static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType & baseType);
 
 public:
@@ -73,8 +71,7 @@ public:
     virtual bool isA(const FieldValue& other) const;
 
     void serialize(vespalib::nbostream &stream) const;
-    void serialize(ByteBuffer& buffer) const;
-    std::unique_ptr<ByteBuffer> serialize() const;
+    vespalib::nbostream serialize() const;
 
     /**
      * Compares this fieldvalue with another fieldvalue.

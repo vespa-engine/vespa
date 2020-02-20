@@ -26,6 +26,7 @@ import java.util.Set;
 public class Index {
 
     public static class Attribute {
+
         private boolean tokenizedContent = false;
         public final String name;
 
@@ -207,20 +208,12 @@ public class Index {
         }
     }
 
-    /**
-     * Whether terms in this field are lower cased when indexing.
-     *
-     * @param lowercase true if terms are lowercased
-     */
+    /** Sets whether terms in this field are lowercased when indexing. */
     public void setLowercase(boolean lowercase) {
         this.lowercase = lowercase;
     }
 
-    /**
-     * Whether terms in this field are lower cased when indexing.
-     *
-     * @return true if terms are lowercased
-     */
+    /** Returns whether terms in this field are lowercased when indexing. */
     public boolean isLowercase() {
         return lowercase;
     }

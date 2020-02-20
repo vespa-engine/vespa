@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.Sets;
@@ -16,7 +16,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -177,7 +178,7 @@ public class ControllerTest {
     public void testGlobalRotations() {
         // Setup
         ControllerTester tester = this.tester.controllerTester();
-        ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
+        ZoneId zone = ZoneId.from("prod", "us-west-1");
         ApplicationId app = ApplicationId.from("tenant", "app1", "default");
         DeploymentId deployment = new DeploymentId(app, zone);
         tester.serviceRegistry().routingGeneratorMock().putEndpoints(deployment, List.of(
@@ -189,7 +190,7 @@ public class ControllerTest {
                 new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1")
         ));
 
-        Supplier<Map<RoutingEndpoint, EndpointStatus>> globalRotationStatus = () -> tester.controller().applications().globalRotationStatus(deployment);
+        Supplier<Map<RoutingEndpoint, EndpointStatus>> globalRotationStatus = () -> tester.controller().routingController().globalRotationStatus(deployment);
         Supplier<List<EndpointStatus>> upstreamOneEndpoints = () -> {
             return globalRotationStatus.get()
                                        .entrySet().stream()
@@ -205,21 +206,10 @@ public class ControllerTest {
 
         // Set the global rotations out of service
         EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "unit-test", "Test", tester.clock().instant().getEpochSecond());
-        tester.controller().applications().setGlobalRotationStatus(deployment, status);
+        tester.controller().routingController().setGlobalRotationStatus(deployment, status);
         assertEquals(2, upstreamOneEndpoints.get().size());
         assertTrue("All upstreams are out", upstreamOneEndpoints.get().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.out));
         assertTrue("Reason is set", upstreamOneEndpoints.get().stream().allMatch(es -> es.getReason().equals("unit-test")));
-
-        // Deployment without a global endpoint
-        tester.serviceRegistry().routingGeneratorMock().putEndpoints(deployment, List.of(
-                new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
-                new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
-                new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3")
-        ));
-        try {
-            tester.controller().applications().setGlobalRotationStatus(deployment, status);
-            fail("Expected exception");
-        } catch (IllegalArgumentException ignored) {}
     }
 
     @Test
@@ -527,9 +517,9 @@ public class ControllerTest {
             context.submit(applicationPackage);
             tester.applications().deleteApplication(context.application().id(),
                                                     tester.controllerTester().credentialsFor(context.application().id().tenant()));
-            try (RotationLock lock = tester.applications().rotationRepository().lock()) {
+            try (RotationLock lock = tester.controller().routingController().rotations().lock()) {
                 assertTrue("Rotation is unassigned",
-                           tester.applications().rotationRepository().availableRotations(lock)
+                           tester.controller().routingController().rotations().availableRotations(lock)
                                  .containsKey(new RotationId("rotation-id-01")));
             }
             context.flushDnsUpdates();
@@ -592,9 +582,10 @@ public class ControllerTest {
     @Test
     public void testIntegrationTestDeployment() {
         Version six = Version.fromString("6.1");
-        tester.controllerTester().upgradeSystem(six);
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
         tester.controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("prod.cd-us-central-1"));
+        tester.configServer().bootstrap(List.of(ZoneId.from("prod.cd-us-central-1")), SystemApplication.all());
+        tester.controllerTester().upgradeSystem(six);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .majorVersion(6)
@@ -709,13 +700,15 @@ public class ControllerTest {
 
     @Test
     public void testDeploySelectivelyProvisionsCertificate() {
-        Function<Instance, Optional<ApplicationCertificate>> certificate = (application) -> tester.controller().curator().readApplicationCertificate(application.id());
+        Function<Instance, Optional<EndpointCertificateMetadata>> certificate = (application) -> tester.controller().curator().readEndpointCertificateMetadata(application.id());
 
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
-        var applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
-                                                                               .region("us-west-1")
-                                                                               .build();
+        var prodZone = ZoneId.from("prod", "us-west-1");
+        tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
+        var applicationPackage = new ApplicationPackageBuilder().environment(prodZone.environment())
+                                                                .region(prodZone.region())
+                                                                .build();
         // Deploy app1 in production
         context1.submit(applicationPackage).deploy();
         var cert = certificate.apply(context1.instance());
@@ -723,11 +716,13 @@ public class ControllerTest {
         assertEquals(Stream.concat(Stream.of("vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
                                              "app1.tenant1.global.vespa.oath.cloud",
                                              "*.app1.tenant1.global.vespa.oath.cloud"),
-                                   tester.controller().zoneRegistry().zones().all().ids().stream()
+                                   tester.controller().zoneRegistry().zones().controllerUpgraded().ids().stream()
                                          .flatMap(zone -> Stream.of("", "*.")
-                                                                .map(prefix -> prefix + "app1.tenant1." + zone.region().value() + ".vespa.oath.cloud")))
+                                                                .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
+                                                                               (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
+                                                                               ".vespa.oath.cloud")))
                            .collect(Collectors.toUnmodifiableList()),
-                     tester.controllerTester().serviceRegistry().applicationCertificateMock().dnsNamesOf(context1.instanceId()));
+                     tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(context1.instanceId()));
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();
@@ -735,13 +730,13 @@ public class ControllerTest {
 
         // Create app2
         var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
-        ZoneId zone = ZoneId.from("dev", "us-east-1");
+        var devZone = ZoneId.from("dev", "us-east-1");
 
-        // Deploy app2 in dev
-        tester.controller().applications().deploy(context2.instanceId(), zone, Optional.of(applicationPackage), DeployOptions.none());
+        // Deploy app2 in a zone with shared routing
+        tester.controller().applications().deploy(context2.instanceId(), devZone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
-                   tester.configServer().application(context2.instanceId(), zone).get().activated());
-        assertFalse("Does not provision certificate in " + Environment.dev, certificate.apply(context2.instance()).isPresent());
+                   tester.configServer().application(context2.instanceId(), devZone).get().activated());
+        assertFalse("Does not provision certificate in zones with routing layer", certificate.apply(context2.instance()).isPresent());
     }
 
     @Test
@@ -776,6 +771,21 @@ public class ControllerTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Endpoint 'foo' in instance 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
+    }
+
+    @Test
+    public void testDeployWithoutSourceRevision() {
+        var context = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+
+        // Submit without source revision
+        context.submit(applicationPackage, Optional.empty())
+               .deploy();
+        assertEquals("Deployed application", 1, context.instance().deployments().size());
     }
 
 }

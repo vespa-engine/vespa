@@ -24,26 +24,8 @@ class StructDataType;
 
 class StructFieldValue : public StructuredFieldValue
 {
-public:
-    class Chunks {
-    public:
-        Chunks() : _sz(0) { }
-        ~Chunks();
-        SerializableArray & operator [] (size_t i) { return *_chunks[i]; }
-        const SerializableArray & operator [] (size_t i) const { return *_chunks[i]; }
-        VESPA_DLL_LOCAL void push_back(SerializableArray::UP item);
-        SerializableArray & back() { return *_chunks[_sz-1]; }
-        const SerializableArray & back() const { return *_chunks[_sz-1]; }
-        size_t size() const { return _sz; }
-        bool empty() const { return _sz == 0; }
-        VESPA_DLL_LOCAL void clear();
-    private:
-        SerializableArray::CP _chunks[2];
-        size_t _sz;
-    };
 private:
-    Chunks   _chunks;
-
+    SerializableArray       _fields;
     // As we do lazy deserialization, we need these saved
     const DocumentTypeRepo *_repo;
     const DocumentType     *_doc_type;
@@ -57,24 +39,25 @@ public:
     StructFieldValue(const DataType &type);
     StructFieldValue(const StructFieldValue & rhs);
     StructFieldValue & operator = (const StructFieldValue & rhs);
-    ~StructFieldValue() override;
+    StructFieldValue(StructFieldValue && rhs) noexcept = default;
+    StructFieldValue & operator = (StructFieldValue && rhs) noexcept = default;
+    ~StructFieldValue() noexcept override;
 
     void setRepo(const DocumentTypeRepo & repo) { _repo = & repo; }
     const DocumentTypeRepo * getRepo() const { return _repo; }
     void setDocumentType(const DocumentType & docType) { _doc_type = & docType; }
+    const SerializableArray & getFields() const { return _fields; }
 
     void lazyDeserialize(const FixedTypeRepo &repo,
                          uint16_t version,
                          SerializableArray::EntryMap && fields,
-                         std::unique_ptr<ByteBuffer> buffer,
+                         ByteBuffer buffer,
                          CompressionConfig::Type comp_type,
                          int32_t uncompressed_length);
 
     // returns false if the field could not be serialized.
     bool serializeField(int raw_field_id, uint16_t version, FieldValueWriter &writer) const;
     uint16_t getVersion() const { return _version; }
-
-    const Chunks & getChunks() const {  return _chunks; }
 
     // raw_ids may contain ids for elements not in the struct's datatype.
     void getRawFieldIds(std::vector<int> &raw_ids) const;
@@ -122,7 +105,6 @@ private:
     VESPA_DLL_LOCAL vespalib::ConstBufferRef getRawField(uint32_t id) const;
     VESPA_DLL_LOCAL const StructDataType & getStructType() const;
 
-    // Iterator implementation
     struct FieldIterator;
     friend struct FieldIterator;
 

@@ -32,6 +32,7 @@
 
 namespace document {
 
+class ByteBuffer;
 class Document;
 class VespaDocumentSerializer;
 /**
@@ -50,8 +51,8 @@ public:
     /**
      * Create new style document update, possibly with field path updates.
      */
-    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream stream);
-    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, ByteBuffer & buffer);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
 
     DocumentUpdate();
     /**
@@ -124,8 +125,8 @@ private:
     bool                    _needHardReserialize;
 
     int deserializeFlags(int sizeAndFlags);
-    void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
     void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
+    void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
     void deserializeBody(const DocumentTypeRepo &repo, vespalib::nbostream &stream);
     void lazyDeserialize(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void ensureDeserialized() const;

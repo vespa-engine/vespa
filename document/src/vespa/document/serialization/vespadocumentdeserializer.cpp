@@ -2,7 +2,6 @@
 
 #include "vespadocumentdeserializer.h"
 #include "annotationdeserializer.h"
-#include <vespa/document/annotation/spantree.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
@@ -19,7 +18,6 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -30,6 +28,8 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/base/idstringexception.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespadocumentdeserializer");
@@ -74,15 +74,15 @@ void VespaDocumentDeserializer::readDocument(Document &value) {
     if (type) {
         Document::verifyIdAndType(value.getId(), type);
         value.setType(*type);
-        value.clear();
         value.setLastModified(0);
+    } else {
+        value.getFields().reset();
     }
     value.setRepo(_repo.getDocumentTypeRepo());
 
     FixedTypeRepo repo(_repo.getDocumentTypeRepo(), value.getType());
     VarScope<FixedTypeRepo> repo_scope(_repo, repo);
     uint32_t chunkCount = getChunkCount(content_code);
-    value.getFields().reset();
     for (uint32_t i = 0; i < chunkCount; ++i) {
         readStructNoReset(value.getFields());
     }
@@ -306,13 +306,29 @@ void VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
     }
 
     if (data_size > 0) {
-        ByteBuffer::UP buffer(_stream.isLongLivedBuffer()
-                          ? new ByteBuffer(_stream.peek(), data_size)
+        ByteBuffer buffer(_stream.isLongLivedBuffer()
+                          ? ByteBuffer(_stream.peek(), data_size)
                           : ByteBuffer::copyBuffer(_stream.peek(), data_size));
-        LOG(spam, "Lazy deserializing into %s with _version %u",
-            value.getDataType()->getName().c_str(), _version);
-        value.lazyDeserialize(_repo, _version, std::move(field_info),
-                              std::move(buffer), compression_type, uncompressed_size);
+        if (value.getFields().empty()) {
+            LOG(spam, "Lazy deserializing into %s with _version %u",
+                value.getDataType()->getName().c_str(), _version);
+            value.lazyDeserialize(_repo, _version, std::move(field_info),
+                                  std::move(buffer), compression_type, uncompressed_size);
+        } else {
+            LOG(debug, "Legacy dual header/body format. -> Merging.");
+            StructFieldValue tmp(*value.getDataType());
+            tmp.lazyDeserialize(_repo, _version, std::move(field_info),
+                                std::move(buffer), compression_type, uncompressed_size);
+            for (const auto & entry : tmp) {
+                try {
+                    FieldValue::UP decoded = tmp.getValue(entry);
+                    value.setValue(entry, std::move(decoded));
+                } catch (const vespalib::Exception & e) {
+                    LOG(warning, "Failed decoding field '%s' in legacy bodyfield -> Skipping it: %s",
+                                 entry.getName().data(), e.what());
+                }
+            }
+        }
         _stream.adjustReadPos(data_size);
     }
 }
@@ -352,9 +368,7 @@ VespaDocumentDeserializer::read(TensorFieldValue &value)
         nbostream wrapStream(_stream.peek(), length);
         tensor = vespalib::tensor::TypedBinaryFormat::deserialize(wrapStream);
         if (wrapStream.size() != 0) {
-            throw DeserializeException("Leftover bytes deserializing "
-                                       "tensor field value.",
-                                       VESPA_STRLOC);
+            throw DeserializeException("Leftover bytes deserializing tensor field value.", VESPA_STRLOC);
         }
     }
     value.assignDeserialized(std::move(tensor));

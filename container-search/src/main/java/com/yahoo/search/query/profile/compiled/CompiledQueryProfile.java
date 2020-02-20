@@ -134,7 +134,6 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     public Map<String, Object> listValues(CompoundName prefix, Map<String, String> context, Properties substitution) {
         Map<String, Object> values = new HashMap<>();
         for (Map.Entry<CompoundName, DimensionalValue<ValueWithSource>> entry : entries.entrySet()) {
-            if ( entry.getKey().size() <= prefix.size()) continue;
             if ( ! entry.getKey().hasPrefix(prefix)) continue;
 
             ValueWithSource valueWithSource = entry.getValue().get(context);

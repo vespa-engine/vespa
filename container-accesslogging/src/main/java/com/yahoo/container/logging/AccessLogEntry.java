@@ -2,6 +2,7 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.collections.ListMap;
+import com.yahoo.yolean.trace.TraceNode;
 
 import javax.security.auth.x500.X500Principal;
 import java.net.InetAddress;
@@ -69,6 +70,7 @@ public class AccessLogEntry {
     private X500Principal sslPrincipal;
     private String rawPath;
     private String rawQuery;
+    private TraceNode traceNode;
 
     private ListMap<String,String> keyValues=null;
 
@@ -452,6 +454,18 @@ public class AccessLogEntry {
         }
     }
 
+    public void setTrace(TraceNode traceNode) {
+        synchronized (monitor) {
+            requireNull(this.traceNode);
+            this.traceNode = traceNode;
+        }
+    }
+    public TraceNode getTrace() {
+        synchronized (monitor) {
+            return traceNode;
+        }
+    }
+
     @Override
     public String toString() {
         synchronized (monitor) {
@@ -481,6 +495,7 @@ public class AccessLogEntry {
                     ", sslPrincipal=" + sslPrincipal +
                     ", rawPath='" + rawPath + '\'' +
                     ", rawQuery='" + rawQuery + '\'' +
+                    ", trace='" + traceNode + '\'' +
                     ", keyValues=" + keyValues +
                     '}';
         }

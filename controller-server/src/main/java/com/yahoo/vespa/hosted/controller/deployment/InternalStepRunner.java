@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.Notifications.When;
@@ -12,14 +13,12 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -27,9 +26,12 @@ import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -39,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Deployment
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
@@ -52,6 +55,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -63,6 +67,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
@@ -71,15 +76,23 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Nod
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Runs steps of a deployment job against its provided controller.
@@ -94,16 +107,18 @@ import static java.util.logging.Level.WARNING;
 public class InternalStepRunner implements StepRunner {
 
     private static final Logger logger = Logger.getLogger(InternalStepRunner.class.getName());
-    private static final NodeResources DEFAULT_TESTER_RESOURCES =
+
+    static final NodeResources DEFAULT_TESTER_RESOURCES =
             new NodeResources(1, 4, 50, 0.3, NodeResources.DiskSpeed.any);
     // Must match exactly the advertised resources of an AWS instance type. Also consider that the container
     // will have ~1.8 GB less memory than equivalent resources in AWS (VESPA-16259).
-    private static final NodeResources DEFAULT_TESTER_RESOURCES_AWS =
+    static final NodeResources DEFAULT_TESTER_RESOURCES_AWS =
             new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
+    static final Duration endpointCertificateTimeout = Duration.ofMinutes(15);
     static final Duration testerTimeout = Duration.ofMinutes(30);
-    static final Duration installationTimeout = Duration.ofMinutes(150);
+    static final Duration installationTimeout = Duration.ofMinutes(60);
     static final Duration certificateTimeout = Duration.ofMinutes(300);
 
     private final Controller controller;
@@ -186,6 +201,9 @@ public class InternalStepRunner implements StepRunner {
                                                                                vespaVersion,
                                                                                false,
                                                                                setTheStage)),
+                      controller.jobController().run(id).get()
+                                .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
+                                .startTime().get(),
                       logger);
     }
 
@@ -201,12 +219,23 @@ public class InternalStepRunner implements StepRunner {
                                                                                      Optional.of(platform),
                                                                                      false,
                                                                                      false)),
+                      controller.jobController().run(id).get()
+                                .stepInfo(deployTester).get()
+                                .startTime().get(),
                       logger);
     }
 
-    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment, DualLogger logger) {
+    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment,
+                                       Instant startTime, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
+            if (prepareResponse.log != null)
+                logger.logAll(prepareResponse.log.stream()
+                                                 .map(entry -> new LogEntry(0, // Sequenced by BufferedLogStore.
+                                                                            Instant.ofEpochMilli(entry.time),
+                                                                            LogEntry.typeOf(LogLevel.parse(entry.level)),
+                                                                            entry.message))
+                                                 .collect(toList()));
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {
                 List<String> messages = new ArrayList<>();
                 messages.add("Deploy failed due to non-compatible changes that require re-feed.");
@@ -220,10 +249,6 @@ public class InternalStepRunner implements StepRunner {
                                                                  .filter(action -> ! action.allowed)
                                                                  .flatMap(action -> action.messages.stream())
                                                                  .forEach(messages::add);
-                messages.add("Details:");
-                prepareResponse.log.stream()
-                                   .map(entry -> entry.message)
-                                   .forEach(messages::add);
                 logger.log(messages);
                 return Optional.of(deploymentFailed);
             }
@@ -238,7 +263,7 @@ public class InternalStepRunner implements StepRunner {
                                                                   .map(Hostname::new)
                                                                   .forEach(hostname -> {
                                                                       controller.applications().restart(new DeploymentId(id, type.zone(controller.system())), Optional.of(hostname));
-                                                                      logger.log("Restarting services on host " + hostname.id() + ".");
+                                                                      logger.log("Schedule service restart on host " + hostname.id() + ".");
                                                                   });
             logger.log("Deployment successful.");
             if (prepareResponse.message != null)
@@ -246,17 +271,25 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(running);
         }
         catch (ConfigServerException e) {
+            // Retry certain failures for up to one hour.
+            Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                                         ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.getErrorCode()) {
+                case CERTIFICATE_NOT_READY:
+                    if (startTime.plus(endpointCertificateTimeout).isBefore(controller.clock().instant())) {
+                        logger.log("Deployment failed to find provisioned endpoint certificate after " + endpointCertificateTimeout);
+                        return Optional.of(RunStatus.endpointCertificateTimeout);
+                    }
+                    return result;
                 case ACTIVATION_CONFLICT:
                 case APPLICATION_LOCK_FAILURE:
-                case CERTIFICATE_NOT_READY:
                     logger.log("Deployment failed with possibly transient error " + e.getErrorCode() +
                             ", will retry: " + e.getMessage());
-                    return Optional.empty();
+                    return result;
                 case LOAD_BALANCER_NOT_READY:
                 case PARENT_HOST_NOT_READY:
                     logger.log(e.getServerMessage());
-                    return Optional.empty();
+                    return result;
                 case OUT_OF_CAPACITY:
                     logger.log(e.getServerMessage());
                     return Optional.of(outOfCapacity);
@@ -280,18 +313,36 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> installReal(RunId id, boolean setTheStage, DualLogger logger) {
         Optional<Deployment> deployment = deployment(id.application(), id.type());
-        if ( ! deployment.isPresent()) {
+        if (deployment.isEmpty()) {
             logger.log(INFO, "Deployment expired before installation was successful.");
             return Optional.of(installationFailed);
         }
 
         Versions versions = controller.jobController().run(id).get().versions();
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
-        ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
-        logger.log("Checking installation of " + platform + " and " + application.id() + " ...");
 
-        if (   nodesConverged(id.application(), id.type(), platform, logger)
-            && servicesConverged(id.application(), id.type(), platform, logger)) {
+        Run run = controller.jobController().run(id).get();
+        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone(controller.system())),
+                                                                                                               Optional.of(platform));
+        if (services.isEmpty()) {
+            logger.log("Config status not currently available -- will retry.");
+            return Optional.empty();
+        }
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
+                                                                                             id.application(),
+                                                                                             ImmutableSet.of(active, reserved));
+        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
+                                                                                               nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
+        NodeList nodeList = NodeList.of(nodes, parents, services.get());
+        boolean firstTick = run.convergenceSummary().isEmpty();
+        if (firstTick) { // Run the first time (for each convergence step).
+            logger.log(nodeList.asList().stream()
+                               .flatMap(node -> nodeDetails(node, true))
+                               .collect(toList()));
+        }
+        ConvergenceSummary summary = nodeList.summary();
+        if (summary.converged()) {
+            controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
             if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
                 if (containersAreUp(id.application(), id.type().zone(controller.system()), logger)) {
                     logger.log("Installation succeeded!");
@@ -304,52 +355,94 @@ public class InternalStepRunner implements StepRunner {
             }
         }
 
-        if (timedOut(id, deployment.get(), installationTimeout)) {
-            logger.log(INFO, "Installation failed to complete within " + installationTimeout.toMinutes() + " minutes!");
+        String failureReason = null;
+
+        NodeList suspendedTooLong = nodeList.suspendedSince(controller.clock().instant().minus(installationTimeout));
+        if ( ! suspendedTooLong.isEmpty()) {
+            failureReason = "Some nodes have been suspended for more than " + installationTimeout.toMinutes() + " minutes:\n" +
+                            suspendedTooLong.asList().stream().map(node -> node.node().hostname().value()).collect(joining("\n"));
+        }
+
+        if (run.noNodesDownSince()
+               .map(since -> since.isBefore(controller.clock().instant().minus(installationTimeout)))
+               .orElse(false)) {
+            if (summary.needPlatformUpgrade() > 0 || summary.needReboot() > 0 || summary.needRestart() > 0)
+                failureReason ="No nodes allowed to suspend to progress installation for " + installationTimeout.toMinutes() + " minutes.";
+            else
+                failureReason = "Nodes not able to start with new application package.";
+        }
+
+        Duration timeout = JobRunner.jobTimeout.minusHours(1); // Time out before job dies.
+        if (timedOut(id, deployment.get(), timeout)) {
+            failureReason = "Installation failed to complete within " + timeout.toHours() + "hours!";
+        }
+
+        if (failureReason != null) {
+            logger.log(nodeList.asList().stream()
+                               .flatMap(node -> nodeDetails(node, true))
+                               .collect(toList()));
+            logger.log(INFO, failureReason);
             return Optional.of(installationFailed);
         }
 
-        logger.log("Installation not yet complete.");
+        if ( ! firstTick)
+            logger.log(nodeList.expectedDown().asList().stream()
+                               .flatMap(node -> nodeDetails(node, false))
+                               .collect(toList()));
+
+        controller.jobController().locked(id, lockedRun -> {
+            Instant noNodesDownSince = nodeList.allowedDown().size() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
+            return lockedRun.noNodesDownSince(noNodesDownSince).withSummary(summary);
+        });
+
         return Optional.empty();
     }
 
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
         Run run = controller.jobController().run(id).get();
         Version platform = controller.systemVersion();
-        logger.log("Checking installation of tester container ...");
-        if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
-            && servicesConverged(id.tester().id(), id.type(), platform, logger)) {
-            if (endpointsAvailable(id.tester().id(), id.type().zone(controller.system()), logger)) {
-                if (containersAreUp(id.tester().id(), id.type().zone(controller.system()), logger)) {
-                    logger.log("Tester container successfully installed!");
-                    return Optional.of(running);
-                }
-            }
-            else if (run.stepInfo(installTester).get().startTime().get().plus(endpointTimeout).isBefore(controller.clock().instant())) {
-                logger.log(WARNING, "Tester failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
-                return Optional.of(error);
-            }
+        ZoneId zone = id.type().zone(controller.system());
+        ApplicationId testerId = id.tester().id();
+
+        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(testerId, zone),
+                                                                                                               Optional.of(platform));
+        if (services.isEmpty()) {
+            logger.log("Config status not currently available -- will retry.");
+            return run.stepInfo(installTester).get().startTime().get().isBefore(controller.clock().instant().minus(Duration.ofMinutes(5)))
+                   ? Optional.of(error)
+                   : Optional.empty();
+        }
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone,
+                                                                                             testerId,
+                                                                                             ImmutableSet.of(active, reserved));
+        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(zone,
+                                                                                               nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
+        NodeList nodeList = NodeList.of(nodes, parents, services.get());
+        logger.log(nodeList.asList().stream()
+                           .flatMap(node -> nodeDetails(node, false))
+                           .collect(toList()));
+
+        if (nodeList.summary().converged() && testerContainersAreUp(testerId, zone, logger)) {
+            logger.log("Tester container successfully installed!");
+            return Optional.of(running);
         }
 
-        if (run.stepInfo(installTester).get().startTime().get().plus(endpointTimeout).isBefore(controller.clock().instant())) {
+        if (run.stepInfo(installTester).get().startTime().get().plus(testerTimeout).isBefore(controller.clock().instant())) {
             logger.log(WARNING, "Installation of tester failed to complete within " + testerTimeout.toMinutes() + " minutes!");
             return Optional.of(error);
         }
 
-        logger.log("Installation of tester not yet complete.");
         return Optional.empty();
     }
 
     /** Returns true iff all containers in the deployment give 100 consecutive 200 OK responses on /status.html. */
     private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
-        var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zoneId)));
+        var endpoints = controller.routingController().zoneEndpointsOf(Set.of(new DeploymentId(id, zoneId)));
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
         for (URI endpoint : endpoints.get(zoneId).values()) {
-            boolean ready = id.instance().isTester() ? controller.jobController().cloud().testerReady(endpoint)
-                                                     : controller.jobController().cloud().ready(endpoint);
-
+            boolean ready = controller.jobController().cloud().ready(endpoint);
             if (!ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);
                 return false;
@@ -359,9 +452,19 @@ public class InternalStepRunner implements StepRunner {
         return true;
     }
 
+    /** Returns true iff all containers in the tester deployment give 100 consecutive 200 OK responses on /status.html. */
+    private boolean testerContainersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
+        DeploymentId deploymentId = new DeploymentId(id, zoneId);
+        if (controller.jobController().cloud().testerReady(deploymentId)) {
+            return true;
+        } else {
+            logger.log("Failed to get 100 consecutive OKs from tester container for " + deploymentId);
+            return false;
+        }
+    }
+
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
-        logger.log("Attempting to find deployment endpoints ...");
-        var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zone)));
+        var endpoints = controller.routingController().zoneEndpointsOf(Set.of(new DeploymentId(id, zone)));
         if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
             return false;
@@ -386,46 +489,37 @@ public class InternalStepRunner implements StepRunner {
         logger.log(messages);
     }
 
-    private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(type.zone(controller.system()), id, ImmutableSet.of(active, reserved));
-        List<String> statuses = nodes.stream()
-                .map(node -> String.format("%70s: %-16s%-25s%-32s%s",
-                                           node.hostname(),
-                                           node.serviceState(),
-                                           node.wantedVersion() + (node.currentVersion().equals(node.wantedVersion()) ? "" : " <-- " + node.currentVersion()),
-                                           node.restartGeneration() >= node.wantedRestartGeneration() ? ""
-                                                   : "restart pending (" + node.wantedRestartGeneration() + " <-- " + node.restartGeneration() + ")",
-                                           node.rebootGeneration() >= node.wantedRebootGeneration() ? ""
-                                                   : "reboot pending (" + node.wantedRebootGeneration() + " <-- " + node.rebootGeneration() + ")"))
-                .collect(Collectors.toList());
-        logger.log(statuses);
-
-        return nodes.stream().allMatch(node ->    node.currentVersion().equals(target)
-                                               && node.restartGeneration() >= node.wantedRestartGeneration()
-                                               && node.rebootGeneration() >= node.wantedRebootGeneration());
+    private Stream<String> nodeDetails(NodeWithServices node, boolean printAllServices) {
+        return Stream.concat(Stream.of(node.node().hostname() + ": " + humanize(node.node().serviceState()) + (node.node().suspendedSince().map(since -> " since " + since).orElse("")),
+                                       "--- platform " + node.node().wantedVersion() + (node.needsPlatformUpgrade()
+                                                                                        ? " <-- " + (node.node().currentVersion().isEmpty() ? "not booted" : node.node().currentVersion())
+                                                                                        : "") +
+                                       (node.needsOsUpgrade() && node.isAllowedDown()
+                                        ? ", upgrading OS (" + node.node().wantedOsVersion() + " <-- " + node.node().currentOsVersion() + ")"
+                                        : "") +
+                                       (node.needsFirmwareUpgrade() && node.isAllowedDown()
+                                        ? ", upgrading firmware"
+                                        : "") +
+                                       (node.needsRestart()
+                                        ? ", restart pending (" + node.node().wantedRestartGeneration() + " <-- " + node.node().restartGeneration() + ")"
+                                        : "") +
+                                       (node.needsReboot()
+                                        ? ", reboot pending (" + node.node().wantedRebootGeneration() + " <-- " + node.node().rebootGeneration() + ")"
+                                        : "")),
+                             node.services().stream()
+                                 .filter(service -> printAllServices || node.needsNewConfig())
+                                 .map(service -> "--- " + service.type() + " on port " + service.port() + (service.currentGeneration() == -1
+                                                                                                           ? " has not started "
+                                                                                                           : " has config generation " + service.currentGeneration() + ", wanted is " + node.wantedConfigGeneration())));
     }
 
-    private boolean servicesConverged(ApplicationId id, JobType type, Version platform, DualLogger logger) {
-        var convergence = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())),
-                                                                       Optional.of(platform));
-        if (convergence.isEmpty()) {
-            logger.log("Config status not currently available -- will retry.");
-            return false;
+    private String humanize(Node.ServiceState state) {
+        switch (state) {
+            case allowedDown: return "allowed to be DOWN";
+            case expectedUp: return "expected to be UP";
+            case unorchestrated: return "unorchestrated";
+            default: return state.name();
         }
-        logger.log("Wanted config generation is " + convergence.get().wantedGeneration());
-        List<String> statuses = convergence.get().services().stream()
-                .filter(serviceStatus -> serviceStatus.currentGeneration() != convergence.get().wantedGeneration())
-                .map(serviceStatus -> String.format("%70s: %11s on port %4d has config generation %s",
-                                                    serviceStatus.host().value(),
-                                                    serviceStatus.type(),
-                                                    serviceStatus.port(),
-                                                    serviceStatus.currentGeneration() == -1 ? "not started!" : Long.toString(serviceStatus.currentGeneration())))
-                .collect(Collectors.toList());
-        logger.log(statuses);
-        if (statuses.isEmpty())
-            logger.log("All services on wanted config generation.");
-
-        return convergence.get().converged();
     }
 
     private Optional<RunStatus> startTests(RunId id, boolean isSetup, DualLogger logger) {
@@ -439,35 +533,30 @@ public class InternalStepRunner implements StepRunner {
                                     .productionDeployments().keySet().stream()
                                     .map(zone -> new DeploymentId(id.application(), zone))
                                     .collect(Collectors.toSet());
-        deployments.add(new DeploymentId(id.application(), id.type().zone(controller.system())));
+        ZoneId zoneId = id.type().zone(controller.system());
+        deployments.add(new DeploymentId(id.application(), zoneId));
 
         logger.log("Attempting to find endpoints ...");
-        var endpoints = controller.applications().clusterEndpoints(deployments);
-        if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
+        var endpoints = controller.routingController().zoneEndpointsOf(deployments);
+        if ( ! endpoints.containsKey(zoneId)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
         }
         logEndpoints(endpoints, logger);
 
-        Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isEmpty()) {
-            logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
-            return Optional.of(error);
-        }
-
-        if ( ! controller.jobController().cloud().testerReady(testerEndpoint.get())) {
+        if (!controller.jobController().cloud().testerReady(getTesterDeploymentId(id))) {
             logger.log(WARNING, "Tester container went bad!");
             return Optional.of(error);
         }
 
         logger.log("Starting tests ...");
-        controller.jobController().cloud().startTests(testerEndpoint.get(),
-                                                      TesterCloud.Suite.of(id.type(), isSetup),
-                                                      testConfigSerializer.configJson(id.application(),
-                                                                                      id.type(),
-                                                                                      true,
-                                                                                      endpoints,
-                                                                                      controller.applications().contentClustersByZone(deployments)));
+        TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
+        byte[] config = testConfigSerializer.configJson(id.application(),
+                                                        id.type(),
+                                                        true,
+                                                        endpoints,
+                                                        controller.applications().contentClustersByZone(deployments));
+        controller.jobController().cloud().startTests(getTesterDeploymentId(id), suite, config);
         return Optional.of(running);
     }
 
@@ -490,20 +579,7 @@ public class InternalStepRunner implements StepRunner {
 
         controller.jobController().updateTestLog(id);
 
-        BooleanFlag useConfigServerForTesterAPI = Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.bindTo(controller.flagSource());
-        ZoneId zoneId = id.type().zone(controller.system());
-        TesterCloud.Status testStatus;
-        if (useConfigServerForTesterAPI.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value()) {
-            testStatus = controller.serviceRegistry().configServer().getTesterStatus(new DeploymentId(id.application(), zoneId));
-        } else {
-            Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-            if (testerEndpoint.isEmpty()) {
-                logger.log("Endpoints for tester not found -- trying again later.");
-                return Optional.empty();
-            }
-            testStatus = controller.jobController().cloud().getStatus(testerEndpoint.get());
-        }
-
+        TesterCloud.Status testStatus = controller.jobController().cloud().getStatus(getTesterDeploymentId(id));
         switch (testStatus) {
             case NOT_STARTED:
                 throw new IllegalStateException("Tester reports tests not started, even though they should have!");
@@ -537,46 +613,32 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
         try {
-            return retrying(10, () -> {
-                logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-                controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
-                return running;
-            });
+            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+            return Optional.of(running);
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting application " + id.application(), e);
-            return Optional.of(error);
+            Instant startTime = controller.jobController().run(id).get().stepInfo(deactivateReal).get().startTime().get();
+            return startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                   ? Optional.of(error)
+                   : Optional.empty();
         }
     }
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
         try {
-            return retrying(10, () -> {
-                logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-                controller.jobController().deactivateTester(id.tester(), id.type());
-                return running;
-            });
+            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.jobController().deactivateTester(id.tester(), id.type());
+            return Optional.of(running);
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting tester of " + id.application(), e);
-            return Optional.of(error);
+            Instant startTime = controller.jobController().run(id).get().stepInfo(deactivateTester).get().startTime().get();
+            return startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                   ? Optional.of(error)
+                   : Optional.empty();
         }
-    }
-
-    private static Optional<RunStatus> retrying(int retries, Supplier<RunStatus> task) {
-        RuntimeException exception = null;
-        do {
-            try {
-                return Optional.of(task.get());
-            }
-            catch (RuntimeException e) {
-                if (exception == null)
-                    exception = e;
-                else
-                    exception.addSuppressed(e);
-            }
-        } while (--retries >= 0);
-        throw exception;
     }
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
@@ -648,7 +710,7 @@ public class InternalStepRunner implements StepRunner {
         // TODO jonmv: This is a workaround for new deployment writes not yet being visible in spite of Curator locking.
         // TODO Investigate what's going on here, and remove this workaround.
         Run run = controller.jobController().run(id).get();
-        if (run.start().isAfter(deployment.at()))
+        if ( ! controller.system().isCd() && run.start().isAfter(deployment.at()))
             return false;
 
         Duration timeout = controller.zoneRegistry().getDeploymentTimeToLive(deployment.zone())
@@ -665,13 +727,9 @@ public class InternalStepRunner implements StepRunner {
         ZoneId zone = id.type().zone(controller.system());
         boolean useTesterCertificate = controller.system().isPublic() && id.type().environment().isTest();
 
-        byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
-                                         ! controller.system().isPublic(),
+        byte[] servicesXml = servicesXml(! controller.system().isPublic(),
                                          useTesterCertificate,
-                                         testerFlavorFor(id, spec)
-                                                 .map(NodeResources::fromLegacyName)
-                                                 .orElse(zone.region().value().contains("aws-") ?
-                                                         DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
+                                         testerResourcesFor(zone, spec.requireInstance(id.application().instance())));
         byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
         byte[] deploymentXml = deploymentXml(id.tester(),
                                              spec.athenzDomain(),
@@ -704,17 +762,23 @@ public class InternalStepRunner implements StepRunner {
         zipBuilder.add("artifacts/cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
     }
 
-    private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
-        for (DeploymentSpec.Step step : spec.steps())
-            if (step.concerns(id.type().environment()))
-                return step.zones().get(0).testerFlavor();
+    private DeploymentId getTesterDeploymentId(RunId runId) {
+        ZoneId zoneId = runId.type().zone(controller.system());
+        return new DeploymentId(runId.tester().id(), zoneId);
+    }
 
-        return Optional.empty();
+    static NodeResources testerResourcesFor(ZoneId zone, DeploymentInstanceSpec spec) {
+        return spec.steps().stream()
+                   .filter(step -> step.concerns(zone.environment()))
+                   .findFirst()
+                   .flatMap(step -> step.zones().get(0).testerFlavor())
+                   .map(NodeResources::fromLegacyName)
+                   .orElse(zone.region().value().contains("aws-") ?
+                           DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES);
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(AthenzDomain domain, boolean systemUsesAthenz, boolean useTesterCertificate,
-                              NodeResources resources) {
+    static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate, NodeResources resources) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
@@ -725,7 +789,6 @@ public class InternalStepRunner implements StepRunner {
                                               "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\"/>",
                                               resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name());
 
-        AthenzDomain idDomain = ("vespa.vespa.cd".equals(domain.value()) ? AthenzDomain.from("vespa.vespa") : domain);
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
@@ -743,51 +806,6 @@ public class InternalStepRunner implements StepRunner {
                 "        <handler id=\"com.yahoo.vespa.hosted.testrunner.TestRunnerHandler\" bundle=\"vespa-testrunner-components\">\n" +
                 "            <binding>http://*/tester/v1/*</binding>\n" +
                 "        </handler>\n" +
-                "\n" +
-                "        <http>\n" +
-                "            <!-- Make sure 4080 is the first port. This will be used by the config server. -->\n" +
-                "            <server id='default' port='4080'/>\n" +
-                "            <server id='testertls4443' port='4443'>\n" +
-                "                <config name=\"jdisc.http.connector\">\n" +
-                "                    <tlsClientAuthEnforcer>\n" +
-                "                        <enable>true</enable>\n" +
-                "                        <pathWhitelist>\n" +
-                "                            <item>/status.html</item>\n" +
-                "                            <item>/state/v1/config</item>\n" +
-                "                        </pathWhitelist>\n" +
-                "                    </tlsClientAuthEnforcer>\n" +
-                "                </config>\n" +
-                "                <ssl>\n" +
-                "                    <private-key-file>/var/lib/sia/keys/" + idDomain.value() + ".tenant.key.pem</private-key-file>\n" +
-                "                    <certificate-file>/var/lib/sia/certs/" + idDomain.value() + ".tenant.cert.pem</certificate-file>\n" +
-                "                    <ca-certificates-file>/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem</ca-certificates-file>\n" +
-                "                    <client-authentication>want</client-authentication>\n" +
-                "                </ssl>\n" +
-                "            </server>\n" +
-                "            <filtering>\n" +
-                (systemUsesAthenz ?
-                "                <access-control domain='" + domain.value() + "'>\n" + // Set up dummy access control to pass validation :/
-                "                    <exclude>\n" +
-                "                        <binding>http://*/tester/v1/*</binding>\n" +
-                "                    </exclude>\n" +
-                "                </access-control>\n"
-                : "") +
-                "                <request-chain id=\"testrunner-api\">\n" +
-                "                    <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle=\"jdisc-security-filters\">\n" +
-                "                        <config name=\"jdisc.http.filter.security.athenz.athenz-authorization-filter\">\n" +
-                "                            <credentialsToVerify>TOKEN_ONLY</credentialsToVerify>\n" +
-                "                            <roleTokenHeaderName>Yahoo-Role-Auth</roleTokenHeaderName>\n" +
-                "                        </config>\n" +
-                "                        <component id=\"com.yahoo.jdisc.http.filter.security.athenz.StaticRequestResourceMapper\" bundle=\"jdisc-security-filters\">\n" +
-                "                            <config name=\"jdisc.http.filter.security.athenz.static-request-resource-mapper\">\n" +
-                "                                <resourceName>" + domain.value() + ":tester-application</resourceName>\n" +
-                "                                <action>deploy</action>\n" +
-                "                            </config>\n" +
-                "                        </component>\n" +
-                "                    </filter>\n" +
-                "                </request-chain>\n" +
-                "            </filtering>\n" +
-                "        </http>\n" +
                 "\n" +
                 "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
                 "            " + resourceString + "\n" +
@@ -823,6 +841,10 @@ public class InternalStepRunner implements StepRunner {
 
         private void log(String... messages) {
             log(List.of(messages));
+        }
+
+        private void logAll(List<LogEntry> messages) {
+            controller.jobController().log(id, step, messages);
         }
 
         private void log(List<String> messages) {

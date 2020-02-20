@@ -3,6 +3,7 @@
 #include "hitlist.h"
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
+#include <stdexcept>
 
 namespace search::aggregation {
 

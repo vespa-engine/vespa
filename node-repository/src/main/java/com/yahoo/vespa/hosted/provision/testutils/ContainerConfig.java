@@ -13,7 +13,8 @@ public class ContainerConfig {
         return "<container version='1.0'>\n" +
                "  <config name=\"container.handler.threadpool\">\n" +
                "    <maxthreads>20</maxthreads>\n" +
-               "  </config>  \n" +
+               "  </config>\n" +
+               "  <accesslog type='disabled'/>\n" +
                "  <component id='com.yahoo.test.ManualClock'/>\n" +
                "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock'/>\n" +

@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
+import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -94,6 +95,10 @@ public final class ControllerTester {
              curatorDb,
              rotationsConfig,
              new ServiceRegistryMock());
+    }
+
+    public ControllerTester(ServiceRegistryMock serviceRegistryMock) {
+        this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), serviceRegistryMock);
     }
 
     public ControllerTester(RotationsConfig rotationsConfig) {
@@ -356,7 +361,6 @@ public final class ControllerTester {
         return application;
     }
 
-
     public void deploy(ApplicationId id, ZoneId zone) {
         deploy(id, zone, new ApplicationPackage(new byte[0]));
     }
@@ -394,7 +398,7 @@ public final class ControllerTester {
                                                new InMemoryFlagSource(),
                                                new MockMavenRepository(),
                                                serviceRegistry,
-                                               new MetricsMock());
+                                               new MetricsMock(), new SecretStoreMock());
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;

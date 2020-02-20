@@ -535,12 +535,12 @@ TEST("requireThatDocumentCanBeSerialized") {
     uint32_t size;
     stream >> read_version >> size;
     EXPECT_EQUAL(serialization_version, read_version);
-    EXPECT_EQUAL(70u, size);
+    EXPECT_EQUAL(64u, size);
     EXPECT_EQUAL(doc_id.getScheme().toString(), stream.peek());
     stream.adjustReadPos(doc_id.getScheme().toString().size() + 1);
     uint8_t content_code;
     stream >> content_code;
-    EXPECT_EQUAL(0x07, content_code);
+    EXPECT_EQUAL(0x03, content_code);
     EXPECT_EQUAL(type.getName(), stream.peek());
     stream.adjustReadPos(type.getName().size() + 1);
     stream >> read_version;
@@ -912,7 +912,7 @@ void
 DeserializedTensorDoc::setup(const DocumentTypeRepo &docTypeRepo, const vespalib::nbostream &blob)
 {
     vespalib::nbostream wrapStream(blob.peek(), blob.size());
-    _doc = std::make_unique<Document>(docTypeRepo, wrapStream, nullptr);
+    _doc = std::make_unique<Document>(docTypeRepo, wrapStream);
     _fieldValue = _doc->getValue(tensor_field_name);
 }
 

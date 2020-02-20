@@ -86,89 +86,45 @@ void VespaDocumentSerializer::write(const DocumentType &value) {
             << static_cast<uint16_t>(0);  // version
 }
 
+namespace {
+
 uint8_t
-VespaDocumentSerializer::getContentCode(bool hasHeader, bool hasBody) const
+getContentCode(bool hasContent)
 {
-    uint8_t content = 0x01;  // Document type is always present.
-    if (hasHeader) {
-        content |= 0x02;  // Header is present.
-    }
-    if (hasBody) {
-        content |= 0x04;  // Body is present.
-    }
-    return content;
+    return 0x01u |  // Document type is always present
+           (hasContent ? 0x02u : 0x00u);   // Payload ?
 }
 
-static inline size_t wantChunks(bool hasHeader, bool hasBody) {
-    size_t res = 0;
-    if (hasHeader) ++res;
-    if (hasBody) ++res;
-    return res;
 }
 
 void
-VespaDocumentSerializer::write(const Document &value, DocSerializationMode mode) {
+VespaDocumentSerializer::write(const Document &value) {
     nbostream doc_stream;
     VespaDocumentSerializer doc_serializer(doc_stream);
     doc_serializer.write(value.getId());
 
-    bool hasHeader = false;
-    bool hasBody = false;
-
-    const StructFieldValue::Chunks & chunks = value.getFields().getChunks();
-
-    for (const Field & field : value.getFields()) {
-        if (field.isHeaderField()) {
-            hasHeader = true;
-        } else {
-            hasBody = true;
-        }
-        if (hasHeader && hasBody) {
-            break;
-        }
-    }
-    if (mode != COMPLETE) {
-        hasBody = false;
-    }
-    doc_stream << getContentCode(hasHeader, hasBody);
+    bool hasContent = ! value.getFields().empty();
+    doc_stream << getContentCode(hasContent);
     doc_serializer.write(value.getType());
 
-    if (chunks.size() == wantChunks(hasHeader, hasBody) &&
-        !structNeedsReserialization(value.getFields()))
-    {
-        // here we assume the receiver can handle whatever serialization the
-        // chunks contain, so we just send them as-is, even if some fields
-        // may have moved from header to body or vice versa.
-        if (hasHeader || hasBody) {
-            assert( ! chunks.empty());
-            doc_serializer.writeUnchanged(chunks[0]);
-        }
-        if (hasHeader && hasBody) {
-            assert(chunks.size() == 2);
-            doc_serializer.writeUnchanged(chunks[1]);
-        }
-    } else {
-        if (hasHeader) {
-            doc_serializer.write(value.getFields(), HeaderFields());
-        }
-        if (hasBody) {
-            doc_serializer.write(value.getFields(), BodyFields());
+    if ( hasContent ) {
+        if (!structNeedsReserialization(value.getFields())) {
+            doc_serializer.writeUnchanged(value.getFields().getFields());
+        } else {
+            doc_serializer.write(value.getFields(), AllFields());
         }
     }
 
     const uint16_t version = serialize_version;
-    _stream << version
-            << static_cast<uint32_t>(doc_stream.size());
+    _stream << version << static_cast<uint32_t>(doc_stream.size());
     _stream.write(doc_stream.peek(), doc_stream.size());
 }
 
 void
 VespaDocumentSerializer::visit(const StructFieldValue &value)
 {
-    const StructFieldValue::Chunks & chunks = value.getChunks();
-    if (!structNeedsReserialization(value) && ! chunks.empty()) {
-        assert(chunks.size() == 1);
-        writeUnchanged(chunks[0]);
+    if (!structNeedsReserialization(value)) {
+        writeUnchanged(value.getFields());
     } else {
         write(value, AllFields());
     }
@@ -247,7 +203,7 @@ VespaDocumentSerializer::write(const ShortFieldValue &value) {
 
 void
 VespaDocumentSerializer::write(const StringFieldValue &value) {
-    uint8_t coding = (value.hasSpanTrees() << 6);
+    uint8_t coding = (value.hasSpanTrees() << 6u);
     _stream << coding;
     putInt1_4Bytes(_stream, value.getValueRef().size() + 1);
     _stream.write(value.getValueRef().data(), value.getValueRef().size());
@@ -293,10 +249,10 @@ vespalib::ConstBufferRef
 compressStream(const CompressionConfig &config, nbostream &stream, vespalib::DataBuffer & compressed_data)
 {
     using vespalib::compression::compress;
-    vespalib::ConstBufferRef buf(stream.c_str(), stream.size());
+    vespalib::ConstBufferRef buf(stream.data(), stream.size());
     if (config.useCompression() && bigEnough(stream.size(), config)) {
         CompressionConfig::Type compressedType = compress(config,
-                                                          vespalib::ConstBufferRef(stream.c_str(), stream.size()),
+                                                          vespalib::ConstBufferRef(stream.data(), stream.size()),
                                                           compressed_data, false);
         if (compressedType != config.type ||
             ! compressionSufficient(config, stream.size(), compressed_data.getDataLen()))
@@ -341,17 +297,8 @@ VespaDocumentSerializer::structNeedsReserialization(const StructFieldValue &valu
         return false;
     }
 
-    const StructFieldValue::Chunks & chunks = value.getChunks();
-
-    for (uint32_t i = 0; i < chunks.size(); ++i) {
-        if (chunks[i].getCompression() != value.getCompressionConfig().type &&
-            chunks[i].getCompression() != CompressionConfig::UNCOMPRESSABLE)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return (value.getFields().getCompression() != value.getCompressionConfig().type &&
+        value.getFields().getCompression() != CompressionConfig::UNCOMPRESSABLE);
 }
 
 void VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
@@ -378,8 +325,7 @@ void VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
     }
 }
 
-void VespaDocumentSerializer::write(const StructFieldValue &value,
-                                    const FieldSet& fieldSet)
+void VespaDocumentSerializer::write(const StructFieldValue &value, const FieldSet& fieldSet)
 {
     nbostream value_stream;
     vector<pair<uint32_t, uint32_t> > field_info;

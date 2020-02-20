@@ -139,13 +139,9 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
         int legalPortInHostedVespa = Container.BASEPORT;
         if (isHosted && port != legalPortInHostedVespa && ! spec.booleanAttribute("required", false)) {
-            // TODO: After January 2020:
-            // - Set required='true' for the http server on port 4443 in the tester services.xml in InternalStepRunner
-            // - Enable 2 currently ignored tests in this module
-            // - throw IllegalArgumentException here instead of warning
-            logger.log(Level.WARNING, "Illegal port " + port + " in http server '" +
-                                      spec.stringAttribute("id") + "'" +
-                                      ": Port must be set to " + legalPortInHostedVespa);
+            throw new IllegalArgumentException("Illegal port " + port + " in http server '" +
+                                               spec.stringAttribute("id") + "'" +
+                                               ": Port must be set to " + legalPortInHostedVespa);
         }
         return port;
     }

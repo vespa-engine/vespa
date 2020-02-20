@@ -8,6 +8,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
@@ -30,7 +31,7 @@ public class DocumentTypeManagerTestCase {
 
         DocumentType newDocType = new DocumentType("testdoc");
         newDocType.addField("Fjomp", DataType.INT);
-        newDocType.addHeaderField("Fjols", DataType.STRING);
+        newDocType.addField("Fjols", DataType.STRING);
 
         manager.registerDocumentType(newDocType);
 
@@ -40,7 +41,6 @@ public class DocumentTypeManagerTestCase {
 
         assertEquals("Fjomp", fetched4.getName());
         assertEquals(fetched4.getDataType(), DataType.INT);
-        assertEquals(fetched4.isHeader(), false);
     }
 
     @Test
@@ -64,8 +64,8 @@ public class DocumentTypeManagerTestCase {
         StructDataType struct = new StructDataType("mystruct");
         DataType wset1 = DataType.getWeightedSet(DataType.getArray(DataType.INT));
         DataType wset2 = DataType.getWeightedSet(DataType.getArray(DataType.TAG));
-        struct.addField(new Field("foo", wset1, true));
-        struct.addField(new Field("bar", wset2, false));
+        struct.addField(new Field("foo", wset1));
+        struct.addField(new Field("bar", wset2));
         DataType array = DataType.getArray(struct);
         DocumentType docType = new DocumentType("mydoc");
         docType.addField("hmm", array);
@@ -148,7 +148,6 @@ public class DocumentTypeManagerTestCase {
         assertTrue(type.hasField("foobarfield1"));
 
         Field foobarfield0 = type.getField("foobarfield0");
-        assertTrue(!foobarfield0.isHeader());
         assertTrue(foobarfield0.getDataType().getCode() == 2);
 
         Field foobarfield1 = type.getField("foobarfield1");
@@ -190,7 +189,6 @@ public class DocumentTypeManagerTestCase {
         assertTrue(type.hasField("arrayarrayfloat"));
 
         Field arrayfloat = type.getField("arrayfloat");
-        assertTrue(!arrayfloat.isHeader());
         ArrayDataType dataType = (ArrayDataType) arrayfloat.getDataType();
         assertTrue(dataType.getCode() == 99);
         assertTrue(dataType.getValueClass().equals(Array.class));
@@ -200,7 +198,6 @@ public class DocumentTypeManagerTestCase {
 
         Field arrayarrayfloat = type.getField("arrayarrayfloat");
         ArrayDataType subType = (ArrayDataType) arrayarrayfloat.getDataType();
-        assertTrue(!arrayarrayfloat.isHeader());
         assertTrue(subType.getCode() == 4003);
         assertTrue(subType.getValueClass().equals(Array.class));
         assertTrue(subType.getNestedType().getCode() == 99);
@@ -218,14 +215,14 @@ public class DocumentTypeManagerTestCase {
         DocumentType customtypes = manager.getDocumentType(new DataTypeName("customtypes"));
 
         assertNull(banana.getField("newfield"));
-        assertEquals(new Field("arrayfloat", 9489, new ArrayDataType(DataType.FLOAT, 99), false), customtypes.getField("arrayfloat"));
+        assertEquals(new Field("arrayfloat", 9489, new ArrayDataType(DataType.FLOAT, 99)), customtypes.getField("arrayfloat"));
 
         DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.updated.cfg");
 
         banana = manager.getDocumentType(new DataTypeName("banana"));
         customtypes = manager.getDocumentType(new DataTypeName("customtypes"));
 
-        assertEquals(new Field("newfield", 12345, DataType.STRING, true), banana.getField("newfield"));
+        assertEquals(new Field("newfield", 12345, DataType.STRING), banana.getField("newfield"));
         assertNull(customtypes.getField("arrayfloat"));
     }
 
@@ -558,6 +555,35 @@ search annotationsimplicitstruct {
         DocumentType targetDocType = manager.getDocumentType("referenced_type");
         assertTrue(fieldRefType.getTargetType() == targetDocType);
     }
+
+    @Test
+    public void imported_fields_are_empty_if_no_fields_provided_in_config() {
+        var manager = createConfiguredManager("file:src/test/document/documentmanager.singlereference.cfg");
+        var docType = manager.getDocumentType("type_with_ref");
+
+        assertNotNull(docType.getImportedFieldNames());
+        assertEquals(docType.getImportedFieldNames().size(), 0);
+        assertFalse(docType.hasImportedField("foo"));
+    }
+
+    @Test
+    public void imported_fields_are_populated_from_config() {
+        var manager = createConfiguredManager("file:src/test/document/documentmanager.importedfields.cfg");
+        var docType = manager.getDocumentType("type_with_ref");
+
+        var expectedFields = new HashSet<String>();
+        expectedFields.add("my_cool_imported_field");
+        expectedFields.add("my_awesome_imported_field");
+        assertEquals(docType.getImportedFieldNames(), expectedFields);
+
+        assertTrue(docType.hasImportedField("my_cool_imported_field"));
+        assertTrue(docType.hasImportedField("my_awesome_imported_field"));
+        assertFalse(docType.hasImportedField("a_missing_imported_field"));
+    }
+
+    // TODO test clone(). Also fieldSets not part of clone()..!
+
+    // TODO add imported field to equals()/hashCode() for DocumentType? fieldSets not part of this...
 
     // TODO test reference to own doc type
 

@@ -14,9 +14,8 @@ namespace document {
 
 namespace {
 template <typename T>
-void deserialize(const ByteBuffer &buffer, T &value) {
+void deserialize(nbostream & stream, T &value) {
     uint16_t version = Document::getNewestSerializationVersion();
-    nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
     DocumentTypeRepo repo;
     VespaDocumentDeserializer deserializer(repo, stream, version);
     deserializer.read(value);
@@ -89,20 +88,17 @@ void deserialize(const ByteBuffer &buffer, T &value) {
 
                 // Serialization
             Type t;
-            std::unique_ptr<ByteBuffer> buf(smallest.serialize());
-            buf->flip();
-            deserialize(*buf, t);
+            nbostream buf(smallest.serialize());
+            deserialize(buf, t);
             EXPECT_EQ(smallest, t);
 
             buf = medium1.serialize();
-            buf->flip();
-            deserialize(*buf, t);
+            deserialize(buf, t);
             EXPECT_EQ(medium1, t);
             EXPECT_EQ(medium2, t);
 
             buf = largest.serialize();
-            buf->flip();
-            deserialize(*buf, t);
+            deserialize(buf, t);
             EXPECT_EQ(largest, t);
 
                 // Assignment
@@ -160,20 +156,17 @@ void deserialize(const ByteBuffer &buffer, T &value) {
         // Test that a just deserialized value can be serialized again
         // (literals have lazy deserialization so behaves diff then
         value = "foo";
-        std::unique_ptr<ByteBuffer> buf(value.serialize());
-        buf->flip();
+        nbostream buf(value.serialize());
         Literal value2("Other");
-        deserialize(*buf, value2);
+        deserialize(buf, value2);
         buf = value2.serialize();
-        buf->flip();
-        deserialize(*buf, value2);
+        deserialize(buf, value2);
         EXPECT_EQ(value, value2);
 
         // Verify that get value ref gives us ref within original bytebuffer
         // (operator== use above should not modify this)
         buf = value.serialize();
-        buf->flip();
-        deserialize(*buf, value2);
+        deserialize(buf, value2);
 
         EXPECT_EQ(size_t(3), value2.getValueRef().size());
         // Zero termination

@@ -111,7 +111,7 @@ struct ArrayFixture : FixtureBase {
     void check_prepare_state_output(const vespalib::tensor::Tensor & tensor, const ExpectedType & expected) {
         vespalib::nbostream os;
         vespalib::tensor::TypedBinaryFormat::serialize(os, tensor);
-        vespalib::string input_vector(os.c_str(), os.size());
+        vespalib::string input_vector(os.data(), os.size());
         check_prepare_state_output(".tensor", input_vector, expected);
     }
 

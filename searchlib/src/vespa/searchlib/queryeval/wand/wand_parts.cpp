@@ -3,22 +3,18 @@
 #include "wand_parts.h"
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search {
-namespace queryeval {
-namespace wand {
+namespace search::queryeval::wand {
 
 void
 VectorizedIteratorTerms::visit_members(vespalib::ObjectVisitor &visitor) const {
     visit(visitor, "children", _terms);
 }
 
-VectorizedIteratorTerms::VectorizedIteratorTerms(VectorizedIteratorTerms &&) = default;
-VectorizedIteratorTerms & VectorizedIteratorTerms::operator=(VectorizedIteratorTerms &&) = default;
-VectorizedIteratorTerms::~VectorizedIteratorTerms() { }
+VectorizedIteratorTerms::VectorizedIteratorTerms(VectorizedIteratorTerms &&) noexcept = default;
+VectorizedIteratorTerms & VectorizedIteratorTerms::operator=(VectorizedIteratorTerms &&) noexcept = default;
+VectorizedIteratorTerms::~VectorizedIteratorTerms() = default;
 
-} // namespace wand
-} // namespace queryeval
-} // namespace search
+}
 
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::wand::Term &obj)

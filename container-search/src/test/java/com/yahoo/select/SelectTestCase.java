@@ -652,12 +652,25 @@ public class SelectTestCase {
         assertGrouping(expected, parseGrouping(grouping));
     }
 
-
     @Test
     public void testMultipleGroupings() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\"}}}, { \"all\" : { \"group\" : \"b\", \"each\" : { \"output\" : \"count()\"}}} ]";
         String expected = "[[]all(group(a) each(output(count()))), []all(group(b) each(output(count())))]";
 
+        assertGrouping(expected, parseGrouping(grouping));
+    }
+
+    @Test
+    public void testGroupingWithPredefinedBuckets() {
+        String grouping = "[ { \"all\" : { \"group\" : { \"predefined\" : [ \"foo\", { \"bucket\": [1,2]}, { \"bucket\": [3,4]} ] } } } ]";
+        String expected = "[[]all(group(predefined(foo, bucket[1, 2>, bucket[3, 4>)))]";
+        assertGrouping(expected, parseGrouping(grouping));
+    }
+
+    @Test
+    public void testMultipleOutputs() {
+        String grouping = "[ { \"all\" : { \"group\" : \"b\", \"each\" : {\"output\": [ \"count()\", \"avg(foo)\" ] } } } ]";
+        String expected = "[[]all(group(b) each(output(count(), avg(foo))))]";
         assertGrouping(expected, parseGrouping(grouping));
     }
 
@@ -763,7 +776,6 @@ public class SelectTestCase {
     }
 
     private List<VespaGroupingStep> parseGrouping(String grouping) {
-
         return parser.getGroupingSteps(grouping);
     }
 

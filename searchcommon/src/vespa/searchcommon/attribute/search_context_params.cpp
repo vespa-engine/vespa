@@ -6,12 +6,4 @@
 
 namespace search::attribute {
 
-SearchContextParams::SearchContextParams()
-    : _diversityAttribute(nullptr),
-      _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
-      _useBitVector(false),
-      _diversityCutoffStrict(false)
-{
-}
-
 }

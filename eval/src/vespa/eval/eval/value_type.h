@@ -46,9 +46,9 @@ private:
         : _type(type_in), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
 
 public:
-    ValueType(ValueType &&) = default;
+    ValueType(ValueType &&) noexcept = default;
     ValueType(const ValueType &) = default;
-    ValueType &operator=(ValueType &&) = default;
+    ValueType &operator=(ValueType &&) noexcept = default;
     ValueType &operator=(const ValueType &) = default;
     ~ValueType();
     Type type() const { return _type; }

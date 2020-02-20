@@ -16,6 +16,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -25,6 +26,8 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
+import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
@@ -33,11 +36,13 @@ import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
 
@@ -48,6 +53,7 @@ class ModelTestUtils {
 
     public static final int NUMBER_OF_CONFIG_SERVERS = 3;
 
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
     private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
@@ -58,14 +64,30 @@ class ModelTestUtils {
                                                                    new ServiceMonitorInstanceLookupService(() -> new ServiceModel(applications)),
                                                                    0,
                                                                    new ManualClock(),
-                                                                   applicationApiFactory());
+                                                                   applicationApiFactory(),
+                                                                   flagSource);
 
     ApplicationApiFactory applicationApiFactory() {
         return new ApplicationApiFactory(NUMBER_OF_CONFIG_SERVERS);
     }
 
-    Map<HostName, HostStatus> getHostStatusMap() {
-        return hostStatusMap;
+    HostInfos getHostInfos() {
+        Instant now = Instant.now();
+
+        Map<HostName, HostInfo> hostInfosMap = hostStatusMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey(),
+                        entry -> {
+                            HostStatus status = entry.getValue();
+                            if (status == HostStatus.NO_REMARKS) {
+                                return HostInfo.createNoRemarks();
+                            } else {
+                                return HostInfo.createSuspended(status, now);
+                            }
+                        }
+                ));
+
+        return new HostInfos(hostInfosMap);
     }
 
     HostName createNode(String name, HostStatus hostStatus) {

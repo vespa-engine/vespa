@@ -25,7 +25,7 @@ public:
      * Constructs a new search result message for deserialization.
      */
     QueryResultMessage();
-    ~QueryResultMessage();
+    ~QueryResultMessage() override;
 
     /**
      * Constructs a new search result message for the given search result.

@@ -120,6 +120,11 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     }
 
     @Test
+    public void testFieldSet2() throws IOException, ParseException {
+        assertCorrectDeriving("fieldset2");
+    }
+
+    @Test
     public void testIndexinfoFieldsets() throws IOException, ParseException {
         assertCorrectDeriving("indexinfo_fieldsets");
     }
@@ -148,6 +153,11 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         builder.build();
         derive("tensor2", builder, builder.getSearch("second"));
         assertCorrectConfigFiles("tensor2");
+    }
+
+    @Test
+    public void testHnswIndex() throws IOException, ParseException {
+        assertCorrectDeriving("hnsw_index");
     }
 
 }

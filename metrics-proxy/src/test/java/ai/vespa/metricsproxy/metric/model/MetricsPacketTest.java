@@ -14,6 +14,7 @@ import java.util.Map;
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,10 +46,20 @@ public class MetricsPacketTest {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
                 .statusCode(0)
                 .statusMessage("")
-                .addConsumers(Collections.singleton(DUPLICATE_CONSUMER))
-                .addConsumers(Collections.singleton(DUPLICATE_CONSUMER))
+                .addConsumers(singleton(DUPLICATE_CONSUMER))
+                .addConsumers(singleton(DUPLICATE_CONSUMER))
                 .build();
         assertEquals(1, packet.consumers().size());
+    }
+
+    @Test
+    public void builder_allows_inspecting_consumers() {
+        var consumer = toConsumerId("my-consumer");
+        var builder = new MetricsPacket.Builder(toServiceId("foo"))
+                .statusCode(0)
+                .statusMessage("")
+                .addConsumers(singleton(consumer));
+        assertTrue(builder.hasConsumer(consumer));
     }
 
     @Test

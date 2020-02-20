@@ -12,16 +12,13 @@
 #include "visitor.h"
 #include <vespa/storageapi/message/datagram.h>
 
-namespace documentapi {
-class DocumentListMessage;
-}
+namespace documentapi { class DocumentListMessage; }
 
 namespace storage {
 
 class RecoveryVisitor : public Visitor {
 public:
-    RecoveryVisitor(StorageComponent&,
-                    const vdslib::Parameters& params);
+    RecoveryVisitor(StorageComponent&, const vdslib::Parameters& params);
 
 private:
     void handleDocuments(const document::BucketId& bucketId,
@@ -43,12 +40,11 @@ struct RecoveryVisitorFactory : public VisitorFactory {
 
     VisitorEnvironment::UP
     makeVisitorEnvironment(StorageComponent&) override {
-        return VisitorEnvironment::UP(new VisitorEnvironment);
+        return std::make_unique<VisitorEnvironment>();
     };
 
     Visitor*
-    makeVisitor(StorageComponent& c, VisitorEnvironment&,
-                const vdslib::Parameters& params) override
+    makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters& params) override
     {
         return new RecoveryVisitor(c, params);
     }

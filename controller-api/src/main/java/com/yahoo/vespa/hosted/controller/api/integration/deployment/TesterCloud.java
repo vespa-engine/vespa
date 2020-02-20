@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 
 import java.net.URI;
@@ -16,11 +17,20 @@ public interface TesterCloud {
     /** Signals the tester to run its tests. */
     void startTests(URI testerUrl, Suite suite, byte[] config);
 
+    /** Signals the tester to run its tests. */
+    void startTests(DeploymentId deploymentId, Suite suite, byte[] config);
+
     /** Returns the log entries from the tester with ids after the given threshold. */
     List<LogEntry> getLog(URI testerUrl, long after);
 
+    /** Returns the log entries from the tester with ids after the given threshold. */
+    List<LogEntry> getLog(DeploymentId deploymentId, long after);
+
     /** Returns the current status of the tester. */
     Status getStatus(URI testerUrl);
+
+    /** Returns the current status of the tester. */
+    Status getStatus(DeploymentId deploymentId);
 
     /** Returns whether the container is ready to serve. */
     boolean ready(URI endpointUrl);
@@ -28,9 +38,17 @@ public interface TesterCloud {
     /** Returns whether the test container is ready to serve */
     boolean testerReady(URI endpointUrl);
 
+    /** Returns whether the test container is ready to serve */
+    boolean testerReady(DeploymentId deploymentId);
+
     /** Returns whether the given URL is registered in DNS. */
     boolean exists(URI endpointUrl);
 
+    /**
+     * Returns whether the given URL is registered in DNS. Always returns true,
+     * as endpoints are not use in this case
+     */
+    default boolean exists(DeploymentId deploymentId) { return true; }
 
     enum Status {
 

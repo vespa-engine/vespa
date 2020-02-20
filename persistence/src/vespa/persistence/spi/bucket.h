@@ -17,8 +17,7 @@
 #include <persistence/spi/types.h>
 #include <vespa/document/bucket/bucket.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 class Bucket {
     document::Bucket _bucket;
@@ -47,6 +46,4 @@ public:
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const Bucket& bucket);
 std::ostream& operator<<(std::ostream& out, const Bucket& bucket);
 
-} // spi
-} // storage
-
+}

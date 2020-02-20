@@ -20,7 +20,6 @@ namespace documentapi {
 class LoadTypeSet;
 class RoutingPolicyRepository;
 class RoutableRepository;
-class SystemState;
 class IRoutingPolicyFactory;
 class IRoutableFactory;
 

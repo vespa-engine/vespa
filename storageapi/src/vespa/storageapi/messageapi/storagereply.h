@@ -15,8 +15,7 @@
 #include "returncode.h"
 #include "storagemessage.h"
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 class StorageCommand;
 
@@ -28,7 +27,7 @@ protected:
                           ReturnCode code = ReturnCode(ReturnCode::OK));
 
 public:
-    ~StorageReply();
+    ~StorageReply() override;
     DECLARE_POINTER_TYPEDEFS(StorageReply);
 
     void setResult(const ReturnCode& r) { _result = r; }
@@ -37,6 +36,4 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-} // api
-} // storage
-
+}

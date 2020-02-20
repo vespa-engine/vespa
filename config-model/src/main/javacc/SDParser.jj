@@ -332,6 +332,9 @@ TOKEN :
 | < UPPERBOUND: "upper-bound" >
 | < DENSEPOSTINGLISTTHRESHOLD: "dense-posting-list-threshold" >
 | < ENABLE_BM25: "enable-bm25" >
+| < HNSW: "hnsw" >
+| < MAXLINKSPERNODE: "max-links-per-node" >
+| < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
@@ -637,7 +640,7 @@ void field(SDDocumentType document, Search search) :
         if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
-        field = new TemporarySDField(name, type, true, document);
+        field = new TemporarySDField(name, type, document);
     }
     lbrace() (fieldBody(field, search, document) (<NL>)*)* <RBRACE>
     {
@@ -651,27 +654,35 @@ void field(SDDocumentType document, Search search) :
 
 void fieldSet(Search search) :
 {
-  String name;
-}
-{
-  <FIELDSET> name = identifier() lbrace()
-    (fieldSetItem(name, search)(<NL>)*)+
-  <RBRACE>
-}
-
-void fieldSetItem(String setName, Search search) :
-{
+  String setName;
   String field;
   String queryCommand;
-  SDField matchSettings = new SDField(setName, DataType.STRING); // match etc for fieldset represented as SDField or ease of parsing
+  List queryCommands = new ArrayList();
+  FieldOperationContainer matchSetting;
+  List matchSettings = new ArrayList();
 }
 {
-  ( <FIELDS><COLON> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
-    ( <COMMA> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
-  |
-    ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { search.fieldSets().userFieldSets().get(setName).queryCommands().add(queryCommand);}
-  |
-    ( match(matchSettings) ) { matchSettings.applyOperations(); search.fieldSets().userFieldSets().get(setName).setMatching(matchSettings.getMatching());}
+  <FIELDSET> setName = identifier() lbrace()
+    ((
+      ( <FIELDS><COLON> field = identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
+      ( <COMMA> field = identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
+    |
+      ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { queryCommands.add(queryCommand); }
+    |
+      ( matchSetting = match(new SDField(setName, DataType.STRING)) ) { matchSettings.add(matchSetting); }
+    )(<NL>)*)+
+  <RBRACE>
+  {
+     // Apply settings after parsing since all user field items must be set first
+
+     for (Object command : queryCommands)
+         search.fieldSets().userFieldSets().get(setName).queryCommands().add((String)command);
+
+     for (Object setting : matchSettings) {
+         ((SDField)setting).applyOperations();
+         search.fieldSets().userFieldSets().get(setName).setMatching(((SDField)setting).getMatching());
+     }
+  }
 }
 
 /**
@@ -923,7 +934,7 @@ void structFieldDefinition(SDDocumentType struct) :
         if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
-        field = new TemporarySDField(name, type, true, struct);
+        field = new TemporarySDField(name, type, struct);
         struct.addField(field);
     }
     lbrace() (id(field,struct) (<NL>)*)? (match(field) (<NL>)*)* <RBRACE> {
@@ -1531,7 +1542,7 @@ void queryCommand(FieldOperationContainer container) :
     QueryCommandOperation field = new QueryCommandOperation();
 }
 {
-    <QUERYCOMMAND> <COLON> command = identifierWithDash()
+    <QUERYCOMMAND> <COLON> ( command = identifierWithDash() | command = quotedString() )
     {
         field.addQueryCommand(command);
         container.addOperation(field);
@@ -1551,11 +1562,11 @@ void alias(FieldOperationContainer container) :
     }
 }
 
-Object match(FieldOperationContainer field) : { }
+FieldOperationContainer match(FieldOperationContainer field) : { }
 {
     <MATCH> ( (<COLON> matchType(field))
               | (lbrace() (matchItem(field) (<NL>)*)* <RBRACE>) )
-    { return null; }
+    { return field; }
 }
 
 /**
@@ -1803,8 +1814,31 @@ Object indexBody(IndexOperation index) :
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
       | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
       | <ENABLE_BM25>                                                  { index.setEnableBm25(true); }
+      | hnswIndex(index)                                               { }
     )
     { return null; }
+}
+
+void hnswIndex(IndexOperation index) :
+{
+    HnswIndexParams.Builder params = new HnswIndexParams.Builder();
+}
+{
+    ( LOOKAHEAD(<HNSW> lbrace())
+      <HNSW> ( (lbrace() (hnswIndexBody(params) (<NL>)*)* <RBRACE>) ) |
+      <HNSW> )
+    {
+        index.setHnswIndexParams(params);
+    }
+}
+
+void hnswIndexBody(HnswIndexParams.Builder params) :
+{
+    int num;
+}
+{
+    ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
+      | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); } )
 }
 
 /**

@@ -7,8 +7,10 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ByteArrayEntity;
 
 import java.io.IOException;
 import java.net.URI;
@@ -24,17 +26,7 @@ public class TesterClient {
     private static final Logger logger = Logger.getLogger(TesterClient.class.getName());
 
     public HttpResponse getStatus(String testerHostname, int port) {
-        URI testerUri;
-        try {
-            testerUri = new URIBuilder()
-                    .setScheme("https")
-                    .setHost(testerHostname)
-                    .setPort(port)
-                    .setPath("/tester/v1/status")
-                    .build();
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
+        URI testerUri = createURI(testerHostname, port, "/tester/v1/status");
 
         return execute(new HttpGet(testerUri), "Failed to get tester status");
     }
@@ -42,11 +34,7 @@ public class TesterClient {
     public HttpResponse getLog(String testerHostname, int port, Long after) {
         URI testerUri;
         try {
-            testerUri = new URIBuilder()
-                    .setScheme("https")
-                    .setHost(testerHostname)
-                    .setPort(port)
-                    .setPath("/tester/v1/log")
+            testerUri = createBuilder(testerHostname, port, "/tester/v1/log")
                     .addParameter("after", String.valueOf(after))
                     .build();
         } catch (URISyntaxException e) {
@@ -56,19 +44,43 @@ public class TesterClient {
         return execute(new HttpGet(testerUri), "Failed to get tester logs");
     }
 
-    public HttpResponse startTests(String testerHostname, String suite, String config) {
-        throw new UnsupportedOperationException("Not implemented yet");
+    public HttpResponse startTests(String testerHostname, int port, String suite, byte[] config) {
+        URI testerUri = createURI(testerHostname, port, "/tester/v1/run/" + suite);
+        HttpPost request = new HttpPost(testerUri);
+        request.setEntity(new ByteArrayEntity(config));
+
+        return execute(request, "Failed to start tests");
     }
 
+    public HttpResponse isTesterReady(String testerHostname, int port) {
+        URI testerUri = createURI(testerHostname, port, "/status.html");
+
+        return execute(new HttpGet(testerUri), "/status.html did not return 200 OK");
+    }
 
     private HttpResponse execute(HttpUriRequest request, String messageIfRequestFails) {
-        // TODO: Change log level to DEBUG
-        logger.log(LogLevel.INFO, "Sending request to tester container " + request.getURI().toString());
+        logger.log(LogLevel.DEBUG, "Sending request to tester container " + request.getURI().toString());
         try {
             return new ProxyResponse(httpClient.execute(request));
         } catch (IOException e) {
             logger.warning(messageIfRequestFails + ": " + Exceptions.toMessageString(e));
             return HttpErrorResponse.internalServerError(Exceptions.toMessageString(e));
+        }
+    }
+
+    private URIBuilder createBuilder(String testerHostname, int port, String path) {
+        return new URIBuilder()
+                .setScheme("https")
+                .setHost(testerHostname)
+                .setPort(port)
+                .setPath(path);
+    }
+
+    private URI createURI(String testerHostname, int port, String path) {
+        try {
+            return createBuilder(testerHostname, port, path).build();
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 

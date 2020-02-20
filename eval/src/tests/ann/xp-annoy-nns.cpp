@@ -3,6 +3,7 @@
 #include "nns.h"
 #include "std-random.h"
 #include <assert.h>
+#include <cinttypes>
 #include <algorithm>
 #include <queue>
 #include <set>
@@ -11,11 +12,11 @@ using V = vespalib::ConstArrayRef<float>;
 class AnnoyLikeNns;
 struct Node;
 
-static uint64_t plane_dist_cnt = 0;
-static uint64_t w_cen_dist_cnt = 0;
-static uint64_t leaf_split_cnt = 0;
-static uint64_t find_top_k_cnt = 0;
-static uint64_t find_cand_cnt = 0;
+static size_t plane_dist_cnt = 0;
+static size_t w_cen_dist_cnt = 0;
+static size_t leaf_split_cnt = 0;
+static size_t find_top_k_cnt = 0;
+static size_t find_cand_cnt = 0;
 
 using QueueNode = std::pair<double, Node *>;
 using NodeQueue = std::priority_queue<QueueNode>;

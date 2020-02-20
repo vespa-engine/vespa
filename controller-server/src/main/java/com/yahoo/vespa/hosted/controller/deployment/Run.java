@@ -35,12 +35,14 @@ public class Run {
     private final RunStatus status;
     private final long lastTestRecord;
     private final Instant lastVespaLogTimestamp;
+    private final Optional<Instant> noNodesDownSince;
+    private final Optional<ConvergenceSummary> convergenceSummary;
     private final Optional<X509Certificate> testerCertificate;
 
     // For deserialisation only -- do not use!
-    public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, Instant start,
-               Optional<Instant> end, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp,
-               Optional<X509Certificate> testerCertificate) {
+    public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, Instant start, Optional<Instant> end,
+               RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp, Optional<Instant> noNodesDownSince,
+               Optional<ConvergenceSummary> convergenceSummary, Optional<X509Certificate> testerCertificate) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -49,6 +51,8 @@ public class Run {
         this.status = status;
         this.lastTestRecord = lastTestRecord;
         this.lastVespaLogTimestamp = lastVespaLogTimestamp;
+        this.noNodesDownSince = noNodesDownSince;
+        this.convergenceSummary = convergenceSummary;
         this.testerCertificate = testerCertificate;
     }
 
@@ -56,7 +60,7 @@ public class Run {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
         JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
         return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running,
-                       -1, Instant.EPOCH, Optional.empty());
+                       -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /** Returns a new Run with the status of the given completed step set accordingly. */
@@ -70,7 +74,7 @@ public class Run {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), stepInfo.with(Step.Status.of(status)));
         return new Run(id, steps, versions, start, end, this.status == running ? status : this.status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
     /** Returns a new Run with a new start time*/
@@ -84,37 +88,50 @@ public class Run {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), stepInfo.with(startTime));
 
-        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+                       noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
     public Run finished(Instant now) {
         requireActive();
         return new Run(id, steps, versions, start, Optional.of(now), status == running ? success : status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty());
     }
 
     public Run aborted() {
         requireActive();
-        return new Run(id, steps, versions, start, end, aborted,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+        return new Run(id, steps, versions, start, end, aborted, lastTestRecord, lastVespaLogTimestamp,
+                       noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
     public Run with(long lastTestRecord) {
         requireActive();
-        return new Run(id, steps, versions, start, end, status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+                       noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
     public Run with(Instant lastVespaLogTimestamp) {
         requireActive();
-        return new Run(id, steps, versions, start, end, status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+                       noNodesDownSince, convergenceSummary, testerCertificate);
+    }
+
+    public Run noNodesDownSince(Instant noNodesDownSince) {
+        requireActive();
+        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+                       Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate);
+    }
+
+    public Run withSummary(ConvergenceSummary convergenceSummary) {
+        requireActive();
+        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+                       noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate);
     }
 
     public Run with(X509Certificate testerCertificate) {
         requireActive();
-        return new Run(id, steps, versions, start, end, status,
-                       lastTestRecord, lastVespaLogTimestamp, Optional.of(testerCertificate));
+        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+                       noNodesDownSince, convergenceSummary, Optional.of(testerCertificate));
     }
 
     /** Returns the id of this run. */
@@ -127,7 +144,7 @@ public class Run {
         return steps.containsKey(step);
     }
 
-    /** Returns info on step. */
+    /** Returns info on step, or empty if the given step is not a part of this run. */
     public Optional<StepInfo> stepInfo(Step step) {
         return Optional.ofNullable(steps.get(step));
     }
@@ -136,7 +153,7 @@ public class Run {
         return stepInfo(step).orElseThrow(() -> new IllegalArgumentException("There is no such step " + step + " for run " + id));
     }
 
-    /** Returns status of step. */
+    /** Returns status of step, or empty if the given step is not a part of this run. */
     public Optional<Step.Status> stepStatus(Step step) {
         return stepInfo(step).map(StepInfo::status);
     }
@@ -188,6 +205,16 @@ public class Run {
     /** Returns the timestamp of the last Vespa log record fetched and stored for this run. */
     public Instant lastVespaLogTimestamp() {
         return lastVespaLogTimestamp;
+    }
+
+    /** Returns the timestamp of the last time no nodes were allowed to be down. */
+    public Optional<Instant> noNodesDownSince() {
+        return noNodesDownSince;
+    }
+
+    /** Returns a summary of convergence status during an application deployment — staging or upgrade. */
+    public Optional<ConvergenceSummary> convergenceSummary() {
+        return convergenceSummary;
     }
 
     /** Returns the tester certificate for this run, or empty. */

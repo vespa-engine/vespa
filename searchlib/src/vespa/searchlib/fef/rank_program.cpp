@@ -153,7 +153,7 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
 }
 
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
-    : _resolver(resolver),
+    : _resolver(std::move(resolver)),
       _hot_stash(32768),
       _cold_stash(),
       _executors(),
@@ -162,7 +162,7 @@ RankProgram::RankProgram(BlueprintResolver::SP resolver)
 {
 }
 
-RankProgram::~RankProgram() {}
+RankProgram::~RankProgram() = default;
 
 void
 RankProgram::setup(const MatchData &md,

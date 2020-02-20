@@ -19,6 +19,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
@@ -50,11 +52,11 @@ public class Deconstructor implements ComponentDeconstructor {
                 }
             } else if (component instanceof Provider) {
                 // TODO Providers should most likely be deconstructed similarly to AbstractComponent
-                log.info("Starting deconstruction of provider " + component);
+                log.log(DEBUG, () -> "Starting deconstruction of provider " + component);
                 ((Provider<?>) component).deconstruct();
-                log.info("Finished deconstruction of provider " + component);
+                log.log(DEBUG, () -> "Finished deconstruction of provider " + component);
             } else if (component instanceof SharedResource) {
-                log.info("Releasing container reference to resource " + component);
+                log.log(DEBUG, () -> "Releasing container reference to resource " + component);
                 // No need to delay release, as jdisc does ref-counting
                 ((SharedResource) component).release();
             }
@@ -70,8 +72,7 @@ public class Deconstructor implements ComponentDeconstructor {
         private final Collection<AbstractComponent> components;
         private final Collection<Bundle> bundles;
 
-        DestructComponentTask(Collection<AbstractComponent> components,
-                              Collection<Bundle> bundles) {
+        DestructComponentTask(Collection<AbstractComponent> components, Collection<Bundle> bundles) {
             this.components = components;
             this.bundles = bundles;
         }
@@ -88,10 +89,10 @@ public class Deconstructor implements ComponentDeconstructor {
         @Override
         public void run() {
             for (var component : components) {
-                log.info("Starting deconstruction of component " + component);
+                log.log(DEBUG, () -> "Starting deconstruction of component " + component);
                 try {
                     component.deconstruct();
-                    log.info("Finished deconstructing of component " + component);
+                    log.log(DEBUG, () -> "Finished deconstructing of component " + component);
                 } catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
                     log.log(WARNING, "Exception thrown when deconstructing component " + component, e);
                 } catch (Error e) {
@@ -111,7 +112,7 @@ public class Deconstructor implements ComponentDeconstructor {
             // It should now be safe to uninstall the old bundles.
             for (var bundle : bundles) {
                 try {
-                    log.info("Uninstalling bundle " + bundle);
+                    log.log(INFO, "Uninstalling bundle " + bundle);
                     bundle.uninstall();
                 } catch (BundleException e) {
                     log.log(SEVERE, "Could not uninstall bundle " + bundle);

@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
-import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.ApplicationPackageTester;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
@@ -10,8 +9,10 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
+import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
+import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
@@ -35,6 +36,7 @@ public class ImportedModelTester {
 
     private final ImmutableList<MlModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
                                                                               new OnnxImporter(),
+                                                                              new LightGBMImporter(),
                                                                               new XGBoostImporter(),
                                                                               new VespaImporter());
 

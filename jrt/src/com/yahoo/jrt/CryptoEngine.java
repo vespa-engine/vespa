@@ -18,7 +18,8 @@ import java.nio.channels.SocketChannel;
  * encryption.
  **/
 public interface CryptoEngine extends AutoCloseable {
-    CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer);
+    CryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec);
+    CryptoSocket createServerCryptoSocket(SocketChannel channel);
     static CryptoEngine createDefault() {
         if (!TransportSecurityUtils.isTransportSecurityEnabled()) {
             return new NullCryptoEngine();

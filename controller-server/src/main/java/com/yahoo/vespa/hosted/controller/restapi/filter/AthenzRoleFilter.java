@@ -87,6 +87,9 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         if (athenz.hasHostedOperatorAccess(identity))
             roleMemberships.add(Role.hostedOperator());
 
+        if (athenz.hasHostedSupporterAccess(identity))
+            roleMemberships.add(Role.hostedSupporter());
+
         // Add all tenants that are accessible for this request
         athenz.accessibleTenants(tenants.asList(), new Credentials(principal))
                 .forEach(accessibleTenant -> roleMemberships.add(Role.athenzTenantAdmin(accessibleTenant.name())));

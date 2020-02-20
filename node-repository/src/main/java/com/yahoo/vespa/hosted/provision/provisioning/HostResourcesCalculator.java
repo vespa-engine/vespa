@@ -9,6 +9,6 @@ import com.yahoo.config.provision.NodeResources;
 public interface HostResourcesCalculator {
 
     /** Calculates the resources that are reserved for host level processes and returns the remainder. */
-    NodeResources availableCapacityOf(NodeResources hostResources);
+    NodeResources availableCapacityOf(String flavorName, NodeResources hostResources);
 
 }

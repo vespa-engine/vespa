@@ -9,6 +9,8 @@
 
 namespace vespalib {
 
+class SocketSpec;
+
 /**
  * Component responsible for wrapping low-level sockets into
  * appropriate CryptoSocket instances. This is the top-level interface
@@ -17,7 +19,8 @@ namespace vespalib {
  **/
 struct CryptoEngine {
     using SP = std::shared_ptr<CryptoEngine>;
-    virtual CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) = 0;
+    virtual CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) = 0;
+    virtual CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) = 0;
     virtual ~CryptoEngine();
     static CryptoEngine::SP get_default();
 };
@@ -26,7 +29,8 @@ struct CryptoEngine {
  * Crypto engine without encryption.
  **/
 struct NullCryptoEngine : public CryptoEngine {
-    CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) override;
+    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
+    CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override;
 };
 
 /**
@@ -35,7 +39,8 @@ struct NullCryptoEngine : public CryptoEngine {
  * from TLS.
  **/
 struct XorCryptoEngine : public CryptoEngine {
-    CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) override;
+    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
+    CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override;
 };
 
 } // namespace vespalib

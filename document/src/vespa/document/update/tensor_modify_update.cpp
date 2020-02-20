@@ -174,9 +174,11 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         auto &oldTensor = tensorFieldValue.getAsTensorPtr();
-        auto newTensor = applyTo(*oldTensor);
-        if (newTensor) {
-            tensorFieldValue = std::move(newTensor);
+        if (oldTensor) {
+            auto newTensor = applyTo(*oldTensor);
+            if (newTensor) {
+                tensorFieldValue = std::move(newTensor);
+            }
         }
     } else {
         vespalib::string err = make_string("Unable to perform a tensor modify update on a '%s' field value",

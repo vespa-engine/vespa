@@ -32,6 +32,17 @@ public class NodeHistory {
         return event;
     }
 
-    public enum Agent { system, application, operator, NodeFailer }
+    public enum Agent {
+        operator,
+        application,
+        system,
+        NodeFailer,
+        Rebalancer,
+        DirtyExpirer,
+        FailedExpirer,
+        InactiveExpirer,
+        ProvisionedExpirer,
+        ReservationExpirer
+    }
 
 }

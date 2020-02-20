@@ -44,7 +44,7 @@ public class QueryProperties extends Properties {
 
     @Override
     public Object get(CompoundName key,
-                      Map<String,String> context,
+                      Map<String, String> context,
                       com.yahoo.processing.request.Properties substitution) {
         if (key.size() == 2 && key.first().equals(Model.MODEL)) {
             Model model = query.getModel();
@@ -294,7 +294,7 @@ public class QueryProperties extends Properties {
                 super.set(key,value,context);
         }
         catch (Exception e) { // Make sure error messages are informative. This should be moved out of this properties implementation
-            if (e.getMessage().startsWith("Could not set"))
+            if (e.getMessage() != null && e.getMessage().startsWith("Could not set"))
                 throw e;
             else
                 throw new IllegalArgumentException("Could not set '" + key + "' to '" + value + "'", e);

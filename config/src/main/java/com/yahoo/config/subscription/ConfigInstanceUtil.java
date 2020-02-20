@@ -38,9 +38,7 @@ public class ConfigInstanceUtil {
         }
     }
 
-    public static <T extends ConfigInstance> T getNewInstance(Class<T> type,
-                                                              String configId,
-                                                              ConfigPayload payload) {
+    public static <T extends ConfigInstance> T getNewInstance(Class<T> type, String configId, ConfigPayload payload) {
         T instance;
         try {
             ConfigTransformer<?> transformer = new ConfigTransformer<>(type);

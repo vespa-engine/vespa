@@ -62,7 +62,7 @@ public class MetricsBuilder {
                 .collect(Collectors.toCollection(LinkedList::new));
 
         List<MetricSet> metricSets = XML.getChildren(consumerElement, "metric-set").stream()
-                .map(metricSetElement -> availableMetricSets.get(metricSetElement.getAttribute(ID_ATTRIBUTE)))
+                .map(metricSetElement -> getMetricSetOrThrow(metricSetElement.getAttribute(ID_ATTRIBUTE)))
                 .collect(Collectors.toCollection(LinkedList::new));
 
         metricSets.add(defaultVespaMetricSet);
@@ -73,6 +73,11 @@ public class MetricsBuilder {
 
     private static String metricSetId(String consumerName) {
         return "user-metrics-" + consumerName;
+    }
+
+    private MetricSet getMetricSetOrThrow(String id) {
+        if (! availableMetricSets.containsKey(id)) throw new IllegalArgumentException("No such metric-set: " + id);
+        return availableMetricSets.get(id);
     }
 
     private void throwIfIllegalConsumerId(Metrics metrics, String consumerId) {

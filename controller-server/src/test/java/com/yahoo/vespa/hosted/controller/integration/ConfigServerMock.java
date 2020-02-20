@@ -18,7 +18,8 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -44,6 +45,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,13 +64,14 @@ import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
     private final Map<DeploymentId, Application> applications = new LinkedHashMap<>();
+    private final Set<ZoneId> inactiveZones = new HashSet<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
     private final Set<ApplicationId> disallowConvergenceCheckApplications = new HashSet<>();
     private final Version initialVersion = new Version(6, 1, 0);
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
-    private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
+    private final Map<ZoneId, Set<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
     private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
@@ -90,12 +93,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
     public void provision(ZoneId zone, ApplicationId application) {
+        Node parent = nodeRepository().list(zone, SystemApplication.tenantHost.id()).stream().findAny()
+                                      .orElseThrow(() -> new IllegalStateException("No parent hosts in " + zone));
         nodeRepository().putByHostname(zone, new Node.Builder().hostname(hostFor(application, zone))
                                                                .state(Node.State.reserved)
                                                                .type(NodeType.tenant)
                                                                .owner(application)
+                                                               .parentHostname(parent.hostname())
                                                                .currentVersion(initialVersion)
                                                                .wantedVersion(initialVersion)
+                                                               .currentOsVersion(Version.emptyVersion)
+                                                               .wantedOsVersion(Version.emptyVersion)
                                                                .resources(new NodeResources(2, 8, 50, 1, slow, remote))
                                                                .serviceState(Node.ServiceState.unorchestrated)
                                                                .flavor("d-2-8-50")
@@ -254,8 +262,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         disallowConvergenceCheckApplications.add(applicationId);
     }
 
-    private List<LoadBalancer> getLoadBalancers(ZoneId zone) {
-        return loadBalancers.getOrDefault(zone, Collections.emptyList());
+    private Set<LoadBalancer> getLoadBalancers(ZoneId zone) {
+        return loadBalancers.getOrDefault(zone, new LinkedHashSet<>());
     }
 
     @Override
@@ -275,8 +283,24 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return TesterCloud.Status.SUCCESS;
     }
 
-    public void addLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
-        this.loadBalancers.putIfAbsent(zone, new ArrayList<>());
+    @Override
+    public String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) {
+        return "Tests started";
+    }
+
+    @Override
+    public List<LogEntry> getTesterLog(DeploymentId deployment, long after) {
+        return List.of();
+    }
+
+    @Override
+    public boolean isTesterReady(DeploymentId deployment) {
+        return false;
+    }
+
+    /** Add any of given loadBalancers that do not already exist to the load balancers in zone */
+    public void putLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
+        this.loadBalancers.putIfAbsent(zone, new LinkedHashSet<>());
         this.loadBalancers.get(zone).addAll(loadBalancers);
     }
 
@@ -287,7 +311,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
                                       Set<ContainerEndpoint> containerEndpoints,
-                                      ApplicationCertificate applicationCertificate, byte[] content) {
+                                      Optional<EndpointCertificateMetadata> endpointCertificateMetadata, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
@@ -360,6 +384,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             throw new NotFoundException("No application with id " + applicationId + " exists, cannot deactivate");
         applications.remove(deployment);
         serviceStatus.remove(deployment);
+        removeLoadBalancers(deployment.applicationId(), deployment.zoneId());
     }
 
     // Returns a canned example response
@@ -395,8 +420,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     // Returns a canned example response
     @Override
-    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName,
-                                          String environment, String region, String serviceName, String restPath) {
+    public Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath) {
         Map<String,List<?>> root = new HashMap<>();
         List<Map<?,?>> resources = new ArrayList<>();
         Map<String,String> resource = new HashMap<>();
@@ -407,14 +431,33 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status) {
-        endpoints.put(endpoint, status);
+    public String getClusterControllerStatus(DeploymentId deployment, String restPath) {
+        return "<h1>OK</h1>";
+    }
+
+    @Override
+    public void setGlobalRotationStatus(DeploymentId deployment, String upstreamName, EndpointStatus status) {
+        endpoints.put(upstreamName, status);
+    }
+
+    @Override
+    public void setGlobalRotationStatus(ZoneId zone, boolean in) {
+        if (in) {
+            inactiveZones.remove(zone);
+        } else {
+            inactiveZones.add(zone);
+        }
     }
 
     @Override
     public EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) {
         EndpointStatus result = new EndpointStatus(EndpointStatus.Status.in, "", "", 1497618757L);
         return endpoints.getOrDefault(endpoint, result);
+    }
+
+    @Override
+    public boolean getGlobalRotationStatus(ZoneId zone) {
+        return !inactiveZones.contains(zone);
     }
 
     @Override

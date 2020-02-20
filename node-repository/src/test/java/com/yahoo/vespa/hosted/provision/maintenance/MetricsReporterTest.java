@@ -10,8 +10,10 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -22,6 +24,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -29,6 +32,7 @@ import org.junit.Test;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +57,7 @@ public class MetricsReporterTest {
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                           true);
+                                                           true, new InMemoryFlagSource());
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(List.of(node));
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
@@ -82,12 +86,17 @@ public class MetricsReporterTest {
         expectedMetrics.put("wantToRetire", 0);
         expectedMetrics.put("wantToDeprovision", 0);
         expectedMetrics.put("failReport", 0);
-        expectedMetrics.put("allowedToBeDown", 0);
+        expectedMetrics.put("allowedToBeDown", 1);
+        expectedMetrics.put("suspended", 1);
+        expectedMetrics.put("suspendedSeconds", 123L);
         expectedMetrics.put("numberOfServices", 0L);
 
+        ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostStatus.NO_REMARKS));
+        when(orchestrator.getHostResolver()).thenReturn(hostName ->
+            Optional.of(HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)))
+        );
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
@@ -99,8 +108,8 @@ public class MetricsReporterTest {
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1)
-        );
+                Duration.ofMinutes(1),
+                clock);
         metricsReporter.maintain();
 
         assertEquals(expectedMetrics, metric.values);
@@ -113,13 +122,13 @@ public class MetricsReporterTest {
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                           true);
+                                                           true, new InMemoryFlagSource());
 
         // Allow 4 containers
         Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
 
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
-                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
         nodeRepository.addNodes(List.of(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
@@ -127,29 +136,30 @@ public class MetricsReporterTest {
         Node container1 = Node.createDockerNode(Set.of("::2"), "container1",
                                                 "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1"), container1).get());
-        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockAllocation()));
+        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockUnallocated()));
 
         Node container2 = Node.createDockerNode(Set.of("::3"), "container2",
                                                 "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2"), container2).get());
-        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockAllocation()));
+        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockUnallocated()));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostStatus.NO_REMARKS));
+        when(orchestrator.getHostResolver()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
         when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
 
         TestMetric metric = new TestMetric();
+        ManualClock clock = new ManualClock();
         MetricsReporter metricsReporter = new MetricsReporter(
                 nodeRepository,
                 metric,
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1)
-        );
+                Duration.ofMinutes(1),
+                clock);
         metricsReporter.maintain();
 
         assertEquals(0, metric.values.get("hostedVespa.readyHosts")); // Only tenants counts

@@ -16,6 +16,11 @@ public class TlsSecrets {
         this.key = key;
     }
 
+    public TlsSecrets(EndpointCertificateSecrets endpointCertificateSecrets) {
+        this.certificate = endpointCertificateSecrets.certificate();
+        this.key = endpointCertificateSecrets.key();
+    }
+
     public String certificate() {
         return certificate;
     }

@@ -6,8 +6,7 @@
 #include "iblueprintregistry.h"
 #include <map>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class implements the blueprint repository interface and acts
@@ -54,6 +53,4 @@ public:
     Blueprint::SP createBlueprint(const vespalib::string &name) const;
 };
 
-} // namespace fef
-} // namespace search
-
+}

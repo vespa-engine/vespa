@@ -23,14 +23,14 @@ public class DocumentTestCaseBase {
         docMan = new DocumentTypeManager();
         testDocType = new DocumentType("testdoc");
 
-        testDocType.addHeaderField("byteattr", DataType.BYTE);
-        testDocType.addHeaderField("intattr", DataType.INT);
+        testDocType.addField("byteattr", DataType.BYTE);
+        testDocType.addField("intattr", DataType.INT);
         testDocType.addField("rawattr", DataType.RAW);
         testDocType.addField("floatattr", DataType.FLOAT);
-        testDocType.addHeaderField("stringattr", DataType.STRING);
-        testDocType.addHeaderField("Minattr", DataType.INT);
-        testDocType.addHeaderField("Minattr2", DataType.INT);
-        testDocType.addHeaderField("primitive1", DataType.INT);
+        testDocType.addField("stringattr", DataType.STRING);
+        testDocType.addField("Minattr", DataType.INT);
+        testDocType.addField("Minattr2", DataType.INT);
+        testDocType.addField("primitive1", DataType.INT);
 
         StructDataType sdt = new StructDataType("struct1");
         sdt.addField(new Field("primitive1", DataType.INT));

@@ -4,9 +4,12 @@ package com.yahoo.vespa.orchestrator.resources;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.restapi.wire.WireHostInfo;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /*
  * @author andreer
@@ -14,16 +17,16 @@ import java.util.Objects;
 public class InstanceStatusResponse {
 
     private final ApplicationInstance applicationInstance;
-    private final Map<HostName, String> hostStates;
+    private final TreeMap<HostName, WireHostInfo> hostInfos;
 
-    private InstanceStatusResponse(ApplicationInstance applicationInstance, Map<HostName, String> hostStates) {
+    private InstanceStatusResponse(ApplicationInstance applicationInstance, TreeMap<HostName, WireHostInfo> hostInfos) {
         this.applicationInstance = applicationInstance;
-        this.hostStates = hostStates;
+        this.hostInfos = hostInfos;
     }
 
     public static InstanceStatusResponse create(
             ApplicationInstance applicationInstance,
-            Map<HostName, String> hostStates) {
+            TreeMap<HostName, WireHostInfo> hostStates) {
         return new InstanceStatusResponse(applicationInstance, hostStates);
     }
 
@@ -34,14 +37,24 @@ public class InstanceStatusResponse {
 
     @JsonProperty("hostStates")
     public Map<HostName, String> hostStates() {
-        return hostStates;
+        // TODO: Remove this once all clients have been moved to hostStatus.
+        return hostInfos.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey(),
+                        entry -> entry.getValue().hostStatus()
+                ));
+    }
+
+    @JsonProperty("hostInfos")
+    public TreeMap<HostName, WireHostInfo> hostInfos() {
+        return hostInfos;
     }
 
     @Override
     public String toString() {
         return "InstanceStatusResponse{" +
                 "applicationInstance=" + applicationInstance +
-                ", hostStates=" + hostStates +
+                ", hostInfos=" + hostInfos +
                 '}';
     }
 
@@ -51,11 +64,11 @@ public class InstanceStatusResponse {
         if (o == null || getClass() != o.getClass()) return false;
         InstanceStatusResponse that = (InstanceStatusResponse) o;
         return Objects.equals(applicationInstance, that.applicationInstance) &&
-                Objects.equals(hostStates, that.hostStates);
+                Objects.equals(hostInfos, that.hostInfos);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(applicationInstance, hostStates);
+        return Objects.hash(applicationInstance, hostInfos);
     }
 }

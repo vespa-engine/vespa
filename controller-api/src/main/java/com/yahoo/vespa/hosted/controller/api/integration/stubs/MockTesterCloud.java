@@ -1,13 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
-import com.google.common.collect.ImmutableList;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,14 +28,27 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
+    public void startTests(DeploymentId deploymentId, Suite suite, byte[] config) {
+        this.status = RUNNING;
+        this.config = config;
+        this.testerUrl = null;
+    }
+
+    @Override
     public List<LogEntry> getLog(URI testerUrl, long after) {
         return log.stream().filter(entry -> entry.id() > after).collect(Collectors.toList());
     }
 
     @Override
-    public Status getStatus(URI testerUrl) {
-        return status;
+    public List<LogEntry> getLog(DeploymentId deploymentId, long after) {
+        return log.stream().filter(entry -> entry.id() > after).collect(Collectors.toList());
     }
+
+    @Override
+    public Status getStatus(URI testerUrl) { return status; }
+
+    @Override
+    public Status getStatus(DeploymentId deploymentId) { return status; }
 
     @Override
     public boolean ready(URI testerUrl) {
@@ -49,7 +61,17 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
+    public boolean testerReady(DeploymentId deploymentId) {
+        return true;
+    }
+
+    @Override
     public boolean exists(URI endpointUrl) {
+        return true;
+    }
+
+    @Override
+    public boolean exists(DeploymentId deploymentId) {
         return true;
     }
 

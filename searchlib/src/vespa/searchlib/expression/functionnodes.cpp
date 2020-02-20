@@ -489,7 +489,7 @@ bool CatFunctionNode::onExecute() const
         getArg(i).execute();
         getArg(i).getResult().serialize(nos);
     }
-    static_cast<RawResultNode &>(updateResult()).setBuffer(os.c_str(), os.size());
+    static_cast<RawResultNode &>(updateResult()).setBuffer(os.data(), os.size());
     return true;
 }
 
@@ -520,14 +520,14 @@ bool XorBitFunctionNode::internalExecute(const nbostream & os) const
 {
     const size_t numBytes(_tmpXor.size());
     memset(&_tmpXor[0], 0, numBytes);
-    const char * s(os.c_str());
+    const char * s(os.data());
     for (size_t i(0), m(os.size()/numBytes); i < m; i++) {
         for (size_t j(0), k(numBytes); j < k; j++) {
             _tmpXor[j] ^= s[j + k*i];
         }
     }
     for (size_t i((os.size()/numBytes)*numBytes); i < os.size(); i++) {
-        _tmpXor[i%numBytes] = os.c_str()[i];
+        _tmpXor[i%numBytes] = os.data()[i];
     }
     static_cast<RawResultNode &>(updateResult()).setBuffer(&_tmpXor[0], numBytes);
     return true;
@@ -537,7 +537,7 @@ bool MD5BitFunctionNode::internalExecute(const nbostream & os) const
 {
     const unsigned int MD5_DIGEST_LENGTH = 16;
     unsigned char md5ScratchPad[MD5_DIGEST_LENGTH];
-    fastc_md5sum(os.c_str(), os.size(), md5ScratchPad);
+    fastc_md5sum(os.data(), os.size(), md5ScratchPad);
     static_cast<RawResultNode &>(updateResult()).setBuffer(md5ScratchPad, std::min(sizeof(md5ScratchPad), getNumBytes()));
     return true;
 }

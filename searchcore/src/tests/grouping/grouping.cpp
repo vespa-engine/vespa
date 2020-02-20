@@ -168,7 +168,7 @@ TEST_F("testGroupingContextInitialization", DoomFixture()) {
     nos << (uint32_t)1;
     baseRequest.serialize(nos);
 
-    GroupingContext context(f1.clock, f1.timeOfDoom, os.c_str(), os.size());
+    GroupingContext context(f1.clock, f1.timeOfDoom, os.data(), os.size());
     ASSERT_TRUE(!context.empty());
     GroupingContext::GroupingList list = context.getGroupingList();
     ASSERT_TRUE(list.size() == 1);
@@ -226,7 +226,7 @@ TEST_F("testGroupingContextSerializing", DoomFixture()) {
     context.serialize();
     vespalib::nbostream & res(context.getResult());
     EXPECT_EQUAL(res.size(), os.size());
-    ASSERT_TRUE(memcmp(res.c_str(), os.c_str(), res.size()) == 0);
+    ASSERT_TRUE(memcmp(res.data(), os.data(), res.size()) == 0);
 }
 
 TEST_F("testGroupingManager", DoomFixture()) {

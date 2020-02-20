@@ -50,7 +50,7 @@ public:
             }
             if (looksLikeTlsToMe(src.data)) {
                 CryptoSocket::UP &self = _self; // need copy due to self destruction
-                auto tls_socket = _factory->create_tls_crypto_socket(std::move(_socket), true);
+                auto tls_socket = _factory->create_tls_server_crypto_socket(std::move(_socket));
                 tls_socket->inject_read_data(src.data, src.size);
                 self = std::move(tls_socket);
                 return self->handshake();

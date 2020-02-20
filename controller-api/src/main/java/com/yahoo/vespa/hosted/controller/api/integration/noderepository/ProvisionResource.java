@@ -50,6 +50,11 @@ public interface ProvisionResource {
 
     @GET
     @Path("/node/")
+    NodeList listNodes(@QueryParam("recursive") boolean recursive,
+                       @QueryParam("hostname") String hostnamesString);
+
+    @GET
+    @Path("/node/")
     NodeList listNodesWithParent(@QueryParam("recursive") boolean recursive,
                                  @QueryParam("parentHost") String parentHostname);
 

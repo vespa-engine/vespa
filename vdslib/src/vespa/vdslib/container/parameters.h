@@ -14,18 +14,15 @@
 
 #pragma once
 
-#include <vespa/document/util/serializable.h>
 #include <vespa/document/util/xmlserializable.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace vespalib {
-    class asciistream;
-}
+namespace vespalib { class GrowableByteBuffer; }
+namespace document { class ByteBuffer; }
 
 namespace vdslib {
 
-class Parameters : public document::Deserializable,
-                   public document::XmlSerializable {
+class Parameters : public document::XmlSerializable {
 public:
     typedef vespalib::stringref KeyT;
     class Value : public vespalib::string
@@ -42,27 +39,25 @@ public:
 private:
     ParametersMap _parameters;
 
-    void onSerialize(document::ByteBuffer& buffer) const override;
-    void onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer) override;
     void printXml(document::XmlOutputStream& xos) const override;
 
 public:
     Parameters();
-    Parameters(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer);
-    virtual ~Parameters();
+    Parameters(document::ByteBuffer& buffer);
+    ~Parameters();
 
     bool operator==(const Parameters &other) const;
 
-    Parameters* clone() const override;
+    size_t getSerializedSize() const;
 
-    size_t getSerializedSize() const override;
-
-    bool hasValue(KeyT id)                const { return (_parameters.find(id) != _parameters.end()); }
-    unsigned int size()                           const { return _parameters.size(); }
+    bool hasValue(KeyT id)                 const { return (_parameters.find(id) != _parameters.end()); }
+    unsigned int size()                    const { return _parameters.size(); }
     bool lookup(KeyT id, ValueRef & v) const;
     void set(KeyT id, const void * v, size_t sz) { _parameters[id] = Value(v, sz); }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void serialize(vespalib::GrowableByteBuffer& buffer) const;
+    void deserialize(document::ByteBuffer& buffer);
 
     // Disallow
     ParametersMap::const_iterator begin() const { return _parameters.begin(); }
@@ -92,7 +87,7 @@ public:
     template<typename T>
     T get(KeyT id, T def) const;
 
-    std::string toString() const;
+    vespalib::string toString() const;
 };
 
 } // vdslib

@@ -8,10 +8,13 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -26,20 +29,24 @@ import static org.junit.Assert.fail;
  */
 public class DocumentSelectorTestCase {
 
+    @Rule
+    public final ExpectedException exceptionRule = ExpectedException.none();
+
     private static DocumentTypeManager manager = new DocumentTypeManager();
 
     @Before
     public void setUp() {
-        DocumentType type = new DocumentType("test");
-        type.addHeaderField("hint", DataType.INT);
-        type.addHeaderField("hfloat", DataType.FLOAT);
-        type.addHeaderField("hstring", DataType.STRING);
+        var importedFields = new HashSet<>(List.of("my_imported_field"));
+        DocumentType type = new DocumentType("test", importedFields);
+        type.addField("hint", DataType.INT);
+        type.addField("hfloat", DataType.FLOAT);
+        type.addField("hstring", DataType.STRING);
         type.addField("content", DataType.STRING);
 
         StructDataType mystruct = new StructDataType("mystruct");
-        mystruct.addField(new Field("key", DataType.INT, false));
-        mystruct.addField(new Field("value", DataType.STRING, false));
-        type.addHeaderField("mystruct", mystruct);
+        mystruct.addField(new Field("key", DataType.INT));
+        mystruct.addField(new Field("value", DataType.STRING));
+        type.addField("mystruct", mystruct);
 
         ArrayDataType structarray = new ArrayDataType(mystruct);
         type.addField("structarray", structarray);
@@ -694,6 +701,44 @@ public class DocumentSelectorTestCase {
 
         assertEquals(Result.TRUE, evaluate("test.structarrmap{$x}.key == 15 AND test.stringweightedset{$x}", documents.get(1)));
         assertEquals(Result.FALSE, evaluate("test.structarrmap{$x}.key == 17 AND test.stringweightedset{$x}", documents.get(1)));
+    }
+
+    @Test
+    public void using_non_commutative_comparison_operator_with_field_value_is_well_defined() throws ParseException {
+        var documents = createDocs();
+        // Doc 0 contains 24 in `hint` field.
+        assertEquals(Result.FALSE, evaluate("25 <= test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("24 <= test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("25 > test.hint", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("24 > test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("24 >= test.hint", documents.get(0)));
+
+        assertEquals(Result.FALSE, evaluate("test.hint <= 23", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint <= 24", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint > 23", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.hint > 24", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint >= 24", documents.get(0)));
+    }
+
+    @Test
+    public void imported_field_references_are_treated_as_valid_field_with_missing_value() throws ParseException {
+        var documents = createDocs();
+        assertEquals(Result.TRUE, evaluate("test.my_imported_field == null", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.my_imported_field != null", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.my_imported_field", documents.get(0)));
+        // Only (in)equality operators are well defined for null values; everything else becomes Invalid.
+        assertEquals(Result.INVALID, evaluate("test.my_imported_field > 0", documents.get(0)));
+    }
+
+    @Test
+    public void imported_fields_only_supported_for_simple_expressions() throws ParseException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        // TODO we should probably handle this case specially and give a better exception message
+        exceptionRule.expectMessage("Field 'my_imported_field' not found in type datatype test");
+
+        var documents = createDocs();
+        // Nested field access is NOT considered a simple expression.
+        evaluate("test.my_imported_field.foo", documents.get(0));
     }
 
     @Test

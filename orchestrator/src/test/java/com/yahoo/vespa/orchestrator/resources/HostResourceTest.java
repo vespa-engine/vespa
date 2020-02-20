@@ -16,6 +16,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Host;
@@ -36,6 +37,7 @@ import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
@@ -90,6 +92,8 @@ public class HostResourceTest {
                                 makeServiceClusterSet())));
     }
 
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+
     private static final InstanceLookupService alwaysEmptyInstanceLookUpService = new InstanceLookupService() {
         @Override
         public Optional<ApplicationInstance> findInstanceById(
@@ -129,23 +133,23 @@ public class HostResourceTest {
         }
     }
 
-    private static final OrchestratorImpl alwaysAllowOrchestrator = new OrchestratorImpl(
+    private final OrchestratorImpl alwaysAllowOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, mockInstanceLookupService,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
-            applicationApiFactory
-    );
+            applicationApiFactory,
+            flagSource);
 
-    private static final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
+    private final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyInstanceLookUpService,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
-            applicationApiFactory
-    );
+            applicationApiFactory,
+            flagSource);
 
     private final UriInfo uriInfo = mock(UriInfo.class);
 
@@ -247,7 +251,8 @@ public class HostResourceTest {
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,mockInstanceLookupService,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
-                applicationApiFactory);
+                applicationApiFactory,
+                flagSource);
 
         try {
             HostResource hostResource = new HostResource(alwaysRejectResolver, uriInfo);
@@ -267,7 +272,8 @@ public class HostResourceTest {
                 mockInstanceLookupService,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
-                applicationApiFactory);
+                applicationApiFactory,
+                flagSource);
 
         try {
             HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysRejectResolver);
@@ -343,7 +349,7 @@ public class HostResourceTest {
 
         Host host = new Host(
                 hostName,
-                HostStatus.ALLOWED_TO_BE_DOWN,
+                HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.EPOCH),
                 new ApplicationInstanceReference(
                         new TenantId("tenantId"),
                         new ApplicationInstanceId("applicationId")),
@@ -353,6 +359,7 @@ public class HostResourceTest {
         assertEquals("https://foo.com/bar", response.applicationUrl());
         assertEquals("hostname", response.hostname());
         assertEquals("ALLOWED_TO_BE_DOWN", response.state());
+        assertEquals("1970-01-01T00:00:00Z", response.suspendedSince());
         assertEquals(1, response.services().size());
         assertEquals("clusterId", response.services().get(0).clusterId);
         assertEquals("configId", response.services().get(0).configId);

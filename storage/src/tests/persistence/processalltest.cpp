@@ -110,12 +110,11 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matc
 
     vespalib::string expected =
         "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
-        "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 169\n"
-        "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 147\n"
-        "  Timestamp: 104, Doc(id:mail:testdoctype1:n=4:56061.html), gid(0x040000002b8f80f0160f6c5c), size: 124\n"
-        "  Timestamp: 106, Doc(id:mail:testdoctype1:n=4:49514.html), gid(0x04000000d45ca9abb47567f0), size: 101\n"
-        "  Timestamp: 108, Doc(id:mail:testdoctype1:n=4:42967.html), gid(0x04000000f19ece1668e6de48), size: 206\n";
-
+        "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 163\n"
+        "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 141\n"
+        "  Timestamp: 104, Doc(id:mail:testdoctype1:n=4:56061.html), gid(0x040000002b8f80f0160f6c5c), size: 118\n"
+        "  Timestamp: 106, Doc(id:mail:testdoctype1:n=4:49514.html), gid(0x04000000d45ca9abb47567f0), size: 95\n"
+        "  Timestamp: 108, Doc(id:mail:testdoctype1:n=4:42967.html), gid(0x04000000f19ece1668e6de48), size: 200\n";
 
     EXPECT_EQ(expected, reply.getResults());
 }
@@ -145,16 +144,16 @@ TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) 
 
     vespalib::string expected =
         "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
-        "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 169\n"
-        "  Timestamp: 101, Doc(id:mail:testdoctype1:n=4:33113.html), gid(0x04000000b121a632741db368), size: 95\n"
-        "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 147\n"
-        "  Timestamp: 103, Doc(id:mail:testdoctype1:n=4:26566.html), gid(0x04000000177f8240bdd2bef0), size: 200\n"
-        "  Timestamp: 104, Doc(id:mail:testdoctype1:n=4:56061.html), gid(0x040000002b8f80f0160f6c5c), size: 124\n"
-        "  Timestamp: 105, Doc(id:mail:testdoctype1:n=4:20019.html), gid(0x040000001550c67f28ea7b03), size: 177\n"
-        "  Timestamp: 106, Doc(id:mail:testdoctype1:n=4:49514.html), gid(0x04000000d45ca9abb47567f0), size: 101\n"
-        "  Timestamp: 107, Doc(id:mail:testdoctype1:n=4:13472.html), gid(0x040000005d01f3fd960f8098), size: 154\n"
-        "  Timestamp: 108, Doc(id:mail:testdoctype1:n=4:42967.html), gid(0x04000000f19ece1668e6de48), size: 206\n"
-        "  Timestamp: 109, Doc(id:mail:testdoctype1:n=4:6925.html), gid(0x04000000667c0b3cada830be), size: 130\n"
+        "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 163\n"
+        "  Timestamp: 101, Doc(id:mail:testdoctype1:n=4:33113.html), gid(0x04000000b121a632741db368), size: 89\n"
+        "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 141\n"
+        "  Timestamp: 103, Doc(id:mail:testdoctype1:n=4:26566.html), gid(0x04000000177f8240bdd2bef0), size: 194\n"
+        "  Timestamp: 104, Doc(id:mail:testdoctype1:n=4:56061.html), gid(0x040000002b8f80f0160f6c5c), size: 118\n"
+        "  Timestamp: 105, Doc(id:mail:testdoctype1:n=4:20019.html), gid(0x040000001550c67f28ea7b03), size: 171\n"
+        "  Timestamp: 106, Doc(id:mail:testdoctype1:n=4:49514.html), gid(0x04000000d45ca9abb47567f0), size: 95\n"
+        "  Timestamp: 107, Doc(id:mail:testdoctype1:n=4:13472.html), gid(0x040000005d01f3fd960f8098), size: 148\n"
+        "  Timestamp: 108, Doc(id:mail:testdoctype1:n=4:42967.html), gid(0x04000000f19ece1668e6de48), size: 200\n"
+        "  Timestamp: 109, Doc(id:mail:testdoctype1:n=4:6925.html), gid(0x04000000667c0b3cada830be), size: 124\n"
         "  Timestamp: 200, id:mail:testdoctype1:n=4:3619.html, gid(0x0400000092bb8d298934253a) (remove)\n"
         "  Timestamp: 201, id:mail:testdoctype1:n=4:33113.html, gid(0x04000000b121a632741db368) (remove)\n"
         "  Timestamp: 202, id:mail:testdoctype1:n=4:62608.html, gid(0x04000000ce878d2488413bc4) (remove)\n"
@@ -191,16 +190,16 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_
 
     vespalib::string expected =
         "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
-        "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 169\n"
-        "  Timestamp: 101, Doc(id:mail:testdoctype1:n=4:33113.html), gid(0x04000000b121a632741db368), size: 95\n"
-        "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 147\n"
-        "  Timestamp: 103, Doc(id:mail:testdoctype1:n=4:26566.html), gid(0x04000000177f8240bdd2bef0), size: 200\n"
-        "  Timestamp: 104, Doc(id:mail:testdoctype1:n=4:56061.html), gid(0x040000002b8f80f0160f6c5c), size: 124\n"
-        "  Timestamp: 105, Doc(id:mail:testdoctype1:n=4:20019.html), gid(0x040000001550c67f28ea7b03), size: 177\n"
-        "  Timestamp: 106, Doc(id:mail:testdoctype1:n=4:49514.html), gid(0x04000000d45ca9abb47567f0), size: 101\n"
-        "  Timestamp: 107, Doc(id:mail:testdoctype1:n=4:13472.html), gid(0x040000005d01f3fd960f8098), size: 154\n"
-        "  Timestamp: 108, Doc(id:mail:testdoctype1:n=4:42967.html), gid(0x04000000f19ece1668e6de48), size: 206\n"
-        "  Timestamp: 109, Doc(id:mail:testdoctype1:n=4:6925.html), gid(0x04000000667c0b3cada830be), size: 130\n";
+        "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 163\n"
+        "  Timestamp: 101, Doc(id:mail:testdoctype1:n=4:33113.html), gid(0x04000000b121a632741db368), size: 89\n"
+        "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 141\n"
+        "  Timestamp: 103, Doc(id:mail:testdoctype1:n=4:26566.html), gid(0x04000000177f8240bdd2bef0), size: 194\n"
+        "  Timestamp: 104, Doc(id:mail:testdoctype1:n=4:56061.html), gid(0x040000002b8f80f0160f6c5c), size: 118\n"
+        "  Timestamp: 105, Doc(id:mail:testdoctype1:n=4:20019.html), gid(0x040000001550c67f28ea7b03), size: 171\n"
+        "  Timestamp: 106, Doc(id:mail:testdoctype1:n=4:49514.html), gid(0x04000000d45ca9abb47567f0), size: 95\n"
+        "  Timestamp: 107, Doc(id:mail:testdoctype1:n=4:13472.html), gid(0x040000005d01f3fd960f8098), size: 148\n"
+        "  Timestamp: 108, Doc(id:mail:testdoctype1:n=4:42967.html), gid(0x04000000f19ece1668e6de48), size: 200\n"
+        "  Timestamp: 109, Doc(id:mail:testdoctype1:n=4:6925.html), gid(0x04000000667c0b3cada830be), size: 124\n";
 
     EXPECT_EQ(expected, reply.getResults());
 }

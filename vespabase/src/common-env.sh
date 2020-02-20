@@ -23,7 +23,7 @@ consider_fallback () {
         : $1 already has value $oldvariablevalue
     elif [ -z "${2}" ]; then
         : proposed value "${2}" is empty
-    elif [ `expr match "$2" ".*'"` != 0 ]; then
+    elif [ `expr "$2" : ".*'"` != 0 ]; then
         : proposed value "${2}" contains a single-quote
     else
         eval "${1}='${2}'"

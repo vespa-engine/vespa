@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "httpclient.h"
+#include <vespa/vespalib/net/socket_spec.h>
 #include <cassert>
 #include <cstring>
 
@@ -69,7 +70,8 @@ HTTPClient::connect_socket()
     if (!handle.valid()) {
         return false;
     }
-    _socket = vespalib::SyncCryptoSocket::create(*_engine, std::move(handle), false);
+    _socket = vespalib::SyncCryptoSocket::create_client(*_engine, std::move(handle),
+                                                        vespalib::SocketSpec::from_host_port(_hostname, _port));
     return bool(_socket);
 }
 

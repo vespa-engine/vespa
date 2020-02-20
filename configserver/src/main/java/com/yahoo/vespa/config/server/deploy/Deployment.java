@@ -6,11 +6,14 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -22,6 +25,7 @@ import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -98,19 +102,21 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     @Override
     public void prepare() {
         if (prepared) return;
-        TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+        try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.prepareMillis")) {
+            TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
-        session.prepare(logger,
-                        new PrepareParams.Builder().applicationId(session.getApplicationId())
-                                                   .timeoutBudget(timeoutBudget)
-                                                   .ignoreValidationErrors( ! validate)
-                                                   .vespaVersion(version.toString())
-                                                   .isBootstrap(isBootstrap)
-                                                   .build(),
-                        Optional.empty(),
-                        tenant.getPath(),
-                        clock.instant());
-        this.prepared = true;
+            session.prepare(logger,
+                            new PrepareParams.Builder().applicationId(session.getApplicationId())
+                                                       .timeoutBudget(timeoutBudget)
+                                                       .ignoreValidationErrors(!validate)
+                                                       .vespaVersion(version.toString())
+                                                       .isBootstrap(isBootstrap)
+                                                       .build(),
+                            Optional.empty(),
+                            tenant.getPath(),
+                            clock.instant());
+            this.prepared = true;
+        }
     }
 
     /** Activates this. If it is not already prepared, this will call prepare first. */
@@ -119,28 +125,32 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if ( ! prepared)
             prepare();
 
-        TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+        try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.activateMillis")) {
+            TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
-        ApplicationId applicationId = session.getApplicationId();
-        try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
-            validateSessionStatus(session);
-            NestedTransaction transaction = new NestedTransaction();
-            transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(applicationId), session, ignoreSessionStaleFailure));
-            hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
-            transaction.commit();
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new InternalServerException("Error activating application", e);
+            ApplicationId applicationId = session.getApplicationId();
+            try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
+                validateSessionStatus(session);
+                NestedTransaction transaction = new NestedTransaction();
+                transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(applicationId), session, ignoreSessionStaleFailure));
+                hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
+                transaction.commit();
+            }
+            catch (RuntimeException e) {
+                throw e;
+            }
+            catch (Exception e) {
+                throw new InternalServerException("Error activating application", e);
+            }
+
+            session.waitUntilActivated(timeoutBudget);
+
+            log.log(LogLevel.INFO, session.logPre() + "Session " + session.getSessionId() +
+                                   " activated successfully using " +
+                                   (hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner") +
+                                   ". Config generation " + session.getMetaData().getGeneration() +
+                                   ". File references used: " + applicationRepository.getFileReferences(applicationId));
         }
-
-        session.waitUntilActivated(timeoutBudget);
-
-        log.log(LogLevel.INFO, session.logPre() + "Session " + session.getSessionId() +
-                               " activated successfully using " +
-                               (hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner") +
-                               ". Config generation " + session.getMetaData().getGeneration() +
-                               ". File references used: " + applicationRepository.getFileReferences(applicationId));
     }
 
     /**

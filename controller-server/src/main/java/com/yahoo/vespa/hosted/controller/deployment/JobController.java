@@ -1,10 +1,11 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -72,8 +73,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class JobController {
 
-    private static final int historyLength = 64;
-    private static final Duration maxHistoryAge = Duration.ofDays(60);
+    public static final int historyLength = 64;
+    public static final Duration maxHistoryAge = Duration.ofDays(60);
 
     private final Controller controller;
     private final CuratorDb curator;
@@ -179,11 +180,8 @@ public class JobController {
             if (step.isEmpty())
                 return run;
 
-            Optional<URI> testerEndpoint = testerEndpoint(id);
-            if ( ! testerEndpoint.isPresent())
-                return run;
-
-            List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
+            List<LogEntry> entries = cloud.getLog(new DeploymentId(id.tester().id(), id.type().zone(controller.system())),
+                                                  run.lastTestLogEntry());
             if (entries.isEmpty())
                 return run;
 
@@ -226,9 +224,14 @@ public class JobController {
 
     /** Returns an immutable map of all known runs for the given application and job type. */
     public NavigableMap<RunId, Run> runs(ApplicationId id, JobType type) {
-        NavigableMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
-        last(id, type).ifPresent(run -> runs.put(run.id(), run));
-        return Collections.unmodifiableNavigableMap(runs);
+        ImmutableSortedMap.Builder<RunId, Run> runs = ImmutableSortedMap.orderedBy(Comparator.comparing(RunId::number));
+        Optional<Run> last = last(id, type);
+        curator.readHistoricRuns(id, type).forEach((runId, run) -> {
+            if (last.isEmpty() || ! runId.equals(last.get().id()))
+                runs.put(runId, run);
+        });
+        last.ifPresent(run -> runs.put(run.id(), run));
+        return runs.build();
     }
 
     /** Returns the run with the given id, if it exists. */
@@ -353,7 +356,9 @@ public class JobController {
                      old = oldEntries.next()) {
 
                     // Make sure we keep the last success and the first failing
-                    if (successes == 1 && old.getValue().status() == RunStatus.success) {
+                    if (     successes == 1
+                        &&   old.getValue().status() == RunStatus.success
+                        && ! old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
                         oldEntries.next();
                         continue;
                     }
@@ -493,12 +498,17 @@ public class JobController {
                });
     }
 
+    // TODO(mpolden): Eliminate duplication in this and ApplicationController#deactivate
     public void deactivateTester(TesterId id, JobType type) {
+        var zone = type.zone(controller.system());
         try {
-            controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
-        }
-        catch (NotFoundException ignored) {
+            controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), zone));
+        } catch (NotFoundException ignored) {
             // Already gone -- great!
+        } finally {
+            // Passing an empty DeploymentSpec here is fine as it's used for registering global endpoint names, and
+            // tester instances have none.
+            controller.routingController().policies().refresh(id.id(), DeploymentSpec.empty, zone);
         }
     }
 
@@ -526,14 +536,10 @@ public class JobController {
                                     .collect(toList()));
     }
 
-    /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
+    /** Returns the tester endpoint URL, if any */
     Optional<URI> testerEndpoint(RunId id) {
-        DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        return controller.applications().getDeploymentEndpoints(testerId)
-                         .stream().findAny()
-                         .or(() -> controller.applications().routingPolicies().get(testerId).stream()
-                                             .findAny()
-                                             .map(policy -> policy.endpointIn(controller.system()).url()));
+        var testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
+        return controller.routingController().zoneEndpointsOf(testerId).values().stream().findFirst();
     }
 
     private void prunePackages(TenantAndApplicationId id) {

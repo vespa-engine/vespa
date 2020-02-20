@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -11,26 +11,28 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -38,7 +40,9 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -80,7 +84,8 @@ public class CuratorDb {
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
-    private static final Path applicationCertificateRoot = root.append("applicationCertificates");
+    private static final Path zoneRoutingPoliciesRoot = root.append("zoneRoutingPolicies");
+    private static final Path endpointCertificateRoot = root.append("applicationCertificates");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
@@ -93,6 +98,7 @@ public class CuratorDb {
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
+    private final ZoneRoutingPolicySerializer zoneRoutingPolicySerializer = new ZoneRoutingPolicySerializer(routingPolicySerializer);
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
 
@@ -382,7 +388,6 @@ public class CuratorDb {
 
     public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs) {
         Path path = runsPath(id, type);
-        cachedHistoricRuns.remove(path);
         curator.set(path, asJson(runSerializer.toSlime(runs)));
     }
 
@@ -485,29 +490,50 @@ public class CuratorDb {
 
     // -------------- Routing policies ----------------------------------------
 
-    public void writeRoutingPolicies(ApplicationId application, Set<RoutingPolicy> policies) {
+    public void writeRoutingPolicies(ApplicationId application, Map<RoutingPolicyId, RoutingPolicy> policies) {
         curator.set(routingPolicyPath(application), asJson(routingPolicySerializer.toSlime(policies)));
     }
 
-    public Map<ApplicationId, Set<RoutingPolicy>> readRoutingPolicies() {
+    public Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> readRoutingPolicies() {
         return curator.getChildren(routingPoliciesRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
                       .collect(Collectors.toUnmodifiableMap(Function.identity(), this::readRoutingPolicies));
     }
 
-    public Set<RoutingPolicy> readRoutingPolicies(ApplicationId application) {
+    public Map<RoutingPolicyId, RoutingPolicy> readRoutingPolicies(ApplicationId application) {
         return readSlime(routingPolicyPath(application)).map(slime -> routingPolicySerializer.fromSlime(application, slime))
-                                                        .orElseGet(Collections::emptySet);
+                                                        .orElseGet(Map::of);
     }
 
-    // -------------- Application web certificates ----------------------------
-
-    public void writeApplicationCertificate(ApplicationId applicationId, ApplicationCertificate applicationCertificate) {
-        curator.set(applicationCertificatePath(applicationId), applicationCertificate.secretsKeyNamePrefix().getBytes());
+    public void writeZoneRoutingPolicy(ZoneRoutingPolicy policy) {
+        curator.set(zoneRoutingPolicyPath(policy.zone()), asJson(zoneRoutingPolicySerializer.toSlime(policy)));
     }
 
-    public Optional<ApplicationCertificate> readApplicationCertificate(ApplicationId applicationId) {
-        return curator.getData(applicationCertificatePath(applicationId)).map(String::new).map(ApplicationCertificate::new);
+    public ZoneRoutingPolicy readZoneRoutingPolicy(ZoneId zone) {
+        return readSlime(zoneRoutingPolicyPath(zone)).map(data -> zoneRoutingPolicySerializer.fromSlime(zone, data))
+                                                     .orElse(new ZoneRoutingPolicy(zone, GlobalRouting.DEFAULT_STATUS));
+    }
+
+    // -------------- Application endpoint certificates ----------------------------
+
+    public void writeEndpointCertificateMetadata(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
+        curator.set(endpointCertificatePath(applicationId), asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
+    }
+
+    public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
+        Optional<String> zkData = curator.getData(endpointCertificatePath(applicationId)).map(String::new);
+        return zkData.map(EndpointCertificateMetadataSerializer::fromJsonOrTlsSecretsKeysString);
+    }
+
+    public Map<ApplicationId, EndpointCertificateMetadata> readAllEndpointCertificateMetadata() {
+        Map<ApplicationId, EndpointCertificateMetadata> allEndpointCertificateMetadata = new HashMap<>();
+
+        for (String appIdString : curator.getChildren(endpointCertificateRoot)) {
+            ApplicationId applicationId = ApplicationId.fromSerializedForm(appIdString);
+            Optional<EndpointCertificateMetadata> endpointCertificateMetadata = readEndpointCertificateMetadata(applicationId);
+            allEndpointCertificateMetadata.put(applicationId, endpointCertificateMetadata.orElseThrow());
+        }
+        return allEndpointCertificateMetadata;
     }
 
     // -------------- Paths ---------------------------------------------------
@@ -581,6 +607,8 @@ public class CuratorDb {
         return routingPoliciesRoot.append(application.serializedForm());
     }
 
+    private static Path zoneRoutingPolicyPath(ZoneId zone) { return zoneRoutingPoliciesRoot.append(zone.value()); }
+
     private static Path nameServiceQueuePath() {
         return root.append("nameServiceQueue");
     }
@@ -625,8 +653,8 @@ public class CuratorDb {
         return controllerRoot.append(hostname);
     }
 
-    private static Path applicationCertificatePath(ApplicationId id) {
-        return applicationCertificateRoot.append(id.serializedForm());
+    private static Path endpointCertificatePath(ApplicationId id) {
+        return endpointCertificateRoot.append(id.serializedForm());
     }
 
 }

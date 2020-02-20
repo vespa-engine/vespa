@@ -19,6 +19,8 @@ public:
            bool fastSearch_ = false, bool huge_ = false);
     Config(const Config &);
     Config & operator = (const Config &);
+    Config(Config &&) noexcept;
+    Config & operator = (Config &&) noexcept;
     ~Config();
 
     BasicType basicType()                 const { return _basicType; }

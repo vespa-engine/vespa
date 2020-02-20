@@ -15,38 +15,40 @@ public class MockTesterClient extends TesterClient {
 
     @Override
     public HttpResponse getStatus(String testerHostname, int port) {
-        return new MockStatusResponse();
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                outputStream.write("OK".getBytes(StandardCharsets.UTF_8));
+            }
+        };
     }
 
     @Override
     public HttpResponse getLog(String testerHostname, int port, Long after) {
-        return new MockLogResponse();
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                outputStream.write("log".getBytes(StandardCharsets.UTF_8));
+            }
+        };
     }
 
-    private static class MockStatusResponse extends HttpResponse {
-
-        private MockStatusResponse() {
-            super(200);
-        }
-
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            outputStream.write("OK".getBytes(StandardCharsets.UTF_8));
-        }
-
+    @Override
+    public HttpResponse startTests(String testerHostname, int port, String suite, byte[] config) {
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) { }
+        };
     }
 
-    private static class MockLogResponse extends HttpResponse {
-
-        private MockLogResponse() {
-            super(200);
-        }
-
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            outputStream.write("log".getBytes(StandardCharsets.UTF_8));
-        }
-
+    @Override
+    public HttpResponse isTesterReady(String testerHostname, int port) {
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                outputStream.write("{ \"message\": \"OK\" } ".getBytes(StandardCharsets.UTF_8));
+            }
+        };
     }
 
 }

@@ -139,6 +139,10 @@ public abstract class StructuredFieldValue extends CompositeFieldValue {
     public final FieldValue setFieldValue(String field, Byte value) {
         return setFieldValue(field, new ByteFieldValue(value));
     }
+
+    public final FieldValue setFieldValue(String field, Boolean value) {
+        return setFieldValue(field, new BoolFieldValue(value));
+    }
     /**
      * Removes and returns a field value.
      *

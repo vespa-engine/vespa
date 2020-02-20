@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -22,6 +22,11 @@ import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.MockReloadHandler;
@@ -37,7 +42,8 @@ import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
-import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
+import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -46,9 +52,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,6 +84,9 @@ public class SessionPreparerTest {
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
     private static final Version version123 = new Version(1, 2, 3);
     private static final Version version321 = new Version(3, 2, 1);
+    private KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+    private X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, new X500Principal("CN=subject"),
+            Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(12345)).build();
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private MockCurator curator;
@@ -231,15 +245,37 @@ public class SessionPreparerTest {
         var tlskey = "vespa.tlskeys.tenant1--app1";
         var applicationId = applicationId("test");
         var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
-        secretStore.put(tlskey+"-cert", "CERT");
-        secretStore.put(tlskey+"-key", "KEY");
+
+        secretStore.put("vespa.tlskeys.tenant1--app1-cert", X509CertificateUtils.toPem(certificate));
+        secretStore.put("vespa.tlskeys.tenant1--app1-key", KeyUtils.toPem(keyPair.getPrivate()));
+
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
         // Read from zk and verify cert and key are available
-        Optional<TlsSecrets> tlsSecrets = new TlsSecretsKeys(curator, tenantPath, secretStore).readTlsSecretsKeyFromZookeeper(applicationId);
-        assertTrue(tlsSecrets.isPresent());
-        assertEquals("KEY", tlsSecrets.get().key());
-        assertEquals("CERT", tlsSecrets.get().certificate());
+        Optional<EndpointCertificateSecrets> endpointCertificateSecrets = new EndpointCertificateMetadataStore(curator, tenantPath)
+                .readEndpointCertificateMetadata(applicationId)
+                .flatMap(p -> new EndpointCertificateRetriever(secretStore).readEndpointCertificateSecrets(p));
+        assertTrue(endpointCertificateSecrets.isPresent());
+        assertTrue(endpointCertificateSecrets.get().key().startsWith("-----BEGIN EC PRIVATE KEY"));
+        assertTrue(endpointCertificateSecrets.get().certificate().startsWith("-----BEGIN CERTIFICATE"));
+    }
+
+    @Test
+    public void require_that_endpoint_certificate_metadata_is_written() throws IOException {
+        var applicationId = applicationId("test");
+        var params = new PrepareParams.Builder().applicationId(applicationId).endpointCertificateMetadata("{\"keyName\": \"vespa.tlskeys.tenant1--app1-key\", \"certName\":\"vespa.tlskeys.tenant1--app1-cert\", \"version\": 7}").build();
+        secretStore.put("vespa.tlskeys.tenant1--app1-cert", 7, X509CertificateUtils.toPem(certificate));
+        secretStore.put("vespa.tlskeys.tenant1--app1-key", 7, KeyUtils.toPem(keyPair.getPrivate()));
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+
+        // Read from zk and verify cert and key are available
+        Optional<EndpointCertificateSecrets> endpointCertificateSecrets = new EndpointCertificateMetadataStore(curator, tenantPath)
+                .readEndpointCertificateMetadata(applicationId)
+                .flatMap(p -> new EndpointCertificateRetriever(secretStore).readEndpointCertificateSecrets(p));
+
+        assertTrue(endpointCertificateSecrets.isPresent());
+        assertTrue(endpointCertificateSecrets.get().key().startsWith("-----BEGIN EC PRIVATE KEY"));
+        assertTrue(endpointCertificateSecrets.get().certificate().startsWith("-----BEGIN CERTIFICATE"));
     }
 
     @Test(expected = CertificateNotReadyException.class)

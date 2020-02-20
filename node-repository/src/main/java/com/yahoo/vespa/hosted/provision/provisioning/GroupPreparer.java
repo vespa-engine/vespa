@@ -31,7 +31,6 @@ public class GroupPreparer {
     private final Optional<HostProvisioner> hostProvisioner;
     private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabledFlag;
-    private final BooleanFlag enableInPlaceResize;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
     public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
@@ -40,7 +39,6 @@ public class GroupPreparer {
         this.hostProvisioner = hostProvisioner;
         this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabledFlag = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
-        this.enableInPlaceResize = Flags.ENABLE_IN_PLACE_RESIZE.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
 
@@ -65,25 +63,23 @@ public class GroupPreparer {
         boolean dynamicProvisioningEnabled = hostProvisioner.isPresent() && dynamicProvisioningEnabledFlag
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                 .value();
-        boolean inPlaceResizeEnabled = enableInPlaceResize
-                .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                .value();
+        boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
 
         try (Mutex lock = nodeRepository.lock(application)) {
 
             // Lock ready pool to ensure that the same nodes are not simultaneously allocated by others
-            try (Mutex allocationLock = nodeRepository.lockAllocation()) {
+            try (Mutex allocationLock = nodeRepository.lockUnallocated()) {
 
                 // Create a prioritized set of nodes
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
                                                                   spareCount, wantedGroups, nodeRepository.nameResolver(),
-                                                                  hostResourcesCalculator, inPlaceResizeEnabled);
+                                                                  hostResourcesCalculator, allocateFully);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes(dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty());
+                prioritizer.addNewDockerNodes();
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,

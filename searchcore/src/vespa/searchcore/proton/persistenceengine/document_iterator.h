@@ -3,8 +3,6 @@
 #pragma once
 
 #include "i_document_retriever.h"
-#include <vespa/searchcore/proton/common/cachedselect.h>
-#include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/selection.h>
@@ -32,10 +30,7 @@ private:
     storage::spi::IterateResult::List     _list;
 
 
-    bool useDocumentSelection() const;
     bool checkMeta(const search::DocumentMetaData &meta) const;
-    bool checkDoc(const document::Document &doc) const;
-    bool checkDoc(const SelectContext &sc) const;
     void fetchCompleteSource(const IDocumentRetriever & source, storage::spi::IterateResult::List & list);
     bool isWeakRead() const { return _readConsistency == ReadConsistency::WEAK; }
 

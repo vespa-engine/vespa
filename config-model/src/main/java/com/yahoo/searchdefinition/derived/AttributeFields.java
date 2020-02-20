@@ -240,6 +240,14 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             aaB.tensortype(attribute.tensorType().get().toString());
         }
         aaB.imported(imported);
+        if (attribute.hnswIndexParams().isPresent()) {
+            var ib = new AttributesConfig.Attribute.Index.Builder();
+            var params = attribute.hnswIndexParams().get();
+            ib.hnsw.enabled(true);
+            ib.hnsw.maxlinkspernode(params.maxLinksPerNode());
+            ib.hnsw.neighborstoexploreatinsert(params.neighborsToExploreAtInsert());
+            aaB.index(ib);
+        }
         return aaB;
     }
 

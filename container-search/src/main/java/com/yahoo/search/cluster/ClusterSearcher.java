@@ -58,7 +58,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         this(id, connections, hasher, internal, true);
     }
 
-    public ClusterSearcher(ComponentId id, List<T> connections, Hasher<T> hasher, boolean internal, boolean startPingThread) {
+    protected ClusterSearcher(ComponentId id, List<T> connections, Hasher<T> hasher, boolean internal, boolean startPingThread) {
         super(id);
         this.hasher = hasher;
         this.monitor = new ClusterMonitor<>(this, startPingThread);
@@ -70,7 +70,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
 
     /** Pinging a node, called from ClusterMonitor */
     @Override
-    public final void ping(T p, Executor executor) {
+    public final void ping(ClusterMonitor<T> clusterMonitor, T p, Executor executor) {
         log(LogLevel.FINE, "Sending ping to: ", p);
         Pinger pinger = new Pinger(p);
         FutureTask<Pong> future = new FutureTask<>(pinger);
@@ -80,7 +80,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         Throwable logThrowable = null;
 
         try {
-            pong = future.get(monitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
+            pong = future.get(clusterMonitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             pong = new Pong(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + p));
             logThrowable = e;
@@ -96,10 +96,10 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         future.cancel(true);
 
         if (pong.badResponse()) {
-            monitor.failed(p, pong.error().get());
+            clusterMonitor.failed(p, pong.error().get());
             log(LogLevel.FINE, "Failed ping - ", pong);
         } else {
-            monitor.responded(p);
+            clusterMonitor.responded(p);
             log(LogLevel.FINE, "Answered ping - ", p);
         }
 

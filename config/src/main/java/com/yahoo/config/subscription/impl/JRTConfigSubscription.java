@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -28,8 +30,8 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     private JRTConfigRequester requester;
     private TimingValues timingValues;
 
-    // Last time we got an OK JRT callback for this
-    private long lastOK = 0;
+    // Last time we got an OK JRT callback
+    private Instant lastOK = Instant.MIN;
 
     /**
      * The queue containing either nothing or the one (newest) request that has got callback from JRT,
@@ -40,9 +42,9 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     public JRTConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source, TimingValues timingValues) {
         super(key, subscriber);
-        this.timingValues=timingValues;
+        this.timingValues = timingValues;
         if (source instanceof ConfigSourceSet) {
-            this.sources=(ConfigSourceSet) source;
+            this.sources = (ConfigSourceSet) source;
         }
     }
 
@@ -53,7 +55,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         ConfigState<T> configState = getConfigState();
         boolean gotNew = configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
         // Return that now, if there's nothing in queue, so that ConfigSubscriber can move on to other subscriptions to check
-        if (getReqQueue().peek()==null && gotNew) {
+        if (getReqQueue().peek() == null && gotNew) {
             return true;
         }
         // Otherwise poll the queue for another generation or timeout
@@ -88,6 +90,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             // timed out, we know nothing new.
             return false;
         }
+        log.log(LogLevel.DEBUG, () -> "Polled queue and found config " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
             setInternalRedeploy(jrtReq.responseIsInternalRedeploy());
             if (jrtReq.hasUpdatedConfig()) {
@@ -135,11 +138,11 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     @Override
     public boolean subscribe(long timeout) {
-        lastOK=System.currentTimeMillis();
+        lastOK = Instant.now();
         requester = getRequester();
         requester.request(this);
         JRTClientConfigRequest req = reqQueue.peek();
-        while (req == null && (System.currentTimeMillis() - lastOK <= timeout)) {
+        while (req == null && (Instant.now().isBefore(lastOK.plus(Duration.ofMillis(timeout))))) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -152,7 +155,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     private JRTConfigRequester getRequester() {
         JRTConfigRequester requester = subscriber.requesters().get(sources);
-        if (requester==null) {
+        if (requester == null) {
             requester = new JRTConfigRequester(new JRTConnectionPool(sources), timingValues);
             subscriber.requesters().put(sources, requester);
         }
@@ -164,8 +167,9 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     public void close() {
         super.close();
         reqQueue = new LinkedBlockingQueue<>() {
+            @SuppressWarnings("NullableProblems")
             @Override
-            public void put(JRTClientConfigRequest e) throws InterruptedException {
+            public void put(JRTClientConfigRequest e) {
                 // When closed, throw away all requests that callbacks try to put
             }
         };
@@ -191,7 +195,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         log.log(LogLevel.DEBUG, "reload() is without effect on a JRTConfigSubscription.");
     }
 
-    void setLastCallBackOKTS(long lastCallBackOKTS) {
+    void setLastCallBackOKTS(Instant lastCallBackOKTS) {
         this.lastOK = lastCallBackOKTS;
     }
 

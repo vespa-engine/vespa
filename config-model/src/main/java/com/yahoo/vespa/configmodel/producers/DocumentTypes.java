@@ -58,6 +58,7 @@ public class DocumentTypes {
             buildConfig(annotation, atb);
         }
         buildConfig(documentType.getFieldSets(), db);
+        buildImportedFieldsConfig(documentType.getImportedFieldNames(), db);
         builder.documenttype(db);
     }
 
@@ -117,6 +118,14 @@ public class DocumentTypes {
                 return;
             }
             documentBuilder.datatype(dataTypeBuilder);
+        }
+    }
+
+    private void buildImportedFieldsConfig(Collection<String> fieldNames, DocumenttypesConfig.Documenttype.Builder  builder) {
+        for (String fieldName : fieldNames) {
+            var ib = new DocumenttypesConfig.Documenttype.Importedfield.Builder();
+            ib.name(fieldName);
+            builder.importedfield(ib);
         }
     }
 

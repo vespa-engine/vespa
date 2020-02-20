@@ -3,7 +3,7 @@
 #pragma once
 
 #include "tls_statistics_metrics_wrapper.h"
-
+#include "fnet_metrics_wrapper.h"
 #include <vespa/metrics/metrics.h>
 
 namespace storage {
@@ -17,21 +17,8 @@ public:
     metrics::LongValueMetric highpri;
     metrics::LongValueMetric veryhighpri;
 
-    MessageMemoryUseMetricSet(metrics::MetricSet* owner);
-    ~MessageMemoryUseMetricSet();
-};
-
-struct DocumentSerializationMetricSet : public metrics::MetricSet
-{
-    metrics::LongCountMetric usedCachedSerializationCount;
-    metrics::LongCountMetric compressedDocumentCount;
-    metrics::LongCountMetric compressionDidntHelpCount;
-    metrics::LongCountMetric uncompressableCount;
-    metrics::LongCountMetric serializedUncompressed;
-    metrics::LongCountMetric inputWronglySerialized;
-
-    DocumentSerializationMetricSet(metrics::MetricSet* owner);
-    ~DocumentSerializationMetricSet();
+    explicit MessageMemoryUseMetricSet(metrics::MetricSet* owner);
+    ~MessageMemoryUseMetricSet() override;
 };
 
 struct StorageMetricSet : public metrics::MetricSet
@@ -39,12 +26,12 @@ struct StorageMetricSet : public metrics::MetricSet
     metrics::LongValueMetric memoryUse;
     MessageMemoryUseMetricSet memoryUse_messages;
     metrics::LongValueMetric memoryUse_visiting;
-    DocumentSerializationMetricSet documentSerialization;
 
     TlsStatisticsMetricsWrapper tls_metrics;
+    FnetMetricsWrapper fnet_metrics;
 
     StorageMetricSet();
-    ~StorageMetricSet();
+    ~StorageMetricSet() override;
     void updateMetrics();
 };
 

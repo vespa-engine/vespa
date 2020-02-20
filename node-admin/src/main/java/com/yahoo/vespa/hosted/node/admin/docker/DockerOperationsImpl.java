@@ -6,9 +6,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -52,13 +50,11 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final Terminal terminal;
     private final IPAddresses ipAddresses;
-    private final BooleanFlag failStartingNodeOnIpMismatch;
 
     public DockerOperationsImpl(Docker docker, Terminal terminal, IPAddresses ipAddresses, FlagSource flagSource) {
         this.docker = docker;
         this.terminal = terminal;
         this.ipAddresses = ipAddresses;
-        this.failStartingNodeOnIpMismatch = Flags.FAIL_STARTING_NODE_ON_IP_MISMATCH.bindTo(flagSource);
     }
 
     @Override
@@ -96,10 +92,8 @@ public class DockerOperationsImpl implements DockerOperations {
             Optional<? extends InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().hostname());
             Optional<? extends InetAddress> ipV6Local = ipAddresses.getIPv6Address(context.node().hostname());
 
-            if (failStartingNodeOnIpMismatch.value()) {
-                assertEqualIpAddresses(context.hostname(), ipV4Local, context.node().ipAddresses(), IPVersion.IPv4);
-                assertEqualIpAddresses(context.hostname(), ipV6Local, context.node().ipAddresses(), IPVersion.IPv6);
-            }
+            assertEqualIpAddresses(context.hostname(), ipV4Local, context.node().ipAddresses(), IPVersion.IPv4);
+            assertEqualIpAddresses(context.hostname(), ipV6Local, context.node().ipAddresses(), IPVersion.IPv6);
 
             if (ipV4Local.isEmpty() && ipV6Local.isEmpty()) {
                 throw new ConvergenceException("Container " + context.node().hostname() + " with " + networking +

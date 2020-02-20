@@ -15,6 +15,7 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
+import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 
 import java.util.HashMap;
@@ -33,6 +34,7 @@ class RankProfileSearchFixture {
 
     private final ImmutableList<MlModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
                                                                               new OnnxImporter(),
+                                                                              new LightGBMImporter(),
                                                                               new XGBoostImporter());
     private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
     private final QueryProfileRegistry queryProfileRegistry;

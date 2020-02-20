@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.INTERNAL_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
@@ -40,7 +41,7 @@ public class VespaMetrics {
     public static final ConsumerId VESPA_CONSUMER_ID = toConsumerId("Vespa");
 
     public static final DimensionId METRIC_TYPE_DIMENSION_ID = toDimensionId("metrictype");
-    public static final DimensionId INSTANCE_DIMENSION_ID = toDimensionId("instance");
+    public static final DimensionId INSTANCE_DIMENSION_ID = toDimensionId(INTERNAL_SERVICE_ID);
 
     private final MetricsConsumers metricsConsumers;
 

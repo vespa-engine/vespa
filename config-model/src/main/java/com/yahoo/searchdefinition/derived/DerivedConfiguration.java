@@ -15,9 +15,11 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.derived.validation.Validation;
+import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.logging.Level;
 
 /**
  * A set of all derived configuration of a search definition. Use this as a facade to individual configurations when
@@ -39,12 +41,13 @@ public class DerivedConfiguration {
     private VsmSummary streamingSummary;
     private IndexSchema indexSchema;
     private ImportedFields importedFields;
+    private QueryProfileRegistry queryProfiles;
 
     /**
      * Creates a complete derived configuration from a search definition.
      * Only used in tests.
      *
-     * @param search The search to derive a configuration from. Derived objects will be snapshots, but this argument is
+     * @param search the search to derive a configuration from. Derived objects will be snapshots, but this argument is
      *               live. Which means that this object will be inconsistent when the given search definition is later
      *               modified.
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
@@ -56,11 +59,11 @@ public class DerivedConfiguration {
     /**
      * Creates a complete derived configuration snapshot from a search definition.
      *
-     * @param search             The search to derive a configuration from. Derived objects will be snapshots, but this
+     * @param search             the search to derive a configuration from. Derived objects will be snapshots, but this
      *                           argument is live. Which means that this object will be inconsistent when the given
      *                           search definition is later modified.
      * @param deployLogger       a {@link DeployLogger} for logging when doing operations on this
-     * @param deployProperties   Properties set on deploy.
+     * @param deployProperties   properties set on deploy
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      * @param queryProfiles      the query profiles of this application
      */
@@ -72,6 +75,7 @@ public class DerivedConfiguration {
                                 ImportedMlModels importedModels) {
         Validator.ensureNotNull("Search definition", search);
         this.search = search;
+        this.queryProfiles = queryProfiles;
         if ( ! search.isDocumentsOnly()) {
             streamingFields = new VsmFields(search);
             streamingSummary = new VsmSummary(search);
@@ -118,6 +122,10 @@ public class DerivedConfiguration {
 
     public static void exportDocuments(DocumenttypesConfig.Builder documentTypesCfg, String toDirectory) throws IOException {
         exportCfg(new DocumenttypesConfig(documentTypesCfg), toDirectory + "/" + "documenttypes.cfg");
+    }
+
+    public static void exportQueryProfiles(QueryProfileRegistry queryProfileRegistry, String toDirectory) throws IOException {
+        exportCfg(new QueryProfiles(queryProfileRegistry, (level, message) -> {}).getConfig(), toDirectory + "/" + "query-profiles.cfg");
     }
 
     private static void exportCfg(ConfigInstance instance, String fileName) throws IOException {
@@ -186,4 +194,7 @@ public class DerivedConfiguration {
     public ImportedFields getImportedFields() {
         return importedFields;
     }
+
+    public QueryProfileRegistry getQueryProfiles() { return queryProfiles; }
+
 }

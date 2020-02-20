@@ -10,6 +10,7 @@ import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 
@@ -17,10 +18,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
@@ -34,7 +34,7 @@ public class ApplicationApiImpl implements ApplicationApi {
     private final NodeGroup nodeGroup;
     private final MutableStatusRegistry hostStatusService;
     private final List<ClusterApi> clusterInOrder;
-    private final Map<HostName, HostStatus> hostStatusMap;
+    private final HostInfos hostInfos;
 
     public ApplicationApiImpl(NodeGroup nodeGroup,
                               MutableStatusRegistry hostStatusService,
@@ -44,10 +44,8 @@ public class ApplicationApiImpl implements ApplicationApi {
         this.nodeGroup = nodeGroup;
         this.hostStatusService = hostStatusService;
         Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
-        this.hostStatusMap = hosts.stream().collect(Collectors.toMap(Function.identity(),
-                                                                     hostName -> hostStatusService.getSuspendedHosts().contains(hostName)
-                                                                                 ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS));
-        this.clusterInOrder = makeClustersInOrder(nodeGroup, hostStatusMap, clusterControllerClientFactory, numberOfConfigServers);
+        this.hostInfos = hostStatusService.getHostInfos();
+        this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, numberOfConfigServers);
     }
 
     @Override
@@ -56,7 +54,7 @@ public class ApplicationApiImpl implements ApplicationApi {
     }
 
     private HostStatus getHostStatus(HostName hostName) {
-        return hostStatusMap.getOrDefault(hostName, HostStatus.NO_REMARKS);
+        return hostInfos.getOrNoRemarks(hostName).status();
     }
 
     @Override
@@ -65,9 +63,9 @@ public class ApplicationApiImpl implements ApplicationApi {
     }
 
     @Override
-    public List<StorageNode> getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder() {
+    public List<StorageNode> getSuspendedStorageNodesInGroupInReverseClusterOrder() {
         return getStorageNodesInGroupInClusterOrder().stream()
-                .filter(storageNode -> getHostStatus(storageNode.hostName()) == HostStatus.ALLOWED_TO_BE_DOWN)
+                .filter(storageNode -> getHostStatus(storageNode.hostName()).isSuspended())
                 .sorted(Comparator.reverseOrder())
                 .collect(Collectors.toList());
     }
@@ -106,13 +104,14 @@ public class ApplicationApiImpl implements ApplicationApi {
     }
 
     @Override
-    public List<HostName> getNodesInGroupWithStatus(HostStatus status) {
+    public List<HostName> getNodesInGroupWith(Predicate<HostStatus> statusPredicate) {
         return nodeGroup.getHostNames().stream()
-                .filter(hostName -> getHostStatus(hostName) == status)
+                .filter(hostName -> statusPredicate.test(getHostStatus(hostName)))
                 .collect(Collectors.toList());
     }
 
-    private List<ClusterApi> makeClustersInOrder(NodeGroup nodeGroup, Map<HostName, HostStatus> hostStatusMap,
+    private List<ClusterApi> makeClustersInOrder(NodeGroup nodeGroup,
+                                                 HostInfos hostInfos,
                                                  ClusterControllerClientFactory clusterControllerClientFactory,
                                                  int numberOfConfigServers) {
         Set<ServiceCluster> clustersInGroup = getServiceClustersInGroup(nodeGroup);
@@ -121,7 +120,7 @@ public class ApplicationApiImpl implements ApplicationApi {
                         this,
                         serviceCluster,
                         nodeGroup,
-                        hostStatusMap,
+                        hostInfos,
                         clusterControllerClientFactory,
                         numberOfConfigServers))
                 .sorted(ApplicationApiImpl::compareClusters)

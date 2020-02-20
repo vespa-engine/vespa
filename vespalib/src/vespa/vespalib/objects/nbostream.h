@@ -141,7 +141,7 @@ public:
     size_t size() const { return left(); }
     size_t capacity() const { return _wbuf.size(); }
     bool empty()  const { return size() == 0; }
-    const char * c_str() const { return &_rbuf[0]; }
+    const char * data() const { return &_rbuf[0]; }
     const char * peek() const { return &_rbuf[_rp]; }
     size_t rp() const { return _rp; }
     nbostream & rp(size_t pos) { if (pos > _wp) fail(eof); _rp = pos; return *this; }

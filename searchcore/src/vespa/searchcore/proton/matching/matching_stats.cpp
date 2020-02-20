@@ -29,7 +29,8 @@ MatchingStats::MatchingStats()
       _softDoomed(0),
       _doomOvertime(),
       _softDoomFactor(INITIAL_SOFT_DOOM_FACTOR),
-      _queryCollateralTime(),
+      _queryCollateralTime(), // TODO: Remove in Vespa 8
+      _querySetupTime(),
       _queryLatency(),
       _matchTime(),
       _groupingTime(),
@@ -69,7 +70,8 @@ MatchingStats::add(const MatchingStats &rhs)
     _softDoomed += rhs.softDoomed();
     _doomOvertime.add(rhs._doomOvertime);
 
-    _queryCollateralTime.add(rhs._queryCollateralTime);
+    _queryCollateralTime.add(rhs._queryCollateralTime); // TODO: Remove in Vespa 8
+    _querySetupTime.add(rhs._querySetupTime);
     _queryLatency.add(rhs._queryLatency);
     _matchTime.add(rhs._matchTime);
     _groupingTime.add(rhs._groupingTime);

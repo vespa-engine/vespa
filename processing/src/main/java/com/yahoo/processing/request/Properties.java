@@ -206,8 +206,8 @@ public class Properties implements Cloneable {
      * This default implementation forwards to the chained instance or throws
      * a RuntimeException if there is not chained instance.
      *
-     * @param name    the name of the value
-     * @param value   the value to set. Setting a name to null explicitly is legal.
+     * @param name    the name of the property
+     * @param value   the value to set. Setting a property to null clears it.
      * @param context the context used to resolve where the values should be set, or null if none
      * @throws RuntimeException if no instance in the chain accepted this name-value pair
      */
@@ -223,8 +223,8 @@ public class Properties implements Cloneable {
      * This default implementation forwards to the chained instance or throws
      * a RuntimeException if there is not chained instance.
      *
-     * @param name    the name of the value
-     * @param value   the value to set. Setting a name to null explicitly is legal.
+     * @param name    the name of the property
+     * @param value   the value to set. Setting a property to null clears it.
      * @param context the context used to resolve where the values should be set, or null if none
      * @throws RuntimeException if no instance in the chain accepted this name-value pair
      */
@@ -235,8 +235,8 @@ public class Properties implements Cloneable {
     /**
      * Sets a value to the first chained instance which accepts it by calling set(name,value,null).
      *
-     * @param name  the name of the value
-     * @param value the value to set. Setting a name to null explicitly is legal.
+     * @param name    the name of the property
+     * @param value   the value to set. Setting a property to null clears it.
      * @throws RuntimeException if no instance in the chain accepted this name-value pair
      */
     public final void set(CompoundName name, Object value) {
@@ -246,12 +246,62 @@ public class Properties implements Cloneable {
     /**
      * Sets a value to the first chained instance which accepts it by calling set(name,value,null).
      *
-     * @param name  the name of the value
-     * @param value the value to set. Setting a name to null explicitly is legal.
+     * @param name    the name of the property
+     * @param value   the value to set. Setting a property to null clears it.
      * @throws RuntimeException if no instance in the chain accepted this name-value pair
      */
     public final void set(String name, Object value) {
         set(new CompoundName(name), value, Collections.<String,String>emptyMap());
+    }
+
+    /**
+     * Sets all properties having this name as a compound prefix to null.
+     * I.e clearAll("a") will clear the value of "a" and "a.b" but not "ab".
+     * This default implementation forwards to the chained instance or throws
+     * a RuntimeException if there is not chained instance.
+     *
+     * @param name    the compound prefix of the properties to clear
+     * @param context the context used to resolve where the values should be cleared, or null if none
+     * @throws RuntimeException if no instance in the chain accepted this name-value pair
+     */
+    public void clearAll(CompoundName name, Map<String, String> context) {
+        if (chained == null) throw new RuntimeException("Property '" + name +
+                                                        "' was not accepted in this property chain");
+        chained.clearAll(name, context);
+    }
+
+    /**
+     * Sets all properties having this name as a compound prefix to null.
+     * I.e clearAll("a") will clear the value of "a" and "a.b" but not "ab".
+     *
+     * @param name    the compound prefix of the properties to clear
+     * @param context the context used to resolve where the values should be cleared, or null if none
+     * @throws RuntimeException if no instance in the chain accepted this name-value pair
+     */
+    public final void clearAll(String name, Object value, Map<String, String> context) {
+        set(new CompoundName(name), value, context);
+    }
+
+    /**
+     * Sets all properties having this name as a compound prefix to null.
+     * I.e clearAll("a") will clear the value of "a" and "a.b" but not "ab".
+     *
+     * @param name    the compound prefix of the properties to clear
+     * @throws RuntimeException if no instance in the chain accepted this name-value pair
+     */
+    public final void clearAll(CompoundName name) {
+        clearAll(name, null);
+    }
+
+    /**
+     * Sets all properties having this name as a compound prefix to null.
+     * I.e clearAll("a") will clear the value of "a" and "a.b" but not "ab".
+     *
+     * @param name    the compound prefix of the properties to clear
+     * @throws RuntimeException if no instance in the chain accepted this name-value pair
+     */
+    public final void clearAll(String name) {
+        clearAll(new CompoundName(name), Collections.<String,String>emptyMap());
     }
 
     /**
@@ -571,14 +621,14 @@ public class Properties implements Cloneable {
         }
     }
 
-    /**
-     * Clones a map by deep cloning each value which is cloneable and shallow copying all other values.
-     */
+    /** Clones a map by deep cloning each value which is cloneable and shallow copying all other values. */
     public static Map<CompoundName, Object> cloneMap(Map<CompoundName, Object> map) {
         return cloneHelper.cloneMap(map);
     }
+
     /** Clones this object if it is clonable, and the clone is public. Returns null if not */
     public static Object clone(Object object) {
         return cloneHelper.clone(object);
     }
+
 }

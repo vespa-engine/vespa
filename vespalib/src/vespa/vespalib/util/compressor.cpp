@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <stdexcept>
 
 using vespalib::alloc::Alloc;
 

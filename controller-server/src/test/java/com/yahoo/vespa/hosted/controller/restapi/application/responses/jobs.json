@@ -230,19 +230,13 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "succeeded",
-            "installTester": "succeeded",
             "deployReal": "succeeded",
             "installReal": "succeeded",
-            "startTests": "succeeded",
-            "endTests": "succeeded",
-            "deactivateTester": "succeeded",
             "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
-            "install": "succeeded",
-            "test": "succeeded"
+            "install": "succeeded"
           },
           "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/run/1"
         }
@@ -268,13 +262,8 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "unfinished",
-            "installTester": "unfinished",
             "deployReal": "unfinished",
             "installReal": "unfinished",
-            "startTests": "unfinished",
-            "endTests": "unfinished",
-            "deactivateTester": "unfinished",
             "report": "unfinished"
           },
           "tasks": {},
@@ -302,13 +291,8 @@
             "commit": "commit1"
           },
           "steps": {
-            "deployTester": "unfinished",
-            "installTester": "unfinished",
             "deployReal": "unfinished",
             "installReal": "unfinished",
-            "startTests": "unfinished",
-            "endTests": "unfinished",
-            "deactivateTester": "unfinished",
             "report": "unfinished"
           },
           "tasks": {},
@@ -344,5 +328,37 @@
       ],
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1"
     }
-  }
+  },
+  "deployment": [
+    {
+      "jobName": "dev-us-east-1",
+      "runs": [
+        {
+          "id": 1,
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/run/1",
+          "start": "(ignore)",
+          "end": "(ignore)",
+          "status": "success",
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {}
+          },
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

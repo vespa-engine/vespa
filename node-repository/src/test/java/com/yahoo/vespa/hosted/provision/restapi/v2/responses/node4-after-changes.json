@@ -27,14 +27,15 @@
   "wantedDockerImage": "docker.domain.tld/my/image:6.42.0",
   "wantedVespaVersion": "6.42.0",
   "requestedResources": { "vcpu":1.0, "memoryGb":4.0, "diskGb":100.0, "bandwidthGbps":1.0, "diskSpeed":"fast", "storageType":"any" },
-  "allowedToBeDown": false,
+  "allowedToBeDown": true,
+  "suspendedSinceMillis": 0,
   "rebootGeneration": 3,
   "currentRebootGeneration": 1,
   "vespaVersion": "6.43.0",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.45.0",
   "failCount": 1,
   "wantToRetire": true,
-  "wantToDeprovision": true,
+  "wantToDeprovision": false,
   "history": [
     {
       "event": "provisioned",

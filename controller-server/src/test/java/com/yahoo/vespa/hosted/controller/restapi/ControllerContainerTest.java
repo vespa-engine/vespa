@@ -65,6 +65,8 @@ public class ControllerContainerTest {
                "      <item key=\"rotation-id-5\">rotation-fqdn-5</item>\n" +
                "    </rotations>\n" +
                "  </config>\n" +
+               "  " +
+               "<accesslog type='disabled'/>\n" +
                "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
                "  <component id='com.yahoo.vespa.configserver.flags.db.FlagsDbImpl'/>\n" +
                "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
@@ -110,6 +112,9 @@ public class ControllerContainerTest {
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
                "    <binding>http://*/user/v1/*</binding>\n" +
                "    <binding>http://*/api/user/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.routing.RoutingApiHandler'>\n" +
+               "    <binding>http://*/routing/v1/*</binding>\n" +
                "  </handler>\n" +
                variablePartXml() +
                "</container>";

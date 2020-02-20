@@ -15,9 +15,10 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -35,22 +36,25 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
 public class MetricsReporter extends Maintainer {
 
     private final Metric metric;
-    private final Function<HostName, Optional<HostStatus>> orchestrator;
+    private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
+    private final Clock clock;
 
     MetricsReporter(NodeRepository nodeRepository,
                     Metric metric,
                     Orchestrator orchestrator,
                     ServiceMonitor serviceMonitor,
                     Supplier<Integer> pendingRedeploymentsSupplier,
-                    Duration interval) {
+                    Duration interval,
+                    Clock clock) {
         super(nodeRepository, interval);
         this.metric = metric;
-        this.orchestrator = orchestrator.getNodeStatuses();
+        this.orchestrator = orchestrator.getHostResolver();
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
+        this.clock = clock;
     }
 
     @Override
@@ -125,9 +129,15 @@ public class MetricsReporter extends Maintainer {
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
         metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
 
-        orchestrator.apply(new HostName(node.hostname()))
-                    .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN ? 1 : 0)
-                    .ifPresent(allowedToBeDown -> metric.set("allowedToBeDown", allowedToBeDown, context));
+        orchestrator.apply(new HostName(node.hostname())).ifPresent(info -> {
+            int suspended = info.status().isSuspended() ? 1 : 0;
+            metric.set("suspended", suspended, context);
+            metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
+            long suspendedSeconds = info.suspendedSince()
+                    .map(suspendedSince -> Duration.between(suspendedSince, clock.instant()).getSeconds())
+                    .orElse(0L);
+            metric.set("suspendedSeconds", suspendedSeconds, context);
+        });
 
         long numberOfServices;
         HostName hostName = new HostName(node.hostname());

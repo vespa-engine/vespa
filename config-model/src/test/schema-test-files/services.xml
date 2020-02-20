@@ -119,6 +119,13 @@
           <certificate-file>/foo/cert</certificate-file>
           <ca-certificates-file>/foo/cacerts</ca-certificates-file>
           <client-authentication>want</client-authentication>
+          <cipher-suites>
+            TLS_AES_128_GCM_SHA256,
+            TLS_AES_256_GCM_SHA384,
+            TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+            TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+          </cipher-suites>
+          <protocols>TLSv1.2,TLSv1.3</protocols>
         </ssl>
       </server>
       <server port="4083" id="sslProvider">

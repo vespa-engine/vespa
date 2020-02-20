@@ -6,6 +6,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -75,7 +76,8 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
             // another controller instance is running this job at the moment; ok
         }
         catch (Throwable t) {
-            log.log(Level.WARNING, this + " failed. Will retry in " + maintenanceInterval.toMinutes() + " minutes", t);
+            log.log(Level.WARNING, "Maintainer " + this.getClass().getSimpleName() + " failed. Will retry in " +
+                                   maintenanceInterval + ": " + Exceptions.toMessageString(t));
         }
     }
 

@@ -15,12 +15,11 @@ DocumentState::DocumentState(const DocumentState& o)
     : _gid(o._gid), _timestamp(o._timestamp), _removeEntry(o._removeEntry)
 {
     if (o._docId.get() != 0) {
-        _docId.reset(new document::DocumentId(*o._docId));
+        _docId = std::make_unique<document::DocumentId>(*o._docId);
     }
 }
 
-DocumentState::DocumentState(const document::DocumentId& id,
-                             uint64_t timestamp, bool removeEntry)
+DocumentState::DocumentState(const document::DocumentId& id, uint64_t timestamp, bool removeEntry)
     : _docId(new document::DocumentId(id)),
       _gid(_docId->getGlobalId()),
       _timestamp(timestamp),
@@ -28,8 +27,7 @@ DocumentState::DocumentState(const document::DocumentId& id,
 {
 }
 
-DocumentState::DocumentState(const document::GlobalId& gid,
-                             uint64_t timestamp, bool removeEntry)
+DocumentState::DocumentState(const document::GlobalId& gid, uint64_t timestamp, bool removeEntry)
     : _gid(gid), _timestamp(timestamp), _removeEntry(removeEntry) {}
 
 DocumentState::DocumentState(document::ByteBuffer& buf)
@@ -39,10 +37,10 @@ DocumentState::DocumentState(document::ByteBuffer& buf)
     buf.getByte(hasDocId);
     if (hasDocId) {
         vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
-        _docId.reset(new document::DocumentId(stream));
+        _docId = std::make_unique<document::DocumentId>(stream);
         buf.incPos(stream.rp());
     }
-    char* gid = buf.getBufferAtPos();
+    const char* gid = buf.getBufferAtPos();
     buf.incPos(document::GlobalId::LENGTH);
     _gid.set(gid);
     buf.getLongNetwork((int64_t&) _timestamp);
@@ -55,8 +53,8 @@ DocumentState&
 DocumentState::operator=(const DocumentState& other)
 {
     _docId.reset();
-    if (other._docId.get() != 0) {
-        _docId.reset(new document::DocumentId(*other._docId));
+    if (other._docId) {
+        _docId = std::make_unique<document::DocumentId>(*other._docId);
     }
     _gid = other._gid;
     _timestamp = other._timestamp;

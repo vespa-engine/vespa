@@ -16,12 +16,11 @@ private:
     vespalib::string _name;
     search::attribute::Config _cfg;
 public:
-    AttributeSpec(const vespalib::string &name,
-                  const search::attribute::Config &cfg);
+    AttributeSpec(const vespalib::string &name, const search::attribute::Config &cfg);
     AttributeSpec(const AttributeSpec &);
     AttributeSpec & operator=(const AttributeSpec &);
-    AttributeSpec(AttributeSpec &&);
-    AttributeSpec & operator=(AttributeSpec &&);
+    AttributeSpec(AttributeSpec &&) noexcept;
+    AttributeSpec & operator=(AttributeSpec &&) noexcept;
     ~AttributeSpec();
     const vespalib::string &getName() const { return _name; }
     const search::attribute::Config &getConfig() const { return _cfg; }

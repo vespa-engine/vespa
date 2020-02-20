@@ -9,7 +9,7 @@ namespace storage::spi {
 
 Result::Result(const Result &) = default;
 Result & Result::operator = (const Result &) = default;
-Result::~Result() { }
+Result::~Result() = default;
 
 vespalib::string
 Result::toString() const {
@@ -33,10 +33,10 @@ GetResult::GetResult(Document::UP doc, Timestamp timestamp)
       _doc(std::move(doc))
 { }
 
-GetResult::~GetResult() { }
-BucketIdListResult::~BucketIdListResult() { }
+GetResult::~GetResult() = default;
+BucketIdListResult::~BucketIdListResult() = default;
 
-IterateResult::~IterateResult() { }
+IterateResult::~IterateResult() = default;
 
 }
 

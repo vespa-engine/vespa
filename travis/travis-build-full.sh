@@ -11,7 +11,7 @@ source /etc/profile.d/enable-rh-maven35.sh
 
 ccache --max-size=1250M
 ccache --set-config=compression=true
-ccache --print-config
+ccache -p
 
 cd ${SOURCE_DIR}
 env VESPA_MAVEN_EXTRA_OPTS="--no-snapshot-updates --batch-mode --threads ${NUM_THREADS}" sh ./bootstrap.sh java

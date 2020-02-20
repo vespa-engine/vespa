@@ -8,7 +8,7 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Inspector;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
@@ -70,6 +70,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/controller/v1/auditlog/")) return new AuditLogResponse(controller.auditLogger().readLog());
         if (path.matches("/controller/v1/maintenance/")) return new JobsResponse(maintenance.jobControl());
         if (path.matches("/controller/v1/jobs/upgrader")) return new UpgraderResponse(maintenance.upgrader());
+        if (path.matches("/controller/v1/metering/tenant/{tenant}/month/{month}")) return new MeteringResponse(controller.serviceRegistry().meteringService(), path.get("tenant"), path.get("month"));
         return notFound(path);
     }
 

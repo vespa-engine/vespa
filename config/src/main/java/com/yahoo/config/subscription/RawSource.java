@@ -4,7 +4,7 @@ package com.yahoo.config.subscription;
 /**
  * Source specifying raw config, where payload is given programmatically
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class RawSource implements ConfigSource {
 

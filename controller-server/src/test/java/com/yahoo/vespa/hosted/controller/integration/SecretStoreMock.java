@@ -5,6 +5,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -45,4 +46,8 @@ public class SecretStoreMock extends AbstractComponent implements SecretStore {
         return secrets.getOrDefault(key, new TreeMap<>()).get(version);
     }
 
+    @Override
+    public List<Integer> listSecretVersions(String key) {
+        return List.copyOf(secrets.getOrDefault(key, new TreeMap<>()).keySet());
+    }
 }

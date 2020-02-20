@@ -16,9 +16,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class DefaultValueApplierTest {
+
     public Slime apply(Slime slime, String ... extraFields) {
         StringBuilder defBuilder = new StringBuilder();
         defBuilder.append("namespace=test").append("\n");

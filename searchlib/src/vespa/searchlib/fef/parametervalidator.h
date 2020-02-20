@@ -7,8 +7,7 @@
 #include "parameter.h"
 #include "parameterdescriptions.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class is a validator for a string parameter list given an index environment and a set of parameter descriptions.
@@ -83,6 +82,4 @@ public:
     Result validate();
 };
 
-} // namespace fef
-} // namespace search
-
+}

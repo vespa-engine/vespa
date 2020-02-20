@@ -55,7 +55,7 @@ cmake3 \
     -DJAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-openjdk} \
     -DCMAKE_PREFIX_PATH="/opt/vespa-deps" \
     -DEXTRA_LINK_DIRECTORY="/opt/vespa-deps/lib64;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
-    -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-deps/include;/usr/include/llvm$VESPA_LLVM_VERSION" \
+    -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-deps/include;/usr/include/llvm$VESPA_LLVM_VERSION;/usr/include/openblas" \
     -DCMAKE_INSTALL_RPATH="${VESPA_INSTALL_PREFIX}/lib64;/opt/vespa-deps/lib64;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
     ${UNPRIVILEGED_ARGS} \
     ${EXTRA_CMAKE_ARGS} \

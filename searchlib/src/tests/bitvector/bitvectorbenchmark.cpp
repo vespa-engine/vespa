@@ -51,10 +51,10 @@ void BitVectorBenchmark::init(size_t n)
     BitVector *b(BitVector::create(n).release());
     srand(1);
     for(size_t i(0), j(0); i < n; i += rand()%10, j++) {
-        a->flip(i);
+        a->flipBit(i);
     }
     for(size_t i(0), j(0); i < n; i += rand()%10, j++) {
-        b->flip(i);
+        b->flipBit(i);
     }
     a->invalidateCachedCount();
     b->invalidateCachedCount();
@@ -73,7 +73,7 @@ void BitVectorBenchmark::testCountSpeed1()
 {
     _bv[0]->invalidateCachedCount();
     unsigned int cnt = _bv[0]->countTrueBits();
-    assert(cnt = _bvc[0]);
+    assert(cnt == _bvc[0]);
     (void) cnt;
 }
 

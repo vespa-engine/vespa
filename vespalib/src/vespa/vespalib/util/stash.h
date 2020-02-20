@@ -4,6 +4,7 @@
 
 #include "traits.h"
 #include "arrayref.h"
+#include <cstdlib>
 
 namespace vespalib {
 namespace stash {

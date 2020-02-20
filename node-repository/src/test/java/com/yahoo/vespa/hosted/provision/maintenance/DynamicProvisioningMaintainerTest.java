@@ -26,9 +26,11 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -49,6 +51,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -64,18 +67,23 @@ public class DynamicProvisioningMaintainerTest {
 
     private final HostProvisionerTester tester = new HostProvisionerTester();
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
+    private final HostResourcesCalculator hostResourcesCalculator = mock(HostResourcesCalculator.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
             .withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true)
             .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), PreprovisionCapacity.class);
     private final DynamicProvisioningMaintainer maintainer = new DynamicProvisioningMaintainer(
-            tester.nodeRepository, Duration.ofDays(1), hostProvisioner, flagSource);
+            tester.nodeRepository, Duration.ofDays(1), hostProvisioner, hostResourcesCalculator, flagSource);
 
     @Test
     public void delegates_to_host_provisioner_and_writes_back_result() {
         addNodes();
+        Node host3 = tester.nodeRepository.getNode("host3").orElseThrow();
         Node host4 = tester.nodeRepository.getNode("host4").orElseThrow();
         Node host41 = tester.nodeRepository.getNode("host4-1").orElseThrow();
-        assertTrue(Stream.of(host4, host41).map(Node::ipAddresses).allMatch(Set::isEmpty));
+        assertTrue(Stream.of(host3, host4, host41).map(Node::ipAddresses).allMatch(Set::isEmpty));
+
+        Node host3new = host3.with(host3.ipConfig().with(Set.of("::5")));
+        when(hostProvisioner.provision(eq(host3), eq(Set.of()))).thenReturn(List.of(host3new));
 
         Node host4new = host4.with(host4.ipConfig().with(Set.of("::2")));
         Node host41new = host41.with(host4.ipConfig().with(Set.of("::4", "10.0.0.1")));
@@ -83,8 +91,10 @@ public class DynamicProvisioningMaintainerTest {
 
         maintainer.updateProvisioningNodes(tester.nodeRepository.list(), () -> {});
         verify(hostProvisioner).provision(eq(host4), eq(Set.of(host41)));
+        verify(hostProvisioner).provision(eq(host3), eq(Set.of()));
         verifyNoMoreInteractions(hostProvisioner);
 
+        assertEquals(Optional.of(host3new), tester.nodeRepository.getNode("host3"));
         assertEquals(Optional.of(host4new), tester.nodeRepository.getNode("host4"));
         assertEquals(Optional.of(host41new), tester.nodeRepository.getNode("host4-1"));
     }
@@ -127,7 +137,7 @@ public class DynamicProvisioningMaintainerTest {
 
     @Test
     public void provision_deficit_and_deprovision_excess() {
-        flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new PreprovisionCapacity(1, 3, 2, 1), new PreprovisionCapacity(2, 3, 2, 2)), PreprovisionCapacity.class);
+        flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new PreprovisionCapacity(2, 4, 8, 1), new PreprovisionCapacity(2, 3, 2, 2)), PreprovisionCapacity.class);
         addNodes();
 
         maintainer.convergeToCapacity(tester.nodeRepository.list());
@@ -150,6 +160,15 @@ public class DynamicProvisioningMaintainerTest {
         verifyNoMoreInteractions(hostProvisioner);
     }
 
+    @Before
+    public void setup() {
+        doAnswer(invocation ->  {
+            String flavorName = invocation.getArgument(0, String.class);
+            if ("default".equals(flavorName)) return new NodeResources(2, 4, 8, 1);
+            return invocation.getArguments()[1];
+        }).when(hostResourcesCalculator).availableCapacityOf(any(), any());
+    }
+
     public void addNodes() {
         List.of(createNode("host1", Optional.empty(), NodeType.host, Node.State.active, Optional.of(tenantHostApp)),
                 createNode("host1-1", Optional.of("host1"), NodeType.tenant, Node.State.reserved, Optional.of(tenantApp)),
@@ -157,6 +176,7 @@ public class DynamicProvisioningMaintainerTest {
 
                 createNode("host2", Optional.empty(), NodeType.host, Node.State.failed, Optional.of(tenantApp)),
                 createNode("host2-1", Optional.of("host2"), NodeType.tenant, Node.State.failed, Optional.empty()),
+
                 createNode("host3", Optional.empty(), NodeType.host, Node.State.provisioned, Optional.empty()),
 
                 createNode("host4", Optional.empty(), NodeType.host, Node.State.provisioned, Optional.empty()),
@@ -186,7 +206,8 @@ public class DynamicProvisioningMaintainerTest {
 
         private final ManualClock clock = new ManualClock();
         private final NodeRepository nodeRepository = new NodeRepository(
-                nodeFlavors, new MockCurator(), clock, Zone.defaultZone(), new MockNameResolver().mockAnyLookup(), DockerImage.fromString("docker-image"), true);
+                nodeFlavors, new MockCurator(), clock, Zone.defaultZone(), new MockNameResolver().mockAnyLookup(),
+                DockerImage.fromString("docker-image"), true, new InMemoryFlagSource());
 
         Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, Optional<ApplicationId> application) {
             Node node = createNode(hostname, parentHostname, nodeType, state, application);
@@ -204,7 +225,7 @@ public class DynamicProvisioningMaintainerTest {
                             false));
             var ipConfig = new IP.Config(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of());
             return new Node("fake-id-" + hostname, ipConfig, hostname, parentHostname, flavor, Status.initial(),
-                    state, allocation, History.empty(), nodeType, new Reports(), Optional.empty());
+                    state, allocation, History.empty(), nodeType, new Reports(), Optional.empty(), Optional.empty());
         }
     }
 }

@@ -24,6 +24,7 @@ search indexschema {
     field sd type string {
       indexing: index
       rank:literal
+      query-command: "phrase-segmenting false"
     }
     field pos type position {
       indexing: attribute
@@ -130,17 +131,17 @@ search indexschema {
   }
 
   fieldset exactexplicit {
-    fields:sa, sb
     query-command: "exact ARNOLD"
+    fields:sa, sb
     query-command: dynteaser
   }
   
   fieldset exactexplicit2 {
-    fields:sc, sd
     match {
       exact
       exact-terminator: "Arnold"
     }
+    fields:sc, sd
   }
 
   fieldset gram {

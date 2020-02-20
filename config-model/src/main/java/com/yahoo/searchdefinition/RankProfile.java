@@ -776,7 +776,7 @@ public class RankProfile implements Cloneable {
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
         rankingConstants().asMap().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
 
-        // Add query features from rank profile types reached from the "default" profile
+        // Add query features from all rank profile types
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
             for (FieldDescription field : queryProfileType.declaredFields().values()) {
                 TensorType type = field.getType().asTensorType();
@@ -788,8 +788,7 @@ public class RankProfile implements Cloneable {
                     type = existingType.dimensionwiseGeneralizationWith(type).orElseThrow( () ->
                         new IllegalArgumentException(queryProfileType + " contains query feature " + feature.get() +
                                                      " with type " + field.getType().asTensorType() +
-                                                     ", but this is already defined " +
-                                                     "in another query profile with type " +
+                                                     ", but this is already defined in another query profile with type " +
                                                      context.getType(feature.get())));
                 context.setType(feature.get(), type);
             }

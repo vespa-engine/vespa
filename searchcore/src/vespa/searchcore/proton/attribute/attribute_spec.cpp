@@ -16,10 +16,10 @@ AttributeSpec::AttributeSpec(const AttributeSpec &) = default;
 AttributeSpec &
 AttributeSpec::operator=(const AttributeSpec &) = default;
 
-AttributeSpec::AttributeSpec(AttributeSpec &&) = default;
+AttributeSpec::AttributeSpec(AttributeSpec &&) noexcept = default;
 
 AttributeSpec &
-AttributeSpec::operator=(AttributeSpec &&) = default;
+AttributeSpec::operator=(AttributeSpec &&) noexcept = default;
 
 AttributeSpec::~AttributeSpec() = default;
 

@@ -78,6 +78,9 @@ public:
     void asyncForAttribute(const vespalib::string & name, std::unique_ptr<IAttributeFunctor> func) const override {
         _mock.asyncForAttribute(name, std::move(func));
     }
+    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override {
+        return _mock.readable_attribute_vector(name);
+    }
 };
 
 }

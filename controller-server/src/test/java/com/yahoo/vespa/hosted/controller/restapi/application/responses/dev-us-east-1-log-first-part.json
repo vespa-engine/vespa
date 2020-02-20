@@ -1,4 +1,6 @@
 {
+  "active": true,
+  "status": "running",
   "log": {
     "deployReal": [
       {
@@ -26,27 +28,17 @@
       {
         "at": 0,
         "type": "info",
-        "message": "Checking installation of 6.1 and unknown ..."
+        "message": "host-tenant:application:default-dev.us-east-1: unorchestrated"
       },
       {
         "at": 0,
         "type": "info",
-        "message": "                         host-tenant:application:default-dev.us-east-1: unorchestrated  6.1                                                      "
+        "message": "--- platform 6.1"
       },
       {
         "at": 0,
         "type": "info",
-        "message": "Wanted config generation is 2"
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "                         host-tenant:application:default-dev.us-east-1:   container on port   43 has config generation 1"
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "Installation not yet complete."
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
       }
     ],
     "copyVespaLogs": [
@@ -57,20 +49,32 @@
       }
     ]
   },
-  "active": true,
-  "lastId": 9,
+  "lastId": 7,
   "steps": {
     "deployReal": {
-      "startMillis": 0,
-      "status": "succeeded"
+      "status": "succeeded",
+      "startMillis": 0
     },
     "installReal": {
+      "status": "unfinished",
       "startMillis": 0,
-      "status": "unfinished"
+      "convergence": {
+        "nodes": 1,
+        "down": 0,
+        "needPlatformUpgrade": 0,
+        "upgrading": 0,
+        "needReboot": 0,
+        "rebooting": 0,
+        "needRestart": 0,
+        "restarting": 0,
+        "upgradingOs": 0,
+        "upgradingFirmware": 0,
+        "services": 1,
+        "needNewConfig": 1
+      }
     },
     "copyVespaLogs": {
       "status": "unfinished"
     }
-  },
-  "status": "running"
+  }
 }

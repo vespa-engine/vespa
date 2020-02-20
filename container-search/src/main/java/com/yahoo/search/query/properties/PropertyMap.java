@@ -26,7 +26,10 @@ public class PropertyMap extends Properties {
     /** The properties of this */
     private Map<CompoundName, Object> properties = new LinkedHashMap<>();
 
-    public void set(CompoundName name, Object value, Map<String,String> context) {
+    public void set(CompoundName name, Object value, Map<String, String> context) {
+        if (value == null) // Both clear and forward
+            properties.remove(name);
+
         if (shouldSet(name, value))
             properties.put(name, value);
         else
@@ -37,7 +40,7 @@ public class PropertyMap extends Properties {
      * Return true if this value should be set in this map, false if the set should be propagated instead
      * This default implementation always returns true.
      */
-    protected boolean shouldSet(CompoundName name,Object value) { return true; }
+    protected boolean shouldSet(CompoundName name, Object value) { return true; }
 
     @Override
     public Object get(CompoundName name, Map<String,String> context,

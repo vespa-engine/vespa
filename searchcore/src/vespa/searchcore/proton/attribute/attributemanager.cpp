@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
@@ -611,6 +612,16 @@ void
 AttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes)
 {
     _importedAttributes = std::move(attributes);
+}
+
+std::shared_ptr<search::attribute::ReadableAttributeVector>
+AttributeManager::readable_attribute_vector(const string& name) const
+{
+    auto attribute = findAttribute(name);
+    if (attribute || !_importedAttributes) {
+        return attribute;
+    }
+    return _importedAttributes->get(name);
 }
 
 } // namespace proton

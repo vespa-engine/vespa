@@ -24,7 +24,7 @@ disk_operation_timeout int default=0 restart
 ## PERFORMANCE PARAMETERS
 
 ## Number of threads to use for each mountpoint.
-num_threads int default=6 restart
+num_threads int default=8 restart
 
 ## When merging, if we find more than this number of documents that exist on all
 ## of the same copies, send a separate apply bucket diff with these entries

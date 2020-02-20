@@ -40,7 +40,7 @@ public class ExpandDims extends IntermediateOperation {
         OrderedTensorType inputType = inputs.get(0).type().get();
         int dimensionToInsert = (int)axis.asDouble();
         if (dimensionToInsert < 0) {
-            dimensionToInsert = inputType.dimensions().size() - dimensionToInsert;
+            dimensionToInsert = inputType.dimensions().size() + dimensionToInsert;
         }
 
         OrderedTensorType.Builder typeBuilder = new OrderedTensorType.Builder(resultValueType());

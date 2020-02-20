@@ -30,7 +30,10 @@ enum PathGroup {
              "/orchestrator/v1/{*}",
              "/os/v1/{*}",
              "/provision/v2/{*}",
-             "/zone/v2/{*}"),
+             "/zone/v2/{*}",
+             "/routing/v1/",
+             "/routing/v1/status/environment/{*}",
+             "/routing/v1/inactive/environment/{*}"),
 
     /** Paths used for creating and reading user resources. */
     user(Optional.of("/api"),
@@ -52,7 +55,8 @@ enum PathGroup {
                Optional.of("/api"),
                "/application/v4/tenant/{tenant}/application/",
                "/application/v4/tenant/{tenant}/cost",
-               "/application/v4/tenant/{tenant}/cost/{date}"),
+               "/application/v4/tenant/{tenant}/cost/{date}",
+               "/routing/v1/status/tenant/{tenant}/{*}"),
 
     tenantKeys(Matcher.tenant,
                Optional.of("/api"),
@@ -96,7 +100,8 @@ enum PathGroup {
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/suspended",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/service/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/global-rotation/{*}",
-                    "/application/v4/tenant/{tenant}/application/{application}/metering"),
+                    "/application/v4/tenant/{tenant}/application/{application}/metering",
+                    "/routing/v1/inactive/tenant/{tenant}/application/{application}/instance/{ignored}/environment/prod/region/{region}"),
 
     // TODO jonmv: remove
     /** Path used to restart development nodes. */

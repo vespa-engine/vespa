@@ -22,9 +22,7 @@ MessageSenderStub::getLastCommand(bool verbose) const
 }
 
 std::string
-MessageSenderStub::dumpMessage(const api::StorageMessage& msg,
-                               bool includeAddress,
-                               bool verbose) const
+MessageSenderStub::dumpMessage(const api::StorageMessage& msg, bool includeAddress, bool verbose) const
 {
     std::ostringstream ost;
 
@@ -67,9 +65,7 @@ MessageSenderStub::getLastReply(bool verbose) const
         throw std::logic_error("Expected reply where there was none");
     }
 
-    return dumpMessage(*replies.back(),
-                       true,
-                       verbose);
+    return dumpMessage(*replies.back(),true, verbose);
 
 }
 

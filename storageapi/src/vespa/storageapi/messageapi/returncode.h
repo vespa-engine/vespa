@@ -10,20 +10,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/printable.h>
-#include <vespa/document/util/serializable.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <iosfwd>
 
-namespace document {
-    class ByteBuffer;
-}
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
-class ReturnCode : public document::Deserializable,
-                   public vespalib::Printable {
+class ReturnCode {
 public:
     typedef documentapi::DocumentProtocol Protocol;
 
@@ -68,30 +60,19 @@ public:
 private:
     Result _result;
     vespalib::string _message;
-    void onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer) override;
-    void onSerialize(document::ByteBuffer& buffer) const override;
-
 public:
     ReturnCode();
     explicit ReturnCode(Result result, vespalib::stringref msg = "");
-    ReturnCode(const document::DocumentTypeRepo &repo,
-               document::ByteBuffer& buffer);
     ReturnCode(const ReturnCode &);
     ReturnCode & operator = (const ReturnCode &);
-    ReturnCode(ReturnCode &&) = default;
-    ReturnCode & operator = (ReturnCode &&);
+    ReturnCode(ReturnCode &&) noexcept = default;
+    ReturnCode & operator = (ReturnCode &&) noexcept;
     ~ReturnCode();
-
-    ReturnCode* clone() const override { return new ReturnCode(*this); }
-
-    size_t getSerializedSize() const override;
 
     const vespalib::string& getMessage() const { return _message; }
     void setMessage(vespalib::stringref message) { _message = message; }
 
     Result getResult() const { return _result; }
-
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /**
      * Translate from status code to human-readable string
@@ -121,8 +102,9 @@ public:
     bool isShutdownRelated() const;
     bool isBucketDisappearance() const;
     bool isNonCriticalForIntegrityChecker() const;
+    vespalib::string toString() const;
 };
 
+std::ostream & operator << (std::ostream & os, const ReturnCode & returnCode);
 
-} // api
-} // storage
+}

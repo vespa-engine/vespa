@@ -17,4 +17,9 @@ Avx2Accelrator::dotProduct(const double * af, const double * bf, size_t sz) cons
     return avx::dotProductSelectAlignment<double, 32>(af, bf, sz);
 }
 
+size_t
+Avx2Accelrator::populationCount(const uint64_t *a, size_t sz) const {
+    return helper::populationCount(a, sz);
+}
+
 }

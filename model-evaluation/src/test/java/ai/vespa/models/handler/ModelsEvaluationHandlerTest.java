@@ -56,7 +56,7 @@ public class ModelsEvaluationHandlerTest {
     public void testListModels() {
         String url = "http://localhost/model-evaluation/v1";
         String expected =
-                "{\"mnist_softmax\":\"http://localhost/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/mnist_softmax_saved\",\"xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_2_2\"}";
+                "{\"mnist_softmax\":\"http://localhost/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/mnist_softmax_saved\",\"xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"}";
         assertResponse(url, 200, expected);
     }
 
@@ -90,6 +90,39 @@ public class ModelsEvaluationHandlerTest {
         properties.put("non-existing-binding", "-1");
         String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";
         String expected = "{\"cells\":[{\"address\":{},\"value\":-7.936679999999999}]}";
+        assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
+    public void testLightGBMEvaluationWithoutBindings() {
+        String url = "http://localhost/model-evaluation/v1/lightgbm_regression/eval";
+        String expected = "{\"cells\":[{\"address\":{},\"value\":1.9130086820218188}]}";
+        assertResponse(url, 200, expected);
+    }
+
+    @Test
+    public void testLightGBMEvaluationWithBindings() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("numerical_1", "0.1");
+        properties.put("numerical_2", "0.2");
+        properties.put("categorical_1", "a");
+        properties.put("categorical_2", "i");
+        properties.put("non-existing-binding", "-1");
+        String url = "http://localhost/model-evaluation/v1/lightgbm_regression/eval";
+        String expected = "{\"cells\":[{\"address\":{},\"value\":2.054697758469921}]}";
+        assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
+    public void testLightGBMEvaluationWithMissingValue() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("missing-value", "-1.0");
+        properties.put("numerical_2", "0.5");
+        properties.put("categorical_1", "b");
+        properties.put("categorical_2", "j");
+        properties.put("non-existing-binding", "-1");
+        String url = "http://localhost/model-evaluation/v1/lightgbm_regression/eval";
+        String expected = "{\"cells\":[{\"address\":{},\"value\":2.0745534018208094}]}";
         assertResponse(url, properties, 200, expected);
     }
 

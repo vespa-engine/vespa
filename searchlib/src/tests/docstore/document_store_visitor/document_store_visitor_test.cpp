@@ -127,7 +127,7 @@ MyVisitor::visit(uint32_t lid, const std::shared_ptr<Document> &doc)
     assert(lid < _docIdLimit);
     Document::UP expDoc(makeDoc(_repo, lid, _before));
     EXPECT_TRUE(*expDoc == *doc);
-    _valid->slowSetBit(lid);
+    _valid->setBitAndMaintainCount(lid);
 }
 
 
@@ -136,7 +136,7 @@ MyVisitor::visit(uint32_t lid)
 {
     ++_visitRmCount;
     assert(lid < _docIdLimit);
-    _valid->slowClearBit(lid);
+    _valid->clearBitAndMaintainCount(lid);
 }
 
 
@@ -158,7 +158,7 @@ MyRewriteVisitor::visit(uint32_t lid, const std::shared_ptr<Document> &doc)
     assert(lid < _docIdLimit);
     Document::UP expDoc(makeDoc(_repo, lid, _before));
     EXPECT_TRUE(*expDoc == *doc);
-    _valid->slowSetBit(lid);
+    _valid->setBitAndMaintainCount(lid);
     doc->set("extra", "foo");
 }
 
@@ -297,7 +297,7 @@ Fixture::put(const Document &doc, uint32_t lid)
     ++_syncToken;
     assert(lid < _docIdLimit);
     _store->write(_syncToken, lid, doc);
-    _valid->slowSetBit(lid);
+    _valid->setBitAndMaintainCount(lid);
 }
 
 
@@ -307,7 +307,7 @@ Fixture::remove(uint32_t lid)
     ++_syncToken;
     assert(lid < _docIdLimit);
     _store->remove(_syncToken, lid);
-    _valid->slowClearBit(lid);
+    _valid->clearBitAndMaintainCount(lid);
 }
 
 

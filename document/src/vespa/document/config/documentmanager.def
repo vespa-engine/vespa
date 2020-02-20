@@ -93,6 +93,9 @@ datatype[].documenttype[].bodystruct int
 ## Field sets
 datatype[].documenttype[].fieldsets{}.fields[] string
 
+## Imported fields (specified outside the document block in the schema)
+datatype[].documenttype[].importedfield[].name string
+
 ## Cross-document reference with ID of target document type
 datatype[].referencetype[].target_type_id int
 

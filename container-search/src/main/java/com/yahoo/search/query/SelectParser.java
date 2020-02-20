@@ -45,7 +45,7 @@ import com.yahoo.search.yql.VespaGroupingStep;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -159,7 +159,7 @@ public class SelectParser implements Parser {
         return new QueryTree(root);
     }
 
-    private Item walkJson(Inspector inspector){
+    private Item walkJson(Inspector inspector) {
         Item[] item = {null};
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;
@@ -197,8 +197,8 @@ public class SelectParser implements Parser {
 
     public List<VespaGroupingStep> getGroupingSteps(String grouping){
         List<VespaGroupingStep> groupingSteps = new ArrayList<>();
-        List<String> groupingOperations = getOperations(grouping);
-        for (String groupingString : groupingOperations){
+        List<String> groupingOperations = toGroupingRequests(grouping);
+        for (String groupingString : groupingOperations) {
             GroupingOperation groupingOperation = GroupingOperation.fromString(groupingString);
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
             groupingSteps.add(groupingStep);
@@ -206,22 +206,49 @@ public class SelectParser implements Parser {
         return groupingSteps;
     }
 
-    private List<String> getOperations(String grouping) {
-        List<String> operations = new ArrayList<>();
-        Inspector inspector = SlimeUtils.jsonToSlime(grouping.getBytes()).get();
-        if (inspector.field("error_message").valid()){
+    /** Translates a list of grouping requests on JSON form to a list in the grouping language form */
+    private List<String> toGroupingRequests(String groupingJson) {
+        Inspector inspector = SlimeUtils.jsonToSlime(groupingJson.getBytes()).get();
+        if (inspector.field("error_message").valid()) {
             throw new QueryException("Illegal query: " + inspector.field("error_message").asString() +
                                      " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
         }
 
-        inspector.traverse( (ArrayTraverser) (key, value) -> {
-            String groupingString = value.toString();
-            groupingString = groupingString.replace(" ", "").replace("\"", "").replace("\'", "").replace(":{", "(").replace(":", "(").replace("}", ")").replace(",", ")");
-            groupingString = groupingString.substring(1, groupingString.length());
-            operations.add(groupingString);
-        });
-
+        List<String> operations = new ArrayList<>();
+        inspector.traverse((ArrayTraverser) (__, item) -> operations.add(toGroupingRequest(item)));
         return operations;
+    }
+
+    private String toGroupingRequest(Inspector groupingJson) {
+        StringBuilder b = new StringBuilder();
+        toGroupingRequest(groupingJson, b);
+        return b.toString();
+    }
+
+    private void toGroupingRequest(Inspector groupingJson, StringBuilder b) {
+        switch (groupingJson.type()) {
+            case ARRAY:
+                groupingJson.traverse((ArrayTraverser) (index, item) -> {
+                    toGroupingRequest(item, b);
+                    if (index + 1 < groupingJson.entries())
+                        b.append(",");
+                });
+                break;
+            case OBJECT:
+                groupingJson.traverse((ObjectTraverser) (name, object) -> {
+                    b.append(name);
+                    b.append("(");
+                    toGroupingRequest(object, b);
+                    b.append(") ");
+                });
+                break;
+            case STRING:
+                b.append(groupingJson.asString());
+                break;
+            default:
+                b.append(groupingJson.toString());
+                break;
+        }
     }
 
     private Item buildFunctionCall(String key, Inspector value) {
@@ -250,7 +277,7 @@ public class SelectParser implements Parser {
             });
 
         } else if (inspector.type() == OBJECT){
-            if (inspector.field("children").valid()){
+            if (inspector.field("children").valid()) {
                 inspector.field("children").traverse((ArrayTraverser) (index, new_value) -> {
                     item.addItem(walkJson(new_value));
                 });
@@ -259,22 +286,22 @@ public class SelectParser implements Parser {
         }
     }
 
-    private Inspector getChildren(Inspector inspector){
+    private Inspector getChildren(Inspector inspector) {
         if (inspector.type() == ARRAY){
             return inspector;
 
         } else if (inspector.type() == OBJECT){
-            if (inspector.field("children").valid()){
+            if (inspector.field("children").valid()) {
                 return inspector.field("children");
             }
-            if (inspector.field(1).valid()){
+            if (inspector.field(1).valid()) {
                 return inspector.field(1);
             }
         }
         return null;
     }
 
-    private HashMap<Integer, Inspector> childMap(Inspector inspector){
+    private HashMap<Integer, Inspector> childMap(Inspector inspector) {
         HashMap<Integer, Inspector> children = new HashMap<>();
         if (inspector.type() == ARRAY){
             inspector.traverse((ArrayTraverser) (index, new_value) -> {
@@ -291,14 +318,14 @@ public class SelectParser implements Parser {
         return children;
     }
 
-    private Inspector getAnnotations(Inspector inspector){
+    private Inspector getAnnotations(Inspector inspector) {
         if (inspector.type() == OBJECT && inspector.field("attributes").valid()){
             return inspector.field("attributes");
         }
         return null;
     }
 
-    private HashMap<String, Inspector> getAnnotationMapFromAnnotationInspector(Inspector annotation){
+    private HashMap<String, Inspector> getAnnotationMapFromAnnotationInspector(Inspector annotation) {
         HashMap<String, Inspector> attributes = new HashMap<>();
         if (annotation.type() == OBJECT){
             annotation.traverse((ObjectTraverser) (index, new_value) -> {
@@ -308,7 +335,7 @@ public class SelectParser implements Parser {
         return attributes;
     }
 
-    private HashMap<String, Inspector> getAnnotationMap(Inspector inspector){
+    private HashMap<String, Inspector> getAnnotationMap(Inspector inspector) {
         HashMap<String, Inspector> attributes = new HashMap<>();
         if (inspector.type() == OBJECT && inspector.field("attributes").valid()){
             inspector.field("attributes").traverse((ObjectTraverser) (index, new_value) -> {
