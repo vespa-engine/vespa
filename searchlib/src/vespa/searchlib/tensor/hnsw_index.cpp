@@ -174,7 +174,7 @@ HnswIndex::calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const
 }
 
 HnswCandidate
-HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level)
+HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const
 {
     HnswCandidate nearest = entry_point;
     bool keep_searching = true;
@@ -192,7 +192,7 @@ HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& e
 }
 
 void
-HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level)
+HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level) const
 {
     NearestPriQ candidates;
     // TODO: Add proper handling of visited set.
@@ -319,7 +319,7 @@ struct NeighborsByDocId {
 };
 
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k)
+HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
 {
     std::vector<Neighbor> result;
     FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k));
@@ -335,7 +335,7 @@ HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k)
 }
 
 FurthestPriQ
-HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k)
+HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k) const
 {
     FurthestPriQ best_neighbors;
     if (_entry_level < 0) {

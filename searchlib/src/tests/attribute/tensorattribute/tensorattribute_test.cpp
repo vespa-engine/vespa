@@ -119,11 +119,11 @@ public:
         auto vector = _vectors.get_vector(docid).typify<double>();
         _removes.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
-    std::vector<uint32_t> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) override {
+    std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
         (void) k;
         (void) vector;
         (void) explore_k;
-        return std::vector<uint32_t>();
+        return std::vector<Neighbor>();
     }
 };
 
