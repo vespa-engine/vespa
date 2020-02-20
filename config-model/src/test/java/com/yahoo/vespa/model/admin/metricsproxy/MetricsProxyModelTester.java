@@ -55,6 +55,16 @@ class MetricsProxyModelTester {
                 : CONTAINER_CONFIG_ID;
     }
 
+    static String servicesWithAdminOnly() {
+        return String.join("\n",
+                           "<services>",
+                           "    <admin version='4.0'>",
+                           "        <adminserver hostalias='node1'/>",
+                           "    </admin>",
+                           "</services>"
+        );
+    }
+
     static boolean checkMetric(ConsumersConfig.Consumer consumer, Metric metric) {
         for (ConsumersConfig.Consumer.Metric m : consumer.metric()) {
             if (metric.name.equals(m.name()) && metric.outputName.equals(m.outputname()))
@@ -77,32 +87,32 @@ class MetricsProxyModelTester {
     }
 
     static ConsumersConfig consumersConfigFromModel(VespaModel model) {
-        return new ConsumersConfig((ConsumersConfig.Builder) model.getConfig(new ConsumersConfig.Builder(), CLUSTER_CONFIG_ID));
+        return model.getConfig(ConsumersConfig.class, CLUSTER_CONFIG_ID);
     }
 
     static MetricsNodesConfig getMetricsNodesConfig(VespaModel model) {
-        return new MetricsNodesConfig((MetricsNodesConfig.Builder) model.getConfig(new MetricsNodesConfig.Builder(), CLUSTER_CONFIG_ID));
+        return model.getConfig(MetricsNodesConfig.class, CLUSTER_CONFIG_ID);
     }
 
     static ApplicationDimensionsConfig getApplicationDimensionsConfig(VespaModel model) {
-        return new ApplicationDimensionsConfig((ApplicationDimensionsConfig.Builder) model.getConfig(new ApplicationDimensionsConfig.Builder(), CLUSTER_CONFIG_ID));
+        return model.getConfig(ApplicationDimensionsConfig.class, CLUSTER_CONFIG_ID);
     }
 
     static QrStartConfig getQrStartConfig(VespaModel model) {
-        return new QrStartConfig((QrStartConfig.Builder) model.getConfig(new QrStartConfig.Builder(), CLUSTER_CONFIG_ID));
+        return model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID);
     }
 
     static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model, String configId) {
-        return new NodeDimensionsConfig((NodeDimensionsConfig.Builder) model.getConfig(new NodeDimensionsConfig.Builder(), configId));
+        return model.getConfig(NodeDimensionsConfig.class, configId);
     }
 
     static VespaServicesConfig getVespaServicesConfig(String servicesXml) {
         VespaModel model = getModel(servicesXml, self_hosted);
-        return new VespaServicesConfig((VespaServicesConfig.Builder) model.getConfig(new VespaServicesConfig.Builder(), CONTAINER_CONFIG_ID));
+        return model.getConfig(VespaServicesConfig.class, CONTAINER_CONFIG_ID);
     }
 
     static RpcConnectorConfig getRpcConnectorConfig(VespaModel model) {
-        return new RpcConnectorConfig((RpcConnectorConfig.Builder) model.getConfig(new RpcConnectorConfig.Builder(), CONTAINER_CONFIG_ID));
+        return model.getConfig(RpcConnectorConfig.class, CONTAINER_CONFIG_ID);
     }
 
 }
