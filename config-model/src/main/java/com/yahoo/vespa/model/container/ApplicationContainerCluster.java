@@ -215,6 +215,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         super.getConfig(builder);
         builder.jvm.verbosegc(true)
                 .availableProcessors(0)
+                .compressedClassSpaceSize(0)  //TODO Reduce, next step is 512m
                 .minHeapsize(1536)
                 .heapsize(1536);
         if (getMemoryPercentage().isPresent()) {
