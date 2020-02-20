@@ -122,7 +122,8 @@ class Preparer {
     private int findHighestIndex(ApplicationId application, ClusterSpec cluster) {
         int highestIndex = -1;
         for (Node node : nodeRepository.getNodes(application,
-                                                 Node.State.active, Node.State.inactive, Node.State.parked, Node.State.failed)) {
+                                                 Node.State.reserved, Node.State.active, Node.State.inactive,
+                                                 Node.State.parked, Node.State.failed)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(cluster.id())) continue;
             if ( ! nodeCluster.type().equals(cluster.type())) continue;
