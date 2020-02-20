@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -22,6 +23,8 @@ public class Telegraf extends AbstractComponent {
     private static final String TELEGRAF_CONFIG_PATH = "/etc/telegraf/telegraf.conf";
     private static final String TELEGRAF_CONFIG_TEMPLATE_PATH = "templates/telegraf.conf.vm";
     private final TelegrafRegistry telegrafRegistry;
+
+    private static final Logger logger = Logger.getLogger(Telegraf.class.getName());
 
     @Inject
     public Telegraf(TelegrafRegistry telegrafRegistry, TelegrafConfig telegrafConfig) {
@@ -44,10 +47,12 @@ public class Telegraf extends AbstractComponent {
     }
 
     private void restartTelegraf() {
+        logger.info("Restarting Telegraf");
         executeCommand("service telegraf restart");
     }
 
     private void stopTelegraf() {
+        logger.info("Stopping Telegraf");
         executeCommand("service telegraf stop");
     }
 
