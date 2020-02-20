@@ -219,10 +219,14 @@ struct Fixture
     }
 
     void set_tensor(uint32_t docid, const TensorSpec &spec) {
-        setTensor(docid, *createTensor(spec));
+        set_tensor_internal(docid, *createTensor(spec));
     }
 
-    void setTensor(uint32_t docId, const Tensor &tensor) {
+    void set_empty_tensor(uint32_t docid) {
+        set_tensor_internal(docid, *_tensorAttr->getEmptyTensor());
+    }
+
+    void set_tensor_internal(uint32_t docId, const Tensor &tensor) {
         ensureSpace(docId);
         _tensorAttr->setTensor(docId, tensor);
         _attr->commit();
@@ -233,27 +237,18 @@ struct Fixture
         return _attr->getStatus();
     }
 
-    void
-    assertGetNoTensor(uint32_t docId) {
+    void assertGetNoTensor(uint32_t docId) {
         AttributeGuard guard(_attr);
         Tensor::UP actTensor = _tensorAttr->getTensor(docId);
         EXPECT_FALSE(actTensor);
     }
 
-    void
-    assertGetTensor(const Tensor &expTensor, uint32_t docId)
-    {
+    void assertGetTensor(const TensorSpec &expSpec, uint32_t docId) {
+        Tensor::UP expTensor = createTensor(expSpec);
         AttributeGuard guard(_attr);
         Tensor::UP actTensor = _tensorAttr->getTensor(docId);
         EXPECT_TRUE(static_cast<bool>(actTensor));
-        EXPECT_EQUAL(expTensor, *actTensor);
-    }
-
-    void
-    assertGetTensor(const TensorSpec &expSpec, uint32_t docId)
-    {
-        Tensor::UP expTensor = createTensor(expSpec);
-        assertGetTensor(*expTensor, docId);
+        EXPECT_EQUAL(*expTensor, *actTensor);
     }
 
     void save() {
@@ -268,23 +263,20 @@ struct Fixture
         EXPECT_TRUE(loadok);
     }
 
-    Tensor::UP expDenseTensor3() const
-    {
-        return createTensor(TensorSpec(denseSpec)
-                            .add({{"x", 0}, {"y", 1}}, 11)
-                            .add({{"x", 1}, {"y", 2}}, 0));
+    TensorSpec expDenseTensor3() const {
+        return TensorSpec(denseSpec)
+                .add({{"x", 0}, {"y", 1}}, 11)
+                .add({{"x", 1}, {"y", 2}}, 0);
     }
 
-    Tensor::UP expDenseFillTensor() const
-    {
-        return createTensor(TensorSpec(denseSpec)
-                            .add({{"x", 0}, {"y", 0}}, 5)
-                            .add({{"x", 1}, {"y", 2}}, 0));
+    TensorSpec expDenseFillTensor() const {
+        return TensorSpec(denseSpec)
+                .add({{"x", 0}, {"y", 0}}, 5)
+                .add({{"x", 1}, {"y", 2}}, 0);
     }
 
-    Tensor::UP expEmptyDenseTensor() const
-    {
-        return createTensor(TensorSpec(denseSpec));
+    TensorSpec expEmptyDenseTensor() const {
+        return TensorSpec(denseSpec);
     }
 
     vespalib::string expEmptyDenseTensorSpec() const {
@@ -314,21 +306,21 @@ Fixture::testSetTensorValue()
     EXPECT_EQUAL(5u, _attr->getNumDocs());
     EXPECT_EQUAL(5u, _attr->getCommittedDocIdLimit());
     TEST_DO(assertGetNoTensor(4));
-    EXPECT_EXCEPTION(setTensor(4, *createTensor(TensorSpec("double"))),
+    EXPECT_EXCEPTION(set_tensor(4, TensorSpec("double")),
                      WrongTensorTypeException,
                      "but other tensor type is 'double'");
     TEST_DO(assertGetNoTensor(4));
-    setTensor(4, *_tensorAttr->getEmptyTensor());
+    set_empty_tensor(4);
     if (_denseTensors) {
-        TEST_DO(assertGetTensor(*expEmptyDenseTensor(), 4));
-        setTensor(3, *expDenseTensor3());
-        TEST_DO(assertGetTensor(*expDenseTensor3(), 3));
+        TEST_DO(assertGetTensor(expEmptyDenseTensor(), 4));
+        set_tensor(3, expDenseTensor3());
+        TEST_DO(assertGetTensor(expDenseTensor3(), 3));
     } else {
         TEST_DO(assertGetTensor(TensorSpec(sparseSpec), 4));
-        setTensor(3, *createTensor(TensorSpec(sparseSpec)
-                                   .add({{"x", ""}, {"y", ""}}, 11)));
+        set_tensor(3, TensorSpec(sparseSpec)
+                .add({{"x", ""}, {"y", ""}}, 11));
         TEST_DO(assertGetTensor(TensorSpec(sparseSpec)
-                                .add({{"x", ""}, {"y", ""}}, 11), 3));
+                                        .add({{"x", ""}, {"y", ""}}, 11), 3));
     }
     TEST_DO(assertGetNoTensor(2));
     TEST_DO(clearTensor(3));
@@ -339,23 +331,23 @@ void
 Fixture::testSaveLoad()
 {
     ensureSpace(4);
-    setTensor(4, *_tensorAttr->getEmptyTensor());
+    set_empty_tensor(4);
     if (_denseTensors) {
-        setTensor(3, *expDenseTensor3());
+        set_tensor(3, expDenseTensor3());
     } else {
-        setTensor(3, *createTensor(TensorSpec(sparseSpec)
-                                   .add({{"x", ""}, {"y", "1"}}, 11)));
+        set_tensor(3, TensorSpec(sparseSpec)
+                .add({{"x", ""}, {"y", "1"}}, 11));
     }
     TEST_DO(save());
     TEST_DO(load());
     EXPECT_EQUAL(5u, _attr->getNumDocs());
     EXPECT_EQUAL(5u, _attr->getCommittedDocIdLimit());
     if (_denseTensors) {
-        TEST_DO(assertGetTensor(*expDenseTensor3(), 3));
-        TEST_DO(assertGetTensor(*expEmptyDenseTensor(), 4));
+        TEST_DO(assertGetTensor(expDenseTensor3(), 3));
+        TEST_DO(assertGetTensor(expEmptyDenseTensor(), 4));
     } else {
         TEST_DO(assertGetTensor(TensorSpec(sparseSpec)
-                                .add({{"x", ""}, {"y", "1"}}, 11), 3));
+                                        .add({{"x", ""}, {"y", "1"}}, 11), 3));
         TEST_DO(assertGetTensor(TensorSpec(sparseSpec), 4));
     }
     TEST_DO(assertGetNoTensor(2));
@@ -370,29 +362,28 @@ Fixture::testCompaction()
         return;
     }
     ensureSpace(4);
-    Tensor::UP emptytensor = _tensorAttr->getEmptyTensor();
-    Tensor::UP emptyxytensor = createTensor(TensorSpec(sparseSpec));
-    Tensor::UP simpletensor = createTensor(TensorSpec(sparseSpec)
-                                           .add({{"x", ""}, {"y", "1"}}, 11));
-    Tensor::UP filltensor = createTensor(TensorSpec(sparseSpec)
-                                         .add({{"x", ""}, {"y", ""}}, 5));
+    TensorSpec empty_xy_tensor(sparseSpec);
+    TensorSpec simple_tensor = TensorSpec(sparseSpec)
+            .add({{"x", ""}, {"y", "1"}}, 11);
+    TensorSpec fill_tensor = TensorSpec(sparseSpec)
+            .add({{"x", ""}, {"y", ""}}, 5);
     if (_denseTensors) {
-        emptyxytensor = expEmptyDenseTensor();
-        simpletensor = expDenseTensor3();
-        filltensor = expDenseFillTensor();
+        empty_xy_tensor = expEmptyDenseTensor();
+        simple_tensor = expDenseTensor3();
+        fill_tensor = expDenseFillTensor();
     }
-    setTensor(4, *emptytensor);
-    setTensor(3, *simpletensor);
-    setTensor(2, *filltensor);
+    set_empty_tensor(4);
+    set_tensor(3, simple_tensor);
+    set_tensor(2, fill_tensor);
     clearTensor(2);
-    setTensor(2, *filltensor);
+    set_tensor(2, fill_tensor);
     search::attribute::Status oldStatus = getStatus();
     search::attribute::Status newStatus = oldStatus;
     uint64_t iter = 0;
     uint64_t iterLimit = 100000;
     for (; iter < iterLimit; ++iter) {
         clearTensor(2);
-        setTensor(2, *filltensor);
+        set_tensor(2, fill_tensor);
         newStatus = getStatus();
         if (newStatus.getUsed() < oldStatus.getUsed()) {
             break;
@@ -404,9 +395,9 @@ Fixture::testCompaction()
         "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
         iter, oldStatus.getUsed(), newStatus.getUsed());
     TEST_DO(assertGetNoTensor(1));
-    TEST_DO(assertGetTensor(*filltensor, 2));
-    TEST_DO(assertGetTensor(*simpletensor, 3));
-    TEST_DO(assertGetTensor(*emptyxytensor, 4));
+    TEST_DO(assertGetTensor(fill_tensor, 2));
+    TEST_DO(assertGetTensor(simple_tensor, 3));
+    TEST_DO(assertGetTensor(empty_xy_tensor, 4));
 }
 
 void
