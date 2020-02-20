@@ -264,7 +264,7 @@ public class ConfigProxyRpcServerTest {
     }
 
     private static ProxyServer createTestServer(ConfigSourceSet source) {
-        return new ProxyServer(null, source, ProxyServer.defaultTimingValues(), new MemoryCache(), null);
+        return new ProxyServer(null, source, new MemoryCache(), null);
     }
 
     private static class TestServer implements AutoCloseable {

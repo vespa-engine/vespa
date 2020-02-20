@@ -70,12 +70,11 @@ public class ProxyServer implements Runnable {
         defaultTimingValues = tv;
     }
 
-    ProxyServer(Spec spec, ConfigSourceSet source, TimingValues timingValues,
-                MemoryCache memoryCache, ConfigSourceClient configClient) {
+    ProxyServer(Spec spec, ConfigSourceSet source, MemoryCache memoryCache, ConfigSourceClient configClient) {
         this.delayedResponses = new DelayedResponses();
         this.configSource = source;
         log.log(LogLevel.DEBUG, "Using config source '" + source);
-        this.timingValues = timingValues;
+        this.timingValues = defaultTimingValues;
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
         this.configClient = createClient(rpcServer, delayedResponses, source, timingValues, memoryCache, configClient);
@@ -181,8 +180,7 @@ public class ProxyServer implements Runnable {
         Event.started("configproxy");
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
-        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources,
-                                                  defaultTimingValues(), new MemoryCache(), null);
+        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources, new MemoryCache(), null);
         // catch termination and interrupt signal
         proxyServer.setupSignalHandler();
         Thread proxyserverThread = new Thread(proxyServer);
