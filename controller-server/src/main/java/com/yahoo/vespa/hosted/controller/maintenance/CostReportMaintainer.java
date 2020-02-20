@@ -6,7 +6,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.restapi.cost.CostCalculator;
+import com.yahoo.vespa.hosted.controller.metric.CostCalculator;
 
 import java.time.Clock;
 import java.time.Duration;
