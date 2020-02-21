@@ -6,6 +6,7 @@ import com.google.common.io.BaseEncoding;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.net.URI;
@@ -28,20 +29,21 @@ public class Endpoint {
     private final URI url;
     private final Scope scope;
     private final boolean legacy;
-    private final boolean directRouting;
+    private final RoutingMethod routingMethod;
     private final boolean tls;
     private final boolean wildcard;
 
     private Endpoint(String name, ApplicationId application, ZoneId zone, SystemName system, Port port, boolean legacy,
-                     boolean directRouting, boolean wildcard) {
+                     RoutingMethod routingMethod, boolean wildcard) {
         Objects.requireNonNull(name, "name must be non-null");
         Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(system, "system must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
-        this.url = createUrl(name, application, zone, system, port, legacy, directRouting);
+        Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
+        this.url = createUrl(name, application, zone, system, port, legacy, routingMethod);
         this.scope = zone == null ? Scope.global : Scope.zone;
         this.legacy = legacy;
-        this.directRouting = directRouting;
+        this.routingMethod = routingMethod;
         this.tls = port.tls;
         this.wildcard = wildcard;
     }
@@ -67,12 +69,9 @@ public class Endpoint {
         return legacy;
     }
 
-    /**
-     * Returns whether this endpoint supports direct routing. Direct routing means that this endpoint is served by an
-     * exclusive load balancer instead of a shared routing layer.
-     */
-    public boolean directRouting() {
-        return directRouting;
+    /** Returns the routing used for this */
+    public RoutingMethod routingMethod() {
+        return routingMethod;
     }
 
     /** Returns whether this endpoint supports TLS connections */
@@ -100,13 +99,13 @@ public class Endpoint {
 
     @Override
     public String toString() {
-        return String.format("endpoint %s [scope=%s, legacy=%s, directRouting=%s]", url, scope, legacy, directRouting);
+        return String.format("endpoint %s [scope=%s, legacy=%s, routingMethod=%s]", url, scope, legacy, routingMethod);
     }
 
     private static URI createUrl(String name, ApplicationId application, ZoneId zone, SystemName system,
-                                 Port port, boolean legacy, boolean directRouting) {
+                                 Port port, boolean legacy, RoutingMethod routingMethod) {
         String scheme = port.tls ? "https" : "http";
-        String separator = separator(system, directRouting, port.tls);
+        String separator = separator(system, routingMethod, port.tls);
         String portPart = port.isDefault() ? "" : ":" + port.port;
         return URI.create(scheme + "://" +
                           sanitize(namePart(name, separator)) +
@@ -126,9 +125,9 @@ public class Endpoint {
         return part.replace('_', '-');
     }
 
-    private static String separator(SystemName system, boolean directRouting, boolean tls) {
+    private static String separator(SystemName system, RoutingMethod routingMethod, boolean tls) {
         if (!tls) return ".";
-        if (directRouting) return ".";
+        if (routingMethod.isDirect()) return ".";
         if (system.isPublic()) return ".";
         return "--";
     }
@@ -234,8 +233,8 @@ public class Endpoint {
         private ClusterSpec.Id cluster;
         private EndpointId endpointId;
         private Port port;
+        private RoutingMethod routingMethod = RoutingMethod.shared;
         private boolean legacy = false;
-        private boolean directRouting = false;
         private boolean wildcard = false;
 
         private EndpointBuilder(ApplicationId application) {
@@ -292,9 +291,9 @@ public class Endpoint {
             return this;
         }
 
-        /** Enables direct routing support for this */
-        public EndpointBuilder directRouting() {
-            this.directRouting = true;
+        /** Sets the routing method for this */
+        public EndpointBuilder routingMethod(RoutingMethod method) {
+            this.routingMethod = method;
             return this;
         }
 
@@ -310,13 +309,13 @@ public class Endpoint {
             } else {
                 throw new IllegalArgumentException("Must set either cluster, rotation or wildcard target");
             }
-            if (system.isPublic() && !directRouting) {
-                throw new IllegalArgumentException("Public system only supports direct routing endpoints");
+            if (system.isPublic() && routingMethod != RoutingMethod.exclusive) {
+                throw new IllegalArgumentException("Public system only supports routing method " + RoutingMethod.exclusive);
             }
-            if (directRouting && !port.isDefault()) {
-                throw new IllegalArgumentException("Direct routing endpoints only support default port");
+            if (routingMethod.isDirect() && !port.isDefault()) {
+                throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            return new Endpoint(name, application, zone, system, port, legacy, directRouting, wildcard);
+            return new Endpoint(name, application, zone, system, port, legacy, routingMethod, wildcard);
         }
 
     }

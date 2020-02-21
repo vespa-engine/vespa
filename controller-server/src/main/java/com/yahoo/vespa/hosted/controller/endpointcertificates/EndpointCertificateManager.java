@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.endpointcertificates;
 import com.google.common.collect.Sets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
@@ -244,7 +245,7 @@ public class EndpointCertificateManager {
         ));
 
         Stream.concat(Stream.of(globalDefaultEndpoint, rotationEndpoints), zoneLocalEndpoints)
-                .map(Endpoint.EndpointBuilder::directRouting)
+                .map(endpoint -> endpoint.routingMethod(RoutingMethod.exclusive))
                 .map(endpoint -> endpoint.on(Endpoint.Port.tls()))
                 .map(endpointBuilder -> endpointBuilder.in(zoneRegistry.system()))
                 .map(Endpoint::dnsName).forEach(endpointDnsNames::add);
