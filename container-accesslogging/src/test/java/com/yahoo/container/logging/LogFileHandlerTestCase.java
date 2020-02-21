@@ -58,6 +58,7 @@ public class LogFileHandlerTestCase {
         h.rotateNow();
         h.publish(lr);
         h.flush();
+        h.shutdown();
     }
 
     @Test
@@ -74,6 +75,7 @@ public class LogFileHandlerTestCase {
       LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileFirst1");
       h.publish(lr);
       h.flush();
+      h.shutdown();
     }
 
     @Test
@@ -98,6 +100,7 @@ public class LogFileHandlerTestCase {
       lr = new LogRecord(Level.INFO, "testDeleteFileDuringLogging2");
       h.publish(lr);
       h.flush();
+      h.shutdown();
     }
 
     @Test
@@ -145,6 +148,7 @@ public class LogFileHandlerTestCase {
         assertThat(secondLength).isEqualTo(link);
         assertThat(31).isEqualTo(first);
         assertThat(secondLength).isEqualTo(second);
+        h.shutdown();
     }
 
     @Test
@@ -181,6 +185,7 @@ public class LogFileHandlerTestCase {
         assertThat(compressed).exists();
         String unzipped = IOUtils.readAll(new InputStreamReader(new GZIPInputStream(new FileInputStream(compressed))));
         assertThat(content).isEqualTo(unzipped);
+        h.shutdown();
     }
 
 }
