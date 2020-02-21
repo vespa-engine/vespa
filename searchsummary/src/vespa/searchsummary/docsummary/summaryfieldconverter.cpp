@@ -389,9 +389,11 @@ private:
         MapFieldValueInserter map_inserter(_inserter, _tokenize);
         if (filter_matching_elements()) {
             assert(v.has_no_erased_keys());
-            for (uint32_t id_to_keep : (*_matching_elems)) {
-                auto entry = v[id_to_keep];
-                map_inserter.insert_entry(*entry.first, *entry.second);
+            if (!_matching_elems->empty() && _matching_elems->back() < v.size()) {
+                for (uint32_t id_to_keep : (*_matching_elems)) {
+                    auto entry = v[id_to_keep];
+                    map_inserter.insert_entry(*entry.first, *entry.second);
+                }
             }
         } else {
             for (const auto &entry : v) {
@@ -406,8 +408,10 @@ private:
             ArrayInserter ai(a);
             SlimeFiller conv(ai, _tokenize);
             if (filter_matching_elements()) {
-                for (uint32_t id_to_keep : (*_matching_elems)) {
-                    value[id_to_keep].accept(conv);
+                if (!_matching_elems->empty() && _matching_elems->back() < value.size()) {
+                    for (uint32_t id_to_keep : (*_matching_elems)) {
+                        value[id_to_keep].accept(conv);
+                    }
                 }
             } else {
                 for (const FieldValue &fv : value) {
