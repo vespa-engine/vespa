@@ -22,7 +22,11 @@ import java.util.List;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.logging.Logger;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * An Rpc client to a config source
@@ -43,9 +47,11 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     private final MemoryCache memoryCache;
     private final DelayedResponses delayedResponses;
     private final static TimingValues timingValues;
-
     private final ExecutorService exec;
     private final JRTConfigRequester requester;
+    // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory());
+    private ScheduledFuture<?> delayedResponseScheduler;
 
     static {
         // Proxy should time out before clients upon subscription.
@@ -57,17 +63,20 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         timingValues = tv;
     }
 
-    RpcConfigSourceClient(RpcServer rpcServer,
-                          ConfigSourceSet configSourceSet,
-                          MemoryCache memoryCache,
-                          DelayedResponses delayedResponses) {
+    RpcConfigSourceClient(RpcServer rpcServer, ConfigSourceSet configSourceSet, MemoryCache memoryCache) {
         this.rpcServer = rpcServer;
         this.configSourceSet = configSourceSet;
         this.memoryCache = memoryCache;
-        this.delayedResponses = delayedResponses;
+        this.delayedResponses = new DelayedResponses();
         checkConfigSources();
         exec = Executors.newCachedThreadPool(new DaemonThreadFactory("subscriber-"));
         requester = JRTConfigRequester.create(configSourceSet, timingValues);
+        // Wait for 5 seconds initially, then run every second
+        delayedResponseScheduler = scheduler.scheduleAtFixedRate(
+                new DelayedResponseHandler(delayedResponses, memoryCache, rpcServer),
+                5,
+                1,
+                SECONDS);
     }
 
     /**
@@ -166,6 +175,8 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     @Override
     public void cancel() {
         shutdownSourceConnections();
+        delayedResponseScheduler.cancel(true);
+        scheduler.shutdown();
     }
 
     /**
