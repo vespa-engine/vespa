@@ -10,7 +10,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
 import com.yahoo.vespa.config.RawConfig;
-import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.proxy.filedistribution.FileDistributionAndUrlDownload;
 import com.yahoo.yolean.system.CatchSignals;
@@ -52,35 +51,22 @@ public class ProxyServer implements Runnable {
 
     private volatile ConfigSourceClient configClient;
 
-    private final TimingValues timingValues;
     private final MemoryCache memoryCache;
-    private static final double timingValuesRatio = 0.8;
-    private final static TimingValues defaultTimingValues;
     private final FileDistributionAndUrlDownload fileDistributionAndUrlDownload;
 
     private volatile Mode mode = new Mode(DEFAULT);
-
-    static {
-        // Proxy should time out before clients upon subscription.
-        TimingValues tv = new TimingValues();
-        tv.setUnconfiguredDelay((long)(tv.getUnconfiguredDelay()* timingValuesRatio)).
-                setConfiguredErrorDelay((long)(tv.getConfiguredErrorDelay()* timingValuesRatio)).
-                setSubscribeTimeout((long)(tv.getSubscribeTimeout()* timingValuesRatio)).
-                setConfiguredErrorTimeout(-1);  // Never cache errors
-        defaultTimingValues = tv;
-    }
 
     ProxyServer(Spec spec, ConfigSourceSet source, MemoryCache memoryCache, ConfigSourceClient configClient) {
         this.delayedResponses = new DelayedResponses();
         this.configSource = source;
         log.log(LogLevel.DEBUG, "Using config source '" + source);
-        this.timingValues = defaultTimingValues;
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
-        this.configClient = createClient(rpcServer, delayedResponses, source, timingValues, memoryCache, configClient);
+        this.configClient = (configClient == null) ? createRpcClient(rpcServer, delayedResponses, source, memoryCache) : configClient;
         this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
     }
 
+    @Override
     public void run() {
         if (rpcServer != null) {
             Thread t = new Thread(rpcServer);
@@ -123,7 +109,7 @@ public class ProxyServer implements Runnable {
                 break;
             case DEFAULT:
                 flush();
-                configClient = createRpcClient();
+                configClient = createRpcClient(rpcServer, delayedResponses, configSource, memoryCache);
                 this.mode = new Mode(modeName);
                 break;
             default:
@@ -132,20 +118,13 @@ public class ProxyServer implements Runnable {
         log.log(LogLevel.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
     }
 
-    private ConfigSourceClient createClient(RpcServer rpcServer, DelayedResponses delayedResponses,
-                                            ConfigSourceSet source, TimingValues timingValues,
-                                            MemoryCache memoryCache, ConfigSourceClient client) {
-        return (client == null)
-                ? new RpcConfigSourceClient(rpcServer, source, memoryCache, timingValues, delayedResponses)
-                : client;
-    }
-
     private ConfigProxyRpcServer createRpcServer(Spec spec) {
         return  (spec == null) ? null : new ConfigProxyRpcServer(this, supervisor, spec); // TODO: Try to avoid first argument being 'this'
     }
 
-    private RpcConfigSourceClient createRpcClient() {
-        return new RpcConfigSourceClient(rpcServer, configSource, memoryCache, timingValues, delayedResponses);
+    private RpcConfigSourceClient createRpcClient(RpcServer rpcServer, DelayedResponses delayedResponses,
+                                                  ConfigSourceSet source, MemoryCache memoryCache) {
+        return new RpcConfigSourceClient(rpcServer, source, memoryCache, delayedResponses);
     }
 
     private void setupSignalHandler() {
@@ -202,14 +181,6 @@ public class ProxyServer implements Runnable {
         }
     }
 
-    static TimingValues defaultTimingValues() {
-        return defaultTimingValues;
-    }
-
-    TimingValues getTimingValues() {
-        return timingValues;
-    }
-
     // Cancels all config instances and flushes the cache. When this method returns,
     // the cache will not be updated again before someone calls getConfig().
     private synchronized void flush() {
@@ -240,7 +211,7 @@ public class ProxyServer implements Runnable {
     void updateSourceConnections(List<String> sources) {
         configSource = new ConfigSourceSet(sources);
         flush();
-        configClient = createRpcClient();
+        configClient = createRpcClient(rpcServer, delayedResponses, configSource, memoryCache);
     }
 
 }

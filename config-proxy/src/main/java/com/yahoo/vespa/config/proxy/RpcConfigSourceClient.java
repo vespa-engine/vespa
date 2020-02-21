@@ -32,6 +32,8 @@ import java.util.logging.Logger;
 class RpcConfigSourceClient implements ConfigSourceClient {
 
     private final static Logger log = Logger.getLogger(RpcConfigSourceClient.class.getName());
+    private static final double timingValuesRatio = 0.8;
+
     private final Supervisor supervisor = new Supervisor(new Transport());
 
     private final RpcServer rpcServer;
@@ -40,22 +42,29 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     private final Object activeSubscribersLock = new Object();
     private final MemoryCache memoryCache;
     private final DelayedResponses delayedResponses;
-    private final TimingValues timingValues;
+    private final static TimingValues timingValues;
 
     private final ExecutorService exec;
     private final JRTConfigRequester requester;
 
+    static {
+        // Proxy should time out before clients upon subscription.
+        TimingValues tv = new TimingValues();
+        tv.setUnconfiguredDelay((long)(tv.getUnconfiguredDelay()* timingValuesRatio)).
+                setConfiguredErrorDelay((long)(tv.getConfiguredErrorDelay()* timingValuesRatio)).
+                setSubscribeTimeout((long)(tv.getSubscribeTimeout()* timingValuesRatio)).
+                setConfiguredErrorTimeout(-1);  // Never cache errors
+        timingValues = tv;
+    }
 
     RpcConfigSourceClient(RpcServer rpcServer,
                           ConfigSourceSet configSourceSet,
                           MemoryCache memoryCache,
-                          TimingValues timingValues,
                           DelayedResponses delayedResponses) {
         this.rpcServer = rpcServer;
         this.configSourceSet = configSourceSet;
         this.memoryCache = memoryCache;
         this.delayedResponses = delayedResponses;
-        this.timingValues = timingValues;
         checkConfigSources();
         exec = Executors.newCachedThreadPool(new DaemonThreadFactory("subscriber-"));
         requester = JRTConfigRequester.create(configSourceSet, timingValues);
@@ -140,8 +149,8 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                 log.log(LogLevel.DEBUG, () -> "Already a subscriber running for: " + configCacheKey);
             } else {
                 log.log(LogLevel.DEBUG, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
-                UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(input, this, configSourceSet,
-                                                                                   timingValues, requester, memoryCache);
+                UpstreamConfigSubscriber subscriber =
+                        new UpstreamConfigSubscriber(input, this, configSourceSet, timingValues, requester, memoryCache);
                 try {
                     subscriber.subscribe();
                     activeSubscribers.put(configCacheKey, subscriber);

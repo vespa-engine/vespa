@@ -29,9 +29,7 @@ public class RpcConfigSourceClientTest {
     public void setup() {
         rpcServer = new MockRpcServer();
         delayedResponses = new DelayedResponses();
-        rpcConfigSourceClient =
-                new RpcConfigSourceClient(rpcServer, new MockConfigSource(),
-                                          new MemoryCache(), ProxyServer.defaultTimingValues(), delayedResponses);
+        rpcConfigSourceClient = new RpcConfigSourceClient(rpcServer, new MockConfigSource(), new MemoryCache(), delayedResponses);
     }
 
     @Test
