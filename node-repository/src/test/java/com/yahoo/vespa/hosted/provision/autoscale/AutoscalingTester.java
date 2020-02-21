@@ -113,20 +113,20 @@ class AutoscalingTester {
     }
 
     /**
-     * Adds measurements with the given cpu value and ideal values for the other resources,
+     * Adds measurements with the given resource value and ideal values for the other resources,
      * scaled to take one node redundancy into account.
      * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
      * wanting to see the ideal load with one node missing.)
      */
-    public void addMeasurements(float cpuValue, int count, ApplicationId applicationId) {
+    public void addMeasurements(Resource resource, float value, int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
-                for (Resource resource : Resource.values())
-                    db.add(node, resource, clock().instant(),
-                           (resource == Resource.cpu ? cpuValue : (float)resource.idealAverageLoad()) * oneExtraNodeFactor);
+                for (Resource r : Resource.values())
+                    db.add(node, r, clock().instant(),
+                           (r == resource ? value : (float)r.idealAverageLoad()) * oneExtraNodeFactor);
             }
         }
     }
