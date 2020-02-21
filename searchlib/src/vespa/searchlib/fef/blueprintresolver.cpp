@@ -85,6 +85,7 @@ struct Compiler : public Blueprint::DependencyHandler {
             }
             compile_error = true;
         }
+        fixup_feature_map();
         return FeatureRef();
     }
 
@@ -121,16 +122,13 @@ struct Compiler : public Blueprint::DependencyHandler {
         self().spec.blueprint->setName(parser.executorName());
         self().spec.blueprint->attach_dependency_handler(*this);
         if (!self().spec.blueprint->setup(index_env, parser.parameters())) {
-            fixup_feature_map();
             return failed(parser.featureName(), "invalid parameters");
         }
         if (parser.output().empty() && self().spec.output_types.empty()) {
-            fixup_feature_map();
             return failed(parser.featureName(), "has no output value");
         }
         const auto &feature = feature_map.find(parser.featureName());
         if (feature == feature_map.end()) {
-            fixup_feature_map();
             return failed(parser.featureName(),
                           vespalib::make_string("unknown output: '%s'", parser.output().c_str()));
         }
