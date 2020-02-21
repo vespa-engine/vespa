@@ -117,8 +117,14 @@ class AutoscalingTester {
      * scaled to take one node redundancy into account.
      * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
      * wanting to see the ideal load with one node missing.)
+     *
+     * @param resource the resource we are explicitly setting the value of
+     * @param otherResourcesLoad the load factor relative to ideal to use for other resources
+     * @param count the number of measurements
+     * @param applicationId the application we're adding measurements for all nodes of
      */
-    public void addMeasurements(Resource resource, float value, int count, ApplicationId applicationId) {
+    public void addMeasurements(Resource resource, float value, float otherResourcesLoad,
+                                int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
@@ -126,7 +132,7 @@ class AutoscalingTester {
             for (Node node : nodes) {
                 for (Resource r : Resource.values())
                     db.add(node, r, clock().instant(),
-                           (r == resource ? value : (float)r.idealAverageLoad()) * oneExtraNodeFactor);
+                           (r == resource ? value : (float)r.idealAverageLoad() * otherResourcesLoad) * oneExtraNodeFactor);
             }
         }
     }
@@ -199,8 +205,6 @@ class AutoscalingTester {
 
         @Override
         public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId) {
-            for (Flavor f : hostFlavors)
-                System.out.println(f + ": " + f.resources());
             Flavor hostFlavor = hostFlavors.stream().filter(f -> f.resources().justNumbers().equals(resources.justNumbers())).findAny()
                                            .orElseThrow(() -> new RuntimeException("No flavor matching " + resources + ". Flavors: " + hostFlavors));
 

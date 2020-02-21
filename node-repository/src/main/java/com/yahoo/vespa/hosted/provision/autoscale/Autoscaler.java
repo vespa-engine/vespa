@@ -67,10 +67,12 @@ public class Autoscaler {
         Optional<Double> totalDiskSpent   = averageUseOf(Resource.disk,   applicationId, cluster, clusterNodes);
         if (totalCpuSpent.isEmpty() || totalMemorySpent.isEmpty() || totalDiskSpent.isEmpty()) return Optional.empty();
 
+        System.out.println("  Total cpu " + totalCpuSpent.get() + " total memory " + totalMemorySpent.get() + " total disk " + totalDiskSpent.get());
         Optional<ClusterResources> bestAllocation = findBestAllocation(totalCpuSpent.get(),
                                                                        totalMemorySpent.get(),
                                                                        totalDiskSpent.get(),
                                                                        currentAllocation);
+        System.out.println("  Best allocation: " + bestAllocation);
         if (bestAllocation.isPresent() && isSimilar(bestAllocation.get(), currentAllocation))
             return Optional.empty(); // Avoid small changes
         return bestAllocation;
@@ -81,9 +83,10 @@ public class Autoscaler {
         Optional<ClusterResourcesWithCost> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(totalCpu, totalMemory, totalDisk, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
+            System.out.println("    Considering " + allocation.nodes() + " nodes:");
             Optional<ClusterResourcesWithCost> allocatableResources = toAllocatableResources(allocation);
             if (allocatableResources.isEmpty()) continue;
-
+            System.out.println("    -- Candidate: " + allocatableResources);
             if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
                 bestAllocation = allocatableResources;
         }
@@ -119,7 +122,10 @@ public class Autoscaler {
             double bestCost = Double.MAX_VALUE;
             Optional<Flavor> bestFlavor = Optional.empty();
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
-                if ( ! flavor.resources().satisfies(resources.nodeResources())) continue;
+                if ( ! flavor.resources().satisfies(resources.nodeResources())) {
+                    System.out.println("      " + flavor.name() + " does not satisfy " + resources.nodeResources());
+                    continue;
+                }
                 if (bestFlavor.isEmpty() || bestCost > costOf(flavor.resources())) {
                     bestFlavor = Optional.of(flavor);
                     bestCost = costOf(flavor);

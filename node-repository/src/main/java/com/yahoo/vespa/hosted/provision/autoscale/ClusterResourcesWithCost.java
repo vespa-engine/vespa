@@ -18,4 +18,9 @@ public class ClusterResourcesWithCost {
 
     public double cost() { return cost; }
 
+    @Override
+    public String toString() {
+        return "$" + cost + ": " + clusterResources();
+    }
+
 }
