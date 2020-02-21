@@ -156,7 +156,8 @@ public class EndpointCertificateManager {
                             storedMetaData.certName(),
                             storedMetaData.version(),
                             providerMetadata.request_id(),
-                            providerMetadata.requestedDnsSans());
+                            providerMetadata.requestedDnsSans(),
+                            Optional.empty());
 
             if (mode == BackfillMode.DRYRUN) {
                 log.log(LogLevel.INFO, "Would update stored metadata " + storedMetaData + " with data from provider: " + backfilledMetadata);
@@ -176,7 +177,7 @@ public class EndpointCertificateManager {
     private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance) {
         List<ZoneId> zones = zoneRegistry.zones().controllerUpgraded().zones().stream().map(ZoneApi::getId).collect(Collectors.toUnmodifiableList());
         EndpointCertificateMetadata provisionedCertificateMetadata = endpointCertificateProvider
-                .requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), zones));
+                .requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), zones), Optional.empty());
         curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
         return provisionedCertificateMetadata;
     }

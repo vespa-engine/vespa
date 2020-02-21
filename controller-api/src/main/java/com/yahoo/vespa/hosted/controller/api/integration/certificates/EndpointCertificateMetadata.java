@@ -18,25 +18,23 @@ public class EndpointCertificateMetadata {
     private final int version;
     private final Optional<String> request_id;
     private final Optional<List<String>> requestedDnsSans;
+    private final Optional<String> issuer;
 
     public EndpointCertificateMetadata(String keyName, String certName, int version) {
-        this.keyName = keyName;
-        this.certName = certName;
-        this.version = version;
-        this.request_id = Optional.empty();
-        this.requestedDnsSans = Optional.empty();
+        this(keyName, certName, version, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public EndpointCertificateMetadata(String keyName, String certName, int version, Optional<String> request_id, Optional<List<String>> requestedDnsSans) {
+    public EndpointCertificateMetadata(String keyName, String certName, int version, String request_id, List<String> requestedDnsSans) {
+        this(keyName, certName, version, Optional.of(request_id), Optional.of(requestedDnsSans), Optional.empty());
+    }
+
+    public EndpointCertificateMetadata(String keyName, String certName, int version, Optional<String> request_id, Optional<List<String>> requestedDnsSans, Optional<String> issuer) {
         this.keyName = keyName;
         this.certName = certName;
         this.version = version;
         this.request_id = request_id;
         this.requestedDnsSans = requestedDnsSans;
-    }
-
-    public EndpointCertificateMetadata(String keyName, String certName, int version, String request_id, List<String> requestedDnsSans) {
-        this(keyName, certName, version, Optional.of(request_id), Optional.of(requestedDnsSans));
+        this.issuer = issuer;
     }
 
     public String keyName() {
@@ -59,6 +57,10 @@ public class EndpointCertificateMetadata {
         return requestedDnsSans;
     }
 
+    public Optional<String> issuer() {
+        return issuer;
+    }
+
     @Override
     public String toString() {
         return "EndpointCertificateMetadata{" +
@@ -67,6 +69,7 @@ public class EndpointCertificateMetadata {
                 ", version=" + version +
                 ", request_id=" + request_id +
                 ", requestedDnsSans=" + requestedDnsSans +
+                ", issuer=" + issuer +
                 '}';
     }
 
@@ -79,11 +82,12 @@ public class EndpointCertificateMetadata {
                 keyName.equals(that.keyName) &&
                 certName.equals(that.certName) &&
                 request_id.equals(that.request_id) &&
-                requestedDnsSans.equals(that.requestedDnsSans);
+                requestedDnsSans.equals(that.requestedDnsSans) &&
+                issuer.equals(that.issuer);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(keyName, certName, version, request_id, requestedDnsSans);
+        return Objects.hash(keyName, certName, version, request_id, requestedDnsSans, issuer);
     }
 }

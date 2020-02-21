@@ -42,7 +42,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -521,8 +520,7 @@ public class CuratorDb {
     }
 
     public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
-        Optional<String> zkData = curator.getData(endpointCertificatePath(applicationId)).map(String::new);
-        return zkData.map(EndpointCertificateMetadataSerializer::fromJsonOrTlsSecretsKeysString);
+        return curator.getData(endpointCertificatePath(applicationId)).map(String::new).map(EndpointCertificateMetadataSerializer::fromJsonString);
     }
 
     public Map<ApplicationId, EndpointCertificateMetadata> readAllEndpointCertificateMetadata() {
