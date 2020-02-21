@@ -8,7 +8,7 @@
 
 namespace proton {
 
-class SearchView : public ISearchHandler, public std::enable_shared_from_this<ISearchHandler>
+class SearchView : public ISearchHandler, public std::enable_shared_from_this<SearchView>
 {
 public:
     using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
@@ -16,7 +16,7 @@ public:
     using InternalDocsumReply = std::pair<std::unique_ptr<DocsumReply>, bool>;
     typedef std::shared_ptr<SearchView> SP;
 
-    SearchView(const ISummaryManager::ISummarySetup::SP &summarySetup, const MatchView::SP &matchView);
+    static std::shared_ptr<SearchView> create(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView);
     SearchView(const SearchView &) = delete;
     SearchView(SearchView &&) = delete;
     SearchView &operator=(const SearchView &) = delete;
@@ -36,6 +36,7 @@ public:
     std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & req) override;
     std::unique_ptr<SearchReply> match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;
 private:
+    SearchView(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView);
     InternalDocsumReply getDocsumsInternal(const DocsumRequest & req);
     ISummaryManager::ISummarySetup::SP _summarySetup;
     MatchView::SP                      _matchView;

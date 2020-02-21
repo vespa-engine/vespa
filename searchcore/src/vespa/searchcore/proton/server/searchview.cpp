@@ -105,11 +105,14 @@ createEmptyReply(const DocsumRequest & request)
 
 }
 
-SearchView::SearchView(const ISummaryManager::ISummarySetup::SP & summarySetup,
-                       const MatchView::SP & matchView)
+std::shared_ptr<SearchView>
+SearchView::create(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView) {
+    return std::shared_ptr<SearchView>( new SearchView(std::move(summarySetup), std::move(matchView)));
+}
+SearchView::SearchView(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView)
     : ISearchHandler(),
-      _summarySetup(summarySetup),
-      _matchView(matchView)
+      _summarySetup(std::move(summarySetup)),
+      _matchView(std::move(matchView))
 { }
 
 SearchView::~SearchView() = default;

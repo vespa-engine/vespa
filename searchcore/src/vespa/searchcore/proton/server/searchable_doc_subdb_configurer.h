@@ -65,11 +65,10 @@ private:
                          const IAttributeManager::SP &attrMgr);
 
     void
-    reconfigureSearchView(const MatchView::SP &matchView);
+    reconfigureSearchView(MatchView::SP matchView);
 
     void
-    reconfigureSearchView(const ISummaryManager::ISummarySetup::SP &summarySetup,
-                           const MatchView::SP &matchView);
+    reconfigureSearchView(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView);
 
 public:
     SearchableDocSubDBConfigurer(const SearchableDocSubDBConfigurer &) = delete;

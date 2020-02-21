@@ -205,14 +205,14 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
     Matchers::SP matchers(_configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig()).release());
     auto matchView = std::make_shared<MatchView>(matchers, indexMgr->getSearchable(), attrMgr,
                                                  sessionManager, _metaStoreCtx, _docIdLimit);
-    _rSearchView.set(std::make_shared<SearchView>(
+    _rSearchView.set(SearchView::create(
                                       getSummaryManager()->createSummarySetup(
                                               configSnapshot.getSummaryConfig(),
                                               configSnapshot.getSummarymapConfig(),
                                               configSnapshot.getJuniperrcConfig(),
                                               configSnapshot.getDocumentTypeRepoSP(),
                                               matchView->getAttributeManager()),
-                                      matchView));
+                                      std::move(matchView)));
 
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
     {
