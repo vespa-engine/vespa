@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -57,11 +56,10 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                        .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
                        .forEach(application -> {
                            try {
-                               Tenant tenant = tenantOf(application.id());
-                               tenant.contact().ifPresent(contact -> { // TODO jvenstad: Makes sense to require, and run this only in main?
+                               tenantOf(application.id()).contact().ifPresent(contact -> { // TODO jvenstad: Makes sense to require, and run this only in main?
                                    ownershipIssues.confirmOwnership(application.ownershipIssueId(),
                                                                     summaryOf(application.id()),
-                                                                    determineAssignee(tenant, application),
+                                                                    determineAssignee(application),
                                                                     contact)
                                                   .ifPresent(newIssueId -> store(newIssueId, application.id()));
                                });
@@ -94,7 +92,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
             application.ownershipIssueId().ifPresent(issueId -> {
                 try {
                     Tenant tenant = tenantOf(application.id());
-                    ownershipIssues.ensureResponse(issueId, tenant.type() == Tenant.Type.athenz ? tenant.contact() : Optional.empty());
+                    ownershipIssues.ensureResponse(issueId, tenant.contact());
                 }
                 catch (RuntimeException e) {
                     log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
@@ -118,8 +116,8 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                        });
     }
 
-    private User determineAssignee(Tenant tenant, Application application) {
-        return application.owner().orElse(tenant instanceof UserTenant ? userFor(tenant) : null);
+    private User determineAssignee(Application application) {
+        return application.owner().orElse(null);
     }
 
     private Tenant tenantOf(TenantAndApplicationId applicationId) {

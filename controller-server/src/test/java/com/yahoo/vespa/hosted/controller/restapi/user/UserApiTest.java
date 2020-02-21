@@ -71,10 +71,10 @@ public class UserApiTest extends ControllerContainerCloudTest {
                                       .data("{\"token\":\"hello\"}"),
                               new File("tenant-without-applications.json"));
 
-        // PUT a tenant is not available to anyone.
+        // PUT a tenant is ignored.
         tester.assertResponse(request("/application/v4/user/", PUT)
                                       .roles(operator),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Not authenticated or not a user.\"}", 403);
+                              "", 200);
 
         // GET at user/v1 root fails as no access control is defined there.
         tester.assertResponse(request("/user/v1/"),

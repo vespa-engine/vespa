@@ -179,15 +179,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET the authenticated user (with associated tenants)
         tester.assertResponse(request("/application/v4/user", GET).userIdentity(USER_ID),
                               new File("user.json"));
-        // PUT a user tenant
+        // TODO jonmv: Remove when dashboard is gone.
+        // PUT a user tenant — does nothing
         tester.assertResponse(request("/application/v4/user", PUT).userIdentity(USER_ID),
-                              "{\"message\":\"Created user 'by-myuser'\"}");
+                              "");
         // GET the authenticated user which now exists (with associated tenants)
         tester.assertResponse(request("/application/v4/user", GET).userIdentity(USER_ID),
-                              new File("user-which-exists.json"));
-        // DELETE the user
+                              new File("user.json"));
+        // DELETE the user — it doesn't exist, so access control fails
         tester.assertResponse(request("/application/v4/tenant/by-myuser", DELETE).userIdentity(USER_ID),
-                              "{\"tenant\":\"by-myuser\",\"type\":\"USER\",\"applications\":[]}");
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}", 403);
         // GET all tenants
         tester.assertResponse(request("/application/v4/tenant/", GET).userIdentity(USER_ID),
                               new File("tenant-list.json"));
@@ -750,17 +751,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Aborting run 2 of staging-test for tenant1.application1.instance1\"}");
 
-        // PUT (create) the authenticated user
-        byte[] data = new byte[0];
-        tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
-                                      .data(data)
-                                      .userIdentity(new UserId("new_user")), // Normalized to by-new-user by API
-                              new File("create-user-response.json"));
-
         // GET user lists only tenants for the authenticated user
         tester.assertResponse(request("/application/v4/user", GET)
                                       .userIdentity(new UserId("other_user")),
-                              "{\"user\":\"other_user\",\"tenants\":[],\"tenantExists\":false}");
+                              "{\"user\":\"other_user\",\"tenants\":[],\"tenantExists\":true}");
 
         // OPTIONS return 200 OK
         tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS)
@@ -1371,22 +1365,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // PUT (create) the authenticated user
         tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
                                       .userIdentity(userId), // Normalized to by-new-user by API
-                              new File("create-user-response.json"));
+                              "");
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
                 .build();
 
-        // POST (deploy) an application to a dev zone
+        // POST (deploy) an application to a dev zone fails because user tenant is used — these do not exist.
         MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(userId),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"User user.new-user is not allowed to launch service domain1.service. Please reach out to the domain admin.\"}",
-                              400);
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
+                              403);
 
         createTenantAndApplication();
-        // POST (deploy) an application to dev through a deployment job
+        // POST (deploy) an application to dev through a deployment job, with user instance and a proper tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/new-user/deploy/dev-us-east-1", POST)
                                       .data(entity)
                                       .userIdentity(userId),
@@ -1398,11 +1392,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .domains.get(ATHENZ_TENANT_DOMAIN)
                         .admin(HostedAthenzIdentities.from(userId));
 
-        // POST (deploy) an application to a dev zone
-        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-east-1/instance/default", POST)
+        // POST (deploy) an application to a dev zone fails because user tenant is used — these do not exist.
+        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(userId),
-                              new File("deploy-result.json"));
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
+                              403);
 
         // POST (deploy) an application to dev through a deployment job
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/new-user/deploy/dev-us-east-1", POST)
@@ -1431,7 +1426,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         AthenzCredentials credentials = new AthenzCredentials(
                 new AthenzPrincipal(new AthenzUser(developer.id())), sandboxDomain, OKTA_IT, OKTA_AT);
         tester.controller().tenants().create(tenantSpec, credentials);
-        tester.controller().applications().createApplication(TenantAndApplicationId.from("sandbox", "myapp"), Optional.of(credentials));
+        tester.controller().applications().createApplication(TenantAndApplicationId.from("sandbox", "myapp"), credentials);
 
         // Create an application package referencing the service from the other domain
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

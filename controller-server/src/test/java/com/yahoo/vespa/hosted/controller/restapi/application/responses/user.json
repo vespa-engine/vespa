@@ -1,5 +1,5 @@
 {
   "user": "myuser",
   "tenants": @include(tenant-list.json),
-  "tenantExists": false
+  "tenantExists": true
 }

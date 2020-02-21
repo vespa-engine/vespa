@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -47,8 +46,12 @@ public class TenantController {
             Instant start = controller.clock().instant();
             int count = 0;
             for (TenantName name : curator.readTenantNames()) {
-                lockIfPresent(name, LockedTenant.class, this::store);
-                count++;
+                if (name.value().startsWith(Tenant.userPrefix))
+                    curator.removeTenant(name);
+                else {
+                    lockIfPresent(name, LockedTenant.class, this::store);
+                    count++;
+                }
             }
             log.log(Level.INFO, String.format("Wrote %d tenants in %s", count,
                                               Duration.between(start, controller.clock().instant())));
@@ -94,14 +97,6 @@ public class TenantController {
         curator.writeTenant(tenant.get());
     }
 
-    /** Create an user tenant with given username */
-    public void createUser(UserTenant tenant) {
-        try (Lock lock = lock(tenant.name())) {
-            requireNonExistent(tenant.name());
-            curator.writeTenant(tenant);
-        }
-    }
-
     /** Create a tenant, provided the given credentials are valid. */
     public void create(TenantSpec tenantSpec, Credentials credentials) {
         try (Lock lock = lock(tenantSpec.tenant())) {
@@ -138,13 +133,6 @@ public class TenantController {
 
             curator.removeTenant(tenant);
             accessControl.deleteTenant(tenant, credentials);
-        }
-    }
-
-    /** Deletes the given user tenant. */
-    public void deleteUser(UserTenant tenant) {
-        try (Lock lock = lock(tenant.name())) {
-            curator.removeTenant(tenant.name());
         }
     }
 
