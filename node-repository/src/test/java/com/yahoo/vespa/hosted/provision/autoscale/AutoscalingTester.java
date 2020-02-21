@@ -65,7 +65,7 @@ class AutoscalingTester {
                                                              .flagSource(flagSource)
                                                              .build();
 
-        hostResourcesCalculator = new MockHostResourcesCalculator();
+        hostResourcesCalculator = new MockHostResourcesCalculator(zone);
         db = new NodeMetricsDb();
         autoscaler = new Autoscaler(hostResourcesCalculator, db, nodeRepository());
     }
@@ -188,9 +188,18 @@ class AutoscalingTester {
 
     private static class MockHostResourcesCalculator implements HostResourcesCalculator {
 
+        private final Zone zone;
+
+        public MockHostResourcesCalculator(Zone zone) {
+            this.zone = zone;
+        }
+
         @Override
         public NodeResources availableCapacityOf(String flavorName, NodeResources hostResources) {
-            return hostResources;
+            if (zone.cloud().value().equals("aws"))
+                return hostResources.withMemoryGb(hostResources.memoryGb() + 3);
+            else
+                return hostResources;
         }
 
     }

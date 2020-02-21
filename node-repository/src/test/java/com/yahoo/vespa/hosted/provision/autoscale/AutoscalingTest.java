@@ -112,8 +112,10 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 100, 100, 1));
 
         tester.addMeasurements(Resource.memory, 0.9f, 0.6f, 120, application1);
-        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                  8, 1, 3,  80, 100,
+        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high." +
+                                                                  "Scaling flavor not count since the latter is more expensive due to " +
+                                                                  "memory charged but taken by aws, see MockHostResourcesCalculator",
+                                                                  5, 1, 3,  150, 100,
                                                                   tester.autoscale(application1, cluster1));
 
         tester.deploy(application1, cluster1, scaledResources);
@@ -122,7 +124,7 @@ public class AutoscalingTest {
         tester.addMeasurements(Resource.memory, 0.3f, 0.6f, 1000, application1);
         System.out.println("Low memory usage");
         tester.assertResources("Scaling down since resource usage has gone down",
-                               6, 1, 3, 80, 100,
+                               4, 1, 3, 100, 100,
                                tester.autoscale(application1, cluster1));
     }
 
