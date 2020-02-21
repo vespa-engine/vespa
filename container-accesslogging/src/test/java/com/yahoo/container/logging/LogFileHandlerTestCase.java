@@ -25,7 +25,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Bob Travis
  * @author bjorncs
  */
-// TODO: Make these tests wait until the right things happen rather than waiting for a predetermined time
 public class LogFileHandlerTestCase {
 
     @Rule
@@ -131,14 +130,14 @@ public class LogFileHandlerTestCase {
         }
         lr = new LogRecord(Level.INFO, "string which is way longer than the word test");
         h.publish(lr);
-        Thread.sleep(1000);
+        h.waitDrained();
         File f = new File(f1);
         long first = f.length();
         f = new File(f2);
         long second = f.length();
         final long secondLength = 72;
         for (int n = 0; n < 20 && second != secondLength; ++n) {
-            Thread.sleep(1000);
+            Thread.sleep(1);
             second = f.length();
         }
         f = new File(root, "symlink");
@@ -177,7 +176,7 @@ public class LogFileHandlerTestCase {
         assertThat(content).hasLineCount(logEntries);
         h.rotateNow();
         while (uncompressed.exists()) {
-            Thread.sleep(10);
+            Thread.sleep(1);
         }
         assertThat(compressed).exists();
         String unzipped = IOUtils.readAll(new InputStreamReader(new GZIPInputStream(new FileInputStream(compressed))));
