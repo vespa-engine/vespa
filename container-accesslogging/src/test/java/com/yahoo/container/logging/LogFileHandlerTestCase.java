@@ -17,9 +17,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.zip.GZIPInputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author <a href="mailto:travisb@yahoo-inc.com">Bob Travis</a>
@@ -46,11 +44,11 @@ public class LogFileHandlerTestCase {
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
         long tomorrowMillis = tomorrowDays * millisPerDay;
-        assertEquals (tomorrowMillis, h.getNextRotationTime(now));
+        assertThat(tomorrowMillis).isEqualTo(h.getNextRotationTime(now));
         long[] rTimes = {1000, 2000, 10000};
         h.setRotationTimes(rTimes);
-        assertEquals (tomorrowMillis+1000, h.getNextRotationTime(tomorrowMillis));
-        assertEquals (tomorrowMillis+10000, h.getNextRotationTime(tomorrowMillis+3000));
+        assertThat(tomorrowMillis+1000).isEqualTo(h.getNextRotationTime(tomorrowMillis));
+        assertThat(tomorrowMillis+10000).isEqualTo(h.getNextRotationTime(tomorrowMillis+3000));
         boolean okToWrite = false; // don't want regular unit tests to create tiles....
         if (okToWrite) {
             LogRecord lr = new LogRecord(Level.INFO, "test");
@@ -69,10 +67,6 @@ public class LogFileHandlerTestCase {
 
     private void deleteOnExit(String fileOrDir) {
         new File(fileOrDir).deleteOnExit();
-    }
-
-    private static void deleteRecursive(String directory) {
-       IOUtils.recursiveDeleteDir(new File(directory));
     }
 
     @Test
@@ -161,9 +155,9 @@ public class LogFileHandlerTestCase {
             }
             f = new File("./testlogforsymlinkchecking", "symlink");
             long link = f.length();
-            assertEquals(secondLength, link);
-            assertEquals(31, first);
-            assertEquals(secondLength, second);
+            assertThat(secondLength).isEqualTo(link);
+            assertThat(31).isEqualTo(first);
+            assertThat(secondLength).isEqualTo(second);
         } catch (InterruptedException e) {
             // just let the test pass
         }
@@ -186,26 +180,27 @@ public class LogFileHandlerTestCase {
                 return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
             }
         } );
-        for (int i=0; i < 10000; i++) {
+        int logEntries = 10000;
+        for (int i = 0; i < logEntries; i++) {
             LogRecord lr = new LogRecord(Level.INFO, "test");
             h.publish(lr);
         }
         h.waitDrained();
         String f1 = h.getFileName();
-        assertTrue(f1.startsWith("./testcompression/logfilehandlertest."));
+        assertThat(f1).startsWith("./testcompression/logfilehandlertest.");
         File uncompressed = new File(f1);
         File compressed = new File(f1 + ".gz");
-        assertTrue(uncompressed.exists());
-        assertFalse(compressed.exists());
+        assertThat(uncompressed).exists();
+        assertThat(compressed).doesNotExist();
         String content = IOUtils.readFile(uncompressed);
-        assertEquals(310000, content.length());
+        assertThat(content).hasLineCount(logEntries);
         h.rotateNow();
         while (uncompressed.exists()) {
             Thread.sleep(10);
         }
-        assertTrue(compressed.exists());
+        assertThat(compressed).exists();
         String unzipped = IOUtils.readAll(new InputStreamReader(new GZIPInputStream(new FileInputStream(compressed))));
-        assertEquals(content, unzipped);
+        assertThat(content).isEqualTo(unzipped);
 
         IOUtils.recursiveDeleteDir(new File("./testcompression"));
     }
