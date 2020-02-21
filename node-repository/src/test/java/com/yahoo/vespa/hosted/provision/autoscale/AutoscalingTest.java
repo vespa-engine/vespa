@@ -95,6 +95,22 @@ public class AutoscalingTest {
     }
 
     @Test
+    public void testAutoscalingAvoidsIllegalConfigurations() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 6, 1, resources);
+        tester.addMeasurements(Resource.memory,  0.02f, 1f, 120, application1);
+        tester.assertResources("Scaling down",
+                               8, 1, 2.1, 4.0, 71.4,
+                               tester.autoscale(application1, cluster1));
+    }
+
+    @Test
     public void testAutoscalingAws() {
         List<Flavor> flavors = new ArrayList<>();
         flavors.add(new Flavor("aws-xlarge", new NodeResources(3, 200, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));

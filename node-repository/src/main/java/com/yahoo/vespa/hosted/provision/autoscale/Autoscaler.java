@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.time.Duration;
 import java.util.List;
@@ -47,6 +48,7 @@ public class Autoscaler {
     private final HostResourcesCalculator hostResourcesCalculator;
     private final NodeMetricsDb metricsDb;
     private final NodeRepository nodeRepository;
+    private final NodeResourceLimits nodeResourceLimits;
 
     public Autoscaler(HostResourcesCalculator hostResourcesCalculator,
                       NodeMetricsDb metricsDb,
@@ -54,6 +56,7 @@ public class Autoscaler {
         this.hostResourcesCalculator = hostResourcesCalculator;
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
+        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository.zone());
     }
 
     public Optional<ClusterResources> autoscale(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
@@ -71,7 +74,8 @@ public class Autoscaler {
         Optional<ClusterResources> bestAllocation = findBestAllocation(totalCpuSpent.get(),
                                                                        totalMemorySpent.get(),
                                                                        totalDiskSpent.get(),
-                                                                       currentAllocation);
+                                                                       currentAllocation,
+                                                                       cluster);
         System.out.println("  Best allocation: " + bestAllocation);
         if (bestAllocation.isPresent() && isSimilar(bestAllocation.get(), currentAllocation))
             return Optional.empty(); // Avoid small changes
@@ -79,12 +83,12 @@ public class Autoscaler {
     }
 
     private Optional<ClusterResources> findBestAllocation(double totalCpu, double totalMemory, double totalDisk,
-                                                          ClusterResources currentAllocation) {
+                                                          ClusterResources currentAllocation, ClusterSpec cluster) {
         Optional<ClusterResourcesWithCost> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(totalCpu, totalMemory, totalDisk, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
             System.out.println("    Considering " + allocation.nodes() + " nodes:");
-            Optional<ClusterResourcesWithCost> allocatableResources = toAllocatableResources(allocation);
+            Optional<ClusterResourcesWithCost> allocatableResources = toAllocatableResources(allocation, cluster);
             if (allocatableResources.isEmpty()) continue;
             System.out.println("    -- Candidate: " + allocatableResources);
             if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
@@ -108,13 +112,14 @@ public class Autoscaler {
      * Returns the smallest allocatable node resources larger than the given node resources,
      * or empty if none available.
      */
-    private Optional<ClusterResourcesWithCost> toAllocatableResources(ClusterResources resources) {
+    private Optional<ClusterResourcesWithCost> toAllocatableResources(ClusterResources resources, ClusterSpec cluster) {
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
-            // Return the requested resources, or empty if they cannot fit on existing hosts
+            // Return the requested resources, adjusted to be legal or empty if they cannot fit on existing hosts
+            NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), cluster.type());
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
-                if (flavor.resources().satisfies(resources.nodeResources()))
-                    return Optional.of(new ClusterResourcesWithCost(resources,
-                                                                    costOf(resources.nodeResources()) * resources.nodes()));
+                if (flavor.resources().satisfies(nodeResources))
+                    return Optional.of(new ClusterResourcesWithCost(resources.with(nodeResources),
+                                                                    costOf(nodeResources) * resources.nodes()));
             return Optional.empty();
         }
         else {
