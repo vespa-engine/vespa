@@ -53,15 +53,12 @@ public class LogFileHandlerTestCase {
         h.setRotationTimes(rTimes);
         assertThat(tomorrowMillis+1000).isEqualTo(h.getNextRotationTime(tomorrowMillis));
         assertThat(tomorrowMillis+10000).isEqualTo(h.getNextRotationTime(tomorrowMillis+3000));
-        boolean okToWrite = false; // don't want regular unit tests to create tiles....
-        if (okToWrite) {
-            LogRecord lr = new LogRecord(Level.INFO, "test");
-            h.publish(lr);
-            h.publish(new LogRecord(Level.INFO, "another test"));
-            h.rotateNow();
-            h.publish(lr);
-            h.flush();
-        }
+        LogRecord lr = new LogRecord(Level.INFO, "test");
+        h.publish(lr);
+        h.publish(new LogRecord(Level.INFO, "another test"));
+        h.rotateNow();
+        h.publish(lr);
+        h.flush();
     }
 
     @Test
@@ -105,7 +102,7 @@ public class LogFileHandlerTestCase {
     }
 
     @Test
-    public void testSymlink() throws IOException {
+    public void testSymlink() throws IOException, InterruptedException {
         File root = temporaryFolder.newFolder("testlogforsymlinkchecking");
         LogFileHandler h = new LogFileHandler();
         h.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s");
@@ -121,38 +118,34 @@ public class LogFileHandlerTestCase {
         h.publish(lr);
         String f1 = h.getFileName();
         String f2 = null;
-        try {
-            while (f1 == null) {
-                Thread.sleep(1);
-                f1 = h.getFileName();
-            }
-            h.rotateNow();
+        while (f1 == null) {
+            Thread.sleep(1);
+            f1 = h.getFileName();
+        }
+        h.rotateNow();
+        Thread.sleep(1);
+        f2 = h.getFileName();
+        while (f1.equals(f2)) {
             Thread.sleep(1);
             f2 = h.getFileName();
-            while (f1.equals(f2)) {
-                Thread.sleep(1);
-                f2 = h.getFileName();
-            }
-            lr = new LogRecord(Level.INFO, "string which is way longer than the word test");
-            h.publish(lr);
-            Thread.sleep(1000);
-            File f = new File(f1);
-            long first = f.length();
-            f = new File(f2);
-            long second = f.length();
-            final long secondLength = 72;
-            for (int n = 0; n < 20 && second != secondLength; ++n) {
-                Thread.sleep(1000);
-                second = f.length();
-            }
-            f = new File(root, "symlink");
-            long link = f.length();
-            assertThat(secondLength).isEqualTo(link);
-            assertThat(31).isEqualTo(first);
-            assertThat(secondLength).isEqualTo(second);
-        } catch (InterruptedException e) {
-            // just let the test pass
         }
+        lr = new LogRecord(Level.INFO, "string which is way longer than the word test");
+        h.publish(lr);
+        Thread.sleep(1000);
+        File f = new File(f1);
+        long first = f.length();
+        f = new File(f2);
+        long second = f.length();
+        final long secondLength = 72;
+        for (int n = 0; n < 20 && second != secondLength; ++n) {
+            Thread.sleep(1000);
+            second = f.length();
+        }
+        f = new File(root, "symlink");
+        long link = f.length();
+        assertThat(secondLength).isEqualTo(link);
+        assertThat(31).isEqualTo(first);
+        assertThat(secondLength).isEqualTo(second);
     }
 
     @Test
