@@ -430,7 +430,11 @@ public final class Node {
 
         /** Returns whether this is a state where the node is assigned to an application */
         public boolean isAllocated() {
-            return this == reserved || this == active || this == inactive || this == failed || this == parked;
+            return allocatedStates().contains(this);
+        }
+
+        public static Set<State> allocatedStates() {
+            return Set.of(reserved, active, inactive, failed, parked);
         }
     }
 
