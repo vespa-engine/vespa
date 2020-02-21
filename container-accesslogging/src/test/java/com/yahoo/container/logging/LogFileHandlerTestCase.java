@@ -26,9 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 // These tests take too long, and are not cleaning up properly. See how this should be done in YApacheLogTestCase
 public class LogFileHandlerTestCase {
 
-    /**
-     * The scenario
-     */
     @Test
     public void testIt() {
         LogFileHandler h = new LogFileHandler();
