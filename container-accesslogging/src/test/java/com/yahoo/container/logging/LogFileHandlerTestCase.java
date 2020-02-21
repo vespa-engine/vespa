@@ -20,7 +20,7 @@ import java.util.zip.GZIPInputStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * @author <a href="mailto:travisb@yahoo-inc.com">Bob Travis</a>
+ * @author Bob Travis
  */
 // TODO: Make these tests wait until the right things happen rather than waiting for a predetermined time
 // These tests take too long, and are not cleaning up properly. See how this should be done in YApacheLogTestCase
