@@ -1,8 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
-import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
@@ -10,7 +8,6 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.util.Objects;
 
 /**
@@ -21,10 +18,10 @@ import java.util.Objects;
  */
 public class Endpoint {
 
-    public static final String YAHOO_DNS_SUFFIX = ".vespa.yahooapis.com";
-    public static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
-    public static final String PUBLIC_DNS_SUFFIX = ".public.vespa.oath.cloud";
-    public static final String PUBLIC_CD_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
+    private static final String YAHOO_DNS_SUFFIX = ".vespa.yahooapis.com";
+    private static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
+    private static final String PUBLIC_DNS_SUFFIX = ".public.vespa.oath.cloud";
+    private static final String PUBLIC_CD_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
 
     private final URI url;
     private final Scope scope;
@@ -100,6 +97,11 @@ public class Endpoint {
     @Override
     public String toString() {
         return String.format("endpoint %s [scope=%s, legacy=%s, routingMethod=%s]", url, scope, legacy, routingMethod);
+    }
+
+    /** Returns the DNS suffix used for endpoints in given system */
+    public static String dnsSuffix(SystemName system) {
+        return dnsSuffix(system, false);
     }
 
     private static URI createUrl(String name, ApplicationId application, ZoneId zone, SystemName system,
@@ -211,13 +213,6 @@ public class Endpoint {
             return new Port(port, false);
         }
 
-    }
-
-    /** Create a DNS name based on a hash of the ApplicationId. This should always be less than 64 characters long. */
-    public static String createHashedCn(ApplicationId application, SystemName system) {
-        var hashCode = Hashing.sha1().hashString(application.serializedForm(), Charset.defaultCharset());
-        var base32encoded = BaseEncoding.base32().omitPadding().lowerCase().encode(hashCode.asBytes());
-        return 'v' + base32encoded + dnsSuffix(system, false);
     }
 
     /** Build an endpoint for given application */
