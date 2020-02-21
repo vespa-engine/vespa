@@ -130,7 +130,7 @@ public class ApplicationController {
             int count = 0;
             for (TenantAndApplicationId id: curator.readApplicationIds()) {
                 lockApplicationIfPresent(id, application -> {
-                    if (id.tenant().value().startsWith("by-")) {
+                    if (id.tenant().value().startsWith("by-")) { // TODO jonmv: Remove after run once.
                         for (Instance instance : application.get().instances().values())
                             for (ZoneId zone : instance.deployments().keySet())
                                 deactivate(instance.id(), zone);

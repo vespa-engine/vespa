@@ -46,7 +46,8 @@ public class TenantController {
             Instant start = controller.clock().instant();
             int count = 0;
             for (TenantName name : curator.readTenantNames()) {
-                if (name.value().startsWith(Tenant.userPrefix))
+                if (name.value().startsWith(Tenant.userPrefix)) // TODO jonmv: Remove after run once.
+
                     curator.removeTenant(name);
                 else {
                     lockIfPresent(name, LockedTenant.class, this::store);
