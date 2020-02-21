@@ -11,7 +11,12 @@ public class ResourceIterator {
 
     // Configured min and max nodes TODO: These should come from the application package
     private static final int minimumNodesPerCluster = 3; // Since this is with redundancy it cannot be lower than 2
-    private static final int maximumNodesPerCluster = 10;
+    private static final int maximumNodesPerCluster = 150;
+
+    // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
+    // proportional to document count. We must account for this when comparing configurations with more or fewer nodes.
+    // TODO: Measure this, and only take it into account with queries
+    private static final double fixedCpuCostFraction = 0.1;
 
     private final double totalCpu;
     private final double totalMemory;
@@ -60,7 +65,18 @@ public class ResourceIterator {
 
     /** Returns the resources needed per node to be at ideal load given a target node count and total resource allocation */
     private NodeResources resourcesFor(int nodeCount) {
-        return resourcesPrototype.withVcpu(totalCpu / nodeCount / Resource.cpu.idealAverageLoad())
+        double cpu;
+        if (singleGroupMode) {
+            // Since we're changing fan-out, adjust cpu to higher/lower target load when we decrease/increase it respectively.
+            // Specifically, we're not scaling the fixed portion of the cpu cost with the added/removed nodes
+            // since each node incurs it, achieved by dividing the fixed fraction by the original group size instead
+            cpu = fixedCpuCostFraction       * totalCpu / groupSize / Resource.cpu.idealAverageLoad() +
+                  (1 - fixedCpuCostFraction) * totalCpu / nodeCount / Resource.cpu.idealAverageLoad();
+        }
+        else {
+            cpu = totalCpu / nodeCount / Resource.cpu.idealAverageLoad();
+        }
+        return resourcesPrototype.withVcpu(cpu)
                                  .withMemoryGb(totalMemory / nodeCount / Resource.memory.idealAverageLoad())
                                  .withDiskGb(totalDisk / nodeCount / Resource.disk.idealAverageLoad());
     }

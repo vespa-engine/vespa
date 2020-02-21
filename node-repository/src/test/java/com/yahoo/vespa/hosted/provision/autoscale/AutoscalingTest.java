@@ -42,7 +42,7 @@ public class AutoscalingTest {
 
         tester.addMeasurements(Resource.cpu,  0.25f, 1f, 60, application1);
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                 10, 1, 1.7,  44.4, 44.4,
+                                                                 15, 1, 1.3,  28.6, 28.6,
                                                                   tester.autoscale(application1, cluster1));
 
         tester.deploy(application1, cluster1, scaledResources);
@@ -58,7 +58,7 @@ public class AutoscalingTest {
 
         tester.addMeasurements(Resource.cpu,  0.1f, 1f, 120, application1);
         tester.assertResources("Scaling down since resource usage has gone down significantly",
-                               10, 1, 1.2, 44.4, 44.4,
+                               26, 1, 0.6, 16.0, 16.0,
                                tester.autoscale(application1, cluster1));
     }
 
@@ -74,7 +74,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 5, resources);
         tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
         tester.assertResources("Scaling up since resource usage is too high",
-                               10, 10, 1.7,  44.4, 44.4,
+                               101, 101, 0.2,  4.0, 4.0,
                                tester.autoscale(application1, cluster1));
     }
 
@@ -90,7 +90,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 6, 2, resources);
         tester.addMeasurements(Resource.cpu,  0.22f, 1f, 120, application1);
         tester.assertResources("Scaling up since resource usage is too high",
-                               9, 3, 2.7,  83.3, 83.3,
+                               126, 42, 0.1,  4.1, 4.1,
                                tester.autoscale(application1, cluster1));
     }
 
@@ -106,7 +106,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 6, 1, resources);
         tester.addMeasurements(Resource.memory,  0.02f, 1f, 120, application1);
         tester.assertResources("Scaling down",
-                               8, 1, 2.1, 4.0, 71.4,
+                               6, 1, 3.0, 4.0, 100.0,
                                tester.autoscale(application1, cluster1));
     }
 

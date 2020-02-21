@@ -127,6 +127,7 @@ class AutoscalingTester {
                                 int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        System.out.println("Naive value " + value + ", adjusted " + value * oneExtraNodeFactor);
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
@@ -147,8 +148,8 @@ class AutoscalingTester {
                                             Optional<ClusterResources> actualResources) {
         double delta = 0.0000000001;
         assertTrue(message, actualResources.isPresent());
-        assertEquals("Node count " + message, nodeCount, actualResources.get().nodes());
-        assertEquals("Group count " + message, groupCount, actualResources.get().groups());
+        assertEquals("Node count:  " + message, nodeCount, actualResources.get().nodes());
+        assertEquals("Group count: " + message, groupCount, actualResources.get().groups());
         assertEquals("Cpu: "    + message, approxCpu, Math.round(actualResources.get().nodeResources().vcpu() * 10) / 10.0, delta);
         assertEquals("Memory: " + message, approxMemory, Math.round(actualResources.get().nodeResources().memoryGb() * 10) / 10.0, delta);
         assertEquals("Disk: "   + message, approxDisk, Math.round(actualResources.get().nodeResources().diskGb() * 10) / 10.0, delta);
