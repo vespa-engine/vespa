@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.endpointcertificates;
+package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
