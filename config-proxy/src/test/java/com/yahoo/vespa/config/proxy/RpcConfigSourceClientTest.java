@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 public class RpcConfigSourceClientTest {
 
     private MockRpcServer rpcServer;
-    private DelayedResponses delayedResponses;
     private RpcConfigSourceClient rpcConfigSourceClient;
 
     @Rule
@@ -28,8 +27,7 @@ public class RpcConfigSourceClientTest {
     @Before
     public void setup() {
         rpcServer = new MockRpcServer();
-        delayedResponses = new DelayedResponses();
-        rpcConfigSourceClient = new RpcConfigSourceClient(rpcServer, new MockConfigSource(), new MemoryCache(), delayedResponses);
+        rpcConfigSourceClient = new RpcConfigSourceClient(rpcServer, new MockConfigSource(), new MemoryCache());
     }
 
     @Test
@@ -96,7 +94,7 @@ public class RpcConfigSourceClientTest {
     }
 
     private void simulateClientRequestingConfig(RawConfig config) {
-        delayedResponses.add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(config, -10L).getRequest())));
+        rpcConfigSourceClient.delayedResponses().add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(config, -10L).getRequest())));
     }
 
     private void configUpdatedSendResponse(RawConfig config) {

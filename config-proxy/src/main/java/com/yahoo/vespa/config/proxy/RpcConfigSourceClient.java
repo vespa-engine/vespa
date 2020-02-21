@@ -245,4 +245,9 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         log.log(LogLevel.DEBUG, () -> "Finished updating config for " + config.getKey() + "," + config.getGeneration());
     }
 
+    @Override
+    public DelayedResponses delayedResponses() {
+        return delayedResponses;
+    }
+
 }

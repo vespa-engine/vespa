@@ -197,4 +197,8 @@ public class ProxyServer implements Runnable {
         configClient = createRpcClient(rpcServer, configSource, memoryCache);
     }
 
+    DelayedResponses delayedResponses() {
+        return configClient.delayedResponses();
+    }
+
 }
