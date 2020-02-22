@@ -18,24 +18,28 @@ public class ResourceIterator {
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
-    private final double totalCpu;
-    private final double totalMemory;
-    private final double totalDisk;
-    private final int nodeIncrement;
+    // Describes the observed state
+    private final ClusterResources allocation;
+    private final double cpuLoad;
+    private final double memoryLoad;
+    private final double diskLoad;
     private final int groupSize;
-    private final boolean singleGroupMode;
-    private final NodeResources resourcesPrototype;
 
+    // Derived from the observed state
+    private final int nodeIncrement;
+    private final boolean singleGroupMode;
+
+    // Iterator state
     private int currentNodes;
 
-    public ResourceIterator(double totalCpu, double totalMemory, double totalDisk, ClusterResources currentAllocation) {
-        this.totalCpu = totalCpu;
-        this.totalMemory = totalMemory;
-        this.totalDisk = totalDisk;
+    public ResourceIterator(double cpuLoad, double memoryLoad, double diskLoad, ClusterResources currentAllocation) {
+        this.cpuLoad = cpuLoad;
+        this.memoryLoad = memoryLoad;
+        this.diskLoad = diskLoad;
 
         // ceil: If the division does not produce a whole number we assume some node is missing
         groupSize = (int)Math.ceil((double)currentAllocation.nodes() / currentAllocation.groups());
-        resourcesPrototype = currentAllocation.nodeResources();
+        allocation = currentAllocation;
 
         // What number of nodes is it effective to add or remove at the time from this cluster?
         // This is the group size, since we (for now) assume the group size is decided by someone wiser than us
@@ -63,22 +67,36 @@ public class ResourceIterator {
         return currentNodes <= maximumNodesPerCluster;
     }
 
-    /** Returns the resources needed per node to be at ideal load given a target node count and total resource allocation */
+    /**
+     * For the observed load this instance is initialized with, returns the resources needed per node to be at
+     * ideal load given a target node count
+     */
     private NodeResources resourcesFor(int nodeCount) {
-        double cpu;
+        double cpu, memory, disk;
         if (singleGroupMode) {
-            // Since we're changing fan-out, adjust cpu to higher/lower target load when we decrease/increase it respectively.
-            // Specifically, we're not scaling the fixed portion of the cpu cost with the added/removed nodes
-            // since each node incurs it, achieved by dividing the fixed fraction by the original group size instead
+            // The fixed cost portion of cpu does not scale with changes to the node count
+            // TODO: Only for the portion of cpu consumed by queries
+            double totalCpu = totalGroupUsage(Resource.cpu, cpuLoad);
             cpu = fixedCpuCostFraction       * totalCpu / groupSize / Resource.cpu.idealAverageLoad() +
                   (1 - fixedCpuCostFraction) * totalCpu / nodeCount / Resource.cpu.idealAverageLoad();
+            memory = totalGroupUsage(Resource.memory, memoryLoad) / nodeCount / Resource.memory.idealAverageLoad();
+            disk = totalGroupUsage(Resource.disk, diskLoad) / nodeCount / Resource.disk.idealAverageLoad();
         }
         else {
-            cpu = totalCpu / nodeCount / Resource.cpu.idealAverageLoad();
+            // Memory and disk does not scale with changes to node counts since we're replicating data
+            // TODO: Also, the share of cpu that is caused by writes does not scale with node count
+            cpu = totalGroupUsage(Resource.cpu, cpuLoad) / nodeCount / Resource.cpu.idealAverageLoad();
+            //memory = totalMemory / groupSize / Resource.memory.idealAverageLoad();
+            //disk = totalDisk / groupSize / Resource.disk.idealAverageLoad();
+            // TODO: Use the above
+            memory = totalGroupUsage(Resource.memory, memoryLoad) / nodeCount / Resource.memory.idealAverageLoad();
+            disk = totalGroupUsage(Resource.disk, diskLoad) / nodeCount / Resource.disk.idealAverageLoad();
         }
-        return resourcesPrototype.withVcpu(cpu)
-                                 .withMemoryGb(totalMemory / nodeCount / Resource.memory.idealAverageLoad())
-                                 .withDiskGb(totalDisk / nodeCount / Resource.disk.idealAverageLoad());
+        return allocation.nodeResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
+    }
+
+    private double totalGroupUsage(Resource resource, double load) {
+        return load * resource.valueFrom(allocation.nodeResources()) * allocation.nodes();
     }
 
 }

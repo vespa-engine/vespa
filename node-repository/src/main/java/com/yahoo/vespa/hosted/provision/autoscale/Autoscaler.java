@@ -66,37 +66,37 @@ public class Autoscaler {
                                                    node.allocation().get().isRemovable()))
             return Optional.empty(); // Don't autoscale clusters that are in flux
         ClusterResources currentAllocation = new ClusterResources(clusterNodes);
-        Optional<Double> totalCpuSpent    = averageUseOf(Resource.cpu,    cluster, clusterNodes);
-        Optional<Double> totalMemorySpent = averageUseOf(Resource.memory, cluster, clusterNodes);
-        Optional<Double> totalDiskSpent   = averageUseOf(Resource.disk,   cluster, clusterNodes);
-        if (totalCpuSpent.isEmpty() || totalMemorySpent.isEmpty() || totalDiskSpent.isEmpty()) return Optional.empty();
+        Optional<Double> cpuLoad    = averageLoad(Resource.cpu, cluster, clusterNodes);
+        Optional<Double> memoryLoad = averageLoad(Resource.memory, cluster, clusterNodes);
+        Optional<Double> diskLoad   = averageLoad(Resource.disk, cluster, clusterNodes);
+        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
 
-        System.out.println("  Total cpu " + totalCpuSpent.get() + " total memory " + totalMemorySpent.get() + " total disk " + totalDiskSpent.get());
-        Optional<ClusterResourcesWithCost> bestAllocation = findBestAllocation(totalCpuSpent.get(),
-                                                                               totalMemorySpent.get(),
-                                                                               totalDiskSpent.get(),
+        System.out.println("  Cpu load " + cpuLoad.get() + " memory load " + memoryLoad.get() + " disk load " + diskLoad.get());
+        Optional<ClusterResourcesWithCost> bestAllocation = findBestAllocation(cpuLoad.get(),
+                                                                               memoryLoad.get(),
+                                                                               diskLoad.get(),
                                                                                currentAllocation,
                                                                                cluster);
         System.out.println("  Best allocation: " + bestAllocation);
         if (bestAllocation.isEmpty()) return Optional.empty();
 
-        System.out.println("  Ideal cpu? " +  closeToIdeal(Resource.cpu, totalCpuSpent.get() / clusterNodes.size()));
-        if (closeToIdeal(Resource.cpu, totalCpuSpent.get() / Resource.cpu.valueFrom(currentAllocation.nodeResources()) / clusterNodes.size()) &&
-            closeToIdeal(Resource.memory, totalMemorySpent.get() / Resource.memory.valueFrom(currentAllocation.nodeResources()) / clusterNodes.size()) &&
-            closeToIdeal(Resource.disk, totalDiskSpent.get() / Resource.disk.valueFrom(currentAllocation.nodeResources()) / clusterNodes.size()) &&
+        if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
+            closeToIdeal(Resource.memory, memoryLoad.get()) &&
+            closeToIdeal(Resource.disk, diskLoad.get()) &&
             similarCost(bestAllocation.get().cost(), currentAllocation.nodes() * costOf(currentAllocation.nodeResources())))
             return Optional.empty(); // Avoid small, unnecessary changes
         return bestAllocation.map(a -> a.clusterResources());
     }
 
-    private Optional<ClusterResourcesWithCost> findBestAllocation(double totalCpu, double totalMemory, double totalDisk,
+    private Optional<ClusterResourcesWithCost> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
                                                                   ClusterResources currentAllocation, ClusterSpec cluster) {
         Optional<ClusterResourcesWithCost> bestAllocation = Optional.empty();
-        for (ResourceIterator i = new ResourceIterator(totalCpu, totalMemory, totalDisk, currentAllocation); i.hasNext(); ) {
+        for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
+            System.out.println("    Considering " + allocation);
             Optional<ClusterResourcesWithCost> allocatableResources = toAllocatableResources(allocation, cluster);
             if (allocatableResources.isEmpty()) continue;
-            System.out.println("    Candidate: " + allocatableResources);
+            System.out.println("    : Candidate: " + allocatableResources);
             if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
                 bestAllocation = allocatableResources;
         }
@@ -156,12 +156,10 @@ public class Autoscaler {
     }
 
     /**
-     * Returns the average total (over all nodes) of this resource in the measurement window,
+     * Returns the average load of this resource in the measurement window,
      * or empty if we are not in a position to make decisions from these measurements at this time.
      */
-    private Optional<Double> averageUseOf(Resource resource, ClusterSpec cluster, List<Node> clusterNodes) {
-        NodeResources currentResources = clusterNodes.get(0).flavor().resources();
-
+    private Optional<Double> averageLoad(Resource resource, ClusterSpec cluster, List<Node> clusterNodes) {
         NodeMetricsDb.Window window = metricsDb.getWindow(nodeRepository.clock().instant().minus(scalingWindow(cluster.type())),
                                                           resource,
                                                           clusterNodes);
@@ -169,7 +167,7 @@ public class Autoscaler {
         if (window.measurementCount() < minimumMeasurements) return Optional.empty();
         if (window.hostnames() != clusterNodes.size()) return Optional.empty(); // Regulate only when all nodes are measured
 
-        return Optional.of(window.average() * resource.valueFrom(currentResources) * clusterNodes.size());
+        return Optional.of(window.average());
     }
 
     /** The duration of the window we need to consider to make a scaling decision */
