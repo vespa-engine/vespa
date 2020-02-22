@@ -91,7 +91,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
         rebalancer = new Rebalancer(deployer, nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), provisionServiceProvider.getHostProvisioner(), metric, clock, defaults.rebalancerInterval);
         nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval);
-        autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), nodeMetricsDb, defaults.autoscalingInterval);
+        autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), nodeMetricsDb, deployer, defaults.autoscalingInterval);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();

@@ -33,7 +33,7 @@ public class Autoscaler {
      - Consider taking spikes/variance into account
      - Measure observed regulation lag (startup+redistribution) into account when deciding regulation observation window
      - Test AutoscalingMaintainer
-     - Include performance not just load+cost
+     - Scale by performance not just load+cost
      */
 
     private static final int minimumMeasurements = 500; // TODO: Per node instead? Also say something about interval?

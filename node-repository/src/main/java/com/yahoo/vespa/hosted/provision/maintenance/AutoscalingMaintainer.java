@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -25,13 +26,16 @@ import java.util.stream.Collectors;
 public class AutoscalingMaintainer extends Maintainer {
 
     private final Autoscaler autoscaler;
+    private final Deployer deployer;
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
                                  HostResourcesCalculator hostResourcesCalculator,
                                  NodeMetricsDb metricsDb,
+                                 Deployer deployer,
                                  Duration interval) {
         super(nodeRepository, interval);
         this.autoscaler = new Autoscaler(hostResourcesCalculator, metricsDb, nodeRepository);
+        this.deployer = deployer;
     }
 
     @Override
@@ -41,10 +45,12 @@ public class AutoscalingMaintainer extends Maintainer {
         nodesByApplication().forEach((applicationId, nodes) -> autoscale(applicationId, nodes));
     }
 
-    private void autoscale(ApplicationId applicationId, List<Node> applicationNodes) {
+    private void autoscale(ApplicationId application, List<Node> applicationNodes) {
+        MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository());
+        if ( ! deployment.isValid()) return; // Another config server will consider this application
         nodesByCluster(applicationNodes).forEach((clusterSpec, clusterNodes) -> {
-            Optional<ClusterResources> target = autoscaler.autoscale(applicationId, clusterSpec, clusterNodes);
-            target.ifPresent(t -> log.info("Autoscale: Application " + applicationId + " cluster " + clusterSpec +
+            Optional<ClusterResources> target = autoscaler.autoscale(application, clusterSpec, clusterNodes);
+            target.ifPresent(t -> log.info("Autoscale: Application " + application + " cluster " + clusterSpec +
                                            " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
                                            " to " + t.nodes() + " * " + t.nodeResources()));
         });
