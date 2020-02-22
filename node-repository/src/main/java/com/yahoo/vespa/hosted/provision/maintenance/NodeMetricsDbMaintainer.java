@@ -40,7 +40,7 @@ public class NodeMetricsDbMaintainer extends Maintainer {
             try {
                 Collection<NodeMetrics.Metric> metrics = nodeMetrics.fetchMetrics(node.hostname());
                 Instant timestamp = nodeRepository().clock().instant();
-                metrics.forEach(metric -> nodeMetricsDb.add(node, Resource.fromMetric(metric.name()), timestamp, metric.value()));
+                metrics.forEach(metric -> nodeMetricsDb.add(node.hostname(), Resource.fromMetric(metric.name()), timestamp, metric.value()));
             }
             catch (Exception e) {
                 if (warnings++ < maxWarningsPerInvocation)

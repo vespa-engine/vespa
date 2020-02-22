@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * The autoscaler makes decisions about the flavor and node count that should be allocated to a cluster
@@ -25,13 +26,14 @@ public class Autoscaler {
 
     /*
      TODO:
-     - X Test gc
-     - X Test AutoscalingMaintainer
      - X Implement node metrics fetch
      - X Avoid making decisions for the same app at multiple config servers
+     - Scale group size
      - Have a better idea about whether we have sufficient information to make decisions
      - Consider taking spikes/variance into account
      - Measure observed regulation lag (startup+redistribution) into account when deciding regulation observation window
+     - Test AutoscalingMaintainer
+     - Include performance not just load+cost
      */
 
     private static final int minimumMeasurements = 500; // TODO: Per node instead? Also say something about interval?
@@ -102,14 +104,7 @@ public class Autoscaler {
         }
         return bestAllocation;
     }
-/*
-    private boolean isSimilar(ClusterResources a1, ClusterResources a2) {
-        if (a1.nodes() != a2.nodes()) return false; // A full node is always a significant difference
-        return isSimilar(a1.nodeResources().vcpu(), a2.nodeResources().vcpu()) &&
-               isSimilar(a1.nodeResources().memoryGb(), a2.nodeResources().memoryGb()) &&
-               isSimilar(a1.nodeResources().diskGb(), a2.nodeResources().diskGb());
-    }
-*/
+
     private boolean similarCost(double cost1, double cost2) {
         return similar(cost1, cost2, costDifferenceRatioWorthReallocation);
     }
@@ -162,7 +157,7 @@ public class Autoscaler {
     private Optional<Double> averageLoad(Resource resource, ClusterSpec cluster, List<Node> clusterNodes) {
         NodeMetricsDb.Window window = metricsDb.getWindow(nodeRepository.clock().instant().minus(scalingWindow(cluster.type())),
                                                           resource,
-                                                          clusterNodes);
+                                                          clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
 
         if (window.measurementCount() < minimumMeasurements) return Optional.empty();
         if (window.hostnames() != clusterNodes.size()) return Optional.empty(); // Regulate only when all nodes are measured

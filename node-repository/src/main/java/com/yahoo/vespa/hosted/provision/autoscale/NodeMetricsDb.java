@@ -31,9 +31,9 @@ public class NodeMetricsDb {
     private final Object lock = new Object();
 
     /** Add a measurement to this */
-    public void add(Node node, Resource resource, Instant timestamp, float value) {
+    public void add(String hostname, Resource resource, Instant timestamp, float value) {
         synchronized (lock) {
-            List<Measurement> measurements = db.computeIfAbsent(new MeasurementKey(node.hostname(), resource), (__) -> new ArrayList<>());
+            List<Measurement> measurements = db.computeIfAbsent(new MeasurementKey(hostname, resource), (__) -> new ArrayList<>());
             measurements.add(new Measurement(timestamp.toEpochMilli(), value));
         }
     }
@@ -60,8 +60,8 @@ public class NodeMetricsDb {
     }
 
     /** Returns a window within which we can ask for specific information from this db */
-    public Window getWindow(Instant startTime, Resource resource, List<Node> nodes) {
-        return new Window(startTime, resource, nodes);
+    public Window getWindow(Instant startTime, Resource resource, List<String> hostnames) {
+        return new Window(startTime, resource, hostnames);
     }
 
     public class Window {
@@ -69,9 +69,9 @@ public class NodeMetricsDb {
         private final long startTime;
         private List<MeasurementKey> keys;
 
-        public Window(Instant startTime, Resource resource, List<Node> nodes) {
+        private Window(Instant startTime, Resource resource, List<String> hostnames) {
             this.startTime = startTime.toEpochMilli();
-            keys = nodes.stream().map(node -> new MeasurementKey(node.hostname(), resource)).collect(Collectors.toList());
+            keys = hostnames.stream().map(hostname -> new MeasurementKey(hostname, resource)).collect(Collectors.toList());
         }
 
         public int measurementCount() {

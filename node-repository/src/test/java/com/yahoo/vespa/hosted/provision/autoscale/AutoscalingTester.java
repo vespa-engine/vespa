@@ -132,7 +132,7 @@ class AutoscalingTester {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
                 for (Resource r : Resource.values())
-                    db.add(node, r, clock().instant(),
+                    db.add(node.hostname(), r, clock().instant(),
                            (r == resource ? value : (float)r.idealAverageLoad() * otherResourcesLoad) * oneExtraNodeFactor);
             }
         }
