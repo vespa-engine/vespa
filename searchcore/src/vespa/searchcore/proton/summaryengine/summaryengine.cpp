@@ -107,13 +107,13 @@ SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
 {
     if (_closed) {
         LOG(warning, "Receiving docsumrequest after engine has been shutdown");
-        DocsumReply::UP ret(new DocsumReply());
+        auto ret = std::make_unique<DocsumReply>();
 
         // TODO: Notify closed.
 
         return ret;
     }
-    vespalib::Executor::Task::UP task(new DocsumTask(*this, std::move(request), client));
+    auto task =std::make_unique<DocsumTask>(*this, std::move(request), client);
     _executor.execute(std::move(task));
     return DocsumReply::UP();
 }

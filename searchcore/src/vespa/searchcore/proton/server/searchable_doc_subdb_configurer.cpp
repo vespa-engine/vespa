@@ -84,17 +84,17 @@ reconfigureMatchView(const Matchers::SP &matchers,
 }
 
 void
-SearchableDocSubDBConfigurer::reconfigureSearchView(const MatchView::SP &matchView)
+SearchableDocSubDBConfigurer::reconfigureSearchView(MatchView::SP matchView)
 {
     SearchView::SP curr = _searchView.get();
-    _searchView.set(SearchView::SP(new SearchView(curr->getSummarySetup(), matchView)));
+    _searchView.set(SearchView::create(curr->getSummarySetup(), std::move(matchView)));
 }
 
 void
-SearchableDocSubDBConfigurer::reconfigureSearchView(const ISummaryManager::ISummarySetup::SP &summarySetup,
-                                                    const MatchView::SP &matchView)
+SearchableDocSubDBConfigurer::reconfigureSearchView(ISummaryManager::ISummarySetup::SP summarySetup,
+                                                    MatchView::SP matchView)
 {
-    _searchView.set(SearchView::SP(new SearchView(summarySetup, matchView)));
+    _searchView.set(SearchView::create(std::move(summarySetup), std::move(matchView)));
 }
 
 SearchableDocSubDBConfigurer::

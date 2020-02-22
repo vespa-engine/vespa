@@ -4,20 +4,16 @@
 #include <vespa/searchlib/engine/request.h>
 #include <vespa/document/datatype/documenttype.h>
 
-namespace proton
-{
+namespace proton {
 
 
 DocTypeName::DocTypeName(const search::engine::Request &request)
     : _name(request.propertiesMap.matchProperties().lookup("documentdb", "searchdoctype").get(""))
-{
-}
+{}
 
 
 DocTypeName::DocTypeName(const document::DocumentType &docType)
     : _name(docType.getName())
-{
+{}
+
 }
-
-
-} // namespace proton

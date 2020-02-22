@@ -53,7 +53,6 @@ public:
 
         bool valid() const override { return (_offset < _handlers.size()); }
         T *get() const override { return _handlers[_offset].get(); }
-        HandlerSP getSP() const { return _handlers[_offset]; }
         void next() override { ++_offset; }
     };
 

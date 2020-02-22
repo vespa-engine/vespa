@@ -26,12 +26,11 @@ protected:
     using DocsumRequest = search::engine::DocsumRequest;
     using ThreadBundle = vespalib::ThreadBundle;
 public:
-    typedef std::unique_ptr<ISearchHandler> UP;
     typedef std::shared_ptr<ISearchHandler> SP;
 
     ISearchHandler(const ISearchHandler &) = delete;
     ISearchHandler & operator = (const ISearchHandler &) = delete;
-    virtual ~ISearchHandler() { }
+    virtual ~ISearchHandler() = default;
 
     /**
      * @return Use the request and produce the document summary result.
@@ -39,7 +38,7 @@ public:
     virtual std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & request) = 0;
 
     virtual std::unique_ptr<SearchReply>
-    match(const ISearchHandler::SP &self, const SearchRequest &req, ThreadBundle &threadBundle) const = 0;
+    match(const SearchRequest &req, ThreadBundle &threadBundle) const = 0;
 };
 
 } // namespace proton
