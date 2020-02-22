@@ -13,7 +13,6 @@ class NnsIndexIterator : public SearchIterator
 public:
     using Hit = search::tensor::NearestNeighborIndex::Neighbor;
     static std::unique_ptr<NnsIndexIterator> create(
-            bool strict,
             fef::TermFieldMatchData &tfmd,
             const std::vector<Hit> &hits);
 };

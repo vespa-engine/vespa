@@ -59,11 +59,9 @@ public:
 
 std::unique_ptr<NnsIndexIterator>
 NnsIndexIterator::create(
-        bool strict,
         fef::TermFieldMatchData &tfmd,
         const std::vector<Hit> &hits)
 {
-    assert(strict);
     return std::make_unique<NeighborVectorIterator>(tfmd, hits);
 }
 

@@ -56,7 +56,7 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     assert(tfmda.size() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0]; // always search in only one field
     if (strict && ! _found_hits.empty()) {
-        return NnsIndexIterator::create(strict, tfmd, _found_hits);
+        return NnsIndexIterator::create(tfmd, _found_hits);
     }
     const vespalib::tensor::DenseTensorView &qT = *_query_tensor;
     return NearestNeighborIterator::create(strict, tfmd, qT, _attr_tensor, _distance_heap);
