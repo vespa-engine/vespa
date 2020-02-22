@@ -74,7 +74,7 @@ public class Flags {
             HOSTNAME, NODE_TYPE);
 
     public static final UnboundStringFlag DOCKER_VERSION = defineStringFlag(
-            "docker-version", "1.13.1-91.git07f3374",
+            "docker-version", "1.13.1-102.git7f2769b",
             "The version of the docker to use of the format VERSION-REL: The YUM package to be installed will be " +
             "2:docker-VERSION-REL.el7.centos.x86_64 in AWS (and without '.centos' otherwise). " +
             "If docker-version is not of this format, it must be parseable by YumPackageName::fromString.",
