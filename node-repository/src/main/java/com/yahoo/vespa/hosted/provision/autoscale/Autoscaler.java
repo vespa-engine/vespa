@@ -73,13 +73,11 @@ public class Autoscaler {
         Optional<Double> diskLoad   = averageLoad(Resource.disk, cluster, clusterNodes);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
 
-        System.out.println("  Cpu load " + cpuLoad.get() + " memory load " + memoryLoad.get() + " disk load " + diskLoad.get());
         Optional<ClusterResourcesWithCost> bestAllocation = findBestAllocation(cpuLoad.get(),
                                                                                memoryLoad.get(),
                                                                                diskLoad.get(),
                                                                                currentAllocation,
                                                                                cluster);
-        System.out.println("  Best allocation: " + bestAllocation);
         if (bestAllocation.isEmpty()) return Optional.empty();
 
         if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
@@ -95,10 +93,8 @@ public class Autoscaler {
         Optional<ClusterResourcesWithCost> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
-            System.out.println("    Considering " + allocation);
             Optional<ClusterResourcesWithCost> allocatableResources = toAllocatableResources(allocation, cluster);
             if (allocatableResources.isEmpty()) continue;
-            System.out.println("    : Candidate: " + allocatableResources);
             if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
                 bestAllocation = allocatableResources;
         }
