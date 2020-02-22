@@ -72,31 +72,33 @@ public class ResourceIterator {
      * ideal load given a target node count
      */
     private NodeResources resourcesFor(int nodeCount) {
+        // Cpu: Scales with cluster size (TODO: Only reads, writes scales with group size)
+        // Memory and disk: Scales with group size
+
         double cpu, memory, disk;
         if (singleGroupMode) {
             // The fixed cost portion of cpu does not scale with changes to the node count
             // TODO: Only for the portion of cpu consumed by queries
-            double totalCpu = totalGroupUsage(Resource.cpu, cpuLoad);
+            double totalCpu = totalUsage(Resource.cpu, cpuLoad);
             cpu = fixedCpuCostFraction       * totalCpu / groupSize / Resource.cpu.idealAverageLoad() +
                   (1 - fixedCpuCostFraction) * totalCpu / nodeCount / Resource.cpu.idealAverageLoad();
             memory = totalGroupUsage(Resource.memory, memoryLoad) / nodeCount / Resource.memory.idealAverageLoad();
             disk = totalGroupUsage(Resource.disk, diskLoad) / nodeCount / Resource.disk.idealAverageLoad();
         }
         else {
-            // Memory and disk does not scale with changes to node counts since we're replicating data
-            // TODO: Also, the share of cpu that is caused by writes does not scale with node count
-            cpu = totalGroupUsage(Resource.cpu, cpuLoad) / nodeCount / Resource.cpu.idealAverageLoad();
-            //memory = totalMemory / groupSize / Resource.memory.idealAverageLoad();
-            //disk = totalDisk / groupSize / Resource.disk.idealAverageLoad();
-            // TODO: Use the above
-            memory = totalGroupUsage(Resource.memory, memoryLoad) / nodeCount / Resource.memory.idealAverageLoad();
-            disk = totalGroupUsage(Resource.disk, diskLoad) / nodeCount / Resource.disk.idealAverageLoad();
+            cpu = totalUsage(Resource.cpu, cpuLoad) / nodeCount / Resource.cpu.idealAverageLoad();
+            memory = totalGroupUsage(Resource.memory, memoryLoad) / groupSize / Resource.memory.idealAverageLoad();
+            disk = totalGroupUsage(Resource.disk, diskLoad) / groupSize / Resource.disk.idealAverageLoad();
         }
         return allocation.nodeResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }
 
-    private double totalGroupUsage(Resource resource, double load) {
+    private double totalUsage(Resource resource, double load) {
         return load * resource.valueFrom(allocation.nodeResources()) * allocation.nodes();
+    }
+
+    private double totalGroupUsage(Resource resource, double load) {
+        return load * resource.valueFrom(allocation.nodeResources()) * groupSize;
     }
 
 }

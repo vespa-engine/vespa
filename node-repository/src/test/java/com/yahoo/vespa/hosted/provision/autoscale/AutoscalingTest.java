@@ -74,7 +74,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 5, resources);
         tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
         tester.assertResources("Scaling up since resource usage is too high",
-                               101, 101, 0.2,  4.0, 4.0,
+                               7, 7, 2.5,  80.0, 80.0,
                                tester.autoscale(application1, cluster1));
     }
 
@@ -90,7 +90,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 6, 2, resources);
         tester.addMeasurements(Resource.cpu,  0.22f, 1f, 120, application1);
         tester.assertResources("Scaling up since resource usage is too high",
-                               126, 42, 0.1,  4.1, 4.1,
+                               9, 3, 2.7,  83.3, 83.3,
                                tester.autoscale(application1, cluster1));
     }
 
