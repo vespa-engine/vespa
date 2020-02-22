@@ -203,7 +203,7 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
     const IIndexManager::SP &indexMgr = getIndexManager();
     _constantValueRepo.reconfigure(configSnapshot.getRankingConstants());
     Matchers::SP matchers(_configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig()).release());
-    auto matchView = std::make_shared<MatchView>(matchers, indexMgr->getSearchable(), attrMgr,
+    auto matchView = std::make_shared<MatchView>(std::move(matchers), indexMgr->getSearchable(), attrMgr,
                                                  sessionManager, _metaStoreCtx, _docIdLimit);
     _rSearchView.set(SearchView::create(
                                       getSummaryManager()->createSummarySetup(
@@ -211,7 +211,7 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
                                               configSnapshot.getSummarymapConfig(),
                                               configSnapshot.getJuniperrcConfig(),
                                               configSnapshot.getDocumentTypeRepoSP(),
-                                              matchView->getAttributeManager()),
+                                              attrMgr),
                                       std::move(matchView)));
 
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);

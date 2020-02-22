@@ -74,7 +74,7 @@ private:
                         bool immediateCommit, OnWriteDoneType onWriteDone);
 
 public:
-    AttributeWriter(const proton::IAttributeManager::SP &mgr);
+    AttributeWriter(proton::IAttributeManager::SP mgr);
     ~AttributeWriter();
 
     /* Only for in tests that add attributes after AttributeWriter construction. */

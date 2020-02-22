@@ -165,8 +165,7 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
 
 std::unique_ptr<SearchReply>
 SearchView::match(const SearchRequest &req, ThreadBundle &threadBundle) const {
-    ISearchHandler::SP self = const_cast<SearchView *>(this)->shared_from_this();
-    return _matchView->match(std::move(self), req, threadBundle);
+    return _matchView->match(shared_from_this(), req, threadBundle);
 }
 
 } // namespace proton

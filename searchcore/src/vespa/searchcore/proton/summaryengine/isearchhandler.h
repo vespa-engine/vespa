@@ -26,12 +26,11 @@ protected:
     using DocsumRequest = search::engine::DocsumRequest;
     using ThreadBundle = vespalib::ThreadBundle;
 public:
-    typedef std::unique_ptr<ISearchHandler> UP;
     typedef std::shared_ptr<ISearchHandler> SP;
 
     ISearchHandler(const ISearchHandler &) = delete;
     ISearchHandler & operator = (const ISearchHandler &) = delete;
-    virtual ~ISearchHandler() { }
+    virtual ~ISearchHandler() = default;
 
     /**
      * @return Use the request and produce the document summary result.
