@@ -4,7 +4,7 @@
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 #include <cmath>
 
-using Hit = search::tensor::NearestNeighborIndex::Neighbor;
+using Neighbor = search::tensor::NearestNeighborIndex::Neighbor;
 
 namespace search::queryeval {
 
@@ -17,12 +17,12 @@ class NeighborVectorIterator : public NnsIndexIterator
 {
 private:
     fef::TermFieldMatchData &_tfmd;
-    const std::vector<Hit> &_hits;
+    const std::vector<Neighbor> &_hits;
     uint32_t _idx;
     double _last_sq_dist;
 public:
     NeighborVectorIterator(fef::TermFieldMatchData &tfmd,
-                           const std::vector<Hit> &hits)
+                           const std::vector<Neighbor> &hits)
         : _tfmd(tfmd),
           _hits(hits),
           _idx(0),
@@ -60,7 +60,7 @@ public:
 std::unique_ptr<NnsIndexIterator>
 NnsIndexIterator::create(
         fef::TermFieldMatchData &tfmd,
-        const std::vector<Hit> &hits)
+        const std::vector<Neighbor> &hits)
 {
     return std::make_unique<NeighborVectorIterator>(tfmd, hits);
 }
