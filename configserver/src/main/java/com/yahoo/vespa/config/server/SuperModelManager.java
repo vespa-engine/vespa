@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Provides a SuperModel - a model of all application instances,  and makes it stays
@@ -37,6 +38,9 @@ public class SuperModelManager implements SuperModelProvider {
     private long generation;
     private final long masterGeneration; // ConfigserverConfig's generation
     private final GenerationCounter generationCounter;
+
+    // The initial set of applications to be deployed on bootstrap.
+    private Optional<Set<ApplicationId>> bootstrapApplicationSet = Optional.empty();
 
     @Inject
     public SuperModelManager(ConfigserverConfig configserverConfig,
@@ -75,6 +79,10 @@ public class SuperModelManager implements SuperModelProvider {
             listeners.add(listener);
             SuperModel superModel = superModelConfigProvider.getSuperModel();
             superModel.getAllApplicationInfos().forEach(application -> listener.applicationActivated(superModel, application));
+
+            if (superModel.isComplete()) {
+                listener.notifyOfCompleteness(superModel);
+            }
         }
     }
 
@@ -89,13 +97,19 @@ public class SuperModelManager implements SuperModelProvider {
                     .getForVersionOrLatest(Optional.empty(), Instant.now())
                     .toApplicationInfo();
 
-            SuperModel newSuperModel = this.superModelConfigProvider
-                    .getSuperModel()
-                    .cloneAndSetApplication(applicationInfo);
+            SuperModel oldSuperModel = superModelConfigProvider.getSuperModel();
+            SuperModel newSuperModel = oldSuperModel
+                    .cloneAndSetApplication(applicationInfo, isComplete(oldSuperModel));
+
             generationCounter.increment();
             makeNewSuperModelConfigProvider(newSuperModel);
-            listeners.stream().forEach(listener ->
-                    listener.applicationActivated(newSuperModel, applicationInfo));
+            listeners.forEach(listener -> listener.applicationActivated(newSuperModel, applicationInfo));
+
+            if (!oldSuperModel.isComplete() && newSuperModel.isComplete()) {
+                for (var listener : listeners) {
+                    listener.notifyOfCompleteness(newSuperModel);
+                }
+            }
         }
     }
 
@@ -106,9 +120,34 @@ public class SuperModelManager implements SuperModelProvider {
                     .cloneAndRemoveApplication(applicationId);
             generationCounter.increment();
             makeNewSuperModelConfigProvider(newSuperModel);
-            listeners.stream().forEach(listener ->
-                    listener.applicationRemoved(newSuperModel, applicationId));
+            listeners.forEach(listener -> listener.applicationRemoved(newSuperModel, applicationId));
         }
+    }
+
+    public void setBootstrapApplicationSet(Set<ApplicationId> bootstrapApplicationSet) {
+        synchronized (monitor) {
+            this.bootstrapApplicationSet = Optional.of(bootstrapApplicationSet);
+
+            SuperModel superModel = superModelConfigProvider.getSuperModel();
+            if (!superModel.isComplete() && isComplete(superModel)) {
+                // We do NOT increment the generation since completeness is not part of the config:
+                // generationCounter.increment()
+
+                SuperModel newSuperModel = superModel.cloneAsComplete();
+                makeNewSuperModelConfigProvider(newSuperModel);
+                listeners.forEach(listener -> listener.notifyOfCompleteness(newSuperModel));
+            }
+        }
+    }
+
+    /** Returns freshly calculated value of isComplete. */
+    private boolean isComplete(SuperModel currentSuperModel) {
+        if (currentSuperModel.isComplete()) return true;
+        if (bootstrapApplicationSet.isEmpty()) return false;
+
+        Set<ApplicationId> currentApplicationIds = superModelConfigProvider.getSuperModel().getApplicationIds();
+        if (currentApplicationIds.size() < bootstrapApplicationSet.get().size()) return false;
+        return currentApplicationIds.containsAll(bootstrapApplicationSet.get());
     }
 
     private void makeNewSuperModelConfigProvider(SuperModel newSuperModel) {

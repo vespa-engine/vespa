@@ -15,7 +15,5 @@ public class MockInfraDeployer implements InfraDeployer {
     }
 
     @Override
-    public Map<ApplicationId, Deployment> getSupportedInfraDeployments() {
-        return Map.of();
-    }
+    public void activateAllSupportedInfraApplications() { }
 }

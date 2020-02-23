@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.InfraDeployer;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
@@ -27,13 +26,6 @@ public class InfrastructureProvisioner extends Maintainer {
 
     @Override
     protected void maintain() {
-        infraDeployer.getSupportedInfraDeployments().forEach((application, deployment) -> {
-            try {
-                deployment.activate();
-            } catch (RuntimeException e) {
-                logger.log(LogLevel.INFO, "Failed to activate " + application, e);
-                // loop around to activate the next application
-            }
-        });
+        infraDeployer.activateAllSupportedInfraApplications();
     }
 }

@@ -47,7 +47,7 @@ public class ExampleModel {
 
         Map<ApplicationId, ApplicationInfo> applicationInfos = new HashMap<>();
         applicationInfos.put(applicationInfo.getApplicationId(), applicationInfo);
-        return new SuperModel(applicationInfos);
+        return new SuperModel(applicationInfos, true);
     }
 
     public static ApplicationBuilder createApplication(String tenant,

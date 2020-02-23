@@ -51,9 +51,19 @@ public class InfraDeployerImpl implements InfraDeployer {
     }
 
     @Override
-    public Map<ApplicationId, Deployment> getSupportedInfraDeployments() {
-        return duperModel.getSupportedInfraApplications().stream()
-                .collect(Collectors.toMap(InfraApplicationApi::getApplicationId, InfraDeployment::new));
+    public void activateAllSupportedInfraApplications() {
+        duperModel.getSupportedInfraApplications().forEach(api -> {
+            var application = api.getApplicationId();
+            var deployment = new InfraDeployment(api);
+            try {
+                deployment.activate();
+            } catch (RuntimeException e) {
+                logger.log(LogLevel.INFO, "Failed to activate " + application, e);
+                // loop around to activate the next application
+            }
+        });
+
+        duperModel.infraApplicationsIsNowComplete();
     }
 
     private class InfraDeployment implements Deployment {

@@ -17,6 +17,6 @@ public interface InfraDeployer {
      */
     Optional<Deployment> getDeployment(ApplicationId application);
 
-    /** Returns deployments by application id for the supported infrastructure applications in this zone */
-    Map<ApplicationId, Deployment> getSupportedInfraDeployments();
+    /** Deploys all supported infrastructure applications in this zone. */
+    void activateAllSupportedInfraApplications();
 }
