@@ -3,6 +3,7 @@
 #include "random_normal_feature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 #include <chrono>
 
 #include <vespa/log/log.h>

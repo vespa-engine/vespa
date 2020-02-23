@@ -2,10 +2,10 @@
 
 #include "term_field_md_feature.h"
 #include "utils.h"
-#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 #include <cassert>
 
 using namespace search::fef;
@@ -83,7 +83,7 @@ TermFieldMdBlueprint::visitDumpFeatures(const IIndexEnvironment &,
 Blueprint::UP
 TermFieldMdBlueprint::createInstance() const
 {
-    return Blueprint::UP(new TermFieldMdBlueprint());
+    return std::make_unique<TermFieldMdBlueprint>();
 }
 
 bool

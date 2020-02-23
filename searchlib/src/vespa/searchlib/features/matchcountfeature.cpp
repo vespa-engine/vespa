@@ -3,11 +3,11 @@
 #include "matchcountfeature.h"
 #include "utils.h"
 #include "valuefeature.h"
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 MatchCountExecutor::MatchCountExecutor(uint32_t fieldId, const IQueryEnvironment &env)
     : FeatureExecutor(),
@@ -43,7 +43,7 @@ MatchCountExecutor::handle_bind_match_data(const MatchData &md)
 
 MatchCountBlueprint::MatchCountBlueprint() :
     Blueprint("matchCount"),
-    _field(NULL)
+    _field(nullptr)
 {
 }
 
@@ -63,7 +63,7 @@ MatchCountBlueprint::setup(const IIndexEnvironment &, const ParameterList & para
 Blueprint::UP
 MatchCountBlueprint::createInstance() const
 {
-    return Blueprint::UP(new MatchCountBlueprint());
+    return std::make_unique<MatchCountBlueprint>();
 }
 
 FeatureExecutor &
@@ -75,5 +75,4 @@ MatchCountBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib
     return stash.create<MatchCountExecutor>(_field->id(), queryEnv);
 }
 
-} // namespace features
-} // namespace search
+}

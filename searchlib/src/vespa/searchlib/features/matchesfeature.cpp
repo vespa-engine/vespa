@@ -4,11 +4,12 @@
 #include "utils.h"
 #include "valuefeature.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 MatchesExecutor::MatchesExecutor(uint32_t fieldId,
                                  const search::fef::IQueryEnvironment &env,
@@ -47,7 +48,7 @@ MatchesExecutor::handle_bind_match_data(const MatchData &md)
 
 MatchesBlueprint::MatchesBlueprint() :
     Blueprint("matches"),
-    _field(NULL),
+    _field(nullptr),
     _termIdx(std::numeric_limits<uint32_t>::max())
 {
 }
@@ -73,7 +74,7 @@ MatchesBlueprint::setup(const IIndexEnvironment &,
 Blueprint::UP
 MatchesBlueprint::createInstance() const
 {
-    return Blueprint::UP(new MatchesBlueprint());
+    return std::make_unique<MatchesBlueprint>();
 }
 
 FeatureExecutor &
@@ -89,5 +90,4 @@ MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::S
     }
 }
 
-} // namespace features
-} // namespace search
+}

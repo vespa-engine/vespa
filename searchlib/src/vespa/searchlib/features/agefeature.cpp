@@ -4,6 +4,7 @@
 #include "valuefeature.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/vespalib/util/stash.h>
 
 using search::attribute::IAttributeVector;
 
@@ -18,20 +19,18 @@ AgeExecutor::AgeExecutor(const IAttributeVector *attribute) :
     _attribute(attribute),
     _buf()
 {
-    if (_attribute != NULL) {
+    if (_attribute != nullptr) {
         _buf.allocate(attribute->getMaxValueCount());
     }
 }
 
-AgeBlueprint::~AgeBlueprint()
-{
-}
+AgeBlueprint::~AgeBlueprint() = default;
 
 void
 AgeExecutor::execute(uint32_t docId)
 {
     feature_t age = 10000000000.0;
-    if (_attribute != NULL) {
+    if (_attribute != nullptr) {
         _buf.fill(*_attribute, docId);
         int64_t docTime = _buf[0];
         feature_t currTime = inputs().get_number(0);
@@ -65,7 +64,7 @@ AgeBlueprint::setup(const search::fef::IIndexEnvironment &env,
 search::fef::Blueprint::UP
 AgeBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new AgeBlueprint());
+    return std::make_unique<AgeBlueprint>();
 }
 
 search::fef::FeatureExecutor &

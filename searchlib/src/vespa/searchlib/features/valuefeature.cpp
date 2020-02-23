@@ -2,12 +2,13 @@
 
 #include "valuefeature.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stash.h>
 
-namespace search {
-namespace features {
+using namespace search::fef;
+namespace search::features {
 
 ValueExecutor::ValueExecutor(const std::vector<feature_t> & values) :
-    search::fef::FeatureExecutor(),
+    FeatureExecutor(),
     _values(values)
 {
 }
@@ -27,22 +28,20 @@ SingleZeroValueExecutor::execute(uint32_t)
 }
 
 ValueBlueprint::ValueBlueprint() :
-    search::fef::Blueprint("value"),
+    Blueprint("value"),
     _values()
 {
 }
 
-ValueBlueprint::~ValueBlueprint() {}
+ValueBlueprint::~ValueBlueprint() = default;
 
 void
-ValueBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                  search::fef::IDumpFeatureVisitor &) const
+ValueBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
 {
 }
 
 bool
-ValueBlueprint::setup(const search::fef::IIndexEnvironment &,
-                      const search::fef::ParameterList & params)
+ValueBlueprint::setup(const IIndexEnvironment &, const ParameterList & params)
 {
     for (uint32_t i = 0; i < params.size(); ++i) {
         _values.push_back(params[i].asDouble());
@@ -56,13 +55,12 @@ ValueBlueprint::setup(const search::fef::IIndexEnvironment &,
     return true;
 }
 
-search::fef::FeatureExecutor &
-ValueBlueprint::createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+FeatureExecutor &
+ValueBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
     (void) queryEnv;
     return stash.create<ValueExecutor>(_values);
 }
 
 
-} // namespace features
-} // namespace search
+}

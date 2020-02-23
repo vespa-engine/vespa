@@ -7,8 +7,7 @@
 #include "lazy_params.h"
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace nodes { struct Node; }
 struct TensorEngine;
@@ -107,5 +106,4 @@ public:
     static Function::Issues detect_issues(const Function &function);
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

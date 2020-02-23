@@ -4,9 +4,9 @@
 #include "euclidean_distance_feature.h"
 #include "array_parser.hpp"
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/vespalib/util/stash.h>
 #include <cmath>
 
 #include <vespa/log/log.h>
@@ -15,8 +15,7 @@ LOG_SETUP(".features.euclidean_distance_feature");
 using namespace search::attribute;
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 
 template <typename DataType>
@@ -57,7 +56,7 @@ EuclideanDistanceBlueprint::EuclideanDistanceBlueprint() :
 {
 }
 
-EuclideanDistanceBlueprint::~EuclideanDistanceBlueprint() {}
+EuclideanDistanceBlueprint::~EuclideanDistanceBlueprint() = default;
 
 void
 EuclideanDistanceBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
@@ -78,7 +77,7 @@ EuclideanDistanceBlueprint::setup(const IIndexEnvironment &env, const ParameterL
 Blueprint::UP
 EuclideanDistanceBlueprint::createInstance() const
 {
-    return Blueprint::UP(new EuclideanDistanceBlueprint());
+    return std::make_unique<EuclideanDistanceBlueprint>();
 }
 
 namespace {
@@ -97,7 +96,7 @@ FeatureExecutor &
 EuclideanDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attributeName);
-    if (attribute == NULL) {
+    if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
             _attributeName.c_str());
         return stash.create<SingleZeroValueExecutor>();
@@ -118,6 +117,5 @@ EuclideanDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespali
 
 }
 
-} // namespace features
-} // namespace search
+}
 

@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <cassert>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".fef.rankprogram");
+
 using vespalib::Stash;
 
 namespace search::fef {
@@ -42,7 +45,7 @@ struct OverrideVisitor : public IPropertiesVisitor
     {
         auto pos = feature_map.find(key);
         if (pos != feature_map.end()) {
-            overrides.push_back(Override(pos->second, vespalib::locale::c::strtod(values.get().c_str(), nullptr)));
+            overrides.emplace_back(pos->second, vespalib::locale::c::strtod(values.get().c_str(), nullptr));
         }
     }
 };
@@ -175,6 +178,7 @@ RankProgram::setup(const MatchData &md,
     auto override_end = overrides.end();
 
     const auto &specs = _resolver->getExecutorSpecs();
+    _executors.reserve(specs.size());
     for (uint32_t i = 0; i < specs.size(); ++i) {
         vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(specs[i].output_types.size());
         StashSelector stash(_hot_stash, _cold_stash);
@@ -216,6 +220,8 @@ RankProgram::setup(const MatchData &md,
         }
     }
     assert(_executors.size() == specs.size());
+    LOG(debug, "Num executors = %ld, hot stash = %ld, cold stash = %ld, match data fields = %d",
+               _executors.size(), _hot_stash.count_used(), _cold_stash.count_used(), md.getNumTermFields());
 }
 
 FeatureResolver

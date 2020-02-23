@@ -3,6 +3,7 @@
 #include <vespa/fnet/frt/values.h>
 #include <vespa/fnet/databuffer.h>
 #include <vespa/fnet/info.h>
+#include <vespa/vespalib/util/stash.h>
 
 using vespalib::Stash;
 

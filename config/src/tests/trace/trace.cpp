@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/trace.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 
 using namespace config;
