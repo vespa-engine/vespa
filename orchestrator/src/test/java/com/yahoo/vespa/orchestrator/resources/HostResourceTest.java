@@ -368,7 +368,7 @@ public class HostResourceTest {
     }
 
     @Test
-    public void throws_504_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException {
+    public void throws_409_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).resume(any(HostName.class));
 
@@ -377,13 +377,13 @@ public class HostResourceTest {
             hostResource.resume("hostname");
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(504);
+            assertThat(w.getResponse().getStatus()).isEqualTo(409);
             assertEquals("resume failed: Timeout Message [deadline]", w.getMessage());
         }
     }
 
     @Test
-    public void throws_504_on_suspendAll_timeout() throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
+    public void throws_409_on_suspendAll_timeout() throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).suspendAll(any(), any());
 
@@ -392,7 +392,7 @@ public class HostResourceTest {
             resource.suspendAll("parenthost", Arrays.asList("h1", "h2", "h3"));
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(504);
+            assertThat(w.getResponse().getStatus()).isEqualTo(409);
         }
     }
 }
