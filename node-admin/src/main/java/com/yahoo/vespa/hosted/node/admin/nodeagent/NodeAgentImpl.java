@@ -76,6 +76,7 @@ public class NodeAgentImpl implements NodeAgent {
     private boolean hasResumedNode = false;
     private boolean hasStartedServices = true;
     private Optional<Instant> firstSuccessfulHealthCheckInstant = Optional.empty();
+    private boolean suspendedInOrchestrator = false;
 
     private int numberOfUnhandledException = 0;
     private long currentRebootGeneration = 0;
@@ -397,6 +398,7 @@ public class NodeAgentImpl implements NodeAgent {
     public void converge(NodeAgentContext context) {
         try {
             doConverge(context);
+            context.log(logger, LogLevel.INFO, "Converged");
         } catch (ConvergenceException e) {
             context.log(logger, e.getMessage());
         } catch (ContainerNotFoundException e) {
@@ -411,7 +413,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    // Public for testing
+    // Non-private for testing
     void doConverge(NodeAgentContext context) {
         NodeSpec node = context.node();
         Optional<Container> container = getContainer(context);
@@ -488,8 +490,11 @@ public class NodeAgentImpl implements NodeAgent {
                 //  - Slobrok and internal orchestrator state is used to determine whether
                 //    to allow upgrade (suspend).
                 updateNodeRepoWithCurrentAttributes(context);
-                context.log(logger, "Call resume against Orchestrator");
-                orchestrator.resume(context.hostname().value());
+                if (suspendedInOrchestrator || node.allowedToBeDown().orElse(false)) {
+                    context.log(logger, "Call resume against Orchestrator");
+                    orchestrator.resume(context.hostname().value());
+                    suspendedInOrchestrator = false;
+                }
                 break;
             case provisioned:
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.dirty);
@@ -562,6 +567,7 @@ public class NodeAgentImpl implements NodeAgent {
         context.log(logger, "Ask Orchestrator for permission to suspend node");
         try {
             orchestrator.suspend(context.hostname().value());
+            suspendedInOrchestrator = true;
         } catch (OrchestratorException e) {
             // Ensure the ACLs are up to date: The reason we're unable to suspend may be because some other
             // node is unable to resume because the ACL rules of SOME Docker container is wrong...
