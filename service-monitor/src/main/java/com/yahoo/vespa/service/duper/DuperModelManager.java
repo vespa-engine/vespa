@@ -94,8 +94,10 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
             @Override
             public void notifyOfCompleteness(SuperModel superModel) {
                 synchronized (monitor) {
-                    superModelIsComplete = true;
-                    maybeSetDuperModelAsComplete();
+                    if (!superModelIsComplete) {
+                        superModelIsComplete = true;
+                        maybeSetDuperModelAsComplete();
+                    }
                 }
             }
         });
@@ -164,8 +166,10 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
     @Override
     public void infraApplicationsIsNowComplete() {
         synchronized (monitor) {
-            this.infraApplicationsIsComplete = true;
-            maybeSetDuperModelAsComplete();
+            if (!infraApplicationsIsComplete) {
+                infraApplicationsIsComplete = true;
+                maybeSetDuperModelAsComplete();
+            }
         }
     }
 

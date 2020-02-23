@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.InfraDeployer;
 
-import java.util.Map;
 import java.util.Optional;
 
 public class MockInfraDeployer implements InfraDeployer {
@@ -15,5 +14,5 @@ public class MockInfraDeployer implements InfraDeployer {
     }
 
     @Override
-    public void activateAllSupportedInfraApplications() { }
+    public void activateAllSupportedInfraApplications(boolean propagateException) { }
 }
