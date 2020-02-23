@@ -17,7 +17,6 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
@@ -325,8 +324,6 @@ public class OrchestratorImplTest {
 
     @Test
     public void testLargeLocks() throws Exception {
-        flagSource.withBooleanFlag(Flags.ENABLE_LARGE_ORCHESTRATOR_LOCKS.id(), true);
-
         var tenantId = new TenantId("tenant");
         var applicationInstanceId = new ApplicationInstanceId("app:dev:us-east-1:default");
         var applicationInstanceReference = new ApplicationInstanceReference(tenantId, applicationInstanceId);
