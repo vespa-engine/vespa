@@ -10,10 +10,10 @@ class Test : public FtTestApp
 {
 public:
     Test();
-    ~Test();
+    ~Test() override;
     int Main() override;
     void testFramework();
-    void testFtLib();
+    static void testFtLib();
     void testAge();
     void testAttribute();
     void testAttributeMatch();
@@ -39,10 +39,9 @@ public:
     void testRankingExpression();
     void testTerm();
     void testTermDistance();
-    void testUtils();
+    static void testUtils();
 
     static void setupForDotProductTest(FtFeatureTest & ft);
-    static void setupForDocumentTest(FtFeatureTest &ft, const vespalib::string & attrName, const vespalib::string & docType);
 
 private:
     void testFieldMatchBluePrint();
@@ -81,21 +80,21 @@ private:
     void testFieldMatchExecutorRemaining();
 
     void assertAge(feature_t expAge, const vespalib::string & attr, uint64_t now, uint64_t docTime);
-    void setupForAgeTest(FtFeatureTest & ft, uint64_t docTime);
-    void setupForAttributeTest(FtFeatureTest &ft, bool setup_env = true);
+    static void setupForAgeTest(FtFeatureTest & ft, uint64_t docTime);
+    static void setupForAttributeTest(FtFeatureTest &ft, bool setup_env = true);
     void assertCloseness(feature_t exp, const vespalib::string & attr, double distance, double maxDistance = 0, double halfResponse = 0);
-    void setupForDistanceTest(FtFeatureTest & ft, const vespalib::string & attrName,
-                              const std::vector<std::pair<int32_t, int32_t> > & positions, bool zcurve);
+    static void setupForDistanceTest(FtFeatureTest & ft, const vespalib::string & attrName,
+                                     const std::vector<std::pair<int32_t, int32_t> > & positions, bool zcurve);
     void assert2DZDistance(feature_t exp, const vespalib::string & positions,
                            int32_t xquery, int32_t yquery, uint32_t xAspect = 0);
-    void assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > pos, const vespalib::string &path,
+    void assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > & pos, const vespalib::string &path,
                               feature_t distance = search::features::DistanceToPathExecutor::DEFAULT_DISTANCE,
                               feature_t traveled = 1, feature_t product = 0);
     void assertDotProduct(feature_t exp, const vespalib::string & vector, uint32_t docId = 1,
                           const vespalib::string & attribute = "wsstr", const vespalib::string & attributeOverride="");
 
     void assertFieldMatch(const vespalib::string & spec, const vespalib::string & query, const vespalib::string & field,
-                          const search::features::fieldmatch::Params * params = NULL, uint32_t totalTermWeight = 0, feature_t totalSignificance = 0.0f);
+                          const search::features::fieldmatch::Params * params = nullptr, uint32_t totalTermWeight = 0, feature_t totalSignificance = 0.0f);
     void assertFieldMatch(const vespalib::string & spec, const vespalib::string & query, const vespalib::string & field,
                           uint32_t totalTermWeight);
     void assertFieldMatchTS(const vespalib::string & spec, const vespalib::string & query, const vespalib::string & field,
