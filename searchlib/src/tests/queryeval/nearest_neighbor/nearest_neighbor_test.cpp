@@ -195,7 +195,7 @@ TEST("require that NnsIndexIterator works as expected") {
     std::vector<NnsIndexIterator::Hit> hits{{2,4.0}, {3,9.0}, {5,1.0}, {8,16.0}, {9,36.0}};
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
-    auto search = NnsIndexIterator::create(true, tfmd, hits);
+    auto search = NnsIndexIterator::create(tfmd, hits);
     uint32_t docid = 1;
     search->initFullRange();
     bool match = search->seek(docid);
