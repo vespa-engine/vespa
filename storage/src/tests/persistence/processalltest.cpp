@@ -23,11 +23,15 @@ TEST_F(ProcessAllHandlerTest, remove_location) {
     api::RemoveLocationCommand removeLocation("id.user == 4", makeDocumentBucket(bucketId));
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
-    handler.handleRemoveLocation(removeLocation, context);
+    auto tracker = handler.handleRemoveLocation(removeLocation, context);
 
     EXPECT_EQ("DocEntry(1234, 1, id:mail:testdoctype1:n=4:3619.html)\n"
               "DocEntry(2345, 1, id:mail:testdoctype1:n=4:4008.html)\n",
               dumpBucket(bucketId));
+
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->getReply());
+    ASSERT_TRUE(reply.get() != nullptr);
+    EXPECT_EQ(2u, reply->documents_removed());
 }
 
 TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
@@ -44,7 +48,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
     api::RemoveLocationCommand
         removeLocation("testdoctype1.headerval % 2 == 0", makeDocumentBucket(bucketId));
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
-    handler.handleRemoveLocation(removeLocation, context);
+    auto tracker = handler.handleRemoveLocation(removeLocation, context);
 
     EXPECT_EQ("DocEntry(100, 1, id:mail:testdoctype1:n=4:3619.html)\n"
               "DocEntry(101, 0, Doc(id:mail:testdoctype1:n=4:33113.html))\n"
@@ -57,6 +61,10 @@ TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
               "DocEntry(108, 1, id:mail:testdoctype1:n=4:42967.html)\n"
               "DocEntry(109, 0, Doc(id:mail:testdoctype1:n=4:6925.html))\n",
               dumpBucket(bucketId));
+
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(tracker->getReply());
+    ASSERT_TRUE(reply.get() != nullptr);
+    EXPECT_EQ(5u, reply->documents_removed());
 }
 
 TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_unknown_doc_type) {

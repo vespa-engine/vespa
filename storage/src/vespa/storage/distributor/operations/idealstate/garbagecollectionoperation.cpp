@@ -2,6 +2,7 @@
 
 #include "garbagecollectionoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -9,19 +10,18 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.idealstate.remove");
 
-using namespace storage::distributor;
+namespace storage::distributor {
 
 GarbageCollectionOperation::GarbageCollectionOperation(const std::string& clusterName, const BucketAndNodes& nodes)
     : IdealStateOperation(nodes),
       _tracker(clusterName),
-      _replica_info()
+      _replica_info(),
+      _max_documents_removed(0)
 {}
 
 GarbageCollectionOperation::~GarbageCollectionOperation() = default;
 
-void
-GarbageCollectionOperation::onStart(DistributorMessageSender& sender)
-{
+void GarbageCollectionOperation::onStart(DistributorMessageSender& sender) {
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
     std::vector<uint16_t> nodes = entry->getNodes();
 
@@ -43,7 +43,7 @@ GarbageCollectionOperation::onStart(DistributorMessageSender& sender)
 
 void
 GarbageCollectionOperation::onReceive(DistributorMessageSender&,
-                           const std::shared_ptr<api::StorageReply>& reply)
+                                      const std::shared_ptr<api::StorageReply>& reply)
 {
     auto* rep = dynamic_cast<api::RemoveLocationReply*>(reply.get());
     assert(rep != nullptr);
@@ -53,6 +53,7 @@ GarbageCollectionOperation::onReceive(DistributorMessageSender&,
     if (!rep->getResult().failed()) {
         _replica_info.emplace_back(_manager->getDistributorComponent().getUniqueTimestamp(),
                                    node, rep->getBucketInfo());
+        _max_documents_removed = std::max(_max_documents_removed, rep->documents_removed());
     } else {
         _ok = false;
     }
@@ -61,6 +62,7 @@ GarbageCollectionOperation::onReceive(DistributorMessageSender&,
         if (_ok) {
             merge_received_bucket_info_into_db();
         }
+        update_gc_metrics();
         done();
     }
 }
@@ -76,8 +78,16 @@ void GarbageCollectionOperation::merge_received_bucket_info_into_db() {
     }
 }
 
+void GarbageCollectionOperation::update_gc_metrics() {
+    auto metric_base = _manager->getMetrics().operations[IdealStateOperation::GARBAGE_COLLECTION];
+    auto gc_metrics = std::dynamic_pointer_cast<GcMetricSet>(metric_base);
+    assert(gc_metrics);
+    gc_metrics->documents_removed.inc(_max_documents_removed);
+}
+
 bool
-GarbageCollectionOperation::shouldBlockThisOperation(uint32_t, uint8_t) const
-{
+GarbageCollectionOperation::shouldBlockThisOperation(uint32_t, uint8_t) const {
     return true;
+}
+
 }

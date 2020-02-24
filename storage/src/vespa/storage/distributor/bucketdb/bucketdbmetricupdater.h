@@ -7,12 +7,9 @@
 
 #include <unordered_map>
 
-namespace storage {
+namespace storage::distributor {
 
 class DistributorMetricSet;
-
-namespace distributor {
-
 class IdealStateMetricSet;
 
 class BucketDBMetricUpdater {
@@ -107,5 +104,4 @@ private:
     void resetStats();
 };
 
-} // distributor
-} // storage
+} // storage::distributor
