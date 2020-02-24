@@ -3,7 +3,9 @@ package ai.vespa.metricsproxy.telegraf;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.log.LogLevel;
 import com.yahoo.system.execution.ProcessExecutor;
+import com.yahoo.system.execution.ProcessResult;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 
@@ -47,22 +49,29 @@ public class Telegraf extends AbstractComponent {
     }
 
     private void restartTelegraf() {
-        logger.info("Restarting Telegraf");
         executeCommand("service telegraf restart");
     }
 
     private void stopTelegraf() {
-        logger.info("Stopping Telegraf");
         executeCommand("service telegraf stop");
     }
 
     private void executeCommand(String command) {
+        logger.info(String.format("Running command: %s", command));
         ProcessExecutor processExecutor = new ProcessExecutor
                 .Builder(10)
                 .successExitCodes(0)
                 .build();
-        uncheck(() -> processExecutor.execute(command))
+        ProcessResult processResult = uncheck(() -> processExecutor.execute(command))
                 .orElseThrow(() -> new RuntimeException("Timed out running command: " + command));
+
+        logger.log(LogLevel.DEBUG, () -> String.format("Exit code: %d\nstdOut: %s\nstdErr: %s",
+                                                        processResult.exitCode,
+                                                        processResult.stdOut,
+                                                        processResult.stdErr));
+
+        if (!processResult.stdErr.isBlank())
+            logger.warning(String.format("stdErr not empty: %s", processResult.stdErr));
     }
 
     @SuppressWarnings("ConstantConditions")
