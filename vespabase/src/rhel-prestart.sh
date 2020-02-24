@@ -102,7 +102,7 @@ fixdir   root        wheel 1777  var/run
 fixdir ${VESPA_USER} wheel 1777  var/crash
 fixdir ${VESPA_USER} wheel 1777  logs/vespa
 fixdir ${VESPA_USER} wheel 1777  tmp/vespa
-fixdir ${VESPA_USER} wheel  755  var
+fixdir   root        root   755  var
 fixdir ${VESPA_USER} wheel  755  libexec/vespa/plugins/qrs
 fixdir ${VESPA_USER} wheel  755  logs/vespa/configserver
 fixdir ${VESPA_USER} wheel  755  logs/vespa/qrs
