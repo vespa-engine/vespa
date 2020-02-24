@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -70,7 +71,10 @@ public class RoutingPolicy {
 
     /** Returns the endpoint of this */
     public Endpoint endpointIn(SystemName system) {
-        return Endpoint.of(id.owner()).target(id.cluster(), id.zone()).on(Port.tls()).directRouting().in(system);
+        return Endpoint.of(id.owner()).target(id.cluster(), id.zone())
+                       .routingMethod(RoutingMethod.exclusive)
+                       .on(Port.tls())
+                       .in(system);
     }
 
     /** Returns global endpoints which this is a member of */
@@ -100,7 +104,10 @@ public class RoutingPolicy {
 
     /** Creates a global endpoint for given application */
     public static Endpoint globalEndpointOf(ApplicationId application, EndpointId endpointId, SystemName system) {
-        return Endpoint.of(application).named(endpointId).on(Port.tls()).directRouting().in(system);
+        return Endpoint.of(application).named(endpointId)
+                       .on(Port.tls())
+                       .routingMethod(RoutingMethod.exclusive)
+                       .in(system);
     }
 
 }
