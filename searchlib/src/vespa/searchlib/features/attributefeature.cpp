@@ -13,6 +13,7 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
+#include <vespa/searchlib/attribute/singleboolattribute.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.attributefeature");
@@ -33,6 +34,7 @@ using search::fef::FeatureExecutor;
 using search::features::util::ConstCharPtr;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
+using namespace search::index;
 
 using namespace search::fef::indexproperties;
 
@@ -98,7 +100,7 @@ considerUndefined<ConstCharPtr>(ConstCharPtr value, BasicType::Type )
  * Implements the executor for fetching values from a single or array attribute vector
  */
 template <typename T>
-class SingleAttributeExecutor : public fef::FeatureExecutor {
+class SingleAttributeExecutor final : public fef::FeatureExecutor {
 private:
     const T & _attribute;
 public:
@@ -118,11 +120,23 @@ public:
     void execute(uint32_t docId) override;
 };
 
+class BoolAttributeExecutor final : public fef::FeatureExecutor {
+private:
+    const SingleBoolAttribute & _attribute;
+public:
+    BoolAttributeExecutor(const SingleBoolAttribute & attribute)
+        : _attribute(attribute)
+    {}
+    void execute(uint32_t docId) override {
+        outputs().set_number(0, _attribute.getFloat(docId));
+    }
+};
+
 /**
  * Implements the executor for fetching values from a single or array attribute vector
  */
 template <typename T>
-class MultiAttributeExecutor : public fef::FeatureExecutor {
+class MultiAttributeExecutor final : public fef::FeatureExecutor {
 private:
     const T & _attribute;
     uint32_t  _idx;
@@ -138,7 +152,7 @@ public:
     }
 };
 
-class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
+class CountOnlyAttributeExecutor final : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector & _attribute;
 
@@ -157,7 +171,7 @@ public:
  * Implements the executor for fetching values from a single or array attribute vector
  */
 template <typename T>
-class AttributeExecutor : public fef::FeatureExecutor {
+class AttributeExecutor final : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector * _attribute;
     attribute::BasicType::Type _attrType;
@@ -365,6 +379,12 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             { SingleValueExecutorCreator<IntegerAttributeTemplate<int8_t>> creator;       if (creator.handle(attribute)) return creator.create(stash); }
             { SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
             { SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
+            {
+                auto boolAttribute = dynamic_cast<const SingleBoolAttribute *>(attribute);
+                if (boolAttribute) {
+                    return stash.create<BoolAttributeExecutor>(*boolAttribute);
+                }
+            }
         }
         {
             uint32_t idx = 0;
@@ -468,7 +488,10 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
                    "the value at the given index of an array attribute, "
                    "the given key of a weighted set attribute, or"
                    "the tensor of a tensor attribute", output_type);
-    if (!_tensorType.is_tensor()) {
+    const fef::FieldInfo * fInfo = env.getFieldByName(_attrName);
+    if (!_tensorType.is_tensor() &&
+        !((fInfo->collection() == schema::CollectionType::SINGLE) && (fInfo->get_data_type() == schema::DataType::BOOL)))
+    {
         describeOutput("weight", "The weight associated with the given key in a weighted set attribute.");
         describeOutput("contains", "1 if the given key is present in a weighted set attribute, 0 otherwise.");
         describeOutput("count", "Returns the number of elements in this array or weighted set attribute.");
