@@ -51,7 +51,7 @@ public class MetricsResponse {
 
     private void addMetricIfPresent(String hostname, String metricName, long timestamp, Map<String, Double> values) {
         if (values.containsKey(metricName))
-            metricValues.add(new NodeMetrics.MetricValue(hostname, "cpu.util", timestamp, values.get("cpu.util").floatValue()));
+            metricValues.add(new NodeMetrics.MetricValue(hostname, metricName, timestamp, values.get("cpu.util").floatValue()));
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {

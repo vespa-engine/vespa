@@ -16,7 +16,7 @@ public class NodeMetricsHttpFetcher implements NodeMetrics {
 
     @Override
     public Collection<MetricValue> fetchMetrics(ApplicationId application) {
-        String response = ""; // TODO
+        String response = ""; // TODO: Fetch the "system" metrics set
         return new MetricsResponse(response).metrics();
     }
 

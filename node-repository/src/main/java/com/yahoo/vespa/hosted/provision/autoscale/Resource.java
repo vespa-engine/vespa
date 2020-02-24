@@ -17,13 +17,13 @@ public enum Resource {
     },
 
     memory {
-        String metric() { return "memory"; } // TODO: Full metric name
+        String metric() { return "memory.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.memoryGb(); }
     },
 
     disk {
-        String metric() { return "disk"; } // TODO: Full metric name
+        String metric() { return "disk.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.diskGb(); }
     };
