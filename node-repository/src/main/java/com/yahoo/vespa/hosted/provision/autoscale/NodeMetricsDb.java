@@ -1,12 +1,11 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.vespa.hosted.provision.Node;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -31,10 +30,14 @@ public class NodeMetricsDb {
     private final Object lock = new Object();
 
     /** Add a measurement to this */
-    public void add(String hostname, Resource resource, Instant timestamp, float value) {
+    public void add(Collection<NodeMetrics.MetricValue> metricValues) {
         synchronized (lock) {
-            List<Measurement> measurements = db.computeIfAbsent(new MeasurementKey(hostname, resource), (__) -> new ArrayList<>());
-            measurements.add(new Measurement(timestamp.toEpochMilli(), value));
+            for (var value : metricValues) {
+                List<Measurement> measurements = db.computeIfAbsent(new MeasurementKey(value.hostname(),
+                                                                                       Resource.fromMetric(value.name())),
+                                                                    (__) -> new ArrayList<>());
+                measurements.add(new Measurement(value.timestamp(), value.value()));
+            }
         }
     }
 

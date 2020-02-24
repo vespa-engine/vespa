@@ -1,6 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ApplicationId;
+
 import java.util.Collection;
 
 /**
@@ -11,24 +13,29 @@ import java.util.Collection;
 public interface NodeMetrics {
 
     /**
-     * Fetches node metrics for a node. This call may be expensive.
+     * Fetches metrics for an application. This call may be expensive.
      *
-     * @param hostname the hostname of the node to fetch metrics from
+     * @param application the application to fetch metrics from
      */
-    Collection<Metric> fetchMetrics(String hostname);
+    Collection<MetricValue> fetchMetrics(ApplicationId application);
 
-    final class Metric {
+    final class MetricValue {
 
-        private String name;
-        private float value;
+        private final String hostname;
+        private final String name;
+        private long timestamp;
+        private final float value;
 
-        public Metric(String name, float value) {
+        public MetricValue(String hostname, String name, long timestamp, float value) {
+            this.hostname = hostname;
             this.name = name;
+            this.timestamp = timestamp;
             this.value = value;
         }
 
+        public String hostname() { return hostname; }
         public String name() { return name; }
-
+        public long timestamp() { return timestamp; }
         public float value() { return value; }
 
     }

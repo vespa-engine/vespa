@@ -127,13 +127,17 @@ class AutoscalingTester {
                                 int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
-        System.out.println("Naive value " + value + ", adjusted " + value * oneExtraNodeFactor);
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
-                for (Resource r : Resource.values())
-                    db.add(node.hostname(), r, clock().instant(),
-                           (r == resource ? value : (float)r.idealAverageLoad() * otherResourcesLoad) * oneExtraNodeFactor);
+                for (Resource r : Resource.values()) {
+                    float effectiveValue = (r == resource ? value : (float) r.idealAverageLoad() * otherResourcesLoad)
+                                           * oneExtraNodeFactor;
+                    db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
+                                                               r.metric(),
+                                                               clock().instant().toEpochMilli(),
+                                                               effectiveValue)));
+                }
             }
         }
     }

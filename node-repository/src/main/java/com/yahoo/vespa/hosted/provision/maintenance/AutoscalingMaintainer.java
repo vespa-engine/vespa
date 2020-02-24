@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
@@ -42,7 +41,7 @@ public class AutoscalingMaintainer extends Maintainer {
     protected void maintain() {
         if ( ! nodeRepository().zone().environment().isProduction()) return;
 
-        nodesByApplication().forEach((applicationId, nodes) -> autoscale(applicationId, nodes));
+        activeNodesByApplication().forEach((applicationId, nodes) -> autoscale(applicationId, nodes));
     }
 
     private void autoscale(ApplicationId application, List<Node> applicationNodes) {
@@ -54,11 +53,6 @@ public class AutoscalingMaintainer extends Maintainer {
                                            " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
                                            " to " + t.nodes() + " * " + t.nodeResources()));
         });
-    }
-
-    private Map<ApplicationId, List<Node>> nodesByApplication() {
-        return nodeRepository().list().nodeType(NodeType.tenant).state(Node.State.active).asList()
-                               .stream().collect(Collectors.groupingBy(n -> n.allocation().get().owner()));
     }
 
     private Map<ClusterSpec, List<Node>> nodesByCluster(List<Node> applicationNodes) {

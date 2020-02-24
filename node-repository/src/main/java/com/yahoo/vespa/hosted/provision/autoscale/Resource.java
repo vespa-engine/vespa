@@ -11,7 +11,7 @@ import com.yahoo.config.provision.NodeResources;
 public enum Resource {
 
     cpu {
-        String metric() { return "cpu"; } // TODO: Full metric name
+        String metric() { return "cpu.util"; }
         double idealAverageLoad() { return 0.2; }
         double valueFrom(NodeResources resources) { return resources.vcpu(); }
     },

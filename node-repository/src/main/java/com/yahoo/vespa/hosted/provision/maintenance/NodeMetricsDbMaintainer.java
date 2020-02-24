@@ -1,16 +1,12 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
-import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Collection;
 import java.util.logging.Level;
 
 /**
@@ -36,15 +32,13 @@ public class NodeMetricsDbMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         int warnings = 0;
-        for (Node node : nodeRepository().list().nodeType(NodeType.tenant).state(Node.State.active).asList()) {
+        for (ApplicationId application : activeNodesByApplication().keySet()) {
             try {
-                Collection<NodeMetrics.Metric> metrics = nodeMetrics.fetchMetrics(node.hostname());
-                Instant timestamp = nodeRepository().clock().instant();
-                metrics.forEach(metric -> nodeMetricsDb.add(node.hostname(), Resource.fromMetric(metric.name()), timestamp, metric.value()));
+                nodeMetricsDb.add(nodeMetrics.fetchMetrics(application));
             }
             catch (Exception e) {
                 if (warnings++ < maxWarningsPerInvocation)
-                    log.log(Level.WARNING, "Could not update metrics from " + node, e); // TODO: Exclude allowed to be down nodes
+                    log.log(Level.WARNING, "Could not update metrics for " + application, e);
             }
         }
         nodeMetricsDb.gc(nodeRepository().clock());
