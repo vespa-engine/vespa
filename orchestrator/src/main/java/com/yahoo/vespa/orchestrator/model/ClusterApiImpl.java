@@ -131,25 +131,56 @@ class ClusterApiImpl implements ClusterApi {
         return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
     }
 
+    /**
+     * A description of the hosts outside the group that are allowed to be down,
+     * and a description of the services outside the group and outside of the allowed services
+     * that are down.
+     */
     @Override
-    public String servicesDownAndNotInGroupDescription() {
-        // Sort these for readability and testing stability
-        return Stream
-                .concat(servicesDownAndNotInGroup.stream().map(ServiceInstance::toString).sorted(),
-                        missingServices > 0 ? Stream.of(descriptionOfMissingServices) : Stream.of())
-                .collect(Collectors.toList())
-                .toString();
-    }
+    public String downDescription() {
+        StringBuilder description = new StringBuilder();
 
-    @Override
-    public String nodesAllowedToBeDownNotInGroupDescription() {
-        return servicesNotInGroup.stream()
+        Set<HostName> suspended = servicesNotInGroup.stream()
                 .map(ServiceInstance::hostName)
                 .filter(hostName -> hostStatus(hostName).isSuspended())
-                .sorted()
-                .distinct()
-                .collect(Collectors.toList())
-                .toString();
+                .collect(Collectors.toSet());
+
+        if (suspended.size() > 0) {
+            description.append(" ");
+
+            final int nodeLimit = 3;
+            description.append("Suspended hosts: ");
+            description.append(suspended.stream().sorted().distinct().limit(nodeLimit).collect(Collectors.toList()).toString());
+            if (suspended.size() > nodeLimit) {
+                description.append(", and " + (suspended.size() - nodeLimit) + " more");
+            }
+            description.append(".");
+        }
+
+        Set<ServiceInstance> downElsewhere = servicesDownAndNotInGroup.stream()
+                .filter(serviceInstance -> !suspended.contains(serviceInstance.hostName()))
+                .collect(Collectors.toSet());
+
+        final int downElsewhereTotal = downElsewhere.size() + missingServices;
+        if (downElsewhereTotal > 0) {
+            description.append(" ");
+
+            final int serviceLimit = 2; // services info is verbose
+            description.append("Services down on resumed hosts: ");
+            description.append(Stream.concat(
+                    downElsewhere.stream().map(ServiceInstance::toString).sorted(),
+                    missingServices > 0 ? Stream.of(descriptionOfMissingServices) : Stream.of())
+                    .limit(serviceLimit)
+                    .collect(Collectors.toList())
+                    .toString());
+
+            if (downElsewhereTotal > serviceLimit) {
+                description.append(", and " + (downElsewhereTotal - serviceLimit) + " more");
+            }
+            description.append(".");
+        }
+
+        return description.toString();
     }
 
     private Optional<StorageNode> storageNodeInGroup(Predicate<ServiceInstance> storageServicePredicate) {
