@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("threading_service_config_test");
 
 #include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("threading_service_config_test");
 
 using namespace proton;
 using ProtonConfig = vespa::config::search::core::ProtonConfig;
@@ -42,7 +43,7 @@ TEST_F("require that indexing threads are set based on cpu cores and feeding con
     TEST_DO(f.assertIndexingThreads(3, 18));
     TEST_DO(f.assertIndexingThreads(4, 19));
     TEST_DO(f.assertIndexingThreads(4, 24));
-    TEST_DO(f.assertIndexingThreads(4, 64));
+    TEST_DO(f.assertIndexingThreads(4, 64)); // Ensure it is capped at 4
 }
 
 TEST_F("require that indexing threads is always >= 1", Fixture(0))

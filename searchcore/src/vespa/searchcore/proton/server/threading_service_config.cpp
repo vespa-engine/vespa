@@ -22,6 +22,9 @@ namespace {
 uint32_t
 calculateIndexingThreads(uint32_t cfgIndexingThreads, double concurrency, const HwInfo::Cpu &cpuInfo)
 {
+    // We are capping at 12 threads to reduce cost of waking up threads
+    // to achieve a better throughput.
+    // TODO: Fix this in a simpler/better way.
     double scaledCores = std::min(12.0, cpuInfo.cores() * concurrency);
     uint32_t indexingThreads = std::max((uint32_t)std::ceil(scaledCores / 3), cfgIndexingThreads);
     return std::max(indexingThreads, 1u);
