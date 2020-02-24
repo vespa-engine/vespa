@@ -23,9 +23,9 @@ public class InfrastructureProvisioner extends Maintainer {
     InfrastructureProvisioner(NodeRepository nodeRepository, InfraDeployer infraDeployer, Duration interval) {
         super(nodeRepository, interval);
         this.infraDeployer = infraDeployer;
+    }
 
-        // If this fails, we fail the component graph construction and bootstrap of config server,
-        // which is what we want.
+    public void maintainButThrowOnException() {
         try {
             infraDeployer.activateAllSupportedInfraApplications(true);
         } catch (RuntimeException e) {
