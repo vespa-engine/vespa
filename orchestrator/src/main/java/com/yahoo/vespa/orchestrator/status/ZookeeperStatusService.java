@@ -371,11 +371,6 @@ public class ZookeeperStatusService implements StatusService {
         }
 
         @Override
-        public HostInfo getHostInfo(HostName hostName) {
-            return ZookeeperStatusService.this.getHostInfo(applicationInstanceReference, hostName);
-        }
-
-        @Override
         public HostInfos getHostInfos() {
             return hostInfosCache.getHostInfos(applicationInstanceReference);
         }
