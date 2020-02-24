@@ -5,6 +5,7 @@
 #include <vespa/searchlib/features/rankingexpression/intrinsic_blueprint_adapter.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/vespalib/util/stash.h>
 #include <set>
 
 using namespace search::features::rankingexpression;

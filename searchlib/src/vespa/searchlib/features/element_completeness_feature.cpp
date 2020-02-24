@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stash.h>
 #include <cassert>
 
 namespace search::features {
@@ -116,7 +117,7 @@ ElementCompletenessBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &en
 fef::Blueprint::UP
 ElementCompletenessBlueprint::createInstance() const
 {
-    return Blueprint::UP(new ElementCompletenessBlueprint());
+    return std::make_unique<ElementCompletenessBlueprint>();
 }
 
 bool

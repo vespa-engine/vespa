@@ -3,30 +3,28 @@
 #include "terminfofeature.h"
 #include "valuefeature.h"
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/itermdata.h>
-#include <vespa/searchlib/fef/handle.h>
+#include <vespa/vespalib/util/stash.h>
 
-namespace search {
-namespace features {
+using namespace search::fef;
+namespace search::features {
 
 TermInfoBlueprint::TermInfoBlueprint()
-    : search::fef::Blueprint("termInfo"),
+    : Blueprint("termInfo"),
       _termIdx(0)
 {
 }
 
 void
-TermInfoBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                     search::fef::IDumpFeatureVisitor &) const
+TermInfoBlueprint::visitDumpFeatures(const IIndexEnvironment &,
+                                     IDumpFeatureVisitor &) const
 {
 }
 
 bool
-TermInfoBlueprint::setup(const search::fef::IIndexEnvironment &,
-                         const search::fef::ParameterList & params)
+TermInfoBlueprint::setup(const IIndexEnvironment &,
+                         const ParameterList & params)
 {
     _termIdx = params[0].asInteger();
     describeOutput("queryidx", "The index of the first term with the given "
@@ -34,8 +32,8 @@ TermInfoBlueprint::setup(const search::fef::IIndexEnvironment &,
     return true;
 }
 
-search::fef::FeatureExecutor &
-TermInfoBlueprint::createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+FeatureExecutor &
+TermInfoBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
     feature_t queryIdx = -1.0;
     if (queryEnv.getNumTerms() > _termIdx) {
@@ -46,5 +44,4 @@ TermInfoBlueprint::createExecutor(const search::fef::IQueryEnvironment &queryEnv
     return stash.create<ValueExecutor>(values);
 }
 
-} // namespace features
-} // namespace search
+}

@@ -3,6 +3,7 @@
 #include "random_normal_stable_feature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomnormalstablefeature");
@@ -41,7 +42,7 @@ RandomNormalStableBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironm
 search::fef::Blueprint::UP
 RandomNormalStableBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new RandomNormalStableBlueprint());
+    return std::make_unique<RandomNormalStableBlueprint>();
 }
 
 bool
@@ -74,6 +75,5 @@ RandomNormalStableBlueprint::createExecutor(const search::fef::IQueryEnvironment
     }
     return stash.create<RandomNormalStableExecutor>(seed, _mean, _stddev);
 }
-
 
 }

@@ -7,6 +7,8 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stash.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -285,7 +287,7 @@ FlowCompletenessBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
 fef::Blueprint::UP
 FlowCompletenessBlueprint::createInstance() const
 {
-    return Blueprint::UP(new FlowCompletenessBlueprint());
+    return std::make_unique<FlowCompletenessBlueprint>();
 }
 
 bool
@@ -317,7 +319,5 @@ FlowCompletenessBlueprint::createExecutor(const fef::IQueryEnvironment &env, ves
 {
     return stash.create<FlowCompletenessExecutor>(env, _params);
 }
-
-//-----------------------------------------------------------------------------
 
 }

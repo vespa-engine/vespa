@@ -3,21 +3,16 @@
 #include "interpreted_function.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
-#include "check_type.h"
-#include "tensor_spec.h"
-#include "operation.h"
 #include "tensor_nodes.h"
 #include "tensor_engine.h"
+#include "make_tensor_function.h"
+#include "compile_tensor_function.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <set>
 
-#include "make_tensor_function.h"
-#include "compile_tensor_function.h"
-
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace {
 
@@ -42,11 +37,12 @@ InterpretedFunction::State::State(const TensorEngine &engine_in)
       params(nullptr),
       stash(),
       stack(),
-      program_offset(0)
+      program_offset(0),
+      if_cnt(0)
 {
 }
 
-InterpretedFunction::State::~State() {}
+InterpretedFunction::State::~State() = default;
 
 void
 InterpretedFunction::State::init(const LazyParams &params_in) {
@@ -82,7 +78,7 @@ InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes
     _program = compile_tensor_function(optimized, _stash);
 }
 
-InterpretedFunction::~InterpretedFunction() {}
+InterpretedFunction::~InterpretedFunction() = default;
 
 const Value &
 InterpretedFunction::eval(Context &ctx, const LazyParams &params) const
@@ -123,5 +119,4 @@ InterpretedFunction::detect_issues(const Function &function)
     return Function::Issues(std::move(checker.issues));
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

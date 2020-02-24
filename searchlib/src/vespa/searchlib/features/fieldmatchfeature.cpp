@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 using CollectionType = FieldInfo::CollectionType;
@@ -92,14 +93,12 @@ FieldMatchExecutor::handle_bind_match_data(const fef::MatchData &md)
 
 FieldMatchBlueprint::FieldMatchBlueprint() :
     Blueprint("fieldMatch"),
-    _field(NULL),
+    _field(nullptr),
     _params()
 {
 }
 
-FieldMatchBlueprint::~FieldMatchBlueprint()
-{
-}
+FieldMatchBlueprint::~FieldMatchBlueprint() = default;
 
 void
 FieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
@@ -158,7 +157,7 @@ FieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
 Blueprint::UP
 FieldMatchBlueprint::createInstance() const
 {
-    return Blueprint::UP(new FieldMatchBlueprint());
+    return std::make_unique<FieldMatchBlueprint>();
 }
 
 bool
@@ -305,6 +304,5 @@ FieldMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
 {
     return stash.create<FieldMatchExecutor>(env, *_field, _params);
 }
-
 
 }

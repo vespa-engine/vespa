@@ -5,11 +5,11 @@
 #include "utils.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 
 TermDistanceExecutor::TermDistanceExecutor(const IQueryEnvironment & env,
@@ -61,7 +61,7 @@ TermDistanceBlueprint::visitDumpFeatures(const IIndexEnvironment &,
 Blueprint::UP
 TermDistanceBlueprint::createInstance() const
 {
-    return Blueprint::UP(new TermDistanceBlueprint());
+    return std::make_unique<TermDistanceBlueprint>();
 }
 
 bool
@@ -97,6 +97,4 @@ TermDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::St
     }
 }
 
-
-} // namespace features
-} // namespace search
+}

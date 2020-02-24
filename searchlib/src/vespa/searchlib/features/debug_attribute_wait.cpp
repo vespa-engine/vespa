@@ -2,6 +2,8 @@
 
 #include "debug_attribute_wait.h"
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 using search::attribute::IAttributeVector;
 using namespace search::fef;

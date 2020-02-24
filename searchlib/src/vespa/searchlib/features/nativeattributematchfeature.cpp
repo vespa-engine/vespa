@@ -7,11 +7,11 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 feature_t
 NativeAttributeMatchExecutor::calculateScore(const CachedTermData &td, const TermFieldMatchData &tfmd)
@@ -115,7 +115,7 @@ NativeAttributeMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
 Blueprint::UP
 NativeAttributeMatchBlueprint::createInstance() const
 {
-    return Blueprint::UP(new NativeAttributeMatchBlueprint());
+    return std::make_unique<NativeAttributeMatchBlueprint>();
 }
 
 fef::ParameterDescriptions
@@ -160,6 +160,4 @@ NativeAttributeMatchBlueprint::createExecutor(const IQueryEnvironment &env, vesp
     return NativeAttributeMatchExecutor::createExecutor(env, _params, stash);
 }
 
-
-} // namespace features
-} // namespace search
+}
