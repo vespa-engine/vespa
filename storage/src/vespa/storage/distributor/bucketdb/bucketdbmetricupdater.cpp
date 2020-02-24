@@ -4,8 +4,7 @@
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 BucketDBMetricUpdater::Stats::Stats()
     : _docCount(0),
@@ -27,9 +26,7 @@ BucketDBMetricUpdater::BucketDBMetricUpdater()
 {
 }
 
-BucketDBMetricUpdater::~BucketDBMetricUpdater()
-{
-}
+BucketDBMetricUpdater::~BucketDBMetricUpdater() = default;
 
 void
 BucketDBMetricUpdater::resetStats()
@@ -148,5 +145,4 @@ BucketDBMetricUpdater::reset()
     resetStats();
 }
 
-} // distributor
-} // storage
+} // storage::distributor

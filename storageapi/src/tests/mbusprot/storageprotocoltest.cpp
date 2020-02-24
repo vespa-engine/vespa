@@ -522,8 +522,15 @@ TEST_P(StorageProtocolTest, remove_location) {
     EXPECT_EQ("id.group == \"mygroup\"", cmd2->getDocumentSelection());
     EXPECT_EQ(_bucket, cmd2->getBucket());
 
-    auto reply = std::make_shared<RemoveLocationReply>(*cmd2);
+    uint32_t n_docs_removed = 12345;
+    auto reply = std::make_shared<RemoveLocationReply>(*cmd2, n_docs_removed);
     auto reply2 = copyReply(reply);
+    if (GetParam().getMajor() == 7) {
+        // Statistics are only available for protobuf-enabled version.
+        EXPECT_EQ(n_docs_removed, reply2->documents_removed());
+    } else {
+        EXPECT_EQ(0, reply2->documents_removed());
+    }
 }
 
 TEST_P(StorageProtocolTest, create_visitor) {
