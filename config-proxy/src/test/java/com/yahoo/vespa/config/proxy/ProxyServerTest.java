@@ -27,7 +27,7 @@ public class ProxyServerTest {
 
     private final MemoryCache memoryCache = new MemoryCache();
     private final MockConfigSource source = new MockConfigSource();
-    private MockConfigSourceClient client = new MockConfigSourceClient(source, memoryCache);
+    private final MockConfigSourceClient client = new MockConfigSourceClient(source, memoryCache);
     private ProxyServer proxy;
 
     static final RawConfig fooConfig = ConfigTester.fooConfig;
@@ -58,7 +58,6 @@ public class ProxyServerTest {
     public void basic() {
         assertTrue(proxy.getMode().isDefault());
         assertThat(proxy.getMemoryCache().size(), is(0));
-        assertThat(proxy.getTimingValues(), is(ProxyServer.defaultTimingValues()));
 
         ConfigTester tester = new ConfigTester();
         final MemoryCache memoryCache = proxy.getMemoryCache();
