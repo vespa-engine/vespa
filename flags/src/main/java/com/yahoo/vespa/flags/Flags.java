@@ -204,6 +204,11 @@ public class Flags {
             "Takes effect on the next deployment of the application",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag VALIDATE_ENDPOINT_CERTIFICATES = defineFeatureFlag(
+            "validate-endpoint-certificates", false,
+            "Whether endpoint certificates should be validated before use",
+            "Takes effect on the next deployment of the application");
+
     public static final UnboundStringFlag ENDPOINT_CERTIFICATE_BACKFILL = defineStringFlag(
             "endpoint-certificate-backfill", "disable",
             "Whether the endpoint certificate maintainer should backfill missing certificate data from cameo",

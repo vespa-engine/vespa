@@ -41,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.yolean.Exceptions;
 
@@ -299,6 +300,20 @@ public class InternalStepRunner implements StepRunner {
             }
 
             throw e;
+        } catch (EndpointCertificateException e) {
+            switch (e.getType()) {
+                case CERT_NOT_AVAILABLE:
+                    // Same as CERTIFICATE_NOT_READY above, only from the controller
+                    Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+                            ? Optional.of(deploymentFailed) : Optional.empty();
+                    if (startTime.plus(endpointCertificateTimeout).isBefore(controller.clock().instant())) {
+                        logger.log("Deployment failed to find provisioned endpoint certificate after " + endpointCertificateTimeout);
+                        return Optional.of(RunStatus.endpointCertificateTimeout);
+                    }
+                    return result;
+                default:
+                    throw e; // Should be surfaced / fail deployment
+            }
         }
     }
 

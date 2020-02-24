@@ -25,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -41,7 +42,8 @@ public class EndpointCertificateManagerTest {
     private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final InMemoryFlagSource inMemoryFlagSource = new InMemoryFlagSource();
     private final Clock clock = Clock.systemUTC();
-    private final EndpointCertificateManager endpointCertificateManager = new EndpointCertificateManager(zoneRegistryMock, mockCuratorDb, secretStore, endpointCertificateMock, clock, inMemoryFlagSource);
+    private final EndpointCertificateManager endpointCertificateManager =
+            new EndpointCertificateManager(zoneRegistryMock, mockCuratorDb, secretStore, endpointCertificateMock, clock, inMemoryFlagSource);
 
     private static final KeyPair testKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 192);
     private static final X509Certificate testCertificate = X509CertificateBuilder
@@ -66,7 +68,8 @@ public class EndpointCertificateManagerTest {
     @Before
     public void setUp() {
         zoneRegistryMock.exclusiveRoutingIn(zoneRegistryMock.zones().all().zones());
-        testZone = zoneRegistryMock.zones().directlyRouted().zones().stream().findFirst().get().getId();
+        testZone = zoneRegistryMock.zones().directlyRouted().zones().stream().findFirst().orElseThrow().getId();
+        inMemoryFlagSource.withBooleanFlag(Flags.VALIDATE_ENDPOINT_CERTIFICATES.id(), true);
     }
 
     @Test
@@ -81,6 +84,8 @@ public class EndpointCertificateManagerTest {
     @Test
     public void reuses_stored_certificate_metadata() {
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, 7));
+        secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 7);
+        secretStore.setSecret(testCertName, X509CertificateUtils.toPem(testCertificate)+X509CertificateUtils.toPem(testCertificate), 7);
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(testKeyName, endpointCertificateMetadata.get().keyName());
@@ -103,6 +108,17 @@ public class EndpointCertificateManagerTest {
         assertEquals(testKeyName, endpointCertificateMetadata.get().keyName());
         assertEquals(testCertName, endpointCertificateMetadata.get().certName());
         assertEquals(8, endpointCertificateMetadata.get().version());
+    }
+
+    @Test
+    public void reprovisions_certificate_when_necessary() {
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, "uuid", List.of()));
+        secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
+        secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate)+X509CertificateUtils.toPem(testCertificate), 0);
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone);
+        assertTrue(endpointCertificateMetadata.isPresent());
+        assertEquals(0, endpointCertificateMetadata.get().version());
+        assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
     }
 
 }

@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * @author tokle
@@ -24,9 +23,8 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
     @Override
     public EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata) {
         this.dnsNames.put(applicationId, dnsNames);
-        String endpointCertificatePrefix = String.format("vespa.tls.%s.%s@%s", applicationId.tenant(),
-                applicationId.application(),
-                UUID.randomUUID().toString());
+        String endpointCertificatePrefix = String.format("vespa.tls.%s.%s.%s", applicationId.tenant(),
+                applicationId.application(), applicationId.instance());
         return new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0);
     }
 
