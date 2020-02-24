@@ -87,7 +87,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         rebalancer = new Rebalancer(deployer, nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), provisionServiceProvider.getHostProvisioner(), metric, clock, defaults.rebalancerInterval);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
-        infrastructureProvisioner.maintain();
+        infrastructureProvisioner.maintainButThrowOnException();
     }
 
     @Override

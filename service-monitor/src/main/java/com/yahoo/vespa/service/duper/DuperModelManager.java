@@ -12,6 +12,8 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
+import com.yahoo.vespa.service.monitor.DuperModelListener;
+import com.yahoo.vespa.service.monitor.DuperModelProvider;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ import java.util.stream.Stream;
 /**
  * @author hakonhall
  */
-public class DuperModelManager implements DuperModelInfraApi {
+public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi {
 
     // Infrastructure applications
     static final ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
@@ -45,6 +47,8 @@ public class DuperModelManager implements DuperModelInfraApi {
     // The set of active infrastructure ApplicationInfo. Not all are necessarily in the DuperModel for historical reasons.
     private final Set<ApplicationId> activeInfraInfos = new HashSet<>(10);
 
+    private boolean superModelIsComplete = false;
+    private boolean infraApplicationsIsComplete = false;
 
     @Inject
     public DuperModelManager(ConfigserverConfig configServerConfig, FlagSource flagSource, SuperModelProvider superModelProvider) {
@@ -53,7 +57,7 @@ public class DuperModelManager implements DuperModelInfraApi {
              superModelProvider, new DuperModel(), flagSource, SystemName.from(configServerConfig.system()));
     }
 
-    /** For testing */
+    /** Non-private for testing */
     DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider, DuperModel duperModel, FlagSource flagSource, SystemName system) {
         this.duperModel = duperModel;
 
@@ -86,6 +90,16 @@ public class DuperModelManager implements DuperModelInfraApi {
                     duperModel.remove(applicationId);
                 }
             }
+
+            @Override
+            public void notifyOfCompleteness(SuperModel superModel) {
+                synchronized (monitor) {
+                    if (!superModelIsComplete) {
+                        superModelIsComplete = true;
+                        maybeSetDuperModelAsComplete();
+                    }
+                }
+            }
         });
     }
 
@@ -93,6 +107,7 @@ public class DuperModelManager implements DuperModelInfraApi {
      * Synchronously call {@link DuperModelListener#applicationActivated(ApplicationInfo) listener.applicationActivated()}
      * for each currently active application, and forward future changes.
      */
+    @Override
     public void registerListener(DuperModelListener listener) {
         synchronized (monitor) {
             duperModel.registerListener(listener);
@@ -148,9 +163,25 @@ public class DuperModelManager implements DuperModelInfraApi {
         }
     }
 
+    @Override
+    public void infraApplicationsIsNowComplete() {
+        synchronized (monitor) {
+            if (!infraApplicationsIsComplete) {
+                infraApplicationsIsComplete = true;
+                maybeSetDuperModelAsComplete();
+            }
+        }
+    }
+
     public List<ApplicationInfo> getApplicationInfos() {
         synchronized (monitor) {
             return duperModel.getApplicationInfos();
+        }
+    }
+
+    private void maybeSetDuperModelAsComplete() {
+        if (superModelIsComplete && infraApplicationsIsComplete) {
+            duperModel.setCompleteness(true);
         }
     }
 }

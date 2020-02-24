@@ -990,13 +990,16 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void <init>(java.util.Map)",
+      "public void <init>(java.util.Map, boolean)",
       "public java.util.Map getModelsPerTenant()",
       "public java.util.Map getModels()",
+      "public boolean isComplete()",
       "public java.util.List getAllApplicationInfos()",
       "public java.util.Optional getApplicationInfo(com.yahoo.config.provision.ApplicationId)",
-      "public com.yahoo.config.model.api.SuperModel cloneAndSetApplication(com.yahoo.config.model.api.ApplicationInfo)",
-      "public com.yahoo.config.model.api.SuperModel cloneAndRemoveApplication(com.yahoo.config.provision.ApplicationId)"
+      "public com.yahoo.config.model.api.SuperModel cloneAndSetApplication(com.yahoo.config.model.api.ApplicationInfo, boolean)",
+      "public com.yahoo.config.model.api.SuperModel cloneAndRemoveApplication(com.yahoo.config.provision.ApplicationId)",
+      "public com.yahoo.config.model.api.SuperModel cloneAsComplete()",
+      "public java.util.Set getApplicationIds()"
     ],
     "fields": []
   },
@@ -1010,7 +1013,8 @@
     ],
     "methods": [
       "public abstract void applicationActivated(com.yahoo.config.model.api.SuperModel, com.yahoo.config.model.api.ApplicationInfo)",
-      "public abstract void applicationRemoved(com.yahoo.config.model.api.SuperModel, com.yahoo.config.provision.ApplicationId)"
+      "public abstract void applicationRemoved(com.yahoo.config.model.api.SuperModel, com.yahoo.config.provision.ApplicationId)",
+      "public abstract void notifyOfCompleteness(com.yahoo.config.model.api.SuperModel)"
     ],
     "fields": []
   },

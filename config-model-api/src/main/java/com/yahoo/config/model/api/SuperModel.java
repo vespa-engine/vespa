@@ -20,13 +20,15 @@ import java.util.Set;
 public class SuperModel {
 
     private final Map<ApplicationId, ApplicationInfo> models;
+    private final boolean complete;
 
     public SuperModel() {
-        this.models = Collections.emptyMap();
+        this(Collections.emptyMap(), false);
     }
 
-    public SuperModel(Map<ApplicationId, ApplicationInfo> models) {
+    public SuperModel(Map<ApplicationId, ApplicationInfo> models, boolean complete) {
         this.models = models;
+        this.complete = complete;
     }
 
     public Map<TenantName, Set<ApplicationInfo>> getModelsPerTenant() {
@@ -45,6 +47,8 @@ public class SuperModel {
         return ImmutableMap.copyOf(models);
     }
 
+    public boolean isComplete() { return complete; }
+
     public List<ApplicationInfo> getAllApplicationInfos() {
         return new ArrayList<>(models.values());
     }
@@ -54,19 +58,21 @@ public class SuperModel {
         return applicationInfo == null ? Optional.empty() : Optional.of(applicationInfo);
     }
 
-    public SuperModel cloneAndSetApplication(ApplicationInfo application) {
+    public SuperModel cloneAndSetApplication(ApplicationInfo application, boolean complete) {
         Map<ApplicationId, ApplicationInfo> newModels = cloneModels(models);
         newModels.put(application.getApplicationId(), application);
-
-        return new SuperModel(newModels);
+        return new SuperModel(newModels, complete);
     }
 
     public SuperModel cloneAndRemoveApplication(ApplicationId applicationId) {
         Map<ApplicationId, ApplicationInfo> newModels = cloneModels(models);
         newModels.remove(applicationId);
-
-        return new SuperModel(newModels);
+        return new SuperModel(newModels, complete);
     }
+
+    public SuperModel cloneAsComplete() { return new SuperModel(models, true); }
+
+    public Set<ApplicationId> getApplicationIds() { return models.keySet(); }
 
     private static Map<ApplicationId, ApplicationInfo> cloneModels(Map<ApplicationId, ApplicationInfo> models) {
         return new LinkedHashMap<>(models);

@@ -73,6 +73,10 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
     }
 
     @Override
+    public void bootstrapComplete() {
+    }
+
+    @Override
     public List<Mirror.Entry> lookup(ApplicationId id, String pattern) {
         synchronized (monitor) {
             SlobrokMonitor slobrokMonitor = slobrokMonitors.get(id);
