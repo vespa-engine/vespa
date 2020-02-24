@@ -110,7 +110,7 @@ protected:
     LinkArray select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     LinkArray select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     LinkArray select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    void connect_new_node(uint32_t docid, const LinkArray& neighbors, uint32_t level);
+    void connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
     inline TypedCells get_vector(uint32_t docid) const {
@@ -145,8 +145,7 @@ public:
 
     // Should only be used by unit tests.
     HnswNode get_node(uint32_t docid) const;
-
-    // TODO: Implement set_node() as well for use in unit tests.
+    void set_node(uint32_t docid, HnswNode node);
 };
 
 }
