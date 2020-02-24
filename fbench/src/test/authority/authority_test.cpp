@@ -48,8 +48,6 @@ TEST(MakeSNISpecTest, supplied_host_port_is_used_as_fallback) {
 
 //-----------------------------------------------------------------------------
 
-std::string make_host_header_value(const vespalib::SocketSpec &sni_spec, bool use_https);
-
 TEST(MakeHostHeaderValueTest, host_port_is_formatted_as_expected) {
     auto my_spec = SocketSpec::from_host_port("myhost", 123);
     EXPECT_EQ(make_host_header_value(my_spec, false), "myhost:123");
