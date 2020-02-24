@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/features/agefeature.h>
 #include <vespa/searchlib/features/array_parser.hpp>
 #include <vespa/searchlib/features/attributefeature.h>
@@ -57,6 +58,7 @@ using search::AttributeFactory;
 using search::IntegerAttribute;
 using search::FloatingPointAttribute;
 using search::StringAttribute;
+using search::SingleBoolAttribute;
 using search::WeightedSetStringExtAttribute;
 using search::attribute::WeightedEnumContent;
 
@@ -237,7 +239,12 @@ Test::testAttribute()
         RankResult exp;
         exp.addScore("attribute(sint)", 10).
             addScore("attribute(sint,0)", 10).
+            addScore("attribute(slong)", 20).
+            addScore("attribute(sbyte)", 37).
+            addScore("attribute(sbool)", 1).
+            addScore("attribute(sebool)", 0).
             addScore("attribute(sfloat)", 60.5f).
+            addScore("attribute(sdouble)", 67.5f).
             addScore("attribute(sstr)", (feature_t)vespalib::hash_code("foo")).
             addScore("attribute(sint).count", 1).
             addScore("attribute(sfloat).count", 1).
@@ -247,12 +254,18 @@ Test::testAttribute()
             addScore("attribute(udefstr)", (feature_t)vespalib::hash_code(""));
 
         FtFeatureTest ft(_factory, exp.getKeys());
-        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint").
-            addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sfloat").
-            addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sstr").
-            addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udefint").
-            addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udeffloat").
-            addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udefstr");
+        ft.getIndexEnv().getBuilder()
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "slong")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbyte")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sebool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sfloat")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sdouble")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sstr")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udefint")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udeffloat")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udefstr");
         setupForAttributeTest(ft);
         ASSERT_TRUE(ft.setup());
         ASSERT_TRUE(ft.execute(exp));
@@ -367,6 +380,11 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     avs.push_back(AttributeFactory::createAttribute("udefint", AVC(AVBT::INT32, AVCT::SINGLE)));    // 9
     avs.push_back(AttributeFactory::createAttribute("udeffloat", AVC(AVBT::FLOAT, AVCT::SINGLE)));    // 10
     avs.push_back(AttributeFactory::createAttribute("udefstr", AVC(AVBT::STRING, AVCT::SINGLE)));    // 11
+    avs.push_back(AttributeFactory::createAttribute("sbyte",   AVC(AVBT::INT64,  AVCT::SINGLE))); // 12
+    avs.push_back(AttributeFactory::createAttribute("slong",   AVC(AVBT::INT64,  AVCT::SINGLE))); // 13
+    avs.push_back(AttributeFactory::createAttribute("sbool",   AVC(AVBT::BOOL,  AVCT::SINGLE))); // 14
+    avs.push_back(AttributeFactory::createAttribute("sebool",   AVC(AVBT::BOOL,  AVCT::SINGLE))); // 15
+    avs.push_back(AttributeFactory::createAttribute("sdouble",   AVC(AVBT::DOUBLE,  AVCT::SINGLE))); // 16
 
     // simulate a unique only attribute as specified in sd
     AVC cfg(AVBT::INT32, AVCT::SINGLE);
@@ -388,7 +406,12 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udefint")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udeffloat")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "udefstr")
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "unique");
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "unique")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "slong")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sdouble")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbyte")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sebool");
     }
 
     for (const auto & attr : avs) {
@@ -399,6 +422,10 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
 
     // integer attributes
     (dynamic_cast<IntegerAttribute *>(avs[0].get()))->update(1, 10);
+    (dynamic_cast<IntegerAttribute *>(avs[12].get()))->update(1, 37);
+    (dynamic_cast<IntegerAttribute *>(avs[13].get()))->update(1, 20);
+    (dynamic_cast<SingleBoolAttribute *>(avs[14].get()))->update(1, 1);
+    (dynamic_cast<SingleBoolAttribute *>(avs[15].get()))->update(1, 0);
     (dynamic_cast<IntegerAttribute *>(avs[1].get()))->append(1, 20, 0);
     (dynamic_cast<IntegerAttribute *>(avs[1].get()))->append(1, 30, 0);
     (dynamic_cast<IntegerAttribute *>(avs[2].get()))->append(1, 40, 10);
@@ -411,6 +438,7 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     (dynamic_cast<FloatingPointAttribute *>(avs[5].get()))->append(1, 90.5f, -30);
     (dynamic_cast<FloatingPointAttribute *>(avs[5].get()))->append(1, 100.5f, -40);
     (dynamic_cast<FloatingPointAttribute *>(avs[10].get()))->update(1, search::attribute::getUndefined<float>());
+    (dynamic_cast<FloatingPointAttribute *>(avs[16].get()))->update(1, 67.5);
     // string attributes
     (dynamic_cast<StringAttribute *>(avs[6].get()))->update(1, "foo");
     (dynamic_cast<StringAttribute *>(avs[7].get()))->append(1, "bar", 0);
