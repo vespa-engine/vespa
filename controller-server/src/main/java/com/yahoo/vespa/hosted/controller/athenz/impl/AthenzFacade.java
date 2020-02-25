@@ -62,12 +62,12 @@ public class AthenzFacade implements AccessControl {
         this.zmsClient = factory.createZmsClient();
         this.ztsClient = factory.createZtsClient();
         this.service = factory.getControllerIdentity();
-        this.userDomains = factory.cacheZtsUserDomains()
+        this.userDomains = factory.cacheLookups()
                            ? CacheBuilder.newBuilder()
                                          .expireAfterWrite(1, TimeUnit.MINUTES)
                                          .build(CacheLoader.from(this::getUserDomains))::getUnchecked
                            : this::getUserDomains;
-        this.accessRights = factory.cacheZtsUserDomains()
+        this.accessRights = factory.cacheLookups()
                             ? CacheBuilder.newBuilder()
                                           .expireAfterWrite(1, TimeUnit.MINUTES)
                                           .build(CacheLoader.from(this::lookupAccess))::getUnchecked

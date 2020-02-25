@@ -50,7 +50,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
     }
 
     @Override
-    public boolean cacheZtsUserDomains() {
+    public boolean cacheLookups() {
         return true;
     }
 
