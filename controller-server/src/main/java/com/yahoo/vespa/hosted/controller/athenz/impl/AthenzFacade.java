@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
@@ -36,6 +39,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -49,16 +54,22 @@ public class AthenzFacade implements AccessControl {
     private final ZmsClient zmsClient;
     private final ZtsClient ztsClient;
     private final AthenzIdentity service;
+    private final Function<AthenzIdentity, List<AthenzDomain>> userDomains;
 
     @Inject
     public AthenzFacade(AthenzClientFactory factory) {
-        this(factory.createZmsClient(), factory.createZtsClient(), factory.getControllerIdentity());
+        this.zmsClient = factory.createZmsClient();
+        this.ztsClient = factory.createZtsClient();
+        this.service = factory.getControllerIdentity();
+        this.userDomains = factory.cacheZtsUserDomains()
+                           ? CacheBuilder.newBuilder()
+                                         .expireAfterWrite(1, TimeUnit.MINUTES)
+                                         .build(CacheLoader.from(this::getUserDomains))::getUnchecked
+                           : this::getUserDomains;
     }
 
-    public AthenzFacade(ZmsClient zmsClient, ZtsClient ztsClient, AthenzIdentity identity) {
-        this.zmsClient = zmsClient;
-        this.ztsClient = ztsClient;
-        this.service = identity;
+    private List<AthenzDomain> getUserDomains(AthenzIdentity userIdentity) {
+        return ztsClient.getTenantDomains(service, userIdentity, "admin");
     }
 
     @Override
@@ -184,10 +195,9 @@ public class AthenzFacade implements AccessControl {
     // TODO jonmv: Remove
     public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials) {
         AthenzIdentity identity =  ((AthenzPrincipal) credentials.user()).getIdentity();
-        List<AthenzDomain> userDomains = ztsClient.getTenantDomains(service, identity, "admin");
         return tenants.stream()
                       .filter(tenant ->    tenant.type() == Tenant.Type.user && ((UserTenant) tenant).is(identity.getName())
-                                        || tenant.type() == Tenant.Type.athenz && userDomains.contains(((AthenzTenant) tenant).domain()))
+                                        || tenant.type() == Tenant.Type.athenz && userDomains.apply(identity).contains(((AthenzTenant) tenant).domain()))
                       .collect(Collectors.toUnmodifiableList());
     }
 

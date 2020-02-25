@@ -47,8 +47,4 @@ public class AthenzClientFactoryMock extends AbstractComponent implements Athenz
         return new ZtsClientMock(athenz);
     }
 
-    private static void log(String format, Object... args) {
-        log.log(Level.INFO, String.format(format, args));
-    }
-
 }
