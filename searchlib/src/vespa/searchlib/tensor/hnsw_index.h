@@ -133,9 +133,13 @@ public:
 
     const Config& config() const { return _cfg; }
 
+    // Implements NearestNeighborIndex
     void add_document(uint32_t docid) override;
     void remove_document(uint32_t docid) override;
+    void transfer_hold_lists(generation_t current_gen) override;
+    void trim_hold_lists(generation_t first_used_gen) override;
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
+
     FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
 
     // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)

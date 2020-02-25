@@ -310,6 +310,24 @@ HnswIndex::remove_document(uint32_t docid)
     _node_refs[docid].store_release(invalid);
 }
 
+void
+HnswIndex::transfer_hold_lists(generation_t current_gen)
+{
+    // Note: RcuVector transfers hold lists as part of reallocation based on current generation.
+    //       We need to set the next generation here, as it is incremented on a higher level right after this call.
+    _node_refs.setGeneration(current_gen + 1);
+    _nodes.transferHoldLists(current_gen);
+    _links.transferHoldLists(current_gen);
+}
+
+void
+HnswIndex::trim_hold_lists(generation_t first_used_gen)
+{
+    _node_refs.removeOldGenerations(first_used_gen);
+    _nodes.trimHoldLists(first_used_gen);
+    _links.trimHoldLists(first_used_gen);
+}
+
 struct NeighborsByDocId {
     bool operator() (const NearestNeighborIndex::Neighbor &lhs,
                      const NearestNeighborIndex::Neighbor &rhs)

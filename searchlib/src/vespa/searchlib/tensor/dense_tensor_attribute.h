@@ -29,7 +29,7 @@ public:
     DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     virtual ~DenseTensorAttribute();
-    // Implements TensorAttribute
+    // Implements AttributeVector and ITensorAttribute
     uint32_t clearDoc(DocId docId) override;
     void setTensor(DocId docId, const Tensor &tensor) override;
     std::unique_ptr<Tensor> getTensor(DocId docId) const override;
@@ -38,6 +38,8 @@ public:
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     void compactWorst() override;
     uint32_t getVersion() const override;
+    void onGenerationChange(generation_t next_gen) override;
+    void removeOldGenerations(generation_t first_used_gen) override;
 
     // Implements DocVectorAccess
     vespalib::tensor::TypedCells get_vector(uint32_t docid) const override;
