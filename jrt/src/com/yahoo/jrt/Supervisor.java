@@ -155,6 +155,23 @@ public class Supervisor {
     }
 
     /**
+     * Convenience method for connecting to a peer, invoking a method
+     * and disconnecting.
+     *
+     * @param spec the address to connect to
+     * @param req the invocation request
+     * @param timeout request timeout in seconds
+     **/
+    public void invokeBatch(Spec spec, Request req, double timeout) {
+        Target target = connect(spec);
+        try {
+            target.invokeSync(req, timeout);
+        } finally {
+            target.close();
+        }
+    }
+
+    /**
      * This method is invoked when a new target is created
      *
      * @param target the target

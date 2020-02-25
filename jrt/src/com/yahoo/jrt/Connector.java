@@ -3,53 +3,119 @@ package com.yahoo.jrt;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicReference;
 
-class Connector {
-    private static final Logger log = Logger.getLogger(Connector.class.getName());
+class Connector implements AutoCloseable {
 
-    private final ExecutorService executor = new ThreadPoolExecutor(1, 64, 1L, TimeUnit.SECONDS,
-                                                                    new SynchronousQueue<>(),
-                                                                    ThreadFactoryFactory.getDaemonThreadFactory("jrt.connector"));
+    private static final Object globalLock = new Object();
+    private static ExecutorService globalPrimaryExecutor = null;
+    private static ExecutorService globalFallbackExecutor = null;
+    private static long usages = 0;
+
+    private static class ExecutorWithFallback implements Executor {
+        private final Executor primary;
+        private final Executor secondary;
+        ExecutorWithFallback(Executor primary, Executor secondary) {
+            this.primary = primary;
+            this.secondary = secondary;
+        }
+
+        @Override
+        public void execute(Runnable command) {
+            try {
+                primary.execute(command);
+            } catch (RejectedExecutionException e1) {
+                secondary.execute(() -> retryForEver(command));
+            }
+        }
+        private void retryForEver(Runnable command) {
+            while (true) {
+                try {
+                    primary.execute(command);
+                    return;
+                } catch (RejectedExecutionException rejected) {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException silenced) { }
+                }
+            }
+        }
+    }
+
+    private static ExecutorWithFallback acquire() {
+        synchronized (globalLock) {
+            if (globalPrimaryExecutor == null) {
+                globalPrimaryExecutor = new ThreadPoolExecutor(1, 64, 1L, TimeUnit.SECONDS,
+                        new SynchronousQueue<>(), ThreadFactoryFactory.getDaemonThreadFactory("jrt.connector.primary"));
+                globalFallbackExecutor = Executors.newSingleThreadExecutor(ThreadFactoryFactory.getDaemonThreadFactory("jrt.connector.fallback"));
+            }
+            usages ++;
+            return new ExecutorWithFallback(globalPrimaryExecutor, globalFallbackExecutor);
+        }
+    }
+
+    private static void release(ExecutorWithFallback executor) {
+        synchronized (globalLock) {
+            if (executor.primary != globalPrimaryExecutor) {
+                throw new IllegalStateException("primary executor " + executor.primary + " != " + globalPrimaryExecutor);
+            }
+            if (executor.secondary != globalFallbackExecutor) {
+                throw new IllegalStateException("secondary executor " + executor.secondary + " != " + globalFallbackExecutor);
+            }
+            usages--;
+            if (usages == 0) {
+                globalPrimaryExecutor.shutdown();
+                globalFallbackExecutor.shutdown();
+                while (true) {
+                    try {
+                        if (globalPrimaryExecutor != null && globalPrimaryExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
+                            globalPrimaryExecutor = null;
+                        }
+                        if (globalFallbackExecutor != null && globalFallbackExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
+                            globalFallbackExecutor = null;
+                        }
+                        if (globalFallbackExecutor == null && globalFallbackExecutor == null) {
+                            return;
+                        }
+                    } catch (InterruptedException e) {}
+                }
+            }
+        }
+    }
+
+    private final AtomicReference<ExecutorWithFallback> executor;
+
+    Connector() {
+        executor = new AtomicReference<>(acquire());
+    }
 
     private void connect(Connection conn) {
         conn.transportThread().addConnection(conn.connect());
     }
 
     public void connectLater(Connection conn) {
-        long delay = 1;
-        while (!executor.isShutdown()) {
+        Executor executor = this.executor.get();
+        if (executor != null) {
             try {
                 executor.execute(() -> connect(conn));
                 return;
             } catch (RejectedExecutionException ignored) {
-                log.warning("Failed posting connect task for " + conn + ". Trying again in " + delay + "ms.");
-                try {
-                    Thread.sleep(delay);
-                } catch (InterruptedException silenced) {}
-                delay = Math.min(delay * 2, 100);
             }
         }
         conn.transportThread().addConnection(conn);
     }
 
-    public Connector shutdown() {
-        executor.shutdown();
-        return this;
-    }
-
-    public void join() {
-        while (true) {
-            try {
-                if (executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                    return;
-                }
-            } catch (InterruptedException e) {}
+    public void close() {
+        ExecutorWithFallback toShutdown = executor.getAndSet(null);
+        if (toShutdown != null) {
+            release(toShutdown);
         }
     }
 }

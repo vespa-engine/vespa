@@ -173,7 +173,7 @@ public class Transport {
      * @return this object, to enable chaining with join
      **/
     public Transport shutdown() {
-        connector.shutdown().join();
+        connector.close();
         for (TransportThread thread: threads) {
             thread.shutdown();
         }
