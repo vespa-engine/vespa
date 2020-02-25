@@ -20,168 +20,10 @@
 #include "nns.h"
 #include "for-sift-hit.h"
 #include "for-sift-top-k.h"
-
-std::vector<TopK> bruteforceResults;
-std::vector<float> tmp_v(NUM_DIMS);
-
-struct PointVector {
-    float v[NUM_DIMS];
-    using ConstArr = vespalib::ConstArrayRef<float>;
-    operator ConstArr() const { return ConstArr(v, NUM_DIMS); }
-};
-
-static PointVector *aligned_alloc(size_t num) {
-    size_t num_bytes = num * sizeof(PointVector);
-    double mega_bytes = num_bytes / (1024.0*1024.0);
-    fprintf(stderr, "allocate %.2f MB of vectors\n", mega_bytes);
-    char *mem = (char *)malloc(num_bytes + 512);
-    mem += 512;
-    size_t val = (size_t)mem;
-    size_t unalign = val % 512;
-    mem -= unalign;
-    return reinterpret_cast<PointVector *>(mem);
-}
-
-static PointVector *generatedQueries = aligned_alloc(NUM_Q);
-static PointVector *generatedDocs = aligned_alloc(NUM_DOCS);
-
-struct DocVectorAdapter : public DocVectorAccess<float>
-{
-    vespalib::ConstArrayRef<float> get(uint32_t docid) const override {
-        ASSERT_TRUE(docid < NUM_DOCS);
-        return generatedDocs[docid];
-    }
-};
-
-double computeDistance(const PointVector &query, uint32_t docid) {
-    const PointVector &docvector = generatedDocs[docid];
-    return l2distCalc.l2sq_dist(query, docvector, tmp_v);
-}
-
-void read_queries(std::string fn) {
-    int fd = open(fn.c_str(), O_RDONLY);
-    ASSERT_TRUE(fd > 0);
-    int d;
-    size_t rv;
-    fprintf(stderr, "reading %u queries from %s\n", NUM_Q, fn.c_str());
-    for (uint32_t qid = 0; qid < NUM_Q; ++qid) {
-        rv = read(fd, &d, 4);
-        ASSERT_EQUAL(rv, 4u);
-        ASSERT_EQUAL(d, NUM_DIMS);
-        rv = read(fd, &generatedQueries[qid].v, NUM_DIMS*sizeof(float));
-        ASSERT_EQUAL(rv, sizeof(PointVector));
-    }
-    close(fd);
-}
-
-void read_docs(std::string fn) {
-    int fd = open(fn.c_str(), O_RDONLY);
-    ASSERT_TRUE(fd > 0);
-    int d;
-    size_t rv;
-    fprintf(stderr, "reading %u doc vectors from %s\n", NUM_DOCS, fn.c_str());
-    for (uint32_t docid = 0; docid < NUM_DOCS; ++docid) {
-        rv = read(fd, &d, 4);
-        ASSERT_EQUAL(rv, 4u);
-        ASSERT_EQUAL(d, NUM_DIMS);
-        rv = read(fd, &generatedDocs[docid].v, NUM_DIMS*sizeof(float));
-        ASSERT_EQUAL(rv, sizeof(PointVector));
-    }
-    close(fd);
-}
-
-using TimePoint = std::chrono::steady_clock::time_point;
-using Duration = std::chrono::steady_clock::duration;
-
-double to_ms(Duration elapsed) {
-    std::chrono::duration<double, std::milli> ms(elapsed);
-    return ms.count();
-}
-
-void read_data(std::string dir) {
-    TimePoint bef = std::chrono::steady_clock::now();
-    read_queries(dir + "/gist_query.fvecs");
-    TimePoint aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "read queries: %.3f ms\n", to_ms(aft - bef));
-    bef = std::chrono::steady_clock::now();
-    read_docs(dir + "/gist_base.fvecs");
-    aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "read docs: %.3f ms\n", to_ms(aft - bef));
-}
-
-
-struct BfHitComparator {
-    bool operator() (const Hit &lhs, const Hit& rhs) const {
-        if (lhs.distance < rhs.distance) return false;
-        if (lhs.distance > rhs.distance) return true;
-        return (lhs.docid > rhs.docid);
-    }
-};
-
-class BfHitHeap {
-private:
-    size_t _size;
-    vespalib::PriorityQueue<Hit, BfHitComparator> _priQ;
-public:
-    explicit BfHitHeap(size_t maxSize) : _size(maxSize), _priQ() {
-        _priQ.reserve(maxSize);
-    }
-    ~BfHitHeap() {}
-    void maybe_use(const Hit &hit) {
-        if (_priQ.size() < _size) {
-            _priQ.push(hit);
-        } else if (hit.distance < _priQ.front().distance) {
-            _priQ.front() = hit;
-            _priQ.adjust();
-        }
-    }
-    std::vector<Hit> bestHits() {
-        std::vector<Hit> result;
-        size_t i = _priQ.size();
-        result.resize(i);
-        while (i-- > 0) {
-            result[i] = _priQ.front();
-            _priQ.pop_front();
-        }
-        return result;
-    }
-};
-
-TopK bruteforce_nns(const PointVector &query) {
-    TopK result;
-    BfHitHeap heap(result.K);
-    for (uint32_t docid = 0; docid < EFFECTIVE_DOCS; ++docid) {
-        const PointVector &docvector = generatedDocs[docid];
-        double d = l2distCalc.l2sq_dist(query, docvector, tmp_v);
-        Hit h(docid, d);
-        heap.maybe_use(h);
-    }
-    std::vector<Hit> best = heap.bestHits();
-    for (size_t i = 0; i < result.K; ++i) {
-        result.hits[i] = best[i];
-    }
-    return result;
-}
-
-void verifyBF(uint32_t qid) {
-    const PointVector &query = generatedQueries[qid];
-    TopK &result = bruteforceResults[qid];
-    double min_distance = result.hits[0].distance;
-    std::vector<double> all_c2;
-    for (uint32_t i = 0; i < EFFECTIVE_DOCS; ++i) {
-        double dist = computeDistance(query, i);
-        if (dist < min_distance) {
-            fprintf(stderr, "WARN dist %.9g < mindist %.9g\n", dist, min_distance);
-        }
-        EXPECT_FALSE(dist+0.000001 < min_distance);
-        if (min_distance > 0.0) all_c2.push_back(dist / min_distance);
-    }
-    if (all_c2.size() != EFFECTIVE_DOCS) return;
-    std::sort(all_c2.begin(), all_c2.end());
-    for (uint32_t idx : { 1, 3, 10, 30, 100, 300, 1000, 3000, EFFECTIVE_DOCS/2, EFFECTIVE_DOCS-1}) {
-        fprintf(stderr, "c2-factor[%u] = %.3f\n", idx, all_c2[idx]);
-    }
-}
+#include "time-util.h"
+#include "point-vector.h"
+#include "read-vecs.h"
+#include "bruteforce-nns.h"
 
 using NNS_API = NNS<float>;
 
@@ -386,17 +228,21 @@ TEST("require that HNSW wrapped api mostly works") {
  */
 int main(int argc, char **argv) {
     TEST_MASTER.init(__FILE__);
-    std::string gist_dir = ".";
-    if (argc > 1) {
-        gist_dir = argv[1];
+    std::string data_set = "gist";
+    std::string data_dir = ".";
+    if (argc > 2) {
+        data_set = argv[1];
+        data_dir = argv[2];
+    } else if (argc > 1) {
+        data_dir = argv[1];
     } else {
         char *home = getenv("HOME");
         if (home) {
-            gist_dir = home;
-            gist_dir += "/gist";
+            data_dir = home;
+            data_dir += "/" + data_set;
         }
     }
-    read_data(gist_dir);
+    read_data(data_dir, data_set);
     TEST_RUN_ALL();
     return (TEST_MASTER.fini() ? 0 : 1);
 }

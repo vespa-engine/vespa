@@ -20,148 +20,10 @@
 #include "for-sift-hit.h"
 #include "for-sift-top-k.h"
 #include "std-random.h"
-
-std::vector<TopK> bruteforceResults;
-
-struct PointVector {
-    float v[NUM_DIMS];
-    using ConstArr = vespalib::ConstArrayRef<float>;
-    operator ConstArr() const { return ConstArr(v, NUM_DIMS); }
-};
-
-static PointVector *aligned_alloc(size_t num) {
-    size_t num_bytes = num * sizeof(PointVector);
-    double mega_bytes = num_bytes / (1024.0*1024.0);
-    fprintf(stderr, "allocate %.2f MB of vectors\n", mega_bytes);
-    char *mem = (char *)malloc(num_bytes + 512);
-    mem += 512;
-    size_t val = (size_t)mem;
-    size_t unalign = val % 512;
-    mem -= unalign;
-    return reinterpret_cast<PointVector *>(mem);
-}
-
-static PointVector *generatedQueries = aligned_alloc(NUM_Q);
-static PointVector *generatedDocs = aligned_alloc(NUM_DOCS);
-
-struct DocVectorAdapter : public DocVectorAccess<float>
-{
-    vespalib::ConstArrayRef<float> get(uint32_t docid) const override {
-        ASSERT_TRUE(docid < NUM_DOCS);
-        return generatedDocs[docid];
-    }
-};
-
-double computeDistance(const PointVector &query, uint32_t docid) {
-    const PointVector &docvector = generatedDocs[docid];
-    return l2distCalc.l2sq_dist(query, docvector);
-}
-
-void read_queries(std::string fn) {
-    int fd = open(fn.c_str(), O_RDONLY);
-    ASSERT_TRUE(fd > 0);
-    int d;
-    size_t rv;
-    fprintf(stderr, "reading %u queries from %s\n", NUM_Q, fn.c_str());
-    for (uint32_t qid = 0; qid < NUM_Q; ++qid) {
-        rv = read(fd, &d, 4);
-        ASSERT_EQUAL(rv, 4u);
-        ASSERT_EQUAL(d, NUM_DIMS);
-        rv = read(fd, &generatedQueries[qid].v, NUM_DIMS*sizeof(float));
-        ASSERT_EQUAL(rv, sizeof(PointVector));
-    }
-    close(fd);
-}
-
-void read_docs(std::string fn) {
-    int fd = open(fn.c_str(), O_RDONLY);
-    ASSERT_TRUE(fd > 0);
-    int d;
-    size_t rv;
-    fprintf(stderr, "reading %u doc vectors from %s\n", NUM_DOCS, fn.c_str());
-    for (uint32_t docid = 0; docid < NUM_DOCS; ++docid) {
-        rv = read(fd, &d, 4);
-        ASSERT_EQUAL(rv, 4u);
-        ASSERT_EQUAL(d, NUM_DIMS);
-        rv = read(fd, &generatedDocs[docid].v, NUM_DIMS*sizeof(float));
-        ASSERT_EQUAL(rv, sizeof(PointVector));
-    }
-    close(fd);
-}
-
-using TimePoint = std::chrono::steady_clock::time_point;
-using Duration = std::chrono::steady_clock::duration;
-
-double to_ms(Duration elapsed) {
-    std::chrono::duration<double, std::milli> ms(elapsed);
-    return ms.count();
-}
-
-void read_data(const std::string& dir, const std::string& data_set) {
-    fprintf(stderr, "read data set '%s' from directory '%s'\n", data_set.c_str(), dir.c_str());
-    TimePoint bef = std::chrono::steady_clock::now();
-    read_queries(dir + "/" + data_set + "_query.fvecs");
-    TimePoint aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "read queries: %.3f ms\n", to_ms(aft - bef));
-    bef = std::chrono::steady_clock::now();
-    read_docs(dir + "/" + data_set + "_base.fvecs");
-    aft = std::chrono::steady_clock::now();
-    fprintf(stderr, "read docs: %.3f ms\n", to_ms(aft - bef));
-}
-
-
-struct BfHitComparator {
-    bool operator() (const Hit &lhs, const Hit& rhs) const {
-        if (lhs.distance < rhs.distance) return false;
-        if (lhs.distance > rhs.distance) return true;
-        return (lhs.docid > rhs.docid);
-    }
-};
-
-class BfHitHeap {
-private:
-    size_t _size;
-    vespalib::PriorityQueue<Hit, BfHitComparator> _priQ;
-public:
-    explicit BfHitHeap(size_t maxSize) : _size(maxSize), _priQ() {
-        _priQ.reserve(maxSize);
-    }
-    ~BfHitHeap() {}
-    void maybe_use(const Hit &hit) {
-        if (_priQ.size() < _size) {
-            _priQ.push(hit);
-        } else if (hit.distance < _priQ.front().distance) {
-            _priQ.front() = hit;
-            _priQ.adjust();
-        }
-    }
-    std::vector<Hit> bestHits() {
-        std::vector<Hit> result;
-        size_t i = _priQ.size();
-        result.resize(i);
-        while (i-- > 0) {
-            result[i] = _priQ.front();
-            _priQ.pop_front();
-        }
-        return result;
-    }
-};
-
-TopK bruteforce_nns(const PointVector &query) {
-    TopK result;
-    BfHitHeap heap(result.K);
-    for (uint32_t docid = 0; docid < NUM_DOCS; ++docid) {
-        const PointVector &docvector = generatedDocs[docid];
-        double d = l2distCalc.l2sq_dist(query, docvector);
-        Hit h(docid, d);
-        heap.maybe_use(h);
-    }
-    std::vector<Hit> best = heap.bestHits();
-    for (size_t i = 0; i < result.K; ++i) {
-        result.hits[i] = best[i];
-    }
-    return result;
-}
+#include "time-util.h"
+#include "point-vector.h"
+#include "read-vecs.h"
+#include "bruteforce-nns.h"
 
 TopK bruteforce_nns_filter(const PointVector &query, const BitVector &blacklist) {
     TopK result;
@@ -179,20 +41,6 @@ TopK bruteforce_nns_filter(const PointVector &query, const BitVector &blacklist)
         result.hits[i] = best[i];
     }
     return result;
-}
-
-
-void verifyBF(uint32_t qid) {
-    const PointVector &query = generatedQueries[qid];
-    TopK &result = bruteforceResults[qid];
-    double min_distance = result.hits[0].distance;
-    for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-        double dist = computeDistance(query, i);
-        if (dist < min_distance) {
-            fprintf(stderr, "WARN dist %.9g < mindist %.9g\n", dist, min_distance);
-        }
-        EXPECT_FALSE(dist+0.000001 < min_distance);
-    }
 }
 
 void timing_bf_filter(int percent)
