@@ -2,7 +2,6 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 
 namespace vespalib {
