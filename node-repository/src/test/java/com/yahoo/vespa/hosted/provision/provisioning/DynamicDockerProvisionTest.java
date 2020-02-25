@@ -6,10 +6,13 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -18,11 +21,15 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -101,6 +108,41 @@ public class DynamicDockerProvisionTest {
         assertEquals(6, tester.nodeRepository().list().size());
         assertEquals(2, tester.nodeRepository().getNodes(NodeType.host, Node.State.active).size());
         assertEquals(4, tester.nodeRepository().getNodes(NodeType.tenant, Node.State.reserved).size());
+    }
+
+    @Test
+    public void node_indices_are_unique_even_when_a_node_is_left_in_reserved_state() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        NodeResources resources = new NodeResources(10, 10, 10, 10);
+        ApplicationId app = tester.makeApplicationId();
+
+        Function<Node, Node> retireNode = node ->
+                tester.nodeRepository().write(node.withWantToRetire(true, Agent.system, Instant.now()), () -> {});
+        Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().getNodes(app).stream()
+                .filter(node -> node.allocation().get().membership().cluster().group().get().index() == group)
+                .findAny().orElseThrow();
+
+        // Allocate 10 hosts
+        tester.makeReadyNodes(10, resources, NodeType.host, 1);
+        tester.deployZoneApp();
+
+        // Prepare & activate an application with 8 nodes and 2 groups
+        tester.activate(app, tester.prepare(app, clusterSpec("content"), 8, 2, resources));
+
+        // Retire a node in group 1 and prepare the application
+        retireNode.apply(getNodeInGroup.apply(1));
+        tester.prepare(app, clusterSpec("content"), 8, 2, resources);
+        // App is not activated, to leave node '8' in reserved state
+
+        // Retire a node in group 0 and prepare the application
+        retireNode.apply(getNodeInGroup.apply(0));
+        tester.prepare(app, clusterSpec("content"), 8, 2, resources);
+
+        // Verify that nodes have unique indices from 0..9
+        var indices = tester.nodeRepository().getNodes(app).stream()
+                .map(node -> node.allocation().get().membership().index())
+                .collect(Collectors.toSet());
+        assertTrue(indices.containsAll(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
     }
 
     private static void deployZoneApp(ProvisioningTester tester) {
