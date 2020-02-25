@@ -68,7 +68,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag SERVICE_MODEL_CACHE = defineFeatureFlag(
-            "service-model-cache", false,
+            "service-model-cache", true,
             "Whether the service model is cached.",
             "Takes effect on restart of config server.",
             HOSTNAME);
