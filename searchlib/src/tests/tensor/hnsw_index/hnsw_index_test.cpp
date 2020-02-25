@@ -291,7 +291,12 @@ TEST_F(HnswIndexTest, manual_insert)
 
     HnswNode five{{{1,2}, {4}}};
     index->set_node(5, five);
+
+    expect_levels(1, {{3,4,5}});
+    expect_levels(2, {{3,5}});
+    expect_levels(3, {{1,2}});
     expect_levels(4, {{1}, {5}});
+    expect_levels(5, {{1,2}, {4}});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

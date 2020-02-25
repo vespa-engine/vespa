@@ -145,7 +145,7 @@ public:
 
     // Should only be used by unit tests.
     HnswNode get_node(uint32_t docid) const;
-    void set_node(uint32_t docid, HnswNode node);
+    void set_node(uint32_t docid, const HnswNode &node);
 };
 
 }

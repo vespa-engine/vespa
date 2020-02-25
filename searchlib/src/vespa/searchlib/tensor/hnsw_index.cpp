@@ -372,7 +372,7 @@ HnswIndex::get_node(uint32_t docid) const
 }
 
 void
-HnswIndex::set_node(uint32_t docid, HnswNode node)
+HnswIndex::set_node(uint32_t docid, const HnswNode &node)
 {
     _node_refs.ensure_size(docid + 1, AtomicEntryRef());
     // A document cannot be added twice.
