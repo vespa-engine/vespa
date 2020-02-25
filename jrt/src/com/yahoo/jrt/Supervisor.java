@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -103,19 +102,6 @@ public class Supervisor {
     }
 
     /**
-     * Remove a method from the set of methods held by this Supervisor
-     *
-     * @param methodName name of the method to remove
-     **/
-    public void removeMethod(String methodName) {
-        synchronized (methodMapLock) {
-            HashMap<String, Method> newMap = new HashMap<>(methodMap());
-            newMap.remove(methodName);
-            methodMap.setRelease(newMap);
-        }
-    }
-
-    /**
      * Remove a method from the set of methods held by this
      * Supervisor. Use this if you know exactly which method to remove
      * and not only the name.
@@ -166,23 +152,6 @@ public class Supervisor {
      **/
     public Acceptor listen(Spec spec) throws ListenFailedException {
         return transport.listen(this, spec);
-    }
-
-    /**
-     * Convenience method for connecting to a peer, invoking a method
-     * and disconnecting.
-     *
-     * @param spec the address to connect to
-     * @param req the invocation request
-     * @param timeout request timeout in seconds
-     **/
-    public void invokeBatch(Spec spec, Request req, double timeout) {
-        Target target = connect(spec);
-        try {
-            target.invokeSync(req, timeout);
-        } finally {
-            target.close();
-        }
     }
 
     /**

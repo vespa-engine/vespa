@@ -4,7 +4,6 @@ package com.yahoo.jrt;
 
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -19,7 +18,7 @@ import java.util.logging.Logger;
  **/
 public class Transport {
 
-    private static Logger log = Logger.getLogger(Transport.class.getName());
+    private static final Logger log = Logger.getLogger(Transport.class.getName());
 
     private final FatalErrorHandler fatalHandler; // NB: this must be set first
     private final CryptoEngine      cryptoEngine;
@@ -28,7 +27,7 @@ public class Transport {
     private final AtomicInteger     runCnt;
 
     private final TransportMetrics metrics = TransportMetrics.getInstance();
-    private final ArrayList<TransportThread> threads = new ArrayList<TransportThread>();
+    private final ArrayList<TransportThread> threads = new ArrayList<>();
     private final Random rnd = new Random();
 
     /**

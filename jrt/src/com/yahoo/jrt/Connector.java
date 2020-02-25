@@ -4,15 +4,17 @@ package com.yahoo.jrt;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 class Connector {
+    private static final Logger log = Logger.getLogger(Connector.class.getName());
 
     private final ExecutorService executor = new ThreadPoolExecutor(1, 64, 1L, TimeUnit.SECONDS,
-                                                                    new LinkedBlockingQueue<>(),
+                                                                    new SynchronousQueue<>(),
                                                                     ThreadFactoryFactory.getDaemonThreadFactory("jrt.connector"));
 
     private void connect(Connection conn) {
@@ -20,11 +22,20 @@ class Connector {
     }
 
     public void connectLater(Connection conn) {
-        try {
-            executor.execute(() -> connect(conn));
-        } catch (RejectedExecutionException e) {
-            conn.transportThread().addConnection(conn);
+        long delay = 1;
+        while (!executor.isShutdown()) {
+            try {
+                executor.execute(() -> connect(conn));
+                return;
+            } catch (RejectedExecutionException ignored) {
+                log.warning("Failed posting connect task for " + conn + ". Trying again in " + delay + "ms.");
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException silenced) {}
+                delay = Math.min(delay * 2, 100);
+            }
         }
+        conn.transportThread().addConnection(conn);
     }
 
     public Connector shutdown() {
