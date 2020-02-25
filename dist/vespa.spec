@@ -6,6 +6,12 @@
 # Force special prefix for Vespa
 %define _prefix /opt/vespa
 %define _vespa_deps_prefix /opt/vespa-deps
+%define _vespa_user vespa
+%define _vespa_group vespa
+%define _create_vespa_group 1
+%define _create_vespa_user 1
+%define _create_vespa_service 1
+%define _defattr_is_vespa_vespa 0
 
 Name:           vespa
 Version:        _VESPA_VERSION_
@@ -211,7 +217,7 @@ Vespa - The open big data serving engine
 
 %prep
 %if 0%{?installdir:1}
-%setup -D -T
+%setup -c -D -T
 %else
 %setup -q
 %endif
@@ -238,6 +244,7 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
        -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/jre-11-openjdk/lib" \
        %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
+       -DVESPA_USER=%{_vespa_user} \
        -DVESPA_UNPRIVILEGED=no \
        .
 
@@ -253,49 +260,97 @@ cp -r %{installdir} %{buildroot}
 make install DESTDIR=%{buildroot}
 %endif
 
+%if %{_create_vespa_service}
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/system
+%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %pre
-getent group vespa >/dev/null || groupadd -r vespa
-getent passwd vespa >/dev/null || \
-    useradd -r -g vespa --home-dir %{_prefix} --create-home -s /sbin/nologin \
-    -c "Create owner of all Vespa data files" vespa
-# Home dir created with rwx on user only.
-chmod a+rx %{_prefix}
+%if %{_create_vespa_group}
+getent group %{_vespa_group} >/dev/null || groupadd -r %{_vespa_group}
+%endif
+%if %{_create_vespa_user}
+getent passwd %{_vespa_user} >/dev/null || \
+    useradd -r -g %{_vespa_group} --home-dir %{_prefix} -s /sbin/nologin \
+    -c "Create owner of all Vespa data files" %{_vespa_user}
+%endif
 echo "pathmunge %{_prefix}/bin" > /etc/profile.d/vespa.sh
 echo "export VESPA_HOME=%{_prefix}" >> /etc/profile.d/vespa.sh
 exit 0
 
+%if %{_create_vespa_service}
 %post
 %systemd_post vespa-configserver.service
 %systemd_post vespa.service
+%endif
 
+%if %{_create_vespa_service}
 %preun
 %systemd_preun vespa.service
 %systemd_preun vespa-configserver.service
+%endif
 
 %postun
+%if %{_create_vespa_service}
 %systemd_postun_with_restart vespa.service
 %systemd_postun_with_restart vespa-configserver.service
+%endif
 if [ $1 -eq 0 ]; then # this is an uninstallation
     rm -f /etc/profile.d/vespa.sh
-    ! getent passwd vespa >/dev/null || userdel vespa
-    ! getent group vespa >/dev/null || groupdel vespa
+%if %{_create_vespa_user}
+    ! getent passwd %{_vespa_user} >/dev/null || userdel %{_vespa_user}
+%endif
+%if %{_create_vespa_group}
+    ! getent group %{_vespa_group} >/dev/null || groupdel %{_vespa_group}
+%endif
 fi
 
 %files
-%defattr(-,vespa,vespa,-)
+%if %{_defattr_is_vespa_vespa}
+%defattr(-,%{_vespa_user},%{_vespa_group},-)
+%endif
 %doc
-%{_prefix}/*
+%dir %{_prefix}
+%{_prefix}/bin
+%dir %{_prefix}/conf
+%{_prefix}/conf/configserver
+%{_prefix}/conf/configserver-app
+%dir %{_prefix}/conf/logd
+%{_prefix}/conf/node-admin-app
+%dir %{_prefix}/conf/vespa
+%dir %attr(-,%{_vespa_user},-) %{_prefix}/conf/zookeeper
+%dir %{_prefix}/etc
+%{_prefix}/etc/systemd
+%{_prefix}/etc/vespa
+%{_prefix}/include
+%{_prefix}/lib
+%{_prefix}/lib64
+%{_prefix}/libexec
+%dir %attr(1777,-,-) %{_prefix}/logs
+%dir %attr(1777,%{_vespa_user},-) %{_prefix}/logs/vespa
+%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/configserver
+%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/node-admin
+%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/search
+%{_prefix}/man
+%{_prefix}/sbin
+%{_prefix}/share
+%dir %attr(1777,-,-) %{_prefix}/tmp
+%dir %attr(1777,%{_vespa_user},-) %{_prefix}/tmp/vespa
+%dir %{_prefix}/var
+%dir %{_prefix}/var/db
+%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/db/vespa
+%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/db/vespa/logcontrol
+%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/zookeeper
 %config(noreplace) %{_prefix}/conf/logd/logd.cfg
 %config(noreplace) %{_prefix}/conf/vespa/default-env.txt
 %config(noreplace) %{_prefix}/etc/vespamalloc.conf
+%if %{_create_vespa_service}
 %attr(644,root,root) /usr/lib/systemd/system/vespa.service
 %attr(644,root,root) /usr/lib/systemd/system/vespa-configserver.service
+%endif
 
 %changelog
