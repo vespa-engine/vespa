@@ -16,7 +16,6 @@
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
@@ -24,7 +23,6 @@
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
