@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
@@ -54,7 +54,7 @@ public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics
                                                 .container()
                                                 .filter(node -> expectedUp(node))
                                                 .asList().get(0);
-        String url = "https://" + metricsV2Container.hostname() + ":" + 4443 + apiPath + "?consumer=vespa-consumer-metrics";
+        String url = "http://" + metricsV2Container.hostname() + ":" + 4080 + apiPath + "?consumer=vespa-consumer-metrics";
         String response = httpClient.get(url);
         return new MetricsResponse(response).metrics();
     }

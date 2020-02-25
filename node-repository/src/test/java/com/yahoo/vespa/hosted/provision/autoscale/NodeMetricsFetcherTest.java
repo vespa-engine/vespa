@@ -1,10 +1,9 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -38,7 +37,7 @@ public class NodeMetricsFetcherTest {
         {
             httpClient.cannedResponse = cannedResponseForApplication1;
             List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application1));
-            assertEquals("https://host-1.yahoo.com:4443/metrics/v2/values?consumer=vespa-consumer-metrics",
+            assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=vespa-consumer-metrics",
                          httpClient.requestsReceived.get(0));
             assertEquals(5, values.size());
             assertEquals("metric value cpu.util: 16.2 at 1234 for host-1.yahoo.com", values.get(0).toString());
@@ -51,7 +50,7 @@ public class NodeMetricsFetcherTest {
         {
             httpClient.cannedResponse = cannedResponseForApplication2;
             List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application2));
-            assertEquals("https://host-3.yahoo.com:4443/metrics/v2/values?consumer=vespa-consumer-metrics",
+            assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=vespa-consumer-metrics",
                          httpClient.requestsReceived.get(1));
             assertEquals(3, values.size());
             assertEquals("metric value cpu.util: 10.0 at 1300 for host-3.yahoo.com", values.get(0).toString());
