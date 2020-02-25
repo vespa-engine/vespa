@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
@@ -12,7 +11,6 @@ import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
@@ -28,9 +26,15 @@ import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
 import java.security.Principal;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
@@ -46,11 +50,13 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
 
     private final AthenzFacade athenz;
     private final TenantController tenants;
+    private final ExecutorService executor;
 
     @Inject
     public AthenzRoleFilter(AthenzClientFactory athenzClientFactory, Controller controller) {
         this.athenz = new AthenzFacade(athenzClientFactory);
         this.tenants = controller.tenants();
+        this.executor = Executors.newCachedThreadPool();
     }
 
     @Override
@@ -69,7 +75,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         return Optional.empty();
     }
 
-    Set<Role> roles(AthenzPrincipal principal, URI uri) {
+    Set<Role> roles(AthenzPrincipal principal, URI uri) throws Exception {
         Path path = new Path(uri);
 
         path.matches("/application/v4/tenant/{tenant}/{*}");
@@ -80,30 +86,44 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
 
         AthenzIdentity identity = principal.getIdentity();
 
-        Set<Role> roleMemberships = new HashSet<>();
-        if (athenz.hasHostedOperatorAccess(identity))
-            roleMemberships.add(Role.hostedOperator());
+        Set<Role> roleMemberships = new CopyOnWriteArraySet<>();
+        List<Future<?>> futures = new ArrayList<>();
 
-        if (athenz.hasHostedSupporterAccess(identity))
-            roleMemberships.add(Role.hostedSupporter());
+        futures.add(executor.submit(() -> {
+            if (athenz.hasHostedOperatorAccess(identity))
+                roleMemberships.add(Role.hostedOperator());
+        }));
 
-        // Add all tenants that are accessible for this request
-        athenz.accessibleTenants(tenants.asList(), new Credentials(principal))
-                .forEach(accessibleTenant -> roleMemberships.add(Role.athenzTenantAdmin(accessibleTenant.name())));
+        futures.add(executor.submit(() -> {
+            if (athenz.hasHostedSupporterAccess(identity))
+                roleMemberships.add(Role.hostedSupporter());
+        }));
+
+        futures.add(executor.submit(() -> {
+                    // Add all tenants that are accessible for this request
+                    athenz.accessibleTenants(tenants.asList(), new Credentials(principal))
+                          .forEach(accessibleTenant -> roleMemberships.add(Role.athenzTenantAdmin(accessibleTenant.name())));
+        }));
 
         if (identity.getDomain().equals(SCREWDRIVER_DOMAIN) && application.isPresent() && tenant.isPresent())
             // NOTE: Only fine-grained deploy authorization for Athenz tenants
-            if (   tenant.get().type() != Tenant.Type.athenz
-                || hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
-                    roleMemberships.add(Role.tenantPipeline(tenant.get().name(), application.get()));
+            futures.add(executor.submit(() -> {
+                        if (   tenant.get().type() != Tenant.Type.athenz
+                            || hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
+                            roleMemberships.add(Role.tenantPipeline(tenant.get().name(), application.get()));
+            }));
 
-        if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/false)) {
-            roleMemberships.add(Role.systemFlagsDeployer());
-        }
+        futures.add(executor.submit(() -> {
+                    if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/false))
+                        roleMemberships.add(Role.systemFlagsDeployer());
+        }));
 
-        if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/true)) {
+        // Run last request in handler thread to avoid creating extra thread.
+        if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/true))
             roleMemberships.add(Role.systemFlagsDryrunner());
-        }
+
+        for (Future<?> future : futures)
+            future.get(30, TimeUnit.SECONDS);
 
         return roleMemberships.isEmpty()
                 ? Set.of(Role.everyone())

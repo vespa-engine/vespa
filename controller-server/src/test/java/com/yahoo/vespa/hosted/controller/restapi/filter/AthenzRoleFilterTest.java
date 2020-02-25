@@ -70,7 +70,7 @@ public class AthenzRoleFilterTest {
     }
 
     @Test
-    public void testTranslations() {
+    public void testTranslations() throws Exception {
 
         // Hosted operators are always members of the hostedOperator role.
         assertEquals(Set.of(Role.hostedOperator(), Role.systemFlagsDeployer(), Role.systemFlagsDryrunner(), Role.hostedSupporter()),
