@@ -78,9 +78,6 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}");
         Optional<ApplicationName> application = Optional.ofNullable(path.get("application")).map(ApplicationName::from);
 
-        path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/{*}");
-        Optional<InstanceName> instance = Optional.ofNullable(path.get("instance")).map(InstanceName::from);
-
         AthenzIdentity identity = principal.getIdentity();
 
         Set<Role> roleMemberships = new HashSet<>();
