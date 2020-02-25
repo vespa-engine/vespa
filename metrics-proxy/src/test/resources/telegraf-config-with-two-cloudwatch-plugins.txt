@@ -9,7 +9,7 @@
   flush_jitter = "0s"
   precision = ""
   logtarget = "file"
-  logfile = "/var/log/telegraf/telegraf.log"
+  logfile = "/opt/vespa/logs/telegraf/telegraf.log"
   logfile_rotation_interval = "1d"
   logfile_rotation_max_size = "20MB"
   logfile_rotation_max_archives = 5
