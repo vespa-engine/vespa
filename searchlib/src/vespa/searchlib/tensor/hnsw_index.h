@@ -108,9 +108,14 @@ protected:
      * Used by select_neighbors_heuristic().
      */
     bool have_closer_distance(HnswCandidate candidate, const LinkArray& curr_result) const;
-    LinkArray select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    LinkArray select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    LinkArray select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    struct SelectResult {
+        LinkArray used;
+        LinkArray unused;
+    };
+    SelectResult select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    SelectResult select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    SelectResult select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    void shrink_if_needed(uint32_t docid, uint32_t level);
     void connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
@@ -150,6 +155,7 @@ public:
     // Should only be used by unit tests.
     HnswNode get_node(uint32_t docid) const;
     void set_node(uint32_t docid, const HnswNode &node);
+    bool check_link_symmetry() const;
 };
 
 }
