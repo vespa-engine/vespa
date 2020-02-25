@@ -67,6 +67,12 @@ public class Flags {
             "Takes effect on next host admin tick.",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag SERVICE_MODEL_CACHE = defineFeatureFlag(
+            "service-model-cache", false,
+            "Whether the service model is cached.",
+            "Takes immediate effect.",
+            HOSTNAME);
+
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",

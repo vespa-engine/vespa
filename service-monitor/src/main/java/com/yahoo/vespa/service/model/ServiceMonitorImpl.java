@@ -5,16 +5,12 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
-import com.yahoo.vespa.applicationmodel.ApplicationInstance;
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
-import com.yahoo.vespa.service.health.HealthMonitorManager;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
-import com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl;
-
-import java.util.Map;
 
 public class ServiceMonitorImpl implements ServiceMonitor {
 
@@ -25,7 +21,8 @@ public class ServiceMonitorImpl implements ServiceMonitor {
                               UnionMonitorManager monitorManager,
                               Metric metric,
                               Timer timer,
-                              Zone zone) {
+                              Zone zone,
+                              FlagSource flagSource) {
         duperModelManager.registerListener(monitorManager);
 
         ServiceModelProvider uncachedServiceModelProvider = new ServiceModelProvider(
@@ -34,7 +31,8 @@ public class ServiceMonitorImpl implements ServiceMonitor {
                 duperModelManager,
                 new ModelGenerator(),
                 zone);
-        serviceModelProvider = new ServiceModelCache(uncachedServiceModelProvider, timer);
+        boolean cache = Flags.SERVICE_MODEL_CACHE.bindTo(flagSource).value();
+        serviceModelProvider = new ServiceModelCache(uncachedServiceModelProvider, timer, cache);
     }
 
     @Override

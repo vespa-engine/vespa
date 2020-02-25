@@ -17,6 +17,7 @@ public class ServiceModelCache implements Supplier<ServiceModel> {
 
     private final Supplier<ServiceModel> expensiveSupplier;
     private final Timer timer;
+    private final boolean useCache;
 
     private volatile ServiceModel snapshot;
     private boolean updatePossiblyInProgress = false;
@@ -24,13 +25,18 @@ public class ServiceModelCache implements Supplier<ServiceModel> {
     private final Object updateMonitor = new Object();
     private long snapshotMillis;
 
-    public ServiceModelCache(Supplier<ServiceModel> expensiveSupplier, Timer timer) {
+    public ServiceModelCache(Supplier<ServiceModel> expensiveSupplier, Timer timer, boolean useCache) {
         this.expensiveSupplier = expensiveSupplier;
         this.timer = timer;
+        this.useCache = useCache;
     }
 
     @Override
     public ServiceModel get() {
+        if (!useCache) {
+            return expensiveSupplier.get();
+        }
+
         if (snapshot == null) {
             synchronized (updateMonitor) {
                 if (snapshot == null) {
