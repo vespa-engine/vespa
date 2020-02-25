@@ -3,14 +3,14 @@
 #include "closenessfeature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.closenessfeature");
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 ClosenessExecutor::ClosenessExecutor(feature_t maxDistance, feature_t scaleDistance) :
     FeatureExecutor(),
@@ -96,7 +96,7 @@ ClosenessBlueprint::setup(const IIndexEnvironment & env,
 Blueprint::UP
 ClosenessBlueprint::createInstance() const
 {
-    return Blueprint::UP(new ClosenessBlueprint());
+    return std::make_unique<ClosenessBlueprint>();
 }
 
 FeatureExecutor &
@@ -105,6 +105,4 @@ ClosenessBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &s
     return stash.create<ClosenessExecutor>(_maxDistance, _scaleDistance);
 }
 
-
-} // namespace features
-} // namespace search
+}

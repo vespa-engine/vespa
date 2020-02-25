@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
+import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.ErrorType;
 import com.yahoo.vespa.config.TimingValues;
@@ -17,6 +19,8 @@ import java.util.Random;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -347,6 +351,25 @@ public class JRTConfigRequesterTest {
             request().setError(com.yahoo.jrt.ErrorCode.TIMEOUT, "error");
             requestWaiter().handleRequestDone(request());
         }
+    }
+
+    @Test
+    public void testManagedPool() {
+        ConfigSourceSet sourceSet = ConfigSourceSet.createDefault();
+        TimingValues timingValues = new TimingValues();
+        JRTConfigRequester requester1 = JRTConfigRequester.create(sourceSet, timingValues);
+        JRTConfigRequester requester2 = JRTConfigRequester.create(sourceSet, timingValues);
+        assertNotSame(requester1, requester2);
+        assertSame(requester1.getConnectionPool(), requester2.getConnectionPool());
+        ConnectionPool firstPool = requester1.getConnectionPool();
+        requester1.close();
+        requester2.close();
+        requester1 = JRTConfigRequester.create(sourceSet, timingValues);
+        assertNotSame(firstPool, requester1.getConnectionPool());
+        requester2 = JRTConfigRequester.create(new ConfigSourceSet("test-managed-pool-2"), timingValues);
+        assertNotSame(requester1.getConnectionPool(), requester2.getConnectionPool());
+        requester1.close();
+        requester2.close();
     }
 
 }

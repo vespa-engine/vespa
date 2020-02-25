@@ -60,9 +60,9 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
-import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.Fail.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -167,7 +167,7 @@ public class HostResourceTest {
 
         UpdateHostResponse response = hostResource.suspend(hostName);
 
-        assertThat(response.hostname()).isEqualTo(hostName);
+        assertEquals(hostName, response.hostname());
     }
 
     @Test
@@ -175,14 +175,14 @@ public class HostResourceTest {
         HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysAllowOrchestrator);
         BatchOperationResult response = hostSuspensionResource.suspendAll("parentHostname",
                                                                           Arrays.asList("hostname1", "hostname2"));
-        assertThat(response.success());
+        assertTrue(response.success());
     }
 
     @Test
     public void returns_200_empty_batch() {
         HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysAllowOrchestrator);
         BatchOperationResult response = hostSuspensionResource.suspendAll("parentHostname", List.of());
-        assertThat(response.success());
+        assertTrue(response.success());
     }
 
     @Test
@@ -193,7 +193,7 @@ public class HostResourceTest {
             hostResource.suspend("hostname");
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(404);
+            assertEquals(404, w.getResponse().getStatus());
         }
     }
 
@@ -207,7 +207,7 @@ public class HostResourceTest {
             hostSuspensionResource.suspendAll("parentHostname", Arrays.asList("hostname1", "hostname2"));
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(400);
+            assertEquals(400, w.getResponse().getStatus());
         }
     }
 
@@ -259,7 +259,7 @@ public class HostResourceTest {
             hostResource.suspend("hostname");
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(409);
+            assertEquals(409, w.getResponse().getStatus());
         }
     }
 
@@ -280,7 +280,7 @@ public class HostResourceTest {
             hostSuspensionResource.suspendAll("parentHostname", Arrays.asList("hostname1", "hostname2"));
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(409);
+            assertEquals(409, w.getResponse().getStatus());
         }
     }
 
@@ -368,7 +368,7 @@ public class HostResourceTest {
     }
 
     @Test
-    public void throws_504_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException {
+    public void throws_409_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).resume(any(HostName.class));
 
@@ -377,13 +377,13 @@ public class HostResourceTest {
             hostResource.resume("hostname");
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(504);
+            assertEquals(409, w.getResponse().getStatus());
             assertEquals("resume failed: Timeout Message [deadline]", w.getMessage());
         }
     }
 
     @Test
-    public void throws_504_on_suspendAll_timeout() throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
+    public void throws_409_on_suspendAll_timeout() throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).suspendAll(any(), any());
 
@@ -392,7 +392,7 @@ public class HostResourceTest {
             resource.suspendAll("parenthost", Arrays.asList("h1", "h2", "h3"));
             fail();
         } catch (WebApplicationException w) {
-            assertThat(w.getResponse().getStatus()).isEqualTo(504);
+            assertEquals(409, w.getResponse().getStatus());
         }
     }
 }

@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -58,6 +59,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
@@ -82,6 +84,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1475,14 +1478,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void applicationWithRoutingPolicy() {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
+        var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
+                                                                            EnumSet.of(RoutingMethod.exclusive, RoutingMethod.shared));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .instances("instance1")
-                .region("us-west-1")
+                .region(zone.region().value())
                 .build();
         app.submit(applicationPackage).deploy();
-        app.addRoutingPolicy(ZoneId.from(Environment.prod, RegionName.from("us-west-1")), true);
-        app.addRoutingPolicy(ZoneId.from(Environment.prod, RegionName.from("us-west-1")), false);
+        app.addRoutingPolicy(zone, true);
+        app.addRoutingPolicy(zone, false);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)

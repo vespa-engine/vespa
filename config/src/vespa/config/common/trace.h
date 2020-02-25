@@ -1,11 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/trace/tracenode.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <memory>
+#include <vespa/vespalib/data/memory.h>
 
+namespace vespalib::slime {
+    class Cursor;
+    class Inspector;
+}
 namespace config {
 
 /**

@@ -26,7 +26,6 @@ public interface ClusterApi {
     Optional<StorageNode> storageNodeInGroup();
     Optional<StorageNode> upStorageNodeInGroup();
 
-    String servicesDownAndNotInGroupDescription();
-    String nodesAllowedToBeDownNotInGroupDescription();
+    String downDescription();
 
 }

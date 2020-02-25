@@ -6,8 +6,8 @@
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 #include <cmath>
-#include <memory>
 #include <stdexcept>
 
 #include <vespa/log/log.h>

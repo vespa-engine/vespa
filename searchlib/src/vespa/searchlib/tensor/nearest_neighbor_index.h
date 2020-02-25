@@ -13,10 +13,20 @@ namespace search::tensor {
  */
 class NearestNeighborIndex {
 public:
+    struct Neighbor {
+        uint32_t docid;
+        double distance;
+        Neighbor(uint32_t id, double dist)
+          : docid(id), distance(dist)
+        {}
+        Neighbor() : docid(0), distance(0.0) {}
+    };
     virtual ~NearestNeighborIndex() {}
     virtual void add_document(uint32_t docid) = 0;
     virtual void remove_document(uint32_t docid) = 0;
-    virtual std::vector<uint32_t> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) = 0;
+    virtual std::vector<Neighbor> find_top_k(uint32_t k,
+                                             vespalib::tensor::TypedCells vector,
+                                             uint32_t explore_k) const = 0;
 };
 
 }

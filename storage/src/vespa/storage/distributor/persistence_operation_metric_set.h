@@ -16,7 +16,7 @@ class PersistenceFailuresMetricSet : public metrics::MetricSet
 {
 public:
     explicit PersistenceFailuresMetricSet(metrics::MetricSet* owner);
-    ~PersistenceFailuresMetricSet();
+    ~PersistenceFailuresMetricSet() override;
 
     metrics::SumMetric<metrics::LongCountMetric> sum;
     metrics::LongCountMetric notready;
@@ -44,7 +44,7 @@ public:
     PersistenceFailuresMetricSet failures;
 
     PersistenceOperationMetricSet(const std::string& name, metrics::MetricSet* owner = nullptr);
-    ~PersistenceOperationMetricSet();
+    ~PersistenceOperationMetricSet() override;
 
     MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                       metrics::MetricSet* owner, bool includeUnused) const override;

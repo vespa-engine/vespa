@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 import com.yahoo.config.provision.ApplicationId;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Generates an endpoint certificate for an application instance.
@@ -12,7 +13,7 @@ import java.util.List;
  */
 public interface EndpointCertificateProvider  {
 
-    EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames);
+    EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata);
 
     List<EndpointCertificateMetadata> listCertificates();
 }

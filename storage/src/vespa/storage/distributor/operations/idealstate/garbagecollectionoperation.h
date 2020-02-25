@@ -26,8 +26,10 @@ protected:
     MessageTracker _tracker;
 private:
     std::vector<BucketCopy> _replica_info;
+    uint32_t _max_documents_removed;
 
     void merge_received_bucket_info_into_db();
+    void update_gc_metrics();
 };
 
 }

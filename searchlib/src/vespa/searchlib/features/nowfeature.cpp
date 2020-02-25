@@ -3,6 +3,7 @@
 #include "nowfeature.h"
 #include <vespa/searchlib/fef/queryproperties.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 #include <chrono>
 
 namespace search::features {

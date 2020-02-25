@@ -34,8 +34,9 @@ public class DefaultTlsContext implements TlsContext {
                              List<X509Certificate> caCertificates,
                              AuthorizedPeers authorizedPeers,
                              AuthorizationMode mode,
-                             PeerAuthentication peerAuthentication) {
-        this(createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode), peerAuthentication);
+                             PeerAuthentication peerAuthentication,
+                             HostnameVerification hostnameVerification) {
+        this(createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode, hostnameVerification), peerAuthentication);
     }
 
     public DefaultTlsContext(SSLContext sslContext, PeerAuthentication peerAuthentication) {
@@ -120,7 +121,8 @@ public class DefaultTlsContext implements TlsContext {
                                                PrivateKey privateKey,
                                                List<X509Certificate> caCertificates,
                                                AuthorizedPeers authorizedPeers,
-                                               AuthorizationMode mode) {
+                                               AuthorizationMode mode,
+                                               HostnameVerification hostnameVerification) {
         SslContextBuilder builder = new SslContextBuilder();
         if (!certificates.isEmpty()) {
             builder.withKeyStore(privateKey, certificates);
@@ -129,12 +131,12 @@ public class DefaultTlsContext implements TlsContext {
             builder.withTrustStore(caCertificates);
         }
         if (authorizedPeers != null) {
-            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(authorizedPeers, mode, truststore));
+            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(authorizedPeers, mode, hostnameVerification, truststore));
         } else {
-            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, truststore));
+            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(
+                    new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, hostnameVerification, truststore));
         }
         return builder.build();
     }
-
 
 }

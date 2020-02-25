@@ -368,8 +368,7 @@ public:
     virtual SerialNum getNewestFlushedSerial();
 
     std::unique_ptr<search::engine::SearchReply>
-    match(const ISearchHandler::SP &searchHandler,
-          const search::engine::SearchRequest &req,
+    match(const search::engine::SearchRequest &req,
           vespalib::ThreadBundle &threadBundle) const;
 
     std::unique_ptr<search::engine::DocsumReply>

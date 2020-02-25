@@ -1061,6 +1061,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Add zone endpoints defined by routing policies
         var endpointArray = response.setArray("endpoints");
         for (var policy : controller.routingController().policies().get(deploymentId).values()) {
+            // TODO(mpolden): Always add endpoints from all policies, independent of routing method. This allows removal
+            //                of RoutingGenerator and eliminates the external call to the routing layer below.
+            if (!controller.routingController().supportsRoutingMethod(RoutingMethod.exclusive, deployment.zone())) continue;
             if (!policy.status().isActive()) continue;
             {
                 var endpointObject = endpointArray.addObject();
@@ -1157,6 +1160,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         deployment.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
         // Cost
+        // TODO(mpolden): Unused, remove this field and related code.
         DeploymentCost appCost = new DeploymentCost(Map.of());
         Cursor costObject = response.setObject("cost");
         toSlime(appCost, costObject);

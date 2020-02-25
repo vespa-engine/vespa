@@ -2,20 +2,17 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <variant>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/arrayref.h>
-#include <vespa/vespalib/util/overload.h>
 #include "tensor_spec.h"
 #include "lazy_params.h"
 #include "value_type.h"
 #include "value.h"
 #include "aggr.h"
-
 #include "interpreted_function.h"
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/overload.h>
+#include <variant>
 
 namespace vespalib {
 

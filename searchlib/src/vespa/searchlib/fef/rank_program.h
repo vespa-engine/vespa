@@ -9,8 +9,8 @@
 #include "feature_resolver.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/stash.h>
 #include <set>
-#include <vector>
 
 namespace search::fef {
 

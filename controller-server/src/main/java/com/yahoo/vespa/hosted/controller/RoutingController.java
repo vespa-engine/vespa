@@ -237,7 +237,8 @@ public class RoutingController {
         }
     }
 
-    private boolean supportsRoutingMethod(RoutingMethod routingMethod, ZoneId zone) {
+    /** Returns whether given routingMethod is supported by zone */
+    public boolean supportsRoutingMethod(RoutingMethod routingMethod, ZoneId zone) {
         return controller.zoneRegistry().zones().routingMethod(routingMethod).ids().contains(zone);
     }
 

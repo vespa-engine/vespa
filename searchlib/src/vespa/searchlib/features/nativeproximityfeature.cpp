@@ -7,12 +7,12 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 #include <map>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 feature_t
 NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs, uint32_t docId)
@@ -136,9 +136,7 @@ NativeProximityBlueprint::NativeProximityBlueprint() :
 {
 }
 
-NativeProximityBlueprint::~NativeProximityBlueprint()
-{
-}
+NativeProximityBlueprint::~NativeProximityBlueprint() = default;
 
 void
 NativeProximityBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
@@ -151,7 +149,7 @@ NativeProximityBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
 Blueprint::UP
 NativeProximityBlueprint::createInstance() const
 {
-    return Blueprint::UP(new NativeProximityBlueprint());
+    return std::make_unique<NativeProximityBlueprint>();
 }
 
 bool
@@ -168,12 +166,12 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
         NativeProximityParam & param = _params.vector[fieldId];
         param.field = true;
         if ((param.proximityTable =
-             util::lookupTable(env, getBaseName(), "proximityTable", info->name(), _defaultProximityBoost)) == NULL)
+             util::lookupTable(env, getBaseName(), "proximityTable", info->name(), _defaultProximityBoost)) == nullptr)
         {
             return false;
         }
         if ((param.revProximityTable =
-             util::lookupTable(env, getBaseName(), "reverseProximityTable", info->name(), _defaultRevProximityBoost)) == NULL)
+             util::lookupTable(env, getBaseName(), "reverseProximityTable", info->name(), _defaultRevProximityBoost)) == nullptr)
         {
             return false;
         }
@@ -190,7 +188,7 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
         if (NativeRankBlueprint::useTableNormalization(env)) {
             const Table * fp = param.proximityTable;
             const Table * rp = param.revProximityTable;
-            if (fp != NULL && rp != NULL) {
+            if (fp != nullptr && rp != nullptr) {
                 double value = (fp->max() * param.proximityImportance) +
                     (rp->max() * (1 - param.proximityImportance));
                 _params.setMaxTableSums(fieldId, value);
@@ -217,6 +215,4 @@ NativeProximityBlueprint::createExecutor(const IQueryEnvironment &env, vespalib:
 
 }
 
-
-} // namespace features
-} // namespace search
+}

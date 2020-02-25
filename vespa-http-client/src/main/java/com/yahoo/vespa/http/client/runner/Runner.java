@@ -70,7 +70,6 @@ public class Runner {
                 Optional.ofNullable(commandLineArgs.getFile()),
                 commandLineArgs.getAddRootElementToXml());
 
-
         int intervalOfLogging = commandLineArgs.getVerbose()
                 ? commandLineArgs.getWhenVerboseEnabledPrintMessageForEveryXDocuments()
                 : Integer.MAX_VALUE;
@@ -86,13 +85,15 @@ public class Runner {
 
         if (commandLineArgs.getVerbose()) {
             System.err.println(feedClient.getStatsAsJson());
-            double fileSizeMb = ((double) new File(commandLineArgs.getFile()).length()) / 1024.0 / 1024.0;
             double transferTimeSec = ((double) sendTotalTimeMs) / 1000.0;
-            System.err.println("Sent " + fileSizeMb + " MB in " + transferTimeSec + " seconds.");
-            System.err.println("Speed: " + ((fileSizeMb / transferTimeSec) * 8.0) + " Mbits/sec, + HTTP overhead " +
-                               "(not taking compression into account)");
             if (transferTimeSec > 0) {
-                System.err.printf("Docs/sec %.3f%n\n", numSent.get() / transferTimeSec);
+                System.err.printf("Docs/sec %.3f%n", numSent.get() / transferTimeSec);
+            }
+            if (commandLineArgs.getFile() != null) {
+                double fileSizeMb = ((double) new File(commandLineArgs.getFile()).length()) / 1024.0 / 1024.0;
+                System.err.println("Sent " + fileSizeMb + " MB in " + transferTimeSec + " seconds.");
+                System.err.println("Speed: " + ((fileSizeMb / transferTimeSec) * 8.0) + " Mbits/sec, + HTTP overhead " +
+                                   "(not taking compression into account)");
             }
         }
         callback.printProgress();

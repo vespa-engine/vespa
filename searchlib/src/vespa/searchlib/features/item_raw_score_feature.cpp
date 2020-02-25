@@ -3,11 +3,11 @@
 #include "item_raw_score_feature.h"
 #include "valuefeature.h"
 #include "utils.h"
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 void
 ItemRawScoreExecutor::execute(uint32_t docId)
@@ -89,6 +89,4 @@ ItemRawScoreBlueprint::resolve(const IQueryEnvironment &env,
     return handles;
 }
 
-
-} // namespace features
-} // namespace search
+}

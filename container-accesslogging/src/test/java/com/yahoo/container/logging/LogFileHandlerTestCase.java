@@ -2,7 +2,9 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.io.IOUtils;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,21 +19,23 @@ import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.zip.GZIPInputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Bob Travis
+ * @author bjorncs
  */
-// TODO: Make these tests wait until the right things happen rather than waiting for a predetermined time
-// These tests take too long, and are not cleaning up properly. See how this should be done in YApacheLogTestCase
 public class LogFileHandlerTestCase {
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Test
-    public void testIt() {
+    public void testIt() throws IOException {
+        File root = temporaryFolder.newFolder("logfilehandlertest");
+
         LogFileHandler h = new LogFileHandler();
-        h.setFilePattern("./logfilehandlertest.%Y%m%d%H%M%S");
+        h.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S");
         h.setFormatter(new Formatter() {
                 public String format(LogRecord r) {
                     DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
@@ -43,42 +47,27 @@ public class LogFileHandlerTestCase {
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
         long tomorrowMillis = tomorrowDays * millisPerDay;
-        assertEquals (tomorrowMillis, h.getNextRotationTime(now));
+        assertThat(tomorrowMillis).isEqualTo(h.getNextRotationTime(now));
         long[] rTimes = {1000, 2000, 10000};
         h.setRotationTimes(rTimes);
-        assertEquals (tomorrowMillis+1000, h.getNextRotationTime(tomorrowMillis));
-        assertEquals (tomorrowMillis+10000, h.getNextRotationTime(tomorrowMillis+3000));
-        boolean okToWrite = false; // don't want regular unit tests to create tiles....
-        if (okToWrite) {
-            LogRecord lr = new LogRecord(Level.INFO, "test");
-            h.publish(lr);
-            h.publish(new LogRecord(Level.INFO, "another test"));
-            h.rotateNow();
-            h.publish(lr);
-            h.flush();
-        }
-    }
-
-    private boolean delete(String fileOrDir) {
-      File file = new File(fileOrDir);
-      return file.delete();
-    }
-
-    private void deleteOnExit(String fileOrDir) {
-        new File(fileOrDir).deleteOnExit();
-    }
-
-    private static void deleteRecursive(String directory) {
-       IOUtils.recursiveDeleteDir(new File(directory));
+        assertThat(tomorrowMillis+1000).isEqualTo(h.getNextRotationTime(tomorrowMillis));
+        assertThat(tomorrowMillis+10000).isEqualTo(h.getNextRotationTime(tomorrowMillis+3000));
+        LogRecord lr = new LogRecord(Level.INFO, "test");
+        h.publish(lr);
+        h.publish(new LogRecord(Level.INFO, "another test"));
+        h.rotateNow();
+        h.publish(lr);
+        h.flush();
+        h.shutdown();
     }
 
     @Test
-    public void testSimpleLogging() {
-      String logFilePattern = "./testLogFileG1.txt";
+    public void testSimpleLogging() throws IOException {
+        File logFile = temporaryFolder.newFile("testLogFileG1.txt");
 
       //create logfilehandler
       LogFileHandler h = new LogFileHandler();
-      h.setFilePattern(logFilePattern);
+      h.setFilePattern(logFile.getAbsolutePath());
       h.setFormatter(new SimpleFormatter());
       h.setRotationTimes("0 5 ...");
 
@@ -86,17 +75,16 @@ public class LogFileHandlerTestCase {
       LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileFirst1");
       h.publish(lr);
       h.flush();
-
-      new File(logFilePattern).deleteOnExit();
+      h.shutdown();
     }
 
     @Test
-    public void testDeleteFileDuringLogging() {
-      String logFilePattern = "./testLogFileG2.txt";
+    public void testDeleteFileDuringLogging() throws IOException {
+      File logFile = temporaryFolder.newFile("testLogFileG2.txt");
 
       //create logfilehandler
       LogFileHandler h = new LogFileHandler();
-      h.setFilePattern(logFilePattern);
+      h.setFilePattern(logFile.getAbsolutePath());
       h.setFormatter(new SimpleFormatter());
       h.setRotationTimes("0 5 ...");
 
@@ -106,20 +94,20 @@ public class LogFileHandlerTestCase {
       h.flush();
 
       //delete log file
-      delete(logFilePattern);
+        logFile.delete();
 
       //write log again
       lr = new LogRecord(Level.INFO, "testDeleteFileDuringLogging2");
       h.publish(lr);
       h.flush();
-
-      new File(logFilePattern).deleteOnExit();
+      h.shutdown();
     }
 
     @Test
-    public void testSymlink() {
+    public void testSymlink() throws IOException, InterruptedException {
+        File root = temporaryFolder.newFolder("testlogforsymlinkchecking");
         LogFileHandler h = new LogFileHandler();
-        h.setFilePattern("./testlogforsymlinkchecking/logfilehandlertest.%Y%m%d%H%M%S%s");
+        h.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s");
         h.setFormatter(new Formatter() {
             public String format(LogRecord r) {
                 DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
@@ -132,50 +120,43 @@ public class LogFileHandlerTestCase {
         h.publish(lr);
         String f1 = h.getFileName();
         String f2 = null;
-        try {
-            while (f1 == null) {
-                Thread.sleep(1);
-                f1 = h.getFileName();
-            }
-            h.rotateNow();
+        while (f1 == null) {
+            Thread.sleep(1);
+            f1 = h.getFileName();
+        }
+        h.rotateNow();
+        Thread.sleep(1);
+        f2 = h.getFileName();
+        while (f1.equals(f2)) {
             Thread.sleep(1);
             f2 = h.getFileName();
-            while (f1.equals(f2)) {
-                Thread.sleep(1);
-                f2 = h.getFileName();
-            }
-            lr = new LogRecord(Level.INFO, "string which is way longer than the word test");
-            h.publish(lr);
-            Thread.sleep(1000);
-            File f = new File(f1);
-            long first = f.length();
-            f = new File(f2);
-            long second = f.length();
-            final long secondLength = 72;
-            for (int n = 0; n < 20 && second != secondLength; ++n) {
-                Thread.sleep(1000);
-                second = f.length();
-            }
-            f = new File("./testlogforsymlinkchecking", "symlink");
-            long link = f.length();
-            assertEquals(secondLength, link);
-            assertEquals(31, first);
-            assertEquals(secondLength, second);
-        } catch (InterruptedException e) {
-            // just let the test pass
         }
-        deleteOnExit("./testlogforsymlinkchecking");
-        deleteOnExit("./testlogforsymlinkchecking/symlink");
-        deleteOnExit(f1);
-        if (f2 != null)
-            deleteOnExit(f2);
+        lr = new LogRecord(Level.INFO, "string which is way longer than the word test");
+        h.publish(lr);
+        h.waitDrained();
+        File f = new File(f1);
+        long first = f.length();
+        f = new File(f2);
+        long second = f.length();
+        final long secondLength = 72;
+        for (int n = 0; n < 20 && second != secondLength; ++n) {
+            Thread.sleep(1);
+            second = f.length();
+        }
+        f = new File(root, "symlink");
+        long link = f.length();
+        assertThat(secondLength).isEqualTo(link);
+        assertThat(31).isEqualTo(first);
+        assertThat(secondLength).isEqualTo(second);
+        h.shutdown();
     }
 
     @Test
     public void testcompression() throws InterruptedException, IOException {
-        IOUtils.recursiveDeleteDir(new File("./testcompression"));
+        File root = temporaryFolder.newFolder("testcompression");
+
         LogFileHandler h = new LogFileHandler(true);
-        h.setFilePattern("./testcompression/logfilehandlertest.%Y%m%d%H%M%S%s");
+        h.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s");
         h.setFormatter(new Formatter() {
             public String format(LogRecord r) {
                 DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
@@ -183,28 +164,28 @@ public class LogFileHandlerTestCase {
                 return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
             }
         } );
-        for (int i=0; i < 10000; i++) {
+        int logEntries = 10000;
+        for (int i = 0; i < logEntries; i++) {
             LogRecord lr = new LogRecord(Level.INFO, "test");
             h.publish(lr);
         }
         h.waitDrained();
         String f1 = h.getFileName();
-        assertTrue(f1.startsWith("./testcompression/logfilehandlertest."));
+        assertThat(f1).startsWith(root.getAbsolutePath() + "/logfilehandlertest.");
         File uncompressed = new File(f1);
         File compressed = new File(f1 + ".gz");
-        assertTrue(uncompressed.exists());
-        assertFalse(compressed.exists());
+        assertThat(uncompressed).exists();
+        assertThat(compressed).doesNotExist();
         String content = IOUtils.readFile(uncompressed);
-        assertEquals(310000, content.length());
+        assertThat(content).hasLineCount(logEntries);
         h.rotateNow();
         while (uncompressed.exists()) {
-            Thread.sleep(10);
+            Thread.sleep(1);
         }
-        assertTrue(compressed.exists());
+        assertThat(compressed).exists();
         String unzipped = IOUtils.readAll(new InputStreamReader(new GZIPInputStream(new FileInputStream(compressed))));
-        assertEquals(content, unzipped);
-
-        IOUtils.recursiveDeleteDir(new File("./testcompression"));
+        assertThat(content).isEqualTo(unzipped);
+        h.shutdown();
     }
 
 }

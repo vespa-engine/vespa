@@ -3,6 +3,7 @@ package com.yahoo.security.tls.authz;
 
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.AuthorizationMode;
+import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.TrustManagerUtils;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 
@@ -14,7 +15,6 @@ import java.net.Socket;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -33,15 +33,23 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     private final PeerAuthorizer authorizer;
     private final X509ExtendedTrustManager defaultTrustManager;
     private final AuthorizationMode mode;
+    private final HostnameVerification hostnameVerification;
 
-    public PeerAuthorizerTrustManager(AuthorizedPeers authorizedPeers, AuthorizationMode mode, X509ExtendedTrustManager defaultTrustManager) {
+    public PeerAuthorizerTrustManager(AuthorizedPeers authorizedPeers,
+                                      AuthorizationMode mode,
+                                      HostnameVerification hostnameVerification,
+                                      X509ExtendedTrustManager defaultTrustManager) {
         this.authorizer = new PeerAuthorizer(authorizedPeers);
         this.mode = mode;
+        this.hostnameVerification = hostnameVerification;
         this.defaultTrustManager = defaultTrustManager;
     }
 
-    public PeerAuthorizerTrustManager(AuthorizedPeers authorizedPeers, AuthorizationMode mode, KeyStore truststore) {
-        this(authorizedPeers, mode, TrustManagerUtils.createDefaultX509TrustManager(truststore));
+    public PeerAuthorizerTrustManager(AuthorizedPeers authorizedPeers,
+                                      AuthorizationMode mode,
+                                      HostnameVerification hostnameVerification,
+                                      KeyStore truststore) {
+        this(authorizedPeers, mode, hostnameVerification, TrustManagerUtils.createDefaultX509TrustManager(truststore));
     }
 
     @Override
@@ -58,28 +66,26 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
-        overrideHostnameVerification(socket);
         defaultTrustManager.checkClientTrusted(chain, authType, socket);
         authorizePeer(chain[0], authType, true, null);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
-        overrideHostnameVerification(socket);
+        overrideHostnameVerificationForClient(socket);
         defaultTrustManager.checkServerTrusted(chain, authType, socket);
         authorizePeer(chain[0], authType, false, null);
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
-        overrideHostnameVerification(sslEngine);
         defaultTrustManager.checkClientTrusted(chain, authType, sslEngine);
         authorizePeer(chain[0], authType, true, sslEngine);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
-        overrideHostnameVerification(sslEngine);
+        overrideHostnameVerificationForClient(sslEngine);
         defaultTrustManager.checkServerTrusted(chain, authType, sslEngine);
         authorizePeer(chain[0], authType, false, sslEngine);
     }
@@ -121,31 +127,44 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
                              certificate.getSubjectX500Principal(), X509CertificateUtils.getSubjectAlternativeNames(certificate), authType, isVerifyingClient);
     }
 
-    private static void overrideHostnameVerification(SSLEngine engine) {
+    private void overrideHostnameVerificationForClient(SSLEngine engine) {
         SSLParameters params = engine.getSSLParameters();
-        if (overrideHostnameVerification(params)) {
+        if (overrideHostnameVerificationForClient(params)) {
             engine.setSSLParameters(params);
         }
     }
 
-    private static void overrideHostnameVerification(Socket socket) {
+    private void overrideHostnameVerificationForClient(Socket socket) {
         if (socket instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket) socket;
             SSLParameters params = sslSocket.getSSLParameters();
-            if (overrideHostnameVerification(params)) {
+            if (overrideHostnameVerificationForClient(params)) {
                 sslSocket.setSSLParameters(params);
             }
         }
     }
 
-    // Disable the default hostname verification that is performed by underlying trust manager when 'HTTPS' is used as endpoint identification algorithm.
-    // Some http clients, notably the new http client in Java 11, does not allow user configuration of the endpoint algorithm or custom HostnameVerifier.
-    private static boolean overrideHostnameVerification(SSLParameters params) {
-        if (Objects.equals("HTTPS", params.getEndpointIdentificationAlgorithm())) {
-            params.setEndpointIdentificationAlgorithm("");
-            return true;
+    // Overrides the endpoint identification algorithm specified in the ssl parameters of the ssl engine/socket.
+    // The underlying trust manager will perform hostname verification if endpoint identification algorithm is set to 'HTTPS'.
+    // Returns true if the parameter instance was modified
+    private boolean overrideHostnameVerificationForClient(SSLParameters params) {
+        String configuredAlgorithm = params.getEndpointIdentificationAlgorithm();
+        switch (hostnameVerification) {
+            case ENABLED:
+                if (!"HTTPS".equals(configuredAlgorithm)) {
+                    params.setEndpointIdentificationAlgorithm("HTTPS");
+                    return true;
+                }
+                return false;
+            case DISABLED:
+                if (configuredAlgorithm != null && !configuredAlgorithm.isEmpty()) {
+                    params.setEndpointIdentificationAlgorithm(""); // disable any configured endpoint identification algorithm
+                    return true;
+                }
+                return false;
+            default:
+                throw new IllegalStateException("Unknown host verification type: " + hostnameVerification);
         }
-        return false;
     }
 
 }

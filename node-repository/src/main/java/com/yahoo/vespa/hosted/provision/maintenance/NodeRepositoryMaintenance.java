@@ -94,7 +94,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), nodeMetricsDb, deployer, defaults.autoscalingInterval);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
-        infrastructureProvisioner.maintain();
+        infrastructureProvisioner.maintainButThrowOnException();
     }
 
     @Override

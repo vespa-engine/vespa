@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -81,15 +80,10 @@ public class ClusterApiImplTest {
 
         assertEquals("{ clusterId=cluster, serviceType=service-type }", clusterApi.clusterInfo());
         assertFalse(clusterApi.isStorageCluster());
-        assertEquals("[ServiceInstance{configId=service-2, hostName=host2, serviceStatus=" +
-                        "ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}, "
-                        + "ServiceInstance{configId=service-3, hostName=host3, serviceStatus=" +
-                        "ServiceStatusInfo{status=UP, since=Optional.empty, lastChecked=Optional.empty}}, "
-                        + "ServiceInstance{configId=service-4, hostName=host4, serviceStatus=" +
-                        "ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}]",
-                clusterApi.servicesDownAndNotInGroupDescription());
-        assertEquals("[host3, host4]",
-                clusterApi.nodesAllowedToBeDownNotInGroupDescription());
+        assertEquals(" Suspended hosts: [host3, host4]. Services down on resumed hosts: [" +
+                        "ServiceInstance{configId=service-2, hostName=host2, serviceStatus=" +
+                        "ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}].",
+                clusterApi.downDescription());
         assertEquals(60, clusterApi.percentageOfServicesDown());
         assertEquals(80, clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown());
     }
@@ -110,9 +104,9 @@ public class ClusterApiImplTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(),
-                    containsString("Changing the state of cfg1 would violate enough-services-up: Suspension percentage " +
-                            "for service type configserver would increase from 33% to 66%, over the limit of 10%. " +
-                            "These instances may be down: [1 missing config server] and these hosts are allowed to be down: []"));
+                    containsString("Changing the state of cfg1 would violate enough-services-up: " +
+                            "Suspension for service type configserver would increase from 33% to 66%, " +
+                            "over the limit of 10%. Services down on resumed hosts: [1 missing config server]."));
         }
     }
 

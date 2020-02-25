@@ -38,9 +38,11 @@ public class OrchestratorContext implements AutoCloseable {
     private final HashMap<ApplicationInstanceReference, Runnable> locks = new HashMap<>();
 
     /** Create an OrchestratorContext for operations on multiple applications. */
-    public static OrchestratorContext createContextForMultiAppOp(Clock clock, boolean largeLocks) {
+    public static OrchestratorContext createContextForMultiAppOp(Clock clock) {
         return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP),
-                false, largeLocks, false);
+                false, // probe
+                true, // large locks
+                false); // use permanently down status
     }
 
     /** Create an OrchestratorContext for an operation on a single application. */

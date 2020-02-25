@@ -112,19 +112,6 @@ public class JRTConnectionPool implements ConnectionPool {
         return this;
     }
 
-    public String getAllSourceAddresses() {
-        StringBuilder sb = new StringBuilder();
-        synchronized (connections) {
-            for (JRTConnection conn : connections.values()) {
-                sb.append(conn.getAddress());
-                sb.append(",");
-            }
-        }
-        // Remove trailing ","
-        sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
-    }
-
     public String toString() {
         StringBuilder sb = new StringBuilder();
         synchronized (connections) {

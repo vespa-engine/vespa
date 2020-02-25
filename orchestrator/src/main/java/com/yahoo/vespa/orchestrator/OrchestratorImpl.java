@@ -64,7 +64,6 @@ public class OrchestratorImpl implements Orchestrator {
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final Clock clock;
     private final ApplicationApiFactory applicationApiFactory;
-    private final BooleanFlag enableLargeOrchestratorLocks;
     private final BooleanFlag retireWithPermanentlyDownFlag;
 
     @Inject
@@ -101,7 +100,6 @@ public class OrchestratorImpl implements Orchestrator {
         this.instanceLookupService = instanceLookupService;
         this.clock = clock;
         this.applicationApiFactory = applicationApiFactory;
-        this.enableLargeOrchestratorLocks = Flags.ENABLE_LARGE_ORCHESTRATOR_LOCKS.bindTo(flagSource);
         this.retireWithPermanentlyDownFlag = Flags.RETIRE_WITH_PERMANENTLY_DOWN.bindTo(flagSource);
     }
 
@@ -167,7 +165,7 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (MutableStatusRegistry statusRegistry = statusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
-            HostStatus currentHostState = statusRegistry.getHostInfo(hostName).status();
+            HostStatus currentHostState = statusRegistry.getHostInfos().getOrNoRemarks(hostName).status();
             if (currentHostState == HostStatus.NO_REMARKS) {
                 return;
             }
@@ -258,10 +256,7 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public void suspendAll(HostName parentHostname, List<HostName> hostNames)
             throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
-        boolean largeLocks = enableLargeOrchestratorLocks
-                .with(FetchVector.Dimension.HOSTNAME, parentHostname.s())
-                .value();
-        try (OrchestratorContext context = OrchestratorContext.createContextForMultiAppOp(clock, largeLocks)) {
+        try (OrchestratorContext context = OrchestratorContext.createContextForMultiAppOp(clock)) {
             List<NodeGroup> nodeGroupsOrderedByApplication;
             try {
                 nodeGroupsOrderedByApplication = nodeGroupsOrderedForSuspend(hostNames);

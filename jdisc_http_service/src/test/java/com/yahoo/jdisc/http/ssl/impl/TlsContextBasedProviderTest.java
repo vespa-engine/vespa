@@ -5,6 +5,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.DefaultTlsContext;
+import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.PeerAuthentication;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
@@ -51,7 +52,7 @@ public class TlsContextBasedProviderTest {
                         BigInteger.ONE)
                 .build();
         return new DefaultTlsContext(
-                List.of(certificate), keyPair.getPrivate(), List.of(certificate), new AuthorizedPeers(Set.of()), AuthorizationMode.ENFORCE, PeerAuthentication.NEED);
+                List.of(certificate), keyPair.getPrivate(), List.of(certificate), new AuthorizedPeers(Set.of()), AuthorizationMode.ENFORCE, PeerAuthentication.NEED, HostnameVerification.ENABLED);
     }
 
     private static class SimpleTlsContextBasedProvider extends TlsContextBasedProvider {

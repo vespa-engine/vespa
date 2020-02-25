@@ -319,6 +319,7 @@ public class ConfigSubscriber implements AutoCloseable {
     @Override
     public void close() {
         synchronized (monitor) {
+            if (state == State.CLOSED) return;
             state = State.CLOSED;
         }
         for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {

@@ -12,7 +12,7 @@ class VisitorAdapter : public search::fef::IDumpFeatureVisitor
 {
     search::fef::BlueprintResolver &_resolver;
 public:
-    VisitorAdapter(search::fef::BlueprintResolver &resolver)
+    explicit VisitorAdapter(search::fef::BlueprintResolver &resolver)
         : _resolver(resolver) {}
     void visitDumpFeature(const vespalib::string &name) override {
         _resolver.addSeed(name);
@@ -60,7 +60,8 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _diversityCutoffFactor(10.0),
       _diversityCutoffStrategy("loose"),
       _softTimeoutEnabled(false),
-      _softTimeoutTailCost(0.1)
+      _softTimeoutTailCost(0.1),
+      _softTimeoutFactor(0.5)
 { }
 
 RankSetup::~RankSetup() = default;
@@ -71,13 +72,13 @@ RankSetup::configure()
     setFirstPhaseRank(rank::FirstPhase::lookup(_indexEnv.getProperties()));
     setSecondPhaseRank(rank::SecondPhase::lookup(_indexEnv.getProperties()));
     std::vector<vespalib::string> summaryFeatures = summary::Feature::lookup(_indexEnv.getProperties());
-    for (uint32_t i = 0; i < summaryFeatures.size(); ++i) {
-        addSummaryFeature(summaryFeatures[i]);
+    for (const auto & feature : summaryFeatures) {
+        addSummaryFeature(feature);
     }
     setIgnoreDefaultRankFeatures(dump::IgnoreDefaultFeatures::check(_indexEnv.getProperties()));
     std::vector<vespalib::string> dumpFeatures = dump::Feature::lookup(_indexEnv.getProperties());
-    for (uint32_t i = 0; i < dumpFeatures.size(); ++i) {
-        addDumpFeature(dumpFeatures[i]);
+    for (const auto & feature : dumpFeatures) {
+        addDumpFeature(feature);
     }
     split_unpacking_iterators(matching::SplitUnpackingIterators::check(_indexEnv.getProperties()));
     delay_unpacking_iterators(matching::DelayUnpackingIterators::check(_indexEnv.getProperties()));
@@ -159,15 +160,15 @@ RankSetup::compile()
             _compileError = true;
         }
     }
-    for (uint32_t i = 0; i < _summaryFeatures.size(); ++i) {
-        _summary_resolver->addSeed(_summaryFeatures[i]);
+    for (const auto & feature :_summaryFeatures) {
+        _summary_resolver->addSeed(feature);
     }
     if (!_ignoreDefaultRankFeatures) {
         VisitorAdapter adapter(*_dumpResolver);
         _factory.visitDumpFeatures(_indexEnv, adapter);
     }
-    for (uint32_t i = 0; i < _dumpFeatures.size(); ++i) {
-        _dumpResolver->addSeed(_dumpFeatures[i]);
+    for (const auto & feature : _dumpFeatures) {
+        _dumpResolver->addSeed(feature);
     }
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::RANK);
     _compileError |= !_first_phase_resolver->compile();

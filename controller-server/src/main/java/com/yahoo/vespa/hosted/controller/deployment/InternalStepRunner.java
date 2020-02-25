@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
@@ -38,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -76,7 +76,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Nod
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
@@ -672,19 +671,33 @@ public class InternalStepRunner implements StepRunner {
             return;
 
         try {
-            if (run.status() == outOfCapacity && run.id().type().isProduction())
-                controller.serviceRegistry().mailer().send(mails.outOfCapacity(run.id(), recipients));
-            if (run.status() == deploymentFailed)
-                controller.serviceRegistry().mailer().send(mails.deploymentFailure(run.id(), recipients));
-            if (run.status() == installationFailed)
-                controller.serviceRegistry().mailer().send(mails.installationFailure(run.id(), recipients));
-            if (run.status() == testFailure)
-                controller.serviceRegistry().mailer().send(mails.testFailure(run.id(), recipients));
-            if (run.status() == error)
-                controller.serviceRegistry().mailer().send(mails.systemError(run.id(), recipients));
+            mailOf(run, recipients).ifPresent(controller.serviceRegistry().mailer()::send);
         }
         catch (RuntimeException e) {
             logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
+        }
+    }
+
+    private Optional<Mail> mailOf(Run run, List<String> recipients) {
+        switch (run.status()) {
+            case running:
+            case aborted:
+            case success:
+                return Optional.empty();
+            case outOfCapacity:
+                return run.id().type().isProduction() ? Optional.of(mails.outOfCapacity(run.id(), recipients)) : Optional.empty();
+            case deploymentFailed:
+                return Optional.of(mails.deploymentFailure(run.id(), recipients));
+            case installationFailed:
+                return Optional.of(mails.installationFailure(run.id(), recipients));
+            case testFailure:
+                return Optional.of(mails.testFailure(run.id(), recipients));
+            case error:
+            case endpointCertificateTimeout:
+                return Optional.of(mails.systemError(run.id(), recipients));
+            default:
+                logger.log(WARNING, "Don't know what mail to send for run status '" + run.status() + "'");
+                return Optional.of(mails.systemError(run.id(), recipients));
         }
     }
 

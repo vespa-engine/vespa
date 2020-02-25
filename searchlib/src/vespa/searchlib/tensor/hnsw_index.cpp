@@ -44,7 +44,7 @@ HnswIndex::max_links_for_level(uint32_t level) const
 uint32_t
 HnswIndex::make_node_for_document(uint32_t docid)
 {
-    uint32_t max_level = _level_generator.max_level();
+    uint32_t max_level = _level_generator->max_level();
     // TODO: Add capping on num_levels
     uint32_t num_levels = max_level + 1;
     // Note: The level array instance lives as long as the document is present in the index.
@@ -136,7 +136,7 @@ HnswIndex::select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_l
 }
 
 void
-HnswIndex::connect_new_node(uint32_t docid, const LinkArray& neighbors, uint32_t level)
+HnswIndex::connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level)
 {
     set_link_array(docid, level, neighbors);
     for (uint32_t neighbor_docid : neighbors) {
@@ -170,11 +170,11 @@ double
 HnswIndex::calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const
 {
     auto rhs = get_vector(rhs_docid);
-    return _distance_func.calc(lhs, rhs);
+    return _distance_func->calc(lhs, rhs);
 }
 
 HnswCandidate
-HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level)
+HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const
 {
     HnswCandidate nearest = entry_point;
     bool keep_searching = true;
@@ -192,7 +192,7 @@ HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& e
 }
 
 void
-HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level)
+HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level) const
 {
     NearestPriQ candidates;
     // TODO: Add proper handling of visited set.
@@ -227,11 +227,11 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, Fur
     }
 }
 
-HnswIndex::HnswIndex(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
-                     RandomLevelGenerator& level_generator, const Config& cfg)
+HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
+                     RandomLevelGenerator::UP level_generator, const Config& cfg)
     : _vectors(vectors),
-      _distance_func(distance_func),
-      _level_generator(level_generator),
+      _distance_func(std::move(distance_func)),
+      _level_generator(std::move(level_generator)),
       _cfg(cfg),
       _node_refs(),
       _nodes(make_default_node_store_config()),
@@ -310,24 +310,32 @@ HnswIndex::remove_document(uint32_t docid)
     _node_refs[docid].store_release(invalid);
 }
 
-std::vector<uint32_t>
-HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k)
+struct NeighborsByDocId {
+    bool operator() (const NearestNeighborIndex::Neighbor &lhs,
+                     const NearestNeighborIndex::Neighbor &rhs)
+    {
+        return (lhs.docid < rhs.docid);
+    }
+};
+
+std::vector<NearestNeighborIndex::Neighbor>
+HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
 {
-    std::vector<uint32_t> result;
+    std::vector<Neighbor> result;
     FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k));
     while (candidates.size() > k) {
         candidates.pop();
     }
     result.reserve(candidates.size());
     for (const HnswCandidate & hit : candidates.peek()) {
-        result.emplace_back(hit.docid);
+        result.emplace_back(hit.docid, hit.distance);
     }
-    std::sort(result.begin(), result.end());
+    std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
 }
 
 FurthestPriQ
-HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k)
+HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k) const
 {
     FurthestPriQ best_neighbors;
     if (_entry_level < 0) {
@@ -363,5 +371,28 @@ HnswIndex::get_node(uint32_t docid) const
     return HnswNode(result);
 }
 
+void
+HnswIndex::set_node(uint32_t docid, const HnswNode &node)
+{
+    _node_refs.ensure_size(docid + 1, AtomicEntryRef());
+    // A document cannot be added twice.
+    assert(!_node_refs[docid].load_acquire().valid());
+
+    // make new node
+    size_t num_levels = node.size();
+    assert(num_levels > 0);
+    LevelArray levels(num_levels, AtomicEntryRef());
+    auto node_ref = _nodes.add(levels);
+    _node_refs[docid].store_release(node_ref);
+
+    for (size_t level = 0; level < num_levels; ++level) {
+        connect_new_node(docid, node.level(level), level);
+    }
+    int max_level = num_levels - 1;
+    if (_entry_level < max_level) {
+        _entry_docid = docid;
+        _entry_level = max_level;
+    }
 }
 
+}

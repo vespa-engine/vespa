@@ -6,13 +6,12 @@
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/fieldtype.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 FieldLengthExecutor::
 FieldLengthExecutor(const IQueryEnvironment &env,
@@ -63,7 +62,7 @@ FieldLengthExecutor::handle_bind_match_data(const MatchData &md)
 
 FieldLengthBlueprint::FieldLengthBlueprint()
     : Blueprint("fieldLength"),
-      _field(NULL)
+      _field(nullptr)
 {
 }
 
@@ -86,7 +85,7 @@ FieldLengthBlueprint::setup(const IIndexEnvironment &env,
 Blueprint::UP
 FieldLengthBlueprint::createInstance() const
 {
-    return Blueprint::UP(new FieldLengthBlueprint());
+    return std::make_unique<FieldLengthBlueprint>();
 }
 
 FeatureExecutor &
@@ -100,4 +99,4 @@ FieldLengthBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Sta
     return stash.create<FieldLengthExecutor>(env, _field->id());
 }
 
-}}
+}

@@ -105,11 +105,14 @@ createEmptyReply(const DocsumRequest & request)
 
 }
 
-SearchView::SearchView(const ISummaryManager::ISummarySetup::SP & summarySetup,
-                       const MatchView::SP & matchView)
+std::shared_ptr<SearchView>
+SearchView::create(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView) {
+    return std::shared_ptr<SearchView>( new SearchView(std::move(summarySetup), std::move(matchView)));
+}
+SearchView::SearchView(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView)
     : ISearchHandler(),
-      _summarySetup(summarySetup),
-      _matchView(matchView)
+      _summarySetup(std::move(summarySetup)),
+      _matchView(std::move(matchView))
 { }
 
 SearchView::~SearchView() = default;
@@ -161,8 +164,8 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
 }
 
 std::unique_ptr<SearchReply>
-SearchView::match(const ISearchHandler::SP &self, const SearchRequest &req, ThreadBundle &threadBundle) const {
-    return _matchView->match(self, req, threadBundle);
+SearchView::match(const SearchRequest &req, ThreadBundle &threadBundle) const {
+    return _matchView->match(shared_from_this(), req, threadBundle);
 }
 
 } // namespace proton

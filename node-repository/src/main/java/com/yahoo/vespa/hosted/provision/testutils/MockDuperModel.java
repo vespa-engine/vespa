@@ -50,4 +50,8 @@ public class MockDuperModel implements DuperModelInfraApi {
     public void infraApplicationRemoved(ApplicationId applicationId) {
         activeApps.remove(applicationId);
     }
+
+    @Override
+    public void infraApplicationsIsNowComplete() {
+    }
 }

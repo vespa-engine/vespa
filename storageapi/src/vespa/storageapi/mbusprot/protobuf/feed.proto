@@ -90,7 +90,12 @@ message RemoveLocationRequest {
     bytes  document_selection = 2;
 }
 
+message RemoveLocationStats {
+    uint32 documents_removed = 1;
+}
+
 message RemoveLocationResponse {
     BucketInfo bucket_info        = 1;
     BucketId   remapped_bucket_id = 2;
+    RemoveLocationStats stats     = 3;
 }

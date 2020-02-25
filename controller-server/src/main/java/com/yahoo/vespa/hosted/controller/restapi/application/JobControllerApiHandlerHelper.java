@@ -554,15 +554,16 @@ class JobControllerApiHandlerHelper {
 
     private static String nameOf(RunStatus status) {
         switch (status) {
-            case running:               return "running";
-            case aborted:               return "aborted";
-            case error:                 return "error";
-            case testFailure:           return "testFailure";
-            case outOfCapacity:         return "outOfCapacity";
-            case installationFailed:    return "installationFailed";
-            case deploymentFailed:      return "deploymentFailed";
-            case success:               return "success";
-            default:                    throw new IllegalArgumentException("Unexpected status '" + status + "'");
+            case running:                    return "running";
+            case aborted:                    return "aborted";
+            case error:                      return "error";
+            case testFailure:                return "testFailure";
+            case endpointCertificateTimeout: return "endpointCertificateTimeout";
+            case outOfCapacity:              return "outOfCapacity";
+            case installationFailed:         return "installationFailed";
+            case deploymentFailed:           return "deploymentFailed";
+            case success:                    return "success";
+            default:                         throw new IllegalArgumentException("Unexpected status '" + status + "'");
         }
     }
 

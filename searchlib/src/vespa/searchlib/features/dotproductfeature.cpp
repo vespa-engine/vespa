@@ -10,12 +10,11 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multienumattribute.h>
-#include <type_traits>
-
-#include <vespa/log/log.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/stash.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".features.dotproduct");
 
 using namespace search::attribute;

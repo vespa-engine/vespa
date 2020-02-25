@@ -11,17 +11,22 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigCacheKey;
+import com.yahoo.vespa.config.RawConfig;
+import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.logging.Logger;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * An Rpc client to a config source
@@ -31,6 +36,8 @@ import java.util.logging.Logger;
 class RpcConfigSourceClient implements ConfigSourceClient {
 
     private final static Logger log = Logger.getLogger(RpcConfigSourceClient.class.getName());
+    private static final double timingValuesRatio = 0.8;
+
     private final Supervisor supervisor = new Supervisor(new Transport());
 
     private final RpcServer rpcServer;
@@ -39,38 +46,37 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     private final Object activeSubscribersLock = new Object();
     private final MemoryCache memoryCache;
     private final DelayedResponses delayedResponses;
-    private final TimingValues timingValues;
-
+    private final static TimingValues timingValues;
     private final ExecutorService exec;
-    private final Map<ConfigSourceSet, JRTConfigRequester> requesterPool;
+    private final JRTConfigRequester requester;
+    // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory());
+    private ScheduledFuture<?> delayedResponseScheduler;
 
+    static {
+        // Proxy should time out before clients upon subscription.
+        TimingValues tv = new TimingValues();
+        tv.setUnconfiguredDelay((long)(tv.getUnconfiguredDelay()* timingValuesRatio)).
+                setConfiguredErrorDelay((long)(tv.getConfiguredErrorDelay()* timingValuesRatio)).
+                setSubscribeTimeout((long)(tv.getSubscribeTimeout()* timingValuesRatio)).
+                setConfiguredErrorTimeout(-1);  // Never cache errors
+        timingValues = tv;
+    }
 
-    RpcConfigSourceClient(RpcServer rpcServer,
-                          ConfigSourceSet configSourceSet,
-                          MemoryCache memoryCache,
-                          TimingValues timingValues,
-                          DelayedResponses delayedResponses) {
+    RpcConfigSourceClient(RpcServer rpcServer, ConfigSourceSet configSourceSet, MemoryCache memoryCache) {
         this.rpcServer = rpcServer;
         this.configSourceSet = configSourceSet;
         this.memoryCache = memoryCache;
-        this.delayedResponses = delayedResponses;
-        this.timingValues = timingValues;
+        this.delayedResponses = new DelayedResponses();
         checkConfigSources();
         exec = Executors.newCachedThreadPool(new DaemonThreadFactory("subscriber-"));
-        requesterPool = createRequesterPool(configSourceSet, timingValues);
-    }
-
-    /**
-     * Creates a requester (connection) pool of one entry, to be used each time this {@link RpcConfigSourceClient} is used
-     * @param ccs a {@link ConfigSourceSet}
-     * @param timingValues a {@link TimingValues}
-     * @return requester map
-     */
-    private Map<ConfigSourceSet, JRTConfigRequester> createRequesterPool(ConfigSourceSet ccs, TimingValues timingValues) {
-        Map<ConfigSourceSet, JRTConfigRequester> ret = new HashMap<>();
-        if (ccs.getSources().isEmpty()) return ret; // unit test, just skip creating any requester
-        ret.put(ccs, new JRTConfigRequester(new JRTConnectionPool(ccs), timingValues));
-        return ret;
+        requester = JRTConfigRequester.create(configSourceSet, timingValues);
+        // Wait for 5 seconds initially, then run every second
+        delayedResponseScheduler = scheduler.scheduleAtFixedRate(
+                new DelayedResponseHandler(delayedResponses, memoryCache, rpcServer),
+                5,
+                1,
+                SECONDS);
     }
 
     /**
@@ -152,8 +158,8 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                 log.log(LogLevel.DEBUG, () -> "Already a subscriber running for: " + configCacheKey);
             } else {
                 log.log(LogLevel.DEBUG, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
-                UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(input, this, configSourceSet,
-                                                                                   timingValues, requesterPool, memoryCache);
+                UpstreamConfigSubscriber subscriber =
+                        new UpstreamConfigSubscriber(input, this, configSourceSet, timingValues, requester, memoryCache);
                 try {
                     subscriber.subscribe();
                     activeSubscribers.put(configCacheKey, subscriber);
@@ -169,6 +175,8 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     @Override
     public void cancel() {
         shutdownSourceConnections();
+        delayedResponseScheduler.cancel(true);
+        scheduler.shutdown();
     }
 
     /**
@@ -183,25 +191,18 @@ class RpcConfigSourceClient implements ConfigSourceClient {
             activeSubscribers.clear();
         }
         exec.shutdown();
-        for (JRTConfigRequester requester : requesterPool.values()) {
-            requester.close();
-        }
+        requester.close();
     }
 
     @Override
     public String getActiveSourceConnection() {
-        if (requesterPool.get(configSourceSet) != null) {
-            return requesterPool.get(configSourceSet).getConnectionPool().getCurrent().getAddress();
-        } else {
-            return "";
-        }
+        return requester.getConnectionPool().getCurrent().getAddress();
     }
 
     @Override
     public List<String> getSourceConnections() {
         ArrayList<String> ret = new ArrayList<>();
-        final JRTConfigRequester jrtConfigRequester = requesterPool.get(configSourceSet);
-        if (jrtConfigRequester != null) {
+        if (configSourceSet != null) {
             ret.addAll(configSourceSet.getSources());
         }
         return ret;
@@ -242,6 +243,11 @@ class RpcConfigSourceClient implements ConfigSourceClient {
             log.log(LogLevel.DEBUG, () -> "Found no recipient for " + config.getKey() + " in delayed response queue");
         }
         log.log(LogLevel.DEBUG, () -> "Finished updating config for " + config.getKey() + "," + config.getGeneration());
+    }
+
+    @Override
+    public DelayedResponses delayedResponses() {
+        return delayedResponses;
     }
 
 }

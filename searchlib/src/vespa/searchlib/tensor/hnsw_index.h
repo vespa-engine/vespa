@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include "distance_function.h"
 #include "doc_vector_access.h"
 #include "hnsw_index_utils.h"
 #include "hnsw_node.h"
 #include "nearest_neighbor_index.h"
+#include "random_level_generator.h"
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
@@ -14,9 +16,6 @@
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::tensor {
-
-class DistanceFunction;
-class RandomLevelGenerator;
 
 /**
  * Implementation of a hierarchical navigable small world graph (HNSW)
@@ -82,8 +81,8 @@ protected:
     using TypedCells = vespalib::tensor::TypedCells;
 
     const DocVectorAccess& _vectors;
-    const DistanceFunction& _distance_func;
-    RandomLevelGenerator& _level_generator;
+    DistanceFunction::UP _distance_func;
+    RandomLevelGenerator::UP _level_generator;
     Config _cfg;
     NodeRefVector _node_refs;
     NodeStore _nodes;
@@ -111,7 +110,7 @@ protected:
     LinkArray select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     LinkArray select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     LinkArray select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    void connect_new_node(uint32_t docid, const LinkArray& neighbors, uint32_t level);
+    void connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
     inline TypedCells get_vector(uint32_t docid) const {
@@ -124,18 +123,20 @@ protected:
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
-    HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level);
-    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level);
+    HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
+    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors, uint32_t level) const;
 
 public:
-    HnswIndex(const DocVectorAccess& vectors, const DistanceFunction& distance_func,
-              RandomLevelGenerator& level_generator, const Config& cfg);
+    HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
+              RandomLevelGenerator::UP level_generator, const Config& cfg);
     ~HnswIndex() override;
+
+    const Config& config() const { return _cfg; }
 
     void add_document(uint32_t docid) override;
     void remove_document(uint32_t docid) override;
-    std::vector<uint32_t> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) override;
-    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k);
+    std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
+    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
 
     // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)
 
@@ -144,8 +145,7 @@ public:
 
     // Should only be used by unit tests.
     HnswNode get_node(uint32_t docid) const;
-
-    // TODO: Implement set_node() as well for use in unit tests.
+    void set_node(uint32_t docid, const HnswNode &node);
 };
 
 }

@@ -4,11 +4,12 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 void
 FirstPhaseExecutor::execute(uint32_t)
@@ -34,7 +35,7 @@ FirstPhaseBlueprint::visitDumpFeatures(const IIndexEnvironment &,
 Blueprint::UP
 FirstPhaseBlueprint::createInstance() const
 {
-    return Blueprint::UP(new FirstPhaseBlueprint());
+    return std::make_unique<FirstPhaseBlueprint>();
 }
 
 bool
@@ -54,5 +55,4 @@ FirstPhaseBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &
 }
 
 
-} // namespace features
-} // namespace search
+}

@@ -643,7 +643,9 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationComma
 }
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationReply& msg) const {
-    encode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, msg, no_op_encode);
+    encode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, msg, [&](auto& res) {
+        res.mutable_stats()->set_documents_removed(msg.documents_removed());
+    });
 }
 
 api::StorageCommand::UP ProtocolSerialization7::onDecodeRemoveLocationCommand(BBuf& buf) const {
@@ -653,8 +655,11 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeRemoveLocationCommand(BB
 }
 
 api::StorageReply::UP ProtocolSerialization7::onDecodeRemoveLocationReply(const SCmd& cmd, BBuf& buf) const {
-    return decode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, [&]([[maybe_unused]] auto& res) {
-        return std::make_unique<api::RemoveLocationReply>(static_cast<const api::RemoveLocationCommand&>(cmd));
+    return decode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, [&](auto& res) {
+        uint32_t documents_removed = (res.has_stats() ? res.stats().documents_removed() : 0u);
+        return std::make_unique<api::RemoveLocationReply>(
+                static_cast<const api::RemoveLocationCommand&>(cmd),
+                documents_removed);
     });
 }
 

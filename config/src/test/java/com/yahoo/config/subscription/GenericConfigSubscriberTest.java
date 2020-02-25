@@ -49,14 +49,17 @@ public class GenericConfigSubscriberTest {
     public void testGenericRequesterPooling() {
         ConfigSourceSet source1 = new ConfigSourceSet("tcp/foo:78");
         ConfigSourceSet source2 = new ConfigSourceSet("tcp/bar:79");
-        JRTConfigRequester req1 = new JRTConfigRequester(new JRTConnectionPool(source1), JRTConfigRequesterTest.getTestTimingValues());
-        JRTConfigRequester req2 = new JRTConfigRequester(new JRTConnectionPool(source2), JRTConfigRequesterTest.getTestTimingValues());
+        JRTConfigRequester req1 = JRTConfigRequester.create(source1, JRTConfigRequesterTest.getTestTimingValues());
+        JRTConfigRequester req2 = JRTConfigRequester.create(source2, JRTConfigRequesterTest.getTestTimingValues());
         Map<ConfigSourceSet, JRTConfigRequester> requesters = new LinkedHashMap<>();
         requesters.put(source1, req1);
         requesters.put(source2, req2);
         GenericConfigSubscriber sub = new GenericConfigSubscriber(requesters);
         assertEquals(sub.requesters().get(source1).getConnectionPool().getCurrent().getAddress(), "tcp/foo:78");
         assertEquals(sub.requesters().get(source2).getConnectionPool().getCurrent().getAddress(), "tcp/bar:79");
+        for (JRTConfigRequester requester : requesters.values()) {
+            requester.close();
+        }
     }
 
     @Test(expected=UnsupportedOperationException.class)

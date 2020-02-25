@@ -278,6 +278,22 @@ AttributeManagerTest::testConfigConvert()
         AttributeVector::Config out = ConfigConverter::convert(a);
         EXPECT_EQUAL("tensor(x[5])", out.tensorType().to_spec());
     }
+    { // hnsw index params (enabled)
+        CACA a;
+        a.index.hnsw.enabled = true;
+        a.index.hnsw.maxlinkspernode = 32;
+        a.index.hnsw.neighborstoexploreatinsert = 300;
+        auto out = ConfigConverter::convert(a);
+        EXPECT_TRUE(out.hnsw_index_params().has_value());
+        EXPECT_EQUAL(32u, out.hnsw_index_params().value().max_links_per_node());
+        EXPECT_EQUAL(300u, out.hnsw_index_params().value().neighbors_to_explore_at_insert());
+    }
+    { // hnsw index params (disabled)
+        CACA a;
+        a.index.hnsw.enabled = false;
+        auto out = ConfigConverter::convert(a);
+        EXPECT_FALSE(out.hnsw_index_params().has_value());
+    }
 }
 
 bool gt_attribute(const attribute::IAttributeVector * a, const attribute::IAttributeVector * b) {

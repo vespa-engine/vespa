@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.endpointcertificates;
+package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;

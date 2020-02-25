@@ -162,9 +162,9 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         dispatchRpcRequest(req, () -> {
             StringBuilder sb = new StringBuilder();
             sb.append("\nDelayed responses queue size: ");
-            sb.append(proxyServer.delayedResponses.size());
+            sb.append(proxyServer.delayedResponses().size());
             sb.append("\nContents: ");
-            for (DelayedResponse delayed : proxyServer.delayedResponses.responses()) {
+            for (DelayedResponse delayed : proxyServer.delayedResponses().responses()) {
                 sb.append(delayed.getRequest().toString()).append("\n");
             }
 
@@ -357,7 +357,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     @Override
     public void notifyTargetInvalid(Target target) {
         log.log(LogLevel.DEBUG, () -> "Target invalid " + target);
-        for (Iterator<DelayedResponse> it = proxyServer.delayedResponses.responses().iterator(); it.hasNext(); ) {
+        for (Iterator<DelayedResponse> it = proxyServer.delayedResponses().responses().iterator(); it.hasNext(); ) {
             DelayedResponse delayed = it.next();
             JRTServerConfigRequest request = delayed.getRequest();
             if (request.getRequest().target().equals(target)) {

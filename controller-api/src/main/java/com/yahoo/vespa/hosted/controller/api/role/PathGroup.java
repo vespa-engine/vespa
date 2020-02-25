@@ -179,8 +179,7 @@ enum PathGroup {
                          "/application/v4/tenant/"),
 
     /** Paths which contain (not very strictly) classified information about, e.g., customers. */
-    classifiedInfo("/cost/v1/{*}",
-                   "/",
+    classifiedInfo("/",
                    "/d/{*}"),
 
     /** Same as classifiedInfo, but with optional /api prefix */

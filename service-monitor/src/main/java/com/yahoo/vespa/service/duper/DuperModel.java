@@ -4,9 +4,9 @@ package com.yahoo.vespa.service.duper;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.service.monitor.DuperModelListener;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -22,11 +22,15 @@ public class DuperModel {
 
     private final Map<ApplicationId, ApplicationInfo> applications = new TreeMap<>();
     private final List<DuperModelListener> listeners = new ArrayList<>();
+    private boolean isComplete = false;
 
     public void registerListener(DuperModelListener listener) {
         applications.values().forEach(listener::applicationActivated);
         listeners.add(listener);
     }
+
+    public void setCompleteness(boolean isComplete) { this.isComplete = isComplete; }
+    public boolean isComplete() { return isComplete; }
 
     public boolean contains(ApplicationId applicationId) {
         return applications.containsKey(applicationId);
@@ -47,6 +51,6 @@ public class DuperModel {
 
     public List<ApplicationInfo> getApplicationInfos() {
         logger.log(LogLevel.DEBUG, "Applications in duper model: " + applications.values().size());
-        return Collections.unmodifiableList(new ArrayList<>(applications.values()));
+        return List.copyOf(applications.values());
     }
 }

@@ -57,11 +57,23 @@ void print_decode_result(const char* mode, const DecodeResult& res) {
             decode_state_to_str(res.state));
 }
 
+TransportSecurityOptions ts_from_pems(vespalib::stringref ca_certs_pem,
+                                      vespalib::stringref cert_chain_pem,
+                                      vespalib::stringref private_key_pem)
+{
+    auto ts_builder = TransportSecurityOptions::Params().
+            ca_certs_pem(ca_certs_pem).
+            cert_chain_pem(cert_chain_pem).
+            private_key_pem(private_key_pem).
+            authorized_peers(AuthorizedPeers::allow_all_authenticated());
+    return TransportSecurityOptions(std::move(ts_builder));
+}
+
 struct Fixture {
     TransportSecurityOptions tls_opts;
     std::shared_ptr<TlsContext> tls_ctx;
-    std::unique_ptr<CryptoCodec> client;
-    std::unique_ptr<CryptoCodec> server;
+    std::unique_ptr<OpenSslCryptoCodecImpl> client;
+    std::unique_ptr<OpenSslCryptoCodecImpl> server;
     SmartBuffer client_to_server;
     SmartBuffer server_to_client;
 
@@ -77,16 +89,21 @@ struct Fixture {
 
     static TransportSecurityOptions create_options_without_own_peer_cert() {
         auto source_opts = vespalib::test::make_tls_options_for_testing();
-        return TransportSecurityOptions(source_opts.ca_certs_pem(), "", "");
+        return ts_from_pems(source_opts.ca_certs_pem(), "", "");
     }
 
-    static std::unique_ptr<CryptoCodec> create_openssl_codec(
-            const TransportSecurityOptions& opts, CryptoCodec::Mode mode) {
+    static std::unique_ptr<OpenSslCryptoCodecImpl> create_openssl_codec(
+            const TransportSecurityOptions& opts, CryptoCodec::Mode mode, const SocketSpec& peer_spec) {
         auto ctx = TlsContext::create_default_context(opts, AuthorizationMode::Enforce);
-        return create_openssl_codec(ctx, mode);
+        return create_openssl_codec(ctx, mode, peer_spec);
     }
 
-    static std::unique_ptr<CryptoCodec> create_openssl_codec(
+    static std::unique_ptr<OpenSslCryptoCodecImpl> create_openssl_codec(
+            const TransportSecurityOptions& opts, CryptoCodec::Mode mode) {
+        return create_openssl_codec(opts, mode, SocketSpec::invalid);
+    }
+
+    static std::unique_ptr<OpenSslCryptoCodecImpl> create_openssl_codec(
             const TransportSecurityOptions& opts,
             std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
             CryptoCodec::Mode mode) {
@@ -94,21 +111,30 @@ struct Fixture {
         return create_openssl_codec(ctx, mode);
     }
 
-    static std::unique_ptr<CryptoCodec> create_openssl_codec(
-            const std::shared_ptr<TlsContext>& ctx, CryptoCodec::Mode mode) {
+    static std::unique_ptr<OpenSslCryptoCodecImpl> create_openssl_codec(
+            const std::shared_ptr<TlsContext>& ctx, CryptoCodec::Mode mode, const SocketSpec& peer_spec) {
         auto ctx_impl = std::dynamic_pointer_cast<impl::OpenSslTlsContextImpl>(ctx);
-        return std::make_unique<impl::OpenSslCryptoCodecImpl>(std::move(ctx_impl), SocketAddress(), mode);
+        if (mode == CryptoCodec::Mode::Client) {
+            return OpenSslCryptoCodecImpl::make_client_codec(std::move(ctx_impl), peer_spec, SocketAddress());
+        } else {
+            return OpenSslCryptoCodecImpl::make_server_codec(std::move(ctx_impl), SocketAddress());
+        }
     }
 
-    EncodeResult do_encode(CryptoCodec& codec, Output& buffer, vespalib::stringref plaintext) {
+    static std::unique_ptr<OpenSslCryptoCodecImpl> create_openssl_codec(
+            const std::shared_ptr<TlsContext>& ctx, CryptoCodec::Mode mode) {
+        return create_openssl_codec(ctx, mode, SocketSpec::invalid);
+    }
+
+    static EncodeResult do_encode(CryptoCodec& codec, Output& buffer, vespalib::stringref plaintext) {
         auto out = buffer.reserve(codec.min_encode_buffer_size());
         auto enc_res = codec.encode(plaintext.data(), plaintext.size(), out.data, out.size);
         buffer.commit(enc_res.bytes_produced);
         return enc_res;
     }
 
-    DecodeResult do_decode(CryptoCodec& codec, Input& buffer, vespalib::string& out,
-                           size_t max_bytes_produced, size_t max_bytes_consumed) {
+    static DecodeResult do_decode(CryptoCodec& codec, Input& buffer, vespalib::string& out,
+                                  size_t max_bytes_produced, size_t max_bytes_consumed) {
         auto in = buffer.obtain();
         out.resize(max_bytes_produced);
         auto to_consume = std::min(in.size, max_bytes_consumed);
@@ -382,13 +408,13 @@ l9pLv1vrujrPEC78cyIQe2x55wf3pRoaDg==
 -----END EC PRIVATE KEY-----)";
 
 TEST_F("client with certificate signed by untrusted CA is rejected by server", Fixture) {
-    TransportSecurityOptions client_opts(unknown_ca_pem, untrusted_host_cert_pem, untrusted_host_key_pem);
+    auto client_opts = ts_from_pems(unknown_ca_pem, untrusted_host_cert_pem, untrusted_host_key_pem);
     f.client = f.create_openssl_codec(client_opts, CryptoCodec::Mode::Client);
     EXPECT_FALSE(f.handshake());
 }
 
 TEST_F("server with certificate signed by untrusted CA is rejected by client", Fixture) {
-    TransportSecurityOptions server_opts(unknown_ca_pem, untrusted_host_cert_pem, untrusted_host_key_pem);
+    auto server_opts = ts_from_pems(unknown_ca_pem, untrusted_host_cert_pem, untrusted_host_key_pem);
     f.server = f.create_openssl_codec(server_opts, CryptoCodec::Mode::Server);
     EXPECT_FALSE(f.handshake());
 }
@@ -396,8 +422,8 @@ TEST_F("server with certificate signed by untrusted CA is rejected by client", F
 TEST_F("Can specify multiple trusted CA certs in transport options", Fixture) {
     auto& base_opts = f.tls_opts;
     auto multi_ca_pem = base_opts.ca_certs_pem() + "\n" + unknown_ca_pem;
-    TransportSecurityOptions multi_ca_using_ca_1(multi_ca_pem, untrusted_host_cert_pem, untrusted_host_key_pem);
-    TransportSecurityOptions multi_ca_using_ca_2(multi_ca_pem, base_opts.cert_chain_pem(), base_opts.private_key_pem());
+    auto multi_ca_using_ca_1 = ts_from_pems(multi_ca_pem, untrusted_host_cert_pem, untrusted_host_key_pem);
+    auto multi_ca_using_ca_2 = ts_from_pems(multi_ca_pem, base_opts.cert_chain_pem(), base_opts.private_key_pem());
     // Let client be signed by CA 1, server by CA 2. Both have the two CAs in their trust store
     // so this should allow for a successful handshake.
     f.client = f.create_openssl_codec(multi_ca_using_ca_1, CryptoCodec::Mode::Client);
@@ -446,7 +472,7 @@ struct CertFixture : Fixture {
         return {std::move(cert), std::move(key)};
     }
 
-    static std::unique_ptr<CryptoCodec> create_openssl_codec_with_authz_mode(
+    static std::unique_ptr<OpenSslCryptoCodecImpl> create_openssl_codec_with_authz_mode(
             const TransportSecurityOptions& opts,
             std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
             CryptoCodec::Mode codec_mode,
@@ -455,33 +481,52 @@ struct CertFixture : Fixture {
         return create_openssl_codec(ctx, codec_mode);
     }
 
+    TransportSecurityOptions::Params ts_builder_from(const CertKeyWrapper& ck) const {
+        return TransportSecurityOptions::Params().
+                ca_certs_pem(root_ca.cert->to_pem()).
+                cert_chain_pem(ck.cert->to_pem()).
+                private_key_pem(ck.key->private_to_pem());
+    }
+
     void reset_client_with_cert_opts(const CertKeyWrapper& ck, AuthorizedPeers authorized) {
-        TransportSecurityOptions client_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
-                                             ck.key->private_to_pem(), std::move(authorized));
-        client = create_openssl_codec(client_opts, CryptoCodec::Mode::Client);
+        auto ts_params = ts_builder_from(ck).authorized_peers(std::move(authorized));
+        client = create_openssl_codec(TransportSecurityOptions(std::move(ts_params)), CryptoCodec::Mode::Client);
     }
 
     void reset_client_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
-        TransportSecurityOptions client_opts(root_ca.cert->to_pem(), ck.cert->to_pem(), ck.key->private_to_pem());
-        client = create_openssl_codec(client_opts, std::move(cert_cb), CryptoCodec::Mode::Client);
+        auto ts_params = ts_builder_from(ck).authorized_peers(AuthorizedPeers::allow_all_authenticated());
+        client = create_openssl_codec(TransportSecurityOptions(std::move(ts_params)),
+                                      std::move(cert_cb), CryptoCodec::Mode::Client);
     }
 
     void reset_server_with_cert_opts(const CertKeyWrapper& ck, AuthorizedPeers authorized) {
-        TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
-                                             ck.key->private_to_pem(), std::move(authorized));
-        server = create_openssl_codec(server_opts, CryptoCodec::Mode::Server);
+        auto ts_params = ts_builder_from(ck).authorized_peers(std::move(authorized));
+        server = create_openssl_codec(TransportSecurityOptions(std::move(ts_params)), CryptoCodec::Mode::Server);
     }
 
     void reset_server_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
-        TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(), ck.key->private_to_pem());
-        server = create_openssl_codec(server_opts, std::move(cert_cb), CryptoCodec::Mode::Server);
+        auto ts_params = ts_builder_from(ck).authorized_peers(AuthorizedPeers::allow_all_authenticated());
+        server = create_openssl_codec(TransportSecurityOptions(std::move(ts_params)),
+                                      std::move(cert_cb), CryptoCodec::Mode::Server);
     }
 
     void reset_server_with_cert_opts(const CertKeyWrapper& ck,
                                      std::shared_ptr<CertificateVerificationCallback> cert_cb,
                                      AuthorizationMode authz_mode) {
-        TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(), ck.key->private_to_pem());
-        server = create_openssl_codec_with_authz_mode(server_opts, std::move(cert_cb), CryptoCodec::Mode::Server, authz_mode);
+        auto ts_params = ts_builder_from(ck).authorized_peers(AuthorizedPeers::allow_all_authenticated());
+        server = create_openssl_codec_with_authz_mode(TransportSecurityOptions(std::move(ts_params)),
+                                                      std::move(cert_cb), CryptoCodec::Mode::Server, authz_mode);
+    }
+
+    void reset_client_with_peer_spec(const CertKeyWrapper& ck,
+                                     const SocketSpec& peer_spec,
+                                     bool disable_hostname_validation = false)
+    {
+        auto ts_params = ts_builder_from(ck).
+                authorized_peers(AuthorizedPeers::allow_all_authenticated()).
+                disable_hostname_validation(disable_hostname_validation);
+        client = create_openssl_codec(TransportSecurityOptions(std::move(ts_params)),
+                                      CryptoCodec::Mode::Client, peer_spec);
     }
 };
 
@@ -537,7 +582,7 @@ TEST_F("Exception during verification callback processing breaks handshake", Cer
     EXPECT_FALSE(f.handshake());
 }
 
-TEST_F("certificate verification callback observes CN and DNS SANs", CertFixture) {
+TEST_F("Certificate verification callback observes CN and DNS SANs", CertFixture) {
     auto ck = f.create_ca_issued_peer_cert(
             {{"rockets.wile.example.com"}},
             {{"DNS:crash.wile.example.com"}, {"DNS:burn.wile.example.com"}});
@@ -556,7 +601,7 @@ TEST_F("certificate verification callback observes CN and DNS SANs", CertFixture
     EXPECT_EQUAL("burn.wile.example.com", creds.dns_sans[1]);
 }
 
-TEST_F("last occurring CN is given to verification callback if multiple CNs are present", CertFixture) {
+TEST_F("Last occurring CN is given to verification callback if multiple CNs are present", CertFixture) {
     auto ck = f.create_ca_issued_peer_cert(
             {{"foo.wile.example.com"}, {"bar.wile.example.com"}, {"baz.wile.example.com"}}, {});
 
@@ -643,6 +688,51 @@ TEST_F("Log-only insecure authorization mode ignores verification result", CertF
 
 TEST_F("Disabled insecure authorization mode ignores verification result", CertFixture) {
     reset_peers_with_server_authz_mode(f, AuthorizationMode::Disable);
+    EXPECT_TRUE(f.handshake());
+}
+
+void reset_peers_with_client_peer_spec(CertFixture& f,
+                                       const SocketSpec& peer_spec,
+                                       bool disable_hostname_validation = false)
+{
+    auto client_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
+    f.reset_client_with_peer_spec(client_ck, peer_spec, disable_hostname_validation);
+    // Since hostname validation is enabled by default, providing a peer spec also
+    // means that we must have a valid server name to present back (or the handshake fails).
+    auto server_ck = f.create_ca_issued_peer_cert({}, {{"DNS:*.example.com"}});
+    f.reset_server_with_cert_opts(server_ck, AuthorizedPeers::allow_all_authenticated());
+}
+
+TEST_F("Client does not send SNI extension if hostname not provided in spec", CertFixture) {
+    reset_peers_with_client_peer_spec(f, SocketSpec::invalid);
+
+    ASSERT_TRUE(f.handshake());
+    auto maybe_sni = f.server->client_provided_sni_extension();
+    EXPECT_FALSE(maybe_sni.has_value());
+}
+
+TEST_F("Client sends SNI extension with hostname provided in spec", CertFixture) {
+    reset_peers_with_client_peer_spec(f, SocketSpec::from_host_port("sni-test.example.com", 12345));
+
+    ASSERT_TRUE(f.handshake());
+    auto maybe_sni = f.server->client_provided_sni_extension();
+    ASSERT_TRUE(maybe_sni.has_value());
+    EXPECT_EQUAL("sni-test.example.com", *maybe_sni);
+}
+
+TEST_F("Client hostname validation passes handshake if server hostname matches certificate", CertFixture) {
+    reset_peers_with_client_peer_spec(f, SocketSpec::from_host_port("server-must-be-under.example.com", 12345), false);
+    EXPECT_TRUE(f.handshake());
+}
+
+TEST_F("Client hostname validation fails handshake if server hostname mismatches certificate", CertFixture) {
+    // Wildcards only apply to a single level, so this should fail as the server only has a cert for *.example.com
+    reset_peers_with_client_peer_spec(f, SocketSpec::from_host_port("nested.name.example.com", 12345), false);
+    EXPECT_FALSE(f.handshake());
+}
+
+TEST_F("Mismatching server cert vs hostname does not fail if hostname validation is disabled", CertFixture) {
+    reset_peers_with_client_peer_spec(f, SocketSpec::from_host_port("a.very.nested.name.example.com", 12345), true);
     EXPECT_TRUE(f.handshake());
 }
 

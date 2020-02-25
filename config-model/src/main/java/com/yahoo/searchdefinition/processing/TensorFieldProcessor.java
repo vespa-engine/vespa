@@ -24,16 +24,18 @@ public class TensorFieldProcessor extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        if ( ! validate) return;
-
         for (var field : search.allConcreteFields()) {
             if ( field.getDataType() instanceof TensorDataType ) {
-                validateIndexingScripsForTensorField(field);
-                validateAttributeSettingForTensorField(field);
-                processIndexSettingsForTensorField(field);
+                if (validate) {
+                    validateIndexingScripsForTensorField(field);
+                    validateAttributeSettingForTensorField(field);
+                }
+                processIndexSettingsForTensorField(field, validate);
             }
             else if (field.getDataType() instanceof CollectionDataType){
-                validateDataTypeForCollectionField(field);
+                if (validate) {
+                    validateDataTypeForCollectionField(field);
+                }
             }
         }
     }
@@ -68,12 +70,12 @@ public class TensorFieldProcessor extends Processor {
         }
     }
 
-    private void processIndexSettingsForTensorField(SDField field) {
+    private void processIndexSettingsForTensorField(SDField field, boolean validate) {
         if (!field.doesIndexing()) {
             return;
         }
         if (isTensorTypeThatSupportsHnswIndex(field)) {
-            if (!field.doesAttributing()) {
+            if (validate && !field.doesAttributing()) {
                 fail(search, field, "A tensor that has an index must also be an attribute.");
             }
             var index = field.getIndex(field.getName());
