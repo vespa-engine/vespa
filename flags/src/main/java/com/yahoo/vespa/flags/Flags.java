@@ -70,7 +70,7 @@ public class Flags {
     public static final UnboundBooleanFlag SERVICE_MODEL_CACHE = defineFeatureFlag(
             "service-model-cache", false,
             "Whether the service model is cached.",
-            "Takes immediate effect.",
+            "Takes effect on restart of config server.",
             HOSTNAME);
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
