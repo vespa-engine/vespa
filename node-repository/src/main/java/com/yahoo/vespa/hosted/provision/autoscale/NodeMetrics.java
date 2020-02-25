@@ -38,6 +38,11 @@ public interface NodeMetrics {
         public long timestamp() { return timestamp; }
         public float value() { return value; }
 
+        @Override
+        public String toString() {
+            return "metric value " + name + ": " + value + " at " + timestamp + " for " + hostname;
+        }
+
     }
 
 }

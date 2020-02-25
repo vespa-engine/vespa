@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -24,48 +25,43 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-public class NodeMetricsHttpFetcher extends AbstractComponent implements NodeMetrics {
+public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics {
 
-    private static final Logger log = Logger.getLogger(NodeMetricsHttpFetcher.class.getName());
+    private static final Logger log = Logger.getLogger(NodeMetricsFetcher.class.getName());
 
     private static final String apiPath = "/metrics/v2/values";
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
-    private final CloseableHttpClient httpClient;
+    private final HttpClient httpClient;
 
-    public NodeMetricsHttpFetcher(NodeRepository nodeRepository, Orchestrator orchestrator) {
+    @Inject
+    public NodeMetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator) {
+        this(nodeRepository, orchestrator, new ApacheHttpClient());
+    }
+
+    NodeMetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator, HttpClient httpClient) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
-        httpClient = VespaHttpClientBuilder.createWithBasicConnectionManager().build();
+        this.httpClient = httpClient;
     }
 
     @Override
     public Collection<MetricValue> fetchMetrics(ApplicationId application) {
         Node metricsV2Container = nodeRepository.list()
+                                                .owner(application)
                                                 .state(Node.State.active)
                                                 .container()
                                                 .filter(node -> expectedUp(node))
                                                 .asList().get(0);
         String url = "https://" + metricsV2Container.hostname() + ":" + 4443 + apiPath + "?consumer=vespa-consumer-metrics";
-
-        try {
-            String response = httpClient.execute(new HttpGet(url), new BasicResponseHandler());
-            return new MetricsResponse(response).metrics();
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException("Failed to get metrics on " + url, e);
-        }
+        String response = httpClient.get(url);
+        return new MetricsResponse(response).metrics();
     }
 
     @Override
     public void deconstruct() {
-        try {
-            httpClient.close();
-        }
-        catch (IOException e) {
-            log.log(Level.WARNING, "Exception deconstructing", e);
-        }
+        httpClient.close();
     }
 
     private boolean expectedUp(Node node) {
@@ -75,6 +71,42 @@ public class NodeMetricsHttpFetcher extends AbstractComponent implements NodeMet
         catch (HostNameNotFoundException e) {
             return false;
         }
+    }
+
+    /** The simplest possible http client interface */
+    public interface HttpClient {
+
+        String get(String url);
+        void close();
+
+    }
+
+    /** Implements the HttpClient interface by delegating to an Apache HTTP client */
+    public static class ApacheHttpClient implements HttpClient {
+
+        private final CloseableHttpClient httpClient = VespaHttpClientBuilder.createWithBasicConnectionManager().build();
+
+        @Override
+        public String get(String url) {
+            try {
+                return httpClient.execute(new HttpGet(url), new BasicResponseHandler());
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException("Could not get " + url, e);
+            }
+        }
+
+        @Override
+        public void close() {
+            try {
+                httpClient.close();
+            }
+            catch (IOException e) {
+                log.log(Level.WARNING, "Exception deconstructing", e);
+            }
+        }
+
+
     }
 
 }

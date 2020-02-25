@@ -11,24 +11,24 @@ import com.yahoo.config.provision.NodeResources;
 public enum Resource {
 
     cpu {
-        String metric() { return "cpu.util"; }
+        String metricName() { return "cpu.util"; }
         double idealAverageLoad() { return 0.2; }
         double valueFrom(NodeResources resources) { return resources.vcpu(); }
     },
 
     memory {
-        String metric() { return "memory.util"; }
+        String metricName() { return "memory.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.memoryGb(); }
     },
 
     disk {
-        String metric() { return "disk.util"; }
+        String metricName() { return "disk.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.diskGb(); }
     };
 
-    abstract String metric();
+    abstract String metricName();
 
     /** The load we should have of this resource on average, when one node in the cluster is down */
     abstract double idealAverageLoad();
@@ -37,7 +37,7 @@ public enum Resource {
 
     public static Resource fromMetric(String metricName) {
         for (Resource resource : values())
-            if (resource.metric().equals(metricName)) return resource;
+            if (resource.metricName().equals(metricName)) return resource;
         throw new IllegalArgumentException("Metric '" + metricName + "' does not map to a resource");
     }
 

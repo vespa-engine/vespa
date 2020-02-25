@@ -46,12 +46,13 @@ public class MetricsResponse {
     private void consumeNodeMetrics(String hostname, Inspector node) {
         long timestamp = node.field("timestamp").asLong();
         Map<String, Double> values = consumeMetrics(node.field("metrics"));
-        addMetricIfPresent(hostname, "cpu.util", timestamp, values);
+        for (Resource resource : Resource.values())
+            addMetricIfPresent(hostname, resource.metricName(), timestamp, values);
     }
 
     private void addMetricIfPresent(String hostname, String metricName, long timestamp, Map<String, Double> values) {
         if (values.containsKey(metricName))
-            metricValues.add(new NodeMetrics.MetricValue(hostname, metricName, timestamp, values.get("cpu.util").floatValue()));
+            metricValues.add(new NodeMetrics.MetricValue(hostname, metricName, timestamp, values.get(metricName).floatValue()));
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
@@ -62,8 +63,12 @@ public class MetricsResponse {
 
     private Map<String, Double> consumeMetrics(Inspector metrics) {
         Map<String, Double> values = new HashMap<>();
-        metrics.field("values").traverse((ObjectTraverser)(name, value) -> values.put(name, value.asDouble()));
+        metrics.traverse((ArrayTraverser) (__, item) -> consumeMetricsItem(item, values));
         return values;
+    }
+
+    private void consumeMetricsItem(Inspector item, Map<String, Double> values) {
+        item.field("values").traverse((ObjectTraverser)(name, value) -> values.put(name, value.asDouble()));
     }
 
 }
