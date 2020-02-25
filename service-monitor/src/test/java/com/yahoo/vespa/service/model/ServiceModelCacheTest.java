@@ -18,7 +18,7 @@ public class ServiceModelCacheTest {
     @SuppressWarnings("unchecked")
     private final Supplier<ServiceModel> rawSupplier = mock(Supplier.class);
     private final Timer timer = mock(Timer.class);
-    private final ServiceModelCache cache = new ServiceModelCache(rawSupplier, timer);
+    private final ServiceModelCache cache = new ServiceModelCache(rawSupplier, timer, true);
 
     @Test
     public void sanityCheck() {
