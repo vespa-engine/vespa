@@ -89,7 +89,7 @@ Metrics = element metrics {
 
 Cloudwatch = element cloudwatch {
     attribute region { xsd:Name } &
-    attribute namespace { xsd:Name } &
+    attribute namespace { xsd:string { pattern = "[\w_\-/#:\.]+" } } &
     (
       (
         element access-key-name { xsd:Name } &
