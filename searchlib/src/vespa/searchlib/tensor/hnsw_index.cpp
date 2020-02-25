@@ -136,7 +136,7 @@ HnswIndex::select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_l
 }
 
 void
-HnswIndex::connect_new_node(uint32_t docid, const LinkArray& neighbors, uint32_t level)
+HnswIndex::connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level)
 {
     set_link_array(docid, level, neighbors);
     for (uint32_t neighbor_docid : neighbors) {
@@ -371,5 +371,28 @@ HnswIndex::get_node(uint32_t docid) const
     return HnswNode(result);
 }
 
+void
+HnswIndex::set_node(uint32_t docid, const HnswNode &node)
+{
+    _node_refs.ensure_size(docid + 1, AtomicEntryRef());
+    // A document cannot be added twice.
+    assert(!_node_refs[docid].load_acquire().valid());
+
+    // make new node
+    size_t num_levels = node.size();
+    assert(num_levels > 0);
+    LevelArray levels(num_levels, AtomicEntryRef());
+    auto node_ref = _nodes.add(levels);
+    _node_refs[docid].store_release(node_ref);
+
+    for (size_t level = 0; level < num_levels; ++level) {
+        connect_new_node(docid, node.level(level), level);
+    }
+    int max_level = num_levels - 1;
+    if (_entry_level < max_level) {
+        _entry_docid = docid;
+        _entry_level = max_level;
+    }
 }
 
+}
