@@ -14,7 +14,7 @@ vespa_add_executable(eval_gist_benchmark_app
     SOURCES
     gist_benchmark.cpp
     xp-annoy-nns.cpp
-    xp-hnswlike-nns.cpp
+    extended-hnsw.cpp
     xp-lsh-nns.cpp
     DEPENDS
     vespaeval
