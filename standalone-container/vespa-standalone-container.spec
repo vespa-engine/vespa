@@ -99,15 +99,6 @@ done
 %clean
 rm -rf %buildroot
 
-%pre
-getent group vespa >/dev/null || groupadd -r vespa
-getent passwd vespa >/dev/null || \
-    useradd -r -g vespa -d %_prefix -s /sbin/nologin \
-    -c "Create owner of all Vespa data files" vespa
-echo "pathmunge %_prefix/bin" > /etc/profile.d/vespa.sh
-echo "export VESPA_HOME=%_prefix" >> /etc/profile.d/vespa.sh
-chmod +x /etc/profile.d/vespa.sh
-
 %postun
 if [ $1 -eq 0 ]; then # this is an uninstallation
     rm -f /etc/profile.d/vespa.sh
