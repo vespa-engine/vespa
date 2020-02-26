@@ -48,7 +48,6 @@ public class IndexFacts {
     static final String unionName = "unionOfAllKnown";
 
     /** A search definition which contains the union of all settings. */
-    @SuppressWarnings("deprecation")
     private SearchDefinition unionSearchDefinition = new SearchDefinition(unionName);
 
     private boolean frozen;

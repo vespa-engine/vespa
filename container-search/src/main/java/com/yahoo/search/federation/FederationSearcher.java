@@ -354,7 +354,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private void warnIfUnresolvedSearchChains(List<UnresolvedSearchChainException> missingTargets,
-                                      HitGroup errorHitGroup) {
+                                              HitGroup errorHitGroup) {
         if (!missingTargets.isEmpty()) {
             errorHitGroup.addError(missingSearchChainsErrorMessage(missingTargets));
         }
@@ -492,9 +492,9 @@ public class FederationSearcher extends ForkingSearcher {
      * TODO This is probably a dirty hack for bug 4711376. There are probably better ways.
      * But I will leave that to trd-processing@
      *
-     * @param group  The merging hitgroup to be updated if necessary
-     * @param orderer The per provider hit orderer.
-     * @return The hitorderer chosen
+     * @param group the merging hitgroup to be updated if necessary
+     * @param orderer the per provider hit orderer
+     * @return he hitorderer chosen
      */
     private HitOrderer dirtyCopyIfModifiedOrderer(HitGroup group, HitOrderer orderer) {
         if (orderer != null) {

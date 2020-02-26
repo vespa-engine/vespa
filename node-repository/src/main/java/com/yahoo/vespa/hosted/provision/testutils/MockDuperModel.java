@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author hakonhall
  */
 public class MockDuperModel implements DuperModelInfraApi {
+
     private final Map<ApplicationId, InfraApplicationApi> supportedInfraApps = new HashMap<>();
     private final ConcurrentHashMap<ApplicationId, List<HostName>> activeApps = new ConcurrentHashMap<>();
 
