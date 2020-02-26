@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -71,6 +72,9 @@ public interface ZoneRegistry {
 
     /** Returns all OS upgrade policies */
     List<UpgradePolicy> osUpgradePolicies();
+
+    /** Returns the routing methods supported by given zone, with the most preferred method appearing first */
+    List<RoutingMethod> routingMethods(ZoneId zone);
 
     /** Returns a URL where an informative dashboard can be found. */
     URI dashboardUrl();

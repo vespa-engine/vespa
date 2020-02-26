@@ -25,16 +25,16 @@ import java.util.stream.Collectors;
 public class ZoneFilterMock implements ZoneList {
 
     private final List<ZoneApi> zones;
-    private final Map<ZoneApi, Set<RoutingMethod>> zoneRoutingMethods;
+    private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods;
     private final boolean negate;
 
-    private ZoneFilterMock(List<ZoneApi> zones, Map<ZoneApi, Set<RoutingMethod>> zoneRoutingMethods, boolean negate) {
+    private ZoneFilterMock(List<ZoneApi> zones, Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods, boolean negate) {
         this.zones = zones;
         this.zoneRoutingMethods = zoneRoutingMethods;
         this.negate = negate;
     }
 
-    public static ZoneFilter from(Collection<? extends ZoneApi> zones, Map<ZoneApi, Set<RoutingMethod>> routingMethods) {
+    public static ZoneFilter from(Collection<? extends ZoneApi> zones, Map<ZoneApi, List<RoutingMethod>> routingMethods) {
         return new ZoneFilterMock(List.copyOf(zones), Map.copyOf(routingMethods), false);
     }
 
@@ -60,7 +60,7 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public ZoneList routingMethod(RoutingMethod method) {
-        return filter(zone -> zoneRoutingMethods.getOrDefault(zone, Set.of()).contains(method));
+        return filter(zone -> zoneRoutingMethods.getOrDefault(zone, List.of()).contains(method));
     }
 
     @Override
