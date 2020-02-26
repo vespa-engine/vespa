@@ -6,7 +6,7 @@ struct TopK {
     static constexpr size_t K = 100;
     Hit hits[K];
 
-    size_t recall(const TopK &other) {
+    size_t recall(const TopK &other) const {
         size_t overlap = 0;
         size_t i = 0;
         size_t j = 0;

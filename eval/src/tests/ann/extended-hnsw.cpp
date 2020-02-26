@@ -2,24 +2,6 @@
 
 #include "hnsw-like.h"
 
-/*
- Todo:
-
- measure effect of:
- 1) removing leftover backlinks during "shrink" operation
- 2) refilling to low-watermark after 1) happens
- 3) refilling to mid-watermark after 1) happens
- 4) adding then removing 20% extra documents
- 5) removing 20% first-added documents
- 6) removing first-added documents while inserting new ones
-
- 7) auto-tune search_k to ensure >= 50% recall on 1000 Q with k=100
- 8) auto-tune search_k to ensure avg 90% recall on 1000 Q with k=100
- 9) auto-tune search_k to ensure >= 90% reachability of 10000 docids
-
- 10) timings for SIFT, GIST, and DEEP data (100k, 200k, 300k, 500k, 700k, 1000k)
- */
-
 static size_t distcalls_simple;
 static size_t distcalls_search_layer;
 static size_t distcalls_other;
@@ -32,7 +14,6 @@ static size_t disconnected_weak_links;
 static size_t disconnected_for_symmetry;
 static size_t select_n_full;
 static size_t select_n_partial;
-
 
 
 HnswLikeNns::HnswLikeNns(uint32_t numDims, const DocVectorAccess<float> &dva)
@@ -67,6 +48,7 @@ HnswLikeNns::search_layer_simple(Vector vector, HnswHit curPoint, uint32_t searc
     return curPoint;
 }
 
+
 bool
 HnswLikeNns::haveCloserDistance(HnswHit e, const LinkList &r) const {
     for (uint32_t prevId : r) {
@@ -93,18 +75,29 @@ HnswLikeNns::addDoc(uint32_t docid) {
         return;
     }
     int searchLevel = _entryLevel;
+    VisitedSet &visited = _visitedSetPool.get(_nodes.size());
     double entryDist = distance(vector, _entryId);
     ++distcalls_other;
     HnswHit entryPoint(_entryId, SqDist(entryDist));
+#undef MULTI_ENTRY_I
+#ifdef MULTI_ENTRY_I
+    FurthestPriQ w;
+    w.push(entryPoint);
+    while (searchLevel > level) {
+        search_layer(vector, w, visited, 5 * _M, searchLevel);
+        --searchLevel;
+    }
+#else
     while (searchLevel > level) {
         entryPoint = search_layer_simple(vector, entryPoint, searchLevel);
         --searchLevel;
     }
-    searchLevel = std::min(level, _entryLevel);
     FurthestPriQ w;
     w.push(entryPoint);
+#endif
+    searchLevel = std::min(level, _entryLevel);
     while (searchLevel >= 0) {
-        search_layer(vector, w, _efConstruction, searchLevel);
+        search_layer(vector, w, visited, _efConstruction, searchLevel);
         LinkList neighbors = select_neighbors(w.peek(), _M);
         connect_new_node(docid, neighbors, searchLevel);
         each_shrink_ifneeded(neighbors, searchLevel);
@@ -137,22 +130,83 @@ HnswLikeNns::track_ops() {
     }
 }                    
 
+#ifdef SIMPLE_REFILL
 void
 HnswLikeNns::refill_ifneeded(uint32_t my_id, const LinkList &replacements, uint32_t level) {
     LinkList &my_links = getLinkList(my_id, level);
-    if (my_links.size() < 8) {
+    if (my_links.size() * 2 < _M) {
+        const uint32_t maxLinks = (level > 0) ? _M : (2 * _M);
         ++refill_needed_calls;
         for (uint32_t repl_id : replacements) {
             if (repl_id == my_id) continue;
             if (my_links.has_link_to(repl_id)) continue;
             LinkList &other_links = getLinkList(repl_id, level);
-            if (other_links.size() + 1 >= _M) continue;
+            if (other_links.size() >= maxLinks) continue;
             other_links.push_back(my_id);
             my_links.push_back(repl_id);
             if (my_links.size() >= _M) return;
         }
     }
 }
+#endif
+
+#define REFILL_ALL
+#ifdef REFILL_ALL
+void
+HnswLikeNns::refill_ifneeded(uint32_t my_id, const LinkList &replacements, uint32_t level) {
+    LinkList &my_links = getLinkList(my_id, level);
+    if (my_links.size() >= _M) return;
+    ++refill_needed_calls;
+    const uint32_t maxLinks = (level > 0) ? _M : (2 * _M);
+    NearestPriQ w;
+    for (uint32_t repl_id : replacements) {
+        if (repl_id == my_id) continue;
+        if (my_links.has_link_to(repl_id)) continue;
+        const LinkList &other_links = getLinkList(repl_id, level);
+        if (other_links.size() >= maxLinks) continue;
+        double dist = distance(my_id, repl_id);
+        ++distcalls_refill;
+        w.emplace(repl_id, SqDist(dist));
+    }
+    while (! w.empty()) {
+        HnswHit e = w.top();
+        w.pop();
+        if (haveCloserDistance(e, my_links)) continue;
+        LinkList &other_links = getLinkList(e.docid, level);
+        my_links.push_back(e.docid);
+        other_links.push_back(my_id);
+        if (my_links.size() == _M) break;
+    }
+}
+#endif
+
+#ifdef REFILL_ONE
+void
+HnswLikeNns::refill_ifneeded(uint32_t my_id, const LinkList &replacements, uint32_t level) {
+    LinkList &my_links = getLinkList(my_id, level);
+    if (my_links.size() >= _M) return;
+    ++refill_needed_calls;
+    NearestPriQ w;
+    for (uint32_t repl_id : replacements) {
+        if (repl_id == my_id) continue;
+        if (my_links.has_link_to(repl_id)) continue;
+        LinkList &other_links = getLinkList(repl_id, level);
+        if (other_links.size() >= _M) continue;
+        double dist = distance(my_id, repl_id);
+        ++distcalls_refill;
+        w.emplace(repl_id, SqDist(dist));
+    }
+    while (! w.empty()) {
+        HnswHit e = w.top();
+        w.pop();
+        if (haveCloserDistance(e, my_links)) continue;
+        LinkList &other_links = getLinkList(e.docid, level);
+        my_links.push_back(e.docid);
+        other_links.push_back(my_id);
+        return;
+    }
+}
+#endif
 
 void
 HnswLikeNns::shrink_links(uint32_t shrink_id, uint32_t maxLinks, uint32_t level) {
@@ -180,6 +234,7 @@ HnswLikeNns::shrink_links(uint32_t shrink_id, uint32_t maxLinks, uint32_t level)
 #endif
 #endif
 }
+
 
 void
 HnswLikeNns::removeDoc(uint32_t docid) {
@@ -225,13 +280,24 @@ HnswLikeNns::topK(uint32_t k, Vector vector, uint32_t search_k) {
     ++distcalls_other;
     HnswHit entryPoint(_entryId, SqDist(entryDist));
     int searchLevel = _entryLevel;
+    VisitedSet &visited = _visitedSetPool.get(_nodes.size());
+#undef MULTI_ENTRY_S
+#ifdef MULTI_ENTRY_S
+    FurthestPriQ w;
+    w.push(entryPoint);
+    while (searchLevel > 0) {
+        search_layer(vector, w, visited, std::min(k, search_k), searchLevel);
+        --searchLevel;
+    }
+#else
     while (searchLevel > 0) {
         entryPoint = search_layer_simple(vector, entryPoint, searchLevel);
         --searchLevel;
     }
     FurthestPriQ w;
     w.push(entryPoint);
-    search_layer(vector, w, std::max(k, search_k), 0);
+#endif
+    search_layer(vector, w, visited, std::max(k, search_k), 0);
     while (w.size() > k) {
         w.pop();
     }
@@ -261,13 +327,23 @@ HnswLikeNns::topKfilter(uint32_t k, Vector vector, uint32_t search_k, const BitV
     ++distcalls_other;
     HnswHit entryPoint(_entryId, SqDist(entryDist));
     int searchLevel = _entryLevel;
+    VisitedSet &visited = _visitedSetPool.get(_nodes.size());
+#ifdef MULTI_ENTRY_S
+    FurthestPriQ w;
+    w.push(entryPoint);
+    while (searchLevel > 0) {
+        search_layer(vector, w, visited, std::min(k, search_k), searchLevel);
+        --searchLevel;
+    }
+#else
     while (searchLevel > 0) {
         entryPoint = search_layer_simple(vector, entryPoint, searchLevel);
         --searchLevel;
     }
     FurthestPriQ w;
     w.push(entryPoint);
-    search_layer_with_filter(vector, w, std::max(k, search_k), 0, blacklist);
+#endif
+    search_layer_with_filter(vector, w, visited, std::max(k, search_k), 0, blacklist);
     NearestList tmp = w.steal();
     std::sort(tmp.begin(), tmp.end(), LesserDist());
     result.reserve(std::min((size_t)k, tmp.size()));
@@ -293,10 +369,10 @@ HnswLikeNns::each_shrink_ifneeded(const LinkList &neighbors, uint32_t level) {
 
 void
 HnswLikeNns::search_layer(Vector vector, FurthestPriQ &w,
+                          VisitedSet &visited,
                           uint32_t ef, uint32_t searchLevel)
 {
     NearestPriQ candidates;
-    VisitedSet &visited = _visitedSetPool.get(_nodes.size());
 
     for (const HnswHit & entry : w.peek()) {
         candidates.push(entry);
@@ -329,11 +405,11 @@ HnswLikeNns::search_layer(Vector vector, FurthestPriQ &w,
 
 void
 HnswLikeNns::search_layer_with_filter(Vector vector, FurthestPriQ &w,
+                                      VisitedSet &visited,
                                       uint32_t ef, uint32_t searchLevel,
                                       const BitVector &blacklist)
 {
     NearestPriQ candidates;
-    VisitedSet &visited = _visitedSetPool.get(_nodes.size());
 
     for (const HnswHit & entry : w.peek()) {
         candidates.push(entry);
@@ -452,6 +528,22 @@ HnswLikeNns::connect_new_node(uint32_t id, const LinkList &neighbors, uint32_t l
         newLinks.push_back(neigh_id);
         oldLinks.push_back(id);
     }
+#define DISCONNECT_OLD_WEAK_LINKS
+#ifdef DISCONNECT_OLD_WEAK_LINKS
+    for (uint32_t i = 1; i < neighbors.size(); ++i) {
+        uint32_t n_1 = neighbors[i];
+        LinkList &links_1 = getLinkList(n_1, level);
+        for (uint32_t j = 0; j < i; ++j) {
+            uint32_t n_2 = neighbors[j];
+            if (links_1.has_link_to(n_2)) {
+                ++disconnected_weak_links;
+                LinkList &links_2 = getLinkList(n_2, level);
+                links_1.remove_link(n_2);
+                links_2.remove_link(n_1);
+            }
+        }
+    }
+#endif
 }
 
 uint32_t
