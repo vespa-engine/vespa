@@ -24,7 +24,6 @@ import java.util.logging.Logger;
  * @author Eirik Nygaard
  */
 public class SystemPoller {
-
     final private static Logger log = Logger.getLogger(SystemPoller.class.getName());
 
     private final int pollingIntervalSecs;

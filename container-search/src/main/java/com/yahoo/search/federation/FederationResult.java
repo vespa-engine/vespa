@@ -39,8 +39,8 @@ class FederationResult {
     }
 
     /**
-     * Wait on each target for that targets timeout.
-     * In the worst case this is the same as waiting for the max target timeout,
+     * Wait on each target for that targets timeout
+     * On the worst case this is the same as waiting for the max target timeout,
      * in the average case it may be much better because lower timeout sources do not get to
      * drive the timeout above their own timeout value.
      * When this completes, results can be accessed from the TargetResults with no blocking

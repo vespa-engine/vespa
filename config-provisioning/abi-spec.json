@@ -391,7 +391,6 @@
     "methods": [
       "public void <init>(com.yahoo.config.provisioning.FlavorsConfig$Flavor)",
       "public void <init>(com.yahoo.config.provision.NodeResources)",
-      "public void <init>(java.lang.String, com.yahoo.config.provision.NodeResources)",
       "public com.yahoo.config.provision.Flavor with(com.yahoo.config.provision.host.FlavorOverrides)",
       "public com.yahoo.config.provision.Flavor with(com.yahoo.config.provision.NodeResources)",
       "public java.lang.String name()",

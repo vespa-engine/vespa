@@ -32,7 +32,6 @@ import static java.util.Collections.emptyList;
  * @author gjoranv
  */
 public class NodeMetricsClient {
-
     private static final Logger log = Logger.getLogger(NodeMetricsClient.class.getName());
 
     static final Duration METRICS_TTL = Duration.ofSeconds(30);
@@ -80,6 +79,7 @@ public class NodeMetricsClient {
     long snapshotsRetrieved() {
         return snapshotsRetrieved;
     }
+
 
     /**
      * Convenience class for storing a metrics snapshot with its timestamp.

@@ -35,7 +35,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  * @author gjoranv
  */
 public class VespaMetrics {
-
     private static final Logger log = Logger.getLogger(VespaMetrics.class.getPackage().getName());
 
     public static final ConsumerId VESPA_CONSUMER_ID = toConsumerId("Vespa");
