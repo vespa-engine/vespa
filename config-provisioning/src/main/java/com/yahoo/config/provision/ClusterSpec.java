@@ -158,7 +158,6 @@ public final class ClusterSpec {
     }
 
     /** Identifier of a group within a cluster */
-    @SuppressWarnings("deprecation")
     public static final class Group {
 
         private final int index;

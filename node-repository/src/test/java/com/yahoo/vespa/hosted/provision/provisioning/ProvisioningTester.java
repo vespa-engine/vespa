@@ -447,6 +447,7 @@ public class ProvisioningTester {
     }
 
     public static final class Builder {
+
         private Curator curator;
         private FlavorsConfig flavorsConfig;
         private Zone zone;

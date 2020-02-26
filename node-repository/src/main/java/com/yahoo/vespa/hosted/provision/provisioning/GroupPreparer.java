@@ -64,7 +64,6 @@ public class GroupPreparer {
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                 .value();
         boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
-
         try (Mutex lock = nodeRepository.lock(application)) {
 
             // Lock ready pool to ensure that the same nodes are not simultaneously allocated by others

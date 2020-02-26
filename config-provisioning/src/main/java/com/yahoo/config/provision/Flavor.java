@@ -49,6 +49,11 @@ public class Flavor {
         this(resources.toString(), resources, Optional.empty(), Type.DOCKER_CONTAINER, false, 0, resources.vcpu());
     }
 
+    /** Creates a *host* flavor for testing */
+    public Flavor(String name, NodeResources resources) {
+        this(name, resources, Optional.empty(), Flavor.Type.VIRTUAL_MACHINE, true, 0, resources.vcpu());
+    }
+
     private Flavor(String name,
                    NodeResources resources,
                    Optional<FlavorOverrides> flavorOverrides,
