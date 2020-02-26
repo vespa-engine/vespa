@@ -80,6 +80,7 @@ public abstract class ClientBase implements AutoCloseable {
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
                 .setUserAgent(userAgent)
                 .setSSLSocketFactory(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(sslContextSupplier), hostnameVerifier))
+                .setMaxConnPerRoute(8)
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout((int) Duration.ofSeconds(10).toMillis())
                                                  .setConnectionRequestTimeout((int)Duration.ofSeconds(10).toMillis())
