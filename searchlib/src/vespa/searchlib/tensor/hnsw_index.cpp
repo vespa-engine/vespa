@@ -9,6 +9,8 @@
 
 namespace search::tensor {
 
+using search::datastore::EntryRef;
+
 namespace {
 
 // TODO: Move this to MemoryAllocator, with name PAGE_SIZE.
@@ -44,6 +46,9 @@ HnswIndex::max_links_for_level(uint32_t level) const
 uint32_t
 HnswIndex::make_node_for_document(uint32_t docid)
 {
+    // A document cannot be added twice.
+    assert(!_node_refs[docid].load_acquire().valid());
+
     uint32_t max_level = _level_generator->max_level();
     // TODO: Add capping on num_levels
     uint32_t num_levels = max_level + 1;
@@ -52,6 +57,15 @@ HnswIndex::make_node_for_document(uint32_t docid)
     auto node_ref = _nodes.add(levels);
     _node_refs[docid].store_release(node_ref);
     return max_level;
+}
+
+void
+HnswIndex::remove_node_for_document(uint32_t docid)
+{
+    auto node_ref = _node_refs[docid].load_acquire();
+    _nodes.remove(node_ref);
+    EntryRef invalid;
+    _node_refs[docid].store_release(invalid);
 }
 
 HnswIndex::LevelArrayRef
@@ -72,10 +86,12 @@ HnswIndex::get_link_array(uint32_t docid, uint32_t level) const
 void
 HnswIndex::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links)
 {
-    auto links_ref = _links.add(links);
+    auto new_links_ref = _links.add(links);
     auto node_ref = _node_refs[docid].load_acquire();
     auto levels = _nodes.get_writable(node_ref);
-    levels[level].store_release(links_ref);
+    auto old_links_ref = levels[level].load_acquire();
+    levels[level].store_release(new_links_ref);
+    _links.remove(old_links_ref);
 }
 
 bool
@@ -248,8 +264,6 @@ HnswIndex::add_document(uint32_t docid)
 {
     auto input = get_vector(docid);
     _node_refs.ensure_size(docid + 1, AtomicEntryRef());
-    // A document cannot be added twice.
-    assert(!_node_refs[docid].load_acquire().valid());
     int level = make_node_for_document(docid);
     if (_entry_docid == 0) {
         _entry_docid = docid;
@@ -306,8 +320,35 @@ HnswIndex::remove_document(uint32_t docid)
         _entry_docid = 0;
         _entry_level = -1;
     }
-    search::datastore::EntryRef invalid;
-    _node_refs[docid].store_release(invalid);
+    remove_node_for_document(docid);
+}
+
+void
+HnswIndex::transfer_hold_lists(generation_t current_gen)
+{
+    // Note: RcuVector transfers hold lists as part of reallocation based on current generation.
+    //       We need to set the next generation here, as it is incremented on a higher level right after this call.
+    _node_refs.setGeneration(current_gen + 1);
+    _nodes.transferHoldLists(current_gen);
+    _links.transferHoldLists(current_gen);
+}
+
+void
+HnswIndex::trim_hold_lists(generation_t first_used_gen)
+{
+    _node_refs.removeOldGenerations(first_used_gen);
+    _nodes.trimHoldLists(first_used_gen);
+    _links.trimHoldLists(first_used_gen);
+}
+
+vespalib::MemoryUsage
+HnswIndex::memory_usage() const
+{
+    vespalib::MemoryUsage result;
+    result.merge(_node_refs.getMemoryUsage());
+    result.merge(_nodes.getMemoryUsage());
+    result.merge(_links.getMemoryUsage());
+    return result;
 }
 
 struct NeighborsByDocId {

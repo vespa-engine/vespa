@@ -6,6 +6,7 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/tensor/default_nearest_neighbor_index_factory.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
@@ -41,6 +42,7 @@ using vespalib::tensor::DenseTensor;
 using vespalib::tensor::Tensor;
 
 using DoubleVector = std::vector<double>;
+using generation_t = vespalib::GenerationHandler::generation_t;
 
 namespace vespalib::tensor {
 
@@ -80,12 +82,16 @@ private:
     const DocVectorAccess& _vectors;
     EntryVector _adds;
     EntryVector _removes;
+    generation_t _transfer_gen;
+    generation_t _trim_gen;
 
 public:
     MockNearestNeighborIndex(const DocVectorAccess& vectors)
         : _vectors(vectors),
           _adds(),
-          _removes()
+          _removes(),
+          _transfer_gen(std::numeric_limits<generation_t>::max()),
+          _trim_gen(std::numeric_limits<generation_t>::max())
     {
     }
     void clear() {
@@ -111,6 +117,9 @@ public:
         EXPECT_EQUAL(exp_docid, _removes.back().first);
         EXPECT_EQUAL(exp_vector, _removes.back().second);
     }
+    generation_t get_transfer_gen() const { return _transfer_gen; }
+    generation_t get_trim_gen() const { return _trim_gen; }
+
     void add_document(uint32_t docid) override {
         auto vector = _vectors.get_vector(docid).typify<double>();
         _adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
@@ -118,6 +127,15 @@ public:
     void remove_document(uint32_t docid) override {
         auto vector = _vectors.get_vector(docid).typify<double>();
         _removes.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
+    }
+    void transfer_hold_lists(generation_t current_gen) override {
+        _transfer_gen = current_gen;
+    }
+    void trim_hold_lists(generation_t first_used_gen) override {
+        _trim_gen = first_used_gen;
+    }
+    vespalib::MemoryUsage memory_usage() const override {
+        return vespalib::MemoryUsage();
     }
     std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
         (void) k;
@@ -230,6 +248,10 @@ struct Fixture
         ensureSpace(docId);
         _tensorAttr->setTensor(docId, tensor);
         _attr->commit();
+    }
+
+    generation_t get_current_gen() const {
+        return _attr->getCurrentGeneration();
     }
 
     search::attribute::Status getStatus() {
@@ -529,6 +551,35 @@ TEST_F("onLoad() updates nearest neighbor index", DenseTensorAttributeMockIndex)
     f.load();
     auto& index = f.mock_index();
     index.expect_adds({{1, {3, 5}}, {2, {7, 9}}});
+}
+
+
+TEST_F("commit() ensures transfer and trim hold lists on nearest neighbor index", DenseTensorAttributeMockIndex)
+{
+    auto& index = f.mock_index();
+    TensorSpec spec = vec_2d(3, 5);
+
+    f.set_tensor(1, spec);
+    generation_t gen_1 = f.get_current_gen();
+    EXPECT_EQUAL(gen_1 - 1, index.get_transfer_gen());
+    EXPECT_EQUAL(gen_1, index.get_trim_gen());
+
+    generation_t gen_2 = 0;
+    {
+        // Takes guard on gen_1
+        auto guard = f._attr->makeReadGuard(false);
+        f.set_tensor(2, spec);
+        gen_2 = f.get_current_gen();
+        EXPECT_GREATER(gen_2, gen_1);
+        EXPECT_EQUAL(gen_2 - 1, index.get_transfer_gen());
+        EXPECT_EQUAL(gen_1, index.get_trim_gen());
+    }
+
+    f.set_tensor(3, spec);
+    generation_t gen_3 = f.get_current_gen();
+    EXPECT_GREATER(gen_3, gen_2);
+    EXPECT_EQUAL(gen_3 - 1, index.get_transfer_gen());
+    EXPECT_EQUAL(gen_3, index.get_trim_gen());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); vespalib::unlink("test.dat"); }

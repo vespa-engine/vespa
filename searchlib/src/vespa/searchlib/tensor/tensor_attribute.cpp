@@ -71,7 +71,6 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
 {
 }
 
-
 TensorAttribute::~TensorAttribute() = default;
 
 const ITensorAttribute *
@@ -93,7 +92,6 @@ TensorAttribute::clearDoc(DocId docId)
     return 0u;
 }
 
-
 void
 TensorAttribute::onCommit()
 {
@@ -110,7 +108,6 @@ TensorAttribute::onCommit()
     }
 }
 
-
 void
 TensorAttribute::onUpdateStat()
 {
@@ -126,7 +123,6 @@ TensorAttribute::onUpdateStat()
                            total.allocatedBytesOnHold());
 }
 
-
 void
 TensorAttribute::removeOldGenerations(generation_t firstUsed)
 {
@@ -140,7 +136,6 @@ TensorAttribute::onGenerationChange(generation_t generation)
     getGenerationHolder().transferHoldLists(generation - 1);
     _tensorStore.transferHoldLists(generation - 1);
 }
-
 
 bool
 TensorAttribute::addDoc(DocId &docId)
@@ -209,7 +204,6 @@ TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit)
     }
 }
 
-
 void
 TensorAttribute::onShrinkLidSpace()
 {
@@ -220,13 +214,11 @@ TensorAttribute::onShrinkLidSpace()
     setNumDocs(committedDocIdLimit);
 }
 
-
 uint32_t
 TensorAttribute::getVersion() const
 {
     return TENSOR_ATTRIBUTE_VERSION;
 }
-
 
 TensorAttribute::RefCopyVector
 TensorAttribute::getRefCopy() const

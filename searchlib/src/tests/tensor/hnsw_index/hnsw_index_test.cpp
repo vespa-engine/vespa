@@ -6,11 +6,14 @@
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP("hnsw_index_test");
 
+using vespalib::GenerationHandler;
+using vespalib::MemoryUsage;
 using namespace search::tensor;
 
 template <typename FloatType>
@@ -49,11 +52,13 @@ class HnswIndexTest : public ::testing::Test {
 public:
     FloatVectors vectors;
     LevelGenerator* level_generator;
+    GenerationHandler gen_handler;
     HnswIndexUP index;
 
     HnswIndexTest()
         : vectors(),
           level_generator(),
+          gen_handler(),
           index()
     {
         vectors.set(1, {2, 2}).set(2, {3, 2}).set(3, {2, 3})
@@ -70,9 +75,23 @@ public:
     void add_document(uint32_t docid, uint32_t max_level = 0) {
         level_generator->level = max_level;
         index->add_document(docid);
+        commit();
     }
     void remove_document(uint32_t docid) {
         index->remove_document(docid);
+        commit();
+    }
+    void commit() {
+        index->transfer_hold_lists(gen_handler.getCurrentGeneration());
+        gen_handler.incGeneration();
+        gen_handler.updateFirstUsedGeneration();
+        index->trim_hold_lists(gen_handler.getFirstUsedGeneration());
+    }
+    GenerationHandler::Guard take_read_guard() {
+        return gen_handler.takeGuard();
+    }
+    MemoryUsage memory_usage() const {
+        return index->memory_usage();
     }
     void expect_entry_point(uint32_t exp_docid, uint32_t exp_level) {
         EXPECT_EQ(exp_docid, index->get_entry_docid());
@@ -82,6 +101,10 @@ public:
         auto node = index->get_node(docid);
         ASSERT_EQ(1, node.size());
         EXPECT_EQ(exp_links, node.level(0));
+    }
+    void expect_empty_level_0(uint32_t docid) {
+        auto node = index->get_node(docid);
+        EXPECT_TRUE(node.empty());
     }
     void expect_levels(uint32_t docid, const HnswNode::LevelArray& exp_levels) {
         auto act_node = index->get_node(docid);
@@ -297,6 +320,51 @@ TEST_F(HnswIndexTest, manual_insert)
     expect_levels(3, {{1,2}});
     expect_levels(4, {{1}, {5}});
     expect_levels(5, {{1,2}, {4}});
+}
+
+TEST_F(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
+{
+    init(true);
+
+    add_document(1);
+    add_document(3);
+    auto mem_1 = memory_usage();
+
+    add_document(2);
+    expect_level_0(1, {2,3});
+    expect_level_0(2, {1,3});
+    expect_level_0(3, {1,2});
+    auto mem_2 = memory_usage();
+    // We should use more memory with larger link arrays and extra document.
+    EXPECT_GT((mem_2.usedBytes() - mem_2.deadBytes()), (mem_1.usedBytes() - mem_1.deadBytes()));
+    EXPECT_EQ(0, mem_2.allocatedBytesOnHold());
+
+    remove_document(2);
+    expect_level_0(1, {3});
+    expect_empty_level_0(2);
+    expect_level_0(3, {1});
+    auto mem_3 = memory_usage();
+    // We end up in the same state as before document 2 was added and effectively use the same amount of memory.
+    EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes()), (mem_3.usedBytes() - mem_3.deadBytes()));
+    EXPECT_EQ(0, mem_3.allocatedBytesOnHold());
+}
+
+TEST_F(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held)
+{
+    init(true);
+
+    add_document(1);
+    add_document(3);
+    {
+        auto guard = take_read_guard();
+        add_document(2);
+        auto mem = memory_usage();
+        // As read guard is held memory to reclaim is put on hold
+        EXPECT_GT(mem.allocatedBytesOnHold(), 0);
+    }
+    commit();
+    auto mem = memory_usage();
+    EXPECT_EQ(0, mem.allocatedBytesOnHold());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -95,6 +95,7 @@ protected:
 
     uint32_t max_links_for_level(uint32_t level) const;
     uint32_t make_node_for_document(uint32_t docid);
+    void remove_node_for_document(uint32_t docid);
     LevelArrayRef get_level_array(uint32_t docid) const;
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const;
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links);
@@ -133,12 +134,15 @@ public:
 
     const Config& config() const { return _cfg; }
 
+    // Implements NearestNeighborIndex
     void add_document(uint32_t docid) override;
     void remove_document(uint32_t docid) override;
+    void transfer_hold_lists(generation_t current_gen) override;
+    void trim_hold_lists(generation_t first_used_gen) override;
+    vespalib::MemoryUsage memory_usage() const override;
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
-    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
 
-    // TODO: Add support for generation handling and cleanup (transfer_hold_lists, trim_hold_lists)
+    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
 
     uint32_t get_entry_docid() const { return _entry_docid; }
     uint32_t get_entry_level() const { return _entry_level; }

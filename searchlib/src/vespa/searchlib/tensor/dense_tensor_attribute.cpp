@@ -183,6 +183,26 @@ DenseTensorAttribute::getVersion() const
     return DENSE_TENSOR_ATTRIBUTE_VERSION;
 }
 
+void
+DenseTensorAttribute::onGenerationChange(generation_t next_gen)
+{
+    // TODO: Change onGenerationChange() to send current generation instead of next generation.
+    //       This applies for entire attribute vector code.
+    TensorAttribute::onGenerationChange(next_gen);
+    if (_index) {
+        _index->transfer_hold_lists(next_gen - 1);
+    }
+}
+
+void
+DenseTensorAttribute::removeOldGenerations(generation_t first_used_gen)
+{
+    TensorAttribute::removeOldGenerations(first_used_gen);
+    if (_index) {
+        _index->trim_hold_lists(first_used_gen);
+    }
+}
+
 vespalib::tensor::TypedCells
 DenseTensorAttribute::get_vector(uint32_t docid) const
 {
