@@ -4,10 +4,9 @@ package com.yahoo.searchdefinition.fieldoperation;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class IndexingRewriteOperation implements FieldOperation {
-
-    public void apply(SDField field) { }
-
+    public void apply(SDField field) {
+    }
 }

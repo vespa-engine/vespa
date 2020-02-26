@@ -390,5 +390,4 @@ class NodeAllocation {
             return count;
         }
     }
-
 }

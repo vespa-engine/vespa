@@ -33,7 +33,6 @@ import static java.util.stream.Collectors.toMap;
  * @author gjoranv
  */
 public class ApplicationMetricsRetriever extends AbstractComponent {
-
     private static final Logger log = Logger.getLogger(ApplicationMetricsRetriever.class.getName());
 
     private static final int PARALLELISM = 20;

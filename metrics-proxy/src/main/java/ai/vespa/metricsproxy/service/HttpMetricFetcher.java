@@ -20,7 +20,6 @@ import java.util.logging.Logger;
  * @author bjorncs
  */
 public abstract class HttpMetricFetcher {
-
     private final static Logger log = Logger.getLogger(HttpMetricFetcher.class.getPackage().getName());
     public final static String STATE_PATH = "/state/v1/";
     // The call to apache will do 3 retries. As long as we check the services in series, we can't have this too high.
@@ -32,8 +31,8 @@ public abstract class HttpMetricFetcher {
 
 
     /**
-     * @param service the service to fetch metrics from
-     * @param port    the port to use
+     * @param service The service to fetch metrics from
+     * @param port    The port to use
      */
     HttpMetricFetcher(VespaService service, int port, String path) {
         this.service = service;
@@ -87,5 +86,4 @@ public abstract class HttpMetricFetcher {
                                                  .build())
                 .build();
     }
-
 }

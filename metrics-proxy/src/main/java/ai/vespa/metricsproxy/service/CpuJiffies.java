@@ -2,7 +2,6 @@
 package ai.vespa.metricsproxy.service;
 
 class CpuJiffies {
-
     private int cpuId;
     private long jiffies;
 
@@ -38,5 +37,4 @@ class CpuJiffies {
     public long getTotalJiffies() {
         return jiffies;
     }
-
 }

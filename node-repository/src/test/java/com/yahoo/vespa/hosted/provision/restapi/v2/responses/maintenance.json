@@ -1,9 +1,6 @@
 {
   "jobs": [
     {
-      "name": "AutoscalingMaintainer"
-    },
-    {
       "name": "CapacityReportMaintainer"
     },
     {
@@ -26,9 +23,6 @@
     },
     {
       "name": "NodeFailer"
-    },
-    {
-      "name": "NodeMetricsDbMaintainer"
     },
     {
       "name": "NodeRebooter"

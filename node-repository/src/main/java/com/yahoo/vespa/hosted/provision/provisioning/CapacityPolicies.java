@@ -19,15 +19,11 @@ import java.util.Locale;
 public class CapacityPolicies {
 
     private final Zone zone;
-
-    private final NodeResourceLimits nodeResourceLimits;
-
     /* Deployments must match 1-to-1 the advertised resources of a physical host */
     private final boolean isUsingAdvertisedResources;
 
     public CapacityPolicies(Zone zone) {
         this.zone = zone;
-        this.nodeResourceLimits = new NodeResourceLimits(zone);
         this.isUsingAdvertisedResources = zone.cloud().value().equals("aws");
     }
 
@@ -68,12 +64,18 @@ public class CapacityPolicies {
     }
 
     private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
-        double minMemoryGb = nodeResourceLimits.minMemoryGb(cluster.type());
+        double minMemoryGb = minMemoryGb(cluster.type());
         if (resources.memoryGb() >= minMemoryGb) return;
 
         throw new IllegalArgumentException(String.format(Locale.ENGLISH,
                 "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
                 minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
+    }
+
+    private int minMemoryGb(ClusterSpec.Type clusterType) {
+        if (zone.system() == SystemName.dev) return 1; // Allow small containers in dev system
+        if (clusterType == ClusterSpec.Type.admin) return 2;
+        return 4;
     }
 
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {

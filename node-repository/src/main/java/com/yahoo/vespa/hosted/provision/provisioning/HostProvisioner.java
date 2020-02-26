@@ -18,7 +18,7 @@ public interface HostProvisioner {
     /**
      * Schedule provisioning of a given number of hosts.
      *
-     * @param provisionIndexes list of unique provision indexes which will be used to generate the node hostnames
+     * @param provisionIndexes List of unique provision indexes which will be used to generate the node hostnames
      *                         on the form of <code>[prefix][index].[domain]</code>
      * @param resources the resources needed per node
      * @param applicationId id of the application that will own the provisioned host

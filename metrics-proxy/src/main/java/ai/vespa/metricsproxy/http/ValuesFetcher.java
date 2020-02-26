@@ -21,7 +21,6 @@ import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
  * @author gjoranv
  */
 public class ValuesFetcher {
-
     private static final Logger log = Logger.getLogger(ValuesFetcher.class.getName());
 
     public static final ConsumerId DEFAULT_PUBLIC_CONSUMER_ID = toConsumerId("default");
