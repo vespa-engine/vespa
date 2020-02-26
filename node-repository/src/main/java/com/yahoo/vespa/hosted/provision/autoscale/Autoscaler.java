@@ -26,8 +26,6 @@ public class Autoscaler {
 
     /*
      TODO:
-     - X Implement node metrics fetch
-     - X Avoid making decisions for the same app at multiple config servers
      - Scale group size
      - Have a better idea about whether we have sufficient information to make decisions
      - Consider taking spikes/variance into account
