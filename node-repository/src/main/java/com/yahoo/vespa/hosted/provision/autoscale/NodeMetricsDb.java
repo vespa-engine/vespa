@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An in-memory time-series "database" of node metrics.
@@ -79,14 +80,10 @@ public class NodeMetricsDb {
 
         public int measurementCount() {
             synchronized (lock) {
-                int count = 0;
-                for (MeasurementKey key : keys) {
-                    List<Measurement> measurements = db.get(key);
-                    if (measurements == null) continue;
-                    int measurementsInWindow = measurements.size() - largestIndexOutsideWindow(measurements) + 1;
-                    count += measurementsInWindow;
-                }
-                return count;
+                return (int) keys.stream()
+                                 .flatMap(key -> db.getOrDefault(key, List.of()).stream())
+                                 .filter(measurement -> measurement.timestamp >= startTime)
+                                 .count();
             }
         }
 
@@ -123,13 +120,6 @@ public class NodeMetricsDb {
                 }
                 return sum / count;
             }
-        }
-
-        private int largestIndexOutsideWindow(List<Measurement> measurements) {
-            int index = measurements.size() - 1;
-            while (index >= 0 && measurements.get(index).timestamp >= startTime)
-                index--;
-            return index;
         }
 
     }

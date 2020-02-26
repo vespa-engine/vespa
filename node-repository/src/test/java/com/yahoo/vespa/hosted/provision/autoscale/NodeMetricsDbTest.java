@@ -23,10 +23,10 @@ public class NodeMetricsDbTest {
         }
         db.add(values);
 
-        assertEquals(32, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
+        assertEquals(30, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
         assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.memory, List.of("host0")).measurementCount());
         db.gc(clock);
-        assertEquals(26, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
+        assertEquals(24, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
         assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.memory, List.of("host0")).measurementCount());
     }
 
