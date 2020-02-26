@@ -30,6 +30,7 @@ vespa_define_module(
     src/tests/component
     src/tests/compress
     src/tests/compression
+    src/tests/crypto
     src/tests/data/databuffer
     src/tests/data/input_reader
     src/tests/data/lz4_encode_decode
@@ -139,6 +140,7 @@ vespa_define_module(
     src/vespa/vespalib
     src/vespa/vespalib/btree
     src/vespa/vespalib/component
+    src/vespa/vespalib/crypto
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/datastore

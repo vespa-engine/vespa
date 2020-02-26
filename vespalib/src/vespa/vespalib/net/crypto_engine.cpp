@@ -2,9 +2,9 @@
 
 #include "crypto_engine.h"
 #include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
-#include <vespa/vespalib/net/tls/crypto_exception.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
@@ -232,7 +232,7 @@ CryptoEngine::SP create_default_crypto_engine() {
 CryptoEngine::SP try_create_default_crypto_engine() {
     try {
         return create_default_crypto_engine();
-    } catch (net::tls::CryptoException &e) {
+    } catch (crypto::CryptoException &e) {
         LOG(error, "failed to create default crypto engine: %s", e.what());
         std::_Exit(78);
     }

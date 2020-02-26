@@ -2,7 +2,7 @@
 
 #include "crypto_exception.h"
 
-namespace vespalib::net::tls {
+namespace vespalib::crypto {
 
 VESPA_IMPLEMENT_EXCEPTION(CryptoException, Exception);
 

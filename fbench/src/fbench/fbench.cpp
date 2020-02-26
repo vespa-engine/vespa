@@ -3,10 +3,10 @@
 #include <httpclient/httpclient.h>
 #include <util/filereader.h>
 #include <util/clientstatus.h>
+#include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
-#include <vespa/vespalib/net/tls/crypto_exception.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include "client.h"
 #include "fbench.h"
@@ -99,7 +99,7 @@ FBench::init_crypto_engine(const std::string &ca_certs_file_name,
     }
     try {
         _crypto_engine = std::make_shared<vespalib::TlsCryptoEngine>(tls_opts);
-    } catch (vespalib::net::tls::CryptoException &e) {
+    } catch (vespalib::crypto::CryptoException &e) {
         fprintf(stderr, "%s\n", e.what());
         return false;
     }

@@ -6,7 +6,7 @@
 #include <openssl/crypto.h>
 #include <openssl/x509.h>
 
-namespace vespalib::net::tls::impl {
+namespace vespalib::crypto {
 
 struct BioDeleter {
     void operator()(::BIO* bio) const noexcept {

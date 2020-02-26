@@ -3,8 +3,8 @@
 #include "openssl_tls_context_impl.h"
 #include "direct_buffer_bio.h"
 
+#include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
-#include <vespa/vespalib/net/tls/crypto_exception.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 
 #include <mutex>
@@ -35,6 +35,8 @@ LOG_SETUP(".vespalib.net.tls.openssl_crypto_codec_impl");
  * pretend to not know of the beasts that lurk beyond where the torch's
  * light fades and turns to all-enveloping darkness.
  */
+
+using namespace vespalib::crypto;
 
 namespace vespalib::net::tls::impl {
 

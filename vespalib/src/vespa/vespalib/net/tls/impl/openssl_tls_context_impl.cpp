@@ -1,9 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "iana_cipher_map.h"
-#include "openssl_typedefs.h"
 #include "openssl_tls_context_impl.h"
 #include "openssl_crypto_codec_impl.h"
-#include <vespa/vespalib/net/tls/crypto_exception.h>
+#include <vespa/vespalib/crypto/crypto_exception.h>
+#include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -25,6 +25,8 @@ LOG_SETUP(".vespalib.net.tls.openssl_tls_context_impl");
 // < 1.0 requires explicit thread ID callback support.
 #  error "Provided OpenSSL version is too darn old, need at least 1.0.0"
 #endif
+
+using namespace vespalib::crypto;
 
 namespace vespalib::net::tls::impl {
 

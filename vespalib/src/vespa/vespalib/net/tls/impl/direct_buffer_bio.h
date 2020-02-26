@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "openssl_typedefs.h"
+#include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <openssl/bio.h>
 
 /*
@@ -22,8 +22,8 @@
 
 namespace vespalib::net::tls::impl {
 
-BioPtr new_mutable_direct_buffer_bio();
-BioPtr new_const_direct_buffer_bio();
+crypto::BioPtr new_mutable_direct_buffer_bio();
+crypto::BioPtr new_const_direct_buffer_bio();
 
 struct MutableBufferView {
     // Could use a pointer pair instead (or just modify the ptr), but being explicit is good for readability.

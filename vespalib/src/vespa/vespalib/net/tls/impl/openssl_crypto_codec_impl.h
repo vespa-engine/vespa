@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "openssl_typedefs.h"
+#include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
@@ -47,12 +47,12 @@ class OpenSslCryptoCodecImpl : public CryptoCodec {
     // The context maintains shared verification callback state, so it must be
     // kept alive explictly for at least as long as any codecs.
     std::shared_ptr<OpenSslTlsContextImpl> _ctx;
-    SocketSpec    _peer_spec;
-    SocketAddress _peer_address;
-    SslPtr        _ssl;
-    ::BIO*        _input_bio;  // Owned by _ssl
-    ::BIO*        _output_bio; // Owned by _ssl
-    Mode          _mode;
+    SocketSpec     _peer_spec;
+    SocketAddress  _peer_address;
+    crypto::SslPtr _ssl;
+    ::BIO*         _input_bio;  // Owned by _ssl
+    ::BIO*         _output_bio; // Owned by _ssl
+    Mode           _mode;
     std::optional<DeferredHandshakeParams> _deferred_handshake_params;
     std::optional<HandshakeResult>         _deferred_handshake_result;
 public:
