@@ -48,7 +48,7 @@ import java.util.stream.Stream;
 
 /**
  * Looks up stored endpoint certificate metadata, provisions new certificates if none is found,
- * and refreshes certificates if a newer version is available.
+ * re-provisions if zone is not covered, and uses refreshed certificates if a newer version is available.
  *
  * @author andreer
  */
@@ -62,6 +62,7 @@ public class EndpointCertificateManager {
     private final EndpointCertificateProvider endpointCertificateProvider;
     private final Clock clock;
     private final BooleanFlag useRefreshedEndpointCertificate;
+    private final BooleanFlag validateEndpointCertificates;
     private final StringFlag endpointCertificateBackfill;
     private final BooleanFlag endpointCertInSharedRouting;
 
@@ -76,6 +77,7 @@ public class EndpointCertificateManager {
         this.endpointCertificateProvider = endpointCertificateProvider;
         this.clock = clock;
         this.useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
+        this.validateEndpointCertificates = Flags.VALIDATE_ENDPOINT_CERTIFICATES.bindTo(flagSource);
         this.endpointCertificateBackfill = Flags.ENDPOINT_CERTIFICATE_BACKFILL.bindTo(flagSource);
         this.endpointCertInSharedRouting = Flags.ENDPOINT_CERT_IN_SHARED_ROUTING.bindTo(flagSource);
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
@@ -90,33 +92,50 @@ public class EndpointCertificateManager {
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone) {
 
         boolean endpointCertInSharedRouting = this.endpointCertInSharedRouting.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value();
-        if (!zoneRegistry.zones().directlyRouted().ids().contains(zone) && !endpointCertInSharedRouting) return Optional.empty();
+        if (!zoneRegistry.zones().directlyRouted().ids().contains(zone) && !endpointCertInSharedRouting)
+            return Optional.empty();
 
-        // Re-use existing certificate if already provisioned
-        var endpointCertificateMetadata =
-                curator.readEndpointCertificateMetadata(instance.id())
-                        .orElseGet(() -> provisionEndpointCertificate(instance));
+        final var currentCertificateMetadata = curator.readEndpointCertificateMetadata(instance.id());
+
+        if (currentCertificateMetadata.isEmpty()) {
+            var provisionedCertificateMetadata = provisionEndpointCertificate(instance, Optional.empty());
+            // We do not verify the certificate if one has never existed before - because we do not want to
+            // wait for it to be available before we deploy. This allows the config server to start
+            // provisioning nodes ASAP, and the risk is small for a new deployment.
+            curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
+            return Optional.of(provisionedCertificateMetadata);
+        }
+
+        // Reprovision certificate if it is missing SANs for the zone we are deploying to
+        var sansInCertificate = currentCertificateMetadata.get().requestedDnsSans();
+        var requiredSansForZone = dnsNamesOf(instance.id(), List.of(zone));
+        if (sansInCertificate.isPresent() && !sansInCertificate.get().containsAll(requiredSansForZone)) {
+            var reprovisionedCertificateMetadata = provisionEndpointCertificate(instance, currentCertificateMetadata);
+            curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
+            // Verification is unlikely to succeed in this case, as certificate must be available first - controller will retry
+            validateEndpointCertificate(reprovisionedCertificateMetadata, instance, zone);
+            return Optional.of(reprovisionedCertificateMetadata);
+        }
 
         // If feature flag set for application, look for and use refreshed certificate
         if (useRefreshedEndpointCertificate.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value()) {
-            var latestAvailableVersion = latestVersionInSecretStore(endpointCertificateMetadata);
+            var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
 
-            if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > endpointCertificateMetadata.version()) {
+            if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
                 var refreshedCertificateMetadata = new EndpointCertificateMetadata(
-                        endpointCertificateMetadata.keyName(),
-                        endpointCertificateMetadata.certName(),
+                        currentCertificateMetadata.get().keyName(),
+                        currentCertificateMetadata.get().certName(),
                         latestAvailableVersion.getAsInt()
                 );
 
-                if (verifyEndpointCertificate(refreshedCertificateMetadata, instance, zone, "Did not refresh, problems with refreshed certificate: "))
-                    return Optional.of(refreshedCertificateMetadata);
+                validateEndpointCertificate(refreshedCertificateMetadata, instance, zone);
+                curator.writeEndpointCertificateMetadata(instance.id(), refreshedCertificateMetadata);
+                return Optional.of(refreshedCertificateMetadata);
             }
         }
 
-        // Only log warnings
-        verifyEndpointCertificate(endpointCertificateMetadata, instance, zone, "Problems while verifying certificate: ");
-
-        return Optional.of(endpointCertificateMetadata);
+        validateEndpointCertificate(currentCertificateMetadata.get(), instance, zone);
+        return currentCertificateMetadata;
     }
 
     enum BackfillMode {
@@ -150,7 +169,7 @@ public class EndpointCertificateManager {
             var hashedCn = commonNameHashOf(applicationId, zoneRegistry.system()); // use as join key
             EndpointCertificateMetadata providerMetadata = sanToEndpointCertificate.get(hashedCn);
 
-            if(providerMetadata == null) {
+            if (providerMetadata == null) {
                 log.log(LogLevel.INFO, "No matching certificate provider metadata found for application " + applicationId.serializedForm());
                 return;
             }
@@ -179,58 +198,57 @@ public class EndpointCertificateManager {
         return Sets.intersection(certVersions, keyVersions).stream().mapToInt(Integer::intValue).max();
     }
 
-    private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance) {
+    private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance, Optional<EndpointCertificateMetadata> currentMetadata) {
         List<ZoneId> zones = zoneRegistry.zones().controllerUpgraded().zones().stream().map(ZoneApi::getId).collect(Collectors.toUnmodifiableList());
-        EndpointCertificateMetadata provisionedCertificateMetadata = endpointCertificateProvider
-                .requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), zones), Optional.empty());
-        curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
-        return provisionedCertificateMetadata;
+        return endpointCertificateProvider.requestCaSignedCertificate(instance.id(), dnsNamesOf(instance.id(), zones), currentMetadata);
     }
 
-    private boolean verifyEndpointCertificate(EndpointCertificateMetadata endpointCertificateMetadata, Instance instance, ZoneId zone, String warningPrefix) {
-        try {
-            var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
+    private void validateEndpointCertificate(EndpointCertificateMetadata endpointCertificateMetadata, Instance instance, ZoneId zone) {
+        if (validateEndpointCertificates.value())
+            try {
+                var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
 
-            if (pemEncodedEndpointCertificate == null)
-                return logWarning(warningPrefix, "Secret store returned null for certificate");
+                if (pemEncodedEndpointCertificate == null)
+                    throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Secret store returned null for certificate");
 
-            List<X509Certificate> x509CertificateList = X509CertificateUtils.certificateListFromPem(pemEncodedEndpointCertificate);
+                List<X509Certificate> x509CertificateList = X509CertificateUtils.certificateListFromPem(pemEncodedEndpointCertificate);
 
-            if (x509CertificateList.isEmpty()) return logWarning(warningPrefix, "Empty certificate list");
-            if (x509CertificateList.size() < 2)
-                return logWarning(warningPrefix, "Only a single certificate found in chain - intermediate certificates likely missing");
+                if (x509CertificateList.isEmpty())
+                    throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Empty certificate list");
+                if (x509CertificateList.size() < 2)
+                    throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Only a single certificate found in chain - intermediate certificates likely missing");
 
-            Instant now = clock.instant();
-            Instant firstExpiry = Instant.MAX;
-            for (X509Certificate x509Certificate : x509CertificateList) {
-                Instant notBefore = x509Certificate.getNotBefore().toInstant();
-                Instant notAfter = x509Certificate.getNotAfter().toInstant();
-                if (now.isBefore(notBefore)) return logWarning(warningPrefix, "Certificate is not yet valid");
-                if (now.isAfter(notAfter)) return logWarning(warningPrefix, "Certificate has expired");
-                if (notAfter.isBefore(firstExpiry)) firstExpiry = notAfter;
+                Instant now = clock.instant();
+                Instant firstExpiry = Instant.MAX;
+                for (X509Certificate x509Certificate : x509CertificateList) {
+                    Instant notBefore = x509Certificate.getNotBefore().toInstant();
+                    Instant notAfter = x509Certificate.getNotAfter().toInstant();
+                    if (now.isBefore(notBefore))
+                        throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate is not yet valid");
+                    if (now.isAfter(notAfter))
+                        throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate has expired");
+                    if (notAfter.isBefore(firstExpiry)) firstExpiry = notAfter;
+                }
+
+                X509Certificate endEntityCertificate = x509CertificateList.get(0);
+                Set<String> subjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(endEntityCertificate).stream()
+                        .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
+                        .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
+
+                var dnsNamesOfZone = dnsNamesOf(instance.id(), List.of(zone));
+                if (!subjectAlternativeNames.containsAll(dnsNamesOfZone))
+                    throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate is missing required SANs for zone " + zone.value());
+
+            } catch (SecretNotFoundException s) {
+                // Normally because the cert is in the process of being provisioned - this will cause a retry in InternalStepRunner
+                throw new EndpointCertificateException(EndpointCertificateException.Type.CERT_NOT_AVAILABLE, "Certificate not found in secret store");
+            } catch (EndpointCertificateException e) {
+                log.log(LogLevel.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
+                throw e;
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
+                throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate validation failure for app " + instance.id().serializedForm(), e);
             }
-
-            X509Certificate endEntityCertificate = x509CertificateList.get(0);
-            Set<String> subjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(endEntityCertificate).stream()
-                    .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
-                    .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
-
-            if (Sets.intersection(subjectAlternativeNames, Set.copyOf(dnsNamesOf(instance.id(), List.of(zone)))).isEmpty()) {
-                return logWarning(warningPrefix, "No overlap between SANs in certificate and expected SANs");
-            }
-
-            return true; // All good then, hopefully
-        } catch (SecretNotFoundException s) {
-            return logWarning(warningPrefix, "Certificate not found in secret store");
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception thrown when verifying endpoint certificate", e);
-            return false;
-        }
-    }
-
-    private static boolean logWarning(String warningPrefix, String message) {
-        log.log(LogLevel.WARNING, warningPrefix + message);
-        return false;
     }
 
     private List<String> dnsNamesOf(ApplicationId applicationId, List<ZoneId> zones) {
