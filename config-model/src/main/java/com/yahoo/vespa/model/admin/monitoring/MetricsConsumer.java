@@ -17,14 +17,15 @@ import static java.util.Collections.unmodifiableList;
  */
 @Immutable
 public class MetricsConsumer {
+
     private final String id;
     private final MetricSet metricSet;
 
     private final List<CloudWatch> cloudWatches = new ArrayList<>();
 
     /**
-     * @param id The consumer
-     * @param metricSet  The metrics for this consumer
+     * @param id the consumer
+     * @param metricSet the metrics for this consumer
      */
     public MetricsConsumer(String id, MetricSet metricSet) {
         this.id = Objects.requireNonNull(id, "A consumer must have a non-null id.");;

@@ -91,7 +91,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private NormalizeLevel normalizing = new NormalizeLevel();
 
     /** Extra query commands of this field */
-    private List<String> queryCommands=new java.util.ArrayList<>(0);
+    private List<String> queryCommands = new java.util.ArrayList<>(0);
 
     /** Summary fields defined in this field */
     private Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>(0);
@@ -749,20 +749,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return queryCommands.contains(name);
     }
 
-    /**
-     * A list of query commands
-     *
-     * @return a list of strings with query commands.
-     */
+    /** Returns a list of query commands */
     @Override
-    public List<String> getQueryCommands() {
-        return queryCommands;
-    }
+    public List<String> getQueryCommands() { return queryCommands; }
 
-    /**
-     * The document that this field was declared in, or null
-     *
-     */
+    /** Returns the document that this field was declared in, or null */
     private SDDocumentType getOwnerDocType() {
         return ownerDocType;
     }

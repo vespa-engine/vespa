@@ -39,6 +39,7 @@ public class Defaults {
         vespaPortConfigServerHttp = vespaPortConfigServerRpc + 1;
         vespaPortConfigProxyRpc = findConfigProxyPort(vespaPortBase + 90);
     }
+
     static private String findVespaHome(String defHome) {
         Optional<String> vespaHomeEnv = Optional.ofNullable(System.getenv("VESPA_HOME"));
         if ( ! vespaHomeEnv.isPresent() || vespaHomeEnv.get().trim().isEmpty()) {
