@@ -90,7 +90,6 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.yolean.Exceptions;
@@ -252,7 +251,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePUT(Path path, HttpRequest request) {
-        if (path.matches("/application/v4/user")) return createUser(request);
+        if (path.matches("/application/v4/user")) return new EmptyResponse();
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
@@ -335,11 +334,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     // TODO jonmv: Move to Athenz API.
     private HttpResponse authenticatedUser(HttpRequest request) {
         Principal user = requireUserPrincipal(request);
-        if (user == null)
-            throw new NotAuthorizedException("You must be authenticated.");
 
         String userName = user instanceof AthenzPrincipal ? ((AthenzPrincipal) user).getIdentity().getName() : user.getName();
-        TenantName tenantName = TenantName.from(UserTenant.normalizeUser(userName));
         List<Tenant> tenants = controller.tenants().asList(new Credentials(user));
 
         Slime slime = new Slime();
@@ -348,7 +344,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor tenantsArray = response.setArray("tenants");
         for (Tenant tenant : tenants)
             tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
-        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant.name().equals(tenantName)));
+        response.setBool("tenantExists", true);
         return new SlimeJsonResponse(slime);
     }
 
@@ -1423,26 +1419,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return response;
     }
 
-    private HttpResponse createUser(HttpRequest request) {
-        String user = Optional.of(requireUserPrincipal(request))
-                              .filter(AthenzPrincipal.class::isInstance)
-                              .map(AthenzPrincipal.class::cast)
-                              .map(AthenzPrincipal::getIdentity)
-                              .filter(AthenzUser.class::isInstance)
-                              .map(AthenzIdentity::getName)
-                              .map(UserTenant::normalizeUser)
-                              .orElseThrow(() -> new ForbiddenException("Not authenticated or not a user."));
-
-        UserTenant tenant = UserTenant.create(user);
-        try {
-            controller.tenants().createUser(tenant);
-            return new MessageResponse("Created user '" + user + "'");
-        } catch (AlreadyExistsException e) {
-            // Ok
-            return new MessageResponse("User '" + user + "' already exists");
-        }
-    }
-
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
         getTenantOrThrow(tenantName);
         TenantName tenant = TenantName.from(tenantName);
@@ -1463,11 +1439,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
         TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
-        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-                                            ? Optional.empty()
-                                            : Optional.of(accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest()));
+        Credentials credentials = accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest());
         Application application = controller.applications().createApplication(id, credentials);
-
         Slime slime = new Slime();
         toSlime(id, slime.setObject(), request);
         return new SlimeJsonResponse(slime);
@@ -1693,16 +1666,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
         Optional<Tenant> tenant = controller.tenants().get(tenantName);
-        if ( ! tenant.isPresent())
+        if (tenant.isEmpty())
             return ErrorResponse.notFoundError("Could not delete tenant '" + tenantName + "': Tenant not found");
 
-        if (tenant.get().type() == Tenant.Type.user)
-            controller.tenants().deleteUser((UserTenant) tenant.get());
-        else
-            controller.tenants().delete(tenant.get().name(),
-                                        accessControlRequests.credentials(tenant.get().name(),
-                                                                          toSlime(request.getData()).get(),
-                                                                          request.getJDiscRequest()));
+        controller.tenants().delete(tenant.get().name(),
+                                    accessControlRequests.credentials(tenant.get().name(),
+                                                                      toSlime(request.getData()).get(),
+                                                                      request.getJDiscRequest()));
 
         // TODO: Change to a message response saying the tenant was deleted
         return tenant(tenant.get(), request);
@@ -1710,9 +1680,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
         TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
-        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-                                            ? Optional.empty()
-                                            : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
+        Credentials credentials = accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest());
         controller.applications().deleteApplication(id, credentials);
         return new MessageResponse("Deleted application " + id);
     }
@@ -1721,9 +1689,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         controller.applications().deleteInstance(id.instance(instanceName));
         if (controller.applications().requireApplication(id).instances().isEmpty()) {
-            Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-                                                ? Optional.empty()
-                                                : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
+            Credentials credentials = accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest());
             controller.applications().deleteApplication(id, credentials);
         }
         return new MessageResponse("Deleted instance " + id.instance(instanceName).toFullString());
@@ -1797,7 +1763,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     });
                 });
                 break;
-            case user: break;
             case cloud: {
                 CloudTenant cloudTenant = (CloudTenant) tenant;
 
@@ -1836,7 +1801,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 metaData.setString("athensDomain", athenzTenant.domain().getName());
                 metaData.setString("property", athenzTenant.property().id());
                 break;
-            case user: break;
             case cloud: break;
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
@@ -2055,7 +2019,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static String tenantType(Tenant tenant) {
         switch (tenant.type()) {
-            case user: return "USER";
             case athenz: return "ATHENS";
             case cloud: return "CLOUD";
             default: throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());

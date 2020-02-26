@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import javax.ws.rs.ForbiddenException;
 import java.util.Arrays;
@@ -186,8 +185,8 @@ public class AthenzFacade implements AccessControl {
         AthenzIdentity identity =  ((AthenzPrincipal) credentials.user()).getIdentity();
         List<AthenzDomain> userDomains = ztsClient.getTenantDomains(service, identity, "admin");
         return tenants.stream()
-                      .filter(tenant ->    tenant.type() == Tenant.Type.user && ((UserTenant) tenant).is(identity.getName())
-                                        || tenant.type() == Tenant.Type.athenz && userDomains.contains(((AthenzTenant) tenant).domain()))
+                      .filter(tenant ->    tenant.type() == Tenant.Type.athenz
+                                        && userDomains.contains(((AthenzTenant) tenant).domain()))
                       .collect(Collectors.toUnmodifiableList());
     }
 

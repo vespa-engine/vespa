@@ -435,10 +435,6 @@ public class JobController {
         if ( ! type.environment().isManuallyDeployed())
             throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
 
-        if (   controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-            && controller.applications().getApplication(TenantAndApplicationId.from(id)).isEmpty())
-            controller.applications().createApplication(TenantAndApplicationId.from(id), Optional.empty());
-
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
