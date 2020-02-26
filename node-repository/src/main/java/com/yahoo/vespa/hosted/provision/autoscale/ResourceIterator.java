@@ -43,7 +43,7 @@ public class ResourceIterator {
 
         // What number of nodes is it effective to add or remove at the time from this cluster?
         // This is the group size, since we (for now) assume the group size is decided by someone wiser than us
-        // and we decide tyhe number of groups.
+        // and we decide the number of groups.
         // The exception is when we only have one group, where we can add and remove single nodes in it.
         singleGroupMode = currentAllocation.groups() == 1;
         nodeIncrement = singleGroupMode ? 1 : groupSize;
