@@ -6,6 +6,7 @@
 #include <vector>
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 namespace search::tensor {
 
@@ -28,6 +29,7 @@ public:
     virtual void remove_document(uint32_t docid) = 0;
     virtual void transfer_hold_lists(generation_t current_gen) = 0;
     virtual void trim_hold_lists(generation_t first_used_gen) = 0;
+    virtual vespalib::MemoryUsage memory_usage() const = 0;
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              vespalib::tensor::TypedCells vector,

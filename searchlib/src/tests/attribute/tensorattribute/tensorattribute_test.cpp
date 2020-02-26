@@ -134,6 +134,9 @@ public:
     void trim_hold_lists(generation_t first_used_gen) override {
         _trim_gen = first_used_gen;
     }
+    vespalib::MemoryUsage memory_usage() const override {
+        return vespalib::MemoryUsage();
+    }
     std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
         (void) k;
         (void) vector;
