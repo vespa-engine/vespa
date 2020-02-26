@@ -47,5 +47,4 @@ cp node-admin/src/main/sh/node-admin.sh %buildroot%_prefix/libexec/vespa
 rm -rf %buildroot
 
 %files
-%defattr(-,vespa,vespa,-)
 %_prefix/*

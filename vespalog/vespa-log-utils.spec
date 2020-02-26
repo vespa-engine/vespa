@@ -31,5 +31,4 @@ ln -s "vespa-logfmt" "${bin_dir}/logfmt"
 rm -rf %buildroot
 
 %files
-%defattr(-,vespa,vespa,-)
 %_prefix/*

@@ -116,5 +116,4 @@ if [ $1 -eq 0 ]; then # this is an uninstallation
 fi
 
 %files
-%defattr(-,vespa,vespa,-)
 %_prefix/*
