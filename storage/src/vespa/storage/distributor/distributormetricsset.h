@@ -7,7 +7,7 @@
 #include <vespa/metrics/metrics.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 
-namespace storage {
+namespace storage::distributor {
 
 class DistributorMetricSet : public metrics::MetricSet
 {

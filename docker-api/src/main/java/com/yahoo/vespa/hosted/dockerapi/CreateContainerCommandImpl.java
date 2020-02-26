@@ -34,6 +34,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final Map<String, String> labels = new HashMap<>();
     private final List<String> environmentAssignments = new ArrayList<>();
     private final List<String> volumeBindSpecs = new ArrayList<>();
+    private final List<String> dnsOptions = new ArrayList<>();
     private final List<Ulimit> ulimits = new ArrayList<>();
     private final Set<Capability> addCapabilities = new HashSet<>();
     private final Set<Capability> dropCapabilities = new HashSet<>();
@@ -92,6 +93,12 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     @Override
     public Docker.CreateContainerCommand withSecurityOpts(String securityOpt) {
         securityOpts.add(securityOpt);
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withDnsOption(String dnsOption) {
+        dnsOptions.add(dnsOption);
         return this;
     }
 
@@ -171,6 +178,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withPidsLimit(-1L)
                 .withCapAdd(addCapabilities.toArray(new Capability[0]))
                 .withCapDrop(dropCapabilities.toArray(new Capability[0]))
+                .withDnsOptions(dnsOptions)
                 .withPrivileged(privileged);
 
         containerResources.ifPresent(cr -> hostConfig
@@ -241,6 +249,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 toRepeatedOption("--cap-add", addCapabilitiesList),
                 toRepeatedOption("--cap-drop", dropCapabilitiesList),
                 toRepeatedOption("--security-opt", securityOpts),
+                toRepeatedOption("--dns-option", dnsOptions),
                 toOptionalOption("--net", networkMode),
                 toOptionalOption("--ip", ipv4Address),
                 toOptionalOption("--ip6", ipv6Address),

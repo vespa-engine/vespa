@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "httpclient.h"
 #include <vespa/vespalib/net/socket_spec.h>
+#include <util/authority.h>
 #include <cassert>
 #include <cstring>
 
@@ -29,7 +30,8 @@ HTTPClient::HTTPClient(vespalib::CryptoEngine::SP engine, const char *hostname, 
       _keepAlive(keepAlive),
       _headerBenchmarkdataCoverage(headerBenchmarkdataCoverage),
       _extraHeaders(extraHeaders),
-      _authority(authority),
+    _sni_spec(make_sni_spec(authority, hostname, port, _engine->use_tls_when_client())),
+    _host_header_value(make_host_header_value(_sni_spec, _engine->use_tls_when_client())),
     _reuseCount(0),
     _bufsize(10240),
     _buf(new char[_bufsize]),
@@ -51,11 +53,6 @@ HTTPClient::HTTPClient(vespalib::CryptoEngine::SP engine, const char *hostname, 
     _dataDone(false),
     _reader(NULL)
 {
-    if (_authority == "") {
-        char tmp[1024];
-        snprintf(tmp, 1024, "%s:%d", hostname, port);
-        _authority = tmp;
-    }
 }
 
 bool
@@ -70,8 +67,7 @@ HTTPClient::connect_socket()
     if (!handle.valid()) {
         return false;
     }
-    _socket = vespalib::SyncCryptoSocket::create_client(*_engine, std::move(handle),
-                                                        vespalib::SocketSpec::from_host_port(_hostname, _port));
+    _socket = vespalib::SyncCryptoSocket::create_client(*_engine, std::move(handle), _sni_spec);
     return bool(_socket);
 }
 
@@ -153,14 +149,14 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
                  "Content-Length: %d\r\n"
                  "%s"
                  "\r\n",
-                 url, _authority.c_str(), cLen, headers.c_str());
+                 url, _host_header_value.c_str(), cLen, headers.c_str());
     } else {
         snprintf(req, req_max,
                  "GET %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
                  "%s"
                  "\r\n",
-                 url, _authority.c_str(), headers.c_str());
+                 url, _host_header_value.c_str(), headers.c_str());
     }
 
     // try to reuse connection if keep-alive is enabled

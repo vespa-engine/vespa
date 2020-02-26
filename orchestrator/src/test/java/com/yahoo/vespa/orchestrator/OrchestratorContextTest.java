@@ -23,7 +23,7 @@ public class OrchestratorContextTest {
         var mutable = new Object() { boolean locked = true; };
         Runnable unlock = () -> mutable.locked = false;
 
-        try (OrchestratorContext rootContext = OrchestratorContext.createContextForMultiAppOp(new ManualClock(), true)) {
+        try (OrchestratorContext rootContext = OrchestratorContext.createContextForMultiAppOp(new ManualClock())) {
             try (OrchestratorContext probeContext = rootContext.createSubcontextForSingleAppOp(true)) {
                 assertFalse(probeContext.hasLock(application));
                 assertTrue(probeContext.registerLockAcquisition(application, unlock));
@@ -40,20 +40,5 @@ public class OrchestratorContextTest {
             assertTrue(mutable.locked);
         }
         assertFalse(mutable.locked);
-    }
-
-    @Test
-    public void testLargeLocksDisabled() {
-        var mutable = new Object() { boolean locked = true; };
-        Runnable unlock = () -> mutable.locked = false;
-
-        try (OrchestratorContext rootContext = OrchestratorContext.createContextForMultiAppOp(new ManualClock(), false)) {
-            try (OrchestratorContext probeContext = rootContext.createSubcontextForSingleAppOp(true)) {
-                assertFalse(probeContext.hasLock(application));
-                assertFalse(probeContext.registerLockAcquisition(application, unlock));
-            }
-        }
-
-        assertTrue(mutable.locked);
     }
 }

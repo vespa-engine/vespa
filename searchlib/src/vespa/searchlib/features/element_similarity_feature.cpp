@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.elementsimilarity");

@@ -67,6 +67,12 @@ public class Flags {
             "Takes effect on next host admin tick.",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag SERVICE_MODEL_CACHE = defineFeatureFlag(
+            "service-model-cache", true,
+            "Whether the service model is cached.",
+            "Takes effect on restart of config server.",
+            HOSTNAME);
+
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
@@ -74,7 +80,7 @@ public class Flags {
             HOSTNAME, NODE_TYPE);
 
     public static final UnboundStringFlag DOCKER_VERSION = defineStringFlag(
-            "docker-version", "1.13.1-91.git07f3374",
+            "docker-version", "1.13.1-102.git7f2769b",
             "The version of the docker to use of the format VERSION-REL: The YUM package to be installed will be " +
             "2:docker-VERSION-REL.el7.centos.x86_64 in AWS (and without '.centos' otherwise). " +
             "If docker-version is not of this format, it must be parseable by YumPackageName::fromString.",
@@ -125,14 +131,6 @@ public class Flags {
             "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
             "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
             "Takes effect on next run of NodeRebooter");
-
-    public static final UnboundBooleanFlag ENABLE_LARGE_ORCHESTRATOR_LOCKS = defineFeatureFlag(
-            "enable-large-orchestrator-locks", true,
-            "If enabled, the orchestrator will accumulate application locks during probe in batch suspension, " +
-            "and release them in reverse order only after the non-probe is complete. Can be set depending on " +
-            "parent hostname.",
-            "Takes immediate effect for new batch suspensions.",
-            HOSTNAME);
 
     public static final UnboundBooleanFlag RETIRE_WITH_PERMANENTLY_DOWN = defineFeatureFlag(
             "retire-with-permanently-down", false,

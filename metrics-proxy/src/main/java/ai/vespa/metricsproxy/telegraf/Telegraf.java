@@ -3,7 +3,10 @@ package ai.vespa.metricsproxy.telegraf;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.log.LogLevel;
 import com.yahoo.system.execution.ProcessExecutor;
+import com.yahoo.system.execution.ProcessResult;
+import com.yahoo.vespa.defaults.Defaults;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 
@@ -22,6 +25,7 @@ public class Telegraf extends AbstractComponent {
 
     private static final String TELEGRAF_CONFIG_PATH = "/etc/telegraf/telegraf.conf";
     private static final String TELEGRAF_CONFIG_TEMPLATE_PATH = "templates/telegraf.conf.vm";
+    private static final String TELEGRAF_LOG_FILE_PATH = Defaults.getDefaults().underVespaHome("logs/telegraf/telegraf.log");
     private final TelegrafRegistry telegrafRegistry;
 
     private static final Logger logger = Logger.getLogger(Telegraf.class.getName());
@@ -36,6 +40,7 @@ public class Telegraf extends AbstractComponent {
 
     protected static void writeConfig(TelegrafConfig telegrafConfig, Writer writer) {
         VelocityContext context = new VelocityContext();
+        context.put("logFilePath", TELEGRAF_LOG_FILE_PATH);
         context.put("intervalSeconds", telegrafConfig.intervalSeconds());
         context.put("cloudwatchPlugins", telegrafConfig.cloudWatch());
         // TODO: Add node cert if hosted
@@ -47,22 +52,29 @@ public class Telegraf extends AbstractComponent {
     }
 
     private void restartTelegraf() {
-        logger.info("Restarting Telegraf");
         executeCommand("service telegraf restart");
     }
 
     private void stopTelegraf() {
-        logger.info("Stopping Telegraf");
         executeCommand("service telegraf stop");
     }
 
     private void executeCommand(String command) {
+        logger.info(String.format("Running command: %s", command));
         ProcessExecutor processExecutor = new ProcessExecutor
                 .Builder(10)
                 .successExitCodes(0)
                 .build();
-        uncheck(() -> processExecutor.execute(command))
+        ProcessResult processResult = uncheck(() -> processExecutor.execute(command))
                 .orElseThrow(() -> new RuntimeException("Timed out running command: " + command));
+
+        logger.log(LogLevel.DEBUG, () -> String.format("Exit code: %d\nstdOut: %s\nstdErr: %s",
+                                                        processResult.exitCode,
+                                                        processResult.stdOut,
+                                                        processResult.stdErr));
+
+        if (!processResult.stdErr.isBlank())
+            logger.warning(String.format("stdErr not empty: %s", processResult.stdErr));
     }
 
     @SuppressWarnings("ConstantConditions")

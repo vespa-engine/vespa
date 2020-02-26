@@ -157,8 +157,9 @@ public class HostResource implements HostApi {
     private static WebApplicationException webExceptionFromTimeout(String operationDescription,
                                                                    HostName hostName,
                                                                    UncheckedTimeoutException e) {
-        return createWebException(operationDescription, hostName, e, HostedVespaPolicy.DEADLINE_CONSTRAINT, e.getMessage(),
-                Response.Status.GATEWAY_TIMEOUT);
+        // Return timeouts as 409 Conflict instead of 504 Gateway Timeout to reduce noise in 5xx graphs.
+        return createWebException(operationDescription, hostName, e,
+                HostedVespaPolicy.DEADLINE_CONSTRAINT, e.getMessage(), Response.Status.CONFLICT);
     }
 
     private static WebApplicationException webExceptionWithDenialReason(

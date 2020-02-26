@@ -6,10 +6,10 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/vespalib/geo/zcurve.h>
+#include <vespa/vespalib/util/stash.h>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <cmath>
-#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.distancetopathfeature");
@@ -25,7 +25,7 @@ DistanceToPathExecutor::DistanceToPathExecutor(std::vector<Vector2> &path,
     _path(),
     _pos(pos)
 {
-    if (_pos != NULL) {
+    if (_pos != nullptr) {
         _intBuf.allocate(_pos->getMaxValueCount());
     }
     _path.swap(path); // avoid copy
@@ -34,7 +34,7 @@ DistanceToPathExecutor::DistanceToPathExecutor(std::vector<Vector2> &path,
 void
 DistanceToPathExecutor::execute(uint32_t docId)
 {
-    if (_path.size() > 1 && _pos != NULL) {
+    if (_path.size() > 1 && _pos != nullptr) {
         double pos = -1, trip = 0, product = 0;
         double minSqDist = std::numeric_limits<double>::max();
         _intBuf.fill(*_pos, docId);
@@ -145,21 +145,21 @@ DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
     }
 
     // Lookup the attribute vector that holds document positions.
-    const search::attribute::IAttributeVector *pos = NULL;
+    const search::attribute::IAttributeVector *pos = nullptr;
     if (path.size() > 1) {
         pos = env.getAttributeContext().getAttribute(_posAttr);
-        if (pos == NULL) {
+        if (pos == nullptr) {
             pos = env.getAttributeContext().getAttribute(document::PositionDataType::getZCurveFieldName(_posAttr));
         }
-        if (pos != NULL) {
+        if (pos != nullptr) {
             if (!pos->isIntegerType()) {
                 LOG(warning, "The position attribute '%s' is not an integer attribute. Will use default distance.",
                     pos->getName().c_str());
-                pos = NULL;
+                pos = nullptr;
             } else if (pos->getCollectionType() == attribute::CollectionType::WSET) {
                 LOG(warning, "The position attribute '%s' is a weighted set attribute. Will use default distance.",
                     pos->getName().c_str());
-                pos = NULL;
+                pos = nullptr;
             }
         } else {
             LOG(warning, "The position attribute '%s' was not found. Will use default distance.", _posAttr.c_str());

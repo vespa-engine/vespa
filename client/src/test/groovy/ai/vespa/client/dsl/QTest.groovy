@@ -59,7 +59,7 @@ class QTest extends Specification {
             .build()
 
         expect:
-        q == """yql=select * from sd1 where f1 contains "v1" and f2 contains "v2" or f3 contains "v3" and !(f4 contains "v4") order by f1 desc, f2 asc, limit 2 offset 1 timeout 3;&paramk1=paramv1"""
+        q == """yql=select * from sd1 where f1 contains "v1" and f2 contains "v2" or f3 contains "v3" and !(f4 contains "v4") order by f1 desc, f2 asc limit 2 offset 1 timeout 3;&paramk1=paramv1"""
     }
 
     def "matches"() {

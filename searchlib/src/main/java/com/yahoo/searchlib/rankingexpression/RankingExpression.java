@@ -10,6 +10,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.text.Text;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -115,7 +116,7 @@ public class RankingExpression implements Serializable {
             root = parse(new StringReader(expression));
         }
         catch (ParseException e) {
-            ParseException p = new ParseException("Could not parse '" + expression + "'");
+            ParseException p = new ParseException("Could not parse '" + Text.truncate(expression, 50) + "'");
             p.initCause(e);
             throw p;
         }

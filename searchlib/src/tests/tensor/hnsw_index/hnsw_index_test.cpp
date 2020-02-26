@@ -266,5 +266,38 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     expect_level_0(7, {3, 6});
 }
 
+TEST_F(HnswIndexTest, manual_insert)
+{
+    init(false);
+
+    std::vector<uint32_t> nbl;
+    HnswNode empty{nbl};
+    index->set_node(1, empty);
+    index->set_node(2, empty);
+
+    HnswNode three{{1,2}};
+    index->set_node(3, three);
+    expect_level_0(1, {3});
+    expect_level_0(2, {3});
+    expect_level_0(3, {1,2});
+
+    expect_entry_point(1, 0);
+
+    HnswNode twolevels{{{1},nbl}};
+    index->set_node(4, twolevels);
+
+    expect_entry_point(4, 1);
+    expect_level_0(1, {3,4});
+
+    HnswNode five{{{1,2}, {4}}};
+    index->set_node(5, five);
+
+    expect_levels(1, {{3,4,5}});
+    expect_levels(2, {{3,5}});
+    expect_levels(3, {{1,2}});
+    expect_levels(4, {{1}, {5}});
+    expect_levels(5, {{1,2}, {4}});
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
 

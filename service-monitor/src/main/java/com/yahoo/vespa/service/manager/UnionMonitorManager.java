@@ -51,4 +51,8 @@ public class UnionMonitorManager implements MonitorManager {
         slobrokMonitorManager.applicationRemoved(id);
         healthMonitorManager.applicationRemoved(id);
     }
+
+    @Override
+    public void bootstrapComplete() {
+    }
 }

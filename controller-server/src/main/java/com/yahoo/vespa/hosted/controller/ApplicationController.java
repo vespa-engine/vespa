@@ -49,7 +49,7 @@ import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
-import com.yahoo.vespa.hosted.controller.endpointcertificates.EndpointCertificateManager;
+import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateManager;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
@@ -130,13 +130,18 @@ public class ApplicationController {
             int count = 0;
             for (TenantAndApplicationId id: curator.readApplicationIds()) {
                 lockApplicationIfPresent(id, application -> {
-                    if (id.tenant().value().startsWith("by-"))
-                        application = application.with(DeploymentSpec.empty);
-                    else
+                    if (id.tenant().value().startsWith("by-")) { // TODO jonmv: Remove after run once.
+                        for (Instance instance : application.get().instances().values())
+                            for (ZoneId zone : instance.deployments().keySet())
+                                deactivate(instance.id(), zone);
+                            curator.removeApplication(id);
+                    }
+                    else {
                         for (InstanceName instance : application.get().deploymentSpec().instanceNames())
-                            if ( ! application.get().instances().containsKey(instance))
+                            if (!application.get().instances().containsKey(instance))
                                 application = withNewInstance(application, id.instance(instance));
-                    store(application);
+                        store(application);
+                    }
                 });
                 count++;
             }
@@ -229,7 +234,7 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application already exists
      */
-    public Application createApplication(TenantAndApplicationId id, Optional<Credentials> credentials) {
+    public Application createApplication(TenantAndApplicationId id, Credentials credentials) {
         try (Lock lock = lock(id)) {
             if (getApplication(id).isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
@@ -238,14 +243,9 @@ public class ApplicationController {
 
             com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
-            Optional<Tenant> tenant = controller.tenants().get(id.tenant());
-            if (tenant.isEmpty())
+            if (controller.tenants().get(id.tenant()).isEmpty())
                 throw new IllegalArgumentException("Could not create '" + id + "': This tenant does not exist");
-            if (tenant.get().type() != Tenant.Type.user) {
-                if (credentials.isEmpty())
-                    throw new IllegalArgumentException("Could not create '" + id + "': No credentials provided");
-                accessControl.createApplication(id, credentials.get());
-            }
+            accessControl.createApplication(id, credentials);
 
             LockedApplication locked = new LockedApplication(new Application(id, clock.instant()), lock);
             store(locked);
@@ -296,10 +296,6 @@ public class ApplicationController {
             throw new IllegalArgumentException("'" + instanceId + "' is a tester application!");
 
         TenantAndApplicationId applicationId = TenantAndApplicationId.from(instanceId);
-        if (   getApplication(applicationId).isEmpty()
-            && controller.tenants().require(instanceId.tenant()).type() == Tenant.Type.user)
-            createApplication(applicationId, Optional.empty());
-
         if (getInstance(instanceId).isEmpty())
             createInstance(instanceId);
 
@@ -508,11 +504,7 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      */
-    public void deleteApplication(TenantAndApplicationId id, Optional<Credentials> credentials) {
-        Tenant tenant = controller.tenants().require(id.tenant());
-        if (tenant.type() != Tenant.Type.user && credentials.isEmpty())
-            throw new IllegalArgumentException("Could not delete application '" + id + "': No credentials provided");
-
+    public void deleteApplication(TenantAndApplicationId id, Credentials credentials) {
         lockApplicationOrThrow(id, application -> {
             var deployments = application.get().instances().values().stream()
                                          .filter(instance -> ! instance.deployments().isEmpty())
@@ -531,8 +523,7 @@ public class ApplicationController {
             applicationStore.removeAll(id.tenant(), id.application());
             applicationStore.removeAllTesters(id.tenant(), id.application());
 
-            if (tenant.type() != Tenant.Type.user)
-                accessControl.deleteApplication(id, credentials.get());
+            accessControl.deleteApplication(id, credentials);
             curator.removeApplication(id);
 
             controller.jobController().collectGarbage();

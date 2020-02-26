@@ -85,7 +85,19 @@ struct Compiler : public Blueprint::DependencyHandler {
             }
             compile_error = true;
         }
+        fixup_feature_map();
         return FeatureRef();
+    }
+
+    void fixup_feature_map() {
+        auto itr = feature_map.begin();
+        while (itr != feature_map.end()) {
+            if (itr->second.executor >= spec_list.size()) {
+                itr = feature_map.erase(itr);
+            } else {
+                ++itr;
+            }
+        }
     }
 
     FeatureRef verify_type(const FeatureNameParser &parser, FeatureRef ref, Accept accept_type) {

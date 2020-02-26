@@ -208,10 +208,10 @@ Fixture::initViewSet(ViewSet &views)
     views._lidReuseDelayer = std::make_unique<documentmetastore::LidReuseDelayer>(views._writeService, metaStore->get());
     IndexSearchable::SP indexSearchable;
     MatchView::SP matchView(new MatchView(matchers, indexSearchable, attrMgr, sesMgr, metaStore, views._docIdLimit));
-    views.searchView.set(make_shared<SearchView>
+    views.searchView.set(SearchView::create
                                  (summaryMgr->createSummarySetup(SummaryConfig(), SummarymapConfig(),
                                                                  JuniperrcConfig(), views.repo, attrMgr),
-                                  matchView));
+                                  std::move(matchView)));
     views.feedView.set(
             make_shared<SearchableFeedView>(StoreOnlyFeedView::Context(summaryAdapter,
                             schema,

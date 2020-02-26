@@ -3,6 +3,7 @@ package com.yahoo.vespa.service.duper;
 
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.service.monitor.DuperModelListener;
 import org.junit.Before;
 import org.junit.Test;
 

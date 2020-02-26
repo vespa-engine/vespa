@@ -3,7 +3,7 @@
 #include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
 
-namespace storage {
+namespace storage::distributor {
 
 using metrics::MetricSet;
 

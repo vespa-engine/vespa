@@ -4,8 +4,7 @@
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/vespalib/util/fiddle.h>
 
-namespace vespalib {
-namespace geo {
+namespace vespalib::geo {
 
 namespace {
 
@@ -181,5 +180,4 @@ ZCurve::decodeSlow(int64_t enc, int32_t *xp, int32_t *yp)
     *yp = static_cast<int32_t>(y);
 }
 
-}
 }

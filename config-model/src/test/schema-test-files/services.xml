@@ -27,7 +27,7 @@
       </consumer>
       <consumer id="cloudwatch-self-hosted-with-default-auth">
         <metric-set id="public" />
-        <cloudwatch region="us-east1" namespace="my-namespace" />
+        <cloudwatch region="us-east1" namespace="namespace_legal.chars:/#1" />
       </consumer>
       <consumer id="cloudwatch-self-hosted-with-profile">
         <metric id="my-custom-metric" />

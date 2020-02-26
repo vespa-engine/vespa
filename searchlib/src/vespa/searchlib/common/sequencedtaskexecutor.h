@@ -2,7 +2,6 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 
 namespace vespalib {
@@ -16,7 +15,7 @@ namespace search {
  * Class to run multiple tasks in parallel, but tasks with same
  * id has to be run in sequence.
  */
-class SequencedTaskExecutor : public ISequencedTaskExecutor
+class SequencedTaskExecutor final : public ISequencedTaskExecutor
 {
     using Stats = vespalib::ExecutorStats;
     std::vector<std::shared_ptr<vespalib::BlockingThreadStackExecutor>> _executors;

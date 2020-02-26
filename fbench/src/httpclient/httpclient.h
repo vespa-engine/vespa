@@ -6,6 +6,7 @@
 #include <vespa/vespalib/net/sync_crypto_socket.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/socket_address.h>
+#include <vespa/vespalib/net/socket_spec.h>
 
 /**
  * This class implements a HTTP client that may be used to fetch
@@ -99,7 +100,8 @@ protected:
   bool             _keepAlive;
   bool             _headerBenchmarkdataCoverage;
   std::string      _extraHeaders;
-  std::string      _authority;
+  vespalib::SocketSpec _sni_spec;
+  std::string      _host_header_value;
   uint64_t         _reuseCount;
 
   size_t           _bufsize;

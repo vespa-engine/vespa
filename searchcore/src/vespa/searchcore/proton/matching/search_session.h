@@ -26,7 +26,7 @@ public:
         OwnershipBundle(OwnershipBundle &&) = default;
         OwnershipBundle & operator = (OwnershipBundle &&) = default;
         ~OwnershipBundle();
-        ISearchHandler::SP search_handler;
+        std::shared_ptr<const ISearchHandler> search_handler;
         std::unique_ptr<search::fef::Properties> feature_overrides;
         std::unique_ptr<MatchContext> context;
         IDocumentMetaStoreContext::IReadGuard::UP readGuard;

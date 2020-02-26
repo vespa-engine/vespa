@@ -26,13 +26,11 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
         throw new HostStateChangeDeniedException(
                 clusterApi.getNodeGroup(),
                 ENOUGH_SERVICES_UP_CONSTRAINT,
-                "Suspension percentage for service type " + clusterApi.serviceType()
+                "Suspension for service type " + clusterApi.serviceType()
                         + " would increase from " + clusterApi.percentageOfServicesDown()
                         + "% to " + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()
                         + "%, over the limit of " + percentageOfServicesAllowedToBeDown + "%."
-                        + " These instances may be down: " + clusterApi.servicesDownAndNotInGroupDescription()
-                        + " and these hosts are allowed to be down: "
-                        + clusterApi.nodesAllowedToBeDownNotInGroupDescription());
+                        + clusterApi.downDescription());
     }
 
     @Override
@@ -56,9 +54,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
                 "Down percentage for service type " + clusterApi.serviceType()
                         + " would increase to " + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()
                         + "%, over the limit of " + percentageOfServicesAllowedToBeDown + "%."
-                        + " These instances may be down: " + clusterApi.servicesDownAndNotInGroupDescription()
-                        + " and these hosts are allowed to be down: "
-                        + clusterApi.nodesAllowedToBeDownNotInGroupDescription());
+                        + clusterApi.downDescription());
     }
 
     // Non-private for testing purposes

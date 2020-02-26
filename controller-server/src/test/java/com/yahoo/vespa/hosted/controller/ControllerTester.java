@@ -327,20 +327,20 @@ public final class ControllerTester {
         return tenant;
     }
 
-    public Optional<Credentials> credentialsFor(TenantName tenantName) {
+    public Credentials credentialsFor(TenantName tenantName) {
         Tenant tenant = controller().tenants().require(tenantName);
 
         switch (tenant.type()) {
             case athenz:
-                return Optional.of(new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
+                return new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
                                                                              ((AthenzTenant) tenant).domain(),
                                                                              new OktaIdentityToken("okta-identity-token"),
-                                                                             new OktaAccessToken("okta-access-token")));
+                                                                             new OktaAccessToken("okta-access-token"));
             case cloud:
-                return Optional.of(new Credentials(new SimplePrincipal("dev")));
+                return new Credentials(new SimplePrincipal("dev"));
 
             default:
-                return Optional.empty();
+                throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'");
         }
     }
 

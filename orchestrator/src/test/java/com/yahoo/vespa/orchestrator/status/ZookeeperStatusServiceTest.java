@@ -117,7 +117,7 @@ public class ZookeeperStatusServiceTest {
                             TestIds.HOST_NAME1,
                             hostStatus);
 
-                    assertThat(statusRegistry.getHostInfo(TestIds.HOST_NAME1).status(),
+                    assertThat(statusRegistry.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1).status(),
                                is(hostStatus));
                 }
             }
@@ -182,7 +182,7 @@ public class ZookeeperStatusServiceTest {
                 killSession(curator.framework(), testingServer);
 
                 //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
-                statusRegistry.getHostInfo(TestIds.HOST_NAME1);
+                statusRegistry.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1);
             });
 
             assertThat(resultOfZkOperationAfterLockFailure, notHoldsException());

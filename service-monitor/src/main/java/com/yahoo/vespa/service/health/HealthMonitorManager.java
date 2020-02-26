@@ -92,6 +92,10 @@ public class HealthMonitorManager implements MonitorManager, HealthMonitorApi {
     }
 
     @Override
+    public void bootstrapComplete() {
+    }
+
+    @Override
     public ServiceStatusInfo getStatus(ApplicationId applicationId,
                                        ClusterId clusterId,
                                        ServiceType serviceType,

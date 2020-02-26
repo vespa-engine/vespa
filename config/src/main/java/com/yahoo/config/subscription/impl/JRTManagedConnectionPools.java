@@ -29,7 +29,8 @@ public class JRTManagedConnectionPools {
             count = 0;
         }
     }
-    private Map<ConfigSourceSet, CountedPool> pools = new HashMap<>();
+
+    private final Map<ConfigSourceSet, CountedPool> pools = new HashMap<>();
 
     public JRTConfigRequester acquire(ConfigSourceSet sourceSet, TimingValues timingValues) {
         CountedPool countedPool;
@@ -43,12 +44,14 @@ public class JRTManagedConnectionPools {
         }
         return new JRTConfigRequester(sourceSet, countedPool.scheduler, countedPool.pool, timingValues);
     }
+
     public synchronized void release(ConfigSourceSet sourceSet) {
         CountedPool countedPool;
         synchronized (pools) {
             countedPool = pools.get(sourceSet);
-            countedPool.count--;
-            if (countedPool.count > 0) return;
+            if (countedPool != null)
+                countedPool.count--;
+            if (countedPool == null || countedPool.count > 0) return;
             pools.remove(sourceSet);
         }
 

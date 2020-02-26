@@ -6,8 +6,7 @@
 #include <cassert>
 #include <vector>
 
-namespace vespalib {
-namespace geo {
+namespace vespalib::geo {
 
 /**
  * @brief Utility methods for a Z-curve (Morton-order) encoder and decoder.
@@ -31,7 +30,7 @@ public:
     public:
         BoundingBox(int32_t minx, int32_t maxx, int32_t miny, int32_t maxy);
 
-        ~BoundingBox() { }
+        ~BoundingBox() = default;
 
         int64_t getzMinx() const { return _zMinx; } 
         int64_t getzMaxx() const { return _zMaxx; } 
@@ -221,5 +220,3 @@ public:
 };
 
 }
-}
-

@@ -13,7 +13,6 @@ import static org.junit.Assert.*;
  */
 public class TelegrafTest {
 
-
     @Test
     public void test_writing_correct_telegraf_plugin_config() {
         TelegrafConfig telegrafConfig = new TelegrafConfig.Builder()
@@ -39,4 +38,5 @@ public class TelegrafTest {
         String expectedConfig = TestUtil.getFileContents( "telegraf-config-with-two-cloudwatch-plugins.txt");
         assertEquals(expectedConfig, stringWriter.toString());
     }
+
 }

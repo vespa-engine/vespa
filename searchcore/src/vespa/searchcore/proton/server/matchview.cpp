@@ -31,17 +31,17 @@ using matching::ISearchContext;
 using matching::Matcher;
 using matching::SessionManager;
 
-MatchView::MatchView(const Matchers::SP &matchers,
-                     const IndexSearchable::SP &indexSearchable,
-                     const IAttributeManager::SP &attrMgr,
-                     const SessionManagerSP &sessionMgr,
-                     const IDocumentMetaStoreContext::SP &metaStore,
+MatchView::MatchView(Matchers::SP matchers,
+                     IndexSearchable::SP indexSearchable,
+                     IAttributeManager::SP attrMgr,
+                     SessionManagerSP sessionMgr,
+                     IDocumentMetaStoreContext::SP metaStore,
                      DocIdLimit &docIdLimit)
-    : _matchers(matchers),
-      _indexSearchable(indexSearchable),
-      _attrMgr(attrMgr),
-      _sessionMgr(sessionMgr),
-      _metaStore(metaStore),
+    : _matchers(std::move(matchers)),
+      _indexSearchable(std::move(indexSearchable)),
+      _attrMgr(std::move(attrMgr)),
+      _sessionMgr(std::move(sessionMgr)),
+      _metaStore(std::move(metaStore)),
       _docIdLimit(docIdLimit)
 { }
 
@@ -68,12 +68,12 @@ MatchView::createContext() const {
 
 
 std::unique_ptr<SearchReply>
-MatchView::match(const ISearchHandler::SP &searchHandler, const SearchRequest &req,
+MatchView::match(std::shared_ptr<const ISearchHandler> searchHandler, const SearchRequest &req,
                  vespalib::ThreadBundle &threadBundle) const
 {
     Matcher::SP matcher = getMatcher(req.ranking);
     SearchSession::OwnershipBundle owned_objects;
-    owned_objects.search_handler = searchHandler;
+    owned_objects.search_handler = std::move(searchHandler);
     owned_objects.context = createContext();
     owned_objects.readGuard = _metaStore->getReadGuard();;
     MatchContext *ctx = owned_objects.context.get();

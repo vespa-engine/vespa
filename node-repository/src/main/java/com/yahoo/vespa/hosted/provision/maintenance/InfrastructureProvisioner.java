@@ -25,15 +25,20 @@ public class InfrastructureProvisioner extends Maintainer {
         this.infraDeployer = infraDeployer;
     }
 
+    public void maintainButThrowOnException() {
+        try {
+            infraDeployer.activateAllSupportedInfraApplications(true);
+        } catch (RuntimeException e) {
+            logger.log(LogLevel.INFO, "Failed to deploy supported infrastructure applications, " +
+                    "will sleep 30s before propagating failure, to allow inspection of zk",
+                    e.getMessage());
+            try { Thread.sleep(30_000); } catch (InterruptedException ignored) { }
+            throw e;
+        }
+    }
+
     @Override
     protected void maintain() {
-        infraDeployer.getSupportedInfraDeployments().forEach((application, deployment) -> {
-            try {
-                deployment.activate();
-            } catch (RuntimeException e) {
-                logger.log(LogLevel.INFO, "Failed to activate " + application, e);
-                // loop around to activate the next application
-            }
-        });
+        infraDeployer.activateAllSupportedInfraApplications(false);
     }
 }

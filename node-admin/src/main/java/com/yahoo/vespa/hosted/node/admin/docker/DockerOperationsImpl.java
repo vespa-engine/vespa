@@ -66,6 +66,9 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withHostName(context.node().hostname())
                 .withResources(containerResources)
                 .withManagedBy(MANAGER_NAME)
+                // The inet6 option is needed to prefer AAAA records with gethostbyname(3), used by (at least) a yca package
+                // TODO: Try to remove this
+                .withDnsOption("inet6")
                 .withUlimit("nofile", 262_144, 262_144)
                 // The nproc aka RLIMIT_NPROC resource limit works as follows:
                 //  - A process has a (soft) nproc limit, either inherited by the parent or changed with setrlimit(2).

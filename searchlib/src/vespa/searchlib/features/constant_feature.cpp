@@ -4,14 +4,14 @@
 #include "valuefeature.h"
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
+#include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.constant_feature");
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Feature executor that returns a constant value.
@@ -25,8 +25,8 @@ public:
     ConstantFeatureExecutor(const vespalib::eval::Value &value)
         : _value(value)
     {}
-    virtual bool isPure() override { return true; }
-    virtual void execute(uint32_t) override {
+    bool isPure() override { return true; }
+    void execute(uint32_t) override {
         outputs().set_object(0, _value);
     }
     static FeatureExecutor &create(const vespalib::eval::Value &value, vespalib::Stash &stash) {
@@ -41,9 +41,7 @@ ConstantBlueprint::ConstantBlueprint()
 {
 }
 
-ConstantBlueprint::~ConstantBlueprint()
-{
-}
+ConstantBlueprint::~ConstantBlueprint() = default;
 
 void
 ConstantBlueprint::visitDumpFeatures(const IIndexEnvironment &,
@@ -54,7 +52,7 @@ ConstantBlueprint::visitDumpFeatures(const IIndexEnvironment &,
 Blueprint::UP
 ConstantBlueprint::createInstance() const
 {
-    return Blueprint::UP(new ConstantBlueprint());
+    return std::make_unique<ConstantBlueprint>();
 }
 
 bool
@@ -88,5 +86,4 @@ ConstantBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
     }
 }
 
-} // namespace features
-} // namespace search
+}

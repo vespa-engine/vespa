@@ -628,8 +628,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
         {
             // Not allowed to get to service layer to call pause().
             std::unique_lock<std::shared_timed_mutex> persistenceWguard(_persistenceEngine->getWLock());
-            IPersistenceHandler::SP oldHandler;
-            oldHandler = _persistenceEngine->removeHandler(persistenceWguard, old->getBucketSpace(), docTypeName);
+            IPersistenceHandler::SP  oldHandler = _persistenceEngine->removeHandler(persistenceWguard, old->getBucketSpace(), docTypeName);
             if (_initComplete && oldHandler) {
                 // TODO: Fix race with bucket db modifying ops.
                 _persistenceEngine->grabExtraModifiedBuckets(old->getBucketSpace(), *oldHandler);

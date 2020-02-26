@@ -55,7 +55,7 @@ public class SuperModelControllerTest {
         ApplicationId app = ApplicationId.from(TenantName.from("a"),
                                                ApplicationName.from("foo"), InstanceName.defaultName());
         models.put(app, new ApplicationInfo(app, 4L, new VespaModel(FilesApplicationPackage.fromFile(testApp))));
-        SuperModel superModel = new SuperModel(models);
+        SuperModel superModel = new SuperModel(models, true);
         handler = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone(), new InMemoryFlagSource()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
     }
     
@@ -98,7 +98,7 @@ public class SuperModelControllerTest {
         models.put(advanced, createApplicationInfo(testApp2, advanced, 4L));
         models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4L));
 
-        SuperModel superModel = new SuperModel(models);
+        SuperModel superModel = new SuperModel(models, true);
         SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone(), new InMemoryFlagSource()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
         LbServicesConfig.Builder lb = new LbServicesConfig.Builder();
         han.getSuperModel().getConfig(lb);
@@ -126,7 +126,7 @@ public class SuperModelControllerTest {
         models.put(advanced, createApplicationInfo(testApp2, advanced, 4L));
         models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4L));
 
-        SuperModel superModel = new SuperModel(models);
+        SuperModel superModel = new SuperModel(models, true);
         SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone(), new InMemoryFlagSource()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
         LbServicesConfig.Builder lb = new LbServicesConfig.Builder();
         han.getSuperModel().getConfig(lb);

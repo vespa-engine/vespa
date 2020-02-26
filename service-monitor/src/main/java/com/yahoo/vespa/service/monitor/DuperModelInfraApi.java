@@ -27,4 +27,7 @@ public interface DuperModelInfraApi {
 
     /** Update the DuperModel: A supported infrastructure application has been removed or is not active. */
     void infraApplicationRemoved(ApplicationId applicationId);
+
+    /** All infra applications that are supposed to activate on config server bootstrap has been activated. */
+    void infraApplicationsIsNowComplete();
 }

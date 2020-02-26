@@ -2,7 +2,6 @@
 
 #include "sequencedtaskexecutor.h"
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::BlockingThreadStackExecutor;
 

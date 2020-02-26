@@ -60,27 +60,37 @@ BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
-BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: openssl-devel
 %if 0%{?fc29}
+BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: llvm-devel >= 7.0.0
 BuildRequires: boost-devel >= 1.66
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc30}
+BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: llvm-devel >= 8.0.0
 BuildRequires: boost-devel >= 1.69
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc31}
+BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: llvm-devel >= 9.0.0
 BuildRequires: boost-devel >= 1.69
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc32}
+BuildRequires: protobuf-devel
+BuildRequires: llvm-devel >= 10.0.0
+BuildRequires: boost-devel >= 1.69
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
+%endif
+%if 0%{?fc33}
+BuildRequires: protobuf-devel
 BuildRequires: llvm-devel >= 10.0.0
 BuildRequires: boost-devel >= 1.69
 BuildRequires: gtest-devel
@@ -159,21 +169,29 @@ Requires: openssl-libs
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?fedora}
-Requires: vespa-protobuf >= 3.7.0-4
 Requires: openssl-libs
 %if 0%{?fc29}
+Requires: vespa-protobuf >= 3.7.0-4
 Requires: llvm-libs >= 7.0.0
 %define _vespa_llvm_version 7
 %endif
 %if 0%{?fc30}
+Requires: vespa-protobuf >= 3.7.0-4
 Requires: llvm-libs >= 8.0.0
 %define _vespa_llvm_version 8
 %endif
 %if 0%{?fc31}
+Requires: vespa-protobuf >= 3.7.0-4
 Requires: llvm-libs >= 9.0.0
 %define _vespa_llvm_version 9
 %endif
 %if 0%{?fc32}
+Requires: protobuf
+Requires: llvm-libs >= 10.0.0
+%define _vespa_llvm_version 10
+%endif
+%if 0%{?fc33}
+Requires: protobuf
 Requires: llvm-libs >= 10.0.0
 %define _vespa_llvm_version 10
 %endif

@@ -1,8 +1,12 @@
-package com.yahoo.vespa.hosted.controller.endpointcertificates;
+package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.google.common.collect.Sets;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
@@ -23,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
+import java.nio.charset.Charset;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Instant;
@@ -142,7 +147,7 @@ public class EndpointCertificateManager {
             if (storedMetaData.requestedDnsSans().isPresent() && storedMetaData.request_id().isPresent())
                 return;
 
-            var hashedCn = Endpoint.createHashedCn(applicationId, zoneRegistry.system()); // use as join key
+            var hashedCn = commonNameHashOf(applicationId, zoneRegistry.system()); // use as join key
             EndpointCertificateMetadata providerMetadata = sanToEndpointCertificate.get(hashedCn);
 
             if(providerMetadata == null) {
@@ -233,7 +238,7 @@ public class EndpointCertificateManager {
 
         // We add first an endpoint name based on a hash of the applicationId,
         // as the certificate provider requires the first CN to be < 64 characters long.
-        endpointDnsNames.add(Endpoint.createHashedCn(applicationId, zoneRegistry.system()));
+        endpointDnsNames.add(commonNameHashOf(applicationId, zoneRegistry.system()));
 
         var globalDefaultEndpoint = Endpoint.of(applicationId).named(EndpointId.defaultId());
         var rotationEndpoints = Endpoint.of(applicationId).wildcard();
@@ -244,12 +249,19 @@ public class EndpointCertificateManager {
         ));
 
         Stream.concat(Stream.of(globalDefaultEndpoint, rotationEndpoints), zoneLocalEndpoints)
-                .map(Endpoint.EndpointBuilder::directRouting)
+                .map(endpoint -> endpoint.routingMethod(RoutingMethod.exclusive))
                 .map(endpoint -> endpoint.on(Endpoint.Port.tls()))
                 .map(endpointBuilder -> endpointBuilder.in(zoneRegistry.system()))
                 .map(Endpoint::dnsName).forEach(endpointDnsNames::add);
 
         return Collections.unmodifiableList(endpointDnsNames);
+    }
+
+    /** Create a common name based on a hash of the ApplicationId. This should always be less than 64 characters long. */
+    private static String commonNameHashOf(ApplicationId application, SystemName system) {
+        var hashCode = Hashing.sha1().hashString(application.serializedForm(), Charset.defaultCharset());
+        var base32encoded = BaseEncoding.base32().omitPadding().lowerCase().encode(hashCode.asBytes());
+        return 'v' + base32encoded + Endpoint.dnsSuffix(system);
     }
 
 }

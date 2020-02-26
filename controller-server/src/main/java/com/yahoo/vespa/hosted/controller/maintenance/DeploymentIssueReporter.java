@@ -114,7 +114,7 @@ public class DeploymentIssueReporter extends Maintainer {
         try {
             Tenant tenant = ownerOf(application.id());
             tenant.contact().ifPresent(contact -> {
-                User assignee = tenant.type() == Tenant.Type.user ? userFor(tenant) : application.owner().orElse(null);
+                User assignee = application.owner().orElse(null);
                 Optional<IssueId> ourIssueId = application.deploymentIssueId();
                 IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, application.id().defaultInstance(), assignee, contact);
                 store(application.id(), issueId);

@@ -35,7 +35,7 @@ namespace {
 struct WaitTimer {
     double &wait_time_s;
     vespalib::Timer wait_time;
-    WaitTimer(double &wait_time_s_in)
+    explicit WaitTimer(double &wait_time_s_in)
         : wait_time_s(wait_time_s_in), wait_time()
     { }
     void done() {

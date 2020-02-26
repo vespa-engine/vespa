@@ -40,9 +40,6 @@ public class ContactInformationMaintainer extends Maintainer {
                     case athenz: tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant ->
                             tenants.store(lockedTenant.with(contactRetriever.getContact(lockedTenant.get().propertyId()))));
                         return;
-                    case user: tenants.lockIfPresent(tenant.name(), LockedTenant.User.class, lockedTenant ->
-                            tenants.store(lockedTenant.with(contactRetriever.getContact(Optional.empty()))));
-                        return;
                     case cloud: return;
                     default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
                 }

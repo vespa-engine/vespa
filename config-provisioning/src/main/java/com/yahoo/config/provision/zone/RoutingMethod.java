@@ -15,5 +15,11 @@ public enum RoutingMethod {
     exclusive,
 
     /** Routing happens through a shared layer 4 load balancer */
-    shared_layer_4
+    sharedLayer4;
+
+    /** Returns whether this method routes requests directly to the Vespa container cluster */
+    public boolean isDirect() {
+        return this == exclusive || this == sharedLayer4;
+    }
+
 }

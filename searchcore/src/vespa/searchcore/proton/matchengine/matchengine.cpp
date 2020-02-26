@@ -121,12 +121,12 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
         ISearchHandler::SP searchHandler;
         vespalib::SimpleThreadBundle::UP threadBundle = _threadBundlePool.obtain();
         { // try to find the match handler corresponding to the specified search doc type
-            std::lock_guard<std::mutex> guard(_lock);
             DocTypeName docTypeName(*searchRequest);
+            std::lock_guard<std::mutex> guard(_lock);
             searchHandler = _handlers.getHandler(docTypeName);
         }
         if (searchHandler) {
-            ret = searchHandler->match(searchHandler, *searchRequest, *threadBundle);
+            ret = searchHandler->match(*searchRequest, *threadBundle);
         } else {
             HandlerMap<ISearchHandler>::Snapshot snapshot;
             {
@@ -134,8 +134,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
                 snapshot = _handlers.snapshot();
             }
             if (snapshot.valid()) {
-                ISearchHandler::SP handler = snapshot.getSP();
-                ret = handler->match(handler, *searchRequest, *threadBundle); // use the first handler
+                ret = snapshot.get()->match(*searchRequest, *threadBundle); // use the first handler
             }
         }
         _threadBundlePool.release(std::move(threadBundle));

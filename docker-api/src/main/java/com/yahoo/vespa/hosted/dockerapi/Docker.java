@@ -53,6 +53,7 @@ public interface Docker {
         CreateContainerCommand withAddCapability(String capabilityName);
         CreateContainerCommand withDropCapability(String capabilityName);
         CreateContainerCommand withSecurityOpts(String securityOpt);
+        CreateContainerCommand withDnsOption(String dnsOption);
         CreateContainerCommand withPrivileged(boolean privileged);
 
         void create();

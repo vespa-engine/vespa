@@ -3,8 +3,11 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
-#include <vespa/vespalib/data/slime/slime.h>
 
+namespace vespalib::slime {
+    class Cursor;
+    class Inspector;
+}
 namespace config {
 
 /**

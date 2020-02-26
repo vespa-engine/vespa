@@ -2,17 +2,16 @@
 
 #include "matchfeature.h"
 #include "utils.h"
-#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 using namespace search::fef;
 using CollectionType = FieldInfo::CollectionType;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 MatchExecutor::MatchExecutor(const MatchParams & params) :
     FeatureExecutor(),
@@ -46,9 +45,7 @@ MatchBlueprint::MatchBlueprint() :
 {
 }
 
-MatchBlueprint::~MatchBlueprint()
-{
-}
+MatchBlueprint::~MatchBlueprint() = default;
 
 void
 MatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
@@ -61,7 +58,7 @@ MatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
 Blueprint::UP
 MatchBlueprint::createInstance() const
 {
-    return Blueprint::UP(new MatchBlueprint());
+    return std::make_unique<MatchBlueprint>();
 }
 
 bool
@@ -101,6 +98,4 @@ MatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &st
     return stash.create<MatchExecutor>(_params);
 }
 
-
-} // namespace features
-} // namespace search
+}
