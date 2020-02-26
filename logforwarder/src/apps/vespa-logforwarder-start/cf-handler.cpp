@@ -80,7 +80,9 @@ CfHandler::doConfigure()
     if (getenv("VESPA_HOSTNAME") != NULL &&
         getenv("VESPA_TENANT") != NULL &&
         getenv("VESPA_APPLICATION")!= NULL &&
-        getenv("VESPA_INSTANCE") != NULL )
+        getenv("VESPA_INSTANCE") != NULL &&
+        getenv("VESPA_ENVIRONMENT") != NULL &&
+        getenv("VESPA_REGION") != NULL)
         {
         path = cfFilePath(config.splunkHome, "inputs.conf");
         tmpPath = path + ".new";
@@ -88,7 +90,7 @@ CfHandler::doConfigure()
         if (fp != NULL) {
             fprintf(fp, "[default]\n");
             fprintf(fp, "host = %s\n", getenv("VESPA_HOSTNAME"));
-            fprintf(fp, "_meta = vespa_tenant::%s vespa_app::%s.%s\n", getenv("VESPA_TENANT"), getenv("VESPA_APPLICATION"), getenv("VESPA_INSTANCE"));
+            fprintf(fp, "_meta = vespa_tenant::%s vespa_app::%s.%s vespa_zone::%s.%s\n", getenv("VESPA_TENANT"), getenv("VESPA_APPLICATION"), getenv("VESPA_INSTANCE"), getenv("VESPA_ENVIRONMENT"), getenv("VESPA_REGION"));
             fclose(fp);
             rename(tmpPath.c_str(), path.c_str());
         }
