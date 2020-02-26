@@ -20,7 +20,9 @@ import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcServer;
 import ai.vespa.metricsproxy.service.ConfigSentinelClient;
 import ai.vespa.metricsproxy.service.SystemPollerProvider;
+import ai.vespa.metricsproxy.telegraf.Telegraf;
 import ai.vespa.metricsproxy.telegraf.TelegrafConfig;
+import ai.vespa.metricsproxy.telegraf.TelegrafRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -118,6 +120,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         addHttpHandler(ApplicationMetricsHandler.class, ApplicationMetricsHandler.V1_PATH);
         addMetricsProxyComponent(ApplicationMetricsRetriever.class);
+
+        addTelegrafComponents();
     }
 
     private void addHttpHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {
@@ -131,6 +135,15 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         metricsHandler.addServerBindings("http://*" + bindingPath,
                                          "http://*" + bindingPath + "/*");
         return metricsHandler;
+    }
+
+    private void addTelegrafComponents() {
+        getAdmin().ifPresent(admin -> {
+            if (admin.getUserMetrics().usesExternalMetricSystems()) {
+                addMetricsProxyComponent(Telegraf.class);
+                addMetricsProxyComponent(TelegrafRegistry.class);
+            }
+        });
     }
 
     @Override
@@ -224,7 +237,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
                 Optional.of(monitoring.getInterval()) : Optional.empty();
     }
 
-    private void  addMetricsProxyComponent(Class<?> componentClass) {
+    private void addMetricsProxyComponent(Class<?> componentClass) {
         addSimpleComponent(componentClass.getName(), null, METRICS_PROXY_BUNDLE_NAME);
     }
 
