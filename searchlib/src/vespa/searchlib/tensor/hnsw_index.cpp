@@ -50,20 +50,17 @@ HnswIndex::max_links_for_level(uint32_t level) const
     return (level == 0) ? _cfg.max_links_at_level_0() : _cfg.max_links_on_inserts();
 }
 
-uint32_t
-HnswIndex::make_node_for_document(uint32_t docid)
+void
+HnswIndex::make_node_for_document(uint32_t docid, uint32_t num_levels)
 {
+    _node_refs.ensure_size(docid + 1, AtomicEntryRef());
     // A document cannot be added twice.
     assert(!_node_refs[docid].load_acquire().valid());
 
-    uint32_t max_level = _level_generator->max_level();
-    // TODO: Add capping on num_levels
-    uint32_t num_levels = max_level + 1;
     // Note: The level array instance lives as long as the document is present in the index.
     LevelArray levels(num_levels, AtomicEntryRef());
     auto node_ref = _nodes.add(levels);
     _node_refs[docid].store_release(node_ref);
-    return max_level;
 }
 
 void
@@ -301,8 +298,9 @@ void
 HnswIndex::add_document(uint32_t docid)
 {
     auto input = get_vector(docid);
-    _node_refs.ensure_size(docid + 1, AtomicEntryRef());
-    int level = make_node_for_document(docid);
+    // TODO: Add capping on num_levels
+    int level = _level_generator->max_level();
+    make_node_for_document(docid, level + 1);
     if (_entry_docid == 0) {
         _entry_docid = docid;
         _entry_level = level;
@@ -452,17 +450,9 @@ HnswIndex::get_node(uint32_t docid) const
 void
 HnswIndex::set_node(uint32_t docid, const HnswNode &node)
 {
-    _node_refs.ensure_size(docid + 1, AtomicEntryRef());
-    // A document cannot be added twice.
-    assert(!_node_refs[docid].load_acquire().valid());
-
-    // make new node
     size_t num_levels = node.size();
     assert(num_levels > 0);
-    LevelArray levels(num_levels, AtomicEntryRef());
-    auto node_ref = _nodes.add(levels);
-    _node_refs[docid].store_release(node_ref);
-
+    make_node_for_document(docid, num_levels);
     for (size_t level = 0; level < num_levels; ++level) {
         connect_new_node(docid, node.level(level), level);
     }

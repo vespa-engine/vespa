@@ -94,7 +94,7 @@ protected:
     static search::datastore::ArrayStoreConfig make_default_link_store_config();
 
     uint32_t max_links_for_level(uint32_t level) const;
-    uint32_t make_node_for_document(uint32_t docid);
+    void make_node_for_document(uint32_t docid, uint32_t num_levels);
     void remove_node_for_document(uint32_t docid);
     LevelArrayRef get_level_array(uint32_t docid) const;
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const;
