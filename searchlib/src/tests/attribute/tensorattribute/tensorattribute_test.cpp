@@ -501,7 +501,7 @@ TEST_F("Hnsw index is instantiated in dense tensor attribute when specified in c
 
     const auto& cfg = hnsw_index->config();
     EXPECT_EQUAL(8u, cfg.max_links_at_level_0());
-    EXPECT_EQUAL(4u, cfg.max_links_at_hierarchic_levels());
+    EXPECT_EQUAL(4u, cfg.max_links_on_inserts());
     EXPECT_EQUAL(20u, cfg.neighbors_to_explore_at_construction());
     EXPECT_TRUE(cfg.heuristic_select_neighbors());
 }

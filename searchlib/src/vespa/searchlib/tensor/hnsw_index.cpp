@@ -47,7 +47,7 @@ HnswIndex::make_default_link_store_config()
 uint32_t
 HnswIndex::max_links_for_level(uint32_t level) const
 {
-    return (level == 0) ? _cfg.max_links_at_level_0() : _cfg.max_links_at_hierarchic_levels();
+    return (level == 0) ? _cfg.max_links_at_level_0() : _cfg.max_links_on_inserts();
 }
 
 uint32_t
@@ -325,7 +325,7 @@ HnswIndex::add_document(uint32_t docid)
     while (search_level >= 0) {
         // TODO: Rename to search_level?
         search_layer(input, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
-        auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_at_hierarchic_levels());
+        auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
         connect_new_node(docid, neighbors.used, search_level);
         // TODO: Shrink neighbors if needed
         --search_level;
