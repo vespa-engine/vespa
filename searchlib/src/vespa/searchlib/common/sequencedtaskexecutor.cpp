@@ -59,10 +59,7 @@ SequencedTaskExecutor::getStats()
 {
     Stats accumulatedStats;
     for (auto &executor : _executors) {
-        Stats stats = executor->getStats();
-        accumulatedStats.maxPendingTasks += stats.maxPendingTasks;
-        accumulatedStats.acceptedTasks += stats.acceptedTasks;
-        accumulatedStats.rejectedTasks += stats.rejectedTasks;
+        accumulatedStats += executor->getStats();
     }
     return accumulatedStats;
 }
