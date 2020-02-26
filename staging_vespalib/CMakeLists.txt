@@ -30,6 +30,7 @@ vespa_define_module(
     src/tests/shutdownguard
     src/tests/state_server
     src/tests/stllike
+    src/tests/singleexecutor
     src/tests/timer
     src/tests/util/process_memory_stats
     src/tests/xmlserializable

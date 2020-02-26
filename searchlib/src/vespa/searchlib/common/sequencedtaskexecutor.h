@@ -22,6 +22,7 @@ class SequencedTaskExecutor final : public ISequencedTaskExecutor
 
     SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
 public:
+    enum class Optimize {LATENCY, THROUGHPUT};
     using ISequencedTaskExecutor::getExecutorId;
 
     ~SequencedTaskExecutor();
@@ -30,7 +31,7 @@ public:
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
     Stats getStats() override;
-    static std::unique_ptr<ISequencedTaskExecutor> create(uint32_t threads, uint32_t taskLimit = 1000);
+    static std::unique_ptr<ISequencedTaskExecutor> create(uint32_t threads, uint32_t taskLimit = 1000, Optimize optimize = Optimize::THROUGHPUT);
 };
 
 } // namespace search

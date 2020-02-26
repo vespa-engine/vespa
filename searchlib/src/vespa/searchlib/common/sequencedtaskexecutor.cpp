@@ -2,8 +2,10 @@
 
 #include "sequencedtaskexecutor.h"
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/singleexecutor.h>
 
 using vespalib::BlockingThreadStackExecutor;
+using vespalib::SingleExecutor;
 
 namespace search {
 
@@ -15,12 +17,16 @@ constexpr uint32_t stackSize = 128 * 1024;
 
 
 std::unique_ptr<ISequencedTaskExecutor>
-SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit)
+SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, Optimize optimize)
 {
     auto executors = std::make_unique<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>>();
     executors->reserve(threads);
     for (uint32_t id = 0; id < threads; ++id) {
-        executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));
+        if (optimize == Optimize::THROUGHPUT) {
+            executors->push_back(std::make_unique<SingleExecutor>(taskLimit));
+        } else {
+            executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));
+        }
     }
     return std::unique_ptr<ISequencedTaskExecutor>(new SequencedTaskExecutor(std::move(executors)));
 }
