@@ -145,11 +145,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePATCH(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
+            // TODO: Node is fetched outside of lock, might change after getting lock
             Node node = nodeFromRequest(request);
             try (var lock = nodeRepository.lock(node)) {
-                var patchedNode = new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository.list(lock),
-                                                  nodeRepository.clock()).apply();
-                nodeRepository.write(patchedNode, lock);
+                var patchedNodes = new NodePatcher(nodeFlavors, request.getData(), node, () -> nodeRepository.list(lock),
+                                                   nodeRepository.clock()).apply();
+                nodeRepository.write(patchedNodes, lock);
             }
             return new MessageResponse("Updated " + node.hostname());
         }

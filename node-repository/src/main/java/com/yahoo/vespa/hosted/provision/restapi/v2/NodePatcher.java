@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
@@ -50,17 +51,14 @@ public class NodePatcher {
 
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
-    private final LockedNodeList nodes;
+    private final Supplier<LockedNodeList> nodes;
     private final Clock clock;
 
     private Node node;
-    private List<Node> children;
-    private boolean childrenModified = false;
 
-    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, LockedNodeList nodes, Clock clock) {
+    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, Supplier<LockedNodeList> nodes, Clock clock) {
         this.nodeFlavors = nodeFlavors;
         this.node = node;
-        this.children = node.type().isDockerHost() ? nodes.childrenOf(node).asList() : List.of();
         this.nodes = nodes;
         this.clock = clock;
         try {
@@ -76,6 +74,7 @@ public class NodePatcher {
      * children that must be updated in a consistent manner.
      */
     public List<Node> apply() {
+        List<Node> patchedNodes = new ArrayList<>();
         inspector.traverse((String name, Inspector value) -> {
             try {
                 node = applyField(node, name, value);
@@ -84,22 +83,20 @@ public class NodePatcher {
             }
 
             try {
-                children = applyFieldRecursive(children, name, value);
-                childrenModified = true;
+                patchedNodes.addAll(applyFieldRecursive(name, value));
             } catch (IllegalArgumentException e) {
                 // Non recursive field, ignore
             }
         } );
+        patchedNodes.add(node);
 
-        List<Node> nodes = childrenModified ? new ArrayList<>(children) : new ArrayList<>();
-        nodes.add(node);
-
-        return nodes;
+        return patchedNodes;
     }
 
-    private List<Node> applyFieldRecursive(List<Node> childNodes, String name, Inspector value) {
+    private List<Node> applyFieldRecursive(String name, Inspector value) {
         switch (name) {
             case WANT_TO_RETIRE:
+                List<Node> childNodes = node.type().isDockerHost() ? nodes.get().childrenOf(node).asList() : List.of();
                 return childNodes.stream()
                         .map(child -> applyField(child, name, value))
                         .collect(Collectors.toList());
@@ -133,9 +130,9 @@ public class NodePatcher {
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().with(asStringSet(value))), nodes);
+                return IP.Config.verify(node.with(node.ipConfig().with(asStringSet(value))), nodes.get());
             case "additionalIpAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), nodes);
+                return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), nodes.get());
             case WANT_TO_RETIRE :
                 return node.withWantToRetire(asBoolean(value), Agent.operator, clock.instant());
             case "wantToDeprovision" :
