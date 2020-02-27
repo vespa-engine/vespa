@@ -5,6 +5,7 @@
 #include <vespa/searchlib/tensor/doc_vector_access.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
+#include <vespa/searchlib/tensor/inv_log_level_generator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vector>
@@ -65,6 +66,9 @@ public:
                .set(4, {1, 2}).set(5, {8, 3}).set(6, {7, 2})
                .set(7, {3, 5}).set(8, {0, 3}).set(9, {4, 5});
     }
+
+    ~HnswIndexTest() {}
+
     void init(bool heuristic_select_neighbors) {
         auto generator = std::make_unique<LevelGenerator>();
         level_generator = generator.get();
@@ -439,6 +443,20 @@ TEST_F(HnswIndexTest, shrink_called_heuristic)
     index->set_node(9, nb1);
     expect_level_0(1, {2,3,4,8,9});
     EXPECT_TRUE(index->check_link_symmetry());
+}
+
+TEST(LevelGeneratorTest, gives_various_levels)
+{
+    InvLogLevelGenerator generator(4);
+    EXPECT_EQ(2u, generator.max_level());
+    EXPECT_EQ(1u, generator.max_level());
+    EXPECT_EQ(0u, generator.max_level());
+    EXPECT_EQ(1u, generator.max_level());
+    EXPECT_EQ(0u, generator.max_level());
+    EXPECT_EQ(1u, generator.max_level());
+    EXPECT_EQ(0u, generator.max_level());
+    EXPECT_EQ(0u, generator.max_level());
+    EXPECT_EQ(0u, generator.max_level());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
