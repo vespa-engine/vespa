@@ -965,7 +965,7 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
 
-        tester.atMondayMorning().clock().advance(Duration.ofDays(5)); // Inside block window for second instance.
+        tester.atMondayMorning().clock().advance(Duration.ofDays(5)); // Inside revision block window for second, conservative instance.
         Version version = Version.fromString("8.1");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
@@ -973,16 +973,18 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app2.instance().change());
         assertEquals(Change.empty(), app3.instance().change());
 
-        // Upgrade instance 1; a failure allows an application change to accompany the upgrade.
+        // Upgrade instance 1; a failure in any instance allows an application change to accompany the upgrade.
         // The new platform won't roll out to the conservative instance until the normal one is upgraded.
-        app1.failDeployment(systemTest);
+        app2.failDeployment(systemTest);
         app1.submit(applicationPackage);
         assertEquals(Change.of(version).with(app1.application().latestVersion().get()), app1.instance().change());
-        app1.runJob(systemTest)
-            .jobAborted(stagingTest)
+        app2.runJob(systemTest);
+        app1.jobAborted(stagingTest)
             .runJob(stagingTest)
             .runJob(productionUsWest1)
             .runJob(productionUsEast3);
+        app1.runJob(stagingTest);   // Tests with only the outstanding application change.
+        app2.runJob(systemTest);    // Tests with only the outstanding application change.
         tester.clock().advance(Duration.ofHours(2));
         app1.runJob(productionEuWest1);
         tester.clock().advance(Duration.ofHours(1));
@@ -997,9 +999,7 @@ public class DeploymentTriggerTest {
         app1.runJob(testUsEast3);
         app1.runJob(productionApSoutheast1);
 
-        app2.runJob(systemTest)     // Testing outstanding revision.
-            .runJob(stagingTest);   // Testing outstanding revision.
-
+        // Confidence rises to high, for the new version, and instance 2 starts to upgrade.
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
@@ -1009,14 +1009,13 @@ public class DeploymentTriggerTest {
         assertEquals(Change.of(version), app2.instance().change());
         assertEquals(Change.empty(), app3.instance().change());
 
-        app2.runJob(systemTest)     // Explicitly defined for this instance.
-            .runJob(stagingTest)    // Never completed successfully with just the upgrade.
+        app1.runJob(stagingTest);   // Never completed successfully with just the upgrade.
+        app2.runJob(systemTest)     // Never completed successfully with just the upgrade.
             .runJob(productionEuWest1)
-            .failDeployment(testEuWest1)
-            .runJob(systemTest);    // Testing outstanding revision with currently deployed (upgraded) platform.
+            .failDeployment(testEuWest1);
 
+        // Instance 2 failed the last job, and now exist block window, letting application change roll out with the upgrade.
         tester.clock().advance(Duration.ofDays(1)); // Leave block window for revisions.
-        app2.abortJob(testEuWest1);
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
         assertEquals(0, tester.jobs().active().size());

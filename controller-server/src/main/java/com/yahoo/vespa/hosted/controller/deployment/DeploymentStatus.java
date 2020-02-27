@@ -235,10 +235,17 @@ public class DeploymentStatus {
                     && testJobs.keySet().stream()
                                .noneMatch(test ->    test.type() == testType
                                                   && testJobs.get(test).contains(versions)))
-                    testJobs.merge(new JobId(job.application(), testType), List.of(versions), DeploymentStatus::union);
+                    testJobs.merge(anyDeclaredTest(testType).orElse(new JobId(job.application(), testType)), List.of(versions), DeploymentStatus::union);
             });
         }
         return ImmutableMap.copyOf(testJobs);
+    }
+
+    private Optional<JobId> anyDeclaredTest(JobType testJob) {
+        return application.deploymentSpec().instanceNames().stream()
+                .map(application.id()::instance)
+                .flatMap(id -> declaredTest(id, testJob).stream())
+                .findFirst();
     }
 
     /** JobId of any declared test of the given type, for the given instance. */
