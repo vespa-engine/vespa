@@ -6,8 +6,8 @@
 #include <vespa/vespalib/data/memory.h>
 
 namespace vespalib::slime {
-    class Cursor;
-    class Inspector;
+    struct Cursor;
+    struct Inspector;
 }
 namespace config {
 
