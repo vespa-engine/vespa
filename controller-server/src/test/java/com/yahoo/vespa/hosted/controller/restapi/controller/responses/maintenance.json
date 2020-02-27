@@ -10,9 +10,6 @@
       "name": "CloudEventReporter"
     },
     {
-      "name": "ClusterInfoMaintainer"
-    },
-    {
       "name": "ContactInformationMaintainer"
     },
     {
