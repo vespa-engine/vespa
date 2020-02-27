@@ -52,12 +52,6 @@
   },
   "status": "complete",
   "activity": {},
-  "cost": {
-    "tco": 0,
-    "waste": 0,
-    "utilization": 0.0,
-    "cluster": {}
-  },
   "metrics": {
     "queriesPerSecond": 0.0,
     "writesPerSecond": 0.0,
