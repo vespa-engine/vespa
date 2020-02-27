@@ -49,4 +49,9 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
         return new DefaultZtsClient(URI.create(config.ztsUrl()), identityProvider);
     }
 
+    @Override
+    public boolean cacheLookups() {
+        return true;
+    }
+
 }

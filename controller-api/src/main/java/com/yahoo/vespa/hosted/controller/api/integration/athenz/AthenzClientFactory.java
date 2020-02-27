@@ -16,4 +16,7 @@ public interface AthenzClientFactory {
     ZmsClient createZmsClient();
 
     ZtsClient createZtsClient();
+
+    default boolean cacheLookups() { return false; }
+
 }
