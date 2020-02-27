@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class EndpointTest {
     private static final ApplicationId app2 = ApplicationId.from("t2", "a2", "i2");
 
     @Test
-    public void test_global_endpoints() {
+    public void global_endpoints() {
         EndpointId endpointId = EndpointId.defaultId();
 
         Map<String, Endpoint> tests = Map.of(
@@ -70,7 +71,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void test_global_endpoints_with_endpoint_id() {
+    public void global_endpoints_with_endpoint_id() {
         var endpointId = EndpointId.defaultId();
 
         Map<String, Endpoint> tests = Map.of(
@@ -118,7 +119,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void test_zone_endpoints() {
+    public void zone_endpoints() {
         var cluster = ClusterSpec.Id.from("default"); // Always default for non-direct routing
         var prodZone = ZoneId.from("prod", "us-north-1");
         var testZone = ZoneId.from("test", "us-north-2");
@@ -168,7 +169,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void test_wildcard_endpoints() {
+    public void wildcard_endpoints() {
         var defaultCluster = ClusterSpec.Id.from("default");
         var prodZone = ZoneId.from("prod", "us-north-1");
         var testZone = ZoneId.from("test", "us-north-2");
@@ -225,4 +226,30 @@ public class EndpointTest {
 
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
     }
+
+    @Test
+    public void upstream_name() {
+        var zone = ZoneId.from("prod", "us-north-1");
+        var tests1 = Map.of(
+                // With default cluster
+                "t1.a1.us-north-1.prod",
+                Endpoint.of(app1).named(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
+
+                // With non-default cluster
+                "c1.t1.a1.us-north-1.prod",
+                Endpoint.of(app1).named(EndpointId.of("c1")).on(Port.tls(4443)).in(SystemName.main)
+        );
+        var tests2 = Map.of(
+                // With non-default instance
+                "i2.t2.a2.us-north-1.prod",
+                Endpoint.of(app2).named(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
+
+                // With non-default instance and cluster
+                "c2.i2.t2.a2.us-north-1.prod",
+                Endpoint.of(app2).named(EndpointId.of("c2")).on(Port.tls(4443)).in(SystemName.main)
+        );
+        tests1.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(new DeploymentId(app1, zone))));
+        tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(new DeploymentId(app2, zone))));
+    }
+
 }

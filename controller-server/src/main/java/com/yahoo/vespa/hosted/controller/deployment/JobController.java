@@ -531,12 +531,6 @@ public class JobController {
                                     .collect(toList()));
     }
 
-    /** Returns the tester endpoint URL, if any */
-    Optional<URI> testerEndpoint(RunId id) {
-        var testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        return controller.routing().zoneEndpointsOf(testerId).values().stream().findFirst();
-    }
-
     private void prunePackages(TenantAndApplicationId id) {
         controller.applications().lockApplicationIfPresent(id, application -> {
             application.get().productionDeployments().values().stream()

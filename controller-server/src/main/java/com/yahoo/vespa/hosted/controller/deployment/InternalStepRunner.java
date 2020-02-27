@@ -454,7 +454,7 @@ public class InternalStepRunner implements StepRunner {
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
-        for (URI endpoint : endpoints.get(zoneId).values()) {
+        for (var endpoint : endpoints.get(zoneId).keySet()) {
             boolean ready = controller.jobController().cloud().ready(endpoint);
             if (!ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);
@@ -482,7 +482,7 @@ public class InternalStepRunner implements StepRunner {
             logger.log("Endpoints not yet ready.");
             return false;
         }
-        for (var endpoint : endpoints.get(zone).values())
+        for (var endpoint : endpoints.get(zone).keySet())
             if ( ! controller.jobController().cloud().exists(endpoint)) {
                 logger.log(INFO, "DNS lookup yielded no IP address for '" + endpoint + "'.");
                 return false;
@@ -492,12 +492,12 @@ public class InternalStepRunner implements StepRunner {
         return true;
     }
 
-    private void logEndpoints(Map<ZoneId, Map<ClusterSpec.Id, URI>> endpoints, DualLogger logger) {
+    private void logEndpoints(Map<ZoneId, Map<URI, ClusterSpec.Id>> endpoints, DualLogger logger) {
         List<String> messages = new ArrayList<>();
         messages.add("Found endpoints:");
-        endpoints.forEach((zone, uris) -> {
+        endpoints.forEach((zone, urls) -> {
             messages.add("- " + zone);
-            uris.forEach((cluster, uri) -> messages.add(" |-- " + uri + " (" + cluster + ")"));
+            urls.forEach((url, cluster) -> messages.add(" |-- " + url + " (" + cluster + ")"));
         });
         logger.log(messages);
     }

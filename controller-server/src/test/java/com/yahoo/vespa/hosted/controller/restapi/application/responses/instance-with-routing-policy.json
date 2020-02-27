@@ -180,9 +180,7 @@
   ],
   "changeBlockers": [],
   "compileVersion": "(ignore)",
-  "globalRotations": [
-    "https://c0.instance1.application1.tenant1.global.vespa.oath.cloud/"
-  ],
+  "globalRotations": [],
   "instances": [
     {
       "environment": "prod",

@@ -31,7 +31,6 @@ import java.time.Clock;
  *
  * @author mpolden
  */
-// TODO(mpolden): Access all services through this
 public interface ServiceRegistry {
 
     ConfigServer configServer();
@@ -42,6 +41,7 @@ public interface ServiceRegistry {
 
     GlobalRoutingService globalRoutingService();
 
+    // TODO(mpolden): Remove
     RoutingGenerator routingGenerator();
 
     Mailer mailer();

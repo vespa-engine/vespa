@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  * @author jonmv
  */
+// TODO(mpolden): Remove
 public class RoutingGeneratorMock implements RoutingGenerator {
 
     public static final List<RoutingEndpoint> TEST_ENDPOINTS =

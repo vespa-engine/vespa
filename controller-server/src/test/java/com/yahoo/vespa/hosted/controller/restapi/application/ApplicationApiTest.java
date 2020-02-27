@@ -45,7 +45,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -634,10 +633,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                   ZoneId.from("dev", "us-east-1"),
                                                   Optional.of(applicationPackageDefault),
                                                   new DeployOptions(false, Optional.empty(), false, false));
-        tester.serviceRegistry().routingGeneratorMock().putEndpoints(new DeploymentId(ApplicationId.from("tenant1", "application1", "default"), ZoneId.from("prod", "us-central-1")),
-                                                                     List.of(new RoutingEndpoint("https://us-central-1.prod.default", "host", false, "upstream")));
-        tester.serviceRegistry().routingGeneratorMock().putEndpoints(new DeploymentId(ApplicationId.from("tenant1", "application1", "my-user"), ZoneId.from("dev", "us-east-1")),
-                                                                     List.of(new RoutingEndpoint("https://us-east-1.dev.my-user", "host", false, "upstream")));
+
         // GET test-config for local tests against a dev deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user/job/dev-us-east-1/test-config", GET)
                                       .userIdentity(USER_ID),
@@ -798,8 +794,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant and deploy
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
         app.submit(applicationPackage).deploy();
-        app.addRoutingPolicy(westZone, true);
-        app.addRoutingPolicy(eastZone, true);
 
         // Invalid application fails
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation", GET)
@@ -1467,8 +1461,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     }
 
-
-
     @Test
     public void applicationWithRoutingPolicy() {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
@@ -1481,8 +1473,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region(zone.region().value())
                 .build();
         app.submit(applicationPackage).deploy();
-        app.addRoutingPolicy(zone, true);
-        app.addRoutingPolicy(zone, false);
+        app.addInactiveRoutingPolicy(zone);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)

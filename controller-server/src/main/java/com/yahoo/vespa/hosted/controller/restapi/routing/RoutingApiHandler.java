@@ -24,7 +24,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
@@ -265,7 +264,10 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                     // Include status from routing policies
                     var routingPolicies = controller.routing().policies().get(deploymentId);
                     for (var policy : routingPolicies.values()) {
-                        deploymentStatusToSlime(deploymentsArray.addObject(), policy);
+                        if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(RoutingMethod.exclusive)) continue;
+                        deploymentStatusToSlime(deploymentsArray.addObject(), new DeploymentId(policy.id().owner(),
+                                                                                               policy.id().zone()),
+                                                policy.status().globalRouting(), RoutingMethod.exclusive);
                     }
                 }
             }
@@ -273,9 +275,11 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     }
 
-    /** Returns whether instance has an assigned rotation and a deployment in given zone */
-    private static boolean rotationCanRouteTo(ZoneId zone, Instance instance) {
-        return !instance.rotations().isEmpty() && instance.deployments().containsKey(zone);
+    /** Returns whether instance has an assigned rotation that can route to given zone */
+    private boolean rotationCanRouteTo(ZoneId zone, Instance instance) {
+        return !instance.rotations().isEmpty() &&
+               instance.deployments().containsKey(zone) &&
+               controller.zoneRegistry().routingMethods(zone).get(0).isShared();
     }
 
     private static void zoneStatusToSlime(Cursor object, ZoneId zone, GlobalRouting globalRouting, RoutingMethod method) {
@@ -295,11 +299,6 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         object.setString("status", asString(globalRouting.status()));
         object.setString("agent", asString(globalRouting.agent()));
         object.setLong("changedAt", globalRouting.changedAt().toEpochMilli());
-    }
-
-    private static void deploymentStatusToSlime(Cursor object, RoutingPolicy policy) {
-        deploymentStatusToSlime(object, new DeploymentId(policy.id().owner(), policy.id().zone()),
-                                policy.status().globalRouting(), RoutingMethod.exclusive);
     }
 
     private TenantName tenantFrom(Path path) {
@@ -355,7 +354,8 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         switch (method) {
             case shared: return "shared";
             case exclusive: return "exclusive";
-            default: return "unknonwn";
+            case sharedLayer4: return "sharedLayer4";
+            default: return "unknown";
         }
     }
 

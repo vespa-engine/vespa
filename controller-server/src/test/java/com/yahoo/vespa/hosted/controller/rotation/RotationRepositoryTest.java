@@ -2,12 +2,16 @@
 package com.yahoo.vespa.hosted.controller.rotation;
 
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.routing.RoutingId;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Before;
 import org.junit.Rule;
@@ -67,7 +71,8 @@ public class RotationRepositoryTest {
 
         assertEquals(List.of(expected.id()), rotationIds(application.instance().rotations()));
         assertEquals(URI.create("https://app1--tenant1.global.vespa.oath.cloud:4443/"),
-                     application.instance().endpointsIn(SystemName.main).main().get().url());
+                     EndpointList.global(RoutingId.of(application.instanceId(), EndpointId.defaultId()), SystemName.main, RoutingMethod.shared)
+                                 .primary().get().url());
         try (RotationLock lock = repository.lock()) {
             List<AssignedRotation> rotations = repository.getOrAssignRotations(application.application().deploymentSpec(),
                                                                                application.instance(),
@@ -143,7 +148,8 @@ public class RotationRepositoryTest {
         application2.submit(applicationPackage);
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(application2.instance().rotations()));
         assertEquals("https://cd--app2--tenant2.global.vespa.oath.cloud:4443/",
-                     application2.instance().endpointsIn(SystemName.cd).main().get().url().toString());
+                     EndpointList.global(RoutingId.of(application2.instanceId(), EndpointId.defaultId()), SystemName.cd, RoutingMethod.shared)
+                                 .primary().get().url().toString());
     }
 
     @Test
@@ -159,9 +165,11 @@ public class RotationRepositoryTest {
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
         assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
         assertEquals(URI.create("https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/"),
-                     instance1.instance().endpointsIn(SystemName.main).main().get().url());
+                     EndpointList.global(RoutingId.of(instance1.instanceId(), EndpointId.defaultId()), SystemName.main, RoutingMethod.shared)
+                                 .primary().get().url());
         assertEquals(URI.create("https://instance2--application1--tenant1.global.vespa.oath.cloud:4443/"),
-                     instance2.instance().endpointsIn(SystemName.main).main().get().url());
+                     EndpointList.global(RoutingId.of(instance2.instanceId(), EndpointId.defaultId()), SystemName.main, RoutingMethod.shared)
+                                 .primary().get().url());
     }
 
     @Test
@@ -179,9 +187,11 @@ public class RotationRepositoryTest {
         assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
 
         assertEquals(URI.create("https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/"),
-                     instance1.instance().endpointsIn(SystemName.main).main().get().url());
+                     EndpointList.global(RoutingId.of(instance1.instanceId(), EndpointId.defaultId()), SystemName.main, RoutingMethod.shared)
+                                 .primary().get().url());
         assertEquals(URI.create("https://instance2--application1--tenant1.global.vespa.oath.cloud:4443/"),
-                     instance2.instance().endpointsIn(SystemName.main).main().get().url());
+                     EndpointList.global(RoutingId.of(instance2.instanceId(), EndpointId.defaultId()), SystemName.main, RoutingMethod.shared)
+                                 .primary().get().url());
     }
 
     private void assertSingleRotation(Rotation expected, List<AssignedRotation> assignedRotations, RotationRepository repository) {

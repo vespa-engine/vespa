@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -50,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -72,6 +75,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Version initialVersion = new Version(6, 1, 0);
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, Set<LoadBalancer>> loadBalancers = new HashMap<>();
+    private final Set<Environment> deferLoadBalancerProvisioning = new HashSet<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
     private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
@@ -245,6 +249,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         this.clusterMetrics.put(deployment, clusterMetrics);
     }
 
+    public void deferLoadBalancerProvisioningIn(Set<Environment> environments) {
+        deferLoadBalancerProvisioning.addAll(environments);
+    }
+
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
@@ -330,6 +338,15 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                   .flatMap(Collection::stream)
                                   .collect(Collectors.toSet())
         );
+
+        if (!deferLoadBalancerProvisioning.contains(deployment.zoneId().environment())) {
+            putLoadBalancers(deployment.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
+                                                                           deployment.applicationId(),
+                                                                           ClusterSpec.Id.from("default"),
+                                                                           HostName.from("lb-0--" + deployment.applicationId().serializedForm() + "--" + deployment.zoneId().toString()),
+                                                                           LoadBalancer.State.active,
+                                                                           Optional.of("dns-zone-1"))));
+        }
 
         return () -> {
             Application application = applications.get(deployment);

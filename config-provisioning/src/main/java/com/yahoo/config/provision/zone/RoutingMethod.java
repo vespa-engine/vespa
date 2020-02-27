@@ -22,4 +22,9 @@ public enum RoutingMethod {
         return this == exclusive || this == sharedLayer4;
     }
 
+    /** Returns whether this method routes requests through a shared routing layer */
+    public boolean isShared() {
+        return this == shared || this == sharedLayer4;
+    }
+
 }

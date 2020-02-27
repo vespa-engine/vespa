@@ -8,13 +8,13 @@
     {
       "cluster": "default",
       "tls": true,
-      "url": "https://instance1--application1--tenant1.us-east-1.dev.vespa:43",
+      "url": "https://instance1--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/",
       "scope": "zone",
       "routingMethod": "shared"
     }
   ],
   "serviceUrls": [
-    "https://instance1--application1--tenant1.us-east-1.dev.vespa:43"
+    "https://instance1--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/"
   ],
   "nodes": "http://localhost:8080/zone/v2/dev/us-east-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=dev&region=us-east-1&application=tenant1.application1.instance1",

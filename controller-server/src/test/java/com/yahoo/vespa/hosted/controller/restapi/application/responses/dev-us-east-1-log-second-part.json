@@ -6,7 +6,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": " |-- https://default--application--tenant.us-east-1.dev.vespa:43 (cluster 'default')"
+        "message": " |-- https://application--tenant.us-east-1.dev.vespa.oath.cloud:4443/ (cluster 'default')"
       },
       {
         "at": 0,

@@ -6,6 +6,7 @@ import java.util.Objects;
 /**
  * @author smorgrav
  */
+// TODO(mpolden): Remove together with RoutingGenerator and its implementations
 public class RoutingEndpoint {
 
     private final boolean isGlobal;

@@ -29,8 +29,8 @@ public class TestConfigSerializerTest {
         byte[] json = new TestConfigSerializer(SystemName.PublicCd).configJson(instanceId,
                                                                                JobType.systemTest,
                                                                                true,
-                                                                               Map.of(zone, Map.of(ClusterSpec.Id.from("ai"),
-                                                                                                   URI.create("https://server/"))),
+                                                                               Map.of(zone, Map.of(URI.create("https://server/"),
+                                                                                                   ClusterSpec.Id.from("ai"))),
                                                                                Map.of(zone, List.of("facts")));
         byte[] expected = Files.readAllBytes(Paths.get("src/test/resources/testConfig.json"));
         assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlime(expected))),

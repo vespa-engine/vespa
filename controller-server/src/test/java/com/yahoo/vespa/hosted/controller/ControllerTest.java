@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -20,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -38,11 +36,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -176,40 +172,34 @@ public class ControllerTest {
 
     @Test
     public void testGlobalRotations() {
-        // Setup
-        ControllerTester tester = this.tester.controllerTester();
-        ZoneId zone = ZoneId.from("prod", "us-west-1");
-        ApplicationId app = ApplicationId.from("tenant", "app1", "default");
-        DeploymentId deployment = new DeploymentId(app, zone);
-        tester.serviceRegistry().routingGeneratorMock().putEndpoints(deployment, List.of(
-                new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
-                new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
-                new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3"),
-                new RoutingEndpoint("http://global-endpoint-2.vespa.yahooapis.com:4080", "host2", true, "upstream4"),
-                new RoutingEndpoint("http://global-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1"),
-                new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1")
-        ));
-
-        Supplier<Map<RoutingEndpoint, EndpointStatus>> globalRotationStatus = () -> tester.controller().routing().globalRotationStatus(deployment);
-        Supplier<List<EndpointStatus>> upstreamOneEndpoints = () -> {
-            return globalRotationStatus.get()
-                                       .entrySet().stream()
-                                       .filter(kv -> kv.getKey().upstreamName().equals("upstream1"))
-                                       .map(Map.Entry::getValue)
-                                       .collect(Collectors.toList());
-        };
+        var context = tester.newDeploymentContext();
+        var zone1 = ZoneId.from("prod", "us-west-1");
+        var zone2 = ZoneId.from("prod", "us-east-3");
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("default", "default", zone1.region().value(), zone2.region().value())
+                .build();
+        context.submit(applicationPackage).deploy();
 
         // Check initial rotation status
-        assertEquals(3, globalRotationStatus.get().size());
-        assertEquals(2, upstreamOneEndpoints.get().size());
-        assertTrue("All upstreams are in", upstreamOneEndpoints.get().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.in));
+        var deployment1 = context.deploymentIdIn(zone1);
+        var status1 = tester.controller().routing().globalRotationStatus(deployment1);
+        assertEquals(1, status1.size());
+        assertTrue("All upstreams are in", status1.values().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.in));
 
-        // Set the global rotations out of service
-        EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "unit-test", "Test", tester.clock().instant().getEpochSecond());
-        tester.controller().routing().setGlobalRotationStatus(deployment, status);
-        assertEquals(2, upstreamOneEndpoints.get().size());
-        assertTrue("All upstreams are out", upstreamOneEndpoints.get().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.out));
-        assertTrue("Reason is set", upstreamOneEndpoints.get().stream().allMatch(es -> es.getReason().equals("unit-test")));
+        // Set the deployment out of service in the global rotation
+        var newStatus = new EndpointStatus(EndpointStatus.Status.out, "unit-test", ControllerTest.class.getSimpleName(), tester.clock().instant().getEpochSecond());
+        tester.controller().routing().setGlobalRotationStatus(deployment1, newStatus);
+        status1 = tester.controller().routing().globalRotationStatus(deployment1);
+        assertEquals(1, status1.size());
+        assertTrue("All upstreams are out", status1.values().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.out));
+        assertTrue("Reason is set", status1.values().stream().allMatch(es -> es.getReason().equals("unit-test")));
+
+        // Other deployment remains in
+        var status2 = tester.controller().routing().globalRotationStatus(context.deploymentIdIn(zone2));
+        assertEquals(1, status2.size());
+        assertTrue("All upstreams are in", status2.values().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.in));
     }
 
     @Test
@@ -786,6 +776,20 @@ public class ControllerTest {
         context.submit(applicationPackage, Optional.empty())
                .deploy();
         assertEquals("Deployed application", 1, context.instance().deployments().size());
+    }
+
+    @Test
+    public void testDeployWithRoutingGeneratorFallback() {
+        var context = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        // Defer load balancer provisioning in all environments so that routing controller uses routing generator
+        context.deferLoadBalancerProvisioningIn(Environment.test, Environment.staging, Environment.prod)
+               .submit(applicationPackage)
+               .deploy();
     }
 
 }

@@ -131,8 +131,6 @@ public class RoutingApiTest extends ControllerContainerTest {
                 .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
                 .build();
         context.submit(applicationPackage).deploy();
-        context.addRoutingPolicy(westZone, true);
-        context.addRoutingPolicy(eastZone, true);
 
         // GET initial deployment status
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
@@ -254,9 +252,6 @@ public class RoutingApiTest extends ControllerContainerTest {
                 .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
                 .build();
         context.submit(applicationPackage).deploy();
-
-        // Assign policy in one zone
-        context.addRoutingPolicy(westZone, true);
 
         // GET status with both policy and rotation assigned
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",

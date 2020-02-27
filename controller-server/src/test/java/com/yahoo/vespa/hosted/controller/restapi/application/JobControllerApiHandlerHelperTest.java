@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
@@ -153,7 +152,6 @@ public class JobControllerApiHandlerHelperTest {
 
         tester.configServer().setLogStream("Nope, this won't be logged");
         tester.configServer().convergeServices(app.instanceId(), zone);
-        tester.setEndpoints(app.instanceId(), zone);
         tester.runner().run();
 
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root")), "dev-overview.json");
