@@ -186,4 +186,16 @@ TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(
     }
 }
 
+TEST("require that stats can be accumulated") {
+    ThreadStackExecutor::Stats stats(1,2,3);
+    EXPECT_EQUAL(1u, stats.maxPendingTasks);
+    EXPECT_EQUAL(2u, stats.acceptedTasks);
+    EXPECT_EQUAL(3u, stats.rejectedTasks);
+    stats += ThreadStackExecutor::Stats(7,8,9);
+    EXPECT_EQUAL(8u, stats.maxPendingTasks);
+    EXPECT_EQUAL(10u, stats.acceptedTasks);
+    EXPECT_EQUAL(12u, stats.rejectedTasks);
+
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

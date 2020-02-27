@@ -11,7 +11,16 @@ struct ExecutorStats {
     size_t maxPendingTasks;
     size_t acceptedTasks;
     size_t rejectedTasks;
-    ExecutorStats() : maxPendingTasks(0), acceptedTasks(0), rejectedTasks(0) {}
+    ExecutorStats() : ExecutorStats(0, 0, 0) {}
+    ExecutorStats(size_t maxPending, size_t accepted, size_t rejected)
+        : maxPendingTasks(maxPending), acceptedTasks(accepted), rejectedTasks(rejected)
+    {}
+    ExecutorStats & operator += (const ExecutorStats & rhs) {
+        maxPendingTasks += rhs.maxPendingTasks;
+        acceptedTasks += rhs.acceptedTasks;
+        rejectedTasks += rhs.rejectedTasks;
+        return *this;
+    }
 };
 
 }
