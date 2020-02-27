@@ -576,6 +576,21 @@ TEST_F(DocumentSelectParserTest, regex_matching_does_not_bind_anchors_to_newline
     PARSE("\"a\\nb\\nc\" = \"b\"", *_doc[0], False);
 }
 
+// With a recursive backtracking regex implementation like that found in (at the time of
+// writing) GCC's std::regex implementation, certain expressions on a sufficiently large
+// input will cause a stack overflow and send the whole thing spiraling into a flaming
+// vortex of doom. See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=86164 for context.
+//
+// Since crashing the process based on user input is considered bad karma for all the
+// obvious reasons, test that the underlying regex engine is not susceptible to such
+// crashes.
+TEST_F(DocumentSelectParserTest, regex_matching_is_not_susceptible_to_catastrophic_backtracking) {
+    std::string long_string(1024*50, 'A'); // -> hstringval field
+    auto doc = createDoc("testdoctype1", "id:foo:testdoctype1::bar", 24, 0.0, long_string, "bar", 0);
+    // This _will_ crash std::regex on GCC 8.3. Don't try this at home. Unless you want to.
+    PARSE(R"(testdoctype1.hstringval =~ ".*")", *doc, True);
+}
+
 TEST_F(DocumentSelectParserTest, operators_1)
 {
     createDocs();

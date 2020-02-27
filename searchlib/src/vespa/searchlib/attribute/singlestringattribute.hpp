@@ -59,7 +59,7 @@ SingleValueStringAttributeT<B>::StringTemplSearchContext::StringTemplSearchConte
             auto comp = enumStore.make_folded_comparator(queryTerm()->getTerm(), true);
             lookupRange(comp, comp);
         } else if (this->isRegex()) {
-            vespalib::string prefix(vespalib::Regexp::get_prefix(this->queryTerm()->getTerm()));
+            vespalib::string prefix(vespalib::RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
             auto comp = enumStore.make_folded_comparator(prefix.c_str(), true);
             lookupRange(comp, comp);
         } else {

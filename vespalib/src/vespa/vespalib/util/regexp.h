@@ -8,7 +8,7 @@ namespace vespalib {
 /**
  * Utility class inspecting and generating regular expression strings.
  **/
-class Regexp
+class RegexpUtil
 {
 public:
     /**

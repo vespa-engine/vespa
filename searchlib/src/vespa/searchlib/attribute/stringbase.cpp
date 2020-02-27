@@ -231,10 +231,7 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     _regex()
 {
     if (isRegex()) {
-        try {
-            _regex = std::regex(_queryTerm->getTerm(), std::regex::icase);
-        } catch (std::regex_error &) {
-        }
+        _regex = vespalib::Regex::from_pattern(_queryTerm->getTerm(), vespalib::Regex::Options::IgnoreCase);
     }
 }
 

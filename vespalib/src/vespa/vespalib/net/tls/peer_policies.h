@@ -10,7 +10,7 @@ namespace vespalib::net::tls {
 
 struct HostGlobPattern {
     virtual ~HostGlobPattern() = default;
-    virtual bool matches(vespalib::stringref str) const = 0;
+    [[nodiscard]] virtual bool matches(vespalib::stringref str) const = 0;
 
     static std::shared_ptr<const HostGlobPattern> create_from_glob(vespalib::stringref pattern);
 };
@@ -36,7 +36,7 @@ public:
                 && (_original_pattern == rhs._original_pattern));
     }
 
-    bool matches(vespalib::stringref str) const {
+    [[nodiscard]] bool matches(vespalib::stringref str) const {
         return (_match_pattern && _match_pattern->matches(str));
     }
 
@@ -89,7 +89,7 @@ public:
     bool operator==(const AuthorizedPeers& rhs) const {
         return (_peer_policies == rhs._peer_policies);
     }
-    bool allows_all_authenticated() const noexcept {
+    [[nodiscard]] bool allows_all_authenticated() const noexcept {
         return _allow_all_if_empty;
     }
     const std::vector<PeerPolicy>& peer_policies() const noexcept { return _peer_policies; }
