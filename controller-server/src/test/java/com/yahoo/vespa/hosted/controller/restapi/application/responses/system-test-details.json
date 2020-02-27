@@ -127,6 +127,81 @@
       {
         "at": "(ignore)",
         "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
         "message": "Found endpoints:"
       },
       {
@@ -194,7 +269,7 @@
       }
     ]
   },
-  "lastId": 34,
+  "lastId": 49,
   "steps": {
     "deployTester": {
       "status": "succeeded",
