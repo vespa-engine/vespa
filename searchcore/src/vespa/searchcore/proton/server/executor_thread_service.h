@@ -21,9 +21,8 @@ public:
     ExecutorThreadService(vespalib::ThreadStackExecutorBase &executor);
     ~ExecutorThreadService();
 
-    /**
-     * Implements IThreadService
-     */
+    Stats getStats() override;
+
     vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) override {
         return _executor.execute(std::move(task));
     }
@@ -34,6 +33,8 @@ public:
     }
     bool isCurrentThread() const override;
     size_t getNumThreads() const override { return _executor.getNumThreads(); }
+
+    void setTaskLimit(uint32_t taskLimit) override;
 };
 
 } // namespace proton

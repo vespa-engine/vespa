@@ -33,11 +33,6 @@ public:
                                 init_fun_t init_function);
 
     ~BlockingThreadStackExecutor();
-
-    /**
-     * Sets a new upper limit for accepted number of tasks.
-     */
-    void setTaskLimit(uint32_t taskLimit);
 };
 
 } // namespace vespalib

@@ -14,7 +14,8 @@ ForegroundTaskExecutor::ForegroundTaskExecutor()
 }
 
 ForegroundTaskExecutor::ForegroundTaskExecutor(uint32_t threads)
-    : ISequencedTaskExecutor(threads)
+    : ISequencedTaskExecutor(threads),
+      _accepted(0)
 {
 }
 
@@ -25,11 +26,20 @@ ForegroundTaskExecutor::executeTask(ExecutorId id, vespalib::Executor::Task::UP 
 {
     assert(id.getId() < getNumExecutors());
     task->run();
+    _accepted++;
 }
 
 void
 ForegroundTaskExecutor::sync()
 {
+}
+
+void ForegroundTaskExecutor::setTaskLimit(uint32_t) {
+
+}
+
+vespalib::ExecutorStats ForegroundTaskExecutor::getStats() {
+    return vespalib::ExecutorStats(0, _accepted.load(std::memory_order_relaxed), 0);
 }
 
 } // namespace search

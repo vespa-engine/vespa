@@ -3,8 +3,6 @@
 
 #include "isequencedtaskexecutor.h"
 #include <atomic>
-#include <vector>
-#include <mutex>
 
 namespace search {
 
@@ -31,6 +29,10 @@ public:
     uint32_t getExecuteCnt() const { return _executeCnt; }
     uint32_t getSyncCnt() const { return _syncCnt; }
     std::vector<uint32_t> getExecuteHistory();
+
+    void setTaskLimit(uint32_t taskLimit) override;
+
+    vespalib::ExecutorStats getStats() override;
 };
 
 } // namespace search

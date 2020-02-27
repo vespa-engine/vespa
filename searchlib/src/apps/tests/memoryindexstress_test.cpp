@@ -195,8 +195,8 @@ struct Fixture {
     Schema       schema;
     DocumentTypeRepo  repo;
     vespalib::ThreadStackExecutor _executor;
-    search::SequencedTaskExecutor _invertThreads;
-    search::SequencedTaskExecutor _pushThreads;
+    std::unique_ptr<search::ISequencedTaskExecutor> _invertThreads;
+    std::unique_ptr<search::ISequencedTaskExecutor> _pushThreads;
     MemoryIndex  index;
     uint32_t _readThreads;
     vespalib::ThreadStackExecutor _writer; // 1 write thread
@@ -247,9 +247,9 @@ Fixture::Fixture(uint32_t readThreads)
     : schema(makeSchema()),
       repo(makeDocTypeRepoConfig()),
       _executor(1, 128 * 1024),
-      _invertThreads(2),
-      _pushThreads(2),
-      index(schema, MockFieldLengthInspector(), _invertThreads, _pushThreads),
+      _invertThreads(search::SequencedTaskExecutor::create(2)),
+      _pushThreads(search::SequencedTaskExecutor::create(2)),
+      index(schema, MockFieldLengthInspector(), *_invertThreads, *_pushThreads),
       _readThreads(readThreads),
       _writer(1, 128 * 1024),
       _readers(readThreads, 128 * 1024),

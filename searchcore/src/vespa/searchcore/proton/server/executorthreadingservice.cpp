@@ -19,9 +19,9 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadStackExecutor
       _masterService(_masterExecutor),
       _indexService(_indexExecutor),
       _summaryService(_summaryExecutor),
-      _indexFieldInverter(std::make_unique<SequencedTaskExecutor>(threads, taskLimit)),
-      _indexFieldWriter(std::make_unique<SequencedTaskExecutor>(threads, taskLimit)),
-      _attributeFieldWriter(std::make_unique<SequencedTaskExecutor>(threads, taskLimit))
+      _indexFieldInverter(SequencedTaskExecutor::create(threads, taskLimit)),
+      _indexFieldWriter(SequencedTaskExecutor::create(threads, taskLimit)),
+      _attributeFieldWriter(SequencedTaskExecutor::create(threads, taskLimit))
 {
 }
 

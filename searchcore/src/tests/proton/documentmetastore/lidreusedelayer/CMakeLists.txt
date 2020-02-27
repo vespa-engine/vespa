@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_lidreusedelayer_test_app TEST
     DEPENDS
     searchcore_server
     searchcore_documentmetastore
+    searchcore_test
 )
 vespa_add_test(NAME searchcore_lidreusedelayer_test_app COMMAND searchcore_lidreusedelayer_test_app)

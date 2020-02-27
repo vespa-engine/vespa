@@ -2,7 +2,7 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
-#include <vespa/vespalib/stllike/hash_map.h>
+#include <atomic>
 
 namespace vespalib { class ThreadStackExecutorBase; }
 
@@ -25,6 +25,12 @@ public:
 
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
+
+    void setTaskLimit(uint32_t taskLimit) override;
+
+    vespalib::ExecutorStats getStats() override;
+private:
+    std::atomic<uint64_t> _accepted;
 };
 
 } // namespace search

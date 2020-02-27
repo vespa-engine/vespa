@@ -117,8 +117,8 @@ public:
 struct DocumentInverterTest : public ::testing::Test {
     Schema _schema;
     DocBuilder _b;
-    SequencedTaskExecutor _invertThreads;
-    SequencedTaskExecutor _pushThreads;
+    std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
+    std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserter _inserter;
@@ -138,26 +138,26 @@ struct DocumentInverterTest : public ::testing::Test {
     DocumentInverterTest()
         : _schema(makeSchema()),
           _b(_schema),
-          _invertThreads(2),
-          _pushThreads(2),
+          _invertThreads(SequencedTaskExecutor::create(2)),
+          _pushThreads(SequencedTaskExecutor::create(2)),
           _word_store(),
           _remover(_word_store),
           _inserter(),
           _calculator(),
           _fic(_remover, _inserter, _calculator),
-          _inv(_schema, _invertThreads, _pushThreads, _fic)
+          _inv(_schema, *_invertThreads, *_pushThreads, _fic)
     {
     }
 
     void pushDocuments() {
-        _invertThreads.sync();
+        _invertThreads->sync();
         uint32_t fieldId = 0;
         for (auto &inverter : _inv.getInverters()) {
             _inserter.setFieldId(fieldId);
             inverter->pushDocuments();
             ++fieldId;
         }
-        _pushThreads.sync();
+        _pushThreads->sync();
     }
 };
 

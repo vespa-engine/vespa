@@ -314,16 +314,16 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
                                addField("f4"));
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
     DocBuilder b(schema);
-    SequencedTaskExecutor invertThreads(2);
-    SequencedTaskExecutor pushThreads(2);
-    DocumentInverter inv(schema, invertThreads, pushThreads, fic);
+    auto invertThreads = SequencedTaskExecutor::create(2);
+    auto pushThreads = SequencedTaskExecutor::create(2);
+    DocumentInverter inv(schema, *invertThreads, *pushThreads, fic);
     Document::UP doc;
 
     doc = make_doc10(b);
     inv.invertDocument(10, *doc);
-    invertThreads.sync();
+    invertThreads->sync();
     myPushDocument(inv);
-    pushThreads.sync();
+    pushThreads->sync();
 
     b.startDocument("id:ns:searchdocument::11").
         startIndexField("f3").
@@ -331,9 +331,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         endField();
     doc = b.endDocument();
     inv.invertDocument(11, *doc);
-    invertThreads.sync();
+    invertThreads->sync();
     myPushDocument(inv);
-    pushThreads.sync();
+    pushThreads->sync();
 
     b.startDocument("id:ns:searchdocument::12").
         startIndexField("f3").
@@ -341,9 +341,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         endField();
     doc = b.endDocument();
     inv.invertDocument(12, *doc);
-    invertThreads.sync();
+    invertThreads->sync();
     myPushDocument(inv);
-    pushThreads.sync();
+    pushThreads->sync();
 
     IndexBuilder ib(schema);
     vespalib::string dump2dir = prefix + "dump2";
@@ -455,14 +455,14 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
     uint32_t numDocs = 20;
     uint32_t numWords = 1000;
     DocBuilder b(_schema);
-    SequencedTaskExecutor invertThreads(2);
-    SequencedTaskExecutor pushThreads(2);
-    DocumentInverter inv(_schema, invertThreads, pushThreads, fic);
+    auto invertThreads = SequencedTaskExecutor::create(2);
+    auto pushThreads = SequencedTaskExecutor::create(2);
+    DocumentInverter inv(_schema, *invertThreads, *pushThreads, fic);
 
     inv.invertDocument(10, *make_doc10(b));
-    invertThreads.sync();
+    invertThreads->sync();
     myPushDocument(inv);
-    pushThreads.sync();
+    pushThreads->sync();
 
     IndexBuilder ib(_schema);
     TuneFileIndexing tuneFileIndexing;

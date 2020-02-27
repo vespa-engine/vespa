@@ -379,10 +379,9 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
 {
     Schema schema(getSchema());
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
-    SequencedTaskExecutor invertThreads(2);
-    SequencedTaskExecutor pushThreads(2);
-    search::memoryindex::DocumentInverter inverter(schema, invertThreads,
-                                                   pushThreads, fic);
+    auto invertThreads = SequencedTaskExecutor::create(2);
+    auto pushThreads = SequencedTaskExecutor::create(2);
+    search::memoryindex::DocumentInverter inverter(schema, *invertThreads, *pushThreads, fic);
 
     uint64_t fixed_index_size = fic.getMemoryUsage().allocatedBytes();
     uint64_t index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
@@ -395,9 +394,9 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
 
     Document::UP doc = addDocument(docid);
     inverter.invertDocument(docid, *doc);
-    invertThreads.sync();
+    invertThreads->sync();
     inverter.pushDocuments(std::shared_ptr<search::IDestructorCallback>());
-    pushThreads.sync();
+    pushThreads->sync();
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
 
     /// Must account for both docid 0 being reserved and the extra after.
@@ -414,9 +413,9 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
     inverter.invertDocument(docid + 10, *doc);
     doc = addDocument(docid + 100);
     inverter.invertDocument(docid + 100, *doc);
-    invertThreads.sync();
+    invertThreads->sync();
     inverter.pushDocuments(std::shared_ptr<search::IDestructorCallback>());
-    pushThreads.sync();
+    pushThreads->sync();
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 100 + 1) * sizeof(Source);

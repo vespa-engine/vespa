@@ -14,14 +14,15 @@ constexpr uint32_t stackSize = 128 * 1024;
 }
 
 
-SequencedTaskExecutor::SequencedTaskExecutor(uint32_t threads, uint32_t taskLimit)
-    : ISequencedTaskExecutor(threads),
-      _executors()
+std::unique_ptr<ISequencedTaskExecutor>
+SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit)
 {
+    auto executors = std::make_unique<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>>();
+    executors->reserve(threads);
     for (uint32_t id = 0; id < threads; ++id) {
-        auto executor = std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit);
-        _executors.push_back(std::move(executor));
+        executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));
     }
+    return std::unique_ptr<ISequencedTaskExecutor>(new SequencedTaskExecutor(std::move(executors)));
 }
 
 SequencedTaskExecutor::~SequencedTaskExecutor()
@@ -29,10 +30,16 @@ SequencedTaskExecutor::~SequencedTaskExecutor()
     sync();
 }
 
+SequencedTaskExecutor::SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executors)
+    : ISequencedTaskExecutor(executors->size()),
+      _executors(std::move(executors))
+{
+}
+
 void
 SequencedTaskExecutor::setTaskLimit(uint32_t taskLimit)
 {
-    for (const auto &executor : _executors) {
+    for (const auto &executor : *_executors) {
         executor->setTaskLimit(taskLimit);
     }
 }
@@ -40,16 +47,15 @@ SequencedTaskExecutor::setTaskLimit(uint32_t taskLimit)
 void
 SequencedTaskExecutor::executeTask(ExecutorId id, vespalib::Executor::Task::UP task)
 {
-    assert(id.getId() < _executors.size());
-    vespalib::ThreadStackExecutorBase &executor(*_executors[id.getId()]);
-    auto rejectedTask = executor.execute(std::move(task));
+    assert(id.getId() < _executors->size());
+    auto rejectedTask = (*_executors)[id.getId()]->execute(std::move(task));
     assert(!rejectedTask);
 }
 
 void
 SequencedTaskExecutor::sync()
 {
-    for (auto &executor : _executors) {
+    for (auto &executor : *_executors) {
         executor->sync();
     }
 }
@@ -58,7 +64,7 @@ SequencedTaskExecutor::Stats
 SequencedTaskExecutor::getStats()
 {
     Stats accumulatedStats;
-    for (auto &executor : _executors) {
+    for (auto &executor :* _executors) {
         accumulatedStats += executor->getStats();
     }
     return accumulatedStats;

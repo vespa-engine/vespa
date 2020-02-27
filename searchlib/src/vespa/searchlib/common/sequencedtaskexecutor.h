@@ -6,7 +6,7 @@
 
 namespace vespalib {
     struct ExecutorStats;
-    class BlockingThreadStackExecutor;
+    class SyncableThreadExecutor;
 }
 
 namespace search {
@@ -18,17 +18,19 @@ namespace search {
 class SequencedTaskExecutor final : public ISequencedTaskExecutor
 {
     using Stats = vespalib::ExecutorStats;
-    std::vector<std::shared_ptr<vespalib::BlockingThreadStackExecutor>> _executors;
+    std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> _executors;
+
+    SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
 public:
     using ISequencedTaskExecutor::getExecutorId;
 
-    SequencedTaskExecutor(uint32_t threads, uint32_t taskLimit = 1000);
     ~SequencedTaskExecutor();
 
-    void setTaskLimit(uint32_t taskLimit);
+    void setTaskLimit(uint32_t taskLimit) override;
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
-    Stats getStats();
+    Stats getStats() override;
+    static std::unique_ptr<ISequencedTaskExecutor> create(uint32_t threads, uint32_t taskLimit = 1000);
 };
 
 } // namespace search
