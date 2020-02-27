@@ -63,7 +63,7 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
     }
 
     /** Returns the union of the two lists. */
-    public ListType and(ListType others) {
+    public ListType concat(ListType others) {
         return constructor.apply(Stream.concat(items.stream(), others.asList().stream()).collect(toUnmodifiableList()), false);
     }
 

@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceCon
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -77,6 +78,19 @@ public class NodeWithServices {
 
     public boolean needsNewConfig() {
         return services.stream().anyMatch(service -> wantedConfigGeneration > service.currentGeneration());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NodeWithServices that = (NodeWithServices) o;
+        return node.equals(that.node);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(node);
     }
 
 }
