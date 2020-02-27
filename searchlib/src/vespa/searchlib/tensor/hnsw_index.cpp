@@ -327,7 +327,6 @@ HnswIndex::add_document(uint32_t docid)
         search_layer(input, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
         auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
         connect_new_node(docid, neighbors.used, search_level);
-        // TODO: Shrink neighbors if needed
         --search_level;
     }
     if (level > _entry_level) {
