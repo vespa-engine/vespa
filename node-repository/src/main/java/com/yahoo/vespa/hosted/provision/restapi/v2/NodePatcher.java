@@ -74,7 +74,7 @@ public class NodePatcher {
      * children that must be updated in a consistent manner.
      */
     public List<Node> apply() {
-        List<Node> patchedNodes = new ArrayList<>(List.of(node));
+        List<Node> patchedNodes = new ArrayList<>();
         inspector.traverse((String name, Inspector value) -> {
             try {
                 node = applyField(node, name, value);
@@ -88,6 +88,7 @@ public class NodePatcher {
                 // Non recursive field, ignore
             }
         } );
+        patchedNodes.add(node);
 
         return patchedNodes;
     }
