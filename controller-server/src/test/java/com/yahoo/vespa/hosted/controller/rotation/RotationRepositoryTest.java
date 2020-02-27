@@ -55,7 +55,7 @@ public class RotationRepositoryTest {
     @Before
     public void before() {
         tester = new DeploymentTester(new ControllerTester(rotationsConfig));
-        repository = tester.controller().routingController().rotations();
+        repository = tester.controller().routing().rotations();
         application = tester.newDeploymentContext("tenant1", "app1", "default");
     }
 
@@ -83,7 +83,7 @@ public class RotationRepositoryTest {
     @Test
     public void strips_whitespace_in_rotation_fqdn() {
         tester = new DeploymentTester(new ControllerTester(rotationsConfigWhitespaces));
-        RotationRepository repository = tester.controller().routingController().rotations();
+        RotationRepository repository = tester.controller().routing().rotations();
         var application2 = tester.newDeploymentContext("tenant1", "app2", "default");
 
         application2.submit(applicationPackage);

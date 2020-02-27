@@ -124,7 +124,7 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
     public JobController jobController() { return jobController; }
 
     /** Returns the instance controlling routing */
-    public RoutingController routingController() {
+    public RoutingController routing() {
         return routingController;
     }
 

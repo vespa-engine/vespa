@@ -190,7 +190,7 @@ public class ControllerTest {
                 new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1")
         ));
 
-        Supplier<Map<RoutingEndpoint, EndpointStatus>> globalRotationStatus = () -> tester.controller().routingController().globalRotationStatus(deployment);
+        Supplier<Map<RoutingEndpoint, EndpointStatus>> globalRotationStatus = () -> tester.controller().routing().globalRotationStatus(deployment);
         Supplier<List<EndpointStatus>> upstreamOneEndpoints = () -> {
             return globalRotationStatus.get()
                                        .entrySet().stream()
@@ -206,7 +206,7 @@ public class ControllerTest {
 
         // Set the global rotations out of service
         EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "unit-test", "Test", tester.clock().instant().getEpochSecond());
-        tester.controller().routingController().setGlobalRotationStatus(deployment, status);
+        tester.controller().routing().setGlobalRotationStatus(deployment, status);
         assertEquals(2, upstreamOneEndpoints.get().size());
         assertTrue("All upstreams are out", upstreamOneEndpoints.get().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.out));
         assertTrue("Reason is set", upstreamOneEndpoints.get().stream().allMatch(es -> es.getReason().equals("unit-test")));
@@ -517,9 +517,9 @@ public class ControllerTest {
             context.submit(applicationPackage);
             tester.applications().deleteApplication(context.application().id(),
                                                     tester.controllerTester().credentialsFor(context.application().id().tenant()));
-            try (RotationLock lock = tester.controller().routingController().rotations().lock()) {
+            try (RotationLock lock = tester.controller().routing().rotations().lock()) {
                 assertTrue("Rotation is unassigned",
-                           tester.controller().routingController().rotations().availableRotations(lock)
+                           tester.controller().routing().rotations().availableRotations(lock)
                                  .containsKey(new RotationId("rotation-id-01")));
             }
             context.flushDnsUpdates();

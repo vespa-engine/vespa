@@ -260,7 +260,7 @@ public class RoutingPoliciesTest {
                             URI.create("https://c1.app1.tenant1.us-west-1.vespa.oath.cloud/"),
                             ClusterSpec.Id.from("c2"),
                             URI.create("https://c2.app1.tenant1.us-west-1.vespa.oath.cloud/")),
-                     tester.controllerTester().controller().routingController().zoneEndpointsOf(context.deploymentIdIn(zone1)));
+                     tester.controllerTester().controller().routing().zoneEndpointsOf(context.deploymentIdIn(zone1)));
     }
 
     @Test
@@ -618,7 +618,7 @@ public class RoutingPoliciesTest {
         }
 
         public RoutingPolicies routingPolicies() {
-            return tester.controllerTester().controller().routingController().policies();
+            return tester.controllerTester().controller().routing().policies();
         }
 
         public DeploymentContext newDeploymentContext(String tenant, String application, String instance) {

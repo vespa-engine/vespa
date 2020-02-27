@@ -342,7 +342,7 @@ public class ApplicationController {
 
                 endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(application.get().require(instance), zone);
 
-                endpoints = controller.routingController().registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
+                endpoints = controller.routing().registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
@@ -398,7 +398,7 @@ public class ApplicationController {
 
         for (InstanceName instance : declaredInstances)
             if (applicationPackage.deploymentSpec().requireInstance(instance).concerns(Environment.prod))
-                application = controller.routingController().assignRotations(application, instance);
+                application = controller.routing().assignRotations(application, instance);
 
         store(application);
         return application;
@@ -444,7 +444,7 @@ public class ApplicationController {
         } finally {
             // Even if prepare fails, a load balancer may have been provisioned. Always refresh routing policies so that
             // any DNS updates can be propagated as early as possible.
-            controller.routingController().policies().refresh(application, applicationPackage.deploymentSpec(), zone);
+            controller.routing().policies().refresh(application, applicationPackage.deploymentSpec(), zone);
         }
     }
 
@@ -516,7 +516,7 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments: " + deployments);
 
             for (Instance instance : application.get().instances().values()) {
-                controller.routingController().removeEndpointsInDns(instance);
+                controller.routing().removeEndpointsInDns(instance);
                 application = application.without(instance.name());
             }
 
@@ -551,7 +551,7 @@ public class ApplicationController {
                 &&   application.get().deploymentSpec().instanceNames().contains(instanceId.instance()))
                 throw new IllegalArgumentException("Can not delete '" + instanceId + "', which is specified in 'deployment.xml'; remove it there first");
 
-            controller.routingController().removeEndpointsInDns(application.get().require(instanceId.instance()));
+            controller.routing().removeEndpointsInDns(application.get().require(instanceId.instance()));
             curator.writeApplication(application.without(instanceId.instance()).get());
             controller.jobController().collectGarbage();
             log.info("Deleted " + instanceId);
@@ -633,7 +633,7 @@ public class ApplicationController {
         } catch (NotFoundException ignored) {
             // ok; already gone
         } finally {
-            controller.routingController().policies().refresh(application.get().id().instance(instanceName), application.get().deploymentSpec(), zone);
+            controller.routing().policies().refresh(application.get().id().instance(instanceName), application.get().deploymentSpec(), zone);
         }
         return application.with(instanceName, instance -> instance.withoutDeploymentIn(zone));
     }

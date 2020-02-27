@@ -29,10 +29,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -866,7 +863,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .forEach(globalEndpointUrls::add);
 
         // Per-cluster endpoints. These are backed by load balancers.
-        var routingPolicies = controller.routingController().policies().get(instance.id()).values();
+        var routingPolicies = controller.routing().policies().get(instance.id()).values();
         for (var policy : routingPolicies) {
             policy.globalEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
@@ -1056,10 +1053,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add zone endpoints defined by routing policies
         var endpointArray = response.setArray("endpoints");
-        for (var policy : controller.routingController().policies().get(deploymentId).values()) {
+        for (var policy : controller.routing().policies().get(deploymentId).values()) {
             // TODO(mpolden): Always add endpoints from all policies, independent of routing method. This allows removal
             //                of RoutingGenerator and eliminates the external call to the routing layer below.
-            if (!controller.routingController().supportsRoutingMethod(RoutingMethod.exclusive, deployment.zone())) continue;
+            if (!controller.routing().supportsRoutingMethod(RoutingMethod.exclusive, deployment.zone())) continue;
             if (!policy.status().isActive()) continue;
             {
                 var endpointObject = endpointArray.addObject();
@@ -1081,7 +1078,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
         }
         // Add zone endpoints served by shared routing layer
-        for (var clusterAndUrl : controller.routingController().legacyZoneEndpointsOf(deploymentId).entrySet()) {
+        for (var clusterAndUrl : controller.routing().legacyZoneEndpointsOf(deploymentId).entrySet()) {
             var endpointObject = endpointArray.addObject();
             endpointObject.setString("cluster", clusterAndUrl.getKey().value());
             endpointObject.setBool("tls", true);
@@ -1114,7 +1111,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // endpoints, we can't generate these URLs on-the-fly and we have to query the routing layer.
         // TODO(mpolden): Remove this once all clients stop reading this.
         Cursor serviceUrlArray = response.setArray("serviceUrls");
-        controller.routingController().legacyEndpointsOf(deploymentId)
+        controller.routing().legacyEndpointsOf(deploymentId)
                   .forEach(endpoint -> serviceUrlArray.addString(endpoint.toString()));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
@@ -1257,7 +1254,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
         var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
         var status = inService ? GlobalRouting.Status.in : GlobalRouting.Status.out;
-        controller.routingController().policies().setGlobalRoutingStatus(deployment, status, agent);
+        controller.routing().policies().setGlobalRoutingStatus(deployment, status, agent);
     }
 
     /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */
@@ -1268,7 +1265,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         long timestamp = controller.clock().instant().getEpochSecond();
         var status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         var endpointStatus = new EndpointStatus(status, reason, agent.name(), timestamp);
-        controller.routingController().setGlobalRotationStatus(deployment, endpointStatus);
+        controller.routing().setGlobalRotationStatus(deployment, endpointStatus);
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
@@ -1276,7 +1273,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                      ZoneId.from(environment, region));
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("globalrotationoverride");
-        controller.routingController().globalRotationStatus(deploymentId)
+        controller.routing().globalRotationStatus(deploymentId)
                   .forEach((endpoint, status) -> {
                       array.addString(endpoint.upstreamName());
                       Cursor statusObject = array.addObject();
@@ -1722,7 +1719,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
-                                                                      controller.routingController().zoneEndpointsOf(deployments),
+                                                                      controller.routing().zoneEndpointsOf(deployments),
                                                                       controller.applications().contentClustersByZone(deployments)));
     }
 

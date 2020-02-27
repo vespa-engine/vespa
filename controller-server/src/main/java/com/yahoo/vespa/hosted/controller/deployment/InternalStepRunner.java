@@ -450,7 +450,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns true iff all containers in the deployment give 100 consecutive 200 OK responses on /status.html. */
     private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
-        var endpoints = controller.routingController().zoneEndpointsOf(Set.of(new DeploymentId(id, zoneId)));
+        var endpoints = controller.routing().zoneEndpointsOf(Set.of(new DeploymentId(id, zoneId)));
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
@@ -477,7 +477,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
-        var endpoints = controller.routingController().zoneEndpointsOf(Set.of(new DeploymentId(id, zone)));
+        var endpoints = controller.routing().zoneEndpointsOf(Set.of(new DeploymentId(id, zone)));
         if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
             return false;
@@ -550,7 +550,7 @@ public class InternalStepRunner implements StepRunner {
         deployments.add(new DeploymentId(id.application(), zoneId));
 
         logger.log("Attempting to find endpoints ...");
-        var endpoints = controller.routingController().zoneEndpointsOf(deployments);
+        var endpoints = controller.routing().zoneEndpointsOf(deployments);
         if ( ! endpoints.containsKey(zoneId)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
