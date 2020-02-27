@@ -130,6 +130,21 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
                 : Set.copyOf(roleMemberships);
     }
 
+    @Override
+    public void deconstruct() {
+        try {
+            executor.shutdown();
+            if ( ! executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                if ( ! executor.awaitTermination(10, TimeUnit.SECONDS))
+                    throw new IllegalStateException("Failed to shut down executor 40 seconds");
+            }
+        }
+        catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted while shutting down executor", e);
+        }
+    }
+
     private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application) {
         try {
             return athenz.hasApplicationAccess(identity,

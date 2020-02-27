@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.filter.security.base;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.FastContentWriter;
 import com.yahoo.jdisc.handler.ResponseDispatch;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-public abstract class JsonSecurityRequestFilterBase implements SecurityRequestFilter {
+public abstract class JsonSecurityRequestFilterBase extends AbstractComponent implements SecurityRequestFilter {
 
     private static final Logger log = Logger.getLogger(JsonSecurityRequestFilterBase.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
