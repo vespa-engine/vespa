@@ -13,6 +13,7 @@ import java.util.List;
  *
  * @author smorgrav
  */
+// TODO(mpolden): Remove when we stop writing these fields.
 public class ClusterInfo {
     private final String flavor;
     private final double flavorCPU;
