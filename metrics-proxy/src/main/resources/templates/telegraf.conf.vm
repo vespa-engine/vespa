@@ -31,7 +31,7 @@
 
 # Configuration for Vespa input plugin
 [[inputs.vespa]]
-  url = "http://localhost:19092/metrics/v2/values?consumer=$cloudwatch.consumer()"
+  url = "${protocol}://localhost:19092/metrics/v2/values?consumer=$cloudwatch.consumer()"
   [inputs.vespa.tags]
     vespa_consumer = "$cloudwatch.consumer()"
 #* TODO: Add node cert if hosted
