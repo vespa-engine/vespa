@@ -6,7 +6,6 @@
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-namespace search { class SequencedTaskExecutor; }
 namespace proton {
 
 class ExecutorThreadingServiceStats;
@@ -18,16 +17,16 @@ class ExecutorThreadingServiceStats;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
-    vespalib::ThreadStackExecutorBase & _sharedExecutor;
-    vespalib::ThreadStackExecutor _masterExecutor;
-    vespalib::BlockingThreadStackExecutor _indexExecutor;
-    vespalib::BlockingThreadStackExecutor _summaryExecutor;
-    ExecutorThreadService _masterService;
-    ExecutorThreadService _indexService;
-    ExecutorThreadService _summaryService;
-    std::unique_ptr<search::SequencedTaskExecutor> _indexFieldInverter;
-    std::unique_ptr<search::SequencedTaskExecutor> _indexFieldWriter;
-    std::unique_ptr<search::SequencedTaskExecutor> _attributeFieldWriter;
+    vespalib::ThreadStackExecutorBase             & _sharedExecutor;
+    vespalib::ThreadStackExecutor                   _masterExecutor;
+    vespalib::BlockingThreadStackExecutor           _indexExecutor;
+    vespalib::BlockingThreadStackExecutor           _summaryExecutor;
+    ExecutorThreadService                           _masterService;
+    ExecutorThreadService                           _indexService;
+    ExecutorThreadService                           _summaryService;
+    std::unique_ptr<search::ISequencedTaskExecutor> _indexFieldInverter;
+    std::unique_ptr<search::ISequencedTaskExecutor> _indexFieldWriter;
+    std::unique_ptr<search::ISequencedTaskExecutor> _attributeFieldWriter;
 
 public:
     /**

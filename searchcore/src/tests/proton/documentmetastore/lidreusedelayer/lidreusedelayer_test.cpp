@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("lidreusedelayer_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/documentmetastore/i_store.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
@@ -9,12 +8,14 @@ LOG_SETUP("lidreusedelayer_test");
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("lidreusedelayer_test");
+
 using vespalib::makeLambdaTask;
 
 namespace proton {
 
-namespace
-{
+namespace {
 
 bool
 assertThreadObserver(uint32_t masterExecuteCnt,
@@ -55,69 +56,52 @@ public:
     {
     }
 
-    virtual ~MyMetaStore() { }
+    ~MyMetaStore() override = default;
 
-    virtual Result inspectExisting(const GlobalId &) const override
-    {
+    Result inspectExisting(const GlobalId &) const override {
         return Result();
     }
 
-    virtual Result inspect(const GlobalId &) override
-    {
+    Result inspect(const GlobalId &) override {
         return Result();
     }
 
-    virtual Result put(const GlobalId &, const BucketId &, const Timestamp &,
-                       uint32_t, DocId) override
-    {
+    Result put(const GlobalId &, const BucketId &, const Timestamp &, uint32_t, DocId) override {
         return Result();
     }
 
-    virtual bool updateMetaData(DocId, const BucketId &,
-                                const Timestamp &) override
-    {
+    bool updateMetaData(DocId, const BucketId &, const Timestamp &) override {
         return true;
     }
 
-    virtual bool remove(DocId) override
-    {
+    bool remove(DocId) override {
         return true;
     }
 
-    virtual void removeComplete(DocId) override
-    {
+    void removeComplete(DocId) override {
         ++_removeCompleteCount;
         ++_removeCompleteLids;
     }
 
-    virtual void move(DocId, DocId) override
-    {
+    void move(DocId, DocId) override {
     }
 
-    virtual bool validLid(DocId) const override
-    {
+    bool validLid(DocId) const override {
         return true;
     }
 
-    virtual void removeBatch(const std::vector<DocId> &,
-                             const DocId) override
-    {
-    }
+    void removeBatch(const std::vector<DocId> &, const DocId) override {}
 
-    virtual void
-    removeBatchComplete(const std::vector<DocId> &lidsToRemove) override
-    {
+    void removeBatchComplete(const std::vector<DocId> &lidsToRemove) override{
         ++_removeBatchCompleteCount;
         _removeCompleteLids += lidsToRemove.size();
     }
 
-    virtual const RawDocumentMetaData &getRawMetaData(DocId) const override
-    {
+    const RawDocumentMetaData &getRawMetaData(DocId) const override {
         LOG_ABORT("should not be reached");
     }
 
-    virtual bool getFreeListActive() const override
-    {
+    bool getFreeListActive() const override {
         return _freeListActive;
     }
 

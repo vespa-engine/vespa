@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "executor_thread_service.h"
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fastos/thread.h>
 
-using vespalib::makeClosure;
-using vespalib::makeTask;
+using vespalib::makeLambdaTask;
 using vespalib::Executor;
 using vespalib::Gate;
 using vespalib::Runnable;
@@ -32,7 +31,7 @@ std::unique_ptr<internal::ThreadId>
 getThreadId(ThreadStackExecutorBase &executor)
 {
     std::unique_ptr<internal::ThreadId> id = std::make_unique<internal::ThreadId>();
-    executor.execute(makeTask(makeClosure(&sampleThreadId, &id->_id)));
+    executor.execute(makeLambdaTask([threadId=&id->_id] { sampleThreadId(threadId);}));
     executor.sync();
     return id;
 }
@@ -52,7 +51,7 @@ ExecutorThreadService::ExecutorThreadService(ThreadStackExecutorBase &executor)
 {
 }
 
-ExecutorThreadService::~ExecutorThreadService() {}
+ExecutorThreadService::~ExecutorThreadService()  = default;
 
 void
 ExecutorThreadService::run(Runnable &runnable)
@@ -61,7 +60,7 @@ ExecutorThreadService::run(Runnable &runnable)
         runnable.run();
     } else {
         Gate gate;
-        _executor.execute(makeTask(makeClosure(&runRunnable, &runnable, &gate)));
+        _executor.execute(makeLambdaTask([runnablePtr=&runnable, gatePtr=&gate] { runRunnable(runnablePtr, gatePtr); }));
         gate.await();
     }
 }
@@ -71,6 +70,14 @@ ExecutorThreadService::isCurrentThread() const
 {
     FastOS_ThreadId currentThreadId = FastOS_Thread::GetCurrentThreadId();
     return FastOS_Thread::CompareThreadIds(_threadId->_id, currentThreadId);
+}
+
+vespalib::ThreadExecutor::Stats ExecutorThreadService::getStats() {
+    return _executor.getStats();
+}
+
+void ExecutorThreadService::setTaskLimit(uint32_t taskLimit) {
+    _executor.setTaskLimit(taskLimit);
 }
 
 } // namespace proton

@@ -16,9 +16,9 @@ int main(int argc, char *argv[]) {
     if (argc > 2)
         numThreads = atoi(argv[2]);
 
-    SequencedTaskExecutor executor(numThreads);
+    auto executor = SequencedTaskExecutor::create(numThreads);
     for (unsigned long tid(0); tid < numTasks; tid++) {
-        executor.executeTask(ExecutorId(tid%numThreads), vespalib::makeLambdaTask([&counter] { counter++; }));
+        executor->executeTask(ExecutorId(tid%numThreads), vespalib::makeLambdaTask([&counter] { counter++; }));
     }
     return 0;
 }

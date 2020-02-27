@@ -64,8 +64,8 @@ struct MySetup : public IFieldLengthInspector {
 struct Index {
     Schema       schema;
     vespalib::ThreadStackExecutor _executor;
-    search::SequencedTaskExecutor _invertThreads;
-    search::SequencedTaskExecutor _pushThreads;
+    std::unique_ptr<search::ISequencedTaskExecutor> _invertThreads;
+    std::unique_ptr<search::ISequencedTaskExecutor> _pushThreads;
     MemoryIndex  index;
     DocBuilder builder;
     uint32_t     docid;
@@ -123,15 +123,15 @@ private:
 Index::Index(const MySetup &setup)
     : schema(setup.schema),
       _executor(1, 128 * 1024),
-      _invertThreads(2),
-      _pushThreads(2),
-      index(schema, setup, _invertThreads, _pushThreads),
+      _invertThreads(search::SequencedTaskExecutor::create(2)),
+      _pushThreads(search::SequencedTaskExecutor::create(2)),
+      index(schema, setup, *_invertThreads, *_pushThreads),
       builder(schema),
       docid(1),
       currentField()
 {
 }
-Index::~Index() {}
+Index::~Index() = default;
 //-----------------------------------------------------------------------------
 
 std::string toString(SearchIterator & search)

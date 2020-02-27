@@ -21,18 +21,8 @@ private:
     search::SequencedTaskExecutorObserver _attributeFieldWriter;
 
 public:
-    ThreadingServiceObserver(searchcorespi::index::IThreadingService &service)
-        : _service(service),
-          _master(_service.master()),
-          _index(service.index()),
-          _summary(service.summary()),
-          _shared(service.shared()),
-          _indexFieldInverter(_service.indexFieldInverter()),
-          _indexFieldWriter(_service.indexFieldWriter()),
-          _attributeFieldWriter(_service.attributeFieldWriter())
-    {
-    }
-    ~ThreadingServiceObserver() override { }
+    ThreadingServiceObserver(searchcorespi::index::IThreadingService &service);
+    ~ThreadingServiceObserver() override;
     const ThreadServiceObserver &masterObserver() const {
         return _master;
     }
@@ -53,16 +43,10 @@ public:
         return _attributeFieldWriter;
     }
 
-    /**
-     * Implements vespalib::Syncable
-     */
     vespalib::Syncable &sync() override {
         return _service.sync();
     }
 
-    /**
-     * Implements IThreadingService
-     */
     searchcorespi::index::IThreadService &master() override {
         return _master;
     }

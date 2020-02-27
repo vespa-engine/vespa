@@ -41,4 +41,12 @@ SequencedTaskExecutorObserver::getExecuteHistory()
     return _executeHistory;
 }
 
+void SequencedTaskExecutorObserver::setTaskLimit(uint32_t taskLimit) {
+    _executor.setTaskLimit(taskLimit);
+}
+
+vespalib::ExecutorStats SequencedTaskExecutorObserver::getStats() {
+    return _executor.getStats();
+}
+
 } // namespace search

@@ -8,10 +8,8 @@
 #include "sync.h"
 #include "gate.h"
 #include "runnable.h"
-#include <memory>
 #include <vector>
 #include <functional>
-#include "executor_stats.h"
 
 class FastOS_ThreadPool;
 
@@ -36,12 +34,6 @@ class ThreadStackExecutorBase : public SyncableThreadExecutor,
                                 public Runnable
 {
 public:
-    /**
-     * Internal stats that we want to observe externally. Note that
-     * all stats are reset each time they are observed.
-     **/
-    using Stats = ExecutorStats;
-
     using init_fun_t = std::function<int(Runnable&)>;
 
 private:
@@ -204,14 +196,8 @@ public:
      **/
     size_t num_idle_workers() const;
 
-    /**
-     * Observe and reset stats for this object.
-     *
-     * @return stats
-     **/
-    Stats getStats();
+    Stats getStats() override;
 
-    // inherited from Executor
     Task::UP execute(Task::UP task) override;
 
     /**
@@ -232,6 +218,7 @@ public:
     void wait_for_task_count(uint32_t task_count);
 
     size_t getNumThreads() const override;
+    void setTaskLimit(uint32_t taskLimit) override;
 
     /**
      * Shut down this executor. This will make this executor reject

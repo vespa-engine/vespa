@@ -168,6 +168,12 @@ size_t ThreadStackExecutorBase::getNumThreads() const {
 }
 
 void
+ThreadStackExecutorBase::setTaskLimit(uint32_t taskLimit)
+{
+    internalSetTaskLimit(taskLimit);
+}
+
+void
 ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
 {
     MonitorGuard monitor(_monitor);

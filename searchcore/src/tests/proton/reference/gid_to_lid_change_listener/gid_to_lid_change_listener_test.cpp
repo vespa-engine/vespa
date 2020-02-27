@@ -49,13 +49,13 @@ struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory
 struct Fixture
 {
     std::shared_ptr<ReferenceAttribute> _attr;
-    search::SequencedTaskExecutor _writer;
+    std::unique_ptr<search::ISequencedTaskExecutor> _writer;
     MonitoredRefCount _refCount;
     std::unique_ptr<GidToLidChangeListener>  _listener;
 
     Fixture()
         : _attr(std::make_shared<ReferenceAttribute>("test", Config(BasicType::REFERENCE))),
-          _writer(1),
+          _writer(search::SequencedTaskExecutor::create(1)),
           _refCount(),
           _listener()
     {
@@ -91,7 +91,7 @@ struct Fixture
     }
 
     void allocListener() {
-        _listener = std::make_unique<GidToLidChangeListener>(_writer, _attr, _refCount, "test", "testdoc");
+        _listener = std::make_unique<GidToLidChangeListener>(*_writer, _attr, _refCount, "test", "testdoc");
     }
 
     void notifyPutDone(const GlobalId &gid, uint32_t referencedDoc) {

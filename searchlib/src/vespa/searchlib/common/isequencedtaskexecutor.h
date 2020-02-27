@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/executor_stats.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vector>
@@ -66,6 +67,10 @@ public:
      * Wait for all scheduled tasks to complete.
      */
     virtual void sync() = 0;
+
+    virtual void setTaskLimit(uint32_t taskLimit) = 0;
+
+    virtual vespalib::ExecutorStats getStats() = 0;
 
     /**
      * Wrap lambda function into a task and schedule it to be run.
