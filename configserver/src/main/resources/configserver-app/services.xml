@@ -6,7 +6,6 @@
       <initialStatus>initializing</initialStatus>
     </config>
 
-    <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" compressOnRotation="true" symlinkName="access.log" />
     <accesslog type="json"  fileNamePattern="logs/vespa/configserver/access-json.log.%Y%m%d%H%M%S" symlinkName="access-json.log" compressOnRotation="true" />
 
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
