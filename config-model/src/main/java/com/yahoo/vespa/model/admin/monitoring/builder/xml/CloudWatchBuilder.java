@@ -19,6 +19,7 @@ public class CloudWatchBuilder {
     private static final String SECRET_KEY_ATTRIBUTE = "secret-key-name";
     private static final String SHARED_CREDENTIALS_ELEMENT = "shared-credentials";
     private static final String PROFILE_ATTRIBUTE = "profile";
+    private static final String FILE_ATTRIBUTE = "file";
 
     public static CloudWatch buildCloudWatch(Element cloudwatchElement, MetricsConsumer consumer) {
         CloudWatch cloudWatch = new CloudWatch(cloudwatchElement.getAttribute(REGION_ATTRIBUTE),
@@ -26,10 +27,12 @@ public class CloudWatchBuilder {
                                                consumer);
 
         getOptionalChild(cloudwatchElement, CREDENTIALS_ELEMENT)
-                .ifPresent(elem -> cloudWatch.setHostedAuth(new HostedAuth(elem.getAttribute(ACCESS_KEY_ATTRIBUTE),
-                                                                           elem.getAttribute(SECRET_KEY_ATTRIBUTE))));
+                .ifPresent(elem -> cloudWatch.setHostedAuth(elem.getAttribute(ACCESS_KEY_ATTRIBUTE),
+                                                            elem.getAttribute(SECRET_KEY_ATTRIBUTE)));
+
         getOptionalChild(cloudwatchElement, SHARED_CREDENTIALS_ELEMENT)
-                .ifPresent(elem -> cloudWatch.setProfile(elem.getAttribute(PROFILE_ATTRIBUTE)));
+                .ifPresent(elem -> cloudWatch.setSharedCredentials(elem.getAttribute(PROFILE_ATTRIBUTE),
+                                                                   elem.getAttribute(FILE_ATTRIBUTE)));
 
         return cloudWatch;
     }
