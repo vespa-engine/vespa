@@ -45,14 +45,15 @@ public class AutoscalingMaintainer extends Maintainer {
     }
 
     private void autoscale(ApplicationId application, List<Node> applicationNodes) {
-        MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository());
-        if ( ! deployment.isValid()) return; // Another config server will consider this application
-        nodesByCluster(applicationNodes).forEach((clusterSpec, clusterNodes) -> {
-            Optional<ClusterResources> target = autoscaler.autoscale(application, clusterSpec, clusterNodes);
-            target.ifPresent(t -> log.info("Autoscale: Application " + application + " cluster " + clusterSpec +
-                                           " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
-                                           " to " + t.nodes() + " * " + t.nodeResources()));
-        });
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
+            if ( ! deployment.isValid()) return; // Another config server will consider this application
+            nodesByCluster(applicationNodes).forEach((clusterSpec, clusterNodes) -> {
+                Optional<ClusterResources> target = autoscaler.autoscale(application, clusterSpec, clusterNodes);
+                target.ifPresent(t -> log.info("Autoscale: Application " + application + " cluster " + clusterSpec +
+                                               " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
+                                               " to " + t.nodes() + " * " + t.nodeResources()));
+            });
+        }
     }
 
     private Map<ClusterSpec, List<Node>> nodesByCluster(List<Node> applicationNodes) {
