@@ -414,6 +414,11 @@
                 <version>${aws.sdk.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.auth0</groupId>
+                <artifactId>java-jwt</artifactId>
+                <version>3.10.0</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.cverges.expect4j</groupId>
                 <artifactId>expect4j</artifactId>
                 <version>1.6</version>
