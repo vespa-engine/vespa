@@ -12,6 +12,7 @@
 
 #define NUM_DIMS 128
 #define NUM_DOCS 1000000
+#define EFFECTIVE_DOCS NUM_DOCS
 #define NUM_Q 1000
 #define NUM_REACH 10000
 
