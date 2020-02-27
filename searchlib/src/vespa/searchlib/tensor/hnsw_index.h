@@ -35,22 +35,22 @@ public:
     class Config {
     private:
         uint32_t _max_links_at_level_0;
-        uint32_t _max_links_at_hierarchic_levels;
+        uint32_t _max_links_on_inserts;
         uint32_t _neighbors_to_explore_at_construction;
         bool _heuristic_select_neighbors;
 
     public:
         Config(uint32_t max_links_at_level_0_in,
-               uint32_t max_links_at_hierarchic_levels_in,
+               uint32_t max_links_on_inserts_in,
                uint32_t neighbors_to_explore_at_construction_in,
                bool heuristic_select_neighbors_in)
             : _max_links_at_level_0(max_links_at_level_0_in),
-              _max_links_at_hierarchic_levels(max_links_at_hierarchic_levels_in),
+              _max_links_on_inserts(max_links_on_inserts_in),
               _neighbors_to_explore_at_construction(neighbors_to_explore_at_construction_in),
               _heuristic_select_neighbors(heuristic_select_neighbors_in)
         {}
         uint32_t max_links_at_level_0() const { return _max_links_at_level_0; }
-        uint32_t max_links_at_hierarchic_levels() const { return _max_links_at_hierarchic_levels; }
+        uint32_t max_links_on_inserts() const { return _max_links_on_inserts; }
         uint32_t neighbors_to_explore_at_construction() const { return _neighbors_to_explore_at_construction; }
         bool heuristic_select_neighbors() const { return _heuristic_select_neighbors; }
     };
@@ -108,9 +108,14 @@ protected:
      * Used by select_neighbors_heuristic().
      */
     bool have_closer_distance(HnswCandidate candidate, const LinkArray& curr_result) const;
-    LinkArray select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    LinkArray select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    LinkArray select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    struct SelectResult {
+        LinkArray used;
+        LinkArray unused;
+    };
+    SelectResult select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    SelectResult select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    SelectResult select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    void shrink_if_needed(uint32_t docid, uint32_t level);
     void connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
@@ -150,6 +155,7 @@ public:
     // Should only be used by unit tests.
     HnswNode get_node(uint32_t docid) const;
     void set_node(uint32_t docid, const HnswNode &node);
+    bool check_link_symmetry() const;
 };
 
 }

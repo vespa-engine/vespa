@@ -21,6 +21,13 @@ constexpr float alloc_grow_factor = 0.2;
 constexpr size_t max_level_array_size = 16;
 constexpr size_t max_link_array_size = 64;
 
+bool has_link_to(vespalib::ConstArrayRef<uint32_t> links, uint32_t id) {
+    for (uint32_t link : links) {
+        if (link == id) return true;
+    }
+    return false;
+}
+
 }
 
 search::datastore::ArrayStoreConfig
@@ -40,7 +47,7 @@ HnswIndex::make_default_link_store_config()
 uint32_t
 HnswIndex::max_links_for_level(uint32_t level) const
 {
-    return (level == 0) ? _cfg.max_links_at_level_0() : _cfg.max_links_at_hierarchic_levels();
+    return (level == 0) ? _cfg.max_links_at_level_0() : _cfg.max_links_on_inserts();
 }
 
 uint32_t
@@ -106,22 +113,26 @@ HnswIndex::have_closer_distance(HnswCandidate candidate, const LinkArray& result
     return false;
 }
 
-HnswIndex::LinkArray
+HnswIndex::SelectResult
 HnswIndex::select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
     HnswCandidateVector sorted(neighbors);
     std::sort(sorted.begin(), sorted.end(), LesserDistance());
-    LinkArray result;
-    for (size_t i = 0, m = std::min(static_cast<size_t>(max_links), sorted.size()); i < m; ++i) {
-        result.push_back(sorted[i].docid);
+    SelectResult result;
+    for (const auto & candidate : sorted) {
+        if (result.used.size() < max_links) {
+            result.used.push_back(candidate.docid);
+        } else {
+            result.unused.push_back(candidate.docid);
+        }
     }
     return result;
 }
 
-HnswIndex::LinkArray
+HnswIndex::SelectResult
 HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
-    LinkArray result;
+    SelectResult result;
     bool need_filtering = neighbors.size() > max_links;
     NearestPriQ nearest;
     for (const auto& entry : neighbors) {
@@ -130,24 +141,48 @@ HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint
     while (!nearest.empty()) {
         auto candidate = nearest.top();
         nearest.pop();
-        if (need_filtering && have_closer_distance(candidate, result)) {
+        if (need_filtering && have_closer_distance(candidate, result.used)) {
+            result.unused.push_back(candidate.docid);
             continue;
         }
-        result.push_back(candidate.docid);
-        if (result.size() == max_links) {
-            return result;
+        result.used.push_back(candidate.docid);
+        if (result.used.size() == max_links) {
+            while (!nearest.empty()) {
+                candidate = nearest.top();
+                nearest.pop();
+                result.unused.push_back(candidate.docid);
+            }
         }
     }
     return result;
 }
 
-HnswIndex::LinkArray
+HnswIndex::SelectResult
 HnswIndex::select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
     if (_cfg.heuristic_select_neighbors()) {
         return select_neighbors_heuristic(neighbors, max_links);
     } else {
         return select_neighbors_simple(neighbors, max_links);
+    }
+}
+
+void
+HnswIndex::shrink_if_needed(uint32_t docid, uint32_t level)
+{
+    auto old_links = get_link_array(docid, level);
+    uint32_t max_links = max_links_for_level(level);
+    if (old_links.size() > max_links) {
+        HnswCandidateVector neighbors;
+        for (uint32_t neighbor_docid : old_links) {
+            double dist = calc_distance(docid, neighbor_docid);
+            neighbors.emplace_back(neighbor_docid, dist);
+        }
+        auto split = select_neighbors(neighbors, max_links);
+        set_link_array(docid, level, split.used);
+        for (uint32_t removed_docid : split.unused) {
+            remove_link_to(removed_docid, docid, level);
+        }
     }
 }
 
@@ -160,6 +195,9 @@ HnswIndex::connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint3
         LinkArray new_links(old_links.begin(), old_links.end());
         new_links.push_back(docid);
         set_link_array(neighbor_docid, level, new_links);
+    }
+    for (uint32_t neighbor_docid : neighbors) {
+        shrink_if_needed(neighbor_docid, level);
     }
 }
 
@@ -287,9 +325,8 @@ HnswIndex::add_document(uint32_t docid)
     while (search_level >= 0) {
         // TODO: Rename to search_level?
         search_layer(input, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
-        auto neighbors = select_neighbors(best_neighbors.peek(), max_links_for_level(search_level));
-        connect_new_node(docid, neighbors, search_level);
-        // TODO: Shrink neighbors if needed
+        auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
+        connect_new_node(docid, neighbors.used, search_level);
         --search_level;
     }
     if (level > _entry_level) {
@@ -436,4 +473,28 @@ HnswIndex::set_node(uint32_t docid, const HnswNode &node)
     }
 }
 
+bool
+HnswIndex::check_link_symmetry() const
+{
+    bool all_sym = true;
+    for (size_t docid = 0; docid < _node_refs.size(); ++docid) {
+        auto node_ref = _node_refs[docid].load_acquire();
+        if (node_ref.valid()) {
+            auto levels = _nodes.get(node_ref);
+            uint32_t level = 0;
+            for (const auto& links_ref : levels) {
+                auto links = _links.get(links_ref.load_acquire());
+                for (auto neighbor_docid : links) {
+                    auto neighbor_links = get_link_array(neighbor_docid, level);
+                    if (! has_link_to(neighbor_links, docid)) {
+                        all_sym = false;
+                    }
+                }
+                ++level;
+            }
+        }
+    }
+    return all_sym;
 }
+
+} // namespace

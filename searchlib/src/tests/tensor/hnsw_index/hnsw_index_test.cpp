@@ -70,7 +70,7 @@ public:
         level_generator = generator.get();
         index = std::make_unique<HnswIndex>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
                                             std::move(generator),
-                                            HnswIndex::Config(2, 1, 10, heuristic_select_neighbors));
+                                            HnswIndex::Config(5, 2, 10, heuristic_select_neighbors));
     }
     void add_document(uint32_t docid, uint32_t max_level = 0) {
         level_generator->level = max_level;
@@ -365,6 +365,80 @@ TEST_F(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held)
     commit();
     auto mem = memory_usage();
     EXPECT_EQ(0, mem.allocatedBytesOnHold());
+}
+
+TEST_F(HnswIndexTest, shrink_called_simple)
+{
+    init(false);
+    std::vector<uint32_t> nbl;
+    HnswNode empty{nbl};
+    index->set_node(1, empty);
+    nbl.push_back(1);
+    HnswNode nb1{nbl};
+    index->set_node(2, nb1);
+    index->set_node(3, nb1);
+    index->set_node(4, nb1);
+    index->set_node(5, nb1);
+    expect_level_0(1, {2,3,4,5});
+    index->set_node(6, nb1);
+    expect_level_0(1, {2,3,4,5,6});
+    expect_level_0(2, {1});
+    expect_level_0(3, {1});
+    expect_level_0(4, {1});
+    expect_level_0(5, {1});
+    expect_level_0(6, {1});
+    index->set_node(7, nb1);
+    expect_level_0(1, {2,3,4,6,7});
+    expect_level_0(5, {});
+    expect_level_0(6, {1});
+    index->set_node(8, nb1);
+    expect_level_0(1, {2,3,4,7,8});
+    expect_level_0(6, {});
+    index->set_node(9, nb1);
+    expect_level_0(1, {2,3,4,7,8});
+    expect_level_0(2, {1});
+    expect_level_0(3, {1});
+    expect_level_0(4, {1});
+    expect_level_0(5, {});
+    expect_level_0(6, {});
+    expect_level_0(7, {1});
+    expect_level_0(8, {1});
+    expect_level_0(9, {});
+    EXPECT_TRUE(index->check_link_symmetry());
+}
+
+TEST_F(HnswIndexTest, shrink_called_heuristic)
+{
+    init(true);
+    std::vector<uint32_t> nbl;
+    HnswNode empty{nbl};
+    index->set_node(1, empty);
+    nbl.push_back(1);
+    HnswNode nb1{nbl};
+    index->set_node(2, nb1);
+    index->set_node(3, nb1);
+    index->set_node(4, nb1);
+    index->set_node(5, nb1);
+    expect_level_0(1, {2,3,4,5});
+    index->set_node(6, nb1);
+    expect_level_0(1, {2,3,4,5,6});
+    expect_level_0(2, {1});
+    expect_level_0(3, {1});
+    expect_level_0(4, {1});
+    expect_level_0(5, {1});
+    expect_level_0(6, {1});
+    index->set_node(7, nb1);
+    expect_level_0(1, {2,3,4});
+    expect_level_0(2, {1});
+    expect_level_0(3, {1});
+    expect_level_0(4, {1});
+    expect_level_0(5, {});
+    expect_level_0(6, {});
+    expect_level_0(7, {});
+    index->set_node(8, nb1);
+    index->set_node(9, nb1);
+    expect_level_0(1, {2,3,4,8,9});
+    EXPECT_TRUE(index->check_link_symmetry());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
