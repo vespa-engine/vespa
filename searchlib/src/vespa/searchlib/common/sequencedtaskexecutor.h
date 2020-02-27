@@ -31,7 +31,12 @@ public:
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
     Stats getStats() override;
-    static std::unique_ptr<ISequencedTaskExecutor> create(uint32_t threads, uint32_t taskLimit = 1000, Optimize optimize = Optimize::THROUGHPUT);
+
+    /*
+     * Note that if you choose Optimize::THROUGHPUT, you must ensure only a single producer, or synchronize on the outside.
+     */
+    static std::unique_ptr<ISequencedTaskExecutor>
+    create(uint32_t threads, uint32_t taskLimit = 1000, Optimize optimize = Optimize::LATENCY);
 };
 
 } // namespace search
