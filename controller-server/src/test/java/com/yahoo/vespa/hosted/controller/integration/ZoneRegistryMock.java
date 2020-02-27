@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author mpolden
@@ -36,7 +35,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<ZoneId, Duration> deploymentTimeToLive = new HashMap<>();
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
     private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
-    private final Map<ZoneApi, Set<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
+    private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
 
     private List<? extends ZoneApi> zones;
     private SystemName system;
@@ -108,16 +107,16 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     public ZoneRegistryMock setRoutingMethod(ZoneApi zone, RoutingMethod... routingMethods) {
-        return setRoutingMethod(zone, Set.of(routingMethods));
+        return setRoutingMethod(zone, List.of(routingMethods));
     }
 
     public ZoneRegistryMock setRoutingMethod(List<? extends ZoneApi> zones, RoutingMethod... routingMethods) {
-        zones.forEach(zone -> setRoutingMethod(zone, Set.of(routingMethods)));
+        zones.forEach(zone -> setRoutingMethod(zone, List.of(routingMethods)));
         return this;
     }
 
-    public ZoneRegistryMock setRoutingMethod(ZoneApi zone, Set<RoutingMethod> routingMethods) {
-        this.zoneRoutingMethods.put(zone, Set.copyOf(routingMethods));
+    public ZoneRegistryMock setRoutingMethod(ZoneApi zone, List<RoutingMethod> routingMethods) {
+        this.zoneRoutingMethods.put(zone, List.copyOf(routingMethods));
         return this;
     }
 
@@ -159,6 +158,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public List<UpgradePolicy> osUpgradePolicies() {
         return List.copyOf(osUpgradePolicies.values());
+    }
+
+    @Override
+    public List<RoutingMethod> routingMethods(ZoneId zone) {
+        return List.copyOf(zoneRoutingMethods.getOrDefault(ZoneApiMock.from(zone), List.of()));
     }
 
     @Override

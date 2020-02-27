@@ -84,7 +84,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1475,7 +1474,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
         var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
         deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
-                                                                            EnumSet.of(RoutingMethod.exclusive, RoutingMethod.shared));
+                                                                            List.of(RoutingMethod.exclusive, RoutingMethod.shared));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .instances("instance1")
