@@ -177,6 +177,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     @Override
     public void getConfig(TelegrafConfig.Builder builder) {
+        builder.isHostedVespa(isHostedVespa());
+
         var userConsumers = getUserMetricsConsumers();
         for (var consumer : userConsumers.values()) {
             for (var cloudWatch : consumer.cloudWatches()) {
