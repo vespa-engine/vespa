@@ -32,6 +32,7 @@ public class TelegrafTest {
                                 .consumer("consumer2")
                 )
                 .intervalSeconds(300)
+                .isHostedVespa(true)
                 .build();
         StringWriter stringWriter = new StringWriter();
         Telegraf.writeConfig(telegrafConfig, stringWriter);

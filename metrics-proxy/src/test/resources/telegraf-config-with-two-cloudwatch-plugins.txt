@@ -26,7 +26,7 @@
 
 # Configuration for Vespa input plugin
 [[inputs.vespa]]
-  url = "http://localhost:19092/metrics/v2/values?consumer=consumer1"
+  url = "https://localhost:19092/metrics/v2/values?consumer=consumer1"
   [inputs.vespa.tags]
     vespa_consumer = "consumer1"
 # Configuration for AWS CloudWatch output.
@@ -40,7 +40,7 @@
 
 # Configuration for Vespa input plugin
 [[inputs.vespa]]
-  url = "http://localhost:19092/metrics/v2/values?consumer=consumer2"
+  url = "https://localhost:19092/metrics/v2/values?consumer=consumer2"
   [inputs.vespa.tags]
     vespa_consumer = "consumer2"
 
