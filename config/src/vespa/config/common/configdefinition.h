@@ -5,8 +5,8 @@
 #include <vector>
 
 namespace vespalib::slime {
-    class Cursor;
-    class Inspector;
+    struct Cursor;
+    struct Inspector;
 }
 namespace config {
 
