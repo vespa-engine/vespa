@@ -43,6 +43,7 @@ public class Telegraf extends AbstractComponent {
         context.put("logFilePath", TELEGRAF_LOG_FILE_PATH);
         context.put("intervalSeconds", telegrafConfig.intervalSeconds());
         context.put("cloudwatchPlugins", telegrafConfig.cloudWatch());
+        context.put("protocol", telegrafConfig.isHostedVespa() ? "https" : "http");
         // TODO: Add node cert if hosted
 
         VelocityEngine velocityEngine = new VelocityEngine();
