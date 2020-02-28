@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * The service monitor interface. A service monitor provides up to date information about the liveness status
@@ -39,17 +38,8 @@ public interface ServiceMonitor {
         return getServiceModelSnapshot().getApplicationInstance(reference);
     }
 
-    default List<ServiceInstance> getServiceInstancesOn(HostName hostname) {
-        ApplicationInstance application = getServiceModelSnapshot().getApplicationsByHostName().get(hostname);
-        if (application == null) {
-            return List.of();
-        }
-
-        return application
-                .serviceClusters().stream()
-                .flatMap(cluster -> cluster.serviceInstances().stream())
-                .filter(serviceInstance -> hostname.equals(serviceInstance.hostName()))
-                .collect(Collectors.toList());
+    default Optional<ApplicationInstance> getApplicationNarrowedTo(HostName hostname) {
+        return Optional.ofNullable(getServiceModelSnapshot().getApplicationsByHostName().get(hostname));
     }
 
     default Map<HostName, List<ServiceInstance>> getServicesByHostname() {

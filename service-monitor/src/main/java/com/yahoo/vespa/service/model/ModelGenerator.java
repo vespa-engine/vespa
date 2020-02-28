@@ -6,7 +6,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
@@ -55,21 +54,10 @@ public class ModelGenerator {
         return generator.makeApplicationInstance(serviceStatusProvider);
     }
 
-    public List<ServiceInstance> toServices(ApplicationInfo applicationInfo,
-                                            HostName hostname,
-                                            ServiceStatusProvider serviceStatusProvider) {
+    public ApplicationInstance toApplicationNarrowedToHost(ApplicationInfo applicationInfo,
+                                                           HostName hostname,
+                                                           ServiceStatusProvider serviceStatusProvider) {
         var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
-        ApplicationInstance applicationInstance = generator.makeApplicationInstanceLimitedTo(
-                hostname, serviceStatusProvider);
-
-        List<ServiceInstance> serviceInstances = applicationInstance.serviceClusters().stream()
-                .flatMap(cluster -> cluster.serviceInstances().stream())
-                .collect(Collectors.toList());
-
-        if (serviceInstances.size() > 0) {
-            return serviceInstances;
-        }
-
-        return List.of();
+        return generator.makeApplicationInstanceLimitedTo(hostname, serviceStatusProvider);
     }
 }

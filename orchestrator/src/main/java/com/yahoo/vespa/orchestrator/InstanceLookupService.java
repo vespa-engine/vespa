@@ -4,9 +4,7 @@ package com.yahoo.vespa.orchestrator;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -18,5 +16,10 @@ public interface InstanceLookupService {
     Optional<ApplicationInstance> findInstanceById(ApplicationInstanceReference applicationInstanceReference);
     Optional<ApplicationInstance> findInstanceByHost(HostName hostName);
     Set<ApplicationInstanceReference> knownInstances();
-    List<ServiceInstance> findServicesOnHost(HostName hostName);
+
+    /**
+     * Returns an application instance that may not contain more services and clusters than
+     * those related to the host.
+     */
+    Optional<ApplicationInstance> findInstancePossiblyNarrowedToHost(HostName hostname);
 }

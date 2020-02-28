@@ -17,7 +17,6 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -156,13 +155,8 @@ public class DummyInstanceLookupService implements InstanceLookupService {
     }
 
     @Override
-    public List<ServiceInstance> findServicesOnHost(HostName hostName) {
-        return apps.stream()
-                .flatMap(application -> application.serviceClusters().stream())
-                .flatMap(cluster -> cluster.serviceInstances().stream())
-                .filter(service -> service.hostName().equals(hostName))
-                .sorted()
-                .collect(Collectors.toList());
+    public Optional<ApplicationInstance> findInstancePossiblyNarrowedToHost(HostName hostname) {
+        return findInstanceByHost(hostname);
     }
 
     public static Set<HostName> getContentHosts(ApplicationInstanceReference appRef) {

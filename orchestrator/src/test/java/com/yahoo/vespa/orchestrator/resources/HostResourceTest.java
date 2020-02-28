@@ -112,8 +112,8 @@ public class HostResourceTest {
         }
 
         @Override
-        public List<ServiceInstance> findServicesOnHost(HostName hostName) {
-            return List.of();
+        public Optional<ApplicationInstance> findInstancePossiblyNarrowedToHost(HostName hostname) {
+            return Optional.empty();
         }
     };
 

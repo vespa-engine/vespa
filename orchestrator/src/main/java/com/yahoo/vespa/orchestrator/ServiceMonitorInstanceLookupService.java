@@ -5,10 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -42,7 +40,7 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
     }
 
     @Override
-    public List<ServiceInstance> findServicesOnHost(HostName hostName) {
-        return serviceMonitor.getServiceInstancesOn(hostName);
+    public Optional<ApplicationInstance> findInstancePossiblyNarrowedToHost(HostName hostname) {
+        return serviceMonitor.getApplicationNarrowedTo(hostname);
     }
 }

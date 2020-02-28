@@ -69,8 +69,8 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     }
 
     @Override
-    public List<ServiceInstance> getServiceInstancesOn(HostName hostname) {
-        return delegate.getServiceInstancesOn(hostname);
+    public Optional<ApplicationInstance> getApplicationNarrowedTo(HostName hostname) {
+        return delegate.getApplicationNarrowedTo(hostname);
     }
 
     @Override

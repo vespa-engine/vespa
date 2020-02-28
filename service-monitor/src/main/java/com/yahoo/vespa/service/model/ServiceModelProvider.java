@@ -72,14 +72,15 @@ public class ServiceModelProvider implements ServiceMonitor {
     }
 
     @Override
-    public List<ServiceInstance> getServiceInstancesOn(HostName hostname) {
+    public Optional<ApplicationInstance> getApplicationNarrowedTo(HostName hostname) {
         Optional<ApplicationInfo> applicationInfo =
                 duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname));
         if (applicationInfo.isEmpty()) {
-            return List.of();
+            return Optional.empty();
         }
 
-        return modelGenerator.toServices(applicationInfo.get(), hostname, serviceStatusProvider);
+        return Optional.of(modelGenerator.toApplicationNarrowedToHost(
+                applicationInfo.get(), hostname, serviceStatusProvider));
     }
 
     @Override
