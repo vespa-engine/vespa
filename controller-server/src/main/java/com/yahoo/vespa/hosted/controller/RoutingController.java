@@ -94,6 +94,8 @@ public class RoutingController {
     }
 
     /** Returns global-scoped endpoints for given instance */
+    // TODO(mpolden): Add a endpointsOf(Instance, DeploymentId) variant of this that only returns global endpoint of
+    //                which deployment is a member
     public EndpointList endpointsOf(Instance instance) {
         var endpoints = new LinkedHashSet<Endpoint>();
         // Add global endpoints provided by rotations
