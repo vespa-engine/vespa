@@ -93,6 +93,7 @@ public class RoutingController {
         return endpointsOf(controller.applications().requireInstance(instance));
     }
 
+    /** Returns global-scoped endpoints for given instance */
     public EndpointList endpointsOf(Instance instance) {
         var endpoints = new LinkedHashSet<Endpoint>();
         // Add global endpoints provided by rotations
@@ -193,7 +194,7 @@ public class RoutingController {
             // Register names in DNS
             var rotation = rotationRepository.getRotation(assignedRotation.rotationId());
             if (rotation.isPresent()) {
-                endpoints.asList().forEach(endpoint -> {
+                endpoints.forEach(endpoint -> {
                     controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
                                                                   RecordData.fqdn(rotation.get().name()),
                                                                   Priority.normal);
@@ -210,11 +211,11 @@ public class RoutingController {
 
     /** Remove endpoints in DNS for all rotations assigned to given instance */
     public void removeEndpointsInDns(Instance instance) {
-        endpointsOf(instance.id()).requiresRotation()
-                                  .forEach(endpoint -> controller.nameServiceForwarder()
-                                                                 .removeRecords(Record.Type.CNAME,
-                                                                                RecordName.from(endpoint.dnsName()),
-                                                                                Priority.normal));
+        endpointsOf(instance).requiresRotation()
+                             .forEach(endpoint -> controller.nameServiceForwarder()
+                                                            .removeRecords(Record.Type.CNAME,
+                                                                           RecordName.from(endpoint.dnsName()),
+                                                                           Priority.normal));
     }
 
     /** Returns all routing methods supported by this system */
