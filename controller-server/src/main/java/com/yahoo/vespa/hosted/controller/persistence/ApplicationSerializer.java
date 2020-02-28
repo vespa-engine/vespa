@@ -210,6 +210,7 @@ public class ApplicationSerializer {
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
+        // TODO(mpolden): Stop writing this after next release.
         clusterInfoToSlime(deployment.clusterInfo(), object);
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
@@ -393,7 +394,7 @@ public class ApplicationSerializer {
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
-                              clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
+                              Map.of(),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
                                                         Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),
@@ -442,25 +443,6 @@ public class ApplicationSerializer {
             rotationStatus.put(zone, status);
         });
         return Collections.unmodifiableMap(rotationStatus);
-    }
-
-    private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime   (Inspector object) {
-        Map<ClusterSpec.Id, ClusterInfo> map = new HashMap<>();
-        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterInfoFromSlime(value)));
-        return map;
-    }
-
-    private ClusterInfo clusterInfoFromSlime(Inspector inspector) {
-        String flavor = inspector.field(clusterInfoFlavorField).asString();
-        int cost = (int)inspector.field(clusterInfoCostField).asLong();
-        String type = inspector.field(clusterInfoTypeField).asString();
-        double flavorCpu = inspector.field(clusterInfoCpuField).asDouble();
-        double flavorMem = inspector.field(clusterInfoMemField).asDouble();
-        double flavorDisk = inspector.field(clusterInfoDiskField).asDouble();
-
-        List<String> hostnames = new ArrayList<>();
-        inspector.field(clusterInfoHostnamesField).traverse((ArrayTraverser)(int index, Inspector value) -> hostnames.add(value.asString()));
-        return new ClusterInfo(flavor, cost, flavorCpu, flavorMem, flavorDisk, ClusterSpec.Type.from(type), hostnames);
     }
 
     private ZoneId zoneIdFromSlime(Inspector object) {

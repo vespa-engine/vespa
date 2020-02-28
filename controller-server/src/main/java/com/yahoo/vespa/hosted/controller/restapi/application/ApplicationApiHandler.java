@@ -66,10 +66,7 @@ import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterCost;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -1155,12 +1152,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         deployment.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
         deployment.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
-        // Cost
-        // TODO(mpolden): Unused, remove this field and related code.
-        DeploymentCost appCost = new DeploymentCost(Map.of());
-        Cursor costObject = response.setObject("cost");
-        toSlime(appCost, costObject);
-
         // Metrics
         DeploymentMetrics metrics = deployment.metrics();
         Cursor metricsObject = response.setObject("metrics");
@@ -1948,57 +1939,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private boolean systemHasVersion(Version version) {
         return controller.versionStatus().versions().stream().anyMatch(v -> v.versionNumber().equals(version));
-    }
-
-    public static void toSlime(DeploymentCost deploymentCost, Cursor object) {
-        object.setLong("tco", (long)deploymentCost.getTco());
-        object.setLong("waste", (long)deploymentCost.getWaste());
-        object.setDouble("utilization", deploymentCost.getUtilization());
-        Cursor clustersObject = object.setObject("cluster");
-        for (Map.Entry<String, ClusterCost> clusterEntry : deploymentCost.getCluster().entrySet())
-            toSlime(clusterEntry.getValue(), clustersObject.setObject(clusterEntry.getKey()));
-    }
-
-    private static void toSlime(ClusterCost clusterCost, Cursor object) {
-        object.setLong("count", clusterCost.getClusterInfo().getHostnames().size());
-        object.setString("resource", getResourceName(clusterCost.getResultUtilization()));
-        object.setDouble("utilization", clusterCost.getResultUtilization().getMaxUtilization());
-        object.setLong("tco", (int)clusterCost.getTco());
-        object.setLong("waste", (int)clusterCost.getWaste());
-        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
-        object.setDouble("flavorCost", clusterCost.getClusterInfo().getFlavorCost());
-        object.setDouble("flavorCpu", clusterCost.getClusterInfo().getFlavorCPU());
-        object.setDouble("flavorMem", clusterCost.getClusterInfo().getFlavorMem());
-        object.setDouble("flavorDisk", clusterCost.getClusterInfo().getFlavorDisk());
-        object.setString("type", clusterCost.getClusterInfo().getClusterType().name());
-        Cursor utilObject = object.setObject("util");
-        utilObject.setDouble("cpu", clusterCost.getResultUtilization().getCpu());
-        utilObject.setDouble("mem", clusterCost.getResultUtilization().getMemory());
-        utilObject.setDouble("disk", clusterCost.getResultUtilization().getDisk());
-        utilObject.setDouble("diskBusy", clusterCost.getResultUtilization().getDiskBusy());
-        Cursor usageObject = object.setObject("usage");
-        usageObject.setDouble("cpu", clusterCost.getSystemUtilization().getCpu());
-        usageObject.setDouble("mem", clusterCost.getSystemUtilization().getMemory());
-        usageObject.setDouble("disk", clusterCost.getSystemUtilization().getDisk());
-        usageObject.setDouble("diskBusy", clusterCost.getSystemUtilization().getDiskBusy());
-        Cursor hostnamesArray = object.setArray("hostnames");
-        for (String hostname : clusterCost.getClusterInfo().getHostnames())
-            hostnamesArray.addString(hostname);
-    }
-
-    private static String getResourceName(ClusterUtilization utilization) {
-        String name = "cpu";
-        double max = utilization.getMaxUtilization();
-
-        if (utilization.getMemory() == max) {
-            name = "mem";
-        } else if (utilization.getDisk() == max) {
-            name = "disk";
-        } else if (utilization.getDiskBusy() == max) {
-            name = "diskbusy";
-        }
-
-        return name;
     }
 
     private static boolean recurseOverTenants(HttpRequest request) {

@@ -59,12 +59,6 @@
     "lastQueriesPerSecond": 1.0,
     "lastWritesPerSecond": 2.0
   },
-  "cost": {
-    "tco": 0,
-    "waste": 0,
-    "utilization": 0.0,
-    "cluster": {}
-  },
   "metrics": {
     "queriesPerSecond": 1.0,
     "writesPerSecond": 2.0,
