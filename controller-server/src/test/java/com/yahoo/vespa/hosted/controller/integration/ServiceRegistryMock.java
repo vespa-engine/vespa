@@ -64,7 +64,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
         this.configServerMock = new ConfigServerMock(zoneRegistryMock);
-        this.routingGeneratorMock = new RoutingGeneratorMock(RoutingGeneratorMock.TEST_ENDPOINTS, zoneRegistryMock);
+        this.routingGeneratorMock = new RoutingGeneratorMock();
     }
 
     @Inject
