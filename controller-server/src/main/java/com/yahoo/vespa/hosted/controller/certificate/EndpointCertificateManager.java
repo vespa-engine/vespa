@@ -176,7 +176,7 @@ public class EndpointCertificateManager {
                             storedMetaData.version(),
                             providerMetadata.request_id(),
                             providerMetadata.requestedDnsSans(),
-                            Optional.empty());
+                            providerMetadata.issuer());
 
             if (mode == BackfillMode.DRYRUN) {
                 log.log(LogLevel.INFO, "Would update stored metadata " + storedMetaData + " with data from provider: " + backfilledMetadata);
