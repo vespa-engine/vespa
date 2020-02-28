@@ -37,8 +37,8 @@ public class ServiceModelProviderTest {
                 .collect(Collectors.toList());
         when(duperModelManager.getApplicationInfos()).thenReturn(applications);
 
-        ServiceModel serviceModel = provider.get();
+        ServiceModel serviceModel = provider.getServiceModelSnapshot();
         verify(duperModelManager, times(1)).getApplicationInfos();
-        verify(modelGenerator).toServiceModel(applications, zone, slobrokMonitorManager);
+        verify(modelGenerator).toServiceModel(applications, slobrokMonitorManager);
     }
 }

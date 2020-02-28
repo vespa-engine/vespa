@@ -110,6 +110,11 @@ public class HostResourceTest {
         public Set<ApplicationInstanceReference> knownInstances() {
             return Collections.emptySet();
         }
+
+        @Override
+        public List<ServiceInstance> findServicesOnHost(HostName hostName) {
+            return List.of();
+        }
     };
 
     private static class AlwaysAllowPolicy implements Policy {

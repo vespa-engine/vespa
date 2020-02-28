@@ -5,6 +5,10 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
+import com.yahoo.vespa.applicationmodel.ApplicationInstance;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
@@ -12,9 +16,14 @@ import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 public class ServiceMonitorImpl implements ServiceMonitor {
 
-    private final ServiceModelCache serviceModelProvider;
+    private final ServiceMonitor delegate;
 
     @Inject
     public ServiceMonitorImpl(DuperModelManager duperModelManager,
@@ -25,19 +34,47 @@ public class ServiceMonitorImpl implements ServiceMonitor {
                               FlagSource flagSource) {
         duperModelManager.registerListener(monitorManager);
 
-        ServiceModelProvider uncachedServiceModelProvider = new ServiceModelProvider(
+        ServiceMonitor serviceMonitor = new ServiceModelProvider(
                 monitorManager,
                 new ServiceMonitorMetrics(metric, timer),
                 duperModelManager,
-                new ModelGenerator(),
+                new ModelGenerator(zone),
                 zone);
-        boolean cache = Flags.SERVICE_MODEL_CACHE.bindTo(flagSource).value();
-        serviceModelProvider = new ServiceModelCache(uncachedServiceModelProvider, timer, cache);
+
+        if (Flags.SERVICE_MODEL_CACHE.bindTo(flagSource).value()) {
+            delegate = new ServiceModelCache(serviceMonitor::getServiceModelSnapshot, timer);
+        } else {
+            delegate = serviceMonitor;
+        }
     }
 
     @Override
     public ServiceModel getServiceModelSnapshot() {
-        return serviceModelProvider.get();
+        return delegate.getServiceModelSnapshot();
     }
 
+    @Override
+    public Set<ApplicationInstanceReference> getAllApplicationInstanceReferences() {
+        return delegate.getAllApplicationInstanceReferences();
+    }
+
+    @Override
+    public Optional<ApplicationInstance> getApplication(HostName hostname) {
+        return delegate.getApplication(hostname);
+    }
+
+    @Override
+    public Optional<ApplicationInstance> getApplication(ApplicationInstanceReference reference) {
+        return delegate.getApplication(reference);
+    }
+
+    @Override
+    public List<ServiceInstance> getServiceInstancesOn(HostName hostname) {
+        return delegate.getServiceInstancesOn(hostname);
+    }
+
+    @Override
+    public Map<HostName, List<ServiceInstance>> getServicesByHostname() {
+        return delegate.getServicesByHostname();
+    }
 }

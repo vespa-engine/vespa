@@ -21,7 +21,6 @@ import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 
@@ -187,7 +186,7 @@ public class NodeFailer extends Maintainer {
         Map<String, Node> activeNodesByHostname = nodeRepository().getNodes(Node.State.active).stream()
                 .collect(Collectors.toMap(Node::hostname, node -> node));
 
-        serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName()
+        serviceMonitor.getServicesByHostname()
                 .forEach((hostName, serviceInstances) -> {
                     Node node = activeNodesByHostname.get(hostName.s());
                     if (node == null) return;

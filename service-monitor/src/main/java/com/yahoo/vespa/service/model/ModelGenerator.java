@@ -5,11 +5,15 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -18,6 +22,11 @@ import java.util.stream.Collectors;
  */
 public class ModelGenerator {
     public static final String CLUSTER_ID_PROPERTY_NAME = "clustername";
+    private final Zone zone;
+
+    public ModelGenerator(Zone zone) {
+        this.zone = zone;
+    }
 
     /**
      * Create service model based primarily on super model.
@@ -25,7 +34,6 @@ public class ModelGenerator {
      * If the configServerhosts is non-empty, a config server application is added.
      */
     public ServiceModel toServiceModel(List<ApplicationInfo> allApplicationInfos,
-                                       Zone zone,
                                        ServiceStatusProvider serviceStatusProvider) {
         Map<ApplicationInstanceReference, ApplicationInstance> applicationInstances =
                 allApplicationInfos.stream()
@@ -36,4 +44,48 @@ public class ModelGenerator {
         return new ServiceModel(applicationInstances);
     }
 
+    public Set<ApplicationInstanceReference> toApplicationInstanceReferenceSet(List<ApplicationInfo> infos) {
+        return infos.stream()
+                .map(info -> new ApplicationInstanceGenerator(info, zone).toApplicationInstanceReference())
+                .collect(Collectors.toSet());
+    }
+
+    public Optional<ApplicationInstance> toApplication(List<ApplicationInfo> applicationInfos,
+                                                       HostName hostname,
+                                                       ServiceStatusProvider serviceStatusProvider) {
+        for (var applicationInfo : applicationInfos) {
+            var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
+            if (generator.containsHostname(hostname)) {
+                return Optional.of(generator.makeApplicationInstance(serviceStatusProvider));
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public ApplicationInstance toApplication(ApplicationInfo applicationInfo,
+                                             ServiceStatusProvider serviceStatusProvider) {
+        var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
+        return generator.makeApplicationInstance(serviceStatusProvider);
+    }
+
+    public List<ServiceInstance> toServices(List<ApplicationInfo> applicationInfos,
+                                            HostName hostname,
+                                            ServiceStatusProvider serviceStatusProvider) {
+        for (var applicationInfo : applicationInfos) {
+            var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
+            ApplicationInstance applicationInstance = generator.makeApplicationInstanceLimitedTo(
+                    hostname, serviceStatusProvider);
+
+            List<ServiceInstance> serviceInstances = applicationInstance.serviceClusters().stream()
+                    .flatMap(cluster -> cluster.serviceInstances().stream())
+                    .collect(Collectors.toList());
+
+            if (serviceInstances.size() > 0) {
+                return serviceInstances;
+            }
+        }
+
+        return List.of();
+    }
 }

@@ -9,6 +9,7 @@ import com.yahoo.vespa.service.monitor.DuperModelListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -47,6 +48,10 @@ public class DuperModel {
             logger.log(LogLevel.DEBUG, "Removed " + applicationId);
             listeners.forEach(listener -> listener.applicationRemoved(applicationId));
         }
+    }
+
+    public Optional<ApplicationInfo> getApplicationInfo(ApplicationId applicationId) {
+        return Optional.ofNullable(applications.get(applicationId));
     }
 
     public List<ApplicationInfo> getApplicationInfos() {

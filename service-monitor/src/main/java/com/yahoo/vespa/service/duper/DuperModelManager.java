@@ -173,6 +173,12 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
         }
     }
 
+    public Optional<ApplicationInfo> getApplicationInfo(ApplicationId applicationId) {
+        synchronized (monitor) {
+            return duperModel.getApplicationInfo(applicationId);
+        }
+    }
+
     public List<ApplicationInfo> getApplicationInfos() {
         synchronized (monitor) {
             return duperModel.getApplicationInfos();

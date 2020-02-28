@@ -106,6 +106,7 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public Host getHost(HostName hostName) throws HostNameNotFoundException {
         ApplicationInstance applicationInstance = getApplicationInstance(hostName);
+        instanceLookupService.findServicesOnHost(hostName);
         List<ServiceInstance> serviceInstances = applicationInstance
                 .serviceClusters().stream()
                 .flatMap(cluster -> cluster.serviceInstances().stream())

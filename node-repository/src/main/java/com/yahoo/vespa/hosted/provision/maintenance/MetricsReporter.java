@@ -60,8 +60,7 @@ public class MetricsReporter extends Maintainer {
     @Override
     public void maintain() {
         NodeList nodes = nodeRepository().list();
-        Map<HostName, List<ServiceInstance>> servicesByHost =
-                serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName();
+        Map<HostName, List<ServiceInstance>> servicesByHost = serviceMonitor.getServicesByHostname();
 
         nodes.forEach(node -> updateNodeMetrics(node, servicesByHost));
         updateStateMetrics(nodes);
