@@ -608,6 +608,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.idealstate.garbage_collection.done_ok.rate"));
         metrics.add(new Metric("vds.idealstate.garbage_collection.done_failed.rate"));
         metrics.add(new Metric("vds.idealstate.garbage_collection.pending.average"));
+        metrics.add(new Metric("vds.idealstate.garbage_collection.documents_removed.count"));
+        metrics.add(new Metric("vds.idealstate.garbage_collection.documents_removed.rate"));
 
         metrics.add(new Metric("vds.distributor.puts.sum.latency.max"));
         metrics.add(new Metric("vds.distributor.puts.sum.latency.sum"));
