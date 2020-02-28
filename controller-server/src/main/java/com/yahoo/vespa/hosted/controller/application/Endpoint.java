@@ -202,8 +202,8 @@ public class Endpoint {
     private static String upstreamIdOf(String name, ApplicationId application, ZoneId zone) {
         return Stream.of(namePart(name, ""),
                          instancePart(application, ""),
-                         application.tenant().value(),
                          application.application().value(),
+                         application.tenant().value(),
                          zone.region().value(),
                          zone.environment().value())
                      .filter(Predicate.not(String::isEmpty))
