@@ -179,6 +179,12 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
         }
     }
 
+    public Optional<ApplicationInfo> getApplicationInfo(HostName hostname) {
+        synchronized (monitor) {
+            return duperModel.getApplicationInfo(hostname);
+        }
+    }
+
     public List<ApplicationInfo> getApplicationInfos() {
         synchronized (monitor) {
             return duperModel.getApplicationInfos();
@@ -187,7 +193,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
 
     private void maybeSetDuperModelAsComplete() {
         if (superModelIsComplete && infraApplicationsIsComplete) {
-            duperModel.setCompleteness(true);
+            duperModel.setComplete();
         }
     }
 }

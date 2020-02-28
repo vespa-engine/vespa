@@ -12,7 +12,6 @@ import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -50,40 +49,25 @@ public class ModelGenerator {
                 .collect(Collectors.toSet());
     }
 
-    public Optional<ApplicationInstance> toApplication(List<ApplicationInfo> applicationInfos,
-                                                       HostName hostname,
-                                                       ServiceStatusProvider serviceStatusProvider) {
-        for (var applicationInfo : applicationInfos) {
-            var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
-            if (generator.containsHostname(hostname)) {
-                return Optional.of(generator.makeApplicationInstance(serviceStatusProvider));
-            }
-        }
-
-        return Optional.empty();
-    }
-
     public ApplicationInstance toApplication(ApplicationInfo applicationInfo,
                                              ServiceStatusProvider serviceStatusProvider) {
         var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
         return generator.makeApplicationInstance(serviceStatusProvider);
     }
 
-    public List<ServiceInstance> toServices(List<ApplicationInfo> applicationInfos,
+    public List<ServiceInstance> toServices(ApplicationInfo applicationInfo,
                                             HostName hostname,
                                             ServiceStatusProvider serviceStatusProvider) {
-        for (var applicationInfo : applicationInfos) {
-            var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
-            ApplicationInstance applicationInstance = generator.makeApplicationInstanceLimitedTo(
-                    hostname, serviceStatusProvider);
+        var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
+        ApplicationInstance applicationInstance = generator.makeApplicationInstanceLimitedTo(
+                hostname, serviceStatusProvider);
 
-            List<ServiceInstance> serviceInstances = applicationInstance.serviceClusters().stream()
-                    .flatMap(cluster -> cluster.serviceInstances().stream())
-                    .collect(Collectors.toList());
+        List<ServiceInstance> serviceInstances = applicationInstance.serviceClusters().stream()
+                .flatMap(cluster -> cluster.serviceInstances().stream())
+                .collect(Collectors.toList());
 
-            if (serviceInstances.size() > 0) {
-                return serviceInstances;
-            }
+        if (serviceInstances.size() > 0) {
+            return serviceInstances;
         }
 
         return List.of();

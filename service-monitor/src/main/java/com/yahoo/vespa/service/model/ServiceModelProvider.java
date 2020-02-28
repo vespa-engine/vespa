@@ -56,8 +56,13 @@ public class ServiceModelProvider implements ServiceMonitor {
 
     @Override
     public Optional<ApplicationInstance> getApplication(HostName hostname) {
-        // TODO(hakonhall): Lookup the applicationInfo from the hostname.
-        return modelGenerator.toApplication(applicationInfos(), hostname, serviceStatusProvider);
+        Optional<ApplicationInfo> applicationInfo =
+                duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname));
+        if (applicationInfo.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(modelGenerator.toApplication(applicationInfo.get(), serviceStatusProvider));
     }
 
     @Override
@@ -68,8 +73,13 @@ public class ServiceModelProvider implements ServiceMonitor {
 
     @Override
     public List<ServiceInstance> getServiceInstancesOn(HostName hostname) {
-        // TODO(hakonhall): Lookup the applicationInfo from the hostname.
-        return modelGenerator.toServices(applicationInfos(), hostname, serviceStatusProvider);
+        Optional<ApplicationInfo> applicationInfo =
+                duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname));
+        if (applicationInfo.isEmpty()) {
+            return List.of();
+        }
+
+        return modelGenerator.toServices(applicationInfo.get(), hostname, serviceStatusProvider);
     }
 
     @Override
@@ -84,5 +94,10 @@ public class ServiceModelProvider implements ServiceMonitor {
 
     private List<ApplicationInfo> applicationInfos() {
         return duperModelManager.getApplicationInfos();
+    }
+
+    /** The duper model uses HostName from config.provision, which is more natural than applicationmodel. */
+    private com.yahoo.config.provision.HostName toConfigProvisionHostName(HostName hostname) {
+        return com.yahoo.config.provision.HostName.from(hostname.s());
     }
 }
