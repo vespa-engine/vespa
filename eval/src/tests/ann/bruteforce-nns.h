@@ -47,7 +47,7 @@ public:
 TopK bruteforce_nns(const PointVector &query) {
     TopK result;
     BfHitHeap heap(result.K);
-    for (uint32_t docid = 0; docid < NUM_DOCS; ++docid) {
+    for (uint32_t docid = 0; docid < EFFECTIVE_DOCS; ++docid) {
         const PointVector &docvector = generatedDocs[docid];
         double d = l2distCalc.l2sq_dist(query, docvector);
         Hit h(docid, d);
@@ -64,7 +64,7 @@ void verifyBF(uint32_t qid) {
     const PointVector &query = generatedQueries[qid];
     TopK &result = bruteforceResults[qid];
     double min_distance = result.hits[0].distance;
-    for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+    for (uint32_t i = 0; i < EFFECTIVE_DOCS; ++i) {
         double dist = computeDistance(query, i);
         if (dist < min_distance) {
             fprintf(stderr, "WARN dist %.9g < mindist %.9g\n", dist, min_distance);
