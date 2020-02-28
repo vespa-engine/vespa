@@ -217,7 +217,7 @@ public class DeploymentContext {
         return this;
     }
 
-    /** Add a routing policy for this in given zone, with status set to active */
+    /** Add a routing policy for this in given zone, with status set to inactive */
     public DeploymentContext addInactiveRoutingPolicy(ZoneId zone) {
         var clusterId = "default-inactive";
         var id = new RoutingPolicyId(instanceId, ClusterSpec.Id.from(clusterId), zone);
