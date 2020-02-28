@@ -19,3 +19,4 @@ cloudWatch[].secretKeyName string default=""
 
 # Only valid and optional for self-hosted Vespa
 cloudWatch[].profile string default=""
+cloudWatch[].file string default=""

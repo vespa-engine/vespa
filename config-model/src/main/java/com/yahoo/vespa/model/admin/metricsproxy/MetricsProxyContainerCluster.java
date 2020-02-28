@@ -190,7 +190,9 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
                 cloudWatch.hostedAuth().ifPresent(hostedAuth -> cloudWatchBuilder
                         .accessKeyName(hostedAuth.accessKeyName)
                         .secretKeyName(hostedAuth.secretKeyName));
-                cloudWatch.profile().ifPresent(cloudWatchBuilder::profile);
+                cloudWatch.sharedCredentials().ifPresent(sharedCredentials -> cloudWatchBuilder
+                        .profile(sharedCredentials.profile)
+                        .file(sharedCredentials.file));
                 builder.cloudWatch(cloudWatchBuilder);
             }
         }

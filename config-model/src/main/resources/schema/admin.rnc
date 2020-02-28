@@ -91,14 +91,16 @@ Cloudwatch = element cloudwatch {
     attribute region { xsd:Name } &
     attribute namespace { xsd:string { pattern = "[\w_\-/#:\.]+" } } &
     (
-      (
-        element access-key-name { xsd:Name } &
-        element secret-key-name { xsd:Name }
-      )
+      element credentials {
+            attribute access-key-name { xsd:Name } &
+            attribute secret-key-name { xsd:Name }
+      }
       |
-      element profile { xsd:Name }
+      element shared-credentials {
+          attribute profile { xsd:Name } &
+          attribute file { string }?
+      }
     )?
-
 }
 
 ClusterControllers = element cluster-controllers {

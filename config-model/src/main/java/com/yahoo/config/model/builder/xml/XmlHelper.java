@@ -133,6 +133,11 @@ public final class XmlHelper {
         return Optional.ofNullable(element.getAttribute(name)).filter(s -> !s.isEmpty());
     }
 
+    public static Optional<Element> getOptionalChild(Element parent, String childName) {
+        return Optional.ofNullable(XML.getChild(parent, childName));
+
+    }
+
     public static Optional<String> getOptionalChildValue(Element parent, String childName) {
         Element child = XML.getChild(parent, childName);
         if (child == null) return Optional.empty();
