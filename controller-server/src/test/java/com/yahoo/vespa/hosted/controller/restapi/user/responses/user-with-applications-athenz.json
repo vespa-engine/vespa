@@ -11,57 +11,21 @@
         "administrator",
         "developer",
         "reader"
-      ],
-      "applications": {
-        "app1": {
-          "instances": [
-            "default"
-          ]
-        },
-        "app2": {
-          "instances": [
-            "default",
-            "dev"
-          ]
-        }
-      }
+      ]
     },
     "tenant1": {
       "roles": [
         "administrator",
         "developer",
         "reader"
-      ],
-      "applications": {
-        "app1": {
-          "instances": [
-            "default"
-          ]
-        },
-        "app2": {
-          "instances": [
-            "default",
-            "myinstance"
-          ]
-        },
-        "app3": {
-          "instances": []
-        }
-      }
+      ]
     },
     "tenant2": {
       "roles": [
         "administrator",
         "developer",
         "reader"
-      ],
-      "applications": {
-        "app2": {
-          "instances": [
-            "test"
-          ]
-        }
-      }
+      ]
     }
   }
 }
