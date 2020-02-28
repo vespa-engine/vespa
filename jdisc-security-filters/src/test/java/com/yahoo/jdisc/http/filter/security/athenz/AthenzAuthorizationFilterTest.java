@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter.security.athenz;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver.MockResponseHandler;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
@@ -48,7 +50,7 @@ public class AthenzAuthorizationFilterTest {
 
     private static final AthenzResourceName RESOURCE_NAME = new AthenzResourceName("domain", "my-resource-name");
     private static final ZToken ROLE_TOKEN = new ZToken("v=Z1;d=domain;r=my-role;p=my-domain.my-service");
-    private static final AthenzAccessToken ACCESS_TOKEN = new AthenzAccessToken("access-token");
+    private static final AthenzAccessToken ACCESS_TOKEN = new AthenzAccessToken(JWT.create().sign(Algorithm.none()));
     private static final AthenzIdentity IDENTITY = AthenzIdentities.from("user.john");
     private static final AthenzRole ROLE = new AthenzRole("my.domain", "my-role");
     private static final X509Certificate IDENTITY_CERTIFICATE = createDummyIdentityCertificate(IDENTITY);
