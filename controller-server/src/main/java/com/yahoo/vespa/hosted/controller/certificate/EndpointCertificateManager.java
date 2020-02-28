@@ -122,12 +122,7 @@ public class EndpointCertificateManager {
             var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
 
             if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
-                var refreshedCertificateMetadata = new EndpointCertificateMetadata(
-                        currentCertificateMetadata.get().keyName(),
-                        currentCertificateMetadata.get().certName(),
-                        latestAvailableVersion.getAsInt()
-                );
-
+                var refreshedCertificateMetadata = currentCertificateMetadata.get().withVersion(latestAvailableVersion.getAsInt());
                 validateEndpointCertificate(refreshedCertificateMetadata, instance, zone);
                 curator.writeEndpointCertificateMetadata(instance.id(), refreshedCertificateMetadata);
                 return Optional.of(refreshedCertificateMetadata);

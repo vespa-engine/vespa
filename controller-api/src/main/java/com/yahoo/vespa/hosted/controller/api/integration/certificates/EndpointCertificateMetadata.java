@@ -61,6 +61,17 @@ public class EndpointCertificateMetadata {
         return issuer;
     }
 
+    public EndpointCertificateMetadata withVersion(int version) {
+        return new EndpointCertificateMetadata(
+                this.keyName,
+                this.certName,
+                version,
+                this.request_id,
+                this.requestedDnsSans,
+                this.issuer
+        );
+    }
+
     @Override
     public String toString() {
         return "EndpointCertificateMetadata{" +
