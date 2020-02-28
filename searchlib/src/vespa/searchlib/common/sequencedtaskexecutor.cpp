@@ -17,12 +17,12 @@ constexpr uint32_t stackSize = 128 * 1024;
 
 
 std::unique_ptr<ISequencedTaskExecutor>
-SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, Optimize optimize)
+SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize)
 {
     auto executors = std::make_unique<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>>();
     executors->reserve(threads);
     for (uint32_t id = 0; id < threads; ++id) {
-        if (optimize == Optimize::THROUGHPUT) {
+        if (optimize == OptimizeFor::THROUGHPUT) {
             executors->push_back(std::make_unique<SingleExecutor>(taskLimit));
         } else {
             executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));

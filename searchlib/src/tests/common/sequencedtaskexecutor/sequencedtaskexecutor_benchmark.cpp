@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     unsigned long numTasks = 1000000;
     unsigned numThreads = 4;
     unsigned taskLimit = 1000;
-    SequencedTaskExecutor::Optimize optimize = SequencedTaskExecutor::Optimize::LATENCY;
+    vespalib::Executor::OptimizeFor optimize = vespalib::Executor::OptimizeFor::LATENCY;
     std::atomic<long> counter(0);
     if (argc > 1)
         numTasks = atol(argv[1]);
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     if (argc > 3)
         taskLimit = atoi(argv[3]);
     if (argc > 4)
-        optimize = SequencedTaskExecutor::Optimize::THROUGHPUT;
+        optimize = vespalib::Executor::OptimizeFor::THROUGHPUT;
 
     auto executor = SequencedTaskExecutor::create(numThreads, taskLimit, optimize);
     for (unsigned long tid(0); tid < numTasks; tid++) {
