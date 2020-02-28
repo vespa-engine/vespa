@@ -41,9 +41,9 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         return matching(endpoint -> endpoint.name().equals(id.id()));
     }
 
-    /** Returns the subset of endpoints are either legacy or not */
-    public EndpointList legacy(boolean legacy) {
-        return matching(endpoint -> endpoint.legacy() == legacy);
+    /** Returns the subset of endpoints that are considered legacy */
+    public EndpointList legacy() {
+        return matching(Endpoint::legacy);
     }
 
     /** Returns the subset of endpoints that require a rotation */

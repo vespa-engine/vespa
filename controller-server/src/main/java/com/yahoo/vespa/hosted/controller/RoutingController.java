@@ -90,20 +90,23 @@ public class RoutingController {
 
     /** Returns global-scoped endpoints for given instance */
     public EndpointList endpointsOf(ApplicationId instance) {
+        return endpointsOf(controller.applications().requireInstance(instance));
+    }
+
+    public EndpointList endpointsOf(Instance instance) {
         var endpoints = new LinkedHashSet<Endpoint>();
         // Add global endpoints provided by rotations
-        for (var rotation : controller.applications().requireInstance(instance).rotations()) {
-            EndpointList.global(RoutingId.of(instance, rotation.endpointId()),
+        for (var rotation : instance.rotations()) {
+            EndpointList.global(RoutingId.of(instance.id(), rotation.endpointId()),
                                 controller.system(), systemRoutingMethods())
                         .requiresRotation()
-                        .primary()
-                        .ifPresent(endpoints::add);
+                        .forEach(endpoints::add);
         }
         // Add global endpoints provided by routing policices
-        for (var policy : routingPolicies.get(instance).values()) {
+        for (var policy : routingPolicies.get(instance.id()).values()) {
             if (!policy.status().isActive()) continue;
             for (var endpointId : policy.endpoints()) {
-                EndpointList.global(RoutingId.of(instance, endpointId),
+                EndpointList.global(RoutingId.of(instance.id(), endpointId),
                                     controller.system(), systemRoutingMethods())
                             .not().requiresRotation()
                             .forEach(endpoints::add);
@@ -128,7 +131,7 @@ public class RoutingController {
 
     /** Change status of all global endpoints for given deployment */
     public void setGlobalRotationStatus(DeploymentId deployment, EndpointStatus status) {
-        endpointsOf(deployment.applicationId()).requiresRotation().forEach(endpoint -> {
+        endpointsOf(deployment.applicationId()).requiresRotation().primary().ifPresent(endpoint -> {
             try {
                 controller.serviceRegistry().configServer().setGlobalRotationStatus(deployment, endpoint.upstreamIdOf(deployment), status);
             } catch (Exception e) {
@@ -140,7 +143,7 @@ public class RoutingController {
     /** Get global endpoint status for given deployment */
     public Map<Endpoint, EndpointStatus> globalRotationStatus(DeploymentId deployment) {
         var routingEndpoints = new LinkedHashMap<Endpoint, EndpointStatus>();
-        endpointsOf(deployment.applicationId()).requiresRotation().forEach(endpoint -> {
+        endpointsOf(deployment.applicationId()).requiresRotation().primary().ifPresent(endpoint -> {
             var upstreamName = endpoint.upstreamIdOf(deployment);
             var status = controller.serviceRegistry().configServer().getGlobalRotationStatus(deployment, upstreamName);
             routingEndpoints.put(endpoint, status);
@@ -173,12 +176,9 @@ public class RoutingController {
         boolean registerLegacyNames = deploymentSpec.instance(instance.name())
                                                     .flatMap(DeploymentInstanceSpec::globalServiceId)
                                                     .isPresent();
-        var routingMethods = controller.zoneRegistry().routingMethods(zone);
         for (var assignedRotation : instance.rotations()) {
             var names = new ArrayList<String>();
-            var endpoints = EndpointList.global(RoutingId.of(instance.id(), assignedRotation.endpointId()),
-                                                controller.system(), routingMethods)
-                                        .requiresRotation();
+            var endpoints = endpointsOf(instance).named(assignedRotation.endpointId()).requiresRotation();
 
             // Skip rotations which do not apply to this zone. Legacy names always point to all zones
             if (!registerLegacyNames && !assignedRotation.regions().contains(zone.region())) {
@@ -187,7 +187,7 @@ public class RoutingController {
 
             // Omit legacy DNS names when assigning rotations using <endpoints/> syntax
             if (!registerLegacyNames) {
-                endpoints = endpoints.legacy(false);
+                endpoints = endpoints.not().legacy();
             }
 
             // Register names in DNS

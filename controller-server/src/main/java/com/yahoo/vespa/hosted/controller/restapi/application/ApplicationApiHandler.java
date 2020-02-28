@@ -858,7 +858,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Add global endpoints backed by rotations
         controller.routing().endpointsOf(instance.id())
                   .requiresRotation()
-                  .legacy(false) // Hide legacy names
+                  .not().legacy() // Hide legacy names
                   .asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
@@ -1066,7 +1066,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         // Add global endpoints
         if (deploymentId.zoneId().environment().isProduction()) { // Global endpoints can only point to production deployments
-            for (var endpoint : controller.routing().endpointsOf(deploymentId.applicationId())) {
+            for (var endpoint : controller.routing().endpointsOf(instance).not().legacy()) {
                 // TODO(mpolden): Pass cluster name. Cluster that a global endpoint points to is not available at this level.
                 toSlime(endpoint, "", endpointArray.addObject());
             }
