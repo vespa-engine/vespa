@@ -11,6 +11,7 @@ vespa_add_library(searchlib_tensor OBJECT
     hnsw_index.cpp
     imported_tensor_attribute_vector.cpp
     imported_tensor_attribute_vector_read_guard.cpp
+    inv_log_level_generator.cpp
     nearest_neighbor_index.cpp
     tensor_attribute.cpp
     tensor_store.cpp
