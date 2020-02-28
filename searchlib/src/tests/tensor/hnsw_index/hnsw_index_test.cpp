@@ -457,6 +457,23 @@ TEST(LevelGeneratorTest, gives_various_levels)
     EXPECT_EQ(0u, generator.max_level());
     EXPECT_EQ(0u, generator.max_level());
     EXPECT_EQ(0u, generator.max_level());
+
+    uint32_t left = 1000000;
+    std::vector<uint32_t> hist;
+    for (uint32_t i = 0; i < left; ++i) {
+        uint32_t l = generator.max_level();
+        if (hist.size() <= l) {
+            hist.resize(l+1);
+        }
+        hist[l]++;
+    }
+    for (uint32_t l = 0; l < hist.size(); ++l) {
+        double expected = left * 0.75;
+        EXPECT_TRUE(hist[l] < expected*1.01 + 100);
+        EXPECT_TRUE(hist[l] > expected*0.99 - 100);
+        left *= 0.25;
+    }
+    EXPECT_TRUE(hist.size() < 14);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -5,6 +5,15 @@
 
 namespace search::tensor {
 
+/**
+ * Geometric distribution for level selection in HnswIndex.
+ * Pr(level=k) is (1/M)^k * (1 - 1/M)
+ * Note that the level is theoretically unbounded, but in
+ * practice less than 30.
+ * Generated using floor(ln(U)/ln(1-p)), see
+ * https://en.wikipedia.org/wiki/Geometric_distribution#Related_distributions
+ **/
+
 class InvLogLevelGenerator : public RandomLevelGenerator {
     std::mt19937_64 _rng;
     std::uniform_real_distribution<double> _uniform;
