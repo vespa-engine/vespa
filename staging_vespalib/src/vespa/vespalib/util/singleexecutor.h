@@ -25,12 +25,12 @@ public:
     size_t getNumThreads() const override;
     uint32_t getTaskLimit() const { return _taskLimit.load(std::memory_order_relaxed); }
     Stats getStats() override;
-
 private:
+    uint64_t addTask(Task::UP task);
     void run() override;
     void drain_tasks();
     void run_tasks_till(uint64_t available);
-    void wait_for_room(MonitorGuard & producerGuard);
+    void wait_for_room(MonitorGuard & guard);
     uint64_t index(uint64_t counter) const {
         return counter & (_taskLimit.load(std::memory_order_relaxed) - 1);
     }
