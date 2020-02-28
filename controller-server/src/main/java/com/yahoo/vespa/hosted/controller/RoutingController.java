@@ -115,7 +115,7 @@ public class RoutingController {
         return EndpointList.copyOf(endpoints);
     }
 
-    /** Returns all non-global endpoints for given deployments, grouped by their cluster ID and zone */
+    /** Returns all non-global endpoints and corresponding cluster IDs for given deployments, grouped by their zone */
     public Map<ZoneId, Map<URI, ClusterSpec.Id>> zoneEndpointsOf(Collection<DeploymentId> deployments) {
         var endpoints = new TreeMap<ZoneId, Map<URI, ClusterSpec.Id>>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {
