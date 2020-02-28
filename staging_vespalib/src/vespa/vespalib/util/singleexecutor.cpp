@@ -10,7 +10,8 @@ SingleExecutor::SingleExecutor(uint32_t taskLimit)
       _wantedTaskLimit(_taskLimit.load()),
       _rp(0),
       _tasks(std::make_unique<Task::UP[]>(_taskLimit)),
-      _monitor(),
+      _consumerMonitor(),
+      _producerMonitor(),
       _thread(*this),
       _lastAccepted(0),
       _maxPending(0),
@@ -32,12 +33,16 @@ SingleExecutor::getNumThreads() const {
 
 Executor::Task::UP
 SingleExecutor::execute(Task::UP task) {
-    wait_for_room();
-    uint64_t wp = _wp.load(std::memory_order_relaxed);
-    _tasks[index(wp)] = std::move(task);
-    _wp.store(wp + 1, std::memory_order_relaxed);
+    uint64_t wp;
+    {
+        MonitorGuard produceGuard(_producerMonitor);
+        wait_for_room(produceGuard);
+        wp = _wp.load(std::memory_order_relaxed);
+        _tasks[index(wp)] = std::move(task);
+        _wp.store(wp + 1, std::memory_order_relaxed);
+    }
     if (wp == _wakeupConsumerAt.load(std::memory_order_relaxed)) {
-        MonitorGuard guard(_monitor);
+        MonitorGuard guard(_consumerMonitor);
         guard.signal();
     }
     return Task::UP();
@@ -62,8 +67,8 @@ SingleExecutor::run() {
     while (!_thread.stopped()) {
         drain_tasks();
         _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + (_taskLimit.load(std::memory_order_relaxed) >> 2), std::memory_order_relaxed);
-        MonitorGuard guard(_monitor);
-        guard.wait(1ms);
+        MonitorGuard guard(_consumerMonitor);
+        guard.wait(10ms);
         _wakeupConsumerAt.store(0, std::memory_order_relaxed);
     }
 }
@@ -90,14 +95,14 @@ SingleExecutor::run_tasks_till(uint64_t available) {
         task->run();
         _rp.store(++consumed, std::memory_order_relaxed);
         if (wakeupLimit == consumed) {
-            MonitorGuard guard(_monitor);
+            MonitorGuard guard(_producerMonitor);
             guard.signal();
         }
     }
 }
 
 void
-SingleExecutor::wait_for_room() {
+SingleExecutor::wait_for_room(MonitorGuard & producerGuard) {
     if (_taskLimit.load(std::memory_order_relaxed) != _wantedTaskLimit.load(std::memory_order_relaxed)) {
         sync();
         _tasks = std::make_unique<Task::UP[]>(_wantedTaskLimit);
@@ -105,8 +110,7 @@ SingleExecutor::wait_for_room() {
     }
     while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
         _producerNeedWakeup.store(true, std::memory_order_relaxed);
-        MonitorGuard guard(_monitor);
-        guard.wait(1ms);
+        producerGuard.wait(10ms);
         _producerNeedWakeup.store(false, std::memory_order_relaxed);
     }
 }
