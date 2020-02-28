@@ -109,6 +109,7 @@ public final class IndexModel {
         return searchDefinitions;
     }
 
+    @SuppressWarnings("deprecation")
     private SearchDefinition unionOf(Collection<SearchDefinition> searchDefinitions) {
         SearchDefinition union = new SearchDefinition(IndexFacts.unionName);
 
