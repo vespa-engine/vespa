@@ -59,6 +59,7 @@ public class Validation {
         new SecretStoreValidator().validate(model, deployState);
         new EndpointCertificateSecretsValidator().validate(model, deployState);
         new AccessControlFilterValidator().validate(model, deployState);
+        new CloudWatchValidator().validate(model, deployState);
 
         List<ConfigChangeAction> result = Collections.emptyList();
         if (deployState.getProperties().isFirstTimeDeployment()) {
