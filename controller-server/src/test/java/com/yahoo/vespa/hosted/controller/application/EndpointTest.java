@@ -232,20 +232,20 @@ public class EndpointTest {
         var zone = ZoneId.from("prod", "us-north-1");
         var tests1 = Map.of(
                 // With default cluster
-                "t1.a1.us-north-1.prod",
+                "a1.t1.us-north-1.prod",
                 Endpoint.of(app1).named(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
 
                 // With non-default cluster
-                "c1.t1.a1.us-north-1.prod",
+                "c1.a1.t1.us-north-1.prod",
                 Endpoint.of(app1).named(EndpointId.of("c1")).on(Port.tls(4443)).in(SystemName.main)
         );
         var tests2 = Map.of(
                 // With non-default instance
-                "i2.t2.a2.us-north-1.prod",
+                "i2.a2.t2.us-north-1.prod",
                 Endpoint.of(app2).named(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
 
                 // With non-default instance and cluster
-                "c2.i2.t2.a2.us-north-1.prod",
+                "c2.i2.a2.t2.us-north-1.prod",
                 Endpoint.of(app2).named(EndpointId.of("c2")).on(Port.tls(4443)).in(SystemName.main)
         );
         tests1.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(new DeploymentId(app1, zone))));
