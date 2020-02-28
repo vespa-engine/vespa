@@ -6,9 +6,13 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.net.URI;
 import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents an application's endpoint. The endpoint scope can either be global or a specific zone. This is visible to
@@ -23,6 +27,7 @@ public class Endpoint {
     private static final String PUBLIC_DNS_SUFFIX = ".public.vespa.oath.cloud";
     private static final String PUBLIC_CD_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
 
+    private final String name;
     private final URI url;
     private final Scope scope;
     private final boolean legacy;
@@ -37,12 +42,24 @@ public class Endpoint {
         Objects.requireNonNull(system, "system must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
+        this.name = name;
         this.url = createUrl(name, application, zone, system, port, legacy, routingMethod);
         this.scope = zone == null ? Scope.global : Scope.zone;
         this.legacy = legacy;
         this.routingMethod = routingMethod;
         this.tls = port.tls;
         this.wildcard = wildcard;
+    }
+
+    /**
+     * Returns the name of this endpoint (the first component of the DNS name). Depending on the endpoint type, this
+     * can be one of the following:
+     * - A wildcard (any scope)
+     * - A cluster name (only zone scope)
+     * - An endpoint ID (only global scope)
+     */
+    public String name() {
+        return name;
     }
 
     /** Returns the URL used to access this */
@@ -76,9 +93,21 @@ public class Endpoint {
         return tls;
     }
 
+    /** Returns whether this requires a rotation to be reachable */
+    public boolean requiresRotation() {
+        return routingMethod.isShared() && scope == Scope.global;
+    }
+
     /** Returns whether this is a wildcard endpoint (used only in certificates) */
     public boolean wildcard() {
         return wildcard;
+    }
+
+    /** Returns the upstream ID of given deployment. This *must* match what the routing layer generates */
+    public String upstreamIdOf(DeploymentId deployment) {
+        if (scope != Scope.global) throw new IllegalArgumentException("Scope " + scope + " does not have upstream name");
+        if (!routingMethod.isShared()) throw new IllegalArgumentException("Routing method " + routingMethod + " does not have upstream name");
+        return upstreamIdOf(name, deployment.applicationId(), deployment.zoneId());
     }
 
     @Override
@@ -169,6 +198,30 @@ public class Endpoint {
         }
     }
 
+    private static String upstreamIdOf(String name, ApplicationId application, ZoneId zone) {
+        return Stream.of(namePart(name, ""),
+                         instancePart(application, ""),
+                         application.tenant().value(),
+                         application.application().value(),
+                         zone.region().value(),
+                         zone.environment().value())
+                     .filter(Predicate.not(String::isEmpty))
+                     .map(Endpoint::sanitizeUpstream)
+                     .collect(Collectors.joining("."));
+    }
+
+    /** Remove any invalid characters from a upstream part */
+    private static String sanitizeUpstream(String part) {
+        return truncate(part.toLowerCase()
+                            .replace('_', '-')
+                            .replaceAll("[^a-z0-9-]*", ""));
+    }
+
+    /** Truncate the given part at the front so its length does not exceed 63 characters */
+    private static String truncate(String part) {
+        return part.substring(Math.max(0, part.length() - 63));
+    }
+
     /** An endpoint's scope */
     public enum Scope {
 
@@ -201,6 +254,12 @@ public class Endpoint {
         /** Returns the default HTTPS port */
         public static Port tls() {
             return new Port(443, true);
+        }
+
+        /** Returns default port for the given routing method */
+        public static Port fromRoutingMethod(RoutingMethod method) {
+            if (method.isDirect()) return Port.tls();
+            return Port.tls(4443);
         }
 
         /** Create a HTTPS port */

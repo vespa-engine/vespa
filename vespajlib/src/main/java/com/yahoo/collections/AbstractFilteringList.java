@@ -4,15 +4,14 @@ package com.yahoo.collections;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -20,7 +19,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  *
  * @author jonmv
  */
-public abstract class AbstractFilteringList<Type, ListType extends AbstractFilteringList<Type, ListType>> {
+public abstract class AbstractFilteringList<Type, ListType extends AbstractFilteringList<Type, ListType>> implements Iterable<Type> {
 
     private final List<Type> items;
     private final boolean negate;
@@ -83,5 +82,10 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
     public final boolean isEmpty() { return items.isEmpty(); }
 
     public final int size() { return items.size(); }
+
+    @Override
+    public Iterator<Type> iterator() {
+        return items.iterator();
+    }
 
 }

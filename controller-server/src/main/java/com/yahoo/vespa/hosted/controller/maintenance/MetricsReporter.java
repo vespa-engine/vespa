@@ -64,8 +64,8 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void reportRemainingRotations() {
-        try (RotationLock lock = controller().routingController().rotations().lock()) {
-            int availableRotations = controller().routingController().rotations().availableRotations(lock).size();
+        try (RotationLock lock = controller().routing().rotations().lock()) {
+            int availableRotations = controller().routing().rotations().availableRotations(lock).size();
             metric.set(REMAINING_ROTATIONS, availableRotations, metric.createContext(Map.of()));
         }
     }

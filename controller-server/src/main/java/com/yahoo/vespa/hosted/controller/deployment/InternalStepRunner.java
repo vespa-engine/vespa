@@ -450,11 +450,11 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns true iff all containers in the deployment give 100 consecutive 200 OK responses on /status.html. */
     private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
-        var endpoints = controller.routingController().zoneEndpointsOf(Set.of(new DeploymentId(id, zoneId)));
+        var endpoints = controller.routing().zoneEndpointsOf(Set.of(new DeploymentId(id, zoneId)));
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
-        for (URI endpoint : endpoints.get(zoneId).values()) {
+        for (var endpoint : endpoints.get(zoneId).keySet()) {
             boolean ready = controller.jobController().cloud().ready(endpoint);
             if (!ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);
@@ -477,12 +477,12 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
-        var endpoints = controller.routingController().zoneEndpointsOf(Set.of(new DeploymentId(id, zone)));
+        var endpoints = controller.routing().zoneEndpointsOf(Set.of(new DeploymentId(id, zone)));
         if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
             return false;
         }
-        for (var endpoint : endpoints.get(zone).values())
+        for (var endpoint : endpoints.get(zone).keySet())
             if ( ! controller.jobController().cloud().exists(endpoint)) {
                 logger.log(INFO, "DNS lookup yielded no IP address for '" + endpoint + "'.");
                 return false;
@@ -492,12 +492,12 @@ public class InternalStepRunner implements StepRunner {
         return true;
     }
 
-    private void logEndpoints(Map<ZoneId, Map<ClusterSpec.Id, URI>> endpoints, DualLogger logger) {
+    private void logEndpoints(Map<ZoneId, Map<URI, ClusterSpec.Id>> endpoints, DualLogger logger) {
         List<String> messages = new ArrayList<>();
         messages.add("Found endpoints:");
-        endpoints.forEach((zone, uris) -> {
+        endpoints.forEach((zone, urls) -> {
             messages.add("- " + zone);
-            uris.forEach((cluster, uri) -> messages.add(" |-- " + uri + " (" + cluster + ")"));
+            urls.forEach((url, cluster) -> messages.add(" |-- " + url + " (" + cluster + ")"));
         });
         logger.log(messages);
     }
@@ -550,7 +550,7 @@ public class InternalStepRunner implements StepRunner {
         deployments.add(new DeploymentId(id.application(), zoneId));
 
         logger.log("Attempting to find endpoints ...");
-        var endpoints = controller.routingController().zoneEndpointsOf(deployments);
+        var endpoints = controller.routing().zoneEndpointsOf(deployments);
         if ( ! endpoints.containsKey(zoneId)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);

@@ -12,6 +12,7 @@ import java.util.Map;
  * @author bratseth
  * @author smorgrav
  */
+// TODO(mpolden): Remove
 public interface RoutingGenerator {
 
     /**

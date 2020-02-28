@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -504,7 +503,7 @@ public class JobController {
         } finally {
             // Passing an empty DeploymentSpec here is fine as it's used for registering global endpoint names, and
             // tester instances have none.
-            controller.routingController().policies().refresh(id.id(), DeploymentSpec.empty, zone);
+            controller.routing().policies().refresh(id.id(), DeploymentSpec.empty, zone);
         }
     }
 
@@ -530,12 +529,6 @@ public class JobController {
                                     .map(type -> last(id, type))
                                     .flatMap(Optional::stream)
                                     .collect(toList()));
-    }
-
-    /** Returns the tester endpoint URL, if any */
-    Optional<URI> testerEndpoint(RunId id) {
-        var testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        return controller.routingController().zoneEndpointsOf(testerId).values().stream().findFirst();
     }
 
     private void prunePackages(TenantAndApplicationId id) {
