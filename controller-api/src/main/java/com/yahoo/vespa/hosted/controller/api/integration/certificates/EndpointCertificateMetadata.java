@@ -16,16 +16,13 @@ public class EndpointCertificateMetadata {
     private final String keyName;
     private final String certName;
     private final int version;
+    // TODO: make these fields required once all certs have them stored
     private final Optional<String> request_id;
     private final Optional<List<String>> requestedDnsSans;
     private final Optional<String> issuer;
 
     public EndpointCertificateMetadata(String keyName, String certName, int version) {
         this(keyName, certName, version, Optional.empty(), Optional.empty(), Optional.empty());
-    }
-
-    public EndpointCertificateMetadata(String keyName, String certName, int version, String request_id, List<String> requestedDnsSans) {
-        this(keyName, certName, version, Optional.of(request_id), Optional.of(requestedDnsSans), Optional.empty());
     }
 
     public EndpointCertificateMetadata(String keyName, String certName, int version, Optional<String> request_id, Optional<List<String>> requestedDnsSans, Optional<String> issuer) {
@@ -59,6 +56,17 @@ public class EndpointCertificateMetadata {
 
     public Optional<String> issuer() {
         return issuer;
+    }
+
+    public EndpointCertificateMetadata withVersion(int version) {
+        return new EndpointCertificateMetadata(
+                this.keyName,
+                this.certName,
+                version,
+                this.request_id,
+                this.requestedDnsSans,
+                this.issuer
+        );
     }
 
     @Override
