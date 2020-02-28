@@ -191,7 +191,11 @@ public class DeploymentContext {
 
     /** Defer provisioning of load balancers in zones in given environment */
     public DeploymentContext deferLoadBalancerProvisioningIn(Environment... environment) {
-        configServer().deferLoadBalancerProvisioningIn(Set.of(environment));
+        return deferLoadBalancerProvisioningIn(Set.of(environment));
+    }
+
+    public DeploymentContext deferLoadBalancerProvisioningIn(Set<Environment> environments) {
+        configServer().deferLoadBalancerProvisioningIn(environments);
         return this;
     }
 

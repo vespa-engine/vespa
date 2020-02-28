@@ -71,19 +71,21 @@ public class RoutingController {
     /** Returns zone-scoped endpoints for given deployment */
     public EndpointList endpointsOf(DeploymentId deployment) {
         var endpoints = new LinkedHashSet<Endpoint>();
+        // TODO(mpolden): Remove this once all applications have deployed once and config server passes correct cluster
+        //                id for combined cluster type
+        controller.serviceRegistry().routingGenerator().clusterEndpoints(deployment)
+                  .forEach((cluster, url) -> endpoints.add(Endpoint.of(deployment.applicationId())
+                                                                   .target(cluster, deployment.zoneId())
+                                                                   .routingMethod(RoutingMethod.shared)
+                                                                   .on(Port.fromRoutingMethod(RoutingMethod.shared))
+                                                                   .in(controller.system())));
+        boolean hasSharedEndpoint = !endpoints.isEmpty();
         for (var policy : routingPolicies.get(deployment).values()) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
+                if (hasSharedEndpoint && routingMethod == RoutingMethod.shared) continue;
                 endpoints.add(policy.endpointIn(controller.system(), routingMethod));
             }
-        }
-        if (endpoints.isEmpty()) { // TODO(mpolden): Remove this once all applications have deployed once
-            controller.serviceRegistry().routingGenerator().clusterEndpoints(deployment)
-                      .forEach((cluster, url) -> endpoints.add(Endpoint.of(deployment.applicationId())
-                                                                       .target(cluster, deployment.zoneId())
-                                                                       .routingMethod(RoutingMethod.shared)
-                                                                       .on(Port.fromRoutingMethod(RoutingMethod.shared))
-                                                                       .in(controller.system())));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -93,6 +95,9 @@ public class RoutingController {
         return endpointsOf(controller.applications().requireInstance(instance));
     }
 
+    /** Returns global-scoped endpoints for given instance */
+    // TODO(mpolden): Add a endpointsOf(Instance, DeploymentId) variant of this that only returns global endpoint of
+    //                which deployment is a member
     public EndpointList endpointsOf(Instance instance) {
         var endpoints = new LinkedHashSet<Endpoint>();
         // Add global endpoints provided by rotations
@@ -193,7 +198,7 @@ public class RoutingController {
             // Register names in DNS
             var rotation = rotationRepository.getRotation(assignedRotation.rotationId());
             if (rotation.isPresent()) {
-                endpoints.asList().forEach(endpoint -> {
+                endpoints.forEach(endpoint -> {
                     controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
                                                                   RecordData.fqdn(rotation.get().name()),
                                                                   Priority.normal);
@@ -210,11 +215,11 @@ public class RoutingController {
 
     /** Remove endpoints in DNS for all rotations assigned to given instance */
     public void removeEndpointsInDns(Instance instance) {
-        endpointsOf(instance.id()).requiresRotation()
-                                  .forEach(endpoint -> controller.nameServiceForwarder()
-                                                                 .removeRecords(Record.Type.CNAME,
-                                                                                RecordName.from(endpoint.dnsName()),
-                                                                                Priority.normal));
+        endpointsOf(instance).requiresRotation()
+                             .forEach(endpoint -> controller.nameServiceForwarder()
+                                                            .removeRecords(Record.Type.CNAME,
+                                                                           RecordName.from(endpoint.dnsName()),
+                                                                           Priority.normal));
     }
 
     /** Returns all routing methods supported by this system */
