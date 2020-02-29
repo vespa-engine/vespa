@@ -46,7 +46,7 @@ public class ApplicationInstanceGenerator {
 
     // This is cheating a bit, but we don't expect DuperModel's config server application ID to be different.
     // We do this to avoid passing through the ID through multiple levels.
-    private static ApplicationId configServerApplicationId = new ConfigServerApplication().getApplicationId();
+    private static final ApplicationId configServerApplicationId = new ConfigServerApplication().getApplicationId();
 
     public ApplicationInstanceGenerator(ApplicationInfo applicationInfo, Zone zone) {
         this.applicationInfo = applicationInfo;
