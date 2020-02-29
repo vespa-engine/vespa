@@ -50,28 +50,32 @@ abstract class SimpleParser extends StructuredParser {
     private Item anyItemsBody(boolean topLevel) {
         Item topLevelItem = null;
         NotItem not = null;
-        Item item = null;
+        Item item;
 
         do {
-            item = positiveItem();
-            if (item != null) {
-                if (not == null) {
-                    not = new NotItem();
-                    not.addPositiveItem(item);
-                    topLevelItem = combineItems(topLevelItem, not);
-                } else {
-                    not.addPositiveItem(item);
+            item = null;
+
+            if (item == null) {
+                item = positiveItem();
+                if (item != null) {
+                    if (not == null) {
+                        not = new NotItem();
+                        not.addPositiveItem(item);
+                        topLevelItem = combineItems(topLevelItem, not);
+                    } else {
+                        not.addPositiveItem(item);
+                    }
                 }
             }
 
             if (item == null) {
                 item = negativeItem();
                 if (item != null) {
-                    if (not == null) {
+                    if (not == null && item != null) {
                         not = new NotItem();
                         not.addNegativeItem(item);
                         topLevelItem = combineItems(topLevelItem, not);
-                    } else {
+                    } else if (item != null) {
                         not.addNegativeItem(item);
                     }
                 }
@@ -93,8 +97,9 @@ abstract class SimpleParser extends StructuredParser {
                 if (item != null) {
                     if (topLevelItem == null) {
                         topLevelItem = item;
-                    } else if (needNewORTopLevel(topLevelItem, item)) {
+                    } else if (needNewTopLevel(topLevelItem, item)) {
                         CompositeItem newTop = new OrItem();
+
                         newTop.addItem(topLevelItem);
                         newTop.addItem(item);
                         topLevelItem = newTop;
@@ -126,7 +131,6 @@ abstract class SimpleParser extends StructuredParser {
 
             if (topLevelItem != null && topLevelItem != not) {
                 // => neutral rank items becomes implicit positives
-                System.out.println("Extracting positive item from " + topLevelItem);
                 not.addPositiveItem(getItemAsPositiveItem(topLevelItem, not));
                 return not;
             } else { // Only negatives - ignore them
@@ -140,13 +144,21 @@ abstract class SimpleParser extends StructuredParser {
         }
     }
 
-    /** Says whether we need a new top level OR item given the new item */
-    private boolean needNewORTopLevel(Item topLevelItem, Item item) {
-        if (item == null) return false;
-        if (topLevelItem instanceof TermItem) return true;
-        if (topLevelItem instanceof PhraseItem) return true;
-        if (topLevelItem instanceof BlockItem) return true;
-        if ( topLevelItem instanceof AndItem) return true;
+
+    /** Says whether we need a new top level item given the new item */
+    private boolean needNewTopLevel(Item topLevelItem, Item item) {
+        if (item == null) {
+            return false;
+        }
+        if (topLevelItem instanceof TermItem) {
+            return true;
+        }
+        if (topLevelItem instanceof PhraseItem) {
+            return true;
+        }
+        if (topLevelItem instanceof BlockItem) {
+            return true;
+        }
         return false;
     }
 

@@ -16,7 +16,6 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
-import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.IndexedItem;
@@ -942,12 +941,12 @@ public class QueryTestCase {
     @Test
     public void testImplicitPhraseIsDefault() {
         Query query = new Query(httpEncode("?query=it's fine"));
-        assertEquals("AND (SAND it s) fine", query.getModel().getQueryTree().toString());
+        assertEquals("AND 'it s' fine", query.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testImplicitPhrase() {
-        Query query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:a-b myfield:c"));
 
         SearchDefinition test = new SearchDefinition("test");
         Index myField = new Index("myfield");
@@ -962,7 +961,7 @@ public class QueryTestCase {
 
     @Test
     public void testImplicitAnd() {
-        Query query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:a-b myfield:c"));
 
         SearchDefinition test = new SearchDefinition("test");
         Index myField = new Index("myfield");
@@ -973,56 +972,6 @@ public class QueryTestCase {
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
         assertEquals("AND (SAND myfield:it myfield:s) myfield:a myfield:b myfield:c", query.getModel().getQueryTree().toString());
-        // 'it' and 's' should have connectivity 1
-        AndItem root = (AndItem)query.getModel().getQueryTree().getRoot();
-        AndSegmentItem sand = (AndSegmentItem)root.getItem(0);
-        WordItem it = (WordItem)sand.getItem(0);
-        assertEquals("it", it.getWord());
-        WordItem s = (WordItem)sand.getItem(1);
-        assertEquals("s", s.getWord());
-        assertEquals(s, it.getConnectedItem());
-        assertEquals(1.0, it.getConnectivity(), 0.00000001);
-    }
-
-    @Test
-    public void testImplicitAndConnectivity() {
-        SearchDefinition test = new SearchDefinition("test");
-        Index myField = new Index("myfield");
-        myField.addCommand("phrase-segmenting false");
-        test.addIndex(myField);
-        IndexModel indexModel = new IndexModel(test);
-
-        {
-            Query query = new Query(httpEncode("?query=myfield:b.c.d"));
-            query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-            assertEquals("AND myfield:b myfield:c myfield:d", query.getModel().getQueryTree().toString());
-            AndItem root = (AndItem) query.getModel().getQueryTree().getRoot();
-            WordItem b = (WordItem) root.getItem(0);
-            WordItem c = (WordItem) root.getItem(1);
-            WordItem d = (WordItem) root.getItem(2);
-            assertEquals(c, b.getConnectedItem());
-            assertEquals(1.0, b.getConnectivity(), 0.00000001);
-            assertEquals(d, c.getConnectedItem());
-            assertEquals(1.0, c.getConnectivity(), 0.00000001);
-        }
-
-        {
-            Query query = new Query(httpEncode("?query=myfield:a myfield:b.c.d myfield:e"));
-            query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-            assertEquals("AND myfield:a myfield:b myfield:c myfield:d myfield:e", query.getModel().getQueryTree().toString());
-            AndItem root = (AndItem) query.getModel().getQueryTree().getRoot();
-            WordItem a = (WordItem) root.getItem(0);
-            WordItem b = (WordItem) root.getItem(1);
-            WordItem c = (WordItem) root.getItem(2);
-            WordItem d = (WordItem) root.getItem(3);
-            WordItem e = (WordItem) root.getItem(4);
-            assertNull(a.getConnectedItem());
-            assertEquals(c, b.getConnectedItem());
-            assertEquals(1.0, b.getConnectivity(), 0.00000001);
-            assertEquals(d, c.getConnectedItem());
-            assertEquals(1.0, c.getConnectivity(), 0.00000001);
-            assertNull(d.getConnectedItem());
-        }
     }
 
     @Test
