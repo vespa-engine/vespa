@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -143,6 +144,31 @@ public abstract class ControllerHttpClient {
         return toDeploymentLog(send(request(HttpRequest.newBuilder(runPath(id, zone, run, after))
                                                        .timeout(Duration.ofSeconds(10)),
                                             GET)));
+    }
+
+    /** Follows the given deployment job until it is done, or this thread is interrupted, at which point the current status is returned. */
+    public DeploymentLog followDeploymentUntilDone(ApplicationId id, ZoneId zone, long run,
+                                                   Consumer<DeploymentLog.Entry> out) {
+        long last = -1;
+        DeploymentLog log;
+        while (true) {
+            log = deploymentLog(id, zone, run, last);
+            for (DeploymentLog.Entry entry : log.entries())
+                out.accept(entry);
+            last = log.last().orElse(last);
+
+            if ( ! log.isActive())
+                break;
+
+            try {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        return log;
     }
 
     /** Returns the sorted list of log entries from the deployment job of the given ids. */
