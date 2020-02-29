@@ -45,36 +45,34 @@ public class ServiceModelProvider implements ServiceMonitor {
     @Override
     public ServiceModel getServiceModelSnapshot() {
         try (LatencyMeasurement measurement = metrics.startServiceModelSnapshotLatencyMeasurement()) {
-            return modelGenerator.toServiceModel(applicationInfos(), serviceStatusProvider);
+            return modelGenerator.toServiceModel(duperModelManager.getApplicationInfos(), serviceStatusProvider);
         }
     }
 
     @Override
     public Set<ApplicationInstanceReference> getAllApplicationInstanceReferences() {
-        return modelGenerator.toApplicationInstanceReferenceSet(applicationInfos());
+        return modelGenerator.toApplicationInstanceReferenceSet(duperModelManager.getApplicationInfos());
     }
 
     @Override
     public Optional<ApplicationInstance> getApplication(HostName hostname) {
-        Optional<ApplicationInfo> applicationInfo =
-                duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname));
+        Optional<ApplicationInfo> applicationInfo = getApplicationInfo(hostname);
         if (applicationInfo.isEmpty()) {
             return Optional.empty();
         }
 
-        return Optional.of(modelGenerator.toApplication(applicationInfo.get(), serviceStatusProvider));
+        return Optional.of(modelGenerator.toApplicationInstance(applicationInfo.get(), serviceStatusProvider));
     }
 
     @Override
     public Optional<ApplicationInstance> getApplication(ApplicationInstanceReference reference) {
         return getApplicationInfo(reference)
-                .map(applicationInfo -> modelGenerator.toApplication(applicationInfo, serviceStatusProvider));
+                .map(applicationInfo -> modelGenerator.toApplicationInstance(applicationInfo, serviceStatusProvider));
     }
 
     @Override
     public Optional<ApplicationInstance> getApplicationNarrowedTo(HostName hostname) {
-        Optional<ApplicationInfo> applicationInfo =
-                duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname));
+        Optional<ApplicationInfo> applicationInfo = getApplicationInfo(hostname);
         if (applicationInfo.isEmpty()) {
             return Optional.empty();
         }
@@ -93,12 +91,9 @@ public class ServiceModelProvider implements ServiceMonitor {
         return duperModelManager.getApplicationInfo(applicationId);
     }
 
-    private List<ApplicationInfo> applicationInfos() {
-        return duperModelManager.getApplicationInfos();
-    }
-
-    /** The duper model uses HostName from config.provision, which is more natural than applicationmodel. */
-    private com.yahoo.config.provision.HostName toConfigProvisionHostName(HostName hostname) {
-        return com.yahoo.config.provision.HostName.from(hostname.s());
+    private Optional<ApplicationInfo> getApplicationInfo(HostName hostname) {
+        // The duper model uses HostName from config.provision, which is more natural than applicationmodel.
+        var configProvisionHostname = com.yahoo.config.provision.HostName.from(hostname.s());
+        return duperModelManager.getApplicationInfo(configProvisionHostname);
     }
 }

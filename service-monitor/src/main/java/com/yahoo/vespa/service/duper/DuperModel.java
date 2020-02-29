@@ -37,7 +37,15 @@ public class DuperModel {
         listeners.add(listener);
     }
 
-    void setComplete() { this.isComplete = true; }
+    void setComplete() {
+        if (!isComplete) {
+            logger.log(LogLevel.INFO, "Bootstrap done - duper model is complete");
+            isComplete = true;
+
+            listeners.forEach(DuperModelListener::bootstrapComplete);
+        }
+    }
+
     public boolean isComplete() { return isComplete; }
 
     public int numberOfApplications() {
@@ -75,7 +83,7 @@ public class DuperModel {
         }
         logger.log(LogLevel.INFO, logPrefix + applicationInfo.getApplicationId());
 
-        Set<HostName> oldHostnames = hostnamesById.get(applicationInfo.getApplicationId());
+        Set<HostName> oldHostnames = hostnamesById.remove(applicationInfo.getApplicationId());
         if (oldHostnames != null) {
             oldHostnames.forEach(applicationsByHostname::remove);
         }
@@ -98,8 +106,7 @@ public class DuperModel {
         }
 
         ApplicationInfo application = applicationsById.remove(applicationId);
-
-        if (application != null || hostnames != null) {
+        if (application != null) {
             logger.log(LogLevel.INFO, "Removed application " + applicationId);
             listeners.forEach(listener -> listener.applicationRemoved(applicationId));
         }

@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
  */
 public class ModelGenerator {
     public static final String CLUSTER_ID_PROPERTY_NAME = "clustername";
+
     private final Zone zone;
 
     public ModelGenerator(Zone zone) {
@@ -48,12 +49,17 @@ public class ModelGenerator {
                 .collect(Collectors.toSet());
     }
 
-    public ApplicationInstance toApplication(ApplicationInfo applicationInfo,
-                                             ServiceStatusProvider serviceStatusProvider) {
+    public ApplicationInstance toApplicationInstance(ApplicationInfo applicationInfo,
+                                                     ServiceStatusProvider serviceStatusProvider) {
         var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
         return generator.makeApplicationInstance(serviceStatusProvider);
     }
 
+    /**
+     * Make an application instance that contains all services and clusters present on the host,
+     * but lacking other services and hosts. This is an optimization over
+     * {@link #toApplicationInstance(ApplicationInfo, ServiceStatusProvider)}.
+     */
     public ApplicationInstance toApplicationNarrowedToHost(ApplicationInfo applicationInfo,
                                                            HostName hostname,
                                                            ServiceStatusProvider serviceStatusProvider) {

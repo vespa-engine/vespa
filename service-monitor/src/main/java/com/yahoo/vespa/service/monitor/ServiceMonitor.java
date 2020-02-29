@@ -22,7 +22,8 @@ public interface ServiceMonitor {
     /**
      * Returns a ServiceModel which contains the current liveness status (up, down or unknown) of all instances
      * of all services of all clusters of all applications in a zone.
-     * Deprecated: Please use the more specific methods below.
+     *
+     * <p>Please use the more specific methods below to avoid the cost of this method.</p>
      */
     ServiceModel getServiceModelSnapshot();
 
@@ -39,7 +40,7 @@ public interface ServiceMonitor {
     }
 
     default Optional<ApplicationInstance> getApplicationNarrowedTo(HostName hostname) {
-        return Optional.ofNullable(getServiceModelSnapshot().getApplicationsByHostName().get(hostname));
+        return getApplication(hostname);
     }
 
     default Map<HostName, List<ServiceInstance>> getServicesByHostname() {

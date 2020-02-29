@@ -16,8 +16,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -60,11 +58,11 @@ public class DuperModelTest {
     }
 
     @Test
-    public void test() {
+    public void testListeners() {
         assertEquals(0, duperModel.numberOfApplications());
 
         duperModel.add(application1);
-        assertTrue(duperModel.contains(id1));
+        assertEquals(Optional.of(application1), duperModel.getApplicationInfo(id1));
         assertEquals(Arrays.asList(application1), duperModel.getApplicationInfos());
         assertEquals(1, duperModel.numberOfApplications());
 
@@ -82,7 +80,7 @@ public class DuperModelTest {
         verifyNoMoreInteractions(listener1);
 
         duperModel.remove(id1);
-        assertFalse(duperModel.contains(id1));
+        assertEquals(Optional.empty(), duperModel.getApplicationInfo(id1));
         verify(listener1, times(1)).applicationRemoved(id1);
         verifyNoMoreInteractions(listener1);
         assertEquals(Arrays.asList(application2), duperModel.getApplicationInfos());

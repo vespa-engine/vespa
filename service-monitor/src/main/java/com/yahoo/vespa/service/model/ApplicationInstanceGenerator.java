@@ -57,14 +57,6 @@ public class ApplicationInstanceGenerator {
         return makeApplicationInstanceLimitedToHosts(serviceStatusProvider, hostname -> true);
     }
 
-    public static ServiceId getServiceId(ApplicationInfo applicationInfo, ServiceInfo serviceInfo) {
-        return new ServiceId(
-                applicationInfo.getApplicationId(),
-                getClusterId(serviceInfo),
-                toServiceType(serviceInfo),
-                toConfigId(serviceInfo));
-    }
-
     public ApplicationInstanceReference toApplicationInstanceReference() {
         TenantId tenantId = new TenantId(applicationInfo.getApplicationId().tenant().toString());
         ApplicationInstanceId applicationInstanceId = toApplicationInstanceId(applicationInfo.getApplicationId(), zone);
@@ -105,25 +97,6 @@ public class ApplicationInstanceGenerator {
         return ApplicationId.from(TenantName.from(appNameParts[0]),
                 ApplicationName.from(appNameParts[1]),
                 InstanceName.from(appNameParts[4]));
-    }
-
-    private static ApplicationInstanceId toApplicationInstanceId(ApplicationId applicationId, Zone zone) {
-        if (applicationId.equals(configServerApplicationId)) {
-            // Removing this historical discrepancy would break orchestration during rollout.
-            // An alternative may be to use a feature flag and flip it between releases,
-            // once that's available.
-            return new ApplicationInstanceId(applicationId.application().value());
-        } else {
-            return new ApplicationInstanceId(String.format("%s:%s:%s:%s",
-                    applicationId.application().value(),
-                    zone.environment().value(),
-                    zone.region().value(),
-                    applicationId.instance().value()));
-        }
-    }
-
-    private static ClusterId getClusterId(ServiceInfo serviceInfo) {
-        return new ClusterId(serviceInfo.getProperty(CLUSTER_ID_PROPERTY_NAME).orElse(""));
     }
 
     private ApplicationInstance makeApplicationInstanceLimitedToHosts(ServiceStatusProvider serviceStatusProvider,
@@ -185,6 +158,33 @@ public class ApplicationInstanceGenerator {
         ServiceStatusInfo status = serviceStatusProvider.getStatus(applicationId, clusterId, serviceType, configId);
 
         return new ServiceInstance(configId, hostName, status);
+    }
+
+    private static ApplicationInstanceId toApplicationInstanceId(ApplicationId applicationId, Zone zone) {
+        if (applicationId.equals(configServerApplicationId)) {
+            // Removing this historical discrepancy would break orchestration during rollout.
+            // An alternative may be to use a feature flag and flip it between releases,
+            // once that's available.
+            return new ApplicationInstanceId(applicationId.application().value());
+        } else {
+            return new ApplicationInstanceId(String.format("%s:%s:%s:%s",
+                    applicationId.application().value(),
+                    zone.environment().value(),
+                    zone.region().value(),
+                    applicationId.instance().value()));
+        }
+    }
+
+    public static ServiceId getServiceId(ApplicationInfo applicationInfo, ServiceInfo serviceInfo) {
+        return new ServiceId(
+                applicationInfo.getApplicationId(),
+                getClusterId(serviceInfo),
+                toServiceType(serviceInfo),
+                toConfigId(serviceInfo));
+    }
+
+    private static ClusterId getClusterId(ServiceInfo serviceInfo) {
+        return new ClusterId(serviceInfo.getProperty(CLUSTER_ID_PROPERTY_NAME).orElse(""));
     }
 
     private static ServiceClusterKey toServiceClusterKey(ServiceInfo serviceInfo) {
