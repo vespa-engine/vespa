@@ -10,12 +10,12 @@ import com.yahoo.vespa.service.monitor.DuperModelListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * A non-thread-safe mutable container of ApplicationInfo, also taking care of listeners on changes.
@@ -26,7 +26,7 @@ public class DuperModel {
     private static Logger logger = Logger.getLogger(DuperModel.class.getName());
 
     private final Map<ApplicationId, ApplicationInfo> applicationsById = new HashMap<>();
-    private final Map<HostName, ApplicationInfo> applicationsByHostname = new HashMap<>();
+    private final Map<HostName, ApplicationId> idsByHostname = new HashMap<>();
     private final Map<ApplicationId, Set<HostName>> hostnamesById = new HashMap<>();
 
     private final List<DuperModelListener> listeners = new ArrayList<>();
@@ -53,7 +53,7 @@ public class DuperModel {
     }
 
     public int numberOfHosts() {
-        return applicationsByHostname.size();
+        return idsByHostname.size();
     }
 
     public boolean contains(ApplicationId applicationId) {
@@ -65,7 +65,7 @@ public class DuperModel {
     }
 
     public Optional<ApplicationInfo> getApplicationInfo(HostName hostName) {
-        return Optional.ofNullable(applicationsByHostname.get(hostName));
+        return Optional.ofNullable(idsByHostname.get(hostName)).map(applicationsById::get);
     }
 
     public List<ApplicationInfo> getApplicationInfos() {
@@ -73,7 +73,8 @@ public class DuperModel {
     }
 
     public void add(ApplicationInfo applicationInfo) {
-        ApplicationInfo oldApplicationInfo = applicationsById.put(applicationInfo.getApplicationId(), applicationInfo);
+        ApplicationId id = applicationInfo.getApplicationId();
+        ApplicationInfo oldApplicationInfo = applicationsById.put(id, applicationInfo);
 
         final String logPrefix;
         if (oldApplicationInfo == null) {
@@ -81,20 +82,35 @@ public class DuperModel {
         } else {
             logPrefix = isComplete ? "Reactivated application " : "Rebootstrapped application ";
         }
-        logger.log(LogLevel.INFO, logPrefix + applicationInfo.getApplicationId());
+        logger.log(LogLevel.INFO, logPrefix + id);
 
-        Set<HostName> oldHostnames = hostnamesById.remove(applicationInfo.getApplicationId());
-        if (oldHostnames != null) {
-            oldHostnames.forEach(applicationsByHostname::remove);
-        }
+        Set<HostName> hostnames = hostnamesById.computeIfAbsent(id, k -> new HashSet<>());
+        Set<HostName> removedHosts = new HashSet<>(hostnames);
 
-        Set<HostName> hostnames = applicationInfo.getModel().getHosts().stream()
+        applicationInfo.getModel().getHosts().stream()
                 .map(HostInfo::getHostname)
                 .map(HostName::from)
-                .collect(Collectors.toSet());
+                .forEach(hostname -> {
+                    if (!removedHosts.remove(hostname)) {
+                        hostnames.add(hostname);
+                        ApplicationId previousId = idsByHostname.put(hostname, id);
 
-        hostnamesById.put(applicationInfo.getApplicationId(), hostnames);
-        hostnames.forEach(hostname -> applicationsByHostname.put(hostname, applicationInfo));
+                        if (previousId != null && !previousId.equals(id)) {
+                            // If an activation contains a host that is currently assigned to a
+                            // different application we will patch up our data structures to remain
+                            // internally consistent. But listeners may be fooled.
+                            logger.log(LogLevel.WARNING, hostname + " has been reassigned from " +
+                                    previousId + " to " + id);
+
+                            Set<HostName> previousHostnames = hostnamesById.get(id);
+                            if (previousHostnames != null) {
+                                previousHostnames.remove(hostname);
+                            }
+                        }
+                    }
+                });
+
+        removedHosts.forEach(idsByHostname::remove);
 
         listeners.forEach(listener -> listener.applicationActivated(applicationInfo));
     }
@@ -102,7 +118,7 @@ public class DuperModel {
     public void remove(ApplicationId applicationId) {
         Set<HostName> hostnames = hostnamesById.remove(applicationId);
         if (hostnames != null) {
-            hostnames.forEach(applicationsByHostname::remove);
+            hostnames.forEach(idsByHostname::remove);
         }
 
         ApplicationInfo application = applicationsById.remove(applicationId);
