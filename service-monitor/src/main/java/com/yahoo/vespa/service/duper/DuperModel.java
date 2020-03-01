@@ -102,7 +102,7 @@ public class DuperModel {
                             logger.log(LogLevel.WARNING, hostname + " has been reassigned from " +
                                     previousId + " to " + id);
 
-                            Set<HostName> previousHostnames = hostnamesById.get(id);
+                            Set<HostName> previousHostnames = hostnamesById.get(previousId);
                             if (previousHostnames != null) {
                                 previousHostnames.remove(hostname);
                             }
