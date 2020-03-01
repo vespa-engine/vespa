@@ -30,6 +30,7 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.service.model.ServiceModelCache;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import org.junit.Before;
 import org.junit.Test;
@@ -416,7 +417,7 @@ public class OrchestratorImplTest {
                                                ServiceStatus.NOT_CHECKED)))));
 
         InstanceLookupService lookupService = new ServiceMonitorInstanceLookupService(
-                () -> new ServiceModel(Map.of(reference, applicationInstance)));
+                new ServiceModelCache(() -> new ServiceModel(Map.of(reference, applicationInstance)), new TestTimer()));
 
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory),
                                             clusterControllerClientFactory,

@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import org.junit.Test;
 
@@ -97,9 +96,7 @@ public class MetricsReporterTest {
         when(orchestrator.getHostResolver()).thenReturn(hostName ->
             Optional.of(HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)))
         );
-        ServiceModel serviceModel = mock(ServiceModel.class);
-        when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
-        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
+        when(serviceMonitor.getServicesByHostname()).thenReturn(Map.of());
 
         TestMetric metric = new TestMetric();
         MetricsReporter metricsReporter = new MetricsReporter(
@@ -146,9 +143,7 @@ public class MetricsReporterTest {
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
         when(orchestrator.getHostResolver()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
-        ServiceModel serviceModel = mock(ServiceModel.class);
-        when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
-        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
+        when(serviceMonitor.getServicesByHostname()).thenReturn(Map.of());
 
         TestMetric metric = new TestMetric();
         ManualClock clock = new ManualClock();

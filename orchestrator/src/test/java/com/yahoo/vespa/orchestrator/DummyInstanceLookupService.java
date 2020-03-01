@@ -154,6 +154,11 @@ public class DummyInstanceLookupService implements InstanceLookupService {
 
     }
 
+    @Override
+    public Optional<ApplicationInstance> findInstancePossiblyNarrowedToHost(HostName hostname) {
+        return findInstanceByHost(hostname);
+    }
+
     public static Set<HostName> getContentHosts(ApplicationInstanceReference appRef) {
         Set<HostName> hosts = apps.stream()
                 .filter(application -> application.reference().equals(appRef))

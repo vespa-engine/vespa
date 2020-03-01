@@ -2,14 +2,19 @@
 package com.yahoo.vespa.service.duper;
 
 import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -20,37 +25,106 @@ import java.util.logging.Logger;
 public class DuperModel {
     private static Logger logger = Logger.getLogger(DuperModel.class.getName());
 
-    private final Map<ApplicationId, ApplicationInfo> applications = new TreeMap<>();
+    private final Map<ApplicationId, ApplicationInfo> applicationsById = new HashMap<>();
+    private final Map<HostName, ApplicationId> idsByHostname = new HashMap<>();
+    private final Map<ApplicationId, Set<HostName>> hostnamesById = new HashMap<>();
+
     private final List<DuperModelListener> listeners = new ArrayList<>();
     private boolean isComplete = false;
 
     public void registerListener(DuperModelListener listener) {
-        applications.values().forEach(listener::applicationActivated);
+        applicationsById.values().forEach(listener::applicationActivated);
         listeners.add(listener);
     }
 
-    public void setCompleteness(boolean isComplete) { this.isComplete = isComplete; }
+    void setComplete() {
+        if (!isComplete) {
+            logger.log(LogLevel.INFO, "Bootstrap done - duper model is complete");
+            isComplete = true;
+
+            listeners.forEach(DuperModelListener::bootstrapComplete);
+        }
+    }
+
     public boolean isComplete() { return isComplete; }
 
+    public int numberOfApplications() {
+        return applicationsById.size();
+    }
+
+    public int numberOfHosts() {
+        return idsByHostname.size();
+    }
+
     public boolean contains(ApplicationId applicationId) {
-        return applications.containsKey(applicationId);
+        return applicationsById.containsKey(applicationId);
+    }
+
+    public Optional<ApplicationInfo> getApplicationInfo(ApplicationId applicationId) {
+        return Optional.ofNullable(applicationsById.get(applicationId));
+    }
+
+    public Optional<ApplicationInfo> getApplicationInfo(HostName hostName) {
+        return Optional.ofNullable(idsByHostname.get(hostName)).map(applicationsById::get);
+    }
+
+    public List<ApplicationInfo> getApplicationInfos() {
+        return List.copyOf(applicationsById.values());
     }
 
     public void add(ApplicationInfo applicationInfo) {
-        applications.put(applicationInfo.getApplicationId(), applicationInfo);
-        logger.log(LogLevel.DEBUG, "Added " + applicationInfo.getApplicationId());
+        ApplicationId id = applicationInfo.getApplicationId();
+        ApplicationInfo oldApplicationInfo = applicationsById.put(id, applicationInfo);
+
+        final String logPrefix;
+        if (oldApplicationInfo == null) {
+            logPrefix = isComplete ? "New application " : "Bootstrapped application ";
+        } else {
+            logPrefix = isComplete ? "Reactivated application " : "Rebootstrapped application ";
+        }
+        logger.log(LogLevel.INFO, logPrefix + id);
+
+        Set<HostName> hostnames = hostnamesById.computeIfAbsent(id, k -> new HashSet<>());
+        Set<HostName> removedHosts = new HashSet<>(hostnames);
+
+        applicationInfo.getModel().getHosts().stream()
+                .map(HostInfo::getHostname)
+                .map(HostName::from)
+                .forEach(hostname -> {
+                    if (!removedHosts.remove(hostname)) {
+                        hostnames.add(hostname);
+                        ApplicationId previousId = idsByHostname.put(hostname, id);
+
+                        if (previousId != null && !previousId.equals(id)) {
+                            // If an activation contains a host that is currently assigned to a
+                            // different application we will patch up our data structures to remain
+                            // internally consistent. But listeners may be fooled.
+                            logger.log(LogLevel.WARNING, hostname + " has been reassigned from " +
+                                    previousId + " to " + id);
+
+                            Set<HostName> previousHostnames = hostnamesById.get(previousId);
+                            if (previousHostnames != null) {
+                                previousHostnames.remove(hostname);
+                            }
+                        }
+                    }
+                });
+
+        removedHosts.forEach(idsByHostname::remove);
+
         listeners.forEach(listener -> listener.applicationActivated(applicationInfo));
     }
 
     public void remove(ApplicationId applicationId) {
-        if (applications.remove(applicationId) != null) {
-            logger.log(LogLevel.DEBUG, "Removed " + applicationId);
+        Set<HostName> hostnames = hostnamesById.remove(applicationId);
+        if (hostnames != null) {
+            hostnames.forEach(idsByHostname::remove);
+        }
+
+        ApplicationInfo application = applicationsById.remove(applicationId);
+        if (application != null) {
+            logger.log(LogLevel.INFO, "Removed application " + applicationId);
             listeners.forEach(listener -> listener.applicationRemoved(applicationId));
         }
-    }
-
-    public List<ApplicationInfo> getApplicationInfos() {
-        logger.log(LogLevel.DEBUG, "Applications in duper model: " + applications.values().size());
-        return List.copyOf(applications.values());
     }
 }

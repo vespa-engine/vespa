@@ -7,11 +7,8 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Uses slobrok data (a.k.a. heartbeat) to implement {@link InstanceLookupService}.
@@ -29,17 +26,21 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
 
     @Override
     public Optional<ApplicationInstance> findInstanceById(ApplicationInstanceReference applicationInstanceReference) {
-        return serviceMonitor.getServiceModelSnapshot().getApplicationInstance(applicationInstanceReference);
+        return serviceMonitor.getApplication(applicationInstanceReference);
     }
 
     @Override
-    public Optional<ApplicationInstance> findInstanceByHost(HostName hostName) {
-        return Optional.ofNullable(serviceMonitor.getServiceModelSnapshot().getApplicationsByHostName().get(hostName));
+    public Optional<ApplicationInstance> findInstanceByHost(HostName hostname) {
+        return serviceMonitor.getApplication(hostname);
     }
 
     @Override
     public Set<ApplicationInstanceReference> knownInstances() {
-        return serviceMonitor.getServiceModelSnapshot().getAllApplicationInstances().keySet();
+        return serviceMonitor.getAllApplicationInstanceReferences();
     }
 
+    @Override
+    public Optional<ApplicationInstance> findInstancePossiblyNarrowedToHost(HostName hostname) {
+        return serviceMonitor.getApplicationNarrowedTo(hostname);
+    }
 }

@@ -33,7 +33,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -70,8 +69,8 @@ public class InstanceResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<ApplicationInstanceReference> getAllInstances() {
-        return instanceLookupService.knownInstances();
+    public List<ApplicationInstanceReference> getAllInstances() {
+        return instanceLookupService.knownInstances().stream().sorted().collect(Collectors.toList());
     }
 
     @GET

@@ -32,7 +32,9 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.service.model.ServiceModelCache;
 import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
@@ -58,10 +60,12 @@ class ModelTestUtils {
     private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
     private final StatusService statusService = new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
+    private final TestTimer timer = new TestTimer();
+    private final ServiceMonitor serviceMonitor = new ServiceModelCache(() -> new ServiceModel(applications), timer);
     private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory()),
                                                                    clusterControllerClientFactory,
                                                                    statusService,
-                                                                   new ServiceMonitorInstanceLookupService(() -> new ServiceModel(applications)),
+                                                                   new ServiceMonitorInstanceLookupService(serviceMonitor),
                                                                    0,
                                                                    new ManualClock(),
                                                                    applicationApiFactory(),
