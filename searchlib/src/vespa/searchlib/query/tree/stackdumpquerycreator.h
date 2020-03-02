@@ -48,9 +48,6 @@ public:
 private: 
     static Term * createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
         uint32_t arity = queryStack.getArity();
-        uint32_t arg1 = queryStack.getArg1();
-        double arg2 = queryStack.getArg2();
-        double arg3 = queryStack.getArg3();
         ParseItem::ItemType type = queryStack.getType();
         Node::UP node;
         Term *t = 0;
@@ -68,16 +65,19 @@ private:
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEAK_AND) {
             vespalib::stringref view = queryStack.getIndexName();
-            builder.addWeakAnd(arity, arg1, view);
+            uint32_t targetNumHits = queryStack.getTargetNumHits();
+            builder.addWeakAnd(arity, targetNumHits, view);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_EQUIV) {
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             builder.addEquiv(arity, id, weight);
         } else if (type == ParseItem::ITEM_NEAR) {
-            builder.addNear(arity, arg1);
+            uint32_t nearDistance = queryStack.getNearDistance();
+            builder.addNear(arity, nearDistance);
         } else if (type == ParseItem::ITEM_ONEAR) {
-            builder.addONear(arity, arg1);
+            uint32_t nearDistance = queryStack.getNearDistance();
+            builder.addONear(arity, nearDistance);
         } else if (type == ParseItem::ITEM_PHRASE) {
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
@@ -104,18 +104,22 @@ private:
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            t = &builder.addWandTerm(arity, view, id, weight, arg1, arg2, arg3);
+            uint32_t targetNumHits = queryStack.getTargetNumHits();
+            double scoreThreshold = queryStack.getScoreThreshold();
+            double thresholdBoostFactor = queryStack.getThresholdBoostFactor();
+            t = &builder.addWandTerm(arity, view, id, weight,
+                                     targetNumHits, scoreThreshold, thresholdBoostFactor);
             pureTermView = vespalib::stringref();
         } else if (type == ParseItem::ITEM_NOT) {
             builder.addAndNot(arity);
         } else if (type == ParseItem::ITEM_NEAREST_NEIGHBOR) {
             vespalib::stringref query_tensor_name = queryStack.getTerm();
             vespalib::stringref field_name = queryStack.getIndexName();
-            uint32_t target_num_hits = queryStack.getArg1();
+            uint32_t target_num_hits = queryStack.getTargetNumHits();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            uint32_t allow_approximate = (queryStack.getArg2() != 0);
-            uint32_t explore_additional_hits = queryStack.getArg3();
+            uint32_t allow_approximate = queryStack.getAllowApproximate();
+            uint32_t explore_additional_hits = queryStack.getExploreAdditionalHits();
             builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight,
                                               target_num_hits, allow_approximate, explore_additional_hits);
         } else {
