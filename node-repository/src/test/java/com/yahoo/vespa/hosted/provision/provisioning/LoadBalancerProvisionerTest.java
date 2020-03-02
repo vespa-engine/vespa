@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -254,7 +255,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id) {
-        return ClusterSpec.request(type, id, Version.fromString("6.42"), false);
+        return ClusterSpec.request(type, id, Version.fromString("6.42"), false, Optional.empty());
     }
 
     private static <T> T get(Set<T> set, int position) {

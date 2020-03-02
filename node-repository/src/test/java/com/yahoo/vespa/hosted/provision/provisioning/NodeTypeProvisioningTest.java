@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -38,7 +39,7 @@ public class NodeTypeProvisioningTest {
     private final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                                 ClusterSpec.Id.from("test"),
                                                                 Version.fromString("6.42"),
-                                                                false);
+                                                                false, Optional.empty());
 
     @Before
     public void setup() {

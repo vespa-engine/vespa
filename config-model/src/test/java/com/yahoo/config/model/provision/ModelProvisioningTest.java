@@ -264,7 +264,7 @@ public class ModelProvisioningTest {
             assertEquals("Heap size is lowered with combined clusters",
                          17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
             assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
-            assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Type.combined, model);
+            assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
         }
     }
 
@@ -1805,12 +1805,17 @@ public class ModelProvisioningTest {
         assertTrue(logdConfig.logserver().use());
     }
 
-    private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
-        assertEquals("Nodes in cluster " + id + " with type " + type, nodeCount,
+    private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Id combinedId,
+                                          ClusterSpec.Type type, VespaModel model) {
+        assertEquals("Nodes in cluster " + id + " with type " + type + (combinedId != null ? ", combinedId " + combinedId : ""), nodeCount,
                      model.hostSystem().getHosts().stream()
                           .map(h -> h.spec().membership().get().cluster())
-                          .filter(spec -> spec.id().equals(id) && spec.type().equals(type))
+                          .filter(spec -> spec.id().equals(id) && spec.type().equals(type) && spec.combinedId().equals(Optional.ofNullable(combinedId)))
                           .count());
+    }
+
+    private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
+        assertProvisioned(nodeCount, id, null, type, model);
     }
 
 }

@@ -3,9 +3,11 @@ package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
 
+import java.util.Optional;
+
 /**
  * A node's membership in a cluster. This is a value object.
- * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired]"
+ * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired][/combinedId]"
  *
  * @author bratseth
  */
@@ -22,21 +24,24 @@ public class ClusterMembership {
         String[] components = stringValue.split("/");
         if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
-                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive]'");
+                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/combinedId]'");
 
         boolean exclusive = false;
+        var combinedId = Optional.<String>empty();
         if (components.length > 4) {
             for (int i = 4; i < components.length; i++) {
                 String component = components[i];
                 switch (component) {
                     case "exclusive": exclusive = true; break;
                     case "retired": retired = true; break;
+                    default: combinedId = Optional.of(component); break;
                 }
             }
         }
 
         this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
-                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), vespaVersion, exclusive);
+                                        ClusterSpec.Group.from(Integer.parseInt(components[2])), vespaVersion,
+                                        exclusive, combinedId.map(ClusterSpec.Id::from));
         this.index = Integer.parseInt(components[3]);
         this.stringValue = toStringValue();
     }
@@ -54,7 +59,8 @@ public class ClusterMembership {
                (cluster.group().isPresent() ? "/" + cluster.group().get().index() : "") +
                "/" + index +
                ( cluster.isExclusive() ? "/exclusive" : "") +
-               ( retired ? "/retired" : "");
+               ( retired ? "/retired" : "") +
+               ( cluster.combinedId().isPresent() ? "/" + cluster.combinedId().get().value() : "");
 
     }
 

@@ -78,7 +78,8 @@ class AutoscalingTester {
         return ClusterSpec.request(type,
                                    ClusterSpec.Id.from(clusterId),
                                    Version.fromString("7"),
-                                   false);
+                                   false,
+                                   Optional.empty());
     }
 
     public void deploy(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {

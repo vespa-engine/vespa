@@ -5,6 +5,8 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import org.junit.Test;
 
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -16,28 +18,41 @@ public class ClusterMembershipTest {
 
     @Test
     public void testContainerServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false, Optional.empty());
         assertContainerService(ClusterMembership.from(cluster, 3));
     }
 
     @Test
-    public void testContainerInstanceWithOptionalParts() {
+    public void testSerializationWithOptionalParts() {
         {
             ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired", Vtag.currentVersion);
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion);
+            assertEquals(instance, serialized);
             assertTrue(instance.retired());
             assertTrue(instance.cluster().isExclusive());
+            assertFalse(instance.cluster().combinedId().isPresent());
         }
-
         {
             ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive", Vtag.currentVersion);
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion);
+            assertEquals(instance, serialized);
             assertFalse(instance.retired());
             assertTrue(instance.cluster().isExclusive());
+            assertFalse(instance.cluster().combinedId().isPresent());
+        }
+        {
+            ClusterMembership instance = ClusterMembership.from("combined/id1/4/37/exclusive/containerId1", Vtag.currentVersion);
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion);
+            assertEquals(instance, serialized);
+            assertFalse(instance.retired());
+            assertTrue(instance.cluster().isExclusive());
+            assertEquals(ClusterSpec.Id.from("containerId1"), instance.cluster().combinedId().get());
         }
     }
 
     @Test
     public void testServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false, Optional.empty());
         assertContentService(ClusterMembership.from(cluster, 37));
     }
 
@@ -55,7 +70,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstanceWithRetire() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false, Optional.empty());
         assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 

@@ -36,8 +36,8 @@ import static org.junit.Assert.assertNotNull;
 public class VirtualNodeProvisioningTest {
 
     private static final NodeResources flavor = new NodeResources(4, 8, 100, 1);
-    private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false);
-    private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false);
+    private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false, Optional.empty());
+    private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false, Optional.empty());
 
     private ProvisioningTester tester = new ProvisioningTester.Builder().build();
     private ApplicationId applicationId = tester.makeApplicationId();
