@@ -597,7 +597,10 @@ class JobControllerApiHandlerHelper {
                       .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
             stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
             stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
-            stepStatus.blockedUntil(change).ifPresent(until -> stepObject.setLong("blockedUntil", until.toEpochMilli()));
+            stepStatus.blockedUntil(Change.of(controller.systemVersion())) // Dummy version — just anything with a platform.
+                      .ifPresent(until -> stepObject.setLong("platformBlockedUntil", until.toEpochMilli()));
+            application.latestVersion().map(Change::of).flatMap(stepStatus::blockedUntil) // Dummy version — just anything with an application.
+                      .ifPresent(until -> stepObject.setLong("applicationBlockedUntil", until.toEpochMilli()));
 
             if (stepStatus.type() == DeploymentStatus.StepType.instance) {
                 Cursor deployingObject = stepObject.setObject("deploying");
