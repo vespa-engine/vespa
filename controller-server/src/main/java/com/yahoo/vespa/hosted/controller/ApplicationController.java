@@ -775,7 +775,7 @@ public class ApplicationController {
     }
 
     /** Returns the latest known version within the given major. */
-    private Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
+    public Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
         return controller.versionStatus().versions().stream()
                          .map(VespaVersion::versionNumber)
                          .filter(version -> version.getMajor() == targetMajorVersion)
