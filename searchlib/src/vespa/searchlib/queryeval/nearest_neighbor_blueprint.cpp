@@ -13,21 +13,21 @@ namespace search::queryeval {
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                                                    const tensor::DenseTensorAttribute& attr_tensor,
                                                    std::unique_ptr<vespalib::tensor::DenseTensorView> query_tensor,
-                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_k)
+                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits)
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
       _query_tensor(std::move(query_tensor)),
       _target_num_hits(target_num_hits),
       _approximate(approximate),
-      _explore_k(explore_k),
+      _explore_additional_hits(explore_additional_hits),
       _distance_heap(target_num_hits),
       _found_hits()
 {
     uint32_t est_hits = _attr_tensor.getNumDocs();
     if (_attr_tensor.nearest_neighbor_index()) {
         est_hits = std::min(target_num_hits, est_hits);
-        if (_explore_k == 0) {
-            _explore_k = 100;
+        if (_explore_additional_hits == 0) {
+            _explore_additional_hits = 100;
         }
     }
     setEstimate(HitEstimate(est_hits, false));
@@ -46,7 +46,7 @@ NearestNeighborBlueprint::perform_top_k()
         if (lhs_type == rhs_type) {
             auto lhs = _query_tensor->cellsRef();
             uint32_t k = _target_num_hits;
-            _found_hits = nns_index->find_top_k(k, lhs, k + _explore_k);
+            _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits);
         }
     }
 }
@@ -77,6 +77,8 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.visitString("attribute_tensor", _attr_tensor.getTensorType().to_spec());
     visitor.visitString("query_tensor", _query_tensor->type().to_spec());
     visitor.visitInt("target_num_hits", _target_num_hits);
+    visitor.visitBool("approximate", _approximate);
+    visitor.visitInt("explore_additional_hits", _explore_additional_hits);
 }
 
 bool

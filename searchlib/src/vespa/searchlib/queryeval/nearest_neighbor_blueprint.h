@@ -22,7 +22,7 @@ private:
     std::unique_ptr<vespalib::tensor::DenseTensorView> _query_tensor;
     uint32_t _target_num_hits;
     bool _approximate;
-    uint32_t _explore_k;
+    uint32_t _explore_additional_hits;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
 
@@ -31,7 +31,7 @@ public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              const tensor::DenseTensorAttribute& attr_tensor,
                              std::unique_ptr<vespalib::tensor::DenseTensorView> query_tensor,
-                             uint32_t target_num_hits, bool approximate, uint32_t explore_k);
+                             uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;
     ~NearestNeighborBlueprint();
