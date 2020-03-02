@@ -12,7 +12,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.MutableStatusService;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -32,12 +32,12 @@ public class ApplicationApiImpl implements ApplicationApi {
 
     private final ApplicationInstance applicationInstance;
     private final NodeGroup nodeGroup;
-    private final MutableStatusRegistry hostStatusService;
+    private final MutableStatusService hostStatusService;
     private final List<ClusterApi> clusterInOrder;
     private final HostInfos hostInfos;
 
     public ApplicationApiImpl(NodeGroup nodeGroup,
-                              MutableStatusRegistry hostStatusService,
+                              MutableStatusService hostStatusService,
                               ClusterControllerClientFactory clusterControllerClientFactory,
                               int numberOfConfigServers) {
         this.applicationInstance = nodeGroup.getApplication();

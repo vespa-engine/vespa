@@ -13,8 +13,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
-import org.apache.zookeeper.KeeperException.NoNodeException;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.data.Stat;
 
 import javax.inject.Inject;
@@ -33,9 +31,9 @@ import java.util.logging.Logger;
  * TODO: expiry of old application instances
  * @author Tony Vaagenes
  */
-public class ZookeeperStatusService implements StatusService {
+public class ZkStatusService implements StatusService {
 
-    private static final Logger log = Logger.getLogger(ZookeeperStatusService.class.getName());
+    private static final Logger log = Logger.getLogger(ZkStatusService.class.getName());
 
     final static String HOST_STATUS_BASE_PATH = "/vespa/host-status-service";
     final static String APPLICATION_STATUS_BASE_PATH = "/vespa/application-status-service";
@@ -52,7 +50,7 @@ public class ZookeeperStatusService implements StatusService {
     private final ConcurrentHashMap<Map<String, String>, Metric.Context> cachedContexts = new ConcurrentHashMap<>();
 
     @Inject
-    public ZookeeperStatusService(@Component Curator curator, @Component Metric metric, @Component Timer timer) {
+    public ZkStatusService(@Component Curator curator, @Component Metric metric, @Component Timer timer) {
         this.curator = curator;
         this.metric = metric;
         this.timer = timer;
@@ -60,7 +58,7 @@ public class ZookeeperStatusService implements StatusService {
     }
 
     /** Non-private for testing only. */
-    ZookeeperStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache) {
+    ZkStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache) {
         this.curator = curator;
         this.metric = metric;
         this.timer = timer;
@@ -77,9 +75,9 @@ public class ZookeeperStatusService implements StatusService {
             if (stat == null) return resultSet;
 
             // The path exist and we may have children
-            for (String appRefStr : curator.framework().getChildren().forPath(APPLICATION_STATUS_BASE_PATH)) {
-                ApplicationInstanceReference appRef = OrchestratorUtil.parseAppInstanceReference(appRefStr);
-                resultSet.add(appRef);
+            for (String referenceString : curator.framework().getChildren().forPath(APPLICATION_STATUS_BASE_PATH)) {
+                ApplicationInstanceReference reference = OrchestratorUtil.parseApplicationInstanceReference(referenceString);
+                resultSet.add(reference);
             }
 
             return resultSet;
@@ -112,20 +110,20 @@ public class ZookeeperStatusService implements StatusService {
      *     (i.e. the request is for another applicationInstanceReference)
      */
     @Override
-    public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
+    public MutableStatusService lockApplication(
             OrchestratorContext context,
-            ApplicationInstanceReference applicationInstanceReference) throws UncheckedTimeoutException {
+            ApplicationInstanceReference reference) throws UncheckedTimeoutException {
         Runnable onRegistryClose;
 
         // A multi-application operation, aka batch suspension, will first issue a probe
         // then a non-probe. With "large locks", the lock is not release in between -
         // no lock is taken on the non-probe. Instead, the release is done on the multi-application
         // context close.
-        if (context.hasLock(applicationInstanceReference)) {
+        if (context.hasLock(reference)) {
             onRegistryClose = () -> {};
         } else {
-            Runnable unlock = acquireLock(context, applicationInstanceReference);
-            if (context.registerLockAcquisition(applicationInstanceReference, unlock)) {
+            Runnable unlock = acquireLock(context, reference);
+            if (context.registerLockAcquisition(reference, unlock)) {
                 onRegistryClose = () -> {};
             } else {
                 onRegistryClose = unlock;
@@ -133,7 +131,13 @@ public class ZookeeperStatusService implements StatusService {
         }
 
         try {
-            return new ZkMutableStatusRegistry(onRegistryClose, applicationInstanceReference, context.isProbe());
+            return new ZkMutableStatusService(
+                    this,
+                    curator,
+                    onRegistryClose,
+                    reference,
+                    context.isProbe(),
+                    hostInfosCache);
         } catch (Throwable t) {
             // In case the constructor throws an exception.
             onRegistryClose.run();
@@ -142,9 +146,9 @@ public class ZookeeperStatusService implements StatusService {
     }
 
     private Runnable acquireLock(OrchestratorContext context,
-                                 ApplicationInstanceReference applicationInstanceReference)
+                                 ApplicationInstanceReference reference)
             throws UncheckedTimeoutException {
-        ApplicationId applicationId = OrchestratorUtil.toApplicationId(applicationInstanceReference);
+        ApplicationId applicationId = OrchestratorUtil.toApplicationId(reference);
         String app = applicationId.application().value() + "." + applicationId.instance().value();
         Map<String, String> dimensions = Map.of(
                 "tenantName", applicationId.tenant().value(),
@@ -153,7 +157,7 @@ public class ZookeeperStatusService implements StatusService {
         Metric.Context metricContext = cachedContexts.computeIfAbsent(dimensions, metric::createContext);
 
         Duration duration = context.getTimeLeft();
-        String lockPath = applicationInstanceLock2Path(applicationInstanceReference);
+        String lockPath = applicationInstanceLock2Path(reference);
         Lock lock = new Lock(lockPath, curator);
 
         Instant startTime = timer.currentTime();
@@ -180,7 +184,7 @@ public class ZookeeperStatusService implements StatusService {
                 // We may want to avoid logging some exceptions that may be expected, like when session expires.
                 log.log(LogLevel.WARNING,
                         "Failed to close application lock for " +
-                                ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue",
+                                ZkStatusService.class.getSimpleName() + ", will ignore and continue",
                         e);
             }
 
@@ -194,42 +198,16 @@ public class ZookeeperStatusService implements StatusService {
         return Duration.between(startInstant, endInstant).toMillis() / 1000.0;
     }
 
-    private boolean deleteNode_ignoreNoNodeException(String path, String debugLogMessageIfNotExists) {
-        try {
-            curator.framework().delete().forPath(path);
-            return true;
-        } catch (NoNodeException e) {
-            log.log(LogLevel.DEBUG, debugLogMessageIfNotExists, e);
-            return false;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private boolean createNode_ignoreNodeExistsException(String path, String debugLogMessageIfExists) {
-        try {
-            curator.framework().create()
-                    .creatingParentsIfNeeded()
-                    .forPath(path);
-            return true;
-        } catch (NodeExistsException e) {
-            log.log(LogLevel.DEBUG, debugLogMessageIfExists, e);
-            return false;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Override
+    public HostInfo getHostInfo(ApplicationInstanceReference reference, HostName hostName) {
+        return hostInfosCache.getHostInfos(reference).getOrNoRemarks(hostName);
     }
 
     @Override
-    public HostInfo getHostInfo(ApplicationInstanceReference applicationInstanceReference, HostName hostName) {
-        return hostInfosCache.getHostInfos(applicationInstanceReference).getOrNoRemarks(hostName);
-    }
-
-    @Override
-    public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference applicationInstanceReference) {
+    public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference reference) {
         try {
             Stat statOrNull = curator.framework().checkExists().forPath(
-                    applicationInstanceSuspendedPath(applicationInstanceReference));
+                    applicationInstanceSuspendedPath(reference));
 
             return (statOrNull == null) ? ApplicationInstanceStatus.NO_REMARKS : ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
         } catch (Exception e) {
@@ -237,89 +215,24 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    static String applicationInstanceReferencePath(ApplicationInstanceReference applicationInstanceReference) {
-        return HOST_STATUS_BASE_PATH + '/' +
-                applicationInstanceReference.tenantId() + ":" + applicationInstanceReference.applicationInstanceId();
+    static String applicationInstanceReferencePath(ApplicationInstanceReference reference) {
+        return HOST_STATUS_BASE_PATH + '/' + reference.tenantId() + ":" + reference.applicationInstanceId();
     }
 
-    private static String hostsAllowedDownPath(ApplicationInstanceReference applicationInstanceReference) {
-        return applicationInstanceReferencePath(applicationInstanceReference) + "/hosts-allowed-down";
+    private static String hostsAllowedDownPath(ApplicationInstanceReference reference) {
+        return applicationInstanceReferencePath(reference) + "/hosts-allowed-down";
     }
 
-    private static String applicationInstanceLock2Path(ApplicationInstanceReference applicationInstanceReference) {
-        return applicationInstanceReferencePath(applicationInstanceReference) + "/lock2";
+    private static String applicationInstanceLock2Path(ApplicationInstanceReference reference) {
+        return applicationInstanceReferencePath(reference) + "/lock2";
     }
 
-    private String applicationInstanceSuspendedPath(ApplicationInstanceReference applicationInstanceReference) {
-        return APPLICATION_STATUS_BASE_PATH + "/" + OrchestratorUtil.toRestApiFormat(applicationInstanceReference);
+    String applicationInstanceSuspendedPath(ApplicationInstanceReference reference) {
+        return APPLICATION_STATUS_BASE_PATH + "/" + OrchestratorUtil.toRestApiFormat(reference);
     }
 
-    private static String hostAllowedDownPath(ApplicationInstanceReference applicationInstanceReference, HostName hostname) {
-        return hostsAllowedDownPath(applicationInstanceReference) + '/' + hostname.s();
-    }
-
-    private class ZkMutableStatusRegistry implements MutableStatusRegistry {
-
-        private final Runnable onClose;
-        private final ApplicationInstanceReference applicationInstanceReference;
-        private final boolean probe;
-
-        public ZkMutableStatusRegistry(Runnable onClose,
-                                       ApplicationInstanceReference applicationInstanceReference,
-                                       boolean probe) {
-            this.onClose = onClose;
-            this.applicationInstanceReference = applicationInstanceReference;
-            this.probe = probe;
-        }
-
-        @Override
-        public ApplicationInstanceStatus getStatus() {
-            return getApplicationInstanceStatus(applicationInstanceReference);
-        }
-
-        @Override
-        public HostInfos getHostInfos() {
-            return hostInfosCache.getHostInfos(applicationInstanceReference);
-        }
-
-        @Override
-        public void setHostState(final HostName hostName, final HostStatus status) {
-            if (probe) return;
-            log.log(LogLevel.INFO, "Setting host " + hostName + " to status " + status);
-            hostInfosCache.setHostStatus(applicationInstanceReference, hostName, status);
-        }
-
-        @Override
-        public void setApplicationInstanceStatus(ApplicationInstanceStatus applicationInstanceStatus) {
-            if (probe) return;
-
-            log.log(LogLevel.INFO, "Setting app " + applicationInstanceReference.asString() + " to status " + applicationInstanceStatus);
-
-            String path = applicationInstanceSuspendedPath(applicationInstanceReference);
-            switch (applicationInstanceStatus) {
-                case NO_REMARKS:
-                    deleteNode_ignoreNoNodeException(path,
-                            "Instance is already in state NO_REMARKS, path = " + path);
-                    break;
-                case ALLOWED_TO_BE_DOWN:
-                    createNode_ignoreNodeExistsException(path,
-                            "Instance is already in state ALLOWED_TO_BE_DOWN, path = " + path);
-                    break;
-            }
-        }
-
-        @Override
-        public void close()  {
-            try {
-                onClose.run();
-            } catch (RuntimeException e) {
-                // We may want to avoid logging some exceptions that may be expected, like when session expires.
-                log.log(LogLevel.WARNING,
-                        "Failed close application lock in " +
-                        ZookeeperStatusService.class.getSimpleName() + ", will ignore and continue",
-                        e);
-            }
-        }
+    private static String hostAllowedDownPath(ApplicationInstanceReference reference, HostName hostname) {
+        return hostsAllowedDownPath(reference) + '/' + hostname.s();
     }
 
 }

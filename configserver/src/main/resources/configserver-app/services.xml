@@ -64,7 +64,7 @@
     <component id="com.yahoo.vespa.service.model.ServiceMonitorImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.duper.DuperModelManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService" bundle="orchestrator" />
-    <component id="com.yahoo.vespa.orchestrator.status.ZookeeperStatusService" bundle="orchestrator" />
+    <component id="com.yahoo.vespa.orchestrator.status.ZkStatusService" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.controller.RetryingClusterControllerClientFactory" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator" />
     

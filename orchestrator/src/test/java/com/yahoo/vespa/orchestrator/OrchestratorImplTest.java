@@ -27,9 +27,9 @@ import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.MutableStatusService;
 import com.yahoo.vespa.orchestrator.status.StatusService;
-import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import com.yahoo.vespa.service.model.ServiceModelCache;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import org.junit.Before;
@@ -95,7 +95,7 @@ public class OrchestratorImplTest {
         clustercontroller = new ClusterControllerClientFactoryMock();
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clustercontroller, applicationApiFactory),
                                             clustercontroller,
-                                            new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer()),
+                                            new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer()),
                                             new DummyInstanceLookupService(),
                                             0,
                                             new ManualClock(),
@@ -330,17 +330,17 @@ public class OrchestratorImplTest {
         var applicationInstanceReference = new ApplicationInstanceReference(tenantId, applicationInstanceId);
 
         var policy = mock(HostedVespaPolicy.class);
-        var zookeeperStatusService = mock(ZookeeperStatusService.class);
+        var zookeeperStatusService = mock(ZkStatusService.class);
         var instanceLookupService = mock(InstanceLookupService.class);
         var applicationInstance = mock(ApplicationInstance.class);
         var clusterControllerClientFactory = mock(ClusterControllerClientFactory.class);
         var clock = new ManualClock();
         var applicationApiFactory = mock(ApplicationApiFactory.class);
-        var hostStatusRegistry = mock(MutableStatusRegistry.class);
+        var hostStatusRegistry = mock(MutableStatusService.class);
 
         when(instanceLookupService.findInstanceByHost(any())).thenReturn(Optional.of(applicationInstance));
         when(applicationInstance.reference()).thenReturn(applicationInstanceReference);
-        when(zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(any(), any()))
+        when(zookeeperStatusService.lockApplication(any(), any()))
                 .thenReturn(hostStatusRegistry);
         when(hostStatusRegistry.getStatus()).thenReturn(NO_REMARKS);
 
@@ -359,7 +359,7 @@ public class OrchestratorImplTest {
         orchestrator.suspendAll(parentHostname, List.of(parentHostname));
 
         ArgumentCaptor<OrchestratorContext> contextCaptor = ArgumentCaptor.forClass(OrchestratorContext.class);
-        verify(zookeeperStatusService, times(2)).lockApplicationInstance_forCurrentThreadOnly(contextCaptor.capture(), any());
+        verify(zookeeperStatusService, times(2)).lockApplication(contextCaptor.capture(), any());
         List<OrchestratorContext> contexts = contextCaptor.getAllValues();
 
         // First invocation is probe, second is not.
@@ -375,7 +375,7 @@ public class OrchestratorImplTest {
         verify(hostStatusRegistry, times(2)).getStatus();
 
         // Each zookeeperStatusService that is created, is closed.
-        verify(zookeeperStatusService, times(2)).lockApplicationInstance_forCurrentThreadOnly(any(), any());
+        verify(zookeeperStatusService, times(2)).lockApplication(any(), any());
         verify(hostStatusRegistry, times(2)).close();
 
         verifyNoMoreInteractions(
@@ -390,7 +390,7 @@ public class OrchestratorImplTest {
     @Test
     public void testGetHost() throws Exception {
         ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
-        StatusService statusService = new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
+        StatusService statusService = new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
 
         HostName hostName = new HostName("host.yahoo.com");
         TenantId tenantId = new TenantId("tenant");

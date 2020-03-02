@@ -27,12 +27,12 @@ import static org.mockito.Mockito.when;
 /**
  * @author hakonhall
  */
-public class ZookeeperStatusService2Test {
+public class ZkStatusService2Test {
     private final Curator curator = mock(Curator.class);
     private final Timer timer = new TestTimer();
     private final Metric metric = mock(Metric.class);
     private final HostInfosCache cache = mock(HostInfosCache.class);
-    private final ZookeeperStatusService zookeeperStatusService = new ZookeeperStatusService(curator, metric, timer, cache);
+    private final ZkStatusService zkStatusService = new ZkStatusService(curator, metric, timer, cache);
 
     private final OrchestratorContext context = mock(OrchestratorContext.class);
     private final InterProcessMutex mutex = mock(InterProcessMutex.class);
@@ -50,7 +50,7 @@ public class ZookeeperStatusService2Test {
 
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(12));
 
-        try (MutableStatusRegistry registry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(context, reference)) {
+        try (MutableStatusService registry = zkStatusService.lockApplication(context, reference)) {
             // nothing
         }
 
@@ -65,7 +65,7 @@ public class ZookeeperStatusService2Test {
 
         when(context.isProbe()).thenReturn(false);
 
-        try (MutableStatusRegistry registry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(context, reference)) {
+        try (MutableStatusService registry = zkStatusService.lockApplication(context, reference)) {
             // nothing
         }
 
@@ -88,7 +88,7 @@ public class ZookeeperStatusService2Test {
 
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(12));
 
-        try (MutableStatusRegistry registry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(context, reference)) {
+        try (MutableStatusService registry = zkStatusService.lockApplication(context, reference)) {
             // nothing
         }
 
@@ -105,7 +105,7 @@ public class ZookeeperStatusService2Test {
         when(context.hasLock(any())).thenReturn(true);
         when(context.registerLockAcquisition(any(), any())).thenReturn(false);
 
-        try (MutableStatusRegistry registry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(context, reference)) {
+        try (MutableStatusService registry = zkStatusService.lockApplication(context, reference)) {
             // nothing
         }
 

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.MutableStatusService;
 
 /**
  * @author mpolden
@@ -16,7 +16,7 @@ public class ApplicationApiFactory {
     }
 
     public ApplicationApi create(NodeGroup nodeGroup,
-                                 MutableStatusRegistry hostStatusService,
+                                 MutableStatusService hostStatusService,
                                  ClusterControllerClientFactory clusterControllerClientFactory) {
         return new ApplicationApiImpl(nodeGroup, hostStatusService, clusterControllerClientFactory, numberOfConfigServers);
     }

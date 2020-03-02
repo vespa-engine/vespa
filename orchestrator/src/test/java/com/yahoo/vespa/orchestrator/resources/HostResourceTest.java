@@ -39,9 +39,9 @@ import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.MutableStatusService;
 import com.yahoo.vespa.orchestrator.status.StatusService;
-import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
+import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -78,7 +78,7 @@ public class HostResourceTest {
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
-    private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZookeeperStatusService(
+    private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZkStatusService(
             new MockCurator(), mock(Metric.class), new TestTimer());
     private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
@@ -134,7 +134,7 @@ public class HostResourceTest {
         public void releaseSuspensionGrant(
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusRegistry hostStatusRegistry) {
+                MutableStatusService hostStatusRegistry) {
         }
     }
 
@@ -236,7 +236,7 @@ public class HostResourceTest {
         public void releaseSuspensionGrant(
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusRegistry hostStatusRegistry) throws HostStateChangeDeniedException {
+                MutableStatusService hostStatusRegistry) throws HostStateChangeDeniedException {
             doThrow();
         }
 

@@ -53,9 +53,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ZookeeperStatusServiceTest {
+public class ZkStatusServiceTest {
     private TestingServer testingServer;
-    private ZookeeperStatusService zookeeperStatusService;
+    private ZkStatusService zkStatusService;
     private Curator curator;
     private final Timer timer = mock(Timer.class);
     private final Metric metric = mock(Metric.class);
@@ -70,7 +70,7 @@ public class ZookeeperStatusServiceTest {
 
         testingServer = new TestingServer();
         curator = createConnectedCurator(testingServer);
-        zookeeperStatusService = new ZookeeperStatusService(curator, metric, timer);
+        zkStatusService = new ZkStatusService(curator, metric, timer);
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(10));
         when(context.isProbe()).thenReturn(false);
         when(timer.currentTime()).thenReturn(Instant.ofEpochMilli(1));
@@ -96,7 +96,7 @@ public class ZookeeperStatusServiceTest {
     @Test
     public void host_state_for_unknown_hosts_is_no_remarks() {
         assertThat(
-                zookeeperStatusService.getHostInfo(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1).status(),
+                zkStatusService.getHostInfo(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1).status(),
                 is(HostStatus.NO_REMARKS));
     }
 
@@ -107,8 +107,8 @@ public class ZookeeperStatusServiceTest {
                 Instant.ofEpochMilli((3)),
                 Instant.ofEpochMilli(6));
 
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (MutableStatusService statusRegistry = zkStatusService
+                .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
             //shuffling to catch "clean database" failures for all cases.
             for (HostStatus hostStatus: shuffledList(HostStatus.NO_REMARKS, HostStatus.ALLOWED_TO_BE_DOWN)) {
@@ -141,15 +141,15 @@ public class ZookeeperStatusServiceTest {
 
     @Test
     public void locks_are_exclusive() throws Exception {
-        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator, mock(Metric.class), new TestTimer());
+        ZkStatusService zkStatusService2 = new ZkStatusService(curator, mock(Metric.class), new TestTimer());
 
         final CompletableFuture<Void> lockedSuccessfullyFuture;
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (MutableStatusService statusRegistry = zkStatusService
+                .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
             lockedSuccessfullyFuture = CompletableFuture.runAsync(() -> {
-                try (MutableStatusRegistry statusRegistry2 = zookeeperStatusService2
-                        .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE))
+                try (MutableStatusService statusRegistry2 = zkStatusService2
+                        .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE))
                 {
                 }
             });
@@ -166,15 +166,15 @@ public class ZookeeperStatusServiceTest {
 
     @Test
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
-        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator, mock(Metric.class), new TestTimer());
+        ZkStatusService zkStatusService2 = new ZkStatusService(curator, mock(Metric.class), new TestTimer());
 
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (MutableStatusService statusRegistry = zkStatusService
+                .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
             //must run in separate thread, since having 2 locks in the same thread fails
             CompletableFuture<Void> resultOfZkOperationAfterLockFailure = CompletableFuture.runAsync(() -> {
                 try {
-                    zookeeperStatusService2.lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE);
+                    zkStatusService2.lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE);
                     fail("Both zookeeper host status services locked simultaneously for the same application instance");
                 } catch (RuntimeException e) {
                 }
@@ -239,29 +239,29 @@ public class ZookeeperStatusServiceTest {
 
         // Initial state is NO_REMARK
         assertThat(
-                zookeeperStatusService
+                zkStatusService
                         .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.NO_REMARKS));
 
         // Suspend
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (MutableStatusService statusRegistry = zkStatusService
+                .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
         assertThat(
-                zookeeperStatusService
+                zkStatusService
                         .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN));
 
         // Resume
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (MutableStatusService statusRegistry = zkStatusService
+                .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.NO_REMARKS);
         }
 
         assertThat(
-                zookeeperStatusService
+                zkStatusService
                         .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
                 is(ApplicationInstanceStatus.NO_REMARKS));
     }
@@ -269,20 +269,20 @@ public class ZookeeperStatusServiceTest {
     @Test
     public void suspending_two_applications_returns_two_applications() {
         Set<ApplicationInstanceReference> suspendedApps
-                = zookeeperStatusService.getAllSuspendedApplications();
+                = zkStatusService.getAllSuspendedApplications();
         assertThat(suspendedApps.size(), is(0));
 
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (MutableStatusService statusRegistry = zkStatusService
+                .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE2)) {
+        try (MutableStatusService statusRegistry = zkStatusService
+                .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE2)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
-        suspendedApps = zookeeperStatusService.getAllSuspendedApplications();
+        suspendedApps = zkStatusService.getAllSuspendedApplications();
         assertThat(suspendedApps.size(), is(2));
         assertThat(suspendedApps, hasItem(TestIds.APPLICATION_INSTANCE_REFERENCE));
         assertThat(suspendedApps, hasItem(TestIds.APPLICATION_INSTANCE_REFERENCE2));

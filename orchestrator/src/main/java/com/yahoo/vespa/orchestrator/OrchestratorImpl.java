@@ -34,7 +34,7 @@ import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.MutableStatusService;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 
 import java.io.IOException;
@@ -135,8 +135,8 @@ public class OrchestratorImpl implements Orchestrator {
     public void setNodeStatus(HostName hostName, HostStatus status) throws OrchestrationException {
         ApplicationInstanceReference reference = getApplicationInstance(hostName).reference();
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
-        try (MutableStatusRegistry statusRegistry = statusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, reference)) {
+        try (MutableStatusService statusRegistry = statusService
+                .lockApplication(context, reference)) {
             statusRegistry.setHostState(hostName, status);
         }
     }
@@ -165,8 +165,8 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstance appInstance = getApplicationInstance(hostName);
 
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
-        try (MutableStatusRegistry statusRegistry = statusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
+        try (MutableStatusService statusRegistry = statusService
+                .lockApplication(context, appInstance.reference())) {
             HostStatus currentHostState = statusRegistry.getHostInfos().getOrNoRemarks(hostName).status();
             if (currentHostState == HostStatus.NO_REMARKS) {
                 return;
@@ -202,8 +202,8 @@ public class OrchestratorImpl implements Orchestrator {
                 .with(FetchVector.Dimension.HOSTNAME, hostName.s())
                 .value();
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock, usePermanentlyDownStatus);
-        try (MutableStatusRegistry statusRegistry = statusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
+        try (MutableStatusService statusRegistry = statusService
+                .lockApplication(context, appInstance.reference())) {
             ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, statusRegistry,
                                                                          clusterControllerClientFactory);
 
@@ -220,8 +220,8 @@ public class OrchestratorImpl implements Orchestrator {
     void suspendGroup(OrchestratorContext context, NodeGroup nodeGroup) throws HostStateChangeDeniedException {
         ApplicationInstanceReference applicationReference = nodeGroup.getApplicationReference();
 
-        try (MutableStatusRegistry hostStatusRegistry =
-                     statusService.lockApplicationInstance_forCurrentThreadOnly(context, applicationReference)) {
+        try (MutableStatusService hostStatusRegistry =
+                     statusService.lockApplication(context, applicationReference)) {
             ApplicationInstanceStatus appStatus = hostStatusRegistry.getStatus();
             if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
@@ -354,8 +354,8 @@ public class OrchestratorImpl implements Orchestrator {
             throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
-        try (MutableStatusRegistry statusRegistry =
-                     statusService.lockApplicationInstance_forCurrentThreadOnly(context, appRef)) {
+        try (MutableStatusService statusRegistry =
+                     statusService.lockApplication(context, appRef)) {
 
             // Short-circuit if already in wanted state
             if (status == statusRegistry.getStatus()) return;

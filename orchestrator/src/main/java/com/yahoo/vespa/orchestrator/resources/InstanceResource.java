@@ -37,7 +37,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
-import static com.yahoo.vespa.orchestrator.OrchestratorUtil.parseAppInstanceReference;
+import static com.yahoo.vespa.orchestrator.OrchestratorUtil.parseApplicationInstanceReference;
 
 /**
  * Provides a read-only API for looking into the current state as seen by the Orchestrator.
@@ -152,7 +152,7 @@ public class InstanceResource {
 
     static ApplicationInstanceReference parseInstanceId(String instanceIdString) {
         try {
-            return parseAppInstanceReference(instanceIdString);
+            return parseApplicationInstanceReference(instanceIdString);
         } catch (IllegalArgumentException e) {
             throwBadRequest(e.getMessage());
             return null;  // Necessary for compiler

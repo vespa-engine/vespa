@@ -44,9 +44,8 @@ public interface StatusService {
      * this case, subsequent mutating operations will fail, but previous mutating operations are NOT rolled back.
      * This may leave the registry in an inconsistent state (as judged by the client code).
      */
-    MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
-            OrchestratorContext context,
-            ApplicationInstanceReference applicationInstanceReference) throws UncheckedTimeoutException;
+    MutableStatusService lockApplication(OrchestratorContext context, ApplicationInstanceReference reference)
+            throws UncheckedTimeoutException;
 
     /**
      * Returns all application instances that are allowed to be down. The intention is to use this
@@ -68,5 +67,5 @@ public interface StatusService {
     ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationInstanceReference application);
 
     /** Get host info for hostname in application. This is consistent if its lock is held. */
-    HostInfo getHostInfo(ApplicationInstanceReference applicationInstanceReference, HostName hostName);
+    HostInfo getHostInfo(ApplicationInstanceReference reference, HostName hostName);
 }
