@@ -20,6 +20,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
@@ -346,9 +347,8 @@ public class ApplicationController {
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
-            options = withVersion(platformVersion, options);
-            ActivateResult result = deploy(instanceId, applicationPackage, zone, options, endpoints,
-                                           endpointCertificateMetadata);
+            ActivateResult result = deploy(instanceId, applicationPackage, zone, platformVersion, options.ignoreValidationErrors,
+                                           endpoints, endpointCertificateMetadata);
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(instanceId.instance(),
@@ -420,25 +420,24 @@ public class ApplicationController {
             ApplicationPackage applicationPackage = new ApplicationPackage(
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
-            DeployOptions options = withVersion(version, DeployOptions.none());
-            return deploy(application.id(), applicationPackage, zone, options, Set.of(), /* No application cert */ Optional.empty());
+            return deploy(application.id(), applicationPackage, zone, version, false, Set.of(), /* No application cert */ Optional.empty());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
     }
 
     /** Deploys the given tester application to the given zone. */
-    public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        return deploy(tester.id(), applicationPackage, zone, options, Set.of(), /* No application cert for tester*/ Optional.empty());
+    public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, Version platform) {
+        return deploy(tester.id(), applicationPackage, zone, platform, false, Set.of(), /* No application cert for tester*/ Optional.empty());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
-                                  ZoneId zone, DeployOptions deployOptions, Set<ContainerEndpoint> endpoints,
+                                  ZoneId zone, Version platform, boolean ignoreValidationErrors, Set<ContainerEndpoint> endpoints,
                                   Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
-        DeploymentId deploymentId = new DeploymentId(application, zone);
         try {
             ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(deploymentId, deployOptions, endpoints, endpointCertificateMetadata, applicationPackage.zippedContent());
+                    configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
+                                                           ignoreValidationErrors, endpoints, endpointCertificateMetadata));
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {

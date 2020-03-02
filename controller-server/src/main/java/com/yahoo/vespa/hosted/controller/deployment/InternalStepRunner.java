@@ -215,10 +215,7 @@ public class InternalStepRunner implements StepRunner {
                       () -> controller.applications().deployTester(id.tester(),
                                                                    testerPackage(id),
                                                                    id.type().zone(controller.system()),
-                                                                   new DeployOptions(true,
-                                                                                     Optional.of(platform),
-                                                                                     false,
-                                                                                     false)),
+                                                                   platform),
                       controller.jobController().run(id).get()
                                 .stepInfo(deployTester).get()
                                 .startTime().get(),
