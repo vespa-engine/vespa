@@ -29,6 +29,7 @@ private:
     std::unique_ptr<search::ISequencedTaskExecutor> _attributeFieldWriter;
 
 public:
+    using OptimizeFor = vespalib::Executor::OptimizeFor;
     /**
      * Constructor.
      *
@@ -38,7 +39,8 @@ public:
     ExecutorThreadingService(vespalib::ThreadStackExecutorBase &sharedExecutor,
                              uint32_t threads = 1,
                              uint32_t stackSize = 128 * 1024,
-                             uint32_t taskLimit = 1000);
+                             uint32_t taskLimit = 1000,
+                             OptimizeFor optimize = OptimizeFor::LATENCY);
     ~ExecutorThreadingService() override;
 
     /**

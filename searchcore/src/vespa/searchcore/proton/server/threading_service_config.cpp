@@ -7,13 +7,16 @@
 namespace proton {
 
 using ProtonConfig = ThreadingServiceConfig::ProtonConfig;
+using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
                                                uint32_t defaultTaskLimit_,
-                                               uint32_t semiUnboundTaskLimit_)
+                                               uint32_t semiUnboundTaskLimit_,
+                                               OptimizeFor optimize)
     : _indexingThreads(indexingThreads_),
       _defaultTaskLimit(defaultTaskLimit_),
-      _semiUnboundTaskLimit(semiUnboundTaskLimit_)
+      _semiUnboundTaskLimit(semiUnboundTaskLimit_),
+      _optimize(optimize)
 {
 }
 
@@ -30,6 +33,16 @@ calculateIndexingThreads(uint32_t cfgIndexingThreads, double concurrency, const 
     return std::max(indexingThreads, 1u);
 }
 
+OptimizeFor
+selectOptimization(ProtonConfig::Indexing::Optimize optimize) {
+    using CfgOptimize = ProtonConfig::Indexing::Optimize;
+    switch (optimize) {
+        case CfgOptimize::LATENCY: return OptimizeFor::LATENCY;
+        case CfgOptimize::THROUGHPUT: return OptimizeFor::THROUGHPUT;
+    }
+    return OptimizeFor::LATENCY;
+}
+
 }
 
 ThreadingServiceConfig
@@ -37,7 +50,8 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
 {
     uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing.threads, concurrency, cpuInfo);
     return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
-                                  (cfg.indexing.semiunboundtasklimit / indexingThreads));
+                                  (cfg.indexing.semiunboundtasklimit / indexingThreads),
+                                  selectOptimization(cfg.indexing.optimize));
 }
 
 }

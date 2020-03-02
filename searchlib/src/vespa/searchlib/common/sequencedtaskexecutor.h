@@ -23,6 +23,7 @@ class SequencedTaskExecutor final : public ISequencedTaskExecutor
     SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
 public:
     using ISequencedTaskExecutor::getExecutorId;
+    using OptimizeFor = vespalib::Executor::OptimizeFor;
 
     ~SequencedTaskExecutor();
 
@@ -30,7 +31,12 @@ public:
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     void sync() override;
     Stats getStats() override;
-    static std::unique_ptr<ISequencedTaskExecutor> create(uint32_t threads, uint32_t taskLimit = 1000);
+
+    /*
+     * Note that if you choose Optimize::THROUGHPUT, you must ensure only a single producer, or synchronize on the outside.
+     */
+    static std::unique_ptr<ISequencedTaskExecutor>
+    create(uint32_t threads, uint32_t taskLimit = 1000, OptimizeFor optimize = OptimizeFor::LATENCY);
 };
 
 } // namespace search

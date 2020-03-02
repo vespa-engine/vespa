@@ -117,6 +117,10 @@ indexing.read.io enum {NORMAL, DIRECTIO} default=DIRECTIO restart
 ## Control number of threads used for indexing
 indexing.threads int default=1 restart
 
+## Option to specify what is most important during indexing.
+## This is experimental and will most likely be temporary.
+indexing.optimize enum {LATENCY, THROUGHPUT} default=LATENCY restart
+
 ## Maximum number of pending operations for each of the internal
 ## indexing threads.  Only used when visibility delay is zero.
 indexing.tasklimit int default=1000 restart
