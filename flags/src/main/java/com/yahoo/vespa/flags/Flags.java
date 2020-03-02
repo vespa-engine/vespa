@@ -246,7 +246,7 @@ public class Flags {
     public static final UnboundBooleanFlag PHRASE_SEGMENTING = defineFeatureFlag(
             "phrase-segmenting", true,
             "Should 'implicit phrases' in queries we parsed to a phrase or and?",
-            "Takes effect immediately",
+            "Takes effect on redeploy",
             ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
