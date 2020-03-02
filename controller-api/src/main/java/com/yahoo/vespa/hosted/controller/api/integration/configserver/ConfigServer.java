@@ -7,6 +7,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
@@ -32,9 +33,7 @@ public interface ConfigServer {
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
-                               Set<ContainerEndpoint> containerEndpoints, Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                               byte[] content);
+    PreparedApplication deploy(DeploymentData deployment);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 

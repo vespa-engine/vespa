@@ -268,9 +268,9 @@ public class Run {
     private List<Step> forcedSteps() {
         return ImmutableList.copyOf(steps.entrySet().stream()
                                          .filter(entry ->    entry.getValue().status() == unfinished
-                                                          && JobProfile.of(id.type()).alwaysRun().contains(entry.getKey())
+                                                          && entry.getKey().alwaysRun()
                                                           && entry.getKey().prerequisites().stream()
-                                                                  .filter(JobProfile.of(id.type()).alwaysRun()::contains)
+                                                                  .filter(Step::alwaysRun)
                                                                   .allMatch(step ->    steps.get(step) == null
                                                                                     || steps.get(step).status() != unfinished))
                                          .map(Map.Entry::getKey)

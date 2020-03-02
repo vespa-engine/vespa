@@ -159,7 +159,7 @@ public class InternalStepRunner implements StepRunner {
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Unexpected exception running " + id, e);
-            if (JobProfile.of(id.type()).alwaysRun().contains(step.get())) {
+            if (step.get().alwaysRun()) {
                 logger.log("Will keep trying, as this is a cleanup step.");
                 return Optional.empty();
             }
@@ -190,7 +190,7 @@ public class InternalStepRunner implements StepRunner {
                 : Optional.empty();
 
         Optional<Version> vespaVersion = id.type().environment().isManuallyDeployed()
-                ? Optional.of(versions.targetPlatform())
+                ? Optional.of(versions.targetPlatform()) // TODO jonmv: This makes it impossible to deploy on older majors — fix.
                 : Optional.empty();
         return deploy(id.application(),
                       id.type(),
@@ -215,10 +215,7 @@ public class InternalStepRunner implements StepRunner {
                       () -> controller.applications().deployTester(id.tester(),
                                                                    testerPackage(id),
                                                                    id.type().zone(controller.system()),
-                                                                   new DeployOptions(true,
-                                                                                     Optional.of(platform),
-                                                                                     false,
-                                                                                     false)),
+                                                                   platform),
                       controller.jobController().run(id).get()
                                 .stepInfo(deployTester).get()
                                 .startTime().get(),
