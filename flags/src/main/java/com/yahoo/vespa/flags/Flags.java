@@ -243,6 +243,12 @@ public class Flags {
             "Whether to provision and use endpoint certs for apps in shared routing zones",
             "Takes effect on next deployment of the application", APPLICATION_ID);
 
+    public static final UnboundBooleanFlag PHRASE_SEGMENTING = defineFeatureFlag(
+            "phrase-segmenting", true,
+            "Should 'implicit phrases' in queries we parsed to a phrase or and?",
+            "Takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
