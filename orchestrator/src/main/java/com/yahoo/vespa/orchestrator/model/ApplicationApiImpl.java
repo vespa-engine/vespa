@@ -12,7 +12,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -32,19 +32,19 @@ public class ApplicationApiImpl implements ApplicationApi {
 
     private final ApplicationInstance applicationInstance;
     private final NodeGroup nodeGroup;
-    private final MutableStatusRegistry hostStatusService;
+    private final ApplicationLock lock;
     private final List<ClusterApi> clusterInOrder;
     private final HostInfos hostInfos;
 
     public ApplicationApiImpl(NodeGroup nodeGroup,
-                              MutableStatusRegistry hostStatusService,
+                              ApplicationLock lock,
                               ClusterControllerClientFactory clusterControllerClientFactory,
                               int numberOfConfigServers) {
         this.applicationInstance = nodeGroup.getApplication();
         this.nodeGroup = nodeGroup;
-        this.hostStatusService = hostStatusService;
+        this.lock = lock;
         Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
-        this.hostInfos = hostStatusService.getHostInfos();
+        this.hostInfos = lock.getHostInfos();
         this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, numberOfConfigServers);
     }
 
@@ -95,12 +95,12 @@ public class ApplicationApiImpl implements ApplicationApi {
 
     @Override
     public ApplicationInstanceStatus getApplicationStatus() {
-        return hostStatusService.getStatus();
+        return lock.getApplicationInstanceStatus();
     }
 
     @Override
     public void setHostState(OrchestratorContext context, HostName hostName, HostStatus status) {
-        hostStatusService.setHostState(hostName, status);
+        lock.setHostState(hostName, status);
     }
 
     @Override

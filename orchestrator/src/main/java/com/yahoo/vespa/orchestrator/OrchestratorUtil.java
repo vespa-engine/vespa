@@ -65,7 +65,7 @@ public class OrchestratorUtil {
     private static final Pattern APPLICATION_INSTANCE_REFERENCE_REST_FORMAT_PATTERN = Pattern.compile("^([^:]+):(.+)$");
 
     /** Returns an ApplicationInstanceReference constructed from the serialized format used in the REST API. */
-    public static ApplicationInstanceReference parseAppInstanceReference(String restFormat) {
+    public static ApplicationInstanceReference parseApplicationInstanceReference(String restFormat) {
         if (restFormat == null) {
             throw new IllegalArgumentException("Could not construct instance id from null string");
         }
