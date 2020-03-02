@@ -26,9 +26,6 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
     uint32_t est_hits = _attr_tensor.getNumDocs();
     if (_attr_tensor.nearest_neighbor_index()) {
         est_hits = std::min(target_num_hits, est_hits);
-        if (_explore_additional_hits == 0) {
-            _explore_additional_hits = 100;
-        }
     }
     setEstimate(HitEstimate(est_hits, false));
 }
