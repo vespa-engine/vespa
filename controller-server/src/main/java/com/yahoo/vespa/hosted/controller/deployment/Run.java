@@ -56,9 +56,9 @@ public class Run {
         this.testerCertificate = testerCertificate;
     }
 
-    public static Run initial(RunId id, Versions versions, Instant now) {
+    public static Run initial(RunId id, Versions versions, Instant now, JobProfile profile) {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
-        JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
+        profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
         return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running,
                        -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty());
     }
