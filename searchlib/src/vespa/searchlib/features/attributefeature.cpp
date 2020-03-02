@@ -359,7 +359,9 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
         std::vector<feature_t> values(4, 0.0f);
         return stash.create<ValueExecutor>(values);
     }
-    if (attribute->getCollectionType() == CollectionType::WSET) {
+    CollectionType collectionType = attribute->getCollectionType();
+    if (collectionType == CollectionType::WSET) {
+        assert(numOutputs == 4);
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
@@ -373,37 +375,54 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
             return stash.create<CountOnlyAttributeExecutor>(*attribute);
         }
     } else { // SINGLE or ARRAY
-        if ((attribute->getCollectionType() == CollectionType::SINGLE) && (attribute->isIntegerType() || attribute->isFloatingPointType())) {
-            { SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash); }
-            { SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;  if (creator.handle(attribute)) return creator.create(stash); }
-            { SingleValueExecutorCreator<IntegerAttributeTemplate<int8_t>> creator;       if (creator.handle(attribute)) return creator.create(stash); }
-            { SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
-            { SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
-            {
-                auto boolAttribute = dynamic_cast<const SingleBoolAttribute *>(attribute);
-                if (boolAttribute && (numOutputs == 1)) {
-                    return stash.create<BoolAttributeExecutor>(*boolAttribute);
+        BasicType basicType = attribute->getBasicType();
+        if (collectionType == CollectionType::SINGLE) {
+            if (attribute->isIntegerType()) {
+                if (basicType == BasicType::BOOL) {
+                    auto boolAttribute = dynamic_cast<const SingleBoolAttribute *>(attribute);
+                    if (boolAttribute && (numOutputs == 1)) {
+                        return stash.create<BoolAttributeExecutor>(*boolAttribute);
+                    }
+                } else {
+                    assert(numOutputs == 4);
+                    if (basicType == BasicType::INT8) {
+                        SingleValueExecutorCreator<IntegerAttributeTemplate<int8_t>> creator;
+                        if (creator.handle(attribute)) return creator.create(stash);
+                    } else if (basicType == BasicType::INT32) {
+                        SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
+                        if (creator.handle(attribute)) return creator.create(stash);
+                    }
+                    SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
+                    if (creator.handle(attribute)) return creator.create(stash);
+                }
+            } else if (attribute->isFloatingPointType()) {
+                assert(numOutputs == 4);
+                if (basicType == BasicType::DOUBLE) {
+                    SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
+                    if (creator.handle(attribute)) return creator.create(stash);
+                } else {
+                    SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
+                    if (creator.handle(attribute)) return creator.create(stash);
                 }
             }
         }
-        {
-            uint32_t idx = 0;
-            if (!extraParam.empty()) {
-                idx = util::strToNum<uint32_t>(extraParam);
-            } else if (attribute->getCollectionType() == CollectionType::ARRAY) {
-                return stash.create<CountOnlyAttributeExecutor>(*attribute);
-            }
-            if (attribute->isStringType()) {
-                return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
-            } else if (attribute->isIntegerType()) {
-                { MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-                { MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-                return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
-            } else { // FLOAT
-                { MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-                { MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-                return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
-            }
+        assert(numOutputs == 4);
+        uint32_t idx = 0;
+        if (!extraParam.empty()) {
+            idx = util::strToNum<uint32_t>(extraParam);
+        } else if (attribute->getCollectionType() == CollectionType::ARRAY) {
+            return stash.create<CountOnlyAttributeExecutor>(*attribute);
+        }
+        if (attribute->isStringType()) {
+            return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
+        } else if (attribute->isIntegerType()) {
+            { MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+            { MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+            return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
+        } else { // FLOAT
+            { MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+            { MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+            return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
         }
     }
 }
