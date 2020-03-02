@@ -128,6 +128,9 @@ public class VespaSerializerTestCase {
     public void testNearestNeighbor() {
         parseAndConfirm("[{\"label\": \"foo\", \"targetNumHits\": 1000}]nearestNeighbor(semantic_embedding, my_property)");
         parseAndConfirm("[{\"targetNumHits\": 42}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("[{\"targetNumHits\": 1, \"hnsw.exploreAdditionalHits\": 76}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("[{\"targetNumHits\": 2, \"approximate\": false}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("[{\"targetNumHits\": 3, \"hnsw.exploreAdditionalHits\": 67, \"approximate\": false}]nearestNeighbor(semantic_embedding, my_property)");
     }
 
     @Test
