@@ -416,12 +416,22 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
         if (attribute->isStringType()) {
             return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
         } else if (attribute->isIntegerType()) {
-            { MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-            { MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+            if (basicType == BasicType::INT32) {
+                MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
+                if (creator.handle(attribute)) return creator.create(stash, idx);
+            } else if (basicType == BasicType::INT64) {
+                MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
+                if (creator.handle(attribute)) return creator.create(stash, idx);
+            }
             return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
         } else { // FLOAT
-            { MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
-            { MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+            if (basicType == BasicType::DOUBLE) {
+                MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
+                if (creator.handle(attribute)) return creator.create(stash, idx);
+            } else {
+                MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
+                if (creator.handle(attribute)) return creator.create(stash, idx);
+            }
             return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
         }
     }
