@@ -274,7 +274,9 @@ SimpleQueryStackDumpIterator::next()
         try {
             _curr_index_name = read_stringref(p);
             _curr_term = read_stringref(p); // query_tensor_name
-            _currArg1 = readCompressedPositiveInt(p); // target_num_hits;
+            _currArg1 = readCompressedPositiveInt(p); // target_num_hits
+            _currArg2 = readCompressedPositiveInt(p); // allow_approximate
+            _currArg3 = readCompressedPositiveInt(p); // explore_additional_hits
             _currArity = 0;
         } catch (...) {
             return false;

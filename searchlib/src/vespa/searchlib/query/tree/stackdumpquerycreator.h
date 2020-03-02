@@ -114,7 +114,10 @@ private:
             uint32_t target_num_hits = queryStack.getArg1();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight, target_num_hits);
+            uint32_t allow_approximate = (queryStack.getArg2() != 0);
+            uint32_t explore_additional_hits = queryStack.getArg3();
+            builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight,
+                                              target_num_hits, allow_approximate, explore_additional_hits);
         } else {
             vespalib::stringref term = queryStack.getTerm();
             vespalib::stringref view = queryStack.getIndexName();

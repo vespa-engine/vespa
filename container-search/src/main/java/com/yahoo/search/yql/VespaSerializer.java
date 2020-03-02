@@ -702,6 +702,11 @@ public class VespaSerializer {
             comma(destination, initLen);
             int targetNumHits = item.getTargetNumHits();
             destination.append("\"targetNumHits\": ").append(targetNumHits);
+            int explore = item.getHnswExploreAdditionalHits();
+            if (explore != 0) {
+                destination.append(",\"hnsw.exploreAdditionalHits\": ").append(explore);
+            }
+            destination.append(",\"approximate\": ").append(item.getAllowApproximate());
             destination.append("}]");
             destination.append(NEAREST_NEIGHBOR).append('(');
             destination.append(item.getIndexName()).append(", ");
