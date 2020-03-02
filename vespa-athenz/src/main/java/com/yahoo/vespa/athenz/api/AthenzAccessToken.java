@@ -1,10 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.api;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.DecodedJWT;
-
-import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -19,11 +15,9 @@ public class AthenzAccessToken {
     private static final String BEARER_TOKEN_PREFIX = "Bearer ";
 
     private final String value;
-    private final DecodedJWT jwt;
 
     public AthenzAccessToken(String value) {
         this.value = stripBearerTokenPrefix(value);
-        this.jwt = JWT.decode(this.value);
     }
 
     private static String stripBearerTokenPrefix(String rawValue) {
@@ -39,9 +33,6 @@ public class AthenzAccessToken {
 
     public String value() { return value; }
     public String valueWithBearerPrefix() { return BEARER_TOKEN_PREFIX + value; }
-    public Instant getExpiryTime () {
-        return jwt.getExpiresAt().toInstant();
-    }
 
     @Override public String toString() { return "AthenzAccessToken{value='" + value + "'}"; }
 
