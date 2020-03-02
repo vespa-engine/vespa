@@ -6,7 +6,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -23,18 +22,16 @@ public class DeploymentData {
     private final ZoneId zone;
     private final byte[] applicationPackage;
     private final Version platform;
-    private final boolean ignoreValidationErrors;
     private final Set<ContainerEndpoint> containerEndpoints;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
-                          boolean ignoreValidationErrors, Set<ContainerEndpoint> containerEndpoints,
+                          Set<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
-        this.ignoreValidationErrors = requireNonNull(ignoreValidationErrors);
         this.containerEndpoints = requireNonNull(containerEndpoints);
         this.endpointCertificateMetadata = requireNonNull(endpointCertificateMetadata);
     }
@@ -53,10 +50,6 @@ public class DeploymentData {
 
     public Version platform() {
         return platform;
-    }
-
-    public boolean ignoreValidationErrors() {
-        return ignoreValidationErrors;
     }
 
     public Set<ContainerEndpoint> containerEndpoints() {

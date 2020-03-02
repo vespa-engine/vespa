@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
+import com.yahoo.vespa.hosted.controller.deployment.JobProfile;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -148,7 +149,7 @@ public class RunSerializerTest {
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());
 
-        Run initial = Run.initial(id, run.versions(), run.start());
+        Run initial = Run.initial(id, run.versions(), run.start(), JobProfile.production);
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
     }
 

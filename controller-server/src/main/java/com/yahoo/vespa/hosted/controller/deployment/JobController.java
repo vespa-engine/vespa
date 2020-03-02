@@ -413,8 +413,13 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
-        if ( ! type.environment().isManuallyDeployed() && versions.targetApplication().isUnknown())
-            throw new IllegalArgumentException("Target application must be a valid reference.");
+        start(id, type, versions, JobProfile.of(type));
+    }
+
+    /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
+    public void start(ApplicationId id, JobType type, Versions versions, JobProfile profile) {
+        if (profile != JobProfile.development && versions.targetApplication().isUnknown())
+            throw new IllegalArgumentException(" Target application must be a valid reference");
 
         controller.applications().lockApplicationIfPresent(TenantAndApplicationId.from(id), application -> {
             locked(id, type, __ -> {
@@ -423,7 +428,7 @@ public class JobController {
                     throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
                 RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-                curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant()));
+                curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant(), profile));
                 metric.jobStarted(newId.job());
             });
         });
@@ -444,10 +449,15 @@ public class JobController {
         last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
         locked(id, type, __ -> {
             controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
-            start(id, type, new Versions(platform.orElse(controller.systemVersion()),
-                                         ApplicationVersion.unknown,
-                                         Optional.empty(),
-                                         Optional.empty()));
+            start(id,
+                  type,
+                  new Versions(platform.orElse(applicationPackage.deploymentSpec().majorVersion()
+                                                                 .flatMap(controller.applications()::lastCompatibleVersion)
+                                                                 .orElseGet(controller::systemVersion)),
+                               ApplicationVersion.unknown,
+                               Optional.empty(),
+                               Optional.empty()),
+                  JobProfile.development);
 
             runner.get().accept(last(id, type).get());
         });
