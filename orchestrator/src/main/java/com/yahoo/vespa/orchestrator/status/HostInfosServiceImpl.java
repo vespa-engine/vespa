@@ -105,8 +105,8 @@ public class HostInfosServiceImpl implements HostInfosService {
         return "/vespa/host-status/" + application.serializedForm();
     }
 
-    private static String hostsPath(ApplicationId applicationInstanceReference) {
-        return applicationPath(applicationInstanceReference) + "/hosts";
+    private static String hostsPath(ApplicationId application) {
+        return applicationPath(application) + "/hosts";
     }
 
     private static String hostPath(ApplicationId application, HostName hostname) {
