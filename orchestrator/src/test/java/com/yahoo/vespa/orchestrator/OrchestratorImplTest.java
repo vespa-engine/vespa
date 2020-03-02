@@ -27,7 +27,7 @@ import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusService;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import com.yahoo.vespa.service.model.ServiceModelCache;
@@ -336,13 +336,12 @@ public class OrchestratorImplTest {
         var clusterControllerClientFactory = mock(ClusterControllerClientFactory.class);
         var clock = new ManualClock();
         var applicationApiFactory = mock(ApplicationApiFactory.class);
-        var hostStatusRegistry = mock(MutableStatusService.class);
+        var lock = mock(ApplicationLock.class);
 
         when(instanceLookupService.findInstanceByHost(any())).thenReturn(Optional.of(applicationInstance));
         when(applicationInstance.reference()).thenReturn(applicationInstanceReference);
-        when(zookeeperStatusService.lockApplication(any(), any()))
-                .thenReturn(hostStatusRegistry);
-        when(hostStatusRegistry.getStatus()).thenReturn(NO_REMARKS);
+        when(zookeeperStatusService.lockApplication(any(), any())).thenReturn(lock);
+        when(lock.getApplicationInstanceStatus()).thenReturn(NO_REMARKS);
 
         var orchestrator = new OrchestratorImpl(
                 policy,
@@ -372,17 +371,17 @@ public class OrchestratorImplTest {
         verify(applicationApiFactory, times(2)).create(any(), any(), any());
         verify(policy, times(2)).grantSuspensionRequest(any(), any());
         verify(instanceLookupService, atLeastOnce()).findInstanceByHost(any());
-        verify(hostStatusRegistry, times(2)).getStatus();
+        verify(lock, times(2)).getApplicationInstanceStatus();
 
         // Each zookeeperStatusService that is created, is closed.
         verify(zookeeperStatusService, times(2)).lockApplication(any(), any());
-        verify(hostStatusRegistry, times(2)).close();
+        verify(lock, times(2)).close();
 
         verifyNoMoreInteractions(
                 policy,
                 clusterControllerClientFactory,
                 zookeeperStatusService,
-                hostStatusRegistry,
+                lock,
                 instanceLookupService,
                 applicationApiFactory);
     }

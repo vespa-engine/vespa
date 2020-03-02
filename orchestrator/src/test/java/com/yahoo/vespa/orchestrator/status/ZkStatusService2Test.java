@@ -50,7 +50,7 @@ public class ZkStatusService2Test {
 
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(12));
 
-        try (MutableStatusService registry = zkStatusService.lockApplication(context, reference)) {
+        try (ApplicationLock lock = zkStatusService.lockApplication(context, reference)) {
             // nothing
         }
 
@@ -65,7 +65,7 @@ public class ZkStatusService2Test {
 
         when(context.isProbe()).thenReturn(false);
 
-        try (MutableStatusService registry = zkStatusService.lockApplication(context, reference)) {
+        try (ApplicationLock lock = zkStatusService.lockApplication(context, reference)) {
             // nothing
         }
 
@@ -88,7 +88,7 @@ public class ZkStatusService2Test {
 
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(12));
 
-        try (MutableStatusService registry = zkStatusService.lockApplication(context, reference)) {
+        try (ApplicationLock lock = zkStatusService.lockApplication(context, reference)) {
             // nothing
         }
 
@@ -105,7 +105,7 @@ public class ZkStatusService2Test {
         when(context.hasLock(any())).thenReturn(true);
         when(context.registerLockAcquisition(any(), any())).thenReturn(false);
 
-        try (MutableStatusService registry = zkStatusService.lockApplication(context, reference)) {
+        try (ApplicationLock lock = zkStatusService.lockApplication(context, reference)) {
             // nothing
         }
 

@@ -29,7 +29,7 @@ import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusService;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import com.yahoo.vespa.service.model.ServiceModelCache;
@@ -114,10 +114,10 @@ class ModelTestUtils {
             ApplicationInstance applicationInstance,
             HostName... hostnames) {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostnames);
-        MutableStatusService registry = statusService.lockApplication(
+        ApplicationLock lock = statusService.lockApplication(
                 OrchestratorContext.createContextForSingleAppOp(Clock.systemUTC()),
                 applicationInstance.reference());
-        return applicationApiFactory().create(nodeGroup, registry, clusterControllerClientFactory);
+        return applicationApiFactory().create(nodeGroup, lock, clusterControllerClientFactory);
     }
 
     ApplicationInstance createApplicationInstance(

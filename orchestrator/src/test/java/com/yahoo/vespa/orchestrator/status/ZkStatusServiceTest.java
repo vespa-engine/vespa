@@ -107,17 +107,14 @@ public class ZkStatusServiceTest {
                 Instant.ofEpochMilli((3)),
                 Instant.ofEpochMilli(6));
 
-        try (MutableStatusService statusRegistry = zkStatusService
-                .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+        try (ApplicationLock lock = zkStatusService.lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
             //shuffling to catch "clean database" failures for all cases.
             for (HostStatus hostStatus: shuffledList(HostStatus.NO_REMARKS, HostStatus.ALLOWED_TO_BE_DOWN)) {
                 for (int i = 0; i < 2; i++) {
-                    statusRegistry.setHostState(
-                            TestIds.HOST_NAME1,
-                            hostStatus);
+                    lock.setHostState(TestIds.HOST_NAME1, hostStatus);
 
-                    assertThat(statusRegistry.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1).status(),
+                    assertThat(lock.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1).status(),
                                is(hostStatus));
                 }
             }
@@ -144,11 +141,11 @@ public class ZkStatusServiceTest {
         ZkStatusService zkStatusService2 = new ZkStatusService(curator, mock(Metric.class), new TestTimer());
 
         final CompletableFuture<Void> lockedSuccessfullyFuture;
-        try (MutableStatusService statusRegistry = zkStatusService
+        try (ApplicationLock lock = zkStatusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
             lockedSuccessfullyFuture = CompletableFuture.runAsync(() -> {
-                try (MutableStatusService statusRegistry2 = zkStatusService2
+                try (ApplicationLock lock2 = zkStatusService2
                         .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE))
                 {
                 }
@@ -168,7 +165,7 @@ public class ZkStatusServiceTest {
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
         ZkStatusService zkStatusService2 = new ZkStatusService(curator, mock(Metric.class), new TestTimer());
 
-        try (MutableStatusService statusRegistry = zkStatusService
+        try (ApplicationLock lock = zkStatusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
             //must run in separate thread, since having 2 locks in the same thread fails
@@ -182,7 +179,7 @@ public class ZkStatusServiceTest {
                 killSession(curator.framework(), testingServer);
 
                 //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
-                statusRegistry.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1);
+                lock.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1);
             });
 
             assertThat(resultOfZkOperationAfterLockFailure, notHoldsException());
@@ -244,9 +241,9 @@ public class ZkStatusServiceTest {
                 is(ApplicationInstanceStatus.NO_REMARKS));
 
         // Suspend
-        try (MutableStatusService statusRegistry = zkStatusService
+        try (ApplicationLock lock = zkStatusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
-            statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
+            lock.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
         assertThat(
@@ -255,9 +252,9 @@ public class ZkStatusServiceTest {
                 is(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN));
 
         // Resume
-        try (MutableStatusService statusRegistry = zkStatusService
+        try (ApplicationLock lock = zkStatusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
-            statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.NO_REMARKS);
+            lock.setApplicationInstanceStatus(ApplicationInstanceStatus.NO_REMARKS);
         }
 
         assertThat(
@@ -272,14 +269,14 @@ public class ZkStatusServiceTest {
                 = zkStatusService.getAllSuspendedApplications();
         assertThat(suspendedApps.size(), is(0));
 
-        try (MutableStatusService statusRegistry = zkStatusService
+        try (ApplicationLock statusRegistry = zkStatusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
-        try (MutableStatusService statusRegistry = zkStatusService
+        try (ApplicationLock lock = zkStatusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE2)) {
-            statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
+            lock.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
         suspendedApps = zkStatusService.getAllSuspendedApplications();

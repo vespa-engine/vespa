@@ -110,9 +110,9 @@ public class ZkStatusService implements StatusService {
      *     (i.e. the request is for another applicationInstanceReference)
      */
     @Override
-    public MutableStatusService lockApplication(
-            OrchestratorContext context,
-            ApplicationInstanceReference reference) throws UncheckedTimeoutException {
+    public ApplicationLock lockApplication(OrchestratorContext context, ApplicationInstanceReference reference)
+            throws UncheckedTimeoutException {
+
         Runnable onRegistryClose;
 
         // A multi-application operation, aka batch suspension, will first issue a probe
@@ -131,7 +131,7 @@ public class ZkStatusService implements StatusService {
         }
 
         try {
-            return new ZkMutableStatusService(
+            return new ZkApplicationLock(
                     this,
                     curator,
                     onRegistryClose,
@@ -145,8 +145,7 @@ public class ZkStatusService implements StatusService {
         }
     }
 
-    private Runnable acquireLock(OrchestratorContext context,
-                                 ApplicationInstanceReference reference)
+    private Runnable acquireLock(OrchestratorContext context, ApplicationInstanceReference reference)
             throws UncheckedTimeoutException {
         ApplicationId applicationId = OrchestratorUtil.toApplicationId(reference);
         String app = applicationId.application().value() + "." + applicationId.instance().value();

@@ -5,7 +5,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
-import com.yahoo.vespa.orchestrator.status.MutableStatusService;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
 /**
  * @author oyving
@@ -32,6 +32,6 @@ public interface Policy {
     void releaseSuspensionGrant(
             OrchestratorContext context, ApplicationInstance applicationInstance,
             HostName hostName,
-            MutableStatusService hostStatusService) throws HostStateChangeDeniedException;
+            ApplicationLock hostStatusService) throws HostStateChangeDeniedException;
 
 }

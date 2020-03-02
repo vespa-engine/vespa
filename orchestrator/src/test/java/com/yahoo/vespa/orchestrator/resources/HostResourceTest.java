@@ -39,7 +39,7 @@ import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusService;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import org.junit.Before;
@@ -134,7 +134,7 @@ public class HostResourceTest {
         public void releaseSuspensionGrant(
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusService hostStatusRegistry) {
+                ApplicationLock hostStatusRegistry) {
         }
     }
 
@@ -236,7 +236,7 @@ public class HostResourceTest {
         public void releaseSuspensionGrant(
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusService hostStatusRegistry) throws HostStateChangeDeniedException {
+                ApplicationLock hostStatusRegistry) throws HostStateChangeDeniedException {
             doThrow();
         }
 

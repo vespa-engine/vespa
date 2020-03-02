@@ -10,9 +10,9 @@ import org.apache.zookeeper.KeeperException;
 
 import java.util.logging.Logger;
 
-class ZkMutableStatusService implements MutableStatusService {
+class ZkApplicationLock implements ApplicationLock {
 
-    private static final Logger log = Logger.getLogger(ZkMutableStatusService.class.getName());
+    private static final Logger log = Logger.getLogger(ZkApplicationLock.class.getName());
 
     private final ZkStatusService statusService;
     private final Curator curator;
@@ -21,12 +21,12 @@ class ZkMutableStatusService implements MutableStatusService {
     private final boolean probe;
     private final HostInfosCache hostInfosCache;
 
-    ZkMutableStatusService(ZkStatusService statusService,
-                           Curator curator,
-                           Runnable onClose,
-                           ApplicationInstanceReference reference,
-                           boolean probe,
-                           HostInfosCache hostInfosCache) {
+    ZkApplicationLock(ZkStatusService statusService,
+                      Curator curator,
+                      Runnable onClose,
+                      ApplicationInstanceReference reference,
+                      boolean probe,
+                      HostInfosCache hostInfosCache) {
         this.statusService = statusService;
         this.curator = curator;
         this.onClose = onClose;
@@ -36,7 +36,12 @@ class ZkMutableStatusService implements MutableStatusService {
     }
 
     @Override
-    public ApplicationInstanceStatus getStatus() {
+    public ApplicationInstanceReference getApplicationInstanceReference() {
+        return reference;
+    }
+
+    @Override
+    public ApplicationInstanceStatus getApplicationInstanceStatus() {
         return statusService.getApplicationInstanceStatus(reference);
     }
 
@@ -77,7 +82,7 @@ class ZkMutableStatusService implements MutableStatusService {
             // We may want to avoid logging some exceptions that may be expected, like when session expires.
             log.log(LogLevel.WARNING,
                     "Failed close application lock in " +
-                    ZkMutableStatusService.class.getSimpleName() + ", will ignore and continue",
+                    ZkApplicationLock.class.getSimpleName() + ", will ignore and continue",
                     e);
         }
     }
