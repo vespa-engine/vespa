@@ -36,7 +36,7 @@ private:
     }
 
     uint64_t numTasks() const {
-        return _wp.load(std::memory_order_relaxed) - _rp.load(std::memory_order_relaxed);
+        return _wp.load(std::memory_order_relaxed) - _rp.load(std::memory_order_acquire);
     }
     std::atomic<uint32_t>       _taskLimit;
     std::atomic<uint32_t>       _wantedTaskLimit;

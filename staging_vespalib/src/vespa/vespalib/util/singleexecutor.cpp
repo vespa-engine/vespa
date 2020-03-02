@@ -96,7 +96,7 @@ SingleExecutor::run_tasks_till(uint64_t available) {
     while (consumed  < available) {
         Task::UP task = std::move(_tasks[index(consumed)]);
         task->run();
-        _rp.store(++consumed, std::memory_order_relaxed);
+        _rp.store(++consumed, std::memory_order_release);
         if (wakeupLimit == consumed) {
             MonitorGuard guard(_producerMonitor);
             guard.broadcast();
