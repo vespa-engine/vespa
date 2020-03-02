@@ -663,7 +663,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         // getQueryTree isn't exception safe
         try {
             queryTree = model.getQueryTree().toString();
-        } catch (Exception e) {
+        } catch (Exception | StackOverflowError e) {
             queryTree = "[Could not parse user input: " + model.getQueryString() + "]";
         }
         return "query '" + queryTree + "'";
@@ -675,7 +675,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         // getQueryTree isn't exception safe
         try {
             queryTree = model.getQueryTree().toString();
-        } catch (Exception e) {
+        } catch (Exception | StackOverflowError e) {
             queryTree = "Could not parse user input: " + model.getQueryString();
         }
         return "query=[" + queryTree + "]" + " offset=" + getOffset() + " hits=" + getHits() + "]";
