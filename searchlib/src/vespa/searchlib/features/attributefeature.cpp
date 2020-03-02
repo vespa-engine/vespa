@@ -351,7 +351,7 @@ private:
 };
 
 fef::FeatureExecutor &
-createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
+createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning default values.",
@@ -381,7 +381,7 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             { SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
             {
                 auto boolAttribute = dynamic_cast<const SingleBoolAttribute *>(attribute);
-                if (boolAttribute) {
+                if (boolAttribute && (numOutputs == 1)) {
                     return stash.create<BoolAttributeExecutor>(*boolAttribute);
                 }
             }
@@ -444,6 +444,12 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
     return stash.create<TensorAttributeExecutor>(tensorAttribute);
 }
 
+bool
+isSingleValueBoolField(const fef::FieldInfo & fInfo) {
+    return (fInfo.collection() == schema::CollectionType::SINGLE)
+           && (fInfo.get_data_type() == schema::DataType::BOOL);
+}
+
 }
 
 AttributeBlueprint::AttributeBlueprint() :
@@ -451,7 +457,8 @@ AttributeBlueprint::AttributeBlueprint() :
     _attrName(),
     _attrKey(),
     _extra(),
-    _tensorType(ValueType::double_type())
+    _tensorType(ValueType::double_type()),
+    _numOutputs(0)
 {
 }
 
@@ -489,12 +496,13 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
                    "the given key of a weighted set attribute, or"
                    "the tensor of a tensor attribute", output_type);
     const fef::FieldInfo * fInfo = env.getFieldByName(_attrName);
-    if (!_tensorType.is_tensor() &&
-        !((fInfo->collection() == schema::CollectionType::SINGLE) && (fInfo->get_data_type() == schema::DataType::BOOL)))
-    {
+    if (_tensorType.is_tensor() || isSingleValueBoolField(*fInfo)) {
+        _numOutputs = 1;
+    } else {
         describeOutput("weight", "The weight associated with the given key in a weighted set attribute.");
         describeOutput("contains", "1 if the given key is present in a weighted set attribute, 0 otherwise.");
         describeOutput("count", "Returns the number of elements in this array or weighted set attribute.");
+        _numOutputs = 4;
     }
     env.hintAttributeAccess(_attrName);
     return !_tensorType.is_error();
@@ -519,7 +527,7 @@ AttributeBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::
     if (_tensorType.is_tensor()) {
         return createTensorAttributeExecutor(attribute, _attrName, _tensorType, stash);
     } else {
-        return createAttributeExecutor(attribute, _attrName, _extra, stash);
+        return createAttributeExecutor(_numOutputs, attribute, _attrName, _extra, stash);
     }
 }
 
