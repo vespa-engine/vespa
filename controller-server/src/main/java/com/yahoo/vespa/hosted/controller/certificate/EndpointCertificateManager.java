@@ -158,7 +158,7 @@ public class EndpointCertificateManager {
         Map<ApplicationId, EndpointCertificateMetadata> allEndpointCertificateMetadata = curator.readAllEndpointCertificateMetadata();
 
         allEndpointCertificateMetadata.forEach((applicationId, storedMetaData) -> {
-            if (storedMetaData.requestedDnsSans().isPresent() && storedMetaData.request_id().isPresent())
+            if (storedMetaData.requestedDnsSans().isPresent() && storedMetaData.request_id().isPresent() && storedMetaData.issuer().isPresent())
                 return;
 
             var hashedCn = commonNameHashOf(applicationId, zoneRegistry.system()); // use as join key
