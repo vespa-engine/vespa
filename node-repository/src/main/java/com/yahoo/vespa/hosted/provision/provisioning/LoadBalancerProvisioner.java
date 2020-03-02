@@ -74,7 +74,7 @@ public class LoadBalancerProvisioner {
         if (!cluster.type().isContainer()) return; // Nothing to provision for this cluster type
         if (application.instance().isTester()) return; // Do not provision for tester instances
         try (var lock = db.lockLoadBalancers(application)) {
-            provision(application, cluster.id(), false, lock);
+            provision(application, effectiveId(cluster), false, lock);
         }
     }
 
@@ -91,7 +91,7 @@ public class LoadBalancerProvisioner {
     public void activate(ApplicationId application, Set<ClusterSpec> clusters,
                          @SuppressWarnings("unused") Mutex applicationLock, NestedTransaction transaction) {
         try (var lock = db.lockLoadBalancers(application)) {
-            var containerClusters = containerClusterOf(clusters);
+            var containerClusters = containerClustersOf(clusters);
             for (var clusterId : containerClusters) {
                 // Provision again to ensure that load balancer instance is re-configured with correct nodes
                 provision(application, clusterId, true, lock);
@@ -183,7 +183,7 @@ public class LoadBalancerProvisioner {
                        .owner(application)
                        .filter(node -> node.state().isAllocated())
                        .container()
-                       .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterId))
+                       .filter(node -> effectiveId(node.allocation().get().membership().cluster()).equals(clusterId))
                        .asList();
     }
 
@@ -202,11 +202,16 @@ public class LoadBalancerProvisioner {
         return reachable;
     }
 
-    private static Set<ClusterSpec.Id> containerClusterOf(Set<ClusterSpec> clusters) {
+    /** Returns the container cluster IDs of the given clusters */
+    private static Set<ClusterSpec.Id> containerClustersOf(Set<ClusterSpec> clusters) {
         return clusters.stream()
                        .filter(c -> c.type().isContainer())
-                       .map(ClusterSpec::id)
+                       .map(LoadBalancerProvisioner::effectiveId)
                        .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private static ClusterSpec.Id effectiveId(ClusterSpec cluster) {
+        return cluster.combinedId().orElse(cluster.id());
     }
 
 }
