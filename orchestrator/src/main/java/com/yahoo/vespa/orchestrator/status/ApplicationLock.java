@@ -29,7 +29,7 @@ public interface ApplicationLock extends AutoCloseable {
     /** Sets the orchestration status for the application instance. */
     void setApplicationInstanceStatus(ApplicationInstanceStatus applicationInstanceStatus);
 
-    /** implNote: Must not throw an exception. */
+    /** WARNING: Must not throw an exception. */
     @Override
     void close();
 

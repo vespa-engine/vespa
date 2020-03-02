@@ -12,6 +12,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.util.Collection;
 import java.util.List;
@@ -84,26 +85,26 @@ public class OrchestratorUtil {
         return applicationInstanceReference.tenantId() + ":" + applicationInstanceReference.applicationInstanceId();
     }
 
-
-    public static ApplicationInstanceReference toApplicationInstanceReference(ApplicationId appId,
-                                                                              InstanceLookupService instanceLookupService)
+    public static ApplicationInstanceReference toApplicationInstanceReference(
+            ApplicationId applicationid,
+            ServiceMonitor serviceMonitor)
             throws ApplicationIdNotFoundException {
 
-        Set<ApplicationInstanceReference> appRefs = instanceLookupService.knownInstances();
-        List<ApplicationInstanceReference> appRefList = appRefs.stream()
-                .filter(a -> OrchestratorUtil.toApplicationId(a).equals(appId))
+        Set<ApplicationInstanceReference> references = serviceMonitor.getAllApplicationInstanceReferences();
+        List<ApplicationInstanceReference> referencesWithId = references.stream()
+                .filter(a -> OrchestratorUtil.toApplicationId(a).equals(applicationid))
                 .collect(Collectors.toList());
 
-        if (appRefList.size() > 1) {
-            String msg = String.format("ApplicationId '%s' was not unique but mapped to '%s'", appId, appRefList);
+        if (referencesWithId.size() > 1) {
+            String msg = String.format("ApplicationId '%s' was not unique but mapped to '%s'", applicationid, referencesWithId);
             throw new ApplicationIdNotFoundException(msg);
         }
 
-        if (appRefList.size() == 0) {
+        if (referencesWithId.size() == 0) {
             throw new ApplicationIdNotFoundException();
         }
 
-        return appRefList.get(0);
+        return referencesWithId.get(0);
     }
 
     public static ApplicationId toApplicationId(ApplicationInstanceReference appRef) {

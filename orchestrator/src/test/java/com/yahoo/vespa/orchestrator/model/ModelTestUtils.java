@@ -21,15 +21,14 @@ import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
-import com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import com.yahoo.vespa.service.model.ServiceModelCache;
@@ -65,7 +64,7 @@ class ModelTestUtils {
     private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory()),
                                                                    clusterControllerClientFactory,
                                                                    statusService,
-                                                                   new ServiceMonitorInstanceLookupService(serviceMonitor),
+                                                                   serviceMonitor,
                                                                    0,
                                                                    new ManualClock(),
                                                                    applicationApiFactory(),

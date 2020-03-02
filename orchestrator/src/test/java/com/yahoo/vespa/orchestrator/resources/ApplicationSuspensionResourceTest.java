@@ -162,7 +162,7 @@ public class ApplicationSuspensionResourceTest {
                 "        <component id=\"com.yahoo.vespa.flags.InMemoryFlagSource\" bundle=\"flags\" />\n" +
                 "        <component id=\"com.yahoo.vespa.curator.mock.MockCurator\" bundle=\"zkfacade\" />\n" +
                 "        <component id=\"com.yahoo.vespa.orchestrator.status.ZkStatusService\" bundle=\"orchestrator\" />\n" +
-                "        <component id=\"com.yahoo.vespa.orchestrator.DummyInstanceLookupService\" bundle=\"orchestrator\" />\n" +
+                "        <component id=\"com.yahoo.vespa.orchestrator.DummyServiceMonitor\" bundle=\"orchestrator\" />\n" +
                 "        <component id=\"com.yahoo.vespa.orchestrator.OrchestratorImpl\" bundle=\"orchestrator\" />\n" +
                 "        <component id=\"com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock\" bundle=\"orchestrator\" />\n" +
                 "\n" +

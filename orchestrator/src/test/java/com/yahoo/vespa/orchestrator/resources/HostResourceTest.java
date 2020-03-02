@@ -21,7 +21,6 @@ import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
-import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -37,11 +36,13 @@ import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
+import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,8 +57,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static org.junit.Assert.assertEquals;
@@ -82,9 +83,9 @@ public class HostResourceTest {
             new MockCurator(), mock(Metric.class), new TestTimer());
     private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
-    private static final InstanceLookupService mockInstanceLookupService = mock(InstanceLookupService.class);
+    private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     static {
-        when(mockInstanceLookupService.findInstanceByHost(any()))
+        when(serviceMonitor.getApplication(any(HostName.class)))
                 .thenReturn(Optional.of(
                         new ApplicationInstance(
                                 TENANT_ID,
@@ -94,26 +95,12 @@ public class HostResourceTest {
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
-    private static final InstanceLookupService alwaysEmptyInstanceLookUpService = new InstanceLookupService() {
-        @Override
-        public Optional<ApplicationInstance> findInstanceById(
-                final ApplicationInstanceReference applicationInstanceReference) {
-            return Optional.empty();
-        }
+    private static final ServiceMonitor alwaysEmptyServiceMonitor = new ServiceMonitor() {
+        private final ServiceModel emptyServiceModel = new ServiceModel(Map.of());
 
         @Override
-        public Optional<ApplicationInstance> findInstanceByHost(final HostName hostName) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Set<ApplicationInstanceReference> knownInstances() {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public Optional<ApplicationInstance> findInstancePossiblyNarrowedToHost(HostName hostname) {
-            return Optional.empty();
+        public ServiceModel getServiceModelSnapshot() {
+            return emptyServiceModel;
         }
     };
 
@@ -141,7 +128,7 @@ public class HostResourceTest {
     private final OrchestratorImpl alwaysAllowOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
-            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, mockInstanceLookupService,
+            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, serviceMonitor,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
             applicationApiFactory,
@@ -150,7 +137,7 @@ public class HostResourceTest {
     private final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
-            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyInstanceLookUpService,
+            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyServiceMonitor,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
             applicationApiFactory,
@@ -253,7 +240,7 @@ public class HostResourceTest {
         final OrchestratorImpl alwaysRejectResolver = new OrchestratorImpl(
                 new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
-                EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,mockInstanceLookupService,
+                EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, serviceMonitor,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
                 applicationApiFactory,
@@ -274,7 +261,7 @@ public class HostResourceTest {
                 new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
-                mockInstanceLookupService,
+                serviceMonitor,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
                 applicationApiFactory,
