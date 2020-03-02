@@ -347,7 +347,7 @@ public class ApplicationController {
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
-            ActivateResult result = deploy(instanceId, applicationPackage, zone, platformVersion, options.ignoreValidationErrors,
+            ActivateResult result = deploy(instanceId, applicationPackage, zone, platformVersion,
                                            endpoints, endpointCertificateMetadata);
 
             lockApplicationOrThrow(applicationId, application ->
@@ -420,7 +420,7 @@ public class ApplicationController {
             ApplicationPackage applicationPackage = new ApplicationPackage(
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
-            return deploy(application.id(), applicationPackage, zone, version, false, Set.of(), /* No application cert */ Optional.empty());
+            return deploy(application.id(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -428,16 +428,16 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, Version platform) {
-        return deploy(tester.id(), applicationPackage, zone, platform, false, Set.of(), /* No application cert for tester*/ Optional.empty());
+        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
-                                  ZoneId zone, Version platform, boolean ignoreValidationErrors, Set<ContainerEndpoint> endpoints,
+                                  ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
                                   Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
         try {
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
-                                                           ignoreValidationErrors, endpoints, endpointCertificateMetadata));
+                                                           endpoints, endpointCertificateMetadata));
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {
