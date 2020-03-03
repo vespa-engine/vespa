@@ -880,8 +880,7 @@
       "public java.util.Optional endpointCertificateSecrets()",
       "public abstract double defaultTermwiseLimit()",
       "public abstract boolean useBucketSpaceMetric()",
-      "public boolean useNewAthenzFilter()",
-      "public boolean usePhraseSegmenting()"
+      "public boolean useNewAthenzFilter()"
     ],
     "fields": []
   },

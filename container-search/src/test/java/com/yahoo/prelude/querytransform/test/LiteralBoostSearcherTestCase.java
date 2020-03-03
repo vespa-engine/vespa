@@ -71,7 +71,7 @@ public class LiteralBoostSearcherTestCase {
 
     @Test
     public void testQueryWithoutBoost() {
-        assertEquals("RANK (AND nonexistant a nonexistant b) default_literal:nonexistant default_literal:a default_literal:nonexistant default_literal:b",
+        assertEquals("RANK (AND \"nonexistant a\" \"nonexistant b\") default_literal:nonexistant default_literal:a default_literal:nonexistant default_literal:b",
                      transformQuery("?query=nonexistant:a nonexistant:b&source=cluster1&restrict=type1"));
     }
 

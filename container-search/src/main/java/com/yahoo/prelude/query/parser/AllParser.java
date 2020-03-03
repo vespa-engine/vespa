@@ -30,7 +30,6 @@ public class AllParser extends SimpleParser {
         super(environment);
     }
 
-    @Override
     protected Item parseItems() {
         int position = tokens.getPosition();
         try {
