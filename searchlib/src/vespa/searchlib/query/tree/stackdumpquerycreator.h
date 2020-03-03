@@ -118,7 +118,7 @@ private:
             uint32_t target_num_hits = queryStack.getTargetNumHits();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            uint32_t allow_approximate = queryStack.getAllowApproximate();
+            bool allow_approximate = queryStack.getAllowApproximate();
             uint32_t explore_additional_hits = queryStack.getExploreAdditionalHits();
             builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight,
                                               target_num_hits, allow_approximate, explore_additional_hits);
