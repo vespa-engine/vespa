@@ -99,7 +99,7 @@ public class JobRunnerTest {
             jobs.start(id, systemTest, versions);
             fail("Job is already running, so this should not be allowed!");
         }
-        catch (IllegalStateException e) { }
+        catch (IllegalStateException ignored) { }
         jobs.start(id, stagingTest, versions);
 
         assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
@@ -242,7 +242,7 @@ public class JobRunnerTest {
             jobs.locked(id, systemTest, deactivateTester, step -> { });
             fail("deployTester step should still be locked!");
         }
-        catch (TimeoutException e) { }
+        catch (TimeoutException ignored) { }
 
         // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
         assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
