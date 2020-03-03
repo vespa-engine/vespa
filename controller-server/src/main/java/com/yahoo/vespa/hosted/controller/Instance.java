@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -12,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -69,7 +67,6 @@ public class Instance {
         Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
                                                                                       version, instant));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
-                                                  previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity());
         return with(newDeployment);
@@ -83,12 +80,6 @@ public class Instance {
             jobPauses.remove(jobType);
 
         return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
-    }
-
-    public Instance withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
-        Deployment deployment = deployments.get(zone);
-        if (deployment == null) return this;    // No longer deployed in this zone.
-        return with(deployment.withClusterInfo(clusterInfo));
     }
 
     public Instance recordActivityAt(Instant instant, ZoneId zone) {

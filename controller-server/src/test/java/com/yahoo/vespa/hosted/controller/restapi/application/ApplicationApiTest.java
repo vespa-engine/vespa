@@ -9,7 +9,6 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
@@ -48,7 +47,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapsh
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -1600,19 +1598,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
                 for (Instance instance : application.instances().values()) {
                     for (Deployment deployment : instance.deployments().values()) {
-                        Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
-                        List<String> hostnames = new ArrayList<>();
-                        hostnames.add("host1");
-                        hostnames.add("host2");
-                        clusterInfo.put(ClusterSpec.Id.from("cluster1"),
-                                        new ClusterInfo("flavor1", 37, 2, 4, 50,
-                                                        ClusterSpec.Type.content, hostnames));
                         DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5,
                                                                           Optional.of(Instant.ofEpochMilli(123123)), Map.of());
-
                         lockedApplication = lockedApplication.with(instance.name(),
-                                                                   lockedInstance -> lockedInstance.withClusterInfo(deployment.zone(), clusterInfo)
-                                                                                                   .with(deployment.zone(), metrics)
+                                                                   lockedInstance -> lockedInstance.with(deployment.zone(), metrics)
                                                                                                    .recordActivityAt(Instant.parse("2018-06-01T10:15:30.00Z"), deployment.zone()));
                     }
                     deploymentTester.applications().store(lockedApplication);
