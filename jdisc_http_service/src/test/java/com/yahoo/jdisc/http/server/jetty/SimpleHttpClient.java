@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.yahoo.jdisc.http.HttpHeaders;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -27,16 +26,10 @@ import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 
 import javax.net.ssl.SSLContext;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -100,42 +93,6 @@ public class SimpleHttpClient implements AutoCloseable {
 
     public ResponseValidator get(final String path) throws IOException {
         return newGet(path).execute();
-    }
-
-    public String raw(final String request) throws IOException {
-        final Socket socket = new Socket("localhost", listenPort);
-        final OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8);
-        out.write(request);
-        out.flush();
-
-        final ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        final InputStream in = socket.getInputStream();
-        final int[] TERMINATOR = { '\r', '\n', '\r', '\n' };
-        for (int pos = 0; pos < TERMINATOR.length; ++pos) {
-            final int b = in.read();
-            if (b < 0) {
-                throw new EOFException();
-            }
-            if (b != TERMINATOR[pos]) {
-                pos = -1;
-            }
-            buf.write(b);
-        }
-        final String response = buf.toString(StandardCharsets.UTF_8.name());
-        final java.util.regex.Matcher matcher = Pattern.compile(HttpHeaders.Names.CONTENT_LENGTH + ": (.+)\r\n").matcher(response);
-        if (matcher.find()) {
-            final int len = Integer.valueOf(matcher.group(1));
-            for (int i = 0; i < len; ++i) {
-                final int b = in.read();
-                if (b < 0) {
-                    throw new EOFException();
-                }
-                buf.write(b);
-            }
-        }
-
-        socket.close();
-        return buf.toString(StandardCharsets.UTF_8.name());
     }
 
     @Override
@@ -227,9 +184,5 @@ public class SimpleHttpClient implements AutoCloseable {
             return this;
         }
 
-        public ResponseValidator expectTrailer(final String trailerName, final Matcher<String> matcher) {
-            // TODO: check trailer, not header
-            return expectHeader(trailerName, matcher);
-        }
     }
 }
