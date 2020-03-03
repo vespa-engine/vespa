@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.After;
 import org.junit.Before;
@@ -23,50 +24,50 @@ import com.yahoo.text.Utf8;
 /**
  * Functional test for InputCheckingSearcher.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class InputCheckingSearcherTestCase {
 
     Execution execution;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         execution = new Execution(new Chain<Searcher>(new InputCheckingSearcher(MetricReceiver.nullImplementation)),
-                Execution.Context.createContextStub(new IndexFacts()));
+                                  Execution.Context.createContextStub(new IndexFacts()));
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         execution = null;
     }
 
     @Test
-    public final void testCommonCase() {
+    public void testCommonCase() {
         Result r = execution.search(new Query("/search/?query=three+blind+mice"));
         assertNull(r.hits().getErrorHit());
     }
 
     @Test
-    public final void candidateButAsciiOnly() {
+    public void candidateButAsciiOnly() {
         Result r = execution.search(new Query("/search/?query=a+a+a+a+a+a"));
         assertNull(r.hits().getErrorHit());
     }
 
     @Test
-    public final void candidateButValid() throws UnsupportedEncodingException {
+    public void candidateButValid() throws UnsupportedEncodingException {
         Result r = execution.search(new Query("/search/?query=" + URLEncoder.encode("å å å å å å", "UTF-8")));
         assertNull(r.hits().getErrorHit());
     }
 
     @Test
-    public final void candidateButValidAndOutsideFirst256() throws UnsupportedEncodingException {
+    public void candidateButValidAndOutsideFirst256() throws UnsupportedEncodingException {
         Result r = execution.search(new Query("/search/?query=" + URLEncoder.encode("œ œ œ œ œ œ", "UTF-8")));
         assertNull(r.hits().getErrorHit());
     }
 
 
     @Test
-    public final void testDoubleEncoded() throws UnsupportedEncodingException {
+    public void testDoubleEncoded() throws UnsupportedEncodingException {
         String rawQuery = "å å å å å å";
         byte[] encodedOnce = Utf8.toBytes(rawQuery);
         char[] secondEncodingBuffer = new char[encodedOnce.length];
@@ -74,33 +75,42 @@ public class InputCheckingSearcherTestCase {
             secondEncodingBuffer[i] = (char) (encodedOnce[i] & 0xFF);
         }
         String query = new String(secondEncodingBuffer);
-        Result r = execution.search(new Query("/search/?query=" + URLEncoder.encode(query, "UTF-8")));
+        Result r = execution.search(new Query("/search/?query=" + URLEncoder.encode(query, StandardCharsets.UTF_8)));
         assertEquals(1, r.hits().getErrorHit().errors().size());
     }
 
     @Test
-    public final void testRepeatedConsecutiveTermsInPhrase() {
-        Result r = execution.search(new Query("/search/?query=a.b.0.0.0.0.0.c"));
+    public void testRepeatedConsecutiveTermsInPhrase() {
+        Result r = execution.search(new Query("/search/?query=%22a.b.0.0.0.0.0.c%22"));
         assertNull(r.hits().getErrorHit());
-        r = execution.search(new Query("/search/?query=a.b.0.0.0.0.0.0.c"));
+        r = execution.search(new Query("/search/?query=%22a.b.0.0.0.0.0.0.c%22"));
         assertNotNull(r.hits().getErrorHit());
+        assertEquals("More than 5 ocurrences of term '0' in a row detected in phrase : \"a b 0 0 0 0 0 0 c\"",
+                     r.hits().getErrorHit().errorIterator().next().getDetailedMessage());
         r = execution.search(new Query("/search/?query=a.b.0.0.0.1.0.0.0.c"));
         assertNull(r.hits().getErrorHit());
     }
+
     @Test
-    public final void testThatMaxRepeatedConsecutiveTermsInPhraseIs5() {
-        Result r = execution.search(new Query("/search/?query=a.b.0.0.0.0.0.c"));
+    public void testThatMaxRepeatedConsecutiveTermsInPhraseIs5() {
+        Result r = execution.search(new Query("/search/?query=%22a.b.0.0.0.0.0.c%22"));
         assertNull(r.hits().getErrorHit());
-        r = execution.search(new Query("/search/?query=a.b.0.0.0.0.0.0.c"));
+        r = execution.search(new Query("/search/?query=%22a.b.0.0.0.0.0.0.c%22"));
         assertNotNull(r.hits().getErrorHit());
-        r = execution.search(new Query("/search/?query=a.b.0.0.0.1.0.0.0.c"));
+        assertEquals("More than 5 ocurrences of term '0' in a row detected in phrase : \"a b 0 0 0 0 0 0 c\"",
+                     r.hits().getErrorHit().errorIterator().next().getDetailedMessage());
+        r = execution.search(new Query("/search/?query=%22a.b.0.0.0.1.0.0.0.c%22"));
         assertNull(r.hits().getErrorHit());
     }
+
     @Test
-    public final void testThatMaxRepeatedTermsInPhraseIs10() {
-        Result r = execution.search(new Query("/search/?query=0.a.1.a.2.a.3.a.4.a.5.a.6.a.7.a.9.a"));
+    public void testThatMaxRepeatedTermsInPhraseIs10() {
+        Result r = execution.search(new Query("/search/?query=%220.a.1.a.2.a.3.a.4.a.5.a.6.a.7.a.9.a%22"));
         assertNull(r.hits().getErrorHit());
-        r = execution.search(new Query("/search/?query=0.a.1.a.2.a.3.a.4.a.5.a.6.a.7.a.8.a.9.a.10.a"));
+        r = execution.search(new Query("/search/?query=%220.a.1.a.2.a.3.a.4.a.5.a.6.a.7.a.8.a.9.a.10.a%22"));
         assertNotNull(r.hits().getErrorHit());
+        assertEquals("Phrase contains more than 10 occurrences of term 'a' in phrase : \"0 a 1 a 2 a 3 a 4 a 5 a 6 a 7 a 8 a 9 a 10 a\"",
+                     r.hits().getErrorHit().errorIterator().next().getDetailedMessage());
     }
+
 }
