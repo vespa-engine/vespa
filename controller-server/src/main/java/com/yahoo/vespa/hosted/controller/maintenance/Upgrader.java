@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
-import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 
 /**

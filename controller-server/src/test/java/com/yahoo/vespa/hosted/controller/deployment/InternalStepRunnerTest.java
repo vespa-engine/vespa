@@ -60,7 +60,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinishe
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author jonmv

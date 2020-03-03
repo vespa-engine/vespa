@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Clock;

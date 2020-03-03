@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.inject.Inject;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
 import java.time.Duration;
