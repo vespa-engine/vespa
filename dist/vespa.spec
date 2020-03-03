@@ -108,6 +108,7 @@ BuildRequires: openblas-devel
 BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
+BuildRequires: re2-devel
 %if ! 0%{?el7}
 BuildRequires: libicu-devel
 %endif
@@ -151,6 +152,7 @@ Requires: openblas-serial
 Requires: lz4
 Requires: libzstd
 Requires: zlib
+Requires: re2
 %if ! 0%{?el7}
 Requires: libicu
 %endif
