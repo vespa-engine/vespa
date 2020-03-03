@@ -39,6 +39,7 @@ public class NodeMetricsDbMaintainer extends Maintainer {
                 nodeMetricsDb.add(nodeMetrics.fetchMetrics(application));
             }
             catch (Exception e) {
+                // TODO: Don't warn if this only happens occasionally
                 if (warnings++ < maxWarningsPerInvocation)
                     log.log(Level.WARNING, "Could not update metrics for " + application, e);
             }
