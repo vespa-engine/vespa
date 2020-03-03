@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -48,7 +49,12 @@ public class SimpleHttpClient implements AutoCloseable {
     private final String scheme;
     private final int listenPort;
 
-    public SimpleHttpClient(final SSLContext sslContext, final int listenPort, final boolean useCompression) {
+    public SimpleHttpClient(SSLContext sslContext, int listenPort, boolean useCompression) {
+        this(sslContext, null, null, listenPort, useCompression);
+    }
+
+    public SimpleHttpClient(SSLContext sslContext, List<String> enabledProtocols, List<String> enabledCiphers,
+                            int listenPort, boolean useCompression) {
         HttpClientBuilder builder = HttpClientBuilder.create();
         if (!useCompression) {
             builder.disableContentCompression();
@@ -56,6 +62,8 @@ public class SimpleHttpClient implements AutoCloseable {
         if (sslContext != null) {
             SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(
                     sslContext,
+                    toArray(enabledProtocols),
+                    toArray(enabledCiphers),
                     new DefaultHostnameVerifier());
             builder.setSSLSocketFactory(sslConnectionFactory);
 
@@ -69,6 +77,10 @@ public class SimpleHttpClient implements AutoCloseable {
         }
         this.delegate = builder.build();
         this.listenPort = listenPort;
+    }
+
+    private static String[] toArray(List<String> list) {
+        return list != null ? list.toArray(new String[0]) : null;
     }
 
     public URI newUri(final String path) {
