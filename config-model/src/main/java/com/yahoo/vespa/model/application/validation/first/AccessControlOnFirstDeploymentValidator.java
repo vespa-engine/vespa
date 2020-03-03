@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.yahoo.collections.CollectionUtil.mkString;
+import static com.yahoo.config.provision.InstanceName.defaultName;
 import static com.yahoo.vespa.model.container.http.AccessControl.hasHandlerThatNeedsProtection;
 
 /**
@@ -27,10 +28,7 @@ public class AccessControlOnFirstDeploymentValidator extends Validator {
     @Override
     public void validate(VespaModel model, DeployState deployState) {
 
-        if (! deployState.isHosted()) return;
-        if (! deployState.zone().environment().isProduction()) return;
-        if (deployState.zone().system().isPublic()) return;
-        if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
+        if (! needsAccessControlValidation(model, deployState)) return;
 
         List<String> offendingClusters = new ArrayList<>();
         for (ContainerCluster<? extends Container> c : model.getContainerClusters().values()) {
@@ -43,11 +41,19 @@ public class AccessControlOnFirstDeploymentValidator extends Validator {
                 if (hasHandlerThatNeedsProtection(cluster) || ! cluster.getAllServlets().isEmpty())
                     offendingClusters.add(cluster.getName());
         }
-        if (! offendingClusters.isEmpty()
-            && deployState.getApplicationPackage().getApplicationId().instance().equals(InstanceName.defaultName()))
+        if (! offendingClusters.isEmpty())
             deployState.validationOverrides().invalid(ValidationId.accessControl,
                                                       "Access-control must be enabled for write operations to container clusters in production zones: " +
-                                                              mkString(offendingClusters, "[", ", ", "]."), deployState.now());
+                                                              mkString(offendingClusters, "[", ", ", "]"), deployState.now());
     }
 
+    public static boolean needsAccessControlValidation(VespaModel model, DeployState deployState) {
+        if (! deployState.isHosted()) return false;
+        if (! deployState.zone().environment().isProduction()) return false;
+        if (deployState.zone().system().isPublic()) return false;
+        if (! deployState.getApplicationPackage().getApplicationId().instance().equals(defaultName())) return false;
+        if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return false;
+
+        return true;
+    }
 }
