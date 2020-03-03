@@ -115,6 +115,7 @@ public class InternalStepRunner implements StepRunner {
     static final NodeResources DEFAULT_TESTER_RESOURCES_AWS =
             new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
 
+    static final Duration capacityTimeout = Duration.ofMinutes(5);
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration endpointCertificateTimeout = Duration.ofMinutes(15);
     static final Duration testerTimeout = Duration.ofMinutes(30);
@@ -275,7 +276,9 @@ public class InternalStepRunner implements StepRunner {
                     return result;
                 case OUT_OF_CAPACITY:
                     logger.log(e.getServerMessage());
-                    return Optional.of(outOfCapacity);
+                    return controller.system().isCd() && startTime.plus(capacityTimeout).isAfter(controller.clock().instant())
+                           ? Optional.empty()
+                           : Optional.of(outOfCapacity);
                 case INVALID_APPLICATION_PACKAGE:
                 case BAD_REQUEST:
                     logger.log(e.getMessage());
@@ -283,7 +286,8 @@ public class InternalStepRunner implements StepRunner {
             }
 
             throw e;
-        } catch (EndpointCertificateException e) {
+        }
+        catch (EndpointCertificateException e) {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
