@@ -371,12 +371,6 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(1, tester.jobs().active().size());
         assertEquals(version, tester.instance(app.instanceId()).deployments().get(zone).version());
-
-        try {
-            tester.jobs().deploy(app.instanceId(), JobType.productionApNortheast1, Optional.empty(), applicationPackage);
-            fail("Deployments outside dev should not be allowed.");
-        }
-        catch (IllegalArgumentException expected) { }
     }
 
     @Test
@@ -420,8 +414,8 @@ public class InternalStepRunnerTest {
     public void certificateTimeoutAbortsJob() {
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.Public);
         var zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
-                                      ZoneApiMock.fromId("staging.aws-us-east-1c"),
-                                      ZoneApiMock.fromId("prod.aws-us-east-1c"));
+                            ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                            ZoneApiMock.fromId("prod.aws-us-east-1c"));
         tester.controllerTester().zoneRegistry()
               .setZones(zones)
               .setRoutingMethod(zones, RoutingMethod.exclusive);

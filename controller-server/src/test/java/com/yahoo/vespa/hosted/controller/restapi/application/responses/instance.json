@@ -13,8 +13,8 @@
   "projectId": 123,
   "deploying": {
     "revision": {
-      "buildNumber": "(ignore)",
-      "hash": "(ignore)",
+      "buildNumber": 1,
+      "hash": "1.0.1-commit1",
       "source": {
         "gitRepository": "repository1",
         "gitBranch": "master",
@@ -30,10 +30,10 @@
       "success": true,
       "lastTriggered": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -47,10 +47,10 @@
       },
       "lastCompleted": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -64,10 +64,10 @@
       },
       "lastSuccess": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -85,10 +85,10 @@
       "success": true,
       "lastTriggered": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -102,10 +102,10 @@
       },
       "lastCompleted": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -119,10 +119,10 @@
       },
       "lastSuccess": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -140,10 +140,10 @@
       "success": true,
       "lastTriggered": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -157,10 +157,10 @@
       },
       "lastCompleted": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -174,10 +174,10 @@
       },
       "lastSuccess": {
         "id": 1,
-        "version": "(ignore)",
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -192,13 +192,13 @@
     },
     {
       "type": "production-us-east-3",
-      "success": false,
+      "success": true,
       "lastTriggered": {
-        "id": 1,
-        "version": "(ignore)",
+        "id": 2,
+        "version": "6.1.0",
         "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -207,6 +207,18 @@
           "sourceUrl": "repository1/tree/commit1",
           "commit": "commit1"
         },
+        "reason": "unknown reason",
+        "at": "(ignore)"
+      },
+      "lastCompleted": {
+        "id": 1,
+        "version": "6.1.0",
+        "reason": "unknown reason",
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "id": 1,
+        "version": "6.1.0",
         "reason": "unknown reason",
         "at": "(ignore)"
       }
@@ -263,7 +275,7 @@
           "rotationId": "rotation-id-1",
           "clusterId": "foo",
           "status": "IN",
-          "lastUpdated":"(ignore)"
+          "lastUpdated": "(ignore)"
         }
       ],
       "environment": "prod",

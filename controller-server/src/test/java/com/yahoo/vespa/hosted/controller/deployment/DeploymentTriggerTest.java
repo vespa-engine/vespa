@@ -3,13 +3,19 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
@@ -22,11 +28,14 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast2;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApSoutheast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionAwsUsEast1a;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCdAwsUsEast1a;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCdUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -57,7 +66,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentTriggerTest {
 
-    private final DeploymentTester tester = new DeploymentTester();
+    private DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testTriggerFailing() {
@@ -1064,6 +1073,60 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         tester.outstandingChangeDeployer().run();
         assertEquals(Change.of(app.lastSubmission().get()), app.instance().change());
+    }
+
+    @Test
+    public void mixedDirectAndPipelineJobsInProduction() {
+        ApplicationPackage cdPackage = new ApplicationPackageBuilder().region("cd-us-central-1")
+                                                                      .region("cd-aws-us-east-1a")
+                                                                      .build();
+        ServiceRegistryMock services = new ServiceRegistryMock();
+        var zones = List.of(ZoneApiMock.fromId("test.cd-us-central-1"),
+                            ZoneApiMock.fromId("staging.cd-us-central-1"),
+                            ZoneApiMock.fromId("prod.cd-us-central-1"),
+                            ZoneApiMock.fromId("prod.cd-aws-us-east-1a"));
+        services.zoneRegistry()
+                .setSystemName(SystemName.cd)
+                .setZones(zones)
+                .setRoutingMethod(zones, RoutingMethod.exclusive);
+        tester = new DeploymentTester(new ControllerTester(services));
+        tester.configServer().bootstrap(services.zoneRegistry().zones().all().ids(), SystemApplication.values());
+        tester.controllerTester().upgradeSystem(Version.fromString("6.1"));
+        tester.controllerTester().computeVersionStatus();
+        var app = tester.newDeploymentContext();
+
+        app.runJob(productionCdUsCentral1, cdPackage);
+        app.submit(cdPackage);
+        app.runJob(systemTest);
+        // Staging test requires unknown initial version, and is broken.
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
+        app.runJob(productionCdUsCentral1)
+           .abortJob(stagingTest) // Complete failing run.
+           .runJob(stagingTest)
+           .runJob(productionCdAwsUsEast1a);
+
+        app.runJob(productionCdUsCentral1, cdPackage);
+        var version = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version);
+        tester.upgrader().maintain();
+        // System and staging tests both require unknown versions, and are broken.
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
+        app.runJob(productionCdUsCentral1)
+           .abortJob(systemTest)
+           .abortJob(stagingTest)
+           .runJob(systemTest)
+           .runJob(stagingTest)
+           .runJob(productionCdAwsUsEast1a);
+
+        app.runJob(productionCdUsCentral1, cdPackage);
+        app.submit(cdPackage);
+        app.runJob(systemTest);
+        // Staging test requires unknown initial version, and is broken.
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
+        app.runJob(productionCdUsCentral1)
+           .jobAborted(stagingTest)
+           .runJob(stagingTest)
+           .runJob(productionCdAwsUsEast1a);
     }
 
 }

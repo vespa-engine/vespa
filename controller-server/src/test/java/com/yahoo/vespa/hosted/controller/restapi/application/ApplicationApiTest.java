@@ -257,8 +257,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ApplicationId id = ApplicationId.from("tenant1", "application1", "instance1");
         var app1 = deploymentTester.newDeploymentContext(id);
 
-        // POST (deploy) an application to start a manual deployment to dev
+        // POST (deploy) an application to start a manual deployment in prod is not allowed
         MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/production-us-east-3/", POST)
+                                      .data(entity)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Direct deployments are only allowed to manually deployed environments.\"}", 400);
+
+        // POST (deploy) an application to start a manual deployment in prod is allowed for operators
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/production-us-east-3/", POST)
+                                      .data(entity)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"message\":\"Deployment started in run 1 of production-us-east-3 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
+        app1.runJob(JobType.productionUsEast3);
+        tester.controller().applications().deactivate(app1.instanceId(), ZoneId.from("prod", "us-east-3"));
+
+        // POST (deploy) an application to start a manual deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1/", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),

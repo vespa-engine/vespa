@@ -275,7 +275,7 @@
     "us-east-3": {
       "runs": [
         {
-          "id": 1,
+          "id": 2,
           "status": "aborted",
           "start": "(ignore)",
           "wantedPlatform": "6.1",
@@ -296,6 +296,26 @@
             "report": "unfinished"
           },
           "tasks": {},
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": "(ignore)",
+          "end": "(ignore)",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "unknown"
+          },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "copyVespaLogs": "succeeded"
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded"
+          },
           "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/1"
         }
       ],

@@ -1482,6 +1482,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse jobDeploy(ApplicationId id, JobType type, HttpRequest request) {
+        if ( ! type.environment().isManuallyDeployed() && ! isOperator(request))
+            throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
+
         Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("applicationZip"))
             throw new IllegalArgumentException("Missing required form part 'applicationZip'");
