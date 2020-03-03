@@ -50,7 +50,7 @@ public class ApplicationPackageValidator {
     }
 
     /** Verify that we have the security/clients.pem file for public systems */
-    public void validateSecurityClientsPem(ApplicationPackage applicationPackage) {
+    private void validateSecurityClientsPem(ApplicationPackage applicationPackage) {
         if (controller.system().isPublic() && applicationPackage.trustedCertificates().isEmpty())
             throw new IllegalArgumentException("Missing required file 'security/clients.pem'");
     }
