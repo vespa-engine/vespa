@@ -123,10 +123,6 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                 .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
 
-    protected User userFor(Tenant tenant) {
-        return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
-    }
-
     protected void store(IssueId issueId, TenantAndApplicationId applicationId) {
         controller().applications().lockApplicationIfPresent(applicationId, application ->
                 controller().applications().store(application.withOwnershipIssueId(issueId)));

@@ -43,10 +43,6 @@ public class MetricsMock implements Metric {
         return ctx;
     }
 
-    public Map<Context, Map<String, Number>> getMetrics() {
-        return metrics;
-    }
-    
     /** Returns a zero-context metric by name, or null if it is not present */
     public Number getMetric(String name) {
         Map<String, Number> valuesForEmptyContext = metrics.get(createContext(Collections.emptyMap()));

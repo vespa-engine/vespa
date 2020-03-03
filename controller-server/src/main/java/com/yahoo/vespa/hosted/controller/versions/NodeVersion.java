@@ -95,8 +95,4 @@ public class NodeVersion {
         return Objects.hash(hostname, zone, currentVersion, wantedVersion, changedAt);
     }
 
-    public static NodeVersion empty(HostName hostname) {
-        return new NodeVersion(hostname, ZoneId.defaultId(), Version.emptyVersion, Version.emptyVersion, Instant.EPOCH);
-    }
-
 }

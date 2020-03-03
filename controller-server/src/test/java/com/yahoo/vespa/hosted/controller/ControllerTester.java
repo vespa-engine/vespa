@@ -60,7 +60,6 @@ import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
@@ -191,27 +190,6 @@ public final class ControllerTester {
         if (inContainer)
             throw new UnsupportedOperationException("Cannot recreate this controller");
         controller = createController(curator, rotationsConfig, athenzDb, serviceRegistry);
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
-        createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public void createAndDeploy(String tenantName, String domainName, String applicationName,
-                                    String instanceName, ZoneId zone, long projectId, Long propertyId) {
-        throw new AssertionError("Not supposed to use this");
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public void createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
-        createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
-        createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
 
     /** Upgrade controller to given version */
@@ -360,14 +338,6 @@ public final class ControllerTester {
         return application;
     }
 
-    public void deploy(ApplicationId id, ZoneId zone) {
-        deploy(id, zone, new ApplicationPackage(new byte[0]));
-    }
-
-    public void deploy(ApplicationId id, ZoneId zone, ApplicationPackage applicationPackage) {
-        deploy(id, zone, applicationPackage, false);
-    }
-
     public void deploy(ApplicationId id, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
         deploy(id, zone, Optional.of(applicationPackage), deployCurrentVersion);
     }
@@ -381,10 +351,6 @@ public final class ControllerTester {
                                            zone,
                                            applicationPackage,
                                            new DeployOptions(false, version, false, deployCurrentVersion));
-    }
-
-    public Supplier<Instance> application(ApplicationId application) {
-        return () -> controller().applications().requireInstance(application);
     }
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
