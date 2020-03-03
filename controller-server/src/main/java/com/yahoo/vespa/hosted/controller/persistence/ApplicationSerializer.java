@@ -92,6 +92,7 @@ public class ApplicationSerializer {
     private static final String pemDeployKeysField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
+    private static final String assignedRotationRegionsField = "regions";
     private static final String versionField = "version";
 
     // Instance fields
@@ -190,7 +191,7 @@ public class ApplicationSerializer {
             instanceObject.setString(instanceNameField, instance.name().value());
             deploymentsToSlime(instance.deployments().values(), instanceObject.setArray(deploymentsField));
             toSlime(instance.jobPauses(), instanceObject.setObject(deploymentJobsField));
-            assignedRotationsToSlime(instance.rotations(), instanceObject, assignedRotationsField);
+            assignedRotationsToSlime(instance.rotations(), instanceObject);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
             toSlime(instance.change(), instanceObject, deployingField);
         }
@@ -309,13 +310,17 @@ public class ApplicationSerializer {
         });
     }
 
-    private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
-        var rotationsArray = parent.setArray(fieldName);
+    private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent) {
+        var rotationsArray = parent.setArray(assignedRotationsField);
         for (var rotation : rotations) {
             var object = rotationsArray.addObject();
             object.setString(assignedRotationEndpointField, rotation.endpointId().id());
             object.setString(assignedRotationRotationField, rotation.rotationId().asString());
             object.setString(assignedRotationClusterField, rotation.clusterId().value());
+            var regionsArray = object.setArray(assignedRotationRegionsField);
+            for (var region : rotation.regions()) {
+                regionsArray.addString(region.value());
+            }
         }
     }
 
@@ -496,11 +501,11 @@ public class ApplicationSerializer {
 
     private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, InstanceName instance, Inspector root) {
         var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
-
         root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
             var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
             var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
             var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
+            // TODO(mpolden): Read regions from field instead of deployment spec after next release
             var regions = deploymentSpec.instance(instance)
                                         .map(spec -> globalEndpointRegions(spec, endpointId))
                                         .orElse(Set.of());
