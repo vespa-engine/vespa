@@ -5,8 +5,8 @@ import com.yahoo.jdisc.http.HttpHeaders;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.GzipCompressingEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -19,6 +19,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
@@ -46,10 +47,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * A simple http client for testing
  *
  * @author Simon Thoresen Hult
+ * @author bjorncs
  */
-public class SimpleHttpClient {
+public class SimpleHttpClient implements AutoCloseable {
 
-    private final HttpClient delegate;
+    private final CloseableHttpClient delegate;
     private final String scheme;
     private final int listenPort;
 
@@ -136,6 +138,11 @@ public class SimpleHttpClient {
         return buf.toString(StandardCharsets.UTF_8.name());
     }
 
+    @Override
+    public void close() throws IOException {
+        delegate.close();
+    }
+
     public class RequestExecutor {
 
         private HttpUriRequest request;
@@ -177,7 +184,9 @@ public class SimpleHttpClient {
             if (entity != null) {
                 ((HttpPost)request).setEntity(entity);
             }
-            return new ResponseValidator(delegate.execute(request));
+            try (CloseableHttpResponse response = delegate.execute(request)){
+                return new ResponseValidator(response);
+            }
         }
     }
 
