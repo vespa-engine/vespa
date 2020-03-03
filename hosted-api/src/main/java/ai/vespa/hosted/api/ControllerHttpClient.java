@@ -156,11 +156,12 @@ public abstract class ControllerHttpClient {
     public DeploymentLog followDeploymentUntilDone(ApplicationId id, ZoneId zone, long run,
                                                    Consumer<DeploymentLog.Entry> out) {
         long last = -1;
-        DeploymentLog log;
+        DeploymentLog log = null;
         while (true) {
-            log = deploymentLog(id, zone, run, last);
-            for (DeploymentLog.Entry entry : log.entries())
+            DeploymentLog update = deploymentLog(id, zone, run, last);
+            for (DeploymentLog.Entry entry : update.entries())
                 out.accept(entry);
+            log = (log == null ? update : log.updatedWith(update));
             last = log.last().orElse(last);
 
             if ( ! log.isActive())

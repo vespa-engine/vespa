@@ -4,6 +4,7 @@ package ai.vespa.hosted.api;
 import java.time.Instant;
 import java.util.List;
 import java.util.OptionalLong;
+import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -25,6 +26,14 @@ public class DeploymentLog {
         this.active = active;
         this.status = status;
         this.last = last;
+    }
+
+    /** Returns this log updated with the content of the other. */
+    public DeploymentLog updatedWith(DeploymentLog other) {
+        return new DeploymentLog(Stream.concat(entries.stream(), other.entries.stream()).collect(toUnmodifiableList()),
+                                 other.active,
+                                 other.status,
+                                 other.last);
     }
 
     public List<Entry> entries() {
