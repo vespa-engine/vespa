@@ -40,7 +40,33 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Steinar Knutsen
  */
+@SuppressWarnings("deprecation")
 public class FieldCollapsingSearcherTestCase {
+
+    private FastHit createHit(String uri,int relevancy,int mid) {
+        FastHit hit = new FastHit(uri,relevancy);
+        hit.setField("amid", String.valueOf(mid));
+        return hit;
+    }
+
+    private void assertHit(String uri,int relevancy,int mid,Hit hit) {
+        assertEquals(uri,hit.getId().toString());
+        assertEquals(relevancy, ((int) hit.getRelevance().getScore()));
+        assertEquals(mid,Integer.parseInt((String) hit.getField("amid")));
+    }
+
+    private static class ZeroHitsControl extends com.yahoo.search.Searcher {
+        public int queryCount = 0;
+        public com.yahoo.search.Result search(com.yahoo.search.Query query,
+                com.yahoo.search.searchchain.Execution execution) {
+            ++queryCount;
+            if (query.getHits() == 0) {
+                return new Result(query);
+            } else {
+                return new Result(query, ErrorMessage.createIllegalQuery("Did not request zero hits."));
+            }
+        }
+    }
 
     @Test
     public void testFieldCollapsingWithoutHits() {
@@ -90,14 +116,14 @@ public class FieldCollapsingSearcherTestCase {
         // The searcher turns off collapsing further on in the chain
         q.properties().set("collapse", "0");
         Result r = new Result(q);
-        r.hits().add(createHit("http://acme.org/a.html",10, 0));
-        r.hits().add(createHit("http://acme.org/b.html", 9, 0));
-        r.hits().add(createHit("http://acme.org/c.html", 9, 1));
-        r.hits().add(createHit("http://acme.org/d.html", 8, 1));
-        r.hits().add(createHit("http://acme.org/e.html", 8, 2));
-        r.hits().add(createHit("http://acme.org/f.html", 7, 2));
-        r.hits().add(createHit("http://acme.org/g.html", 7, 3));
-        r.hits().add(createHit("http://acme.org/h.html", 6, 3));
+        r.hits().add(createHit("http://acme.org/a.html",10,0));
+        r.hits().add(createHit("http://acme.org/b.html", 9,0));
+        r.hits().add(createHit("http://acme.org/c.html", 9,1));
+        r.hits().add(createHit("http://acme.org/d.html", 8,1));
+        r.hits().add(createHit("http://acme.org/e.html", 8,2));
+        r.hits().add(createHit("http://acme.org/f.html", 7,2));
+        r.hits().add(createHit("http://acme.org/g.html", 7,3));
+        r.hits().add(createHit("http://acme.org/h.html", 6,3));
         r.setTotalHitCount(8);
         docsource.addResult(q, r);
 
@@ -107,10 +133,10 @@ public class FieldCollapsingSearcherTestCase {
 
         assertEquals(4, r.getHitCount());
         assertEquals(1, docsource.getQueryCount());
-        assertHit("http://acme.org/a.html",10, 0, r.hits().get(0));
-        assertHit("http://acme.org/c.html", 9, 1, r.hits().get(1));
-        assertHit("http://acme.org/e.html", 8, 2, r.hits().get(2));
-        assertHit("http://acme.org/g.html", 7, 3, r.hits().get(3));
+        assertHit("http://acme.org/a.html",10,0,r.hits().get(0));
+        assertHit("http://acme.org/c.html", 9,1,r.hits().get(1));
+        assertHit("http://acme.org/e.html", 8,2,r.hits().get(2));
+        assertHit("http://acme.org/g.html", 7,3,r.hits().get(3));
     }
 
     @Test
@@ -126,14 +152,14 @@ public class FieldCollapsingSearcherTestCase {
         // The searcher turns off collapsing further on in the chain
         q.properties().set("collapse", "0");
         Result r = new Result(q);
-        r.hits().add(createHit("http://acme.org/a.html",10, 0));
-        r.hits().add(createHit("http://acme.org/b.html", 9, 0));
-        r.hits().add(createHit("http://acme.org/c.html", 9, 1));
-        r.hits().add(createHit("http://acme.org/d.html", 8, 1));
-        r.hits().add(createHit("http://acme.org/e.html", 8, 2));
-        r.hits().add(createHit("http://acme.org/f.html", 7, 2));
-        r.hits().add(createHit("http://acme.org/g.html", 7, 3));
-        r.hits().add(createHit("http://acme.org/h.html", 6, 3));
+        r.hits().add(createHit("http://acme.org/a.html",10,0));
+        r.hits().add(createHit("http://acme.org/b.html", 9,0));
+        r.hits().add(createHit("http://acme.org/c.html", 9,1));
+        r.hits().add(createHit("http://acme.org/d.html", 8,1));
+        r.hits().add(createHit("http://acme.org/e.html", 8,2));
+        r.hits().add(createHit("http://acme.org/f.html", 7,2));
+        r.hits().add(createHit("http://acme.org/g.html", 7,3));
+        r.hits().add(createHit("http://acme.org/h.html", 6,3));
         r.setTotalHitCount(8);
         docsource.addResult(q, r);
 
@@ -143,10 +169,10 @@ public class FieldCollapsingSearcherTestCase {
 
         assertEquals(4, r.getHitCount());
         assertEquals(1, docsource.getQueryCount());
-        assertHit("http://acme.org/a.html",10,0, r.hits().get(0));
-        assertHit("http://acme.org/c.html", 9,1, r.hits().get(1));
-        assertHit("http://acme.org/e.html", 8,2, r.hits().get(2));
-        assertHit("http://acme.org/g.html", 7,3, r.hits().get(3));
+        assertHit("http://acme.org/a.html",10,0,r.hits().get(0));
+        assertHit("http://acme.org/c.html", 9,1,r.hits().get(1));
+        assertHit("http://acme.org/e.html", 8,2,r.hits().get(2));
+        assertHit("http://acme.org/g.html", 7,3,r.hits().get(3));
     }
 
     @Test
@@ -159,14 +185,14 @@ public class FieldCollapsingSearcherTestCase {
 
         Query q = new Query("?query=test_collapse");
         Result r = new Result(q);
-        r.hits().add(createHit("http://acme.org/a.html",10, 0));
-        r.hits().add(createHit("http://acme.org/b.html", 9, 0));
-        r.hits().add(createHit("http://acme.org/c.html", 9, 1));
-        r.hits().add(createHit("http://acme.org/d.html", 8, 1));
-        r.hits().add(createHit("http://acme.org/e.html", 8, 2));
-        r.hits().add(createHit("http://acme.org/f.html", 7, 2));
-        r.hits().add(createHit("http://acme.org/g.html", 7, 3));
-        r.hits().add(createHit("http://acme.org/h.html", 6, 3));
+        r.hits().add(createHit("http://acme.org/a.html",10,0));
+        r.hits().add(createHit("http://acme.org/b.html", 9,0));
+        r.hits().add(createHit("http://acme.org/c.html", 9,1));
+        r.hits().add(createHit("http://acme.org/d.html", 8,1));
+        r.hits().add(createHit("http://acme.org/e.html", 8,2));
+        r.hits().add(createHit("http://acme.org/f.html", 7,2));
+        r.hits().add(createHit("http://acme.org/g.html", 7,3));
+        r.hits().add(createHit("http://acme.org/h.html", 6,3));
         r.setTotalHitCount(8);
         docsource.addResult(q, r);
 
@@ -194,16 +220,16 @@ public class FieldCollapsingSearcherTestCase {
         // The searcher turns off collapsing further on in the chain
         q.properties().set("collapse", "0");
         Result r = new Result(q);
-        r.hits().add(createHit("http://acme.org/a.html",10, 0));
-        r.hits().add(createHit("http://acme.org/b.html", 9, 0));
-        r.hits().add(createHit("http://acme.org/c.html", 9, 0));
-        r.hits().add(createHit("http://acme.org/d.html", 8, 0));
-        r.hits().add(createHit("http://acme.org/e.html", 8, 0));
-        r.hits().add(createHit("http://acme.org/f.html", 7, 0));
-        r.hits().add(createHit("http://acme.org/g.html", 7, 0));
-        r.hits().add(createHit("http://acme.org/h.html", 6, 0));
-        r.hits().add(createHit("http://acme.org/i.html", 5, 1));
-        r.hits().add(createHit("http://acme.org/j.html", 4, 2));
+        r.hits().add(createHit("http://acme.org/a.html",10,0));
+        r.hits().add(createHit("http://acme.org/b.html", 9,0));
+        r.hits().add(createHit("http://acme.org/c.html", 9,0));
+        r.hits().add(createHit("http://acme.org/d.html", 8,0));
+        r.hits().add(createHit("http://acme.org/e.html", 8,0));
+        r.hits().add(createHit("http://acme.org/f.html", 7,0));
+        r.hits().add(createHit("http://acme.org/g.html", 7,0));
+        r.hits().add(createHit("http://acme.org/h.html", 6,0));
+        r.hits().add(createHit("http://acme.org/i.html", 5,1));
+        r.hits().add(createHit("http://acme.org/j.html", 4,2));
         r.setTotalHitCount(10);
         docsource.addResult(q, r);
 
@@ -213,15 +239,15 @@ public class FieldCollapsingSearcherTestCase {
 
         assertEquals(2, r.getHitCount());
         assertEquals(2, docsource.getQueryCount());
-        assertHit("http://acme.org/a.html",10, 0, r.hits().get(0));
-        assertHit("http://acme.org/i.html", 5, 1, r.hits().get(1));
+        assertHit("http://acme.org/a.html",10,0,r.hits().get(0));
+        assertHit("http://acme.org/i.html", 5,1,r.hits().get(1));
 
         // Next results
         docsource.resetQueryCount();
         r = doSearch(collapse, q, 2, 2, chained);
         assertEquals(1, r.getHitCount());
         assertEquals(2, docsource.getQueryCount());
-        assertHit("http://acme.org/j.html",4, 2, r.hits().get(0));
+        assertHit("http://acme.org/j.html",4,2,r.hits().get(0));
     }
 
     /**
@@ -239,16 +265,16 @@ public class FieldCollapsingSearcherTestCase {
         // The searcher turns off collapsing further on in the chain
         q.properties().set("collapse", "0");
         Result r = new Result(q);
-        r.hits().add(createHit("http://acme.org/a.html", 10, 1));
-        r.hits().add(createHit("http://acme.org/b.html", 10, 1));
-        r.hits().add(createHit("http://acme.org/c.html", 10, 0));
-        r.hits().add(createHit("http://acme.org/d.html", 10, 0));
-        r.hits().add(createHit("http://acme.org/e.html", 10, 0));
-        r.hits().add(createHit("http://acme.org/f.html", 10, 0));
-        r.hits().add(createHit("http://acme.org/g.html", 10, 0));
-        r.hits().add(createHit("http://acme.org/h.html", 10, 0));
-        r.hits().add(createHit("http://acme.org/i.html", 10, 0));
-        r.hits().add(createHit("http://acme.org/j.html", 10, 1));
+        r.hits().add(createHit("http://acme.org/a.html",10,1));
+        r.hits().add(createHit("http://acme.org/b.html",10,1));
+        r.hits().add(createHit("http://acme.org/c.html",10,0));
+        r.hits().add(createHit("http://acme.org/d.html",10,0));
+        r.hits().add(createHit("http://acme.org/e.html",10,0));
+        r.hits().add(createHit("http://acme.org/f.html",10,0));
+        r.hits().add(createHit("http://acme.org/g.html",10,0));
+        r.hits().add(createHit("http://acme.org/h.html",10,0));
+        r.hits().add(createHit("http://acme.org/i.html",10,0));
+        r.hits().add(createHit("http://acme.org/j.html",10,1));
         r.setTotalHitCount(10);
         docsource.addResult(q, r);
 
@@ -259,6 +285,17 @@ public class FieldCollapsingSearcherTestCase {
         assertEquals(2, r.getHitCount());
         assertHit("http://acme.org/a.html",10,1,r.hits().get(0));
         assertHit("http://acme.org/c.html",10,0,r.hits().get(1));
+    }
+
+    public static class QueryMessupSearcher extends Searcher {
+        public Result search(com.yahoo.search.Query query, Execution execution) {
+            AndItem a = new AndItem();
+            a.addItem(query.getModel().getQueryTree().getRoot());
+            a.addItem(new WordItem("b"));
+            query.getModel().getQueryTree().setRoot(a);
+
+            return execution.search(query);
+        }
     }
 
     @Test
@@ -272,9 +309,9 @@ public class FieldCollapsingSearcherTestCase {
         chained.put(collapse, messUp);
         chained.put(messUp, docsource);
 
-        // Caveat: Collapse is set to false, because that's what the collapser asks for
-        Query q = new Query("?query=%22test%20collapse%22+b&collapsefield=amid");
-        System.out.println(q);
+        // Caveat: Collapse is set to false, because that's what the
+        // collapser asks for
+        Query q = new Query("?query=test_collapse+b&collapsefield=amid");
         // The searcher turns off collapsing further on in the chain
         q.properties().set("collapse", "0");
         Result r = new Result(q);
@@ -290,13 +327,13 @@ public class FieldCollapsingSearcherTestCase {
         docsource.addResult(q, r);
 
         // Test basic collapsing on mid
-        q = new Query("?query=%22test%20collapse%22&collapsefield=amid");
+        q = new Query("?query=test_collapse&collapsefield=amid");
         r = doSearch(collapse, q, 0, 2, chained);
 
         assertEquals(2, docsource.getQueryCount());
         assertEquals(2, r.getHitCount());
-        assertHit("http://acme.org/a.html",10, 0, r.hits().get(0));
-        assertHit("http://acme.org/h.html", 6, 1, r.hits().get(1));
+        assertHit("http://acme.org/a.html",10,0,r.hits().get(0));
+        assertHit("http://acme.org/h.html", 6,1,r.hits().get(1));
     }
 
     @Test
@@ -330,10 +367,10 @@ public class FieldCollapsingSearcherTestCase {
         assertEquals(4, r.getHitCount());
         assertEquals(1, docsource.getQueryCount());
         assertTrue(r.isFilled("placeholder"));
-        assertHit("http://acme.org/a.html",10, 0, r.hits().get(0));
-        assertHit("http://acme.org/c.html", 9, 1, r.hits().get(1));
-        assertHit("http://acme.org/e.html", 8, 2, r.hits().get(2));
-        assertHit("http://acme.org/g.html", 7, 3, r.hits().get(3));
+        assertHit("http://acme.org/a.html",10,0,r.hits().get(0));
+        assertHit("http://acme.org/c.html", 9,1,r.hits().get(1));
+        assertHit("http://acme.org/e.html", 8,2,r.hits().get(2));
+        assertHit("http://acme.org/g.html", 7,3,r.hits().get(3));
 
         docsource.resetQueryCount();
         // Test basic collapsing on mid
@@ -344,10 +381,10 @@ public class FieldCollapsingSearcherTestCase {
         assertEquals(1, docsource.getQueryCount());
         assertFalse(r.isFilled("placeholder"));
         assertTrue(r.isFilled("short"));
-        assertHit("http://acme.org/a.html",10, 0, r.hits().get(0));
-        assertHit("http://acme.org/c.html", 9, 1, r.hits().get(1));
-        assertHit("http://acme.org/e.html", 8, 2, r.hits().get(2));
-        assertHit("http://acme.org/g.html", 7, 3, r.hits().get(3));
+        assertHit("http://acme.org/a.html",10,0,r.hits().get(0));
+        assertHit("http://acme.org/c.html", 9,1,r.hits().get(1));
+        assertHit("http://acme.org/e.html", 8,2,r.hits().get(2));
+        assertHit("http://acme.org/g.html", 7,3,r.hits().get(3));
     }
 
     @Test
@@ -363,14 +400,14 @@ public class FieldCollapsingSearcherTestCase {
         // The searcher turns off collapsing further on in the chain
         q.properties().set("collapse", "0");
         Result r = new Result(q);
-        r.hits().add(createHit("http://acme.org/a.html",10, 0));
-        r.hits().add(createHit("http://acme.org/b.html", 9, 0));
-        r.hits().add(createHit("http://acme.org/c.html", 9, 1));
-        r.hits().add(createHit("http://acme.org/d.html", 8, 1));
-        r.hits().add(createHit("http://acme.org/e.html", 8, 2));
-        r.hits().add(createHit("http://acme.org/f.html", 7, 2));
-        r.hits().add(createHit("http://acme.org/g.html", 7, 3));
-        r.hits().add(createHit("http://acme.org/h.html", 6, 3));
+        r.hits().add(createHit("http://acme.org/a.html",10,0));
+        r.hits().add(createHit("http://acme.org/b.html", 9,0));
+        r.hits().add(createHit("http://acme.org/c.html", 9,1));
+        r.hits().add(createHit("http://acme.org/d.html", 8,1));
+        r.hits().add(createHit("http://acme.org/e.html", 8,2));
+        r.hits().add(createHit("http://acme.org/f.html", 7,2));
+        r.hits().add(createHit("http://acme.org/g.html", 7,3));
+        r.hits().add(createHit("http://acme.org/h.html", 6,3));
         r.setTotalHitCount(8);
         docsource.addResult(q, r);
 
@@ -379,28 +416,29 @@ public class FieldCollapsingSearcherTestCase {
         Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
 
         // Assert that the regular hits are collapsed
-        assertEquals(4 + 1, result.getHitCount());
+        assertEquals(4+1, result.getHitCount());
         assertEquals(1, docsource.getQueryCount());
-        assertHit("http://acme.org/a.html",10, 0, result.hits().get(0));
-        assertHit("http://acme.org/c.html", 9, 1, result.hits().get(1));
-        assertHit("http://acme.org/e.html", 8, 2, result.hits().get(2));
-        assertHit("http://acme.org/g.html", 7, 3, result.hits().get(3));
+        assertHit("http://acme.org/a.html",10,0,result.hits().get(0));
+        assertHit("http://acme.org/c.html", 9,1,result.hits().get(1));
+        assertHit("http://acme.org/e.html", 8,2,result.hits().get(2));
+        assertHit("http://acme.org/g.html", 7,3,result.hits().get(3));
 
         // Assert that the aggregation group hierarchy is left intact
-        HitGroup root = getFirstGroupIn(result.hits());
+        HitGroup root= getFirstGroupIn(result.hits());
         assertNotNull(root);
-        assertEquals("group:root:",root.getId().stringValue().substring(0, 11)); // The id ends by a global counter currently
-        assertEquals(1, root.size());
-        HitGroup groupList = (GroupList)root.get("grouplist:g1");
+        assertEquals("group:root:",root.getId().stringValue().substring(0,11)); // The id ends by a global counter currently
+        assertEquals(1,root.size());
+        HitGroup groupList= (GroupList)root.get("grouplist:g1");
         assertNotNull(groupList);
-        assertEquals(1, groupList.size());
-        HitGroup group = (HitGroup)groupList.get("group:long:37");
+        assertEquals(1,groupList.size());
+        HitGroup group= (HitGroup)groupList.get("group:long:37");
         assertNotNull(group);
     }
 
     private Group getFirstGroupIn(HitGroup hits) {
-        for (Hit h : hits)
+        for (Hit h : hits) {
             if (h instanceof Group) return (Group)h;
+        }
         return null;
     }
 
@@ -412,8 +450,9 @@ public class FieldCollapsingSearcherTestCase {
 
     private Chain<Searcher> chainedAsSearchChain(Searcher topOfChain, Map<Searcher, Searcher> chained) {
         List<Searcher> searchers = new ArrayList<>();
-        for (Searcher current = topOfChain; current != null; current = chained.get(current))
+        for (Searcher current = topOfChain; current != null; current = chained.get(current)) {
             searchers.add(current);
+        }
         return new Chain<>(searchers);
     }
 
@@ -431,7 +470,7 @@ public class FieldCollapsingSearcherTestCase {
 
         @Override
         public Result search(Query query, Execution execution) {
-            Result r = execution.search(query);
+            Result r=execution.search(query);
             r.hits().add(createAggregationGroup("g1"));
             return r;
         }
@@ -440,51 +479,10 @@ public class FieldCollapsingSearcherTestCase {
             Group root = new Group(new RootId(0), new Relevance(1));
             GroupList groupList = new GroupList(label);
             root.add(groupList);
-            Group value = new Group(new LongId(37l), new Relevance(2.11));
+            Group value=new Group(new LongId(37l),new Relevance(2.11));
             groupList.add(value);
             return root;
         }
-    }
-
-    private FastHit createHit(String uri,int relevancy,int mid) {
-        FastHit hit = new FastHit(uri,relevancy);
-        hit.setField("amid", String.valueOf(mid));
-        return hit;
-    }
-
-    private void assertHit(String uri,int relevancy,int mid,Hit hit) {
-        assertEquals(uri,hit.getId().toString());
-        assertEquals(relevancy, ((int) hit.getRelevance().getScore()));
-        assertEquals(mid,Integer.parseInt((String) hit.getField("amid")));
-    }
-
-    private static class ZeroHitsControl extends com.yahoo.search.Searcher {
-
-        public int queryCount = 0;
-
-        @Override
-        public Result search(Query query, Execution execution) {
-            ++queryCount;
-            if (query.getHits() == 0) {
-                return new Result(query);
-            } else {
-                return new Result(query, ErrorMessage.createIllegalQuery("Did not request zero hits."));
-            }
-        }
-    }
-
-    public static class QueryMessupSearcher extends Searcher {
-
-        @Override
-        public Result search(com.yahoo.search.Query query, Execution execution) {
-            AndItem a = new AndItem();
-            a.addItem(query.getModel().getQueryTree().getRoot());
-            a.addItem(new WordItem("b"));
-            query.getModel().getQueryTree().setRoot(a);
-
-            return execution.search(query);
-        }
-
     }
 
 }

@@ -135,7 +135,6 @@ public class ModelContextImpl implements ModelContext {
         private final double defaultTermwiseLimit;
         private final boolean useBucketSpaceMetric;
         private final boolean useNewAthenzFilter;
-        private final boolean usePhraseSegmenting;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -169,8 +168,6 @@ public class ModelContextImpl implements ModelContext {
             this.useBucketSpaceMetric = Flags.USE_BUCKET_SPACE_METRIC.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useNewAthenzFilter = Flags.USE_NEW_ATHENZ_FILTER.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.usePhraseSegmenting = Flags.PHRASE_SEGMENTING.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
@@ -226,12 +223,7 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean useBucketSpaceMetric() { return useBucketSpaceMetric; }
 
-        @Override
-        public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
-
-        @Override
-        public boolean usePhraseSegmenting() { return usePhraseSegmenting; }
-
+        @Override public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
     }
 
 }

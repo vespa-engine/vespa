@@ -45,7 +45,7 @@ public class CJKSearcherTestCase {
     @Test
     public void testCjkQueryWithOverlappingTokens() {
         // The test language segmenter will segment "bcd" into the overlapping tokens "bc" "cd"
-        assertTransformed("bcd", "SAND bc cd", Query.Type.ALL, Language.CHINESE_SIMPLIFIED, Language.CHINESE_TRADITIONAL,
+        assertTransformed("bcd", "'bc cd'", Query.Type.ALL, Language.CHINESE_SIMPLIFIED, Language.CHINESE_TRADITIONAL,
                           TestLinguistics.INSTANCE);
 
         // While "efg" will be segmented into one of the standard options, "e" "fg"

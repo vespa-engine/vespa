@@ -442,9 +442,9 @@ abstract class StructuredParser extends AbstractParser {
         Item item = null;
 
         try {
-            if ( ! tokens.currentIs(WORD)
-                && ((!tokens.currentIs(NUMBER) && !tokens.currentIs(MINUS)
-                && !tokens.currentIs(UNDERSCORE)) || (!submodes.url && !submodes.site))) {
+            if (!tokens.currentIs(WORD)
+                    && ((!tokens.currentIs(NUMBER) && !tokens.currentIs(MINUS)
+                    && !tokens.currentIs(UNDERSCORE)) || (!submodes.url && !submodes.site))) {
                 return null;
             }
             Token word = tokens.next();
@@ -557,7 +557,6 @@ abstract class StructuredParser extends AbstractParser {
 
             if (composite != null) {
                 composite.addItem(word);
-                connectLastTermsIn(composite);
             } else if (firstWord != null) {
                 if (submodes.site || submodes.url) {
                     UriItem uriItem = new UriItem();
@@ -585,7 +584,6 @@ abstract class StructuredParser extends AbstractParser {
                 }
                 composite.addItem(firstWord);
                 composite.addItem(word);
-                connectLastTermsIn(composite);
             } else if (word instanceof PhraseItem) {
                 composite = (PhraseItem)word;
             } else {
@@ -654,15 +652,6 @@ abstract class StructuredParser extends AbstractParser {
             }
             return firstWord;
         }
-    }
-
-    private void connectLastTermsIn(CompositeItem composite) {
-        int items = composite.items().size();
-        if (items < 2) return;
-        Item nextToLast = composite.items().get(items - 2);
-        Item last = composite.items().get(items - 1);
-        if ( ! (nextToLast instanceof TermItem)) return;
-        ((TermItem)nextToLast).setConnectivity(last, 1);
     }
 
     private boolean addStartMarking() {

@@ -73,7 +73,7 @@ public class IndexFactsTestCase {
         Query q = newQuery("?query=a:b", indexFacts);
         assertEquals("a:b",  q.getModel().getQueryTree().getRoot().toString());
         q = newQuery("?query=notarealindex:b", indexFacts);
-        assertEquals("AND notarealindex b",  q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("\"notarealindex b\"",  q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -302,8 +302,8 @@ public class IndexFactsTestCase {
         IndexFacts.Session session2 = indexFacts.newSession(query2.getModel().getSources(), query2.getModel().getRestrict());
         assertTrue(session1.getIndex("url").isUriIndex());
         assertTrue(session2.getIndex("url").isUriIndex());
-        assertEquals("AND url:https url:foo url:bar", query1.getModel().getQueryTree().toString());
-        assertEquals("AND url:https url:foo url:bar", query2.getModel().getQueryTree().toString());
+        assertEquals("url:\"https foo bar\"", query1.getModel().getQueryTree().toString());
+        assertEquals("url:\"https foo bar\"", query2.getModel().getQueryTree().toString());
     }
 
     @Test
