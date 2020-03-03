@@ -1132,7 +1132,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void sourceRevisionToSlime(Optional<SourceRevision> revision, Cursor object) {
-        if ( ! revision.isPresent()) return;
+        if (revision.isEmpty()) return;
         object.setString("gitRepository", revision.get().repository());
         object.setString("gitBranch", revision.get().branch());
         object.setString("gitCommit", revision.get().commit());

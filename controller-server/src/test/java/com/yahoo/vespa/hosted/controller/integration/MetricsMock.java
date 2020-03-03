@@ -64,9 +64,8 @@ public class MetricsMock implements Metric {
 
     /** Returns metric filtered by dimension and name */
     public Optional<Number> getMetric(Predicate<Map<String, String>> dimensionMatcher, String name) {
-        Map<String, Number> metrics = getMetrics(dimensionMatcher).entrySet()
+        Map<String, Number> metrics = getMetrics(dimensionMatcher).values()
                                                                   .stream()
-                                                                  .map(Map.Entry::getValue)
                                                                   .findFirst()
                                                                   .orElseGet(Collections::emptyMap);
         return Optional.ofNullable(metrics.get(name));

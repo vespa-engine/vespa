@@ -48,12 +48,11 @@ public class AthenzRoleFilterTest {
     private static final URI INSTANCE_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/instance/john");
     private static final URI INSTANCE2_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/instance/jane");
 
-    private ControllerTester tester;
     private AthenzRoleFilter filter;
 
     @Before
     public void setup() {
-        tester = new ControllerTester();
+        ControllerTester tester = new ControllerTester();
         filter = new AthenzRoleFilter(new AthenzClientFactoryMock(tester.athenzDb()),
                                       tester.controller());
 

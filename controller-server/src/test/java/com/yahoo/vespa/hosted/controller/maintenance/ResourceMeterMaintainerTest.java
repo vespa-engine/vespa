@@ -28,7 +28,6 @@ import static org.junit.Assert.assertEquals;
 public class ResourceMeterMaintainerTest {
 
     private final ControllerTester tester = new ControllerTester();
-    private final double DELTA = Double.MIN_VALUE;
     private MockMeteringClient snapshotConsumer = new MockMeteringClient();
     private MetricsMock metrics = new MetricsMock();
 
@@ -45,16 +44,16 @@ public class ResourceMeterMaintainerTest {
         ResourceSnapshot app1 = consumedResources.stream().filter(snapshot -> snapshot.getApplicationId().equals(ApplicationId.from("tenant1", "app1", "default"))).findFirst().orElseThrow();
         ResourceSnapshot app2 = consumedResources.stream().filter(snapshot -> snapshot.getApplicationId().equals(ApplicationId.from("tenant2", "app2", "default"))).findFirst().orElseThrow();
 
-        assertEquals(24, app1.getCpuCores(), DELTA);
-        assertEquals(24, app1.getMemoryGb(), DELTA);
-        assertEquals(500, app1.getDiskGb(), DELTA);
+        assertEquals(24, app1.getCpuCores(), Double.MIN_VALUE);
+        assertEquals(24, app1.getMemoryGb(), Double.MIN_VALUE);
+        assertEquals(500, app1.getDiskGb(), Double.MIN_VALUE);
 
-        assertEquals(40, app2.getCpuCores(), DELTA);
-        assertEquals(24, app2.getMemoryGb(), DELTA);
-        assertEquals(500, app2.getDiskGb(), DELTA);
+        assertEquals(40, app2.getCpuCores(), Double.MIN_VALUE);
+        assertEquals(24, app2.getMemoryGb(), Double.MIN_VALUE);
+        assertEquals(500, app2.getDiskGb(), Double.MIN_VALUE);
 
         assertEquals(tester.clock().millis()/1000, metrics.getMetric("metering_last_reported"));
-        assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), DELTA);
+        assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), Double.MIN_VALUE);
     }
 
     private void setUpZones() {

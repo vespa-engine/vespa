@@ -105,10 +105,6 @@ public class DeploymentIssueReporter extends Maintainer {
                            .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
 
-    private User userFor(Tenant tenant) {
-        return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
-    }
-
     /** File an issue for applicationId, if it doesn't already have an open issue associated with it. */
     private void fileDeploymentIssueFor(Application application) {
         try {

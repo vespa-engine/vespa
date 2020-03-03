@@ -62,6 +62,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -184,7 +185,7 @@ public class JobRunnerTest {
         runner.maintain();
         assertTrue(run.get().hasFailed());
         assertTrue(run.get().hasEnded());
-        assertTrue(run.get().status() == aborted);
+        assertSame(aborted, run.get().status());
 
         // A new run is attempted.
         jobs.start(id, systemTest, versions);
@@ -195,7 +196,7 @@ public class JobRunnerTest {
         runner.maintain();
         assertTrue(run.get().hasEnded());
         assertTrue(run.get().hasFailed());
-        assertFalse(run.get().status() == aborted);
+        assertNotSame(aborted, run.get().status());
         assertEquals(failed, run.get().stepStatuses().get(deployTester));
         assertEquals(unfinished, run.get().stepStatuses().get(installTester));
         assertEquals(succeeded, run.get().stepStatuses().get(report));

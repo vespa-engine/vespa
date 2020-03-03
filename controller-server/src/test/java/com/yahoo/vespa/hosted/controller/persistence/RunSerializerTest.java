@@ -55,8 +55,8 @@ public class RunSerializerTest {
     private static final RunSerializer serializer = new RunSerializer();
     private static final Path runFile = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/run-status.json");
     private static final RunId id = new RunId(ApplicationId.from("tenant", "application", "default"),
-                                               JobType.productionUsEast3,
-                                               (long) 112358);
+                                              JobType.productionUsEast3,
+                                              112358);
     private static final Instant start = Instant.parse("2007-12-03T10:15:30.00Z");
 
     @Test

@@ -313,9 +313,8 @@ public final class ControllerTester {
         AthenzCredentials credentials = new AthenzCredentials(
                 new AthenzPrincipal(user), domain, new OktaIdentityToken("okta-identity-token"), new OktaAccessToken("okta-access-token"));
         controller().tenants().create(tenantSpec, credentials);
-        if (contact.isPresent())
-            controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
-                    controller().tenants().store(tenant.with(contact.get())));
+        contact.ifPresent(value -> controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
+                controller().tenants().store(tenant.with(value))));
         assertNotNull(controller().tenants().get(name));
         return name;
     }
