@@ -7,7 +7,6 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
-import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -49,9 +48,7 @@ public class ParseTestCase {
 
     @Test
     public void testTermWithIndexPrefix() {
-        tester.assertParsed("url:foobar",
-                            "url:foobar",
-                            Query.Type.ANY);
+        tester.assertParsed("url:foobar", "url:foobar", Query.Type.ANY);
     }
 
     @Test
@@ -62,98 +59,104 @@ public class ParseTestCase {
     @Test
     public void testMultipleTermsWithUTF8EncodingOred() {
         tester.assertParsed("OR l\u00e5gen delta M\u00dcNICH M\u00fcnchen",
-                            "l\u00e5gen delta M\u00dcNICH M\u00fcnchen",
-                            Query.Type.ANY);
+                "l\u00e5gen delta M\u00dcNICH M\u00fcnchen", Query.Type.ANY);
     }
 
     @Test
     public void testMultipleTermsWithMultiplePrefixes() {
         tester.assertParsed("RANK (+bar -normal.title:foo -baz) url:foobar",
-                            "url:foobar +bar -normal.title:foo -baz", Query.Type.ANY);
+                "url:foobar +bar -normal.title:foo -baz", Query.Type.ANY);
     }
 
     @Test
     public void testSimpleQueryDefaultOr() {
-        tester.assertParsed("OR foobar foo bar baz", "foobar foo bar baz", Query.Type.ANY);
+        tester.assertParsed("OR foobar foo bar baz", "foobar foo bar baz",
+                Query.Type.ANY);
     }
 
     @Test
     public void testOrAndNot() {
         tester.assertParsed("RANK (+(AND baz bar) -xyzzy -foobaz) foobar foo",
-                            "foobar +baz foo -xyzzy -foobaz +bar", Query.Type.ANY);
+                "foobar +baz foo -xyzzy -foobaz +bar", Query.Type.ANY);
     }
 
     @Test
     public void testSimpleOrNestedAnd() {
         tester.assertParsed("RANK (OR foo bar baz) foobar xyzzy",
-                            "foobar +(foo bar baz) xyzzy", Query.Type.ANY);
+                "foobar +(foo bar baz) xyzzy", Query.Type.ANY);
     }
 
     @Test
     public void testSimpleOrNestedNot() {
         tester.assertParsed("+(OR foobar xyzzy) -(AND foo bar baz)",
-                            "foobar -(foo bar baz) xyzzy", Query.Type.ANY);
+                "foobar -(foo bar baz) xyzzy", Query.Type.ANY);
     }
 
     @Test
     public void testOrNotNestedAnd() {
-        tester.assertParsed("RANK (+(AND baz (OR foo bar baz) bar) -xyzzy -foobaz) foobar foo",
-                            "foobar +baz foo -xyzzy +(foo bar baz) -foobaz +bar",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "RANK (+(AND baz (OR foo bar baz) bar) -xyzzy -foobaz) foobar foo",
+                "foobar +baz foo -xyzzy +(foo bar baz) -foobaz +bar",
+                Query.Type.ANY);
     }
 
     @Test
     public void testOrAndNotNestedNot() {
-        tester.assertParsed("RANK (+(AND baz bar) -xyzzy -(AND foo bar baz) -foobaz) foobar foo",
-                            "foobar +baz foo -xyzzy -(foo bar baz) -foobaz +bar",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "RANK (+(AND baz bar) -xyzzy -(AND foo bar baz) -foobaz) foobar foo",
+                "foobar +baz foo -xyzzy -(foo bar baz) -foobaz +bar",
+                Query.Type.ANY);
     }
 
     @Test
     public void testOrMultipleNestedAnd() {
-        tester.assertParsed("RANK (AND (OR fo ba foba) (OR foz baraz)) foobar foo bar baz",
-                            "foobar +(fo ba foba) foo bar +(foz baraz) baz",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "RANK (AND (OR fo ba foba) (OR foz baraz)) foobar foo bar baz",
+                "foobar +(fo ba foba) foo bar +(foz baraz) baz", Query.Type.ANY);
     }
 
     @Test
     public void testOrMultipleNestedNot() {
-        tester.assertParsed("+(OR foobar foo bar baz) -(AND fo ba foba) -(AND foz baraz)",
-                            "foobar -(fo ba foba) foo bar -(foz baraz) baz",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "+(OR foobar foo bar baz) -(AND fo ba foba) -(AND foz baraz)",
+                "foobar -(fo ba foba) foo bar -(foz baraz) baz", Query.Type.ANY);
     }
 
     @Test
     public void testOrAndNotMultipleNestedAnd() {
-        tester.assertParsed("RANK (+(AND baz (OR foo bar baz) (OR foz bazaz) bar) -xyzzy -foobaz) foobar foo",
-                            "foobar +baz foo -xyzzy +(foo bar baz) -foobaz +(foz bazaz) +bar",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "RANK (+(AND baz (OR foo bar baz) (OR foz bazaz) bar) -xyzzy -foobaz) foobar foo",
+                "foobar +baz foo -xyzzy +(foo bar baz) -foobaz +(foz bazaz) +bar",
+                Query.Type.ANY);
     }
 
     @Test
     public void testOrAndNotMultipleNestedNot() {
-        tester.assertParsed("RANK (+(AND baz bar) -xyzzy -(AND foo bar baz) -foobaz -(AND foz bazaz)) foobar foo",
-                            "foobar +baz foo -xyzzy -(foo bar baz) -foobaz -(foz bazaz) +bar",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "RANK (+(AND baz bar) -xyzzy -(AND foo bar baz) -foobaz -(AND foz bazaz)) foobar foo",
+                "foobar +baz foo -xyzzy -(foo bar baz) -foobaz -(foz bazaz) +bar",
+                Query.Type.ANY);
     }
 
     @Test
     public void testOrMultipleNestedAndNot() {
-        tester.assertParsed("RANK (+(AND (OR ffoooo bbaarr) (OR oof rab raboof)) -(AND fo ba foba) -(AND foz baraz)) foobar foo bar baz",
-                            "foobar -(fo ba foba) foo +(ffoooo bbaarr) bar +(oof rab raboof) -(foz baraz) baz",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "RANK (+(AND (OR ffoooo bbaarr) (OR oof rab raboof)) -(AND fo ba foba) -(AND foz baraz)) foobar foo bar baz",
+                "foobar -(fo ba foba) foo +(ffoooo bbaarr) bar +(oof rab raboof) -(foz baraz) baz",
+                Query.Type.ANY);
     }
 
     @Test
     public void testOrAndNotMultipleNestedAndNot() {
-        tester.assertParsed("RANK (+(AND (OR ffoooo bbaarr) (OR oof rab raboof) baz xyxyzzy) -(AND fo ba foba) -foo -bar -(AND foz baraz)) foobar",
-                            "foobar -(fo ba foba) -foo +(ffoooo bbaarr) -bar +(oof rab raboof) -(foz baraz) +baz +xyxyzzy",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "RANK (+(AND (OR ffoooo bbaarr) (OR oof rab raboof) baz xyxyzzy) -(AND fo ba foba) -foo -bar -(AND foz baraz)) foobar",
+                "foobar -(fo ba foba) -foo +(ffoooo bbaarr) -bar +(oof rab raboof) -(foz baraz) +baz +xyxyzzy",
+                Query.Type.ANY);
     }
 
     @Test
     public void testExplicitPhrase() {
-        Item root = tester.assertParsed("\"foo bar foobar\"", "\"foo bar foobar\"", Query.Type.ANY);
+        Item root=tester.assertParsed("\"foo bar foobar\"", "\"foo bar foobar\"", Query.Type.ANY);
         assertTrue(root instanceof PhraseItem);
         assertTrue(((PhraseItem)root).isExplicit());
     }
@@ -161,20 +164,21 @@ public class ParseTestCase {
     @Test
     public void testPhraseWithIndex() {
         tester.assertParsed("normal.title:\"foo bar foobar\"",
-                            "normal.title:\"foo bar foobar\"", Query.Type.ANY);
+                "normal.title:\"foo bar foobar\"", Query.Type.ANY);
     }
 
     @Test
     public void testPhrasesAndTerms() {
         tester.assertParsed("OR \"foo bar foobar\" xyzzy \"baz gaz faz\"",
-                            "\"foo bar foobar\" xyzzy \"baz gaz faz\"", Query.Type.ANY);
+                "\"foo bar foobar\" xyzzy \"baz gaz faz\"", Query.Type.ANY);
     }
 
     @Test
     public void testPhrasesAndTermsWithOperators() {
-        tester.assertParsed("RANK (+(AND \"baz gaz faz\" bazar) -\"foo bar foobar\") foofoo xyzzy",
-                            "foofoo -\"foo bar foobar\" xyzzy +\"baz gaz faz\" +bazar",
-                            Query.Type.ANY);
+        tester.assertParsed(
+                "RANK (+(AND \"baz gaz faz\" bazar) -\"foo bar foobar\") foofoo xyzzy",
+                "foofoo -\"foo bar foobar\" xyzzy +\"baz gaz faz\" +bazar",
+                Query.Type.ANY);
     }
 
     @Test
@@ -184,40 +188,38 @@ public class ParseTestCase {
 
     @Test
     public void testTermWithCatalogAndIndexPrefixDefaultAnd() {
-        tester.assertParsed("normal.title:foobar", "normal.title:foobar", Query.Type.ALL);
+        tester.assertParsed("normal.title:foobar", "normal.title:foobar",
+                Query.Type.ALL);
     }
 
     @Test
     public void testMultipleTermsWithMultiplePrefixesDefaultAnd() {
         tester.assertParsed("+(AND url:foobar bar) -normal.title:foo -baz",
-                            "url:foobar +bar -normal.title:foo -baz",
-                            Query.Type.ALL);
+                "url:foobar +bar -normal.title:foo -baz", Query.Type.ALL);
     }
 
     @Test
     public void testSimpleQueryDefaultAnd() {
-        tester.assertParsed("AND foobar foo bar baz", "foobar foo bar baz", Query.Type.ALL);
+        tester.assertParsed("AND foobar foo bar baz", "foobar foo bar baz",
+                Query.Type.ALL);
     }
 
     @Test
     public void testNotDefaultAnd() {
-        tester.assertParsed("+(AND foobar (OR foo bar baz) xyzzy) -(AND foz baraz bazar)",
-                            "foobar +(foo bar baz) xyzzy -(foz baraz bazar)",
-                            Query.Type.ALL);
+        tester.assertParsed(
+                "+(AND foobar (OR foo bar baz) xyzzy) -(AND foz baraz bazar)",
+                "foobar +(foo bar baz) xyzzy -(foz baraz bazar)", Query.Type.ALL);
     }
 
     @Test
     public void testSimpleTermQueryDefaultPhrase() {
-        tester.assertParsed("foobar",
-                            "foobar",
-                            Query.Type.PHRASE);
+        tester.assertParsed("foobar", "foobar", Query.Type.PHRASE);
     }
 
     @Test
     public void testSimpleQueryDefaultPhrase() {
-        Item root = tester.assertParsed("\"foobar foo bar baz\"",
-                                        "foobar foo bar baz",
-                                        Query.Type.PHRASE);
+        Item root=tester.assertParsed("\"foobar foo bar baz\"", "foobar foo bar baz",
+                Query.Type.PHRASE);
         assertTrue(root instanceof PhraseItem);
         assertFalse(((PhraseItem)root).isExplicit());
     }
@@ -225,25 +227,23 @@ public class ParseTestCase {
     @Test
     public void testMultipleTermsWithMultiplePrefixesDefaultPhrase() {
         tester.assertParsed("\"url foobar bar normal title foo baz\"",
-                            "url:foobar +bar -normal.title:foo -baz",
-                            Query.Type.PHRASE);
+                "url:foobar +bar -normal.title:foo -baz", Query.Type.PHRASE);
     }
 
     @Test
     public void testOdd1() {
-        tester.assertParsed("AND window print error", "+window.print() +error",
-                            Query.Type.ALL);
+        tester.assertParsed("AND \"window print\" error", "+window.print() +error",Query.Type.ALL);
     }
 
     @Test
     public void testOdd2() {
-        tester.assertParsed("normal.title:kaboom", "normal.title:\"kaboom\"",
-                            Query.Type.ALL);
+        tester.assertParsed("normal.title:kaboom", "normal.title:\"kaboom\"",Query.Type.ALL);
     }
 
     @Test
     public void testOdd2Uppercase() {
-        tester.assertParsed("normal.title:KABOOM", "NORMAL.TITLE:\"KABOOM\"", Query.Type.ALL);
+        tester.assertParsed("normal.title:KABOOM", "NORMAL.TITLE:\"KABOOM\"",
+                Query.Type.ALL);
     }
 
     @Test
@@ -280,19 +280,19 @@ public class ParseTestCase {
     @Test
     public void testNestedCompositesDefaultOr() {
         tester.assertParsed("RANK (OR foobar bar baz) foo xyzzy",
-                            "foo +(foobar +(bar baz)) xyzzy", Query.Type.ANY);
+                "foo +(foobar +(bar baz)) xyzzy", Query.Type.ANY);
     }
 
     @Test
     public void testNestedCompositesDefaultAnd() {
         tester.assertParsed("AND foo (OR foobar bar baz) xyzzy",
-                            "foo +(foobar +(bar baz)) xyzzy", Query.Type.ALL);
+                "foo +(foobar +(bar baz)) xyzzy", Query.Type.ALL);
     }
 
     @Test
     public void testNestedCompositesPhraseDefault() {
         tester.assertParsed("\"foo foobar bar baz xyzzy\"",
-                            "foo +(foobar +(bar baz)) xyzzy", Query.Type.PHRASE);
+                "foo +(foobar +(bar baz)) xyzzy", Query.Type.PHRASE);
     }
 
     @Test
@@ -349,7 +349,8 @@ public class ParseTestCase {
 
     @Test
     public void testNumericWithIndex() {
-        tester.assertParsed("document.size:[34;454]", "document.size:[34;454]", Query.Type.ANY);
+        tester.assertParsed("document.size:[34;454]", "document.size:[34;454]",
+                Query.Type.ANY);
     }
 
     @Test
@@ -360,14 +361,14 @@ public class ParseTestCase {
     @Test
     public void testMultipleIntegerWithIndex() {
         tester.assertParsed("OR document.size:[34;454] date:>1234567890",
-                            "document.size:[34;454] date:>1234567890", Query.Type.ANY);
+                "document.size:[34;454] date:>1234567890", Query.Type.ANY);
     }
 
     @Test
     public void testMixedNumericAndOtherTerms() {
         tester.assertParsed("RANK (AND document.size:<1024 xyzzy) foo date:>123456890",
-                            "foo +document.size:<1024 +xyzzy date:>123456890",
-                            Query.Type.ANY);
+                "foo +document.size:<1024 +xyzzy date:>123456890",
+                Query.Type.ANY);
     }
 
     @Test
@@ -377,18 +378,20 @@ public class ParseTestCase {
 
     @Test
     public void testItemPhraseEmptyPhrase() {
-        tester.assertParsed("RANK to \"or not to be\"", "+to\"or not to be\"\"\"", Query.Type.ANY);
+        tester.assertParsed("RANK to \"or not to be\"", "+to\"or not to be\"\"\"",
+                Query.Type.ANY);
     }
 
     @Test
     public void testSimpleQuery() {
-        tester.assertParsed("OR if am \"f g 4 2\" maybe", "if am \"  f g 4 2\"\" maybe", Query.Type.ANY);
+        tester.assertParsed("OR if am \"f g 4 2\" maybe", "if am \"  f g 4 2\"\" maybe",
+                Query.Type.ANY);
     }
 
     @Test
     public void testExcessivePluses() {
         tester.assertParsed("+(AND other is nothing) -test",
-                            "++other +++++is ++++++nothing -test", Query.Type.ANY);
+                "++other +++++is ++++++nothing -test", Query.Type.ANY);
     }
 
     @Test
@@ -398,38 +401,39 @@ public class ParseTestCase {
 
     @Test
     public void testPlusesAndMinuses() {
-        tester.assertParsed("AND a b c d d", "a+b+c+d--d", Query.Type.ANY);
+        Item root=tester.assertParsed("\"a b c d d\"", "a+b+c+d--d", Query.Type.ANY);
+        assertTrue(root instanceof PhraseItem);
+        assertFalse(((PhraseItem)root).isExplicit());
     }
 
     @Test
     public void testNumbers() {
-        tester.assertParsed("AND 123 2132odfd 934032 32423", "123+2132odfd.934032,,32423", Query.Type.ANY);
+        tester.assertParsed("\"123 2132odfd 934032 32423\"",
+                "123+2132odfd.934032,,32423", Query.Type.ANY);
     }
 
     @Test
     public void testOtherSignsInQuote() {
-        tester.assertParsed("AND 0032 4 320 24329043", "0032+4\\320.24329043", Query.Type.ANY);
+        tester.assertParsed("\"0032 4 320 24329043\"", "0032+4\\320.24329043",
+                Query.Type.ANY);
     }
 
     @Test
     public void testGribberish() {
         tester.assertParsed("1349832840234l3040roer\u00e6lf12",
-                            ",1349832840234l3040roer\u00e6lf12",
-                            Query.Type.ANY);
+                ",1349832840234l3040roer\u00e6lf12", Query.Type.ANY);
     }
 
     @Test
     public void testUrl() {
-        tester.assertParsed("AND www:www www:hotelaiguablava www:com",
-                            "+www:www.hotelaiguablava:com",
-                            Query.Type.ANY);
+        tester.assertParsed("www:\"www hotelaiguablava com\"",
+                "+www:www.hotelaiguablava:com", Query.Type.ANY);
     }
 
     @Test
     public void testUrlGribberish() {
-        tester.assertParsed("OR (AND 3 16) fast.type:lycosoffensive",
-                            "[ 3:16 fast.type:lycosoffensive",
-                            Query.Type.ANY);
+        tester.assertParsed("OR \"3 16\" fast.type:lycosoffensive",
+                "[ 3:16 fast.type:lycosoffensive", Query.Type.ANY);
     }
 
     @Test
@@ -471,7 +475,8 @@ public class ParseTestCase {
 
     @Test
     public void testPrefixWithDotAdvanced() {
-        tester.assertParsed("normal.title:foobar", "normal.title:foobar", Query.Type.ADVANCED);
+        tester.assertParsed("normal.title:foobar", "normal.title:foobar",
+                Query.Type.ADVANCED);
     }
 
     @Test
@@ -481,21 +486,20 @@ public class ParseTestCase {
 
     @Test
     public void testSimplePhraseAdvanced() {
-        tester.assertParsed("\"foo bar foobar\"", "\"foo bar foobar\"", Query.Type.ADVANCED);
+        tester.assertParsed("\"foo bar foobar\"", "\"foo bar foobar\"",
+                Query.Type.ADVANCED);
     }
 
     @Test
     public void testSimplePhraseWithIndexAdvanced() {
         tester.assertParsed("normal.title:\"foo bar foobar\"",
-                            "normal.title:\"foo bar foobar\"",
-                            Query.Type.ADVANCED);
+                "normal.title:\"foo bar foobar\"", Query.Type.ADVANCED);
     }
 
     @Test
     public void testMultiplePhrasesAdvanced() {
         tester.assertParsed("AND \"foo bar foobar\" \"baz gaz faz\"",
-                            "\"foo bar foobar\" and \"baz gaz faz\"",
-                            Query.Type.ADVANCED);
+                "\"foo bar foobar\" and \"baz gaz faz\"", Query.Type.ADVANCED);
     }
 
     @Test
@@ -657,23 +661,23 @@ public class ParseTestCase {
 
     @Test
     public void testImplicitPhrase1Advanced() {
-        tester.assertParsed("AND test if", "--test+-if", Query.Type.ADVANCED);
+        tester.assertParsed("\"test if\"", "--test+-if", Query.Type.ADVANCED);
     }
 
     @Test
     public void testImplicitPhrase2Advanced() {
-        tester.assertParsed("AND a b c d d", "a+b+c+d--d", Query.Type.ADVANCED);
+        tester.assertParsed("\"a b c d d\"", "a+b+c+d--d", Query.Type.ADVANCED);
     }
 
     @Test
     public void testImplicitPhrase3Advanced() {
-        tester.assertParsed("AND 123 2132odfd 934032 32423",
+        tester.assertParsed("\"123 2132odfd 934032 32423\"",
                 "123+2132odfd.934032,,32423", Query.Type.ADVANCED);
     }
 
     @Test
     public void testImplicitPhrase4Advanced() {
-        tester.assertParsed("AND 0032 4 320 24329043", "0032+4\\320.24329043", Query.Type.ADVANCED);
+        tester.assertParsed("\"0032 4 320 24329043\"", "0032+4\\320.24329043", Query.Type.ADVANCED);
     }
 
     @Test
@@ -726,7 +730,7 @@ public class ParseTestCase {
 
     @Test
     public void testSingleHyphen() {
-        tester.assertParsed("AND a b", "a-b", Query.Type.ALL);
+        tester.assertParsed("\"a b\"", "a-b", Query.Type.ALL);
     }
 
     @Test
@@ -879,27 +883,27 @@ public class ParseTestCase {
 
     @Test
     public void testSimpleDotPhraseAny() {
-        tester.assertParsed("OR a (AND b c) d", "a b.c d", Query.Type.ANY);
+        tester.assertParsed("OR a \"b c\" d", "a b.c d", Query.Type.ANY);
     }
 
     @Test
     public void testSimpleHyphenPhraseAny() {
-        tester.assertParsed("OR a (AND b c) d", "a b-c d", Query.Type.ANY);
+        tester.assertParsed("OR a \"b c\" d", "a b-c d", Query.Type.ANY);
     }
 
     @Test
     public void testAnotherSimpleDotPhraseAny() {
-        tester.assertParsed("OR (AND a b) c d", "a.b c d", Query.Type.ANY);
+        tester.assertParsed("OR \"a b\" c d", "a.b c d", Query.Type.ANY);
     }
 
     @Test
     public void testYetAnotherSimpleDotPhraseAny() {
-        tester.assertParsed("OR a b (AND c d)", "a b c.d", Query.Type.ANY);
+        tester.assertParsed("OR a b \"c d\"", "a b c.d", Query.Type.ANY);
     }
 
     @Test
     public void testVariousSeparatorsPhraseAny() {
-        tester.assertParsed("AND a b c d", "a-b.c%d", Query.Type.ANY);
+        tester.assertParsed("\"a b c d\"", "a-b.c%d", Query.Type.ANY);
     }
 
     @Test
@@ -914,44 +918,45 @@ public class ParseTestCase {
 
     @Test
     public void testIndexedDottedPhraseAny() {
-        tester.assertParsed("OR a (AND url:b url:c) d", "a url:b.c d", Query.Type.ANY);
+        tester.assertParsed("OR a url:\"b c\" d", "a url:b.c d", Query.Type.ANY);
     }
 
     @Test
     public void testIndexedPlusedPhraseAny() {
-        tester.assertParsed("OR a (AND normal.title:b normal.title:c) d", "a normal.title:b+c d", Query.Type.ANY);
+        tester.assertParsed("OR a normal.title:\"b c\" d", "a normal.title:b+c d",
+                Query.Type.ANY);
     }
 
     @Test
     public void testNestedNotAny() {
         tester.assertParsed(
-                "RANK (+(OR normal.title:foobar (AND url:www url:pvv url:org)) -foo) a",
+                "RANK (+(OR normal.title:foobar url:\"www pvv org\") -foo) a",
                 "a +(normal.title:foobar url:www.pvv.org) -foo", Query.Type.ANY);
     }
 
     @Test
     public void testDottedPhraseAdvanced() {
-        tester.assertParsed("OR a (AND b c)", "a or b.c", Query.Type.ADVANCED);
+        tester.assertParsed("OR a \"b c\"", "a or b.c", Query.Type.ADVANCED);
     }
 
     @Test
     public void testHyphenPhraseAdvanced() {
-        tester.assertParsed("OR (AND a (AND b c)) d", "a and b-c or d", Query.Type.ADVANCED);
+        tester.assertParsed("OR (AND a \"b c\") d", "a and b-c or d", Query.Type.ADVANCED);
     }
 
     @Test
     public void testAnotherDottedPhraseAdvanced() {
-        tester.assertParsed("OR (AND a b) c", "a.b or c", Query.Type.ADVANCED);
+        tester.assertParsed("OR \"a b\" c", "a.b or c", Query.Type.ADVANCED);
     }
 
     @Test
     public void testNottedDottedPhraseAdvanced() {
-        tester.assertParsed("+a -(AND c d)", "a andnot c.d", Query.Type.ADVANCED);
+        tester.assertParsed("+a -\"c d\"", "a andnot c.d", Query.Type.ADVANCED);
     }
 
     @Test
     public void testVariousSeparatorsPhraseAdvanced() {
-        tester.assertParsed("AND a b c d", "a-b.c%d", Query.Type.ADVANCED);
+        tester.assertParsed("\"a b c d\"", "a-b.c%d", Query.Type.ADVANCED);
     }
 
     @Test
@@ -971,14 +976,14 @@ public class ParseTestCase {
 
     @Test
     public void testNestedPlussedPhraseAdvanced() {
-        tester.assertParsed("AND (OR a (AND normal.title:b normal.title:c)) d",
+        tester.assertParsed("AND (OR a normal.title:\"b c\") d",
                 "a or normal.title:b+c and d", Query.Type.ADVANCED);
     }
 
     @Test
     public void testNottedNestedDottedPhraseAdvanced() {
         tester.assertParsed(
-                "+(AND a (OR normal.title:foobar (AND url:www url:pvv url:org))) -foo",
+                "+(AND a (OR normal.title:foobar url:\"www pvv org\")) -foo",
                 "a and (normal.title:foobar or url:www.pvv.org) andnot foo",
                 Query.Type.ADVANCED);
     }
@@ -990,7 +995,7 @@ public class ParseTestCase {
 
     @Test
     public void testPlusedTwiceThenQuotedPhraseAny() {
-        tester.assertParsed("AND a b c d", "a+b+\"c d\"", Query.Type.ANY);
+        tester.assertParsed("\"a b c d\"", "a+b+\"c d\"", Query.Type.ANY);
     }
 
     @Test
@@ -1000,7 +1005,7 @@ public class ParseTestCase {
 
     @Test
     public void testPhrasesInBraces() {
-        tester.assertParsed("AND url.domain:microsoft url.domain:com",
+        tester.assertParsed("url.domain:\"microsoft com\"",
                 "+(url.domain:microsoft.com)", Query.Type.ALL);
     }
 
@@ -1048,17 +1053,17 @@ public class ParseTestCase {
 
     @Test
     public void testPhraseNotPrefix() {
-        tester.assertParsed("OR foo (AND prefix bar)", "foo prefix*bar", Query.Type.ANY);
+        tester.assertParsed("OR foo \"prefix bar\"", "foo prefix*bar", Query.Type.ANY);
     }
 
     @Test
     public void testPhraseNotSubstring() {
-        tester.assertParsed("OR foo (AND substring bar)", "foo *substring*bar", Query.Type.ANY);
+        tester.assertParsed("OR foo \"substring bar\"", "foo *substring*bar", Query.Type.ANY);
     }
 
     @Test
     public void testPhraseNotSuffix() {
-        tester.assertParsed("OR (AND foo suffix) bar", "foo*suffix bar", Query.Type.ANY);
+        tester.assertParsed("OR \"foo suffix\" bar", "foo*suffix bar", Query.Type.ANY);
     }
 
     @Test
@@ -1081,17 +1086,20 @@ public class ParseTestCase {
 
     @Test
     public void testIndexedPhraseNotPrefix() {
-        tester.assertParsed("AND foo.bar:prefix foo.bar:xyzzy", "foo.bar:prefix*xyzzy", Query.Type.ANY);
+        tester.assertParsed("foo.bar:\"prefix xyzzy\"", "foo.bar:prefix*xyzzy",
+                     Query.Type.ANY);
     }
 
     @Test
     public void testIndexedPhraseNotSubstring() {
-        tester.assertParsed("AND foo.bar:substring foo.bar:xyzzy", "foo.bar:*substring*xyzzy", Query.Type.ANY);
+        tester.assertParsed("foo.bar:\"substring xyzzy\"", "foo.bar:*substring*xyzzy",
+                     Query.Type.ANY);
     }
 
     @Test
     public void testIndexedPhraseNotSuffix() {
-        tester.assertParsed("AND foo.bar:xyzzy foo.bar:suffix", "foo.bar:xyzzy*suffix", Query.Type.ANY);
+        tester.assertParsed("foo.bar:\"xyzzy suffix\"", "foo.bar:xyzzy*suffix",
+                     Query.Type.ANY);
     }
 
     @Test
@@ -1112,20 +1120,20 @@ public class ParseTestCase {
         assertTrue(root instanceof SuffixItem);
     }
 
-    /** Non existing index → and **/
+    /** Non existing index → phrase **/
     @Test
     public void testNonIndexPhraseNotPrefix() {
-        tester.assertParsed("AND void prefix", "void:prefix*", Query.Type.ANY);
+        tester.assertParsed("\"void prefix\"", "void:prefix*", Query.Type.ANY);
     }
 
     @Test
     public void testNonIndexPhraseNotSubstring() {
-        tester.assertParsed("AND void substring", "void:*substring*", Query.Type.ANY);
+        tester.assertParsed("\"void substring\"", "void:*substring*", Query.Type.ANY);
     }
 
     @Test
     public void testNonIndexPhraseNotSuffix() {
-        tester.assertParsed("AND void suffix", "void:*suffix", Query.Type.ANY);
+        tester.assertParsed("\"void suffix\"", "void:*suffix", Query.Type.ANY);
     }
 
     /** Explicit phrase → remove '*' **/
@@ -1190,7 +1198,7 @@ public class ParseTestCase {
     /** Extra spaces with index **/
     @Test
     public void testIndexPrefixExtraSpace() {
-        tester.assertParsed("AND foo prefix", "foo:prefix *", Query.Type.ANY);
+        tester.assertParsed("\"foo prefix\"", "foo:prefix *", Query.Type.ANY);
     }
 
     @Test
@@ -1411,7 +1419,7 @@ public class ParseTestCase {
 
     @Test
     public void testMultipleDifferentPhraseSeparators() {
-        tester.assertParsed("AND foo bar", "foo.-.bar", Query.Type.ANY);
+        tester.assertParsed("\"foo bar\"", "foo.-.bar", Query.Type.ANY);
     }
 
     @Test
@@ -1422,17 +1430,19 @@ public class ParseTestCase {
 
     @Test
     public void testReallyNoisyQuery1() {
-        tester.assertParsed("AND word another", "&word\"()/&#)(/&another!\"", Query.Type.ALL);
+        tester.assertParsed("AND word another", "&word\"()/&#)(/&another!\"",
+                Query.Type.ALL);
     }
 
     @Test
     public void testReallyNoisyQuery2() {
-        tester.assertParsed("AND \u03bc\u03bc hei", "&&&`\u00b5\u00b5=@hei", Query.Type.ALL);
+        tester.assertParsed("\"\u03bc\u03bc hei\"", "&&&`\u00b5\u00b5=@hei", Query.Type.ALL);
     }
 
     @Test
     public void testReallyNoisyQuery3() {
-        tester.assertParsed("AND hei hallo du der", "hei-hallo;du;der", Query.Type.ALL);
+        tester.assertParsed("AND \"hei hallo\" du der", "hei-hallo;du;der",
+                     Query.Type.ALL);
     }
 
     @Test
@@ -1468,7 +1478,7 @@ public class ParseTestCase {
 
     @Test
     public void testTheStupidSymbolsWhichAreNowWordCharactersInUnicode() {
-        tester.assertParsed("AND yz a", "yz\u00A8\u00AA\u00AF", Query.Type.ANY);
+        tester.assertParsed("\"yz a\"", "yz\u00A8\u00AA\u00AF", Query.Type.ANY);
     }
 
     @Test
@@ -1488,7 +1498,7 @@ public class ParseTestCase {
 
     @Test
     public void testImplicitPhrasingWithIndex() {
-        tester.assertParsed("AND a:b a:c", "a:/b/c", Query.Type.ANY);
+        tester.assertParsed("a:\"b c\"", "a:/b/c", Query.Type.ANY);
     }
 
     @Test
@@ -1498,7 +1508,7 @@ public class ParseTestCase {
 
     @Test
     public void testSingleNoisyPhraseWithIndex() {
-        tester.assertParsed("AND mail:yahoo mail:com", "mail:@yahoo.com", Query.Type.ANY);
+        tester.assertParsed("mail:\"yahoo com\"", "mail:@yahoo.com", Query.Type.ANY);
     }
 
     @Test
@@ -1589,7 +1599,7 @@ public class ParseTestCase {
                 "url.all:http://www.newsadvance.com/servlet/Satellite?pagename=LNA/MGArticle/IMD_BasicArticle&c=MGArticle&cid=1031782787014&path=!mgnetwork!diversions",
                 Query.Type.ALL);
         tester.assertParsed(
-                "AND ull:http ull:www ull:neue ull:oz ull:de ull:information ull:pub ull:Boulevard ull:index ull:html ull:file ull:a ull:3 ull:s ull:4 ull:file s:\"37 iptc bdt 20050607 294 dpa 9001170 txt\" s:\"3 dir\" s:\"26 opt DPA parsed boulevard\" s:\"7 bereich\" s:\"9 Boulevard\"",
+                "AND ull:\"http www neue oz de information pub Boulevard index html file a 3 s 4 file\" s:\"37 iptc bdt 20050607 294 dpa 9001170 txt\" s:\"3 dir\" s:\"26 opt DPA parsed boulevard\" s:\"7 bereich\" s:\"9 Boulevard\"",
                 "ull:http://www.neue-oz.de/information/pub_Boulevard/index.html?file=a:3:{s:4:\"file\";s:37:\"iptc-bdt-20050607-294-dpa_9001170.txt\";s:3:\"dir\";s:26:\"/opt/DPA/parsed/boulevard/\";s:7:\"bereich\";s:9:\"Boulevard\";}",
                 Query.Type.ALL);
     }
@@ -1630,7 +1640,7 @@ public class ParseTestCase {
 
     @Test
     public void testTooLongQueryTerms() {
-        tester.assertParsed("AND 545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof filter ew 545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof 2b 2f 545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof",
+        tester.assertParsed("AND \"545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof filter ew 545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof\"!1000 \"2b 2f 545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof\"",
                 "+/545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof&filter=ew:545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof!1000 =.2b..2f.545558598787gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggcfffffffffffffffffffffffffffffffffffffffffffccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccclllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyytttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlkjhcxxdfffxdzzaqwwsxedcrfvtgbyhnujmikkiloolpppof",
                 Query.Type.ALL);
     }
@@ -1638,22 +1648,22 @@ public class ParseTestCase {
     @Test
     public void testNonSpecialTokenParsing() {
         ParsingTester customTester = new ParsingTester(new SpecialTokens("default"));
-        customTester.assertParsed("OR c or c with (AND tcp ip)", "c# or c++ with tcp/ip", Query.Type.ANY);
+        customTester.assertParsed("OR c or c with \"tcp ip\"", "c# or c++ with tcp/ip", Query.Type.ANY);
     }
 
     @Test
     public void testNonIndexWithColons1() {
-        tester.assertParsed("OR this is (AND notan iindex)", "this is notan:iindex", Query.Type.ANY);
+        tester.assertParsed("OR this is \"notan iindex\"", "this is notan:iindex", Query.Type.ANY);
     }
 
     @Test
     public void testNonIndexWithColons2() {
-        tester.assertParsed("OR this is (AND notan iindex either)", "this is notan:iindex:either", Query.Type.ANY);
+        tester.assertParsed("OR this is \"notan iindex either\"", "this is notan:iindex:either", Query.Type.ANY);
     }
 
     @Test
     public void testIndexThenUnderscoreTermBecomesIndex() {
-        tester.assertParsed("AND name:batch name:article", "name:batch_article", Query.Type.ANY);
+        tester.assertParsed("name:\"batch article\"", "name:batch_article", Query.Type.ANY);
     }
 
     @Test
@@ -1661,17 +1671,17 @@ public class ParseTestCase {
         // "first" "second" and "third" are segments in the test language
         Item item = tester.parseQuery("name:firstsecondthird", null, Language.CHINESE_SIMPLIFIED, Query.Type.ANY, TestLinguistics.INSTANCE);
 
-        assertTrue(item instanceof AndSegmentItem);
-        AndSegmentItem segment = (AndSegmentItem) item;
+        assertTrue(item instanceof PhraseSegmentItem);
+        PhraseSegmentItem phrase = (PhraseSegmentItem) item;
 
-        assertEquals(3, segment.getItemCount());
-        assertEquals("name:first", segment.getItem(0).toString());
-        assertEquals("name:second", segment.getItem(1).toString());
-        assertEquals("name:third", segment.getItem(2).toString());
+        assertEquals(3, phrase.getItemCount());
+        assertEquals("name:first", phrase.getItem(0).toString());
+        assertEquals("name:second", phrase.getItem(1).toString());
+        assertEquals("name:third", phrase.getItem(2).toString());
 
-        assertEquals("name", ((WordItem) segment.getItem(0)).getIndexName());
-        assertEquals("name", ((WordItem) segment.getItem(1)).getIndexName());
-        assertEquals("name", ((WordItem) segment.getItem(2)).getIndexName());
+        assertEquals("name", ((WordItem) phrase.getItem(0)).getIndexName());
+        assertEquals("name", ((WordItem) phrase.getItem(1)).getIndexName());
+        assertEquals("name", ((WordItem) phrase.getItem(2)).getIndexName());
     }
 
     @Test
@@ -1679,22 +1689,22 @@ public class ParseTestCase {
         // "first" "second" and "third" are segments in the test language
         Item item = tester.parseQuery("name:\"firstsecondthird\"", null, Language.CHINESE_SIMPLIFIED, Query.Type.ANY, TestLinguistics.INSTANCE);
 
-        assertTrue(item instanceof AndSegmentItem);
-        AndSegmentItem segment = (AndSegmentItem) item;
+        assertTrue(item instanceof PhraseSegmentItem);
+        PhraseSegmentItem phrase = (PhraseSegmentItem) item;
 
-        assertEquals(3, segment.getItemCount());
-        assertEquals("name:first", segment.getItem(0).toString());
-        assertEquals("name:second", segment.getItem(1).toString());
-        assertEquals("name:third", segment.getItem(2).toString());
+        assertEquals(3, phrase.getItemCount());
+        assertEquals("name:first", phrase.getItem(0).toString());
+        assertEquals("name:second", phrase.getItem(1).toString());
+        assertEquals("name:third", phrase.getItem(2).toString());
 
-        assertEquals("name", ((WordItem) segment.getItem(0)).getIndexName());
-        assertEquals("name", ((WordItem) segment.getItem(1)).getIndexName());
-        assertEquals("name", ((WordItem)segment.getItem(2)).getIndexName());
+        assertEquals("name", ((WordItem) phrase.getItem(0)).getIndexName());
+        assertEquals("name", ((WordItem) phrase.getItem(1)).getIndexName());
+        assertEquals("name", ((WordItem)phrase.getItem(2)).getIndexName());
     }
 
     @Test
     public void testAndItemAndImplicitPhrase() {
-        tester.assertParsed("AND \u00d8 \u00d8 \u00d8 \u00d9",
+        tester.assertParsed("\"\u00d8 \u00d8 \u00d8 \u00d9\"",
                             "\u00d8\u00b9\u00d8\u00b1\u00d8\u00a8\u00d9", "",
                             Query.Type.ALL, Language.CHINESE_SIMPLIFIED);
     }
@@ -1726,7 +1736,7 @@ public class ParseTestCase {
     @Test
     public void testFakeCJKSegmentingOfMultiplePhrases() {
         Item item = tester.parseQuery("name:firstsecond.s", null, Language.CHINESE_SIMPLIFIED, Query.Type.ANY, TestLinguistics.INSTANCE);
-        assertEquals("AND (SAND name:first name:second) name:s", item.toString());
+        assertEquals("name:\"'first second' s\"", item.toString());
     }
 
     @Test
@@ -1791,7 +1801,7 @@ public class ParseTestCase {
 
     @Test
     public void testCommaOnlyLeadsToImplicitPhrasing() {
-        tester.assertParsed("AND A B C", "A,B,C", Query.Type.ALL);
+        tester.assertParsed("\"A B C\"", "A,B,C", Query.Type.ALL);
     }
 
     @Test
@@ -1863,8 +1873,8 @@ public class ParseTestCase {
 
     @Test
     public void testJPMobileExceptionQuery() {
-        tester.assertParsed("OR concat and (AND make string) 1 47 or",
-                            "(concat \"and\" (make-string 1 47) \"or\")", Query.Type.ALL);
+        tester.assertParsed("OR concat and \"make string\" 1 47 or",
+                     "(concat \"and\" (make-string 1 47) \"or\")", Query.Type.ALL);
     }
 
     @Test
@@ -1872,7 +1882,7 @@ public class ParseTestCase {
         tester.assertParsed("b", "a: b", Query.Type.ALL);
         tester.assertParsed("AND a b", "a : b", Query.Type.ALL);
         tester.assertParsed("AND a b", "a :b", Query.Type.ALL);
-        tester.assertParsed("AND a b", "a.:b", Query.Type.ALL);
+        tester.assertParsed("\"a b\"", "a.:b", Query.Type.ALL);
         tester.assertParsed("a:b", "a:b", Query.Type.ALL);
     }
 
@@ -1907,7 +1917,8 @@ public class ParseTestCase {
         tester.assertParsed("AND ringtone AND (OR a:\"Delivery SMAF large max 150kB 063\" OR a:\"RealMusic Delivery\")",
                 "ringtone AND (a:\"Delivery SMAF large max.150kB (063)\" OR a:\"RealMusic Delivery\" )",
                 Query.Type.ALL);
-        // The last one here is a little weird, but it's not a problem, so let it pass for now...
+        // The last one here is a little weird, but it's not a problem,
+        // so I let it pass for now...
         tester.assertParsed("OR (OR ringtone AND) (OR a:\"Delivery SMAF large max 150kB 063\" OR a:\"RealMusic Delivery\")",
                 "ringtone AND (a:\"Delivery SMAF large max.150kB (063)\" OR a:\"RealMusic Delivery\" )",
                 Query.Type.ANY);
@@ -1915,7 +1926,7 @@ public class ParseTestCase {
 
     @Test
     public void testMixedCaseIndexNames() {
-        tester.assertParsed("AND mixedCase:a mixedCase:b notAnIndex c mixedCase:d",
+        tester.assertParsed("AND mixedCase:a mixedCase:b \"notAnIndex c\" mixedCase:d",
                 "mixedcase:a MIXEDCASE:b notAnIndex:c mixedCase:d",
                 Query.Type.ALL);
     }
@@ -1923,7 +1934,7 @@ public class ParseTestCase {
     /** CJK special tokens should be recognized also on non-boundaries */
     @Test
     public void testChineseSpecialTokens() {
-        tester.assertParsed("AND cat tcp/ip zu foo dotnet bar dotnet dotnet c# c++ bar dotnet dotnet wiz",
+        tester.assertParsed("AND \"cat tcp/ip zu\" \"foo dotnet bar dotnet dotnet c# c++ bar dotnet dotnet wiz\"",
                      "cattcp/ipzu foo.netbar.net.netC#c++bar.net.netwiz","", Query.Type.ALL, Language.CHINESE_SIMPLIFIED);
     }
 
@@ -1934,7 +1945,7 @@ public class ParseTestCase {
     @Test
     public void testChineseSpecialTokensWithMultiSegmentReplace() {
         // special-token-fs is a special token, to be replaced by firstsecond, first and second are segments in test
-        tester.assertParsed("AND tcp/ip firstsecond dotnet firstsecond (SAND first second)","tcp/ipspecial-token-fs.net special-token-fs firstsecond",
+        tester.assertParsed("AND \"tcp/ip firstsecond dotnet\" firstsecond 'first second'","tcp/ipspecial-token-fs.net special-token-fs firstsecond",
                             "", Query.Type.ALL, Language.CHINESE_SIMPLIFIED, TestLinguistics.INSTANCE);
     }
 
@@ -2003,7 +2014,7 @@ public class ParseTestCase {
 
     @Test
     public void testVersionNumbers() {
-        tester.assertParsed("AND 1 0 9", "1.0.9", Query.Type.ALL);
+        tester.assertParsed("\"1 0 9\"", "1.0.9", Query.Type.ALL);
     }
 
     @Test
@@ -2310,7 +2321,7 @@ public class ParseTestCase {
 
     @Test
     public void testOdd1Web() {
-        tester.assertParsed("AND window print error", "+window.print() +error",Query.Type.WEB);
+        tester.assertParsed("AND \"window print\" error", "+window.print() +error",Query.Type.WEB);
     }
 
     @Test
@@ -2340,13 +2351,13 @@ public class ParseTestCase {
 
     @Test
     public void testDefaultWebIndices() {
-        tester.assertParsed("AND notanindex b","notanindex:b", Query.Type.WEB);
-        tester.assertParsed("site:\"b $\"","site:b", Query.Type.WEB);
-        tester.assertParsed("hostname:b","hostname:b", Query.Type.WEB);
-        tester.assertParsed("link:b","link:b", Query.Type.WEB);
-        tester.assertParsed("url:b","url:b", Query.Type.WEB);
-        tester.assertParsed("inurl:b","inurl:b", Query.Type.WEB);
-        tester.assertParsed("intitle:b","intitle:b", Query.Type.WEB);
+        tester.assertParsed("\"notanindex b\"","notanindex:b",Query.Type.WEB);
+        tester.assertParsed("site:\"b $\"","site:b",Query.Type.WEB);
+        tester.assertParsed("hostname:b","hostname:b",Query.Type.WEB);
+        tester.assertParsed("link:b","link:b",Query.Type.WEB);
+        tester.assertParsed("url:b","url:b",Query.Type.WEB);
+        tester.assertParsed("inurl:b","inurl:b",Query.Type.WEB);
+        tester.assertParsed("intitle:b","intitle:b",Query.Type.WEB);
     }
 
     @Test
@@ -2516,7 +2527,7 @@ public class ParseTestCase {
 
     @Test
     public void testSiteAndSegmentPhrasesFollowedByText() {
-        tester.assertParsed("AND host.all:\"www abc com x y-z $\" (SAND a b)",
+        tester.assertParsed("AND host.all:\"www abc com x y-z $\" 'a b'",
                            "host.all:www.abc.com/x'y-z a'b", "",
                            Query.Type.ALL, Language.ENGLISH);
     }
@@ -2533,7 +2544,7 @@ public class ParseTestCase {
 
     @Test
     public void testNonAsciiNumber() {
-        tester.assertParsed("AND title:199 title:119 title:201 title:149", "title:１９９．１１９．２０１．１４９", Query.Type.ALL);
+        tester.assertParsed("title:\"199 119 201 149\"", "title:１９９．１１９．２０１．１４９", Query.Type.ALL);
     }
 
 }
