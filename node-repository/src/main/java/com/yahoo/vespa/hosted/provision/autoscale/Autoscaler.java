@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -23,6 +24,8 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class Autoscaler {
+
+    private Logger log = Logger.getLogger(Autoscaler.class.getName());
 
     /*
      TODO:
@@ -69,20 +72,28 @@ public class Autoscaler {
         Optional<Double> cpuLoad    = averageLoad(Resource.cpu, cluster, clusterNodes);
         Optional<Double> memoryLoad = averageLoad(Resource.memory, cluster, clusterNodes);
         Optional<Double> diskLoad   = averageLoad(Resource.disk, cluster, clusterNodes);
-        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
+        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) {
+            log.fine("Autoscaling " + applicationId + " " + cluster + ": Insufficient metrics to decide");
+            return Optional.empty();
+        }
 
         Optional<ClusterResourcesWithCost> bestAllocation = findBestAllocation(cpuLoad.get(),
                                                                                memoryLoad.get(),
                                                                                diskLoad.get(),
                                                                                currentAllocation,
                                                                                cluster);
-        if (bestAllocation.isEmpty()) return Optional.empty();
+        if (bestAllocation.isEmpty()) {
+            log.fine("Autoscaling " + applicationId + " " + cluster + ": Could not find a better allocation");
+            return Optional.empty();
+        }
 
         if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
             closeToIdeal(Resource.memory, memoryLoad.get()) &&
             closeToIdeal(Resource.disk, diskLoad.get()) &&
-            similarCost(bestAllocation.get().cost(), currentAllocation.nodes() * costOf(currentAllocation.nodeResources())))
+            similarCost(bestAllocation.get().cost(), currentAllocation.nodes() * costOf(currentAllocation.nodeResources()))) {
+            log.fine("Autoscaling " + applicationId + " " + cluster + ": Resources are almost ideal and price difference is small");
             return Optional.empty(); // Avoid small, unnecessary changes
+        }
         return bestAllocation.map(a -> a.clusterResources());
     }
 
