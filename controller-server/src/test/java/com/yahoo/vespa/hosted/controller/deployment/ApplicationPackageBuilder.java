@@ -6,12 +6,17 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -183,6 +188,24 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder trust(X509Certificate certificate) {
         this.trustedCertificates.add(certificate);
+        return this;
+    }
+
+    public ApplicationPackageBuilder trustDefaultCertificate() {
+        try {
+            var generator = KeyPairGenerator.getInstance("RSA");
+            var builder = X509CertificateBuilder.fromKeypair(
+                    generator.generateKeyPair(),
+                    new X500Principal("CN=name"),
+                    Instant.now(),
+                    Instant.now().plusMillis(300_000),
+                    SignatureAlgorithm.SHA256_WITH_RSA,
+                    X509CertificateBuilder.generateRandomSerialNumber()
+            );
+            this.trustedCertificates.add(builder.build());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
         return this;
     }
 
