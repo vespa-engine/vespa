@@ -15,8 +15,12 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
+import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,7 +31,7 @@ import java.util.stream.Collectors;
  * @author oyving
  * @author smorgrav
  */
-public class DummyInstanceLookupService implements InstanceLookupService {
+public class DummyServiceMonitor implements ServiceMonitor {
 
     public static final HostName TEST1_HOST_NAME = new HostName("test1.hostname.tld");
     public static final HostName TEST3_HOST_NAME = new HostName("test3.hostname.tld");
@@ -121,26 +125,27 @@ public class DummyInstanceLookupService implements InstanceLookupService {
     }
 
     // A node group is tied to an application, so we need to define them after we have populated the above applications.
-    public final static NodeGroup TEST1_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST1_HOST_NAME).get(), TEST1_HOST_NAME);
-    public final static NodeGroup TEST3_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST3_HOST_NAME).get(), TEST3_HOST_NAME);
-    public final static NodeGroup TEST6_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST6_HOST_NAME).get(), TEST6_HOST_NAME);
-
+    public final static NodeGroup TEST1_NODE_GROUP = new NodeGroup(new DummyServiceMonitor().getApplication(TEST1_HOST_NAME).get(), TEST1_HOST_NAME);
+    public final static NodeGroup TEST3_NODE_GROUP = new NodeGroup(new DummyServiceMonitor().getApplication(TEST3_HOST_NAME).get(), TEST3_HOST_NAME);
+    public final static NodeGroup TEST6_NODE_GROUP = new NodeGroup(new DummyServiceMonitor().getApplication(TEST6_HOST_NAME).get(), TEST6_HOST_NAME);
 
     @Override
-    public Optional<ApplicationInstance> findInstanceById(
-            final ApplicationInstanceReference applicationInstanceReference) {
-        for (ApplicationInstance app : apps) {
-            if (app.reference().equals(applicationInstanceReference)) return Optional.of(app);
-        }
-        return Optional.empty();
+    public ServiceModel getServiceModelSnapshot() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public Optional<ApplicationInstance> findInstanceByHost(HostName hostName) {
+    public Set<ApplicationInstanceReference> getAllApplicationInstanceReferences() {
+        return apps.stream().map(a ->
+                new ApplicationInstanceReference(a.tenantId(),a.applicationInstanceId())).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Optional<ApplicationInstance> getApplication(HostName hostname) {
         for (ApplicationInstance app : apps) {
             for (ServiceCluster cluster : app.serviceClusters()) {
                 for (ServiceInstance service : cluster.serviceInstances()) {
-                    if (hostName.equals(service.hostName())) return Optional.of(app);
+                    if (hostname.equals(service.hostName())) return Optional.of(app);
                 }
             }
         }
@@ -148,15 +153,16 @@ public class DummyInstanceLookupService implements InstanceLookupService {
     }
 
     @Override
-    public Set<ApplicationInstanceReference> knownInstances() {
-        return apps.stream().map(a ->
-                new ApplicationInstanceReference(a.tenantId(),a.applicationInstanceId())).collect(Collectors.toSet());
-
+    public Optional<ApplicationInstance> getApplication(ApplicationInstanceReference reference) {
+        for (ApplicationInstance app : apps) {
+            if (app.reference().equals(reference)) return Optional.of(app);
+        }
+        return Optional.empty();
     }
 
     @Override
-    public Optional<ApplicationInstance> findInstancePossiblyNarrowedToHost(HostName hostname) {
-        return findInstanceByHost(hostname);
+    public Map<HostName, List<ServiceInstance>> getServicesByHostname() {
+        throw new UnsupportedOperationException();
     }
 
     public static Set<HostName> getContentHosts(ApplicationInstanceReference appRef) {

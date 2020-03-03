@@ -10,6 +10,11 @@ import org.apache.zookeeper.KeeperException;
 
 import java.util.logging.Logger;
 
+/**
+ * ZooKeeper implementation of {@link ApplicationLock}.
+ *
+ * @author hakonhall
+ */
 class ZkApplicationLock implements ApplicationLock {
 
     private static final Logger log = Logger.getLogger(ZkApplicationLock.class.getName());

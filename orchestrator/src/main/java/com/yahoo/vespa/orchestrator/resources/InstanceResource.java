@@ -11,7 +11,6 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.WireHostInfo;
@@ -20,6 +19,7 @@ import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.manager.MonitorManager;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 
 import javax.inject.Inject;
@@ -54,14 +54,14 @@ public class InstanceResource {
     private final StatusService statusService;
     private final SlobrokApi slobrokApi;
     private final MonitorManager rootManager;
-    private final InstanceLookupService instanceLookupService;
+    private final ServiceMonitor serviceMonitor;
 
     @Inject
-    public InstanceResource(@Component InstanceLookupService instanceLookupService,
+    public InstanceResource(@Component ServiceMonitor serviceMonitor,
                             @Component StatusService statusService,
                             @Component SlobrokApi slobrokApi,
                             @Component UnionMonitorManager rootManager) {
-        this.instanceLookupService = instanceLookupService;
+        this.serviceMonitor = serviceMonitor;
         this.statusService = statusService;
         this.slobrokApi = slobrokApi;
         this.rootManager = rootManager;
@@ -70,7 +70,7 @@ public class InstanceResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<ApplicationInstanceReference> getAllInstances() {
-        return instanceLookupService.knownInstances().stream().sorted().collect(Collectors.toList());
+        return serviceMonitor.getAllApplicationInstanceReferences().stream().sorted().collect(Collectors.toList());
     }
 
     @GET
@@ -80,7 +80,7 @@ public class InstanceResource {
         ApplicationInstanceReference instanceId = parseInstanceId(instanceIdString);
 
         ApplicationInstance applicationInstance
-                = instanceLookupService.findInstanceById(instanceId)
+                = serviceMonitor.getApplication(instanceId)
                 .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build()));
 
         HostInfos hostInfos = statusService.getHostInfosByApplicationResolver().apply(applicationInstance.reference());
