@@ -21,13 +21,19 @@ public final class ClusterSpec {
     private final Optional<Group> groupId;
     private final Version vespaVersion;
     private boolean exclusive;
+    private final Optional<Id> combinedId;
 
-    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive) {
+    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive, Optional<Id> combinedId) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
         this.vespaVersion = vespaVersion;
         this.exclusive = exclusive;
+        // TODO(mpolden): Require combinedId to always be present for type combined after April 2020
+        if (type != Type.combined && combinedId.isPresent()) {
+            throw new IllegalArgumentException("combinedId must be empty for cluster of type " + type);
+        }
+        this.combinedId = combinedId;
     }
 
     /** Returns the cluster type */
@@ -42,6 +48,11 @@ public final class ClusterSpec {
     /** Returns the group within the cluster this specifies, or empty to specify the whole cluster */
     public Optional<Group> group() { return groupId; }
 
+    /** Returns the ID of the container cluster that is combined with this. This is only present for combined clusters */
+    public Optional<Id> combinedId() {
+        return combinedId;
+    }
+
     /**
      * Returns whether the physical hosts running the nodes of this application can
      * also run nodes of other applications. Using exclusive nodes for containers increases security
@@ -50,19 +61,29 @@ public final class ClusterSpec {
     public boolean isExclusive() { return exclusive; }
 
     public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive);
+        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId);
     }
 
     public ClusterSpec exclusive(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId);
     }
 
+    // TODO(mpolden): Remove after April 2020
     public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive) {
-        return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive);
+        return request(type, id, vespaVersion, exclusive, Optional.empty());
     }
 
+    public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive, Optional<Id> combinedId) {
+        return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive, combinedId);
+    }
+
+    // TODO(mpolden): Remove after April 2020
     public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive) {
-        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive);
+        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, Optional.empty());
+    }
+
+    public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive, Optional<Id> combinedId) {
+        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, combinedId);
     }
 
     @Override

@@ -158,7 +158,7 @@ public class ProvisioningTester {
     }
 
     public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()), version, false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()), version, false, Optional.empty());
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
         List<HostSpec> hostSpecs = prepare(application, cluster, capacity, 1, true);
         activate(application, hostSpecs);
@@ -412,7 +412,7 @@ public class ProvisioningTester {
                                              ClusterSpec.request(ClusterSpec.Type.container,
                                                                  ClusterSpec.Id.from("node-admin"),
                                                                  Version.fromString("6.42"),
-                                                                 false),
+                                                                 false, Optional.empty()),
                                              Capacity.fromRequiredNodeType(NodeType.host),
                                              1);
         activate(applicationId, Set.copyOf(list));
@@ -420,7 +420,7 @@ public class ProvisioningTester {
 
     public List<Node> deploy(ApplicationId application, Capacity capacity) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false);
+                                                  Version.fromString("6.42"), false, Optional.empty());
         List<HostSpec> prepared = prepare(application, cluster, capacity, 1);
         activate(application, Set.copyOf(prepared));
         return getNodes(application, Node.State.active).asList();

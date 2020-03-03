@@ -3,20 +3,17 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -33,7 +30,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -477,7 +473,7 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("music"),
                                                   new com.yahoo.component.Version(4, 5, 6),
-                                                  false);
+                                                  false, Optional.empty());
         tester.prepare(application, cluster, Capacity.fromCount(5, Optional.empty(), false, false), 1);
         // No exception; Success
     }
@@ -514,7 +510,7 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("music"),
                                                   new com.yahoo.component.Version(4, 5, 6),
-                                                  false);
+                                                  false, Optional.empty());
         tester.activate(application, tester.prepare(application, cluster, capacity, 1));
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
@@ -691,10 +687,10 @@ public class ProvisioningTest {
                                 int content1Size, boolean required, NodeResources nodeResources, Version wantedVersion,
                                 ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false);
-        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false);
-        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false);
-        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false);
+        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false, Optional.empty());
+        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false, Optional.empty());
+        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false, Optional.empty());
+        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false, Optional.empty());
 
         Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, nodeResources, tester);
         Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, nodeResources, tester);

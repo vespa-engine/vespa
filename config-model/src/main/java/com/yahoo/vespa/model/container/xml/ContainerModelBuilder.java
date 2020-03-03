@@ -629,7 +629,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                               ClusterSpec.Id.from(cluster.getName()),
                                                               deployState.getWantedNodeVespaVersion(),
-                                                              false);
+                                                              false,
+                                                              Optional.empty());
                 Capacity capacity = Capacity.fromCount(1,
                                                        Optional.empty(),
                                                        false,
@@ -655,7 +656,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, 
                                                       ClusterSpec.Id.from(cluster.getName()), 
                                                       context.getDeployState().getWantedNodeVespaVersion(),
-                                                      false);
+                                                      false,
+                                                      Optional.empty());
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
                                                              Capacity.fromRequiredNodeType(type), 1, log);
