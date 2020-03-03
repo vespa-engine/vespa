@@ -226,7 +226,6 @@ struct Fixture
         while (_attr->getNumDocs() <= docId) {
             uint32_t newDocId = 0u;
             _attr->addDoc(newDocId);
-            _attr->commit();
         }
     }
 
@@ -326,7 +325,6 @@ Fixture::testSetTensorValue()
 {
     ensureSpace(4);
     EXPECT_EQUAL(5u, _attr->getNumDocs());
-    EXPECT_EQUAL(5u, _attr->getCommittedDocIdLimit());
     TEST_DO(assertGetNoTensor(4));
     EXPECT_EXCEPTION(set_tensor(4, TensorSpec("double")),
                      WrongTensorTypeException,
