@@ -97,10 +97,11 @@ public class DocumentSourceSearcher extends Searcher {
     public Result search(Query query, Execution execution)  {
         queryCount++;
         Result r = unFilledResults.get(getQueryKeyClone(query));
-        if (r == null)
+        if (r == null) {
             r = defaultFilledResult.clone();
-        else
+        } else {
             r = r.clone();
+        }
 
         r.setQuery(query);
         r.hits().trim(query.getOffset(), query.getHits());
@@ -181,8 +182,11 @@ public class DocumentSourceSearcher extends Searcher {
      * reset. For testing - not reliable if multiple threads makes
      * queries simultaneously
      */
-    public int getQueryCount() { return queryCount; }
+    public int getQueryCount() {
+        return queryCount;
+    }
 
-    public void resetQueryCount() { queryCount = 0; }
-
+    public void resetQueryCount() {
+        queryCount=0;
+    }
 }
