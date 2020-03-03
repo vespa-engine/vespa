@@ -7,16 +7,15 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validator;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.component.Handler;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.yahoo.collections.CollectionUtil.mkString;
-import static com.yahoo.vespa.model.container.http.AccessControl.isBuiltinGetOnly;
+import static com.yahoo.vespa.model.container.http.AccessControl.hasHandlerThatNeedsProtection;
 
 /**
  * Validates that hosted applications in prod zones have write protection enabled.
@@ -49,18 +48,6 @@ public class AccessControlOnFirstDeploymentValidator extends Validator {
             deployState.validationOverrides().invalid(ValidationId.accessControl,
                                                       "Access-control must be enabled for write operations to container clusters in production zones: " +
                                                               mkString(offendingClusters, "[", ", ", "]."), deployState.now());
-    }
-
-    private boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
-        return cluster.getHandlers().stream().anyMatch(this::handlerNeedsProtection);
-    }
-
-    private boolean handlerNeedsProtection(Handler<?> handler) {
-        return ! isBuiltinGetOnly(handler) && hasNonMbusBinding(handler);
-    }
-
-    private boolean hasNonMbusBinding(Handler<?> handler) {
-        return handler.getServerBindings().stream().anyMatch(binding -> ! binding.startsWith("mbus"));
     }
 
 }

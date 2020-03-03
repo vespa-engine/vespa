@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
@@ -160,4 +161,17 @@ public final class AccessControl {
     private static Stream<String> servletBindings(Servlet servlet) {
         return Stream.of("http://*/").map(protocol -> protocol + servlet.bindingPath);
     }
+
+    public static boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
+        return cluster.getHandlers().stream().anyMatch(AccessControl::handlerNeedsProtection);
+    }
+
+    private static boolean handlerNeedsProtection(Handler<?> handler) {
+        return ! isBuiltinGetOnly(handler) && hasNonMbusBinding(handler);
+    }
+
+    private static boolean hasNonMbusBinding(Handler<?> handler) {
+        return handler.getServerBindings().stream().anyMatch(binding -> ! binding.startsWith("mbus"));
+    }
+
 }
