@@ -100,7 +100,7 @@ public class ApplicationOwnershipConfirmerTest {
         assertEquals("Confirmation issue for application without production deployments has not been filed.", issueId2, app.application().ownershipIssueId());
     }
 
-    private class MockOwnershipIssues implements OwnershipIssues {
+    private static class MockOwnershipIssues implements OwnershipIssues {
 
         private Optional<IssueId> response;
         private boolean escalated = false;
