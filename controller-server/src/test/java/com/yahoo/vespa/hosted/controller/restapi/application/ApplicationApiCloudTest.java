@@ -61,7 +61,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         return new ApplicationPackageBuilder()
                 .instances("default")
                 .environment(Environment.prod)
-                .region("aws-us-east-1c");
+                .region("aws-us-east-1a");
     }
 
     private void setupTenantAndApplication() {
