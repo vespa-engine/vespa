@@ -37,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareRes
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -286,9 +287,65 @@ public class ApplicationController {
         return deploy(applicationId, zone, applicationPackageFromDeployer, Optional.empty(), options);
     }
 
-    /** Deploys an application. If the application does not exist it is created. */
-    // TODO: Get rid of the options arg
-    // TODO jonmv: Split this, and choose between deployDirectly and deploy in handler, excluding internally built from the latter.
+    /** Deploys an application package for an existing application instance. */
+    public ActivateResult deploy2(JobId job, boolean deploySourceVersions) { // TODO jonmv: make it number one!
+        if (job.application().instance().isTester())
+            throw new IllegalArgumentException("'" + job.application() + "' is a tester application!");
+
+        TenantAndApplicationId applicationId = TenantAndApplicationId.from(job.application());
+        ZoneId zone = job.type().zone(controller.system());
+
+        try (Lock deploymentLock = lockForDeployment(job.application(), zone)) {
+            Set<ContainerEndpoint> endpoints;
+            Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
+
+            Run run = controller.jobController().last(job)
+                                .orElseThrow(() -> new IllegalStateException("No known run of '" + job + "'"));
+
+            if (run.hasEnded())
+                throw new IllegalStateException("No deployment expected for " + job + " now, as no job is running");
+
+            Version platform = run.versions().sourcePlatform().filter(__ -> deploySourceVersions).orElse(run.versions().targetPlatform());
+            ApplicationVersion revision = run.versions().sourceApplication().filter(__ -> deploySourceVersions).orElse(run.versions().targetApplication());
+            ApplicationPackage applicationPackage = getApplicationPackage(job.application(), zone, revision);
+
+            try (Lock lock = lock(applicationId)) {
+                LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
+                Instance instance = application.get().require(job.application().instance());
+
+                Deployment deployment = instance.deployments().get(zone);
+                if (   zone.environment().isProduction() && deployment != null
+                    && (   platform.compareTo(deployment.version()) < 0 && ! instance.change().isPinned()
+                        || revision.compareTo(deployment.applicationVersion()) < 0 && ! (revision.isUnknown() && controller.system().isCd())))
+                    throw new IllegalArgumentException(String.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
+                                                                     " are older than the currently deployed (platform: %s, application: %s).",
+                                                                     job.application(), zone, platform, revision, deployment.version(), deployment.applicationVersion()));
+
+                if (   ! applicationPackage.trustedCertificates().isEmpty()
+                    &&   run.testerCertificate().isPresent())
+                    applicationPackage = applicationPackage.withTrustedCertificate(run.testerCertificate().get());
+
+                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(instance, zone);
+
+                endpoints = controller.routing().registerEndpointsInDns(applicationPackage.deploymentSpec(), instance, zone);
+            } // Release application lock while doing the deployment, which is a lengthy task.
+
+            // Carry out deployment without holding the application lock.
+            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, endpoints, endpointCertificateMetadata);
+
+            lockApplicationOrThrow(applicationId, application ->
+                    store(application.with(job.application().instance(),
+                                           instance -> instance.withNewDeployment(zone, revision, platform,
+                                                                                  clock.instant(), warningsFrom(result)))));
+            return result;
+        }
+    }
+
+    private ApplicationPackage getApplicationPackage(ApplicationId application, ZoneId zone, ApplicationVersion revision) {
+        return new ApplicationPackage(revision.isUnknown() ? applicationStore.getDev(application, zone)
+                                                           : applicationStore.get(application.tenant(), application.application(), revision));
+    }
+
     public ActivateResult deploy(ApplicationId instanceId, ZoneId zone,
                                  Optional<ApplicationPackage> applicationPackageFromDeployer,
                                  Optional<ApplicationVersion> applicationVersionFromDeployer,

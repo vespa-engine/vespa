@@ -173,34 +173,20 @@ public class InternalStepRunner implements StepRunner {
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
                    " and application version " +
                    versions.sourceApplication().orElse(versions.targetApplication()).id() + " ...");
-        return deployReal(id, true, versions, logger);
+        return deployReal(id, true, logger);
     }
 
     private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
                          " and application version " + versions.targetApplication().id() + " ...");
-        return deployReal(id, false, versions, logger);
+        return deployReal(id, false, logger);
     }
 
-    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, Versions versions, DualLogger logger) {
-        Optional<ApplicationPackage> applicationPackage = id.type().environment().isManuallyDeployed()
-                ? Optional.of(new ApplicationPackage(controller.applications().applicationStore()
-                                                               .getDev(id.application(), id.type().zone(controller.system()))))
-                : Optional.empty();
-
-        Optional<Version> vespaVersion = id.type().environment().isManuallyDeployed()
-                ? Optional.of(versions.targetPlatform()) // TODO jonmv: This makes it impossible to deploy on older majors — fix.
-                : Optional.empty();
+    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
         return deploy(id.application(),
                       id.type(),
-                      () -> controller.applications().deploy(id.application(),
-                                                             id.type().zone(controller.system()),
-                                                             applicationPackage,
-                                                             new DeployOptions(false,
-                                                                               vespaVersion,
-                                                                               false,
-                                                                               setTheStage)),
+                      () -> controller.applications().deploy2(id.job(), setTheStage),
                       controller.jobController().run(id).get()
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
