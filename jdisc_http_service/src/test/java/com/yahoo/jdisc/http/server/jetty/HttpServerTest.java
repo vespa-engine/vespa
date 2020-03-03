@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -59,6 +60,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.yahoo.jdisc.Response.Status.GATEWAY_TIMEOUT;
@@ -98,6 +101,8 @@ import static org.mockito.Mockito.when;
  * @author bjorncs
  */
 public class HttpServerTest {
+
+    private static final Logger log = Logger.getLogger(HttpServerTest.class.getName());
 
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -669,6 +674,10 @@ public class HttpServerTest {
             fail("SSLHandshakeException expected");
         } catch (SSLHandshakeException e) {
             assertThat(e.getMessage(), containsString(expectedExceptionSubstring));
+        } catch (SSLException e) {
+            // Jetty may sometime close the connection before the apache client has fully consumed the TLS handshake frame
+            log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
+            assertThat(e.getMessage(), containsString("readHandshakeRecord")); // Only ignore this specific ssl exception
         }
     }
 
