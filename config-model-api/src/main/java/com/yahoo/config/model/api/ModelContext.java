@@ -60,6 +60,7 @@ public interface ModelContext {
         double defaultTermwiseLimit();
         boolean useBucketSpaceMetric();
         default boolean useNewAthenzFilter() { return false; }
+        default boolean usePhraseSegmenting() { return false; }
     }
 
 }

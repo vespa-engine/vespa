@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude;
 
-
 import com.yahoo.language.process.StemMode;
 
 import java.util.ArrayList;
@@ -9,7 +8,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 
 /**
  * Information about configured settings of a field or field collection (an actual index or not) in a search definition.
@@ -74,8 +72,8 @@ public class Index {
     private boolean isNGram = false;
     private int gramSize = 2;
 
-    /** Whether implicit phrases should lead to a phrase item or an and item */
-    private boolean phraseSegmenting = true;
+    /** Whether implicit phrases should lead to a phrase item or an and item. */
+    private Boolean phraseSegmenting = false;
 
     /** The string terminating an exact token in this index, or null to use the default (space) */
     private String exactTerminator = null;

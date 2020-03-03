@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
@@ -36,13 +37,16 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_FAST_SEARCH = "fast-search";
     private static final String CMD_PREDICATE_BOUNDS = "predicate-bounds";
     private static final String CMD_NUMERICAL = "numerical";
+    private static final String CMD_PHRASE_SEGMENTING = "phrase-segmenting";
     private Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
     private Map<String, String> aliases = new java.util.LinkedHashMap<>();
     private Map<String, FieldSet> fieldSets;
     private Search search;
+    private final boolean phraseSegmenting;
 
-    public IndexInfo(Search search) {
+    public IndexInfo(Search search, ModelContext.Properties deployProperties) {
         this.fieldSets = search.fieldSets().userFieldSets();
+        this.phraseSegmenting = deployProperties.usePhraseSegmenting();
         addIndexCommand("sddocname", CMD_INDEX);
         addIndexCommand("sddocname", CMD_WORD);
         derive(search);
@@ -151,6 +155,10 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
         if (field.getDataType() instanceof NumericDataType) {
             addIndexCommand(field, CMD_NUMERICAL);
+        }
+
+        if (phraseSegmenting) {
+            addIndexCommand(field, CMD_PHRASE_SEGMENTING);
         }
 
         // Explicit commands
@@ -394,7 +402,12 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             }
             
         }
-       
+
+        if (phraseSegmenting) {
+            iiB.command(new IndexInfoConfig.Indexinfo.Command.Builder()
+                                .indexname(fieldSet.getName())
+                                .command(CMD_PHRASE_SEGMENTING));
+        }
     }
 
     private boolean hasMultiValueField(FieldSet fieldSet) {
