@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -121,7 +122,9 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testFieldSet2() throws IOException, ParseException {
-        assertCorrectDeriving("fieldset2");
+        TestProperties properties = new TestProperties();
+        properties.setUsePhraseSegmenting(true);
+        assertCorrectDeriving("fieldset2", null, properties);
     }
 
     @Test
