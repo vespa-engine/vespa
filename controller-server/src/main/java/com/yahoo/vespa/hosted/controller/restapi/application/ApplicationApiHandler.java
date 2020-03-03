@@ -1956,6 +1956,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 
+        // if we are in public and 'security/clients.pem' is not present (i.e. we don't have any trusted
+        // certificates), we should fail early instead of waiting for the configserver to fail.
+        if (controller.system().isPublic() && applicationPackage.trustedCertificates().isEmpty()) {
+            throw new IllegalArgumentException("Missing required file 'security/clients.pem'");
+        }
+
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
                                                                          Optional.empty(),
                                                                          Optional.empty(),
