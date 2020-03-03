@@ -115,13 +115,12 @@ public class Endpoint {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Endpoint endpoint = (Endpoint) o;
-        return url.equals(endpoint.url) &&
-               routingMethod == endpoint.routingMethod;
+        return url.equals(endpoint.url);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, routingMethod);
+        return Objects.hash(url);
     }
 
     @Override
