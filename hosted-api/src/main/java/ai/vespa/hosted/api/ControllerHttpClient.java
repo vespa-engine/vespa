@@ -148,7 +148,7 @@ public abstract class ControllerHttpClient {
     /** Returns the sorted list of log entries after the given after from the deployment job of the given ids. */
     public DeploymentLog deploymentLog(ApplicationId id, ZoneId zone, long run, long after) {
         return toDeploymentLog(send(request(HttpRequest.newBuilder(runPath(id, zone, run, after))
-                                                       .timeout(Duration.ofSeconds(10)),
+                                                       .timeout(Duration.ofSeconds(60)),
                                             GET)));
     }
 
