@@ -15,9 +15,9 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.
@@ -46,18 +46,19 @@ public class NodesSpecification {
     
     private final boolean exclusive;
 
-    /** Whether this requires running container and content processes co-located on the same node. */
-    private final boolean combined;
-
     /** The resources each node should have, or empty to use the default */
     private final Optional<NodeResources> resources;
 
     /** The identifier of the custom docker image layer to use (not supported yet) */
     private final Optional<String> dockerImage;
 
+    /** The ID of the cluster referencing this node specification, if any */
+    private final Optional<String> combinedId;
+
     private NodesSpecification(boolean dedicated, int count, int groups, Version version,
-                               boolean required, boolean canFail, boolean exclusive, boolean combined,
-                               Optional<NodeResources> resources, Optional<String> dockerImage) {
+                               boolean required, boolean canFail, boolean exclusive,
+                               Optional<NodeResources> resources, Optional<String> dockerImage,
+                               Optional<String> combinedId) {
         this.dedicated = dedicated;
         this.count = count;
         this.groups = groups;
@@ -67,10 +68,11 @@ public class NodesSpecification {
         this.exclusive = exclusive;
         this.resources = resources;
         this.dockerImage = dockerImage;
-        this.combined = combined;
+        this.combinedId = combinedId;
     }
 
-    private NodesSpecification(boolean dedicated, boolean canFail, boolean combined, Version version, ModelElement nodesElement) {
+    private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement,
+                               Optional<String> combinedId) {
         this(dedicated,
              nodesElement.integerAttribute("count", 1),
              nodesElement.integerAttribute("groups", 1),
@@ -78,15 +80,25 @@ public class NodesSpecification {
              nodesElement.booleanAttribute("required", false),
              canFail,
              nodesElement.booleanAttribute("exclusive", false),
-             combined,
              getResources(nodesElement),
-             Optional.ofNullable(nodesElement.stringAttribute("docker-image")));
+             Optional.ofNullable(nodesElement.stringAttribute("docker-image")),
+             combinedId);
+    }
+
+    /** Returns the ID of the cluster referencing this node specification, if any */
+    private static Optional<String> findCombinedId(ModelElement nodesElement, ModelElement resolvedElement) {
+        if (resolvedElement != nodesElement) {
+            // Specification for a container cluster referencing nodes in a content cluster
+            return containerIdOf(nodesElement);
+        }
+        // Specification for a content cluster that is referenced by a container cluster
+        return containerIdReferencing(nodesElement);
     }
 
     private static NodesSpecification create(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement) {
         var resolvedElement = resolveElement(nodesElement);
-        boolean combined = resolvedElement != nodesElement || isReferencedByOtherElement(nodesElement);
-        return new NodesSpecification(dedicated, canFail, combined, version, resolvedElement);
+        var combinedId = findCombinedId(nodesElement, resolvedElement);
+        return new NodesSpecification(dedicated, canFail, version, resolvedElement, combinedId);
     }
 
     /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
@@ -133,7 +145,7 @@ public class NodesSpecification {
                                       false,
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
-                                      false,
+                                      Optional.empty(),
                                       Optional.empty(),
                                       Optional.empty());
     }
@@ -147,7 +159,7 @@ public class NodesSpecification {
                                       false,
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
-                                      false,
+                                      Optional.empty(),
                                       Optional.empty(),
                                       Optional.empty());
     }
@@ -175,9 +187,9 @@ public class NodesSpecification {
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
                                                           DeployLogger logger) {
-        if (combined)
+        if (combinedId.isPresent())
             clusterType = ClusterSpec.Type.combined;
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive);
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive, combinedId.map(ClusterSpec.Id::from));
         return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
     }
 
@@ -280,24 +292,35 @@ public class NodesSpecification {
         return new ModelElement(referencedNodesElement);
     }
 
-    /** Returns whether the given nodesElement is referenced by any other nodes element */
-    private static boolean isReferencedByOtherElement(ModelElement nodesElement) {
+    /** Returns the ID of the parent container element of nodesElement, if any  */
+    private static Optional<String> containerIdOf(ModelElement nodesElement) {
+        var element = nodesElement.getXml();
+        for (var containerTag : List.of("container", "jdisc")) {
+            var container = findParentByTag(containerTag, element);
+            if (container.isEmpty()) continue;
+            return container.map(el -> el.getAttribute("id"));
+        }
+        return Optional.empty();
+    }
+
+    /** Returns the ID of the container element referencing nodesElement, if any */
+    private static Optional<String> containerIdReferencing(ModelElement nodesElement) {
         var element = nodesElement.getXml();
         var services = findParentByTag("services", element);
-        if (services.isEmpty()) return false;
+        if (services.isEmpty()) return Optional.empty();
 
         var content = findParentByTag("content", element);
-        if (content.isEmpty()) return false;
+        if (content.isEmpty()) return Optional.empty();
         var contentClusterId = content.get().getAttribute("id");
-        if (contentClusterId.isEmpty()) return false;
+        if (contentClusterId.isEmpty()) return Optional.empty();
         for (var rootChild : XML.getChildren(services.get())) {
             if ( ! ContainerModelBuilder.isContainerTag(rootChild)) continue;
             var nodes = XML.getChild(rootChild, "nodes");
             if (nodes == null) continue;
             if (!contentClusterId.equals(nodes.getAttribute("of"))) continue;
-            return true;
+            return Optional.of(rootChild.getAttribute("id"));
         }
-        return false;
+        return Optional.empty();
     }
 
     private static Optional<Element> findChildById(Element parent, String id) {

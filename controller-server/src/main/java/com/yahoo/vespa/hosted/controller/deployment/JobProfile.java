@@ -34,8 +34,8 @@ public enum JobProfile {
                           deployTester,
                           installTester,
                           startTests,
-                          endTests),
-               EnumSet.of(copyVespaLogs,
+                          endTests,
+                          copyVespaLogs,
                           deactivateTester,
                           deactivateReal,
                           report)),
@@ -49,37 +49,35 @@ public enum JobProfile {
                            deployReal,
                            installReal,
                            startTests,
-                           endTests),
-                EnumSet.of(copyVespaLogs,
+                           endTests,
+                           copyVespaLogs,
                            deactivateTester,
                            deactivateReal,
                            report)),
 
     production(EnumSet.of(deployReal,
-                          installReal),
-               EnumSet.of(report)),
+                          installReal,
+                          report)),
 
     productionTest(EnumSet.of(deployTester,
                               installTester,
                               startTests,
-                              endTests),
-                   EnumSet.of(deactivateTester,
+                              endTests,
+                              deactivateTester,
                               report)),
 
     development(EnumSet.of(deployReal,
-                           installReal),
-                EnumSet.of(copyVespaLogs));
+                           installReal,
+                           copyVespaLogs));
 
 
     private final Set<Step> steps;
-    private final Set<Step> alwaysRun;
 
-    JobProfile(Set<Step> runWhileSuccess, Set<Step> alwaysRun) {
-        runWhileSuccess.addAll(alwaysRun);
-        this.steps = Collections.unmodifiableSet(runWhileSuccess);
-        this.alwaysRun = Collections.unmodifiableSet(alwaysRun);
+    JobProfile(Set<Step> steps) {
+        this.steps = Collections.unmodifiableSet(steps);
     }
 
+    // TODO jonmv: Let caller decide profile, and store with run?
     public static JobProfile of(JobType type) {
         switch (type.environment()) {
             case test: return systemTest;
@@ -93,8 +91,5 @@ public enum JobProfile {
 
     /** Returns all steps in this profile, the default for which is to run only when all prerequisites are successes. */
     public Set<Step> steps() { return steps; }
-
-    /** Returns the set of steps that should always be run, regardless of outcome. */
-    public Set<Step> alwaysRun() { return alwaysRun; }
 
 }

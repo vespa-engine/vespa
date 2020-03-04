@@ -45,7 +45,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -258,8 +257,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ApplicationId id = ApplicationId.from("tenant1", "application1", "instance1");
         var app1 = deploymentTester.newDeploymentContext(id);
 
-        // POST (deploy) an application to start a manual deployment to dev
+        // POST (deploy) an application to start a manual deployment in prod is not allowed
         MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/production-us-east-3/", POST)
+                                      .data(entity)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Direct deployments are only allowed to manually deployed environments.\"}", 400);
+
+        // POST (deploy) an application to start a manual deployment in prod is allowed for operators
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/production-us-east-3/", POST)
+                                      .data(entity)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"message\":\"Deployment started in run 1 of production-us-east-3 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
+        app1.runJob(JobType.productionUsEast3);
+        tester.controller().applications().deactivate(app1.instanceId(), ZoneId.from("prod", "us-east-3"));
+
+        // POST (deploy) an application to start a manual deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1/", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
@@ -634,10 +647,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                   ZoneId.from("dev", "us-east-1"),
                                                   Optional.of(applicationPackageDefault),
                                                   new DeployOptions(false, Optional.empty(), false, false));
-        tester.serviceRegistry().routingGeneratorMock().putEndpoints(new DeploymentId(ApplicationId.from("tenant1", "application1", "default"), ZoneId.from("prod", "us-central-1")),
-                                                                     List.of(new RoutingEndpoint("https://us-central-1.prod.default", "host", false, "upstream")));
-        tester.serviceRegistry().routingGeneratorMock().putEndpoints(new DeploymentId(ApplicationId.from("tenant1", "application1", "my-user"), ZoneId.from("dev", "us-east-1")),
-                                                                     List.of(new RoutingEndpoint("https://us-east-1.dev.my-user", "host", false, "upstream")));
+
         // GET test-config for local tests against a dev deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user/job/dev-us-east-1/test-config", GET)
                                       .userIdentity(USER_ID),
@@ -798,8 +808,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant and deploy
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
         app.submit(applicationPackage).deploy();
-        app.addRoutingPolicy(westZone, true);
-        app.addRoutingPolicy(eastZone, true);
 
         // Invalid application fails
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation", GET)
@@ -1467,8 +1475,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     }
 
-
-
     @Test
     public void applicationWithRoutingPolicy() {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
@@ -1481,8 +1487,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region(zone.region().value())
                 .build();
         app.submit(applicationPackage).deploy();
-        app.addRoutingPolicy(zone, true);
-        app.addRoutingPolicy(zone, false);
+        app.addInactiveRoutingPolicy(zone);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
@@ -1643,7 +1648,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void assertGlobalRouting(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
         var changedAt = tester.controller().clock().instant();
-        var westPolicies = tester.controller().routingController().policies().get(deployment);
+        var westPolicies = tester.controller().routing().policies().get(deployment);
         assertEquals(1, westPolicies.size());
         var westPolicy = westPolicies.values().iterator().next();
         assertEquals(status, westPolicy.status().globalRouting().status());

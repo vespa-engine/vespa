@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -36,13 +38,16 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_FAST_SEARCH = "fast-search";
     private static final String CMD_PREDICATE_BOUNDS = "predicate-bounds";
     private static final String CMD_NUMERICAL = "numerical";
+    private static final String CMD_PHRASE_SEGMENTING = "phrase-segmenting";
     private Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
     private Map<String, String> aliases = new java.util.LinkedHashMap<>();
     private Map<String, FieldSet> fieldSets;
     private Search search;
+    private final boolean phraseSegmenting;
 
-    public IndexInfo(Search search) {
+    public IndexInfo(Search search, ModelContext.Properties deployProperties) {
         this.fieldSets = search.fieldSets().userFieldSets();
+        this.phraseSegmenting = deployProperties.usePhraseSegmenting();
         addIndexCommand("sddocname", CMD_INDEX);
         addIndexCommand("sddocname", CMD_WORD);
         derive(search);
@@ -151,6 +156,10 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
         if (field.getDataType() instanceof NumericDataType) {
             addIndexCommand(field, CMD_NUMERICAL);
+        }
+
+        if (phraseSegmenting) {
+            addIndexCommand(field, CMD_PHRASE_SEGMENTING);
         }
 
         // Explicit commands
@@ -293,6 +302,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         boolean anyLowerCasing = false;
         boolean anyStemming = false;
         boolean anyNormalizing = false;
+        String phraseSegmentingCommand = null;
         String stemmingCommand = null;
         Matching fieldSetMatching = fieldSet.getMatching(); // null if no explicit matching
         // First a pass over the fields to read some params to decide field settings implicitly:
@@ -313,8 +323,13 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             if (field.getNormalizing().doRemoveAccents()) {
                 anyNormalizing = true;
             }
-            if (fieldSetMatching == null && field.getMatching().getType() != Matching.defaultType)
+            if (fieldSetMatching == null && field.getMatching().getType() != Matching.defaultType) {
                 fieldSetMatching = field.getMatching();
+            }
+            Optional<String> explicitPhraseSegmentingCommand = field.getQueryCommands().stream().filter(c -> c.startsWith(CMD_PHRASE_SEGMENTING)).findFirst();
+            if (explicitPhraseSegmentingCommand.isPresent()) {
+                phraseSegmentingCommand = explicitPhraseSegmentingCommand.get();
+            }
         }
         if (anyIndexing && anyAttributing && fieldSet.getMatching() == null) {
             // We have both attributes and indexes and no explicit match setting ->
@@ -357,6 +372,11 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                             new IndexInfoConfig.Indexinfo.Command.Builder()
                                 .indexname(fieldSet.getName())
                                 .command(CMD_NORMALIZE));
+                if (phraseSegmentingCommand != null)
+                    iiB.command(
+                            new IndexInfoConfig.Indexinfo.Command.Builder()
+                                    .indexname(fieldSet.getName())
+                                    .command(phraseSegmentingCommand));
             }
         } else {
             // Assume only attribute fields
@@ -392,9 +412,15 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             } else if (fieldSetMatching.getType().equals(Matching.Type.TEXT)) {
                 
             }
-            
         }
-       
+
+        if (phraseSegmentingCommand == null
+            && fieldSet.queryCommands().stream().noneMatch(c -> c.startsWith(CMD_PHRASE_SEGMENTING))) { // use default
+            if (phraseSegmenting)
+                iiB.command(new IndexInfoConfig.Indexinfo.Command.Builder()
+                                    .indexname(fieldSet.getName())
+                                    .command(CMD_PHRASE_SEGMENTING));
+        }
     }
 
     private boolean hasMultiValueField(FieldSet fieldSet) {

@@ -116,6 +116,9 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     public ZoneRegistryMock setRoutingMethod(ZoneApi zone, List<RoutingMethod> routingMethods) {
+        if (routingMethods.stream().distinct().count() != routingMethods.size()) {
+            throw new IllegalArgumentException("Routing methods must be distinct");
+        }
         this.zoneRoutingMethods.put(zone, List.copyOf(routingMethods));
         return this;
     }

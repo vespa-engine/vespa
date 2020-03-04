@@ -92,6 +92,7 @@ public class ApplicationSerializer {
     private static final String pemDeployKeysField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
+    private static final String assignedRotationRegionsField = "regions";
     private static final String versionField = "version";
 
     // Instance fields
@@ -190,7 +191,7 @@ public class ApplicationSerializer {
             instanceObject.setString(instanceNameField, instance.name().value());
             deploymentsToSlime(instance.deployments().values(), instanceObject.setArray(deploymentsField));
             toSlime(instance.jobPauses(), instanceObject.setObject(deploymentJobsField));
-            assignedRotationsToSlime(instance.rotations(), instanceObject, assignedRotationsField);
+            assignedRotationsToSlime(instance.rotations(), instanceObject);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
             toSlime(instance.change(), instanceObject, deployingField);
         }
@@ -210,6 +211,7 @@ public class ApplicationSerializer {
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
+        // TODO(mpolden): Stop writing this after next release.
         clusterInfoToSlime(deployment.clusterInfo(), object);
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
@@ -308,13 +310,17 @@ public class ApplicationSerializer {
         });
     }
 
-    private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
-        var rotationsArray = parent.setArray(fieldName);
+    private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent) {
+        var rotationsArray = parent.setArray(assignedRotationsField);
         for (var rotation : rotations) {
             var object = rotationsArray.addObject();
             object.setString(assignedRotationEndpointField, rotation.endpointId().id());
             object.setString(assignedRotationRotationField, rotation.rotationId().asString());
             object.setString(assignedRotationClusterField, rotation.clusterId().value());
+            var regionsArray = object.setArray(assignedRotationRegionsField);
+            for (var region : rotation.regions()) {
+                regionsArray.addString(region.value());
+            }
         }
     }
 
@@ -393,7 +399,7 @@ public class ApplicationSerializer {
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
-                              clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
+                              Map.of(),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
                                                         Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),
@@ -442,25 +448,6 @@ public class ApplicationSerializer {
             rotationStatus.put(zone, status);
         });
         return Collections.unmodifiableMap(rotationStatus);
-    }
-
-    private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime   (Inspector object) {
-        Map<ClusterSpec.Id, ClusterInfo> map = new HashMap<>();
-        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterInfoFromSlime(value)));
-        return map;
-    }
-
-    private ClusterInfo clusterInfoFromSlime(Inspector inspector) {
-        String flavor = inspector.field(clusterInfoFlavorField).asString();
-        int cost = (int)inspector.field(clusterInfoCostField).asLong();
-        String type = inspector.field(clusterInfoTypeField).asString();
-        double flavorCpu = inspector.field(clusterInfoCpuField).asDouble();
-        double flavorMem = inspector.field(clusterInfoMemField).asDouble();
-        double flavorDisk = inspector.field(clusterInfoDiskField).asDouble();
-
-        List<String> hostnames = new ArrayList<>();
-        inspector.field(clusterInfoHostnamesField).traverse((ArrayTraverser)(int index, Inspector value) -> hostnames.add(value.asString()));
-        return new ClusterInfo(flavor, cost, flavorCpu, flavorMem, flavorDisk, ClusterSpec.Type.from(type), hostnames);
     }
 
     private ZoneId zoneIdFromSlime(Inspector object) {
@@ -514,11 +501,11 @@ public class ApplicationSerializer {
 
     private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, InstanceName instance, Inspector root) {
         var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
-
         root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
             var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
             var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
             var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
+            // TODO(mpolden): Read regions from field instead of deployment spec after next release
             var regions = deploymentSpec.instance(instance)
                                         .map(spec -> globalEndpointRegions(spec, endpointId))
                                         .orElse(Set.of());

@@ -32,7 +32,7 @@ public class TestConfigSerializer {
     public Slime configSlime(ApplicationId id,
                              JobType type,
                              boolean isCI,
-                             Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments,
+                             Map<ZoneId, Map<URI, ClusterSpec.Id>> deployments,
                              Map<ZoneId, List<String>> clusters) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -45,14 +45,14 @@ public class TestConfigSerializer {
         Cursor endpointsObject = root.setObject("endpoints"); // TODO jvenstad: remove.
         deployments.forEach((zone, endpoints) -> {
             Cursor endpointArray = endpointsObject.setArray(zone.value());
-            for (URI endpoint : endpoints.values())
+            for (URI endpoint : endpoints.keySet())
                 endpointArray.addString(endpoint.toString());
         });
 
         Cursor zoneEndpointsObject = root.setObject("zoneEndpoints");
         deployments.forEach((zone, endpoints) -> {
             Cursor clusterEndpointsObject = zoneEndpointsObject.setObject(zone.value());
-            endpoints.forEach((cluster, endpoint) -> {
+            endpoints.forEach((endpoint, cluster) -> {
                 clusterEndpointsObject.setString(cluster.value(), endpoint.toString());
             });
         });
@@ -73,7 +73,7 @@ public class TestConfigSerializer {
     public byte[] configJson(ApplicationId id,
                              JobType type,
                              boolean isCI,
-                             Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments,
+                             Map<ZoneId, Map<URI, ClusterSpec.Id>> deployments,
                              Map<ZoneId, List<String>> clusters) {
         try {
             return SlimeUtils.toJsonBytes(configSlime(id, type, isCI, deployments, clusters));

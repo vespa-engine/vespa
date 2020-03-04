@@ -139,12 +139,24 @@ public class ValidateNearestNeighborTestCase {
         assertEquals(ErrorMessage.createIllegalQuery(message), r.hits().getError());
     }
 
+    static String desc(String field, String qt, int th, String errmsg) {
+        StringBuilder r = new StringBuilder();
+        r.append("NEAREST_NEIGHBOR {");
+        r.append("field=").append(field);
+        r.append(",queryTensorName=").append(qt);
+        r.append(",hnsw.exploreAdditionalHits=0");
+        r.append(",approximate=true");
+        r.append(",targetNumHits=").append(th);
+        r.append("} ").append(errmsg);
+        return r.toString();
+    }
+
     @Test
     public void testMissingTargetNumHits() {
         String q = "select * from sources * where nearestNeighbor(dvector,qvector);";
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=qvector,targetNumHits=0} has invalid targetNumHits", r);
+        assertErrMsg(desc("dvector", "qvector", 0, "has invalid targetNumHits"), r);
     }
 
     @Test
@@ -152,16 +164,16 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("dvector", "foo");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=foo,targetNumHits=1} query tensor not found", r);
+        assertErrMsg(desc("dvector", "foo", 1, "query tensor not found"), r);
     }
 
     @Test
     public void testQueryTensorWrongType() {
         String q = makeQuery("dvector", "qvector");
         Result r = doSearch(searcher, q, "tensor string");
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=qvector,targetNumHits=1} query tensor should be a tensor, was: class java.lang.String", r);
+        assertErrMsg(desc("dvector", "qvector", 1, "query tensor should be a tensor, was: class java.lang.String"), r);
         r = doSearch(searcher, q, null);
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=qvector,targetNumHits=1} query tensor should be a tensor, was: null", r);
+        assertErrMsg(desc("dvector", "qvector", 1, "query tensor should be a tensor, was: null"), r);
     }
 
     @Test
@@ -169,7 +181,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("dvector", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_2, 2);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=dvector,queryTensorName=qvector,targetNumHits=1} field type tensor(x[3]) does not match query tensor type tensor(x[2])", r);
+        assertErrMsg(desc("dvector", "qvector", 1, "field type tensor(x[3]) does not match query tensor type tensor(x[2])"), r);
     }
 
     @Test
@@ -177,7 +189,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("foo", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=foo,queryTensorName=qvector,targetNumHits=1} field is not an attribute", r);
+        assertErrMsg(desc("foo", "qvector", 1, "field is not an attribute"), r);
     }
 
     @Test
@@ -185,7 +197,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("simple", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=simple,queryTensorName=qvector,targetNumHits=1} field is not a tensor", r);
+        assertErrMsg(desc("simple", "qvector", 1, "field is not a tensor"), r);
     }
 
     @Test
@@ -193,7 +205,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("sparse", "qvector");
         Tensor t = makeTensor(tt_sparse_vector_x);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=sparse,queryTensorName=qvector,targetNumHits=1} tensor type tensor(x{}) is not a dense vector", r);
+        assertErrMsg(desc("sparse", "qvector", 1, "tensor type tensor(x{}) is not a dense vector"), r);
     }
 
     @Test
@@ -201,7 +213,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("matrix", "qvector");
         Tensor t = makeMatrix(tt_dense_matrix_xy);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg("NEAREST_NEIGHBOR {field=matrix,queryTensorName=qvector,targetNumHits=1} tensor type tensor(x[3],y[1]) is not a dense vector", r);
+        assertErrMsg(desc("matrix", "qvector", 1, "tensor type tensor(x[3],y[1]) is not a dense vector"), r);
     }
 
     private static Result doSearch(ValidateNearestNeighborSearcher searcher, String yqlQuery, Object qTensor) {

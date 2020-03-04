@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,9 +52,9 @@ public class InPlaceResizeProvisionTest {
     private static final NodeResources mediumResources = new NodeResources(4, 8, 16, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
     private static final NodeResources largeResources = new NodeResources(8, 16, 32, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
-    private static final ClusterSpec container1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Version.fromString("7.157.9"), false);
-    private static final ClusterSpec container2 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container2"), Version.fromString("7.157.9"), false);
-    private static final ClusterSpec content1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("content1"), Version.fromString("7.157.9"), false);
+    private static final ClusterSpec container1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Version.fromString("7.157.9"), false, Optional.empty());
+    private static final ClusterSpec container2 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container2"), Version.fromString("7.157.9"), false, Optional.empty());
+    private static final ClusterSpec content1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("content1"), Version.fromString("7.157.9"), false, Optional.empty());
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ProvisioningTester tester = new ProvisioningTester.Builder()

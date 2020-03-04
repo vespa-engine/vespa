@@ -29,10 +29,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -66,10 +63,7 @@ import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterCost;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -111,6 +105,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -853,28 +848,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
+    // TODO(mpolden): Remove once legacy dashboard and integration tests stop expecting these fields
     private void globalEndpointsToSlime(Cursor object, Instance instance) {
         var globalEndpointUrls = new LinkedHashSet<String>();
 
-        // Add default global endpoints. These are backed by rotations.
-        instance.endpointsIn(controller.system())
-                .scope(Endpoint.Scope.global)
-                .legacy(false) // Hide legacy names
-                .asList().stream()
-                .map(Endpoint::url)
-                .map(URI::toString)
-                .forEach(globalEndpointUrls::add);
-
-        // Per-cluster endpoints. These are backed by load balancers.
-        var routingPolicies = controller.routingController().policies().get(instance.id()).values();
-        for (var policy : routingPolicies) {
-            policy.globalEndpointsIn(controller.system()).asList().stream()
+        // Add global endpoints backed by rotations
+        controller.routing().endpointsOf(instance.id())
+                  .requiresRotation()
+                  .not().legacy() // Hide legacy names
+                  .asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
                   .forEach(globalEndpointUrls::add);
-        }
 
-        // TODO(mpolden): Remove once clients stop expecting this field
+
         var globalRotationsArray = object.setArray("globalRotations");
         globalEndpointUrls.forEach(globalRotationsArray::addString);
 
@@ -1047,6 +1034,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
               .ifPresent(version -> toSlime(version, object.setObject("revision")));
     }
 
+    private void toSlime(Endpoint endpoint, String cluster, Cursor object) {
+        object.setString("cluster", cluster);
+        object.setBool("tls", endpoint.tls());
+        object.setString("url", endpoint.url().toString());
+        object.setString("scope", endpointScopeString(endpoint.scope()));
+        object.setString("routingMethod", routingMethodString(endpoint.routingMethod()));
+    }
+
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
         response.setString("tenant", deploymentId.applicationId().tenant().value());
         response.setString("application", deploymentId.applicationId().application().value());
@@ -1054,68 +1049,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setString("environment", deploymentId.zoneId().environment().value());
         response.setString("region", deploymentId.zoneId().region().value());
 
-        // Add zone endpoints defined by routing policies
-        var endpointArray = response.setArray("endpoints");
-        for (var policy : controller.routingController().policies().get(deploymentId).values()) {
-            // TODO(mpolden): Always add endpoints from all policies, independent of routing method. This allows removal
-            //                of RoutingGenerator and eliminates the external call to the routing layer below.
-            if (!controller.routingController().supportsRoutingMethod(RoutingMethod.exclusive, deployment.zone())) continue;
-            if (!policy.status().isActive()) continue;
-            {
-                var endpointObject = endpointArray.addObject();
-                var endpoint = policy.endpointIn(controller.system());
-                endpointObject.setString("cluster", policy.id().cluster().value());
-                endpointObject.setBool("tls", endpoint.tls());
-                endpointObject.setString("url", endpoint.url().toString());
-                endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
-                endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.exclusive));
-            }
-            // Add global endpoints that point to this policy
-            for (var endpoint : policy.globalEndpointsIn(controller.system()).asList()) {
-                var endpointObject = endpointArray.addObject();
-                endpointObject.setString("cluster", policy.id().cluster().value());
-                endpointObject.setBool("tls", endpoint.tls());
-                endpointObject.setString("url", endpoint.url().toString());
-                endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
-                endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.exclusive));
-            }
-        }
-        // Add zone endpoints served by shared routing layer
-        for (var clusterAndUrl : controller.routingController().legacyZoneEndpointsOf(deploymentId).entrySet()) {
-            var endpointObject = endpointArray.addObject();
-            endpointObject.setString("cluster", clusterAndUrl.getKey().value());
-            endpointObject.setBool("tls", true);
-            endpointObject.setString("url", clusterAndUrl.getValue().toString());
-            endpointObject.setString("scope", endpointScopeString(Endpoint.Scope.zone));
-            endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.shared));
-        }
-        // Add global endpoints served by shared routing layer
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
         var instance = application.instances().get(deploymentId.applicationId().instance());
-        if (deploymentId.zoneId().environment().isProduction()) { // Global endpoints can only point to production deployments
-            for (var rotation : instance.rotations()) {
-                var endpoints = instance.endpointsIn(controller.system(), rotation.endpointId())
-                                        .legacy(false)
-                                        .scope(Endpoint.Scope.global)
-                                        .asList();
-                for (var endpoint : endpoints) {
-                    var endpointObject = endpointArray.addObject();
-                    endpointObject.setString("cluster", rotation.clusterId().value());
-                    endpointObject.setBool("tls", true);
-                    endpointObject.setString("url", endpoint.url().toString());
-                    endpointObject.setString("scope", endpointScopeString(endpoint.scope()));
-                    endpointObject.setString("routingMethod", routingMethodString(RoutingMethod.shared));
-                }
+
+        // Add zone endpoints
+        var endpointArray = response.setArray("endpoints");
+        var serviceUrls = new ArrayList<URI>();
+        for (var endpoint : controller.routing().endpointsOf(deploymentId)) {
+            toSlime(endpoint, endpoint.name(), endpointArray.addObject());
+            if (endpoint.routingMethod() == RoutingMethod.shared) {
+                serviceUrls.add(endpoint.url());
             }
         }
-
-        // serviceUrls contains all valid endpoints for this deployment, including global. The name of these endpoints
-        // may contain the cluster name (if non-default). Since the controller has no knowledge of clusters for legacy
-        // endpoints, we can't generate these URLs on-the-fly and we have to query the routing layer.
-        // TODO(mpolden): Remove this once all clients stop reading this.
+        // Add global endpoints
+        if (deploymentId.zoneId().environment().isProduction()) { // Global endpoints can only point to production deployments
+            for (var endpoint : controller.routing().endpointsOf(instance).not().legacy()) {
+                // TODO(mpolden): Pass cluster name. Cluster that a global endpoint points to is not available at this level.
+                toSlime(endpoint, "", endpointArray.addObject());
+            }
+        }
+        // TODO(mpolden): Remove this once all clients stop reading it
         Cursor serviceUrlArray = response.setArray("serviceUrls");
-        controller.routingController().legacyEndpointsOf(deploymentId)
-                  .forEach(endpoint -> serviceUrlArray.addString(endpoint.toString()));
+        serviceUrls.forEach(url -> serviceUrlArray.addString(url.toString()));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
@@ -1154,12 +1109,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                                   instant.toEpochMilli()));
         deployment.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
         deployment.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
-
-        // Cost
-        // TODO(mpolden): Unused, remove this field and related code.
-        DeploymentCost appCost = new DeploymentCost(Map.of());
-        Cursor costObject = response.setObject("cost");
-        toSlime(appCost, costObject);
 
         // Metrics
         DeploymentMetrics metrics = deployment.metrics();
@@ -1257,7 +1206,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
         var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
         var status = inService ? GlobalRouting.Status.in : GlobalRouting.Status.out;
-        controller.routingController().policies().setGlobalRoutingStatus(deployment, status, agent);
+        controller.routing().policies().setGlobalRoutingStatus(deployment, status, agent);
     }
 
     /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */
@@ -1268,7 +1217,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         long timestamp = controller.clock().instant().getEpochSecond();
         var status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         var endpointStatus = new EndpointStatus(status, reason, agent.name(), timestamp);
-        controller.routingController().setGlobalRotationStatus(deployment, endpointStatus);
+        controller.routing().setGlobalRotationStatus(deployment, endpointStatus);
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
@@ -1276,9 +1225,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                      ZoneId.from(environment, region));
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("globalrotationoverride");
-        controller.routingController().globalRotationStatus(deploymentId)
+        controller.routing().globalRotationStatus(deploymentId)
                   .forEach((endpoint, status) -> {
-                      array.addString(endpoint.upstreamName());
+                      array.addString(endpoint.upstreamIdOf(deploymentId));
                       Cursor statusObject = array.addObject();
                       statusObject.setString("status", status.getStatus().name());
                       statusObject.setString("reason", status.getReason() == null ? "" : status.getReason());
@@ -1533,6 +1482,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse jobDeploy(ApplicationId id, JobType type, HttpRequest request) {
+        if ( ! type.environment().isManuallyDeployed() && ! isOperator(request))
+            throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
+
         Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("applicationZip"))
             throw new IllegalArgumentException("Missing required form part 'applicationZip'");
@@ -1722,7 +1674,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
-                                                                      controller.routingController().zoneEndpointsOf(deployments),
+                                                                      controller.routing().zoneEndpointsOf(deployments),
                                                                       controller.applications().contentClustersByZone(deployments)));
     }
 
@@ -1950,57 +1902,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return controller.versionStatus().versions().stream().anyMatch(v -> v.versionNumber().equals(version));
     }
 
-    public static void toSlime(DeploymentCost deploymentCost, Cursor object) {
-        object.setLong("tco", (long)deploymentCost.getTco());
-        object.setLong("waste", (long)deploymentCost.getWaste());
-        object.setDouble("utilization", deploymentCost.getUtilization());
-        Cursor clustersObject = object.setObject("cluster");
-        for (Map.Entry<String, ClusterCost> clusterEntry : deploymentCost.getCluster().entrySet())
-            toSlime(clusterEntry.getValue(), clustersObject.setObject(clusterEntry.getKey()));
-    }
-
-    private static void toSlime(ClusterCost clusterCost, Cursor object) {
-        object.setLong("count", clusterCost.getClusterInfo().getHostnames().size());
-        object.setString("resource", getResourceName(clusterCost.getResultUtilization()));
-        object.setDouble("utilization", clusterCost.getResultUtilization().getMaxUtilization());
-        object.setLong("tco", (int)clusterCost.getTco());
-        object.setLong("waste", (int)clusterCost.getWaste());
-        object.setString("flavor", clusterCost.getClusterInfo().getFlavor());
-        object.setDouble("flavorCost", clusterCost.getClusterInfo().getFlavorCost());
-        object.setDouble("flavorCpu", clusterCost.getClusterInfo().getFlavorCPU());
-        object.setDouble("flavorMem", clusterCost.getClusterInfo().getFlavorMem());
-        object.setDouble("flavorDisk", clusterCost.getClusterInfo().getFlavorDisk());
-        object.setString("type", clusterCost.getClusterInfo().getClusterType().name());
-        Cursor utilObject = object.setObject("util");
-        utilObject.setDouble("cpu", clusterCost.getResultUtilization().getCpu());
-        utilObject.setDouble("mem", clusterCost.getResultUtilization().getMemory());
-        utilObject.setDouble("disk", clusterCost.getResultUtilization().getDisk());
-        utilObject.setDouble("diskBusy", clusterCost.getResultUtilization().getDiskBusy());
-        Cursor usageObject = object.setObject("usage");
-        usageObject.setDouble("cpu", clusterCost.getSystemUtilization().getCpu());
-        usageObject.setDouble("mem", clusterCost.getSystemUtilization().getMemory());
-        usageObject.setDouble("disk", clusterCost.getSystemUtilization().getDisk());
-        usageObject.setDouble("diskBusy", clusterCost.getSystemUtilization().getDiskBusy());
-        Cursor hostnamesArray = object.setArray("hostnames");
-        for (String hostname : clusterCost.getClusterInfo().getHostnames())
-            hostnamesArray.addString(hostname);
-    }
-
-    private static String getResourceName(ClusterUtilization utilization) {
-        String name = "cpu";
-        double max = utilization.getMaxUtilization();
-
-        if (utilization.getMemory() == max) {
-            name = "mem";
-        } else if (utilization.getDisk() == max) {
-            name = "disk";
-        } else if (utilization.getDiskBusy() == max) {
-            name = "diskbusy";
-        }
-
-        return name;
-    }
-
     private static boolean recurseOverTenants(HttpRequest request) {
         return recurseOverApplications(request) || "tenant".equals(request.getProperty("recursive"));
     }
@@ -2126,6 +2027,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         switch (method) {
             case exclusive: return "exclusive";
             case shared: return "shared";
+            case sharedLayer4: return "sharedLayer4";
         }
         throw new IllegalArgumentException("Unknown routing method " + method);
     }

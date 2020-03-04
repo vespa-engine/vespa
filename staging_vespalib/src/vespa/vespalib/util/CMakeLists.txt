@@ -17,6 +17,7 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     rusage.cpp
     shutdownguard.cpp
     scheduledexecutor.cpp
+    singleexecutor.cpp
     xmlserializable.cpp
     xmlstream.cpp
     DEPENDS

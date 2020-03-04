@@ -646,7 +646,9 @@ public:
         query_tensor.release();
         setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *dense_attr_tensor,
                                                                         std::move(dense_query_tensor_up),
-                                                                        n.get_target_num_hits()));
+                                                                        n.get_target_num_hits(),
+                                                                        n.get_allow_approximate(),
+                                                                        n.get_explore_additional_hits()));
     }
 };
 

@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -414,9 +413,11 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
-        if ( ! type.environment().isManuallyDeployed() && versions.targetApplication().isUnknown())
-            throw new IllegalArgumentException("Target application must be a valid reference.");
+        start(id, type, versions, JobProfile.of(type));
+    }
 
+    /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
+    public void start(ApplicationId id, JobType type, Versions versions, JobProfile profile) {
         controller.applications().lockApplicationIfPresent(TenantAndApplicationId.from(id), application -> {
             locked(id, type, __ -> {
                 Optional<Run> last = last(id, type);
@@ -424,7 +425,7 @@ public class JobController {
                     throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
                 RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-                curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant()));
+                curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant(), profile));
                 metric.jobStarted(newId.job());
             });
         });
@@ -432,9 +433,6 @@ public class JobController {
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
-        if ( ! type.environment().isManuallyDeployed())
-            throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
-
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
@@ -445,10 +443,15 @@ public class JobController {
         last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
         locked(id, type, __ -> {
             controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
-            start(id, type, new Versions(platform.orElse(controller.systemVersion()),
-                                         ApplicationVersion.unknown,
-                                         Optional.empty(),
-                                         Optional.empty()));
+            start(id,
+                  type,
+                  new Versions(platform.orElse(applicationPackage.deploymentSpec().majorVersion()
+                                                                 .flatMap(controller.applications()::lastCompatibleVersion)
+                                                                 .orElseGet(controller::systemVersion)),
+                               ApplicationVersion.unknown,
+                               Optional.empty(),
+                               Optional.empty()),
+                  JobProfile.development);
 
             runner.get().accept(last(id, type).get());
         });
@@ -504,7 +507,7 @@ public class JobController {
         } finally {
             // Passing an empty DeploymentSpec here is fine as it's used for registering global endpoint names, and
             // tester instances have none.
-            controller.routingController().policies().refresh(id.id(), DeploymentSpec.empty, zone);
+            controller.routing().policies().refresh(id.id(), DeploymentSpec.empty, zone);
         }
     }
 
@@ -532,17 +535,12 @@ public class JobController {
                                     .collect(toList()));
     }
 
-    /** Returns the tester endpoint URL, if any */
-    Optional<URI> testerEndpoint(RunId id) {
-        var testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        return controller.routingController().zoneEndpointsOf(testerId).values().stream().findFirst();
-    }
-
     private void prunePackages(TenantAndApplicationId id) {
         controller.applications().lockApplicationIfPresent(id, application -> {
             application.get().productionDeployments().values().stream()
                        .flatMap(List::stream)
                        .map(Deployment::applicationVersion)
+                       .filter(version -> ! version.isUnknown())
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);

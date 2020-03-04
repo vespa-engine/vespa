@@ -99,7 +99,7 @@ public class ApplicationSerializerTest {
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
-                                       createClusterInfo(3, 4),
+                                       Map.of(),
                                        new DeploymentMetrics(2, 3, 4, 5, 6,
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                                                              Map.of(DeploymentMetrics.Warning.all, 3)),
@@ -188,14 +188,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id3.instance()).change(), serialized.require(id3.instance()).change());
 
         // Test cluster info
-        assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().size());
-        assertEquals(10, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorCost());
-        assertEquals(ClusterSpec.Type.content, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getClusterType());
-        assertEquals("flavor2", serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavor());
-        assertEquals(4, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getHostnames().size());
-        assertEquals(2, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorCPU(), Double.MIN_VALUE);
-        assertEquals(4, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorMem(), Double.MIN_VALUE);
-        assertEquals(50, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorDisk(), Double.MIN_VALUE);
+        assertEquals(0, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().size());
 
         // Test metrics
         assertEquals(original.metrics().queryServiceQuality(), serialized.metrics().queryServiceQuality(), Double.MIN_VALUE);

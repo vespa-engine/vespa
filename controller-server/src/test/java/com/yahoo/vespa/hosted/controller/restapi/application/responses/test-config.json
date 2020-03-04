@@ -5,12 +5,12 @@
   "isCI": false,
   "endpoints": {
     "prod.us-central-1": [
-      "https://us-central-1.prod.default"
+      "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
     ]
   },
   "zoneEndpoints": {
     "prod.us-central-1": {
-      "default": "https://us-central-1.prod.default"
+      "default": "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
     }
   },
   "clusters": {

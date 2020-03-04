@@ -11,12 +11,12 @@
     {
       "cluster": "default",
       "tls": true,
-      "url": "https://instance1--application1--tenant1.us-central-1.prod.vespa:43",
+      "url": "https://instance1--application1--tenant1.us-central-1.vespa.oath.cloud:4443/",
       "scope": "zone",
       "routingMethod": "shared"
     },
     {
-      "cluster": "foo",
+      "cluster": "",
       "tls": true,
       "url": "https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/",
       "scope": "global",
@@ -24,7 +24,7 @@
     }
   ],
   "serviceUrls": [
-    "https://instance1--application1--tenant1.us-central-1.prod.vespa:43"
+    "https://instance1--application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
   ],
   "nodes": "http://localhost:8080/zone/v2/prod/us-central-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-central-1&application=tenant1.application1.instance1",
@@ -61,12 +61,6 @@
     "lastWritten": 1527848130000,
     "lastQueriesPerSecond": 1.0,
     "lastWritesPerSecond": 2.0
-  },
-  "cost": {
-    "tco": 0,
-    "waste": 0,
-    "utilization": 0.0,
-    "cluster": {}
   },
   "metrics": {
     "queriesPerSecond": 1.0,

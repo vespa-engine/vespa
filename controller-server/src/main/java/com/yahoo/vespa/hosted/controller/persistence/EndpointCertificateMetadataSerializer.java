@@ -48,6 +48,7 @@ public class EndpointCertificateMetadataSerializer {
             Cursor cursor = object.setArray(requestedDnsSansField);
             sans.forEach(cursor::addString);
         });
+        metadata.issuer().ifPresent(id -> object.setString(issuerField, id));
 
         return slime;
     }
@@ -77,7 +78,7 @@ public class EndpointCertificateMetadataSerializer {
                 issuer);
     }
 
-    public static EndpointCertificateMetadata fromJsonString(String zkdata) {
-        return fromSlime(SlimeUtils.jsonToSlime(zkdata).get());
+    public static EndpointCertificateMetadata fromJsonString(String zkData) {
+        return fromSlime(SlimeUtils.jsonToSlime(zkData).get());
     }
 }

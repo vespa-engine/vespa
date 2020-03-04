@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -56,14 +58,9 @@ public class RoutingPolicies {
 
     /** Read all known routing policies for given deployment */
     public Map<RoutingPolicyId, RoutingPolicy> get(DeploymentId deployment) {
-        return get(deployment.applicationId(), deployment.zoneId());
-    }
-
-    /** Read all known routing policies for given deployment */
-    public Map<RoutingPolicyId, RoutingPolicy> get(ApplicationId application, ZoneId zone) {
-        return db.readRoutingPolicies(application).entrySet()
+        return db.readRoutingPolicies(deployment.applicationId()).entrySet()
                  .stream()
-                 .filter(kv -> kv.getKey().zone().equals(zone))
+                 .filter(kv -> kv.getKey().zone().equals(deployment.zoneId()))
                  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -77,16 +74,15 @@ public class RoutingPolicies {
      * load balancers for given application have changed.
      */
     public void refresh(ApplicationId application, DeploymentSpec deploymentSpec, ZoneId zone) {
-        if (!controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) return;
         var loadBalancers = new AllocatedLoadBalancers(application, zone, controller.serviceRegistry().configServer()
                                                                                     .getLoadBalancers(application, zone),
                                                        deploymentSpec);
         var inactiveZones = inactiveZones(application, deploymentSpec);
         try (var lock = db.lockRoutingPolicies()) {
-            if (!application.instance().isTester()) removeGlobalDnsUnreferencedBy(loadBalancers, lock);
+            removeGlobalDnsUnreferencedBy(loadBalancers, lock);
             storePoliciesOf(loadBalancers, lock);
             removePoliciesUnreferencedBy(loadBalancers, lock);
-            if (!application.instance().isTester()) updateGlobalDnsOf(get(loadBalancers.application).values(), inactiveZones, lock);
+            updateGlobalDnsOf(get(loadBalancers.deployment.applicationId()).values(), inactiveZones, lock);
         }
     }
 
@@ -127,6 +123,7 @@ public class RoutingPolicies {
             var staleTargets = new LinkedHashSet<AliasTarget>();
             for (var policy : routeEntry.getValue()) {
                 if (policy.dnsZone().isEmpty()) continue;
+                if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(RoutingMethod.exclusive)) continue;
                 var target = new AliasTarget(policy.canonicalName(), policy.dnsZone().get(), policy.id().zone());
                 var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
                 // Remove target zone if global routing status is set out at:
@@ -146,9 +143,10 @@ public class RoutingPolicies {
                 staleTargets.clear();
             }
             if (!targets.isEmpty()) {
-                var endpoint = RoutingPolicy.globalEndpointOf(routeEntry.getKey().application(),
-                                                              routeEntry.getKey().endpointId(), controller.system());
-                controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), targets, Priority.normal);
+                var endpoints = controller.routing().endpointsOf(routeEntry.getKey().application())
+                                          .named(routeEntry.getKey().endpointId())
+                                          .not().requiresRotation();
+                endpoints.forEach(endpoint -> controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), targets, Priority.normal));
             }
             staleTargets.forEach(t -> controller.nameServiceForwarder().removeRecords(Record.Type.ALIAS,
                                                                                       RecordData.fqdn(t.name().value()),
@@ -158,9 +156,9 @@ public class RoutingPolicies {
 
     /** Store routing policies for given load balancers */
     private void storePoliciesOf(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
-        var policies = new LinkedHashMap<>(get(loadBalancers.application));
+        var policies = new LinkedHashMap<>(get(loadBalancers.deployment.applicationId()));
         for (LoadBalancer loadBalancer : loadBalancers.list) {
-            var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), loadBalancers.zone);
+            var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), loadBalancers.deployment.zoneId());
             var existingPolicy = policies.get(policyId);
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.dnsZone(),
                                               loadBalancers.endpointIdsOf(loadBalancer),
@@ -172,42 +170,45 @@ public class RoutingPolicies {
             updateZoneDnsOf(newPolicy);
             policies.put(newPolicy.id(), newPolicy);
         }
-        db.writeRoutingPolicies(loadBalancers.application, policies);
+        db.writeRoutingPolicies(loadBalancers.deployment.applicationId(), policies);
     }
 
     /** Update zone DNS record for given policy */
     private void updateZoneDnsOf(RoutingPolicy policy) {
-        var name = RecordName.from(policy.endpointIn(controller.system()).dnsName());
+        var name = RecordName.from(policy.endpointIn(controller.system(), RoutingMethod.exclusive).dnsName());
         var data = RecordData.fqdn(policy.canonicalName().value());
-        controller.nameServiceForwarder().createCname(name, data, Priority.normal);
+        nameUpdaterIn(policy.id().zone()).createCname(name, data);
     }
 
     /** Remove policies and zone DNS records unreferenced by given load balancers */
     private void removePoliciesUnreferencedBy(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
-        var policies = get(loadBalancers.application);
+        var policies = get(loadBalancers.deployment.applicationId());
         var newPolicies = new LinkedHashMap<>(policies);
         var activeLoadBalancers = loadBalancers.list.stream().map(LoadBalancer::hostname).collect(Collectors.toSet());
         for (var policy : policies.values()) {
             // Leave active load balancers and irrelevant zones alone
             if (activeLoadBalancers.contains(policy.canonicalName()) ||
-                !policy.id().zone().equals(loadBalancers.zone)) continue;
+                !policy.id().zone().equals(loadBalancers.deployment.zoneId())) continue;
 
-            var dnsName = policy.endpointIn(controller.system()).dnsName();
-            controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(dnsName), Priority.normal);
+            var dnsName = policy.endpointIn(controller.system(), RoutingMethod.exclusive).dnsName();
+            nameUpdaterIn(loadBalancers.deployment.zoneId()).removeRecords(Record.Type.CNAME, RecordName.from(dnsName));
             newPolicies.remove(policy.id());
         }
-        db.writeRoutingPolicies(loadBalancers.application, newPolicies);
+        db.writeRoutingPolicies(loadBalancers.deployment.applicationId(), newPolicies);
     }
 
     /** Remove unreferenced global endpoints from DNS */
     private void removeGlobalDnsUnreferencedBy(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
-        var zonePolicies = get(loadBalancers.application, loadBalancers.zone).values();
+        var zonePolicies = get(loadBalancers.deployment).values();
         var removalCandidates = new HashSet<>(routingTableFrom(zonePolicies).keySet());
         var activeRoutingIds = routingIdsFrom(loadBalancers);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
-            var endpoint = RoutingPolicy.globalEndpointOf(id.application(), id.endpointId(), controller.system());
-            controller.nameServiceForwarder().removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()), Priority.normal);
+            var endpoints = controller.routing().endpointsOf(id.application())
+                                      .not().requiresRotation()
+                                      .named(id.endpointId());
+            var nameUpdater = nameUpdaterIn(loadBalancers.deployment.zoneId());
+            endpoints.forEach(endpoint -> nameUpdater.removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName())));
         }
     }
 
@@ -258,22 +259,20 @@ public class RoutingPolicies {
     /** Load balancers allocated to a deployment */
     private static class AllocatedLoadBalancers {
 
-        private final ApplicationId application;
-        private final ZoneId zone;
+        private final DeploymentId deployment;
         private final List<LoadBalancer> list;
         private final DeploymentSpec deploymentSpec;
 
         private AllocatedLoadBalancers(ApplicationId application, ZoneId zone, List<LoadBalancer> loadBalancers,
                                        DeploymentSpec deploymentSpec) {
-            this.application = application;
-            this.zone = zone;
+            this.deployment = new DeploymentId(application, zone);
             this.list = List.copyOf(loadBalancers);
             this.deploymentSpec = deploymentSpec;
         }
 
         /** Compute all endpoint IDs for given load balancer */
         private Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer) {
-            if (!zone.environment().isProduction()) { // Only production deployments have configurable endpoints
+            if (!deployment.zoneId().environment().isProduction()) { // Only production deployments have configurable endpoints
                 return Set.of();
             }
             var instanceSpec = deploymentSpec.instance(loadBalancer.application().instance());
@@ -282,7 +281,7 @@ public class RoutingPolicies {
             }
             return instanceSpec.get().endpoints().stream()
                                .filter(endpoint -> endpoint.containerId().equals(loadBalancer.cluster().value()))
-                               .filter(endpoint -> endpoint.regions().contains(zone.region()))
+                               .filter(endpoint -> endpoint.regions().contains(deployment.zoneId().region()))
                                .map(com.yahoo.config.application.api.Endpoint::endpointId)
                                .map(EndpointId::of)
                                .collect(Collectors.toSet());
@@ -299,6 +298,55 @@ public class RoutingPolicies {
                            .filter(zone -> !zone.active())
                            .map(zone -> ZoneId.from(zone.environment(), zone.region().get()))
                            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** Returns the name updater to use for given zone */
+    private NameUpdater nameUpdaterIn(ZoneId zone) {
+        if (controller.zoneRegistry().routingMethods(zone).contains(RoutingMethod.exclusive)) {
+            return new NameUpdater(controller.nameServiceForwarder());
+        }
+        return new DiscardingNameUpdater();
+    }
+
+    /** A name updater that passes name service operations to the next handler */
+    private static class NameUpdater {
+
+        private final NameServiceForwarder forwarder;
+
+        public NameUpdater(NameServiceForwarder forwarder) {
+            this.forwarder = forwarder;
+        }
+
+        public void removeRecords(Record.Type type, RecordName name) {
+            forwarder.removeRecords(type, name, Priority.normal);
+        }
+
+        public void createAlias(RecordName name, Set<AliasTarget> targets) {
+            forwarder.createAlias(name, targets, Priority.normal);
+        }
+
+        public void createCname(RecordName name, RecordData data) {
+            forwarder.createCname(name, data, Priority.normal);
+        }
+
+    }
+
+    /** A name updater that does nothing */
+    private static class DiscardingNameUpdater extends NameUpdater {
+
+        private DiscardingNameUpdater() {
+            super(null);
+        }
+
+        @Override
+        public void removeRecords(Record.Type type, RecordName name) {}
+
+        @Override
+        public void createAlias(RecordName name, Set<AliasTarget> target) {}
+
+        @Override
+        public void createCname(RecordName name, RecordData data) {}
+
     }
 
 }

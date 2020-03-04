@@ -20,7 +20,6 @@ import com.yahoo.slime.SlimeStream;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
-import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -125,7 +124,6 @@ public class UserApiHandler extends LoggingRequestHandler {
         User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
         Set<Role> roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
 
-        ApplicationIdSnapshot snapshot = controller.applicationIdSnapshot();
         Map<TenantName, List<TenantRole>> tenantRolesByTenantName = roles.stream()
                 .flatMap(role -> filterTenantRoles(role).stream())
                 .distinct()
@@ -156,17 +154,6 @@ public class UserApiHandler extends LoggingRequestHandler {
                     Cursor tenantRolesObject = tenantObject.setArray("roles");
                     tenantRolesByTenantName.getOrDefault(tenant, List.of())
                             .forEach(role -> tenantRolesObject.addString(role.definition().name()));
-
-                    Cursor tenantApplicationsObject = tenantObject.setObject("applications");
-                    snapshot.applications(tenant).stream()
-                            .sorted()
-                            .forEach(application -> {
-                                Cursor applicationObject = tenantApplicationsObject.setObject(application.value());
-                                Cursor applicationInstancesObject = applicationObject.setArray("instances");
-                                snapshot.instances(tenant, application).stream()
-                                        .sorted()
-                                        .forEach(instance -> applicationInstancesObject.addString(instance.value()));
-                            });
                 });
 
         if (!operatorRoles.isEmpty()) {

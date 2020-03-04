@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -159,7 +160,7 @@ public class LoadBalancerExpirerTest {
         List<HostSpec> hosts = new ArrayList<>();
         for (var cluster : clusters) {
             hosts.addAll(tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
-                                                                         Vtag.currentVersion, false),
+                                                                         Vtag.currentVersion, false, Optional.empty()),
                                         2, 1,
                                         new NodeResources(1, 4, 10, 0.3)));
         }

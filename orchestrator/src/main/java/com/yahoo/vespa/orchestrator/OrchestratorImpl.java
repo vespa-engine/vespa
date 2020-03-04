@@ -31,11 +31,12 @@ import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -59,7 +60,7 @@ public class OrchestratorImpl implements Orchestrator {
 
     private final Policy policy;
     private final StatusService statusService;
-    private final InstanceLookupService instanceLookupService;
+    private final ServiceMonitor serviceMonitor;
     private final int serviceMonitorConvergenceLatencySeconds;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final Clock clock;
@@ -70,24 +71,26 @@ public class OrchestratorImpl implements Orchestrator {
     public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
                             StatusService statusService,
                             OrchestratorConfig orchestratorConfig,
-                            InstanceLookupService instanceLookupService,
+                            ServiceMonitor serviceMonitor,
                             ConfigserverConfig configServerConfig,
                             FlagSource flagSource)
     {
-        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, new ApplicationApiFactory(configServerConfig.zookeeperserver().size())),
-             clusterControllerClientFactory,
-             statusService,
-             instanceLookupService,
-             orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
-             Clock.systemUTC(),
-             new ApplicationApiFactory(configServerConfig.zookeeperserver().size()),
-             flagSource);
+        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(),
+                                   clusterControllerClientFactory,
+                                   new ApplicationApiFactory(configServerConfig.zookeeperserver().size())),
+                clusterControllerClientFactory,
+                statusService,
+                serviceMonitor,
+                orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
+                Clock.systemUTC(),
+                new ApplicationApiFactory(configServerConfig.zookeeperserver().size()),
+                flagSource);
     }
 
     public OrchestratorImpl(Policy policy,
                             ClusterControllerClientFactory clusterControllerClientFactory,
                             StatusService statusService,
-                            InstanceLookupService instanceLookupService,
+                            ServiceMonitor serviceMonitor,
                             int serviceMonitorConvergenceLatencySeconds,
                             Clock clock,
                             ApplicationApiFactory applicationApiFactory,
@@ -97,7 +100,7 @@ public class OrchestratorImpl implements Orchestrator {
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.statusService = statusService;
         this.serviceMonitorConvergenceLatencySeconds = serviceMonitorConvergenceLatencySeconds;
-        this.instanceLookupService = instanceLookupService;
+        this.serviceMonitor = serviceMonitor;
         this.clock = clock;
         this.applicationApiFactory = applicationApiFactory;
         this.retireWithPermanentlyDownFlag = Flags.RETIRE_WITH_PERMANENTLY_DOWN.bindTo(flagSource);
@@ -105,7 +108,10 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public Host getHost(HostName hostName) throws HostNameNotFoundException {
-        ApplicationInstance applicationInstance = getApplicationInstance(hostName);
+        ApplicationInstance applicationInstance = serviceMonitor
+                .getApplicationNarrowedTo(hostName)
+                .orElseThrow(() -> new HostNameNotFoundException(hostName));
+
         List<ServiceInstance> serviceInstances = applicationInstance
                 .serviceClusters().stream()
                 .flatMap(cluster -> cluster.serviceInstances().stream())
@@ -113,7 +119,6 @@ public class OrchestratorImpl implements Orchestrator {
                 .collect(Collectors.toList());
 
         HostInfo hostInfo = statusService.getHostInfo(applicationInstance.reference(), hostName);
-        HostStatus hostStatus = getNodeStatus(applicationInstance.reference(), hostName);
 
         return new Host(hostName, hostInfo, applicationInstance.reference(), serviceInstances);
     }
@@ -125,17 +130,17 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public Function<HostName, Optional<HostInfo>> getHostResolver() {
-        return hostName -> instanceLookupService.findInstanceByHost(hostName)
-                                                .map(application -> statusService.getHostInfo(application.reference(), hostName));
+        return hostName -> serviceMonitor
+                .getApplication(hostName)
+                .map(application -> statusService.getHostInfo(application.reference(), hostName));
     }
 
     @Override
     public void setNodeStatus(HostName hostName, HostStatus status) throws OrchestrationException {
         ApplicationInstanceReference reference = getApplicationInstance(hostName).reference();
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
-        try (MutableStatusRegistry statusRegistry = statusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, reference)) {
-            statusRegistry.setHostState(hostName, status);
+        try (ApplicationLock lock = statusService.lockApplication(context, reference)) {
+            lock.setHostState(hostName, status);
         }
     }
 
@@ -163,9 +168,8 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstance appInstance = getApplicationInstance(hostName);
 
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
-        try (MutableStatusRegistry statusRegistry = statusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
-            HostStatus currentHostState = statusRegistry.getHostInfos().getOrNoRemarks(hostName).status();
+        try (ApplicationLock lock = statusService.lockApplication(context, appInstance.reference())) {
+            HostStatus currentHostState = lock.getHostInfos().getOrNoRemarks(hostName).status();
             if (currentHostState == HostStatus.NO_REMARKS) {
                 return;
             }
@@ -176,11 +180,11 @@ public class OrchestratorImpl implements Orchestrator {
             //  2. The whole application is down: the content cluster states are set to maintenance,
             //     and the host may be taken down manually at any moment.
             if (currentHostState == HostStatus.PERMANENTLY_DOWN ||
-                    statusRegistry.getStatus() == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
+                    lock.getApplicationInstanceStatus() == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
             }
 
-            policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry);
+            policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, lock);
         }
     }
 
@@ -200,10 +204,8 @@ public class OrchestratorImpl implements Orchestrator {
                 .with(FetchVector.Dimension.HOSTNAME, hostName.s())
                 .value();
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock, usePermanentlyDownStatus);
-        try (MutableStatusRegistry statusRegistry = statusService
-                .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
-            ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, statusRegistry,
-                                                                         clusterControllerClientFactory);
+        try (ApplicationLock lock = statusService.lockApplication(context, appInstance.reference())) {
+            ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, lock, clusterControllerClientFactory);
 
             policy.acquirePermissionToRemove(context.createSubcontextWithinLock(), applicationApi);
         }
@@ -218,23 +220,22 @@ public class OrchestratorImpl implements Orchestrator {
     void suspendGroup(OrchestratorContext context, NodeGroup nodeGroup) throws HostStateChangeDeniedException {
         ApplicationInstanceReference applicationReference = nodeGroup.getApplicationReference();
 
-        try (MutableStatusRegistry hostStatusRegistry =
-                     statusService.lockApplicationInstance_forCurrentThreadOnly(context, applicationReference)) {
-            ApplicationInstanceStatus appStatus = hostStatusRegistry.getStatus();
+        try (ApplicationLock lock = statusService.lockApplication(context, applicationReference)) {
+            ApplicationInstanceStatus appStatus = lock.getApplicationInstanceStatus();
             if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
             }
 
-            ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, hostStatusRegistry,
-                                                                         clusterControllerClientFactory);
+            ApplicationApi applicationApi = applicationApiFactory.create(
+                    nodeGroup, lock, clusterControllerClientFactory);
             policy.grantSuspensionRequest(context.createSubcontextWithinLock(), applicationApi);
         }
     }
 
     @Override
     public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) throws ApplicationIdNotFoundException {
-        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
-        return statusService.getApplicationInstanceStatus(appRef);
+        ApplicationInstanceReference reference = OrchestratorUtil.toApplicationInstanceReference(appId, serviceMonitor);
+        return statusService.getApplicationInstanceStatus(reference);
     }
 
     @Override
@@ -351,18 +352,17 @@ public class OrchestratorImpl implements Orchestrator {
     private void setApplicationStatus(ApplicationId appId, ApplicationInstanceStatus status) 
             throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
-        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
-        try (MutableStatusRegistry statusRegistry =
-                     statusService.lockApplicationInstance_forCurrentThreadOnly(context, appRef)) {
+        ApplicationInstanceReference reference = OrchestratorUtil.toApplicationInstanceReference(appId, serviceMonitor);
+        try (ApplicationLock lock = statusService.lockApplication(context, reference)) {
 
             // Short-circuit if already in wanted state
-            if (status == statusRegistry.getStatus()) return;
+            if (status == lock.getApplicationInstanceStatus()) return;
 
             // Set content clusters for this application in maintenance on suspend
             if (status == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
-                ApplicationInstance application = getApplicationInstance(appRef);
+                ApplicationInstance application = getApplicationInstance(reference);
 
-                HostInfos hostInfosSnapshot = statusRegistry.getHostInfos();
+                HostInfos hostInfosSnapshot = lock.getHostInfos();
 
                 // Mark it allowed to be down before we manipulate the clustercontroller
                 OrchestratorUtil.getHostsUsedByApplicationInstance(application)
@@ -370,14 +370,14 @@ public class OrchestratorImpl implements Orchestrator {
                         // This filter also ensures host status is not modified if a suspended host
                         // has status != ALLOWED_TO_BE_DOWN.
                         .filter(hostname -> !hostInfosSnapshot.getOrNoRemarks(hostname).status().isSuspended())
-                        .forEach(hostname -> statusRegistry.setHostState(hostname, HostStatus.ALLOWED_TO_BE_DOWN));
+                        .forEach(hostname -> lock.setHostState(hostname, HostStatus.ALLOWED_TO_BE_DOWN));
 
                 // If the clustercontroller throws an error the nodes will be marked as allowed to be down
                 // and be set back up on next resume invocation.
                 setClusterStateInController(context.createSubcontextWithinLock(), application, ClusterControllerNodeState.MAINTENANCE);
             }
 
-            statusRegistry.setApplicationInstanceStatus(status);
+            lock.setApplicationInstanceStatus(status);
         }
     }
 
@@ -417,12 +417,13 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     private ApplicationInstance getApplicationInstance(HostName hostName) throws HostNameNotFoundException{
-        return instanceLookupService.findInstanceByHost(hostName).orElseThrow(
+        return serviceMonitor.getApplication(hostName).orElseThrow(
                 () -> new HostNameNotFoundException(hostName));
     }
 
-    private ApplicationInstance getApplicationInstance(ApplicationInstanceReference appRef) throws ApplicationIdNotFoundException {
-        return instanceLookupService.findInstanceById(appRef).orElseThrow(ApplicationIdNotFoundException::new);
+    private ApplicationInstance getApplicationInstance(ApplicationInstanceReference reference)
+            throws ApplicationIdNotFoundException {
+        return serviceMonitor.getApplication(reference).orElseThrow(ApplicationIdNotFoundException::new);
     }
 
     private static void sleep(long time, TimeUnit timeUnit) {

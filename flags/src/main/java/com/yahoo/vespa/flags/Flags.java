@@ -192,7 +192,19 @@ public class Flags {
             "Regularly issue a small write to disk and fail the host if it is not successful",
             "Takes effect on next node agent tick (but does not clear existing failure reports)",
             HOSTNAME);
-  
+
+    public static final UnboundBooleanFlag RESTRICT_ACQUIRING_NEW_PRIVILEGES = defineFeatureFlag(
+            "restrict-acquiring-new-privileges", false,
+            "Whether docker daemon should restrict containers from acquiring new privileges",
+            "Takes effect on next host admin tick",
+            HOSTNAME);
+
+    public static final UnboundListFlag<String> AUDITED_PATHS = defineListFlag(
+            "audited-paths", List.of(), String.class,
+            "List of paths that should audited",
+            "Takes effect on next host admin tick",
+            HOSTNAME);
+
     public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
             "generate-l4-routing-config", false,
             "Whether routing nodes should generate L4 routing config",
@@ -213,8 +225,7 @@ public class Flags {
     public static final UnboundStringFlag ENDPOINT_CERTIFICATE_BACKFILL = defineStringFlag(
             "endpoint-certificate-backfill", "disable",
             "Whether the endpoint certificate maintainer should backfill missing certificate data from cameo",
-            "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\""
-    );
+            "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\"");
 
     public static final UnboundBooleanFlag USE_NEW_ATHENZ_FILTER = defineFeatureFlag(
             "use-new-athenz-filter", false,
@@ -237,6 +248,12 @@ public class Flags {
             "endpoint-cert-in-shared-routing", false,
             "Whether to provision and use endpoint certs for apps in shared routing zones",
             "Takes effect on next deployment of the application", APPLICATION_ID);
+
+    public static final UnboundBooleanFlag PHRASE_SEGMENTING = defineFeatureFlag(
+            "phrase-segmenting", true,
+            "Should 'implicit phrases' in queries we parsed to a phrase or and?",
+            "Takes effect on redeploy",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

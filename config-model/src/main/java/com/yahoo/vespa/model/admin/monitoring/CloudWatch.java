@@ -13,7 +13,7 @@ public class CloudWatch {
     private final MetricsConsumer consumer;
 
     private HostedAuth hostedAuth;
-    private String profile;
+    private SharedCredentials sharedCredentials;
 
     public CloudWatch(String region, String namespace, MetricsConsumer consumer) {
         this.region = region;
@@ -26,14 +26,14 @@ public class CloudWatch {
     public String consumer() { return consumer.getId(); }
 
     public Optional<HostedAuth> hostedAuth() {return Optional.ofNullable(hostedAuth); }
-    public Optional<String> profile() { return Optional.ofNullable(profile); }
+    public Optional<SharedCredentials> sharedCredentials() {return Optional.ofNullable(sharedCredentials); }
 
-    public void setHostedAuth(HostedAuth hostedAuth) {
-        this.hostedAuth = hostedAuth;
+    public void setHostedAuth(String accessKeyName, String secretKeyName) {
+        hostedAuth = new HostedAuth(accessKeyName, secretKeyName);
     }
 
-    public void setProfile(String profile) {
-        this.profile = profile;
+    public void setSharedCredentials(String profile, String file) {
+        sharedCredentials = new SharedCredentials(profile, file);
     }
 
     public static class HostedAuth {
@@ -43,6 +43,16 @@ public class CloudWatch {
         public HostedAuth(String accessKeyName, String secretKeyName) {
             this.accessKeyName = accessKeyName;
             this.secretKeyName = secretKeyName;
+        }
+    }
+
+    public static class SharedCredentials {
+        public final String profile;
+        public final String file;
+
+        public SharedCredentials(String profile, String file) {
+            this.profile = profile;
+            this.file = file;
         }
     }
 

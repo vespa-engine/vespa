@@ -20,6 +20,8 @@ import java.nio.ByteBuffer;
 public class NearestNeighborItem extends SimpleTaggableItem {
 
     private int targetNumHits = 0;
+    private int hnswExploreAdditionalHits = 0;
+    private boolean approximate = true;
     private String field;
     private String queryTensorName;
 
@@ -34,11 +36,23 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Returns the field name */
     public String getIndexName() { return field; }
 
+    /** Returns the number of extra hits to explore in HNSW algorithm */
+    public int getHnswExploreAdditionalHits() { return hnswExploreAdditionalHits; }
+
+    /** Returns whether approximation is allowed */
+    public boolean getAllowApproximate() { return approximate; }
+
     /** Returns the name of the query tensor */
     public String getQueryTensorName() { return queryTensorName; }
 
     /** Set the K number of hits to produce */
     public void setTargetNumHits(int target) { this.targetNumHits = target; }
+
+    /** Set the number of extra hits to explore in HNSW algorithm */
+    public void setHnswExploreAdditionalHits(int num) { this.hnswExploreAdditionalHits = num; }
+
+    /** Set whether approximation is allowed */
+    public void setAllowApproximate(boolean value) { this.approximate = value; }
 
     @Override
     public void setIndexName(String index) { this.field = index; }
@@ -58,6 +72,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         putString(field, buffer);
         putString(queryTensorName, buffer);
         IntegerCompressor.putCompressedPositiveNumber(targetNumHits, buffer);
+        IntegerCompressor.putCompressedPositiveNumber((approximate ? 1 : 0), buffer);
+        IntegerCompressor.putCompressedPositiveNumber(hnswExploreAdditionalHits, buffer);
         return 1;  // number of encoded stack dump items
     }
 
@@ -65,6 +81,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append("{field=").append(field);
         buffer.append(",queryTensorName=").append(queryTensorName);
+        buffer.append(",hnsw.exploreAdditionalHits=").append(hnswExploreAdditionalHits);
+        buffer.append(",approximate=").append(String.valueOf(approximate));
         buffer.append(",targetNumHits=").append(targetNumHits).append("}");
     }
 }

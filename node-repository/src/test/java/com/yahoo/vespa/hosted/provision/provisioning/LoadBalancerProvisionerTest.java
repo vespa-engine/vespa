@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -199,8 +200,9 @@ public class LoadBalancerProvisionerTest {
         assertEquals(List.of(), tester.nodeRepository().loadBalancers(app1).asList());
     }
 
+    // TODO(mpolden): Remove when ClusterSpec with combined type rejects empty combinedId
     @Test
-    public void provision_load_balancer_combined_cluster() {
+    public void provision_load_balancer_combined_cluster_without_id() {
         Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(app1).asList();
         ClusterSpec.Id cluster = ClusterSpec.Id.from("foo");
 
@@ -209,6 +211,18 @@ public class LoadBalancerProvisionerTest {
         assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().reals().size());
         tester.activate(app1, nodes);
         assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
+    }
+
+    @Test
+    public void provision_load_balancer_combined_cluster() {
+        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(app1).asList();
+        var combinedId = ClusterSpec.Id.from("container1");
+        var nodes = prepare(app1, clusterRequest(ClusterSpec.Type.combined, ClusterSpec.Id.from("content1"), Optional.of(combinedId)));
+        assertEquals(1, lbs.get().size());
+        assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().reals().size());
+        tester.activate(app1, nodes);
+        assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
+        assertEquals(combinedId, lbs.get().get(0).id().cluster());
     }
 
     private void dirtyNodesOf(ApplicationId application) {
@@ -254,7 +268,11 @@ public class LoadBalancerProvisionerTest {
     }
 
     private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id) {
-        return ClusterSpec.request(type, id, Version.fromString("6.42"), false);
+        return clusterRequest(type,  id, Optional.empty());
+    }
+
+    private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id, Optional<ClusterSpec.Id> combinedId) {
+        return ClusterSpec.request(type, id, Version.fromString("6.42"), false, combinedId);
     }
 
     private static <T> T get(Set<T> set, int position) {

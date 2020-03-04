@@ -60,25 +60,7 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
     }
 
     private void tailLogs(ApplicationId id, ZoneId zone, long run) throws MojoFailureException, MojoExecutionException {
-        long last = -1;
-        DeploymentLog log;
-        while (true) {
-            log = controller.deploymentLog(id, zone, run, last);
-            for (DeploymentLog.Entry entry : log.entries())
-                print(entry);
-            last = log.last().orElse(last);
-
-            if ( ! log.isActive())
-                break;
-
-            try {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
+        DeploymentLog log = controller.followDeploymentUntilDone(id, zone, run, this::print);
         switch (log.status()) {
             case success:            return;
             case error:              throw new MojoExecutionException("Unexpected error during deployment; see log for details");

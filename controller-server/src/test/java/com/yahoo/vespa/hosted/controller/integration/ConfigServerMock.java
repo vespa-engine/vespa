@@ -5,13 +5,15 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -19,7 +21,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -50,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -72,6 +74,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Version initialVersion = new Version(6, 1, 0);
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, Set<LoadBalancer>> loadBalancers = new HashMap<>();
+    private final Set<Environment> deferLoadBalancerProvisioning = new HashSet<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
     private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
@@ -245,6 +248,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         this.clusterMetrics.put(deployment, clusterMetrics);
     }
 
+    public void deferLoadBalancerProvisioningIn(Set<Environment> environments) {
+        deferLoadBalancerProvisioning.addAll(environments);
+    }
+
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
@@ -309,43 +316,51 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
-                                      Set<ContainerEndpoint> containerEndpoints,
-                                      Optional<EndpointCertificateMetadata> endpointCertificateMetadata, byte[] content) {
-        lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
+    public PreparedApplication deploy(DeploymentData deployment) {
+        lastPrepareVersion = deployment.platform();
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
             this.prepareException = null;
             throw prepareException;
         }
-        applications.put(deployment, new Application(deployment.applicationId(), lastPrepareVersion, new ApplicationPackage(content)));
+        DeploymentId id = new DeploymentId(deployment.instance(), deployment.zone());
+        applications.put(id, new Application(id.applicationId(), lastPrepareVersion, new ApplicationPackage(deployment.applicationPackage())));
 
-        if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
-            provision(deployment.zoneId(), deployment.applicationId());
+        if (nodeRepository().list(id.zoneId(), id.applicationId()).isEmpty())
+            provision(id.zoneId(), id.applicationId());
 
         this.rotationNames.put(
-                deployment,
-                containerEndpoints.stream()
-                                  .map(ContainerEndpoint::names)
-                                  .flatMap(Collection::stream)
-                                  .collect(Collectors.toSet())
+                id,
+                deployment.containerEndpoints().stream()
+                          .map(ContainerEndpoint::names)
+                          .flatMap(Collection::stream)
+                          .collect(Collectors.toSet())
         );
 
+        if (!deferLoadBalancerProvisioning.contains(id.zoneId().environment())) {
+            putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
+                                                                   id.applicationId(),
+                                                                   ClusterSpec.Id.from("default"),
+                                                                   HostName.from("lb-0--" + id.applicationId().serializedForm() + "--" + id.zoneId().toString()),
+                                                                   LoadBalancer.State.active,
+                                                                   Optional.of("dns-zone-1"))));
+        }
+
         return () -> {
-            Application application = applications.get(deployment);
+            Application application = applications.get(id);
             application.activate();
-            List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
+            List<Node> nodes = nodeRepository.list(id.zoneId(), id.applicationId());
             for (Node node : nodes) {
-                nodeRepository.putByHostname(deployment.zoneId(), new Node.Builder(node)
+                nodeRepository.putByHostname(id.zoneId(), new Node.Builder(node)
                         .state(Node.State.active)
                         .wantedVersion(application.version().get())
                         .build());
             }
-            serviceStatus.put(deployment, new ServiceConvergence(deployment.applicationId(),
-                                                                 deployment.zoneId(),
-                                                                 false,
-                                                                 2,
-                                                                 nodes.stream()
+            serviceStatus.put(id, new ServiceConvergence(id.applicationId(),
+                                                         id.zoneId(),
+                                                         false,
+                                                         2,
+                                                         nodes.stream()
                                                                       .map(node -> new ServiceConvergence.Status(node.hostname(),
                                                                                                                  43,
                                                                                                                  "container",
@@ -360,7 +375,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                               Collections.emptyList());
             setConfigChangeActions(null);
             prepareResponse.tenant = new TenantId("tenant");
-            prepareResponse.log = warnings.getOrDefault(deployment, Collections.emptyList());
+            prepareResponse.log = warnings.getOrDefault(id, Collections.emptyList());
             return prepareResponse;
         };
     }

@@ -14,6 +14,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -53,6 +54,7 @@ public class TelegrafTest {
         String services = servicesWithCloudwatch();
         VespaModel hostedModel = getModel(services, hosted);
         TelegrafConfig config = hostedModel.getConfig(TelegrafConfig.class, CLUSTER_CONFIG_ID);
+        assertTrue(config.isHostedVespa());
 
         var cloudWatch0 = config.cloudWatch(0);
         assertEquals("cloudwatch-consumer", cloudWatch0.consumer());
@@ -72,8 +74,8 @@ public class TelegrafTest {
                            "            <consumer id='cloudwatch-consumer'>",
                            "                <metric id='my-metric'/>",
                            "                <cloudwatch region='us-east-1' namespace='my-namespace' >",
-                           "                    <access-key-name>my-access-key</access-key-name>",
-                           "                    <secret-key-name>my-secret-key</secret-key-name>",
+                           "                    <credentials access-key-name='my-access-key' ",
+                           "                                 secret-key-name='my-secret-key' />",
                            "                </cloudwatch>",
                            "            </consumer>",
                            "        </metrics>",
@@ -92,11 +94,11 @@ public class TelegrafTest {
                                       "            <consumer id='cloudwatch-consumer'>",
                                       "                <metric id='my-metric'/>",
                                       "                <cloudwatch region='us-east-1' namespace='namespace-1' >",
-                                      "                    <access-key-name>access-key-1</access-key-name>",
-                                      "                    <secret-key-name>secret-key-1</secret-key-name>",
+                                      "                    <credentials access-key-name='access-key-1' ",
+                                      "                                 secret-key-name='secret-key-1' />",
                                       "                </cloudwatch>",
                                       "                <cloudwatch region='us-east-1' namespace='namespace-2' >",
-                                      "                    <profile>profile-2</profile>",
+                                      "                    <shared-credentials profile='profile-2' />",
                                       "                </cloudwatch>",
                                       "            </consumer>",
                                       "        </metrics>",

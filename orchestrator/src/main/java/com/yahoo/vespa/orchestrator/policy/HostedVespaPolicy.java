@@ -13,7 +13,7 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.StorageNode;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
 /**
  * @author oyving
@@ -113,9 +113,9 @@ public class HostedVespaPolicy implements Policy {
             OrchestratorContext context,
             ApplicationInstance applicationInstance,
             HostName hostName,
-            MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
+            ApplicationLock lock) throws HostStateChangeDeniedException {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostName);
-        ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, hostStatusService, clusterControllerClientFactory);
+        ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, lock, clusterControllerClientFactory);
         releaseSuspensionGrant(context, applicationApi);
     }
 

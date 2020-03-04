@@ -23,6 +23,8 @@ public:
         virtual ~Task() {}
     };
 
+    enum class OptimizeFor {LATENCY, THROUGHPUT};
+
     /**
      * Execute the given task using one of the internal threads some
      * time in the future. The task may also be rejected in which case

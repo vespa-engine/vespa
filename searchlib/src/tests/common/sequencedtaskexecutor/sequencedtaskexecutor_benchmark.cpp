@@ -10,13 +10,19 @@ using ExecutorId = search::ISequencedTaskExecutor::ExecutorId;
 int main(int argc, char *argv[]) {
     unsigned long numTasks = 1000000;
     unsigned numThreads = 4;
+    unsigned taskLimit = 1000;
+    vespalib::Executor::OptimizeFor optimize = vespalib::Executor::OptimizeFor::LATENCY;
     std::atomic<long> counter(0);
     if (argc > 1)
         numTasks = atol(argv[1]);
     if (argc > 2)
         numThreads = atoi(argv[2]);
+    if (argc > 3)
+        taskLimit = atoi(argv[3]);
+    if (argc > 4)
+        optimize = vespalib::Executor::OptimizeFor::THROUGHPUT;
 
-    auto executor = SequencedTaskExecutor::create(numThreads);
+    auto executor = SequencedTaskExecutor::create(numThreads, taskLimit, optimize);
     for (unsigned long tid(0); tid < numTasks; tid++) {
         executor->executeTask(ExecutorId(tid%numThreads), vespalib::makeLambdaTask([&counter] { counter++; }));
     }

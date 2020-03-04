@@ -15,26 +15,29 @@
       <slobrok hostalias="rtc-1" />
     </slobroks>
     <metrics>
+
       <consumer id="cloudwatch-hosted">
         <metric-set id="my-set" />
         <metric id="my-metric"/>
         <metric id="my-metric2" display-name="my-metric3"/>
         <metric display-name="my-metric4" id="my-metric4.avg"/>
         <cloudwatch region="us-east1" namespace="my-namespace">
-          <access-key-name>my-access-key</access-key-name>
-          <secret-key-name>my-secret-key</secret-key-name>
+          <credentials access-key-name="my-access-key" secret-key-name="my-secret-key" />
         </cloudwatch>
       </consumer>
+
       <consumer id="cloudwatch-self-hosted-with-default-auth">
         <metric-set id="public" />
         <cloudwatch region="us-east1" namespace="namespace_legal.chars:/#1" />
       </consumer>
+
       <consumer id="cloudwatch-self-hosted-with-profile">
         <metric id="my-custom-metric" />
         <cloudwatch region="us-east1" namespace="another-namespace">
-          <profile>profile-in-credentials-file</profile>
+          <shared-credentials profile="profile-in-credentials-file" file="/user/.aws/credentials"/>
         </cloudwatch>
       </consumer>
+
     </metrics>
     <logforwarding>
       <splunk deployment-server="foo:8989" client-name="foobar" splunk-home="/opt/splunk" phone-home-interval="900"/>

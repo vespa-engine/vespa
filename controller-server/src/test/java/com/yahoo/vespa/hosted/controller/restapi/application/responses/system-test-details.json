@@ -212,7 +212,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa:43 (cluster 'default')"
+        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
       },
       {
         "at": "(ignore)",
@@ -239,7 +239,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa:43 (cluster 'default')"
+        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
       },
       {
         "at": "(ignore)",

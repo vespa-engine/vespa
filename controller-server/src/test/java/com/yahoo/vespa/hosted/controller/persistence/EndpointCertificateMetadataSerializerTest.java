@@ -4,6 +4,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -12,7 +13,7 @@ public class EndpointCertificateMetadataSerializerTest {
     private EndpointCertificateMetadata sample =
             new EndpointCertificateMetadata("keyName", "certName", 1);
     private EndpointCertificateMetadata sampleWithRequestMetadata =
-            new EndpointCertificateMetadata("keyName", "certName", 1, "requestId", List.of("SAN1", "SAN2"));
+            new EndpointCertificateMetadata("keyName", "certName", 1, Optional.of("requestId"), Optional.of(List.of("SAN1", "SAN2")), Optional.of("issuer"));
 
     @Test
     public void serialize() {
@@ -24,7 +25,7 @@ public class EndpointCertificateMetadataSerializerTest {
     @Test
     public void serializeWithRequestMetadata() {
         assertEquals(
-                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"]}",
+                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\"}",
                 EndpointCertificateMetadataSerializer.toSlime(sampleWithRequestMetadata).toString());
     }
 
@@ -41,6 +42,6 @@ public class EndpointCertificateMetadataSerializerTest {
         assertEquals(
                 sampleWithRequestMetadata,
                 EndpointCertificateMetadataSerializer.fromJsonString(
-                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"]}"));
+                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\"}"));
     }
 }

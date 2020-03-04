@@ -122,12 +122,7 @@ public class EndpointCertificateManager {
             var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
 
             if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
-                var refreshedCertificateMetadata = new EndpointCertificateMetadata(
-                        currentCertificateMetadata.get().keyName(),
-                        currentCertificateMetadata.get().certName(),
-                        latestAvailableVersion.getAsInt()
-                );
-
+                var refreshedCertificateMetadata = currentCertificateMetadata.get().withVersion(latestAvailableVersion.getAsInt());
                 validateEndpointCertificate(refreshedCertificateMetadata, instance, zone);
                 curator.writeEndpointCertificateMetadata(instance.id(), refreshedCertificateMetadata);
                 return Optional.of(refreshedCertificateMetadata);
@@ -163,7 +158,7 @@ public class EndpointCertificateManager {
         Map<ApplicationId, EndpointCertificateMetadata> allEndpointCertificateMetadata = curator.readAllEndpointCertificateMetadata();
 
         allEndpointCertificateMetadata.forEach((applicationId, storedMetaData) -> {
-            if (storedMetaData.requestedDnsSans().isPresent() && storedMetaData.request_id().isPresent())
+            if (storedMetaData.requestedDnsSans().isPresent() && storedMetaData.request_id().isPresent() && storedMetaData.issuer().isPresent())
                 return;
 
             var hashedCn = commonNameHashOf(applicationId, zoneRegistry.system()); // use as join key
@@ -181,7 +176,7 @@ public class EndpointCertificateManager {
                             storedMetaData.version(),
                             providerMetadata.request_id(),
                             providerMetadata.requestedDnsSans(),
-                            Optional.empty());
+                            providerMetadata.issuer());
 
             if (mode == BackfillMode.DRYRUN) {
                 log.log(LogLevel.INFO, "Would update stored metadata " + storedMetaData + " with data from provider: " + backfilledMetadata);

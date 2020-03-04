@@ -4,6 +4,7 @@
 #include "distance_functions.h"
 #include "hnsw_index.h"
 #include "random_level_generator.h"
+#include "inv_log_level_generator.h"
 #include <vespa/searchcommon/attribute/config.h>
 
 namespace search::tensor {
@@ -27,24 +28,24 @@ make_distance_function(ValueType::CellType cell_type)
 }
 
 RandomLevelGenerator::UP
-make_random_level_generator()
+make_random_level_generator(uint32_t m)
 {
-    // TODO: Make generator that results in hierarchical graph.
-    return std::make_unique<LevelZeroGenerator>();
+    return std::make_unique<InvLogLevelGenerator>(m);
 }
 
-}
+} // namespace <unnamed>
 
 std::unique_ptr<NearestNeighborIndex>
 DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
                                          vespalib::eval::ValueType::CellType cell_type,
                                          const search::attribute::HnswIndexParams& params) const
 {
-    HnswIndex::Config cfg(params.max_links_per_node() * 2,
-                          params.max_links_per_node(),
+    uint32_t m = params.max_links_per_node();
+    HnswIndex::Config cfg(m * 2,
+                          m,
                           params.neighbors_to_explore_at_insert(),
                           true);
-    return std::make_unique<HnswIndex>(vectors, make_distance_function(cell_type), make_random_level_generator(), cfg);
+    return std::make_unique<HnswIndex>(vectors, make_distance_function(cell_type), make_random_level_generator(m), cfg);
 }
 
 }
