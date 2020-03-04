@@ -32,7 +32,7 @@ public class ZkStatusService2Test {
     private final Timer timer = new TestTimer();
     private final Metric metric = mock(Metric.class);
     private final HostInfosCache cache = mock(HostInfosCache.class);
-    private final ZkStatusService zkStatusService = new ZkStatusService(curator, metric, timer, cache);
+    private final ZkStatusService zkStatusService = new ZkStatusService(curator, metric, timer, cache, false);
 
     private final OrchestratorContext context = mock(OrchestratorContext.class);
     private final InterProcessMutex mutex = mock(InterProcessMutex.class);

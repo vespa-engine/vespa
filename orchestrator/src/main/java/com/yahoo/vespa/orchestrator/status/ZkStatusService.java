@@ -7,10 +7,13 @@ import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import org.apache.zookeeper.data.Stat;
@@ -42,6 +45,7 @@ public class ZkStatusService implements StatusService {
     private final HostInfosCache hostInfosCache;
     private final Metric metric;
     private final Timer timer;
+    private final boolean doCleanup;
 
     /**
      * A cache of metric contexts for each possible dimension map. In practice, there is one dimension map
@@ -50,19 +54,25 @@ public class ZkStatusService implements StatusService {
     private final ConcurrentHashMap<Map<String, String>, Metric.Context> cachedContexts = new ConcurrentHashMap<>();
 
     @Inject
-    public ZkStatusService(@Component Curator curator, @Component Metric metric, @Component Timer timer) {
-        this.curator = curator;
-        this.metric = metric;
-        this.timer = timer;
-        this.hostInfosCache = new HostInfosCache(curator, new HostInfosServiceImpl(curator, timer));
+    public ZkStatusService(
+            @Component Curator curator,
+            @Component Metric metric,
+            @Component Timer timer,
+            @Component FlagSource flagSource) {
+        this(curator,
+                metric,
+                timer,
+                new HostInfosCache(curator, new HostInfosServiceImpl(curator, timer)),
+                Flags.CLEANUP_STATUS_SERVICE.bindTo(flagSource).value());
     }
 
     /** Non-private for testing only. */
-    ZkStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache) {
+    ZkStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache, boolean doCleanup) {
         this.curator = curator;
         this.metric = metric;
         this.timer = timer;
         this.hostInfosCache = hostInfosCache;
+        this.doCleanup = doCleanup;
     }
 
     @Override
@@ -214,8 +224,79 @@ public class ZkStatusService implements StatusService {
         }
     }
 
+    /**
+     * Remove all host-related data in ZooKeeper for all hostnames outside the given set.
+     */
+    @Override
+    public void onApplicationActivate(ApplicationInstanceReference reference, Set<HostName> hostnames) {
+        if (doCleanup) {
+            withLockForAdminOp(reference, " was activated", () -> {
+                HostInfos hostInfos = hostInfosCache.getCachedHostInfos(reference);
+                Set<HostName> toRemove = new HashSet<>(hostInfos.getZkHostnames());
+                toRemove.removeAll(hostnames);
+                if (toRemove.size() > 0) {
+                    log.log(LogLevel.INFO, "Removing " + toRemove + " of " + reference + " from status service");
+                    hostInfosCache.removeHosts(reference, toRemove);
+                }
+            });
+        } else {
+            log.log(LogLevel.INFO, "Would have removed orphaned hosts of " + reference + " from status service");
+        }
+    }
+
+    /**
+     * Remove the application from ZooKeeper.
+     *
+     * <ol>
+     *     <li>/vespa/host-status/APPLICATION_ID (should just be ./hosts/*)</li>
+     *     <li>/vespa/host-status-service/REFERENCE/hosts-allowed-down  (should just be ./*)</li>
+     *     <li>/vespa/application-status-service/REFERENCE  (should just be .)</li>
+     * </ol>
+     */
+    @Override
+    public void onApplicationRemove(ApplicationInstanceReference reference) {
+        if (doCleanup) {
+            withLockForAdminOp(reference, " was removed", () -> {
+                log.log(LogLevel.INFO, "Removing application " + reference + " from status service");
+
+                // /vespa/application-status-service/REFERENCE
+                curator.delete(Path.fromString(applicationInstanceSuspendedPath(reference)));
+
+                // /vespa/host-status-service/REFERENCE/hosts-allowed-down
+                curator.delete(Path.fromString(hostsAllowedDownPath(reference)));
+
+                // /vespa/host-status/APPLICATION_ID
+                hostInfosCache.removeApplication(reference);
+            });
+        } else {
+            log.log(LogLevel.INFO, "Would have removed application " + reference + " from status service");
+        }
+    }
+
+    private void withLockForAdminOp(ApplicationInstanceReference reference,
+                                    String eventDescription,
+                                    Runnable runnable) {
+        OrchestratorContext context = OrchestratorContext.createContextForAdminOp(timer.toUtcClock());
+
+        final ApplicationLock lock;
+        try {
+            lock = lockApplication(context, reference);
+        } catch (RuntimeException e) {
+            log.log(LogLevel.ERROR, "Failed to get Orchestrator lock on when " + reference +
+                    eventDescription + ": " + e.getMessage());
+            return;
+        }
+
+        try (lock) {
+            runnable.run();
+        } catch (RuntimeException e) {
+            log.log(LogLevel.ERROR, "Failed to clean up after " + reference + eventDescription +
+                    ": " + e.getMessage());
+        }
+    }
+
     static String applicationInstanceReferencePath(ApplicationInstanceReference reference) {
-        return HOST_STATUS_BASE_PATH + '/' + reference.tenantId() + ":" + reference.applicationInstanceId();
+        return HOST_STATUS_BASE_PATH + '/' + reference.asString();
     }
 
     private static String hostsAllowedDownPath(ApplicationInstanceReference reference) {

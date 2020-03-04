@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
+import com.yahoo.vespa.service.monitor.ServiceHostListener;
 
 import java.util.Set;
 import java.util.function.Function;
@@ -18,7 +19,7 @@ import java.util.function.Function;
  * @author Tony Vaagenes
  * @author smorgrav
  */
-public interface StatusService {
+public interface StatusService extends ServiceHostListener {
 
     /**
      * Returns a mutable host status registry for a locked application instance. All operations performed on

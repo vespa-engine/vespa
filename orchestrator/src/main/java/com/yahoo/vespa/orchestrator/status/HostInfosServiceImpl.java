@@ -5,6 +5,7 @@ package com.yahoo.vespa.orchestrator.status;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -81,6 +83,19 @@ public class HostInfosServiceImpl implements HostInfosService {
         return true;
     }
 
+    @Override
+    public void removeApplication(ApplicationInstanceReference reference) {
+        ApplicationId application = OrchestratorUtil.toApplicationId(reference);
+        curator.delete(Path.fromString(applicationPath(application)));
+    }
+
+    @Override
+    public void removeHosts(ApplicationInstanceReference reference, Set<HostName> hostnames) {
+        ApplicationId application = OrchestratorUtil.toApplicationId(reference);
+        // Remove /vespa/host-status/APPLICATION_ID/hosts/HOSTNAME
+        hostnames.forEach(hostname -> curator.delete(Path.fromString(hostPath(application, hostname))));
+    }
+
     private Optional<byte[]> readBytesFromZk(String path) throws Exception {
         try {
             return Optional.of(curator.framework().getData().forPath(path));
@@ -101,7 +116,7 @@ public class HostInfosServiceImpl implements HostInfosService {
         }
     }
 
-    private static String applicationPath(ApplicationId application) {
+    static String applicationPath(ApplicationId application) {
         return "/vespa/host-status/" + application.serializedForm();
     }
 

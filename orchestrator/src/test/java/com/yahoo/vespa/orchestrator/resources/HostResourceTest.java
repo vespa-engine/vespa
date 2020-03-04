@@ -80,7 +80,7 @@ public class HostResourceTest {
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
     private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZkStatusService(
-            new MockCurator(), mock(Metric.class), new TestTimer());
+            new MockCurator(), mock(Metric.class), new TestTimer(), new InMemoryFlagSource());
     private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
     private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
@@ -128,7 +128,8 @@ public class HostResourceTest {
     private final OrchestratorImpl alwaysAllowOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
-            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, serviceMonitor,
+            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
+            serviceMonitor,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
             applicationApiFactory,
@@ -137,7 +138,8 @@ public class HostResourceTest {
     private final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
             new AlwaysAllowPolicy(),
             new ClusterControllerClientFactoryMock(),
-            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyServiceMonitor,
+            EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
+            alwaysEmptyServiceMonitor,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
             clock,
             applicationApiFactory,
@@ -240,7 +242,8 @@ public class HostResourceTest {
         final OrchestratorImpl alwaysRejectResolver = new OrchestratorImpl(
                 new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
-                EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, serviceMonitor,
+                EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
+                serviceMonitor,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
                 clock,
                 applicationApiFactory,

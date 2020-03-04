@@ -18,7 +18,7 @@ import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +37,7 @@ public class DummyServiceMonitor implements ServiceMonitor {
     public static final HostName TEST3_HOST_NAME = new HostName("test3.hostname.tld");
     public static final HostName TEST6_HOST_NAME = new HostName("test6.hostname.tld");
 
-    private static final Set<ApplicationInstance> apps = new HashSet<>();
+    private static final List<ApplicationInstance> apps = new ArrayList<>();
 
     static {
         apps.add(new ApplicationInstance(
@@ -177,7 +177,7 @@ public class DummyServiceMonitor implements ServiceMonitor {
         return hosts;
     }
 
-    public static  Set<ApplicationInstance> getApplications() {
+    public static  List<ApplicationInstance> getApplications() {
        return apps;
     }
 }
