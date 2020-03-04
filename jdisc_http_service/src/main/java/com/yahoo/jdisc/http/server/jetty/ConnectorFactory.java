@@ -8,9 +8,9 @@ import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.DetectorConnectionFactory;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.OptionalSslConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -62,7 +62,7 @@ public class ConnectorFactory {
             switch (TransportSecurityUtils.getInsecureMixedMode()) {
                 case TLS_CLIENT_MIXED_SERVER:
                 case PLAINTEXT_CLIENT_MIXED_SERVER:
-                    return List.of(newOptionalSslConnectionFactory(sslConnectionsFactory), sslConnectionsFactory, httpConnectionFactory);
+                    return List.of(new DetectorConnectionFactory(sslConnectionsFactory), httpConnectionFactory);
                 case DISABLED:
                     return List.of(sslConnectionsFactory, httpConnectionFactory);
                 default:
@@ -93,11 +93,6 @@ public class ConnectorFactory {
         SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, HttpVersion.HTTP_1_1.asString());
         connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
         return connectionFactory;
-    }
-
-    @SuppressWarnings("deprecation")
-    private OptionalSslConnectionFactory newOptionalSslConnectionFactory(SslConnectionFactory sslConnectionsFactory) {
-        return new OptionalSslConnectionFactory(sslConnectionsFactory, HttpVersion.HTTP_1_1.asString());
     }
 
 }
