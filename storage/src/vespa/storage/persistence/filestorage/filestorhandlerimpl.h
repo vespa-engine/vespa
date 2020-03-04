@@ -144,12 +144,13 @@ public:
         FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, PriorityIdx & idx,
                                                   PriorityIdx::iterator iter);
         using LockedBuckets = vespalib::hash_map<document::Bucket, MultiLockEntry, document::Bucket::hash>;
-        const FileStorHandlerImpl  &_owner;
-        MessageSender              &_messageSender;
-        FileStorStripeMetrics      *_metrics;
-        vespalib::Monitor           _lock;
-        PriorityQueue               _queue;
-        LockedBuckets               _lockedBuckets;
+        const FileStorHandlerImpl &_owner;
+        MessageSender             &_messageSender;
+        FileStorStripeMetrics     *_metrics;
+        vespalib::Monitor          _lock;
+        PriorityQueue             _queue;
+        LockedBuckets             _lockedBuckets;
+        uint32_t                  _active_merges;
     };
     struct Disk {
         FileStorDiskMetrics * metrics;
@@ -222,7 +223,7 @@ public:
         BucketLock(const vespalib::MonitorGuard & guard, Stripe& disk, const document::Bucket &bucket,
                    uint8_t priority, api::MessageType::Id msgType, api::StorageMessage::Id,
                    api::LockingRequirements lockReq);
-        ~BucketLock();
+        ~BucketLock() override;
 
         const document::Bucket &getBucket() const override { return _bucket; }
         api::LockingRequirements lockingRequirements() const noexcept override { return _lockReq; }
@@ -287,20 +288,15 @@ public:
 
 private:
     ServiceLayerComponent _component;
-    std::vector<Disk> _diskInfo;
-    MessageSender& _messageSender;
+    std::vector<Disk>     _diskInfo;
+    MessageSender&        _messageSender;
     const document::BucketIdFactory& _bucketIdFactory;
-
-    vespalib::Lock _mergeStatesLock;
-
+    vespalib::Lock        _mergeStatesLock;
     std::map<document::Bucket, MergeStatus::SP> _mergeStates;
-
-    uint32_t _getNextMessageTimeout;
-
-    uint32_t _activeMergesSoftLimit;
-    mutable std::atomic<uint32_t> _activeMerges;
-    vespalib::Monitor _pauseMonitor;
-    std::atomic<bool> _paused;
+    uint32_t              _getNextMessageTimeout;
+    const uint32_t        _max_active_merges_per_stripe; // Read concurrently by stripes.
+    vespalib::Monitor     _pauseMonitor;
+    std::atomic<bool>     _paused;
 
     void reply(api::StorageMessage&, DiskState state) const;
 
