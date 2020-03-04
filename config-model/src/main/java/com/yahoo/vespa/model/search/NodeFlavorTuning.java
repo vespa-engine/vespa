@@ -30,6 +30,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     public void getConfig(ProtonConfig.Builder builder) {
         setHwInfo(builder);
         tuneDiskWriteSpeed(builder);
+        tuneRequestThreads(builder);
         tuneDocumentStoreMaxFileSize(builder.summary.log);
         tuneFlushStrategyMemoryLimits(builder.flush.memory);
         tuneFlushStrategyTlsSize(builder.flush.memory);
@@ -103,6 +104,12 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         if (nodeFlavor.hasFastDisk()) {
             builder.advise(ProtonConfig.Search.Mmap.Advise.RANDOM);
         }
+    }
+
+    private void tuneRequestThreads(ProtonConfig.Builder builder) {
+        int numCores = (int)Math.ceil(nodeFlavor.getMinCpuCores());
+        builder.numsearcherthreads(numCores);
+        builder.numsummarythreads(numCores);
     }
 
     private void tuneWriteFilter(ProtonConfig.Writefilter.Builder builder) {
