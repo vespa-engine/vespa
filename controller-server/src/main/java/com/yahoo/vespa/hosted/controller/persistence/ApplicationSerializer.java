@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -129,16 +128,6 @@ public class ApplicationSerializer {
     private static final String jobTypeField = "jobType";
     private static final String pausedUntilField = "pausedUntil";
 
-    // ClusterInfo fields
-    private static final String clusterInfoField = "clusterInfo";
-    private static final String clusterInfoFlavorField = "flavor";
-    private static final String clusterInfoCostField = "cost";
-    private static final String clusterInfoCpuField = "flavorCpu";
-    private static final String clusterInfoMemField = "flavorMem";
-    private static final String clusterInfoDiskField = "flavorDisk";
-    private static final String clusterInfoTypeField = "clusterType";
-    private static final String clusterInfoHostnamesField = "hostnames";
-
     // Deployment metrics fields
     private static final String deploymentMetricsField = "metrics";
     private static final String deploymentMetricsQPSField = "queriesPerSecond";
@@ -211,8 +200,6 @@ public class ApplicationSerializer {
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
-        // TODO(mpolden): Stop writing this after next release.
-        clusterInfoToSlime(deployment.clusterInfo(), object);
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
@@ -231,26 +218,6 @@ public class ApplicationSerializer {
         if (!metrics.warnings().isEmpty()) {
             Cursor warningsObject = root.setObject(deploymentMetricsWarningsField);
             metrics.warnings().forEach((warning, count) -> warningsObject.setLong(warning.name(), count));
-        }
-    }
-
-    private void clusterInfoToSlime(Map<ClusterSpec.Id, ClusterInfo> clusters, Cursor object) {
-        Cursor root = object.setObject(clusterInfoField);
-        for (Map.Entry<ClusterSpec.Id, ClusterInfo> entry : clusters.entrySet()) {
-            toSlime(entry.getValue(), root.setObject(entry.getKey().value()));
-        }
-    }
-
-    private void toSlime(ClusterInfo info, Cursor object) {
-        object.setString(clusterInfoFlavorField, info.getFlavor());
-        object.setLong(clusterInfoCostField, info.getFlavorCost());
-        object.setDouble(clusterInfoCpuField, info.getFlavorCPU());
-        object.setDouble(clusterInfoMemField, info.getFlavorMem());
-        object.setDouble(clusterInfoDiskField, info.getFlavorDisk());
-        object.setString(clusterInfoTypeField, info.getClusterType().name());
-        Cursor array = object.setArray(clusterInfoHostnamesField);
-        for (String host : info.getHostnames()) {
-            array.addString(host);
         }
     }
 
@@ -399,7 +366,6 @@ public class ApplicationSerializer {
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
-                              Map.of(),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
                                                         Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),

@@ -2,13 +2,10 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -23,24 +20,19 @@ public class Deployment {
     private final ApplicationVersion applicationVersion;
     private final Version version;
     private final Instant deployTime;
-    private final Map<Id, ClusterInfo> clusterInfo;
     private final DeploymentMetrics metrics;
     private final DeploymentActivity activity;
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime) {
-        this(zone, applicationVersion, version, deployTime, Collections.emptyMap(),
-             DeploymentMetrics.none, DeploymentActivity.none);
+        this(zone, applicationVersion, version, deployTime, DeploymentMetrics.none, DeploymentActivity.none);
     }
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
-                      Map<Id, ClusterInfo> clusterInfo,
-                      DeploymentMetrics metrics,
-                      DeploymentActivity activity) {
+                      DeploymentMetrics metrics,  DeploymentActivity activity) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
         this.deployTime = Objects.requireNonNull(deployTime, "deployTime cannot be null");
-        this.clusterInfo = Map.copyOf(Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null"));
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
     }
@@ -65,29 +57,13 @@ public class Deployment {
     /** Returns activity for this */
     public DeploymentActivity activity() { return activity; }
 
-    /** Returns information about the clusters allocated to this */
-    public Map<Id, ClusterInfo> clusterInfo() {
-        return clusterInfo;
-    }
-
     public Deployment recordActivityAt(Instant instant) {
-        return new Deployment(zone, applicationVersion, version, deployTime, clusterInfo, metrics,
+        return new Deployment(zone, applicationVersion, version, deployTime, metrics,
                               activity.recordAt(instant, metrics));
     }
 
-    public Deployment withClusterUtils() {
-        return new Deployment(zone, applicationVersion, version, deployTime, clusterInfo, metrics,
-                              activity);
-    }
-
-    public Deployment withClusterInfo(Map<Id, ClusterInfo> newClusterInfo) {
-        return new Deployment(zone, applicationVersion, version, deployTime, newClusterInfo, metrics,
-                              activity);
-    }
-
     public Deployment withMetrics(DeploymentMetrics metrics) {
-        return new Deployment(zone, applicationVersion, version, deployTime, clusterInfo, metrics,
-                              activity);
+        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity);
     }
 
     @Override
