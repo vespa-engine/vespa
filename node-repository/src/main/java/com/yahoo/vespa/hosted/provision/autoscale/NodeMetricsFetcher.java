@@ -17,6 +17,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,13 +50,15 @@ public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics
 
     @Override
     public Collection<MetricValue> fetchMetrics(ApplicationId application) {
-        Node metricsV2Container = nodeRepository.list()
-                                                .owner(application)
-                                                .state(Node.State.active)
-                                                .container()
-                                                .filter(node -> expectedUp(node))
-                                                .asList().get(0);
-        String url = "http://" + metricsV2Container.hostname() + ":" + 4080 + apiPath + "?consumer=vespa-consumer-metrics";
+        Optional<Node> metricsV2Container = nodeRepository.list()
+                                                          .owner(application)
+                                                          .state(Node.State.active)
+                                                          .container()
+                                                          .filter(node -> expectedUp(node))
+                                                          .stream()
+                                                          .findFirst();
+        if (metricsV2Container.isEmpty()) return Collections.emptyList();
+        String url = "http://" + metricsV2Container.get().hostname() + ":" + 4080 + apiPath + "?consumer=vespa-consumer-metrics";
         String response = httpClient.get(url);
         return new MetricsResponse(response).metrics();
     }
