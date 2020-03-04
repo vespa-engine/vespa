@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -635,8 +634,6 @@ public class ControllerTest {
                                                         .region("us-west-1")
                                                         .region("us-east-3")
                                                         .build();
-        SourceRevision source = new SourceRevision("repo", "master", "commit1");
-
         context.submit(applicationPackage).deploy();
 
         DeploymentId deployment1 = context.deploymentIdIn(ZoneId.from(Environment.prod, RegionName.from("us-west-1")));

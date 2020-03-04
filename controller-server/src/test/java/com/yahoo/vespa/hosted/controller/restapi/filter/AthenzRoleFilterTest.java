@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -39,7 +38,6 @@ public class AthenzRoleFilterTest {
     private static final TenantName TENANT = TenantName.from("mytenant");
     private static final TenantName TENANT2 = TenantName.from("othertenant");
     private static final ApplicationName APPLICATION = ApplicationName.from("myapp");
-    private static final InstanceName INSTANCE = InstanceName.from("john");
     private static final URI NO_CONTEXT_PATH = URI.create("/application/v4/");
     private static final URI TENANT_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/");
     private static final URI APPLICATION_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/");

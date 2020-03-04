@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -40,7 +39,6 @@ public class DeploymentMetricsMaintainerTest {
 
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
         Supplier<Application> app = application::application;
-        Supplier<Instance> instance = application::instance;
         Supplier<Deployment> deployment = () -> application.deployment(ZoneId.from("dev", "us-east-1"));
 
         // No metrics gathered yet
