@@ -5,12 +5,10 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingSetSelector;
-import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -23,8 +21,6 @@ import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
-import com.yahoo.jdisc.http.server.jetty.TestDrivers.TlsClientAuth;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
@@ -38,8 +34,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -60,8 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.yahoo.jdisc.Response.Status.GATEWAY_TIMEOUT;
@@ -89,20 +81,14 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * @author Oyvind Bakksjo
  * @author Simon Thoresen Hult
- * @author bjorncs
  */
 public class HttpServerTest {
-
-    private static final Logger log = Logger.getLogger(HttpServerTest.class.getName());
 
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -492,7 +478,7 @@ public class HttpServerTest {
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
 
-        final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile);
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
         assertThat(driver.close(), is(true));
@@ -503,7 +489,7 @@ public class HttpServerTest {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile);
 
         SSLContext trustStoreOnlyCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -521,7 +507,7 @@ public class HttpServerTest {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile);
 
         SSLContext trustStoreOnlyCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -571,114 +557,6 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK));
         assertThat(driver.close(), is(true));
-    }
-
-    @Test
-    public void requireThatMetricIsIncrementedWhenClientIsMissingCertificateOnHandshake() throws IOException {
-        Path privateKeyFile = tmpFolder.newFile().toPath();
-        Path certificateFile = tmpFolder.newFile().toPath();
-        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        var metricConsumer = new MetricConsumerMock();
-        TestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer);
-
-        SSLContext clientCtx = new SslContextBuilder()
-                .withTrustStore(certificateFile)
-                .build();
-        assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, null, null, "Received fatal alert: bad_certificate");
-        verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test
-    public void requireThatMetricIsIncrementedWhenClientUsesIncompatibleTlsVersion() throws IOException {
-        Path privateKeyFile = tmpFolder.newFile().toPath();
-        Path certificateFile = tmpFolder.newFile().toPath();
-        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        var metricConsumer = new MetricConsumerMock();
-        TestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer);
-
-        SSLContext clientCtx = new SslContextBuilder()
-                .withTrustStore(certificateFile)
-                .withKeyStore(privateKeyFile, certificateFile)
-                .build();
-
-        assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, "TLSv1.1", null, "Received fatal alert: protocol_version");
-        verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test
-    public void requireThatMetricIsIncrementedWhenClientUsesIncompatibleCiphers() throws IOException {
-        Path privateKeyFile = tmpFolder.newFile().toPath();
-        Path certificateFile = tmpFolder.newFile().toPath();
-        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        var metricConsumer = new MetricConsumerMock();
-        TestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer);
-
-        SSLContext clientCtx = new SslContextBuilder()
-                .withTrustStore(certificateFile)
-                .withKeyStore(privateKeyFile, certificateFile)
-                .build();
-
-        assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, null, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "Received fatal alert: handshake_failure");
-        verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test
-    public void requireThatMetricIsIncrementedWhenClientUsesInvalidCertificateInHandshake() throws IOException {
-        Path serverPrivateKeyFile = tmpFolder.newFile().toPath();
-        Path serverCertificateFile = tmpFolder.newFile().toPath();
-        generatePrivateKeyAndCertificate(serverPrivateKeyFile, serverCertificateFile);
-        var metricConsumer = new MetricConsumerMock();
-        TestDriver driver = createSslTestDriver(serverCertificateFile, serverPrivateKeyFile, metricConsumer);
-
-        Path clientPrivateKeyFile = tmpFolder.newFile().toPath();
-        Path clientCertificateFile = tmpFolder.newFile().toPath();
-        generatePrivateKeyAndCertificate(clientPrivateKeyFile, clientCertificateFile);
-
-        SSLContext clientCtx = new SslContextBuilder()
-                .withKeyStore(clientPrivateKeyFile, clientCertificateFile)
-                .withTrustStore(serverCertificateFile)
-                .build();
-
-        assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, null, null, "Received fatal alert: certificate_unknown");
-        verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
-    }
-
-    private static TestDriver createSslTestDriver(
-            Path serverCertificateFile, Path serverPrivateKeyFile, MetricConsumerMock metricConsumer) throws IOException {
-        return TestDrivers.newInstanceWithSsl(
-                new EchoRequestHandler(), serverCertificateFile, serverPrivateKeyFile, TlsClientAuth.NEED, metricConsumer.asGuiceModule());
-    }
-
-    private static void assertHttpsRequestTriggersSslHandshakeException(
-            TestDriver testDriver,
-            SSLContext sslContext,
-            String protocolOverride,
-            String cipherOverride,
-            String expectedExceptionSubstring) throws IOException {
-        List<String> protocols = protocolOverride != null ? List.of(protocolOverride) : null;
-        List<String> ciphers = cipherOverride != null ? List.of(cipherOverride) : null;
-        try (var client = new SimpleHttpClient(sslContext, protocols, ciphers, testDriver.server().getListenPort(), false)) {
-            client.get("/status.html");
-            fail("SSLHandshakeException expected");
-        } catch (SSLHandshakeException e) {
-            assertThat(e.getMessage(), containsString(expectedExceptionSubstring));
-        } catch (SSLException e) {
-            // Jetty may sometime close the connection before the apache client has fully consumed the TLS handshake frame
-            log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
-            assertThat(e.getMessage(), containsString("readHandshakeRecord")); // Only ignore this specific ssl exception
-        }
     }
 
     private static void generatePrivateKeyAndCertificate(Path privateKeyFile, Path certificateFile) throws IOException {
@@ -871,18 +749,4 @@ public class HttpServerTest {
             return lhs.getName().compareTo(rhs.getName());
         }
     }
-
-    private static class MetricConsumerMock {
-        static final Metric.Context STATIC_CONTEXT = new Metric.Context() {};
-
-        private final MetricConsumer mockitoMock = mock(MetricConsumer.class);
-
-        MetricConsumerMock() {
-            when(mockitoMock.createContext(anyMap())).thenReturn(STATIC_CONTEXT);
-        }
-
-        MetricConsumer mockitoMock() { return mockitoMock; }
-        Module asGuiceModule() { return binder -> binder.bind(MetricConsumer.class).toInstance(mockitoMock); }
-    }
-
 }

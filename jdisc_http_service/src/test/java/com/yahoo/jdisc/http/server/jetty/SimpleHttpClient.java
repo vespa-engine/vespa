@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.jdisc.http.HttpHeaders;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.GzipCompressingEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -18,7 +19,6 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
@@ -26,11 +26,16 @@ import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 
 import javax.net.ssl.SSLContext;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -41,20 +46,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * A simple http client for testing
  *
  * @author Simon Thoresen Hult
- * @author bjorncs
  */
-public class SimpleHttpClient implements AutoCloseable {
+public class SimpleHttpClient {
 
-    private final CloseableHttpClient delegate;
+    private final HttpClient delegate;
     private final String scheme;
     private final int listenPort;
 
-    public SimpleHttpClient(SSLContext sslContext, int listenPort, boolean useCompression) {
-        this(sslContext, null, null, listenPort, useCompression);
-    }
-
-    public SimpleHttpClient(SSLContext sslContext, List<String> enabledProtocols, List<String> enabledCiphers,
-                            int listenPort, boolean useCompression) {
+    public SimpleHttpClient(final SSLContext sslContext, final int listenPort, final boolean useCompression) {
         HttpClientBuilder builder = HttpClientBuilder.create();
         if (!useCompression) {
             builder.disableContentCompression();
@@ -62,8 +61,6 @@ public class SimpleHttpClient implements AutoCloseable {
         if (sslContext != null) {
             SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(
                     sslContext,
-                    toArray(enabledProtocols),
-                    toArray(enabledCiphers),
                     new DefaultHostnameVerifier());
             builder.setSSLSocketFactory(sslConnectionFactory);
 
@@ -77,10 +74,6 @@ public class SimpleHttpClient implements AutoCloseable {
         }
         this.delegate = builder.build();
         this.listenPort = listenPort;
-    }
-
-    private static String[] toArray(List<String> list) {
-        return list != null ? list.toArray(new String[0]) : null;
     }
 
     public URI newUri(final String path) {
@@ -107,9 +100,40 @@ public class SimpleHttpClient implements AutoCloseable {
         return newGet(path).execute();
     }
 
-    @Override
-    public void close() throws IOException {
-        delegate.close();
+    public String raw(final String request) throws IOException {
+        final Socket socket = new Socket("localhost", listenPort);
+        final OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8);
+        out.write(request);
+        out.flush();
+
+        final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        final InputStream in = socket.getInputStream();
+        final int[] TERMINATOR = { '\r', '\n', '\r', '\n' };
+        for (int pos = 0; pos < TERMINATOR.length; ++pos) {
+            final int b = in.read();
+            if (b < 0) {
+                throw new EOFException();
+            }
+            if (b != TERMINATOR[pos]) {
+                pos = -1;
+            }
+            buf.write(b);
+        }
+        final String response = buf.toString(StandardCharsets.UTF_8.name());
+        final java.util.regex.Matcher matcher = Pattern.compile(HttpHeaders.Names.CONTENT_LENGTH + ": (.+)\r\n").matcher(response);
+        if (matcher.find()) {
+            final int len = Integer.valueOf(matcher.group(1));
+            for (int i = 0; i < len; ++i) {
+                final int b = in.read();
+                if (b < 0) {
+                    throw new EOFException();
+                }
+                buf.write(b);
+            }
+        }
+
+        socket.close();
+        return buf.toString(StandardCharsets.UTF_8.name());
     }
 
     public class RequestExecutor {
@@ -153,9 +177,7 @@ public class SimpleHttpClient implements AutoCloseable {
             if (entity != null) {
                 ((HttpPost)request).setEntity(entity);
             }
-            try (CloseableHttpResponse response = delegate.execute(request)){
-                return new ResponseValidator(response);
-            }
+            return new ResponseValidator(delegate.execute(request));
         }
     }
 
@@ -196,5 +218,9 @@ public class SimpleHttpClient implements AutoCloseable {
             return this;
         }
 
+        public ResponseValidator expectTrailer(final String trailerName, final Matcher<String> matcher) {
+            // TODO: check trailer, not header
+            return expectHeader(trailerName, matcher);
+        }
     }
 }
