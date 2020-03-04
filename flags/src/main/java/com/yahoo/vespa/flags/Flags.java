@@ -197,7 +197,7 @@ public class Flags {
             "restrict-acquiring-new-privileges", false,
             "Whether docker container processes should be prevented from acquiring new privileges",
             "Takes effect on container creation",
-            APPLICATION_ID, HOSTNAME);
+            APPLICATION_ID, NODE_TYPE, HOSTNAME);
 
     public static final UnboundListFlag<String> AUDITED_PATHS = defineListFlag(
             "audited-paths", List.of(), String.class,
