@@ -20,7 +20,6 @@ import java.nio.file.Path;
 
 /**
  * @author Simon Thoresen Hult
- * @author bjorncs
  */
 public class TestDrivers {
 
@@ -46,12 +45,9 @@ public class TestDrivers {
                 ));
     }
 
-    public enum TlsClientAuth { NEED, WANT }
-
     public static TestDriver newInstanceWithSsl(final RequestHandler requestHandler,
                                                 Path certificateFile,
                                                 Path privateKeyFile,
-                                                TlsClientAuth tlsClientAuth,
                                                 final Module... guiceModules) throws IOException {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
@@ -65,9 +61,7 @@ public class TestDrivers {
                                                 .pathWhitelist("/status.html"))
                                 .ssl(new ConnectorConfig.Ssl.Builder()
                                              .enabled(true)
-                                             .clientAuth(tlsClientAuth == TlsClientAuth.NEED
-                                                                 ? ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH
-                                                                 : ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH)
+                                             .clientAuth(ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH)
                                              .privateKeyFile(privateKeyFile.toString())
                                              .certificateFile(certificateFile.toString())
                                              .caCertificateFile(certificateFile.toString())),
