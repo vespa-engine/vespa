@@ -105,7 +105,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _config = std::move(config);
         _disks.resize(_component.getDiskCount());
         size_t numThreads = _config->numThreads;
-        size_t numStripes = std::min(4ul, numThreads);
+        size_t numStripes = std::max(size_t(1u), numThreads / 2);
         _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);
 
         _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _partitions, _compReg);
