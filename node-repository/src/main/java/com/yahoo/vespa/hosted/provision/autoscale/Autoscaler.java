@@ -133,9 +133,7 @@ public class Autoscaler {
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
                 if (flavor.resources().satisfies(nodeResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
-                                                                       costOf(nodeResources) * resources.nodes(),
-                                                                       nodeResources
-                                                                       ));
+                                                                       nodeResources));
             return Optional.empty();
         }
         else {
@@ -147,7 +145,6 @@ public class Autoscaler {
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote)
                     flavor = flavor.with(FlavorOverrides.ofDisk(resources.nodeResources().diskGb()));
                 var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
-                                                                costOf(flavor) * resources.nodes(),
                                                                 hostResourcesCalculator.availableCapacityOf(flavor.name(), flavor.resources()));
 
                 if (best.isEmpty() || best.get().cost() > costOf(flavor.resources()))
@@ -184,12 +181,7 @@ public class Autoscaler {
         return true;
     }
 
-    private double costOf(Flavor flavor) {
-        NodeResources chargedResources = hostResourcesCalculator.availableCapacityOf(flavor.name(), flavor.resources());
-        return costOf(chargedResources);
-    }
-
-    private double costOf(NodeResources resources) {
+    static double costOf(NodeResources resources) {
         return resources.vcpu() * cpuUnitCost +
                resources.memoryGb() * memoryUnitCost +
                resources.diskGb() * diskUnitCost;

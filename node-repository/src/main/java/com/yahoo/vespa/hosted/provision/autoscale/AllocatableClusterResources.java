@@ -10,11 +10,9 @@ public class AllocatableClusterResources {
 
     private final ClusterResources realResources;
     private final ClusterResources advertisedResources;
-    private final double cost;
 
-    public AllocatableClusterResources(ClusterResources realResources, double cost, NodeResources advertisedResources) {
+    public AllocatableClusterResources(ClusterResources realResources, NodeResources advertisedResources) {
         this.realResources = realResources;
-        this.cost = cost;
         this.advertisedResources = realResources.with(advertisedResources);
     }
 
@@ -30,11 +28,11 @@ public class AllocatableClusterResources {
      */
     public ClusterResources advertisedResources() { return advertisedResources; }
 
-    public double cost() { return cost; }
+    public double cost() { return advertisedResources.nodes() * Autoscaler.costOf(advertisedResources.nodeResources()); }
 
     @Override
     public String toString() {
-        return "$" + cost + ": " + realResources();
+        return "$" + cost() + ": " + realResources();
     }
 
 }
