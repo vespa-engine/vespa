@@ -84,9 +84,8 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_ADMIN")  // Needed for perf
                 .withAddCapability("SYS_NICE");  // Needed for set_mempolicy to work
 
-        if (context.node().membership().map(NodeMembership::clusterType).map("content"::equalsIgnoreCase).orElse(false)) {
-            command.withSecurityOpts("seccomp=unconfined");
-        }
+        if (context.node().membership().map(NodeMembership::clusterType).map("content"::equalsIgnoreCase).orElse(false))
+            command.withSecurityOpt("seccomp=unconfined");
 
         DockerNetworking networking = context.dockerNetworking();
         command.withNetworkMode(networking.getDockerNetworkMode());

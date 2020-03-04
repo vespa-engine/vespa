@@ -176,7 +176,7 @@ public class DockerMock implements Docker {
         }
 
         @Override
-        public CreateContainerCommand withSecurityOpts(String securityOpt) {
+        public CreateContainerCommand withSecurityOpt(String securityOpt) {
             return this;
         }
 
