@@ -46,6 +46,13 @@ public class ApplicationPackageValidator {
         validateSteps(applicationPackage.deploymentSpec());
         validateEndpointRegions(applicationPackage.deploymentSpec());
         validateEndpointChange(application, applicationPackage, instant);
+        validateSecurityClientsPem(applicationPackage);
+    }
+
+    /** Verify that we have the security/clients.pem file for public systems */
+    private void validateSecurityClientsPem(ApplicationPackage applicationPackage) {
+        if (controller.system().isPublic() && applicationPackage.trustedCertificates().isEmpty())
+            throw new IllegalArgumentException("Missing required file 'security/clients.pem'");
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system */

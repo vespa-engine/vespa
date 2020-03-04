@@ -1,12 +1,14 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi;
 
+import ai.vespa.hosted.api.MultiPartStreamer;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
+import com.yahoo.yolean.Exceptions;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -68,12 +70,17 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
         private Principal principal = () -> "user@test";
         private User user;
         private Set<Role> roles = Set.of(Role.everyone());
+        private String contentType;
 
         private RequestBuilder(String path, Request.Method method) {
             this.path = path;
             this.method = method;
         }
 
+        public RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
+        public RequestBuilder data(MultiPartStreamer streamer) {
+            return Exceptions.uncheck(() -> data(streamer.data().readAllBytes()).contentType(streamer.contentType()));
+        }
         public RequestBuilder data(byte[] data) { this.data = data; return this; }
         public RequestBuilder data(String data) { this.data = data.getBytes(StandardCharsets.UTF_8); return this; }
         public RequestBuilder principal(String principal) { this.principal = new SimplePrincipal(principal); return this; }
@@ -85,7 +92,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
             Request request = new Request("http://localhost:8080" + path, data, method, principal);
             request.getAttributes().put(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(principal, roles));
             if (user != null) request.getAttributes().put(User.ATTRIBUTE_NAME, user);
-            request.getHeaders().put("Content-Type", "application/json");
+            request.getHeaders().put("Content-Type", contentType);
             return request;
         }
     }

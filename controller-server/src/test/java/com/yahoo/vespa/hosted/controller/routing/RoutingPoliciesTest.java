@@ -494,6 +494,7 @@ public class RoutingPoliciesTest {
         var context = tester.tester.newDeploymentContext();
         var endpointId = EndpointId.of("r0");
         var applicationPackage = new ApplicationPackageBuilder()
+                .trustDefaultCertificate()
                 .region(sharedRegion)
                 .endpoint(endpointId.id(), "default")
                 .build();
