@@ -2,6 +2,7 @@
 package com.yahoo.vespa.service.model;
 
 import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -65,5 +66,9 @@ public class ModelGenerator {
                                                            ServiceStatusProvider serviceStatusProvider) {
         var generator = new ApplicationInstanceGenerator(applicationInfo, zone);
         return generator.makeApplicationInstanceLimitedTo(hostname, serviceStatusProvider);
+    }
+
+    public ApplicationInstanceReference toApplicationInstanceReference(ApplicationId applicationId) {
+        return ApplicationInstanceGenerator.toApplicationInstanceReference(applicationId, zone);
     }
 }

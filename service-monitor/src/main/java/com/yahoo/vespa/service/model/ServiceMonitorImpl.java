@@ -13,6 +13,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
+import com.yahoo.vespa.service.monitor.ServiceHostListener;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
@@ -38,11 +39,10 @@ public class ServiceMonitorImpl implements ServiceMonitor {
                 monitorManager,
                 new ServiceMonitorMetrics(metric, timer),
                 duperModelManager,
-                new ModelGenerator(zone),
-                zone);
+                new ModelGenerator(zone));
 
         if (Flags.SERVICE_MODEL_CACHE.bindTo(flagSource).value()) {
-            delegate = new ServiceModelCache(serviceMonitor::getServiceModelSnapshot, timer);
+            delegate = new ServiceModelCache(serviceMonitor, timer);
         } else {
             delegate = serviceMonitor;
         }
@@ -76,5 +76,10 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     @Override
     public Map<HostName, List<ServiceInstance>> getServicesByHostname() {
         return delegate.getServicesByHostname();
+    }
+
+    @Override
+    public void registerListener(ServiceHostListener listener) {
+        delegate.registerListener(listener);
     }
 }

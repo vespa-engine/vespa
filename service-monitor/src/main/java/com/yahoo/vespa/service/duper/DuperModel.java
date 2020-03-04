@@ -34,6 +34,9 @@ public class DuperModel {
 
     public void registerListener(DuperModelListener listener) {
         applicationsById.values().forEach(listener::applicationActivated);
+        if (isComplete) {
+            listener.bootstrapComplete();
+        }
         listeners.add(listener);
     }
 
@@ -82,7 +85,7 @@ public class DuperModel {
         } else {
             logPrefix = isComplete ? "Reactivated application " : "Rebootstrapped application ";
         }
-        logger.log(LogLevel.INFO, logPrefix + id);
+        logger.log(LogLevel.INFO, logPrefix + id.toFullString());
 
         Set<HostName> hostnames = hostnamesById.computeIfAbsent(id, k -> new HashSet<>());
         Set<HostName> removedHosts = new HashSet<>(hostnames);
@@ -100,7 +103,7 @@ public class DuperModel {
                             // different application we will patch up our data structures to remain
                             // internally consistent. But listeners may be fooled.
                             logger.log(LogLevel.WARNING, hostname + " has been reassigned from " +
-                                    previousId + " to " + id);
+                                    previousId.toFullString() + " to " + id.toFullString());
 
                             Set<HostName> previousHostnames = hostnamesById.get(previousId);
                             if (previousHostnames != null) {
@@ -123,7 +126,7 @@ public class DuperModel {
 
         ApplicationInfo application = applicationsById.remove(applicationId);
         if (application != null) {
-            logger.log(LogLevel.INFO, "Removed application " + applicationId);
+            logger.log(LogLevel.INFO, "Removed application " + applicationId.toFullString());
             listeners.forEach(listener -> listener.applicationRemoved(applicationId));
         }
     }

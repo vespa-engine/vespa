@@ -3,10 +3,9 @@
 package com.yahoo.vespa.service.model;
 
 import com.yahoo.jdisc.Timer;
+import com.yahoo.vespa.service.monitor.ServiceHostListener;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
-
-import java.util.function.Supplier;
 
 /**
  * Adds caching of a supplier of ServiceModel.
@@ -16,7 +15,7 @@ import java.util.function.Supplier;
 public class ServiceModelCache implements ServiceMonitor {
     public static final long EXPIRY_MILLIS = 10000;
 
-    private final Supplier<ServiceModel> expensiveSupplier;
+    private final ServiceMonitor expensiveServiceMonitor;
     private final Timer timer;
 
     private volatile ServiceModel snapshot;
@@ -25,8 +24,8 @@ public class ServiceModelCache implements ServiceMonitor {
     private final Object updateMonitor = new Object();
     private long snapshotMillis;
 
-    public ServiceModelCache(Supplier<ServiceModel> expensiveSupplier, Timer timer) {
-        this.expensiveSupplier = expensiveSupplier;
+    public ServiceModelCache(ServiceMonitor expensiveServiceMonitor, Timer timer) {
+        this.expensiveServiceMonitor = expensiveServiceMonitor;
         this.timer = timer;
     }
 
@@ -59,8 +58,13 @@ public class ServiceModelCache implements ServiceMonitor {
         return snapshot;
     }
 
+    @Override
+    public void registerListener(ServiceHostListener listener) {
+        expensiveServiceMonitor.registerListener(listener);
+    }
+
     private void takeSnapshot() {
-        snapshot = expensiveSupplier.get();
+        snapshot = expensiveServiceMonitor.getServiceModelSnapshot();
         snapshotMillis = timer.currentTimeMillis();
     }
 
