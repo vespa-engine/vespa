@@ -136,7 +136,6 @@ public class AutoscalingTest {
         tester.deactivateRetired(application1, cluster1, scaledResources);
 
         tester.addMeasurements(Resource.memory, 0.3f, 0.6f, 1000, application1);
-        System.out.println("Low memory usage");
         tester.assertResources("Scaling down since resource usage has gone down",
                                5, 1, 3, 80, 36,
                                tester.autoscale(application1, cluster1));
