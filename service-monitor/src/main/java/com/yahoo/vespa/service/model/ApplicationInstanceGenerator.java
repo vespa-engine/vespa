@@ -58,8 +58,12 @@ public class ApplicationInstanceGenerator {
     }
 
     public ApplicationInstanceReference toApplicationInstanceReference() {
-        TenantId tenantId = new TenantId(applicationInfo.getApplicationId().tenant().toString());
-        ApplicationInstanceId applicationInstanceId = toApplicationInstanceId(applicationInfo.getApplicationId(), zone);
+        return toApplicationInstanceReference(applicationInfo.getApplicationId(), zone);
+    }
+
+    static ApplicationInstanceReference toApplicationInstanceReference(ApplicationId applicationId, Zone zone) {
+        TenantId tenantId = new TenantId(applicationId.tenant().toString());
+        ApplicationInstanceId applicationInstanceId = toApplicationInstanceId(applicationId, zone);
         return new ApplicationInstanceReference(tenantId, applicationInstanceId);
     }
 

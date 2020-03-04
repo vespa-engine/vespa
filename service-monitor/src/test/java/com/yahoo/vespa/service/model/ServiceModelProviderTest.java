@@ -2,9 +2,8 @@
 package com.yahoo.vespa.service.model;
 
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.duper.DuperModelManager;
+import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl;
 import org.junit.Test;
 
@@ -23,13 +22,11 @@ public class ServiceModelProviderTest {
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         DuperModelManager duperModelManager = mock(DuperModelManager.class);
         ModelGenerator modelGenerator = mock(ModelGenerator.class);
-        Zone zone = mock(Zone.class);
         ServiceModelProvider provider = new ServiceModelProvider(
                 slobrokMonitorManager,
                 mock(ServiceMonitorMetrics.class),
                 duperModelManager,
-                modelGenerator,
-                zone);
+                modelGenerator);
 
         ApplicationInfo application1 = mock(ApplicationInfo.class);
         ApplicationInfo application2 = mock(ApplicationInfo.class);

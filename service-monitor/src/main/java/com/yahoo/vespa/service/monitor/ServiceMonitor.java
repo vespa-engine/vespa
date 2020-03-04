@@ -47,4 +47,14 @@ public interface ServiceMonitor {
         return getServiceModelSnapshot().getServiceInstancesByHostName();
     }
 
+    /**
+     * Get notified of changes to the set of applications, or set of hosts assigned to an application.
+     *
+     * <p>When notified of model changes, the new model can be accessed through this interface
+     * by the listener. The model changes are visible to other threads strictly after the listener
+     * has been notified.</p>
+     *
+     * <p>WARNING: Methods on the listener may be invoked before returning from this method.</p>
+     */
+    default void registerListener(ServiceHostListener listener) { }
 }

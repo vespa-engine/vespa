@@ -4,11 +4,16 @@ package com.yahoo.vespa.service.model;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.service.duper.DuperModelManager;
+import com.yahoo.vespa.service.manager.MonitorManager;
+import com.yahoo.vespa.service.manager.UnionMonitorManager;
+import com.yahoo.vespa.service.monitor.ServiceHostListener;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
@@ -27,19 +32,30 @@ public class ServiceModelProvider implements ServiceMonitor {
     private final ServiceMonitorMetrics metrics;
     private final DuperModelManager duperModelManager;
     private final ModelGenerator modelGenerator;
-    private final Zone zone;
     private final ServiceStatusProvider serviceStatusProvider;
 
-    public ServiceModelProvider(ServiceStatusProvider serviceStatusProvider,
-                                ServiceMonitorMetrics metrics,
-                                DuperModelManager duperModelManager,
-                                ModelGenerator modelGenerator,
+    public ServiceModelProvider(DuperModelManager duperModelManager,
+                                UnionMonitorManager monitorManager,
+                                Metric metric,
+                                Timer timer,
                                 Zone zone) {
-        this.serviceStatusProvider = serviceStatusProvider;
+        this(monitorManager,
+                new ServiceMonitorMetrics(metric, timer),
+                duperModelManager,
+                new ModelGenerator(zone)
+        );
+    }
+
+    ServiceModelProvider(MonitorManager monitorManager,
+                         ServiceMonitorMetrics metrics,
+                         DuperModelManager duperModelManager,
+                         ModelGenerator modelGenerator) {
+        this.serviceStatusProvider = monitorManager;
         this.metrics = metrics;
         this.duperModelManager = duperModelManager;
         this.modelGenerator = modelGenerator;
-        this.zone = zone;
+
+        duperModelManager.registerListener(monitorManager);
     }
 
     @Override
@@ -84,6 +100,12 @@ public class ServiceModelProvider implements ServiceMonitor {
     @Override
     public Map<HostName, List<ServiceInstance>> getServicesByHostname() {
         return getServiceModelSnapshot().getServiceInstancesByHostName();
+    }
+
+    @Override
+    public void registerListener(ServiceHostListener listener) {
+        var duperModelListener = ServiceHostListenerAdapter.asDuperModelListener(listener, modelGenerator);
+        duperModelManager.registerListener(duperModelListener);
     }
 
     private Optional<ApplicationInfo> getApplicationInfo(ApplicationInstanceReference reference) {

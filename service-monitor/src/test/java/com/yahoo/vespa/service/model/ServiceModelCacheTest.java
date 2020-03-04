@@ -4,9 +4,8 @@ package com.yahoo.vespa.service.model;
 
 import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.service.monitor.ServiceModel;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import org.junit.Test;
-
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -15,15 +14,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ServiceModelCacheTest {
-    @SuppressWarnings("unchecked")
-    private final Supplier<ServiceModel> expensiveServiceMonitor = mock(Supplier.class);
+    private final ServiceMonitor expensiveServiceMonitor = mock(ServiceMonitor.class);
     private final Timer timer = mock(Timer.class);
     private final ServiceModelCache cache = new ServiceModelCache(expensiveServiceMonitor, timer);
 
     @Test
     public void sanityCheck() {
         ServiceModel serviceModel = mock(ServiceModel.class);
-        when(expensiveServiceMonitor.get()).thenReturn(serviceModel);
+        when(expensiveServiceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
 
         long timeMillis = 0;
         when(timer.currentTimeMillis()).thenReturn(timeMillis);
@@ -31,7 +29,7 @@ public class ServiceModelCacheTest {
         // Will always populate cache the first time
         ServiceModel actualServiceModel = cache.getServiceModelSnapshot();
         assertTrue(actualServiceModel == serviceModel);
-        verify(expensiveServiceMonitor, times(1)).get();
+        verify(expensiveServiceMonitor, times(1)).getServiceModelSnapshot();
 
         // Cache hit
         timeMillis += ServiceModelCache.EXPIRY_MILLIS / 2;
@@ -44,12 +42,12 @@ public class ServiceModelCacheTest {
         when(timer.currentTimeMillis()).thenReturn(timeMillis);
 
         ServiceModel serviceModel2 = mock(ServiceModel.class);
-        when(expensiveServiceMonitor.get()).thenReturn(serviceModel2);
+        when(expensiveServiceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel2);
 
         actualServiceModel = cache.getServiceModelSnapshot();
         assertTrue(actualServiceModel == serviceModel2);
         // '2' because it's cumulative with '1' from the first times(1).
-        verify(expensiveServiceMonitor, times(2)).get();
+        verify(expensiveServiceMonitor, times(2)).getServiceModelSnapshot();
 
         // Cache hit #2
         timeMillis += 1;
