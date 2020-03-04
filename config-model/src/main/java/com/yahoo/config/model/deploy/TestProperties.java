@@ -42,7 +42,7 @@ public class TestProperties implements ModelContext.Properties {
     private double defaultTermwiseLimit = 1.0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private boolean useNewAthenzFilter = false;
-
+    private boolean usePhraseSegmenting = false;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -63,6 +63,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useBucketSpaceMetric() { return true; }
     @Override public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
+    @Override public boolean usePhraseSegmenting() { return usePhraseSegmenting; }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
@@ -111,6 +112,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setZone(Zone zone) {
         this.zone = zone;
+        return this;
+    }
+
+    public TestProperties setUsePhraseSegmenting(boolean phraseSegmenting) {
+        this.usePhraseSegmenting = phraseSegmenting;
         return this;
     }
 
