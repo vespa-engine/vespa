@@ -107,9 +107,7 @@ public class Flavor {
 
     public NodeResources resources() { return resources; }
 
-    public Optional<FlavorOverrides> flavorOverrides() {
-        return flavorOverrides;
-    }
+    public Optional<FlavorOverrides> flavorOverrides() { return flavorOverrides; }
 
     public double getMinMainMemoryAvailableGb() { return resources.memoryGb(); }
 

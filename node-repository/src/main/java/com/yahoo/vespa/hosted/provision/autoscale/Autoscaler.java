@@ -6,6 +6,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -142,6 +143,8 @@ public class Autoscaler {
             Optional<Flavor> bestFlavor = Optional.empty();
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
                 if ( ! flavor.resources().satisfies(resources.nodeResources())) continue;
+                if (flavor.resources().storageType() == NodeResources.StorageType.remote)
+                    flavor = flavor.with(FlavorOverrides.ofDisk(resources.nodeResources().diskGb()));
                 if (bestFlavor.isEmpty() || bestCost > costOf(flavor.resources())) {
                     bestFlavor = Optional.of(flavor);
                     bestCost = costOf(flavor);

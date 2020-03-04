@@ -220,7 +220,7 @@ class AutoscalingTester {
 
         @Override
         public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId) {
-            Flavor hostFlavor = hostFlavors.stream().filter(f -> f.resources().justNumbers().equals(resources.justNumbers())).findAny()
+            Flavor hostFlavor = hostFlavors.stream().filter(f -> matches(f, resources)).findAny()
                                            .orElseThrow(() -> new RuntimeException("No flavor matching " + resources + ". Flavors: " + hostFlavors));
 
             List<ProvisionedHost> hosts = new ArrayList<>();
@@ -242,6 +242,15 @@ class AutoscalingTester {
         @Override
         public void deprovision(Node host) {
             throw new RuntimeException("Not implemented");
+        }
+
+        private boolean matches(Flavor flavor, NodeResources resources) {
+            NodeResources flavorResources = flavor.resources();
+            if (flavorResources.storageType() == NodeResources.StorageType.remote
+                && resources.diskGb() <= flavorResources.diskGb())
+                flavorResources = flavorResources.withDiskGb(resources.diskGb());
+
+            return flavorResources.justNumbers().equals(resources.justNumbers());
         }
 
     }

@@ -114,9 +114,9 @@ public class AutoscalingTest {
     public void testAutoscalingAws() {
         List<Flavor> flavors = new ArrayList<>();
         flavors.add(new Flavor("aws-xlarge", new NodeResources(3, 200, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
-        flavors.add(new Flavor("aws-large", new NodeResources(3, 150, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
+        flavors.add(new Flavor("aws-large",  new NodeResources(3, 150, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
         flavors.add(new Flavor("aws-medium", new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
-        flavors.add(new Flavor("aws-small", new NodeResources(3, 80, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
+        flavors.add(new Flavor("aws-small",  new NodeResources(3,  80, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
         AutoscalingTester tester = new AutoscalingTester(new Zone(CloudName.from("aws"), SystemName.main,
                                                                   Environment.prod, RegionName.from("us-east")),
                                                          flavors);
@@ -128,10 +128,8 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 100, 100, 1));
 
         tester.addMeasurements(Resource.memory, 0.9f, 0.6f, 120, application1);
-        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high." +
-                                                                  "Scaling flavor not count since the latter is more expensive due to " +
-                                                                  "memory charged but taken by aws, see MockHostResourcesCalculator",
-                                                                  5, 1, 3,  150, 100,
+        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high.",
+                                                                  8, 1, 3,  80, 34.3,
                                                                   tester.autoscale(application1, cluster1));
 
         tester.deploy(application1, cluster1, scaledResources);
@@ -140,7 +138,7 @@ public class AutoscalingTest {
         tester.addMeasurements(Resource.memory, 0.3f, 0.6f, 1000, application1);
         System.out.println("Low memory usage");
         tester.assertResources("Scaling down since resource usage has gone down",
-                               4, 1, 3, 100, 100,
+                               5, 1, 3, 80, 36,
                                tester.autoscale(application1, cluster1));
     }
 
