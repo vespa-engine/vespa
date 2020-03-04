@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -130,7 +131,15 @@ public class LoadBalancerExpirer extends Maintainer {
     }
 
     private List<Node> allocatedNodes(LoadBalancerId loadBalancer) {
-        return nodeRepository().list().owner(loadBalancer.application()).cluster(loadBalancer.cluster()).asList();
+        return nodeRepository().list()
+                               .owner(loadBalancer.application())
+                               .cluster(loadBalancer.cluster())
+                               // TODO(mpolden): Remove after March 2020. This ignores nodes in combined clusters so
+                               //                that inactive load balancers for combined clusters with wrong ID are
+                               //                eventually removed.
+                               .filter(node -> node.allocation().isPresent() &&
+                                               node.allocation().get().membership().cluster().type() != ClusterSpec.Type.combined)
+                               .asList();
     }
 
 }
