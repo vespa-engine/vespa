@@ -95,6 +95,7 @@ public class ConnectorFactory {
         return connectionFactory;
     }
 
+    @SuppressWarnings("deprecation")
     private OptionalSslConnectionFactory newOptionalSslConnectionFactory(SslConnectionFactory sslConnectionsFactory) {
         return new OptionalSslConnectionFactory(sslConnectionsFactory, HttpVersion.HTTP_1_1.asString());
     }
