@@ -91,7 +91,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     @Override
-    public Docker.CreateContainerCommand withSecurityOpts(String securityOpt) {
+    public Docker.CreateContainerCommand withSecurityOpt(String securityOpt) {
         securityOpts.add(securityOpt);
         return this;
     }

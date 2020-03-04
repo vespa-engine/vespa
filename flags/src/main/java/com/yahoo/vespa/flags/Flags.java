@@ -200,9 +200,9 @@ public class Flags {
 
     public static final UnboundBooleanFlag RESTRICT_ACQUIRING_NEW_PRIVILEGES = defineFeatureFlag(
             "restrict-acquiring-new-privileges", false,
-            "Whether docker daemon should restrict containers from acquiring new privileges",
-            "Takes effect on next host admin tick",
-            HOSTNAME);
+            "Whether docker container processes should be prevented from acquiring new privileges",
+            "Takes effect on container creation",
+            APPLICATION_ID, HOSTNAME);
 
     public static final UnboundListFlag<String> AUDITED_PATHS = defineListFlag(
             "audited-paths", List.of(), String.class,
