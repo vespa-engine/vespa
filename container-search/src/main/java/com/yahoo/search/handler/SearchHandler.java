@@ -25,6 +25,7 @@ import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.slime.Inspector;
@@ -49,6 +50,7 @@ import com.yahoo.statistics.Handle;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
+import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -297,9 +299,7 @@ public class SearchHandler extends LoggingRequestHandler {
         Renderer renderer = toRendererCopy(query.getPresentation().getRenderer());
         HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
                                                              result, query, renderer,
-                                                             log.isLoggable(Level.FINE)
-                                                                     ? query.getContext(false).getTrace().traceNode()
-                                                                     : null);
+                                                             extractTraceNode(query));
         if (hostResponseHeaderKey.isPresent())
             response.headers().add(hostResponseHeaderKey.get(), selfHostname);
 
@@ -308,6 +308,19 @@ public class SearchHandler extends LoggingRequestHandler {
                                          response.getHitCounts(), getErrors(result), response.getCoverage());
 
         return response;
+    }
+
+    private static TraceNode extractTraceNode(Query query) {
+        if (log.isLoggable(Level.FINE)) {
+            QueryContext queryContext = query.getContext(false);
+            if (queryContext != null) {
+                Execution.Trace trace = queryContext.getTrace();
+                if (trace != null) {
+                    return trace.traceNode();
+                }
+            }
+        }
+        return null;
     }
 
     private static int getErrors(Result result) {
