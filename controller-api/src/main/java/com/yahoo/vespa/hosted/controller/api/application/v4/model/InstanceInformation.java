@@ -5,11 +5,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.config.provision.zone.RoutingMethod;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
-import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
-import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 
 import java.net.URI;
 import java.util.List;
@@ -19,18 +14,11 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InstanceInformation {
-    public List<URI> serviceUrls;
+
     public List<Endpoint> endpoints;
-    public URI nodes;
     public URI yamasUrl;
-    public RevisionId revision;
     public Long deployTimeEpochMs;
     public Long expiryTimeEpochMs;
-
-    public ScrewdriverId screwdriverId;
-    public GitRepository gitRepository;
-    public GitBranch gitBranch;
-    public GitCommit gitCommit;
 
     public static class Endpoint {
         public String cluster;
@@ -63,4 +51,5 @@ public class InstanceInformation {
                    '}';
         }
     }
+
 }
