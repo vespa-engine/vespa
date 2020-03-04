@@ -244,7 +244,7 @@ public class Execution {
         /**
          * The node in the trace tree capturing this execution
          */
-        private TraceNode traceNode;
+        private final TraceNode traceNode;
 
         /**
          * The highest level of tracing this should record
