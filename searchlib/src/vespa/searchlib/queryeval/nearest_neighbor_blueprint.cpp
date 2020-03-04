@@ -13,11 +13,13 @@ namespace search::queryeval {
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                                                    const tensor::DenseTensorAttribute& attr_tensor,
                                                    std::unique_ptr<vespalib::tensor::DenseTensorView> query_tensor,
-                                                   uint32_t target_num_hits)
+                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits)
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
       _query_tensor(std::move(query_tensor)),
       _target_num_hits(target_num_hits),
+      _approximate(approximate),
+      _explore_additional_hits(explore_additional_hits),
       _distance_heap(target_num_hits),
       _found_hits()
 {
@@ -34,15 +36,14 @@ void
 NearestNeighborBlueprint::perform_top_k()
 {
     auto nns_index = _attr_tensor.nearest_neighbor_index();
-    if (nns_index) {
+    if (_approximate && nns_index) {
         auto lhs_type = _query_tensor->fast_type();
         auto rhs_type = _attr_tensor.getTensorType();
         // XXX deal with different cell types later
         if (lhs_type == rhs_type) {
             auto lhs = _query_tensor->cellsRef();
             uint32_t k = _target_num_hits;
-            uint32_t explore_k = k + 100; // XXX hardcoded for now
-            _found_hits = nns_index->find_top_k(k, lhs, explore_k);
+            _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits);
         }
     }
 }
@@ -73,6 +74,8 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.visitString("attribute_tensor", _attr_tensor.getTensorType().to_spec());
     visitor.visitString("query_tensor", _query_tensor->type().to_spec());
     visitor.visitInt("target_num_hits", _target_num_hits);
+    visitor.visitBool("approximate", _approximate);
+    visitor.visitInt("explore_additional_hits", _explore_additional_hits);
 }
 
 bool

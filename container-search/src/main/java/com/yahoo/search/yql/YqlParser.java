@@ -137,6 +137,7 @@ public class YqlParser implements Parser {
     static final String ACCENT_DROP = "accentDrop";
     static final String ALTERNATIVES = "alternatives";
     static final String AND_SEGMENTING = "andSegmenting";
+    static final String APPROXIMATE = "approximate";
     static final String BOUNDS = "bounds";
     static final String BOUNDS_LEFT_OPEN = "leftOpen";
     static final String BOUNDS_OPEN = "open";
@@ -149,6 +150,7 @@ public class YqlParser implements Parser {
     static final String EQUIV = "equiv";
     static final String FILTER = "filter";
     static final String HIT_LIMIT = "hitLimit";
+    static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
     static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
     static final String LABEL = "label";
     static final String NEAR = "near";
@@ -421,6 +423,14 @@ public class YqlParser implements Parser {
         if (targetNumHits != null) {
             item.setTargetNumHits(targetNumHits);
         }
+        Integer hnswExploreAdditionalHits = getAnnotation(ast, HNSW_EXPLORE_ADDITIONAL_HITS,
+                Integer.class, null, "number of extra hits to explore for HNSW algorithm");
+        if (hnswExploreAdditionalHits != null) {
+            item.setHnswExploreAdditionalHits(hnswExploreAdditionalHits);
+        }
+        Boolean allowApproximate = getAnnotation(ast, APPROXIMATE,
+                Boolean.class, Boolean.TRUE, "allow approximate nearest neighbor search");
+        item.setAllowApproximate(allowApproximate);
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
                 item.setLabel(label);

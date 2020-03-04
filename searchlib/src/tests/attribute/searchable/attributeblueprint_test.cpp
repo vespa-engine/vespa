@@ -295,7 +295,7 @@ public:
         request_ctx.set_query_tensor("query_tensor", tensor_spec);
     }
     Blueprint::UP create_blueprint() {
-        query::NearestNeighborTerm term("query_tensor", attr_name, 0, Weight(0), 7);
+        query::NearestNeighborTerm term("query_tensor", attr_name, 0, Weight(0), 7, true, 33);
         return source.createBlueprint(request_ctx, FieldSpec(attr_name, 0, 0), term);
     }
 };
