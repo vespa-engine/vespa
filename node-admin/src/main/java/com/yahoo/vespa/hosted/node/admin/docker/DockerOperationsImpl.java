@@ -93,6 +93,7 @@ public class DockerOperationsImpl implements DockerOperations {
         boolean noNewPrivileges = noNewPrivilegesFlag
                 .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
                 .with(FetchVector.Dimension.APPLICATION_ID, context.node().owner().map(ApplicationId::serializedForm).orElse(null))
+                .with(FetchVector.Dimension.NODE_TYPE, context.nodeType().name())
                 .value();
         if (noNewPrivileges)
             command.withSecurityOpt("no-new-privileges");
