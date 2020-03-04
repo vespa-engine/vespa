@@ -147,7 +147,7 @@ public class Autoscaler {
                 var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
                                                                 hostResourcesCalculator.availableCapacityOf(flavor.name(), flavor.resources()));
 
-                if (best.isEmpty() || best.get().cost() > costOf(flavor.resources()))
+                if (best.isEmpty() || candidate.cost() <= best.get().cost())
                     best = Optional.of(candidate);
             }
             return best;
