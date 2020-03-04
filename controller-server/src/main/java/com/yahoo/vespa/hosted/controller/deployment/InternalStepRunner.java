@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
@@ -144,9 +143,9 @@ public class InternalStepRunner implements StepRunner {
                 case installTester: return installTester(id, logger);
                 case installReal: return installReal(id, logger);
                 case startStagingSetup: return startTests(id, true, logger);
-                case endStagingSetup: return endTests(id, logger);
+                case endStagingSetup:
+                case endTests:  return endTests(id, logger);
                 case startTests: return startTests(id, false, logger);
-                case endTests: return endTests(id, logger);
                 case copyVespaLogs: return copyVespaLogs(id, logger);
                 case deactivateReal: return deactivateReal(id, logger);
                 case deactivateTester: return deactivateTester(id, logger);

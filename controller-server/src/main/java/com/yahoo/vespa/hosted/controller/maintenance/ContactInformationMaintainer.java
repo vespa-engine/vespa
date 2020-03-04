@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 

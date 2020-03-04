@@ -94,14 +94,13 @@ public class ApplicationOwnershipConfirmerTest {
         confirmer.maintain();
 
         // Time has passed, and a new confirmation issue is in order for the property which is still in production.
-        Optional<IssueId> issueId3 = Optional.of(IssueId.from("3"));
-        issues.response = issueId3;
+        issues.response = Optional.of(IssueId.from("3"));
         confirmer.maintain();
 
         assertEquals("Confirmation issue for application without production deployments has not been filed.", issueId2, app.application().ownershipIssueId());
     }
 
-    private class MockOwnershipIssues implements OwnershipIssues {
+    private static class MockOwnershipIssues implements OwnershipIssues {
 
         private Optional<IssueId> response;
         private boolean escalated = false;

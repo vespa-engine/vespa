@@ -68,7 +68,7 @@ public abstract class Tenant {
         user, // TODO jonmv: Remove.
 
         /** Tenant authenticated through some cloud identity provider. */
-        cloud;
+        cloud
 
     }
 

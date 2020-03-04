@@ -10,9 +10,9 @@ import static org.junit.Assert.*;
 
 public class EndpointCertificateMetadataSerializerTest {
 
-    private EndpointCertificateMetadata sample =
+    private final EndpointCertificateMetadata sample =
             new EndpointCertificateMetadata("keyName", "certName", 1);
-    private EndpointCertificateMetadata sampleWithRequestMetadata =
+    private final EndpointCertificateMetadata sampleWithRequestMetadata =
             new EndpointCertificateMetadata("keyName", "certName", 1, Optional.of("requestId"), Optional.of(List.of("SAN1", "SAN2")), Optional.of("issuer"));
 
     @Test

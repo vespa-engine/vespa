@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -18,7 +17,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.logging.Level;
 
 /**
@@ -56,13 +54,13 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                        .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
                        .forEach(application -> {
                            try {
-                               tenantOf(application.id()).contact().ifPresent(contact -> { // TODO jvenstad: Makes sense to require, and run this only in main?
-                                   ownershipIssues.confirmOwnership(application.ownershipIssueId(),
-                                                                    summaryOf(application.id()),
-                                                                    determineAssignee(application),
-                                                                    contact)
-                                                  .ifPresent(newIssueId -> store(newIssueId, application.id()));
-                               });
+                               // TODO jvenstad: Makes sense to require, and run this only in main?
+                               tenantOf(application.id()).contact().flatMap(contact -> {
+                                   return ownershipIssues.confirmOwnership(application.ownershipIssueId(),
+                                                                           summaryOf(application.id()),
+                                                                           determineAssignee(application),
+                                                                           contact);
+                               }).ifPresent(newIssueId -> store(newIssueId, application.id()));
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
                                log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + application.id() + "': " + Exceptions.toMessageString(e));
@@ -123,10 +121,6 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     private Tenant tenantOf(TenantAndApplicationId applicationId) {
         return controller().tenants().get(applicationId.tenant())
                 .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
-    }
-
-    protected User userFor(Tenant tenant) {
-        return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
     }
 
     protected void store(IssueId issueId, TenantAndApplicationId applicationId) {

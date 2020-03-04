@@ -63,7 +63,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
     protected RequestBuilder request(String path) { return new RequestBuilder(path, Request.Method.GET); }
     protected RequestBuilder request(String path, Request.Method method) { return new RequestBuilder(path, method); }
 
-    protected class RequestBuilder implements Supplier<Request> {
+    protected static class RequestBuilder implements Supplier<Request> {
         private final String path;
         private final Request.Method method;
         private byte[] data = new byte[0];

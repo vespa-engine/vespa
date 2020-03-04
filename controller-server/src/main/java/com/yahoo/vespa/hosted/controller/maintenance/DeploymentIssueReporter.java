@@ -19,9 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 
@@ -103,10 +101,6 @@ public class DeploymentIssueReporter extends Maintainer {
     private Tenant ownerOf(TenantAndApplicationId applicationId) {
         return controller().tenants().get(applicationId.tenant())
                            .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
-    }
-
-    private User userFor(Tenant tenant) {
-        return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
     }
 
     /** File an issue for applicationId, if it doesn't already have an open issue associated with it. */

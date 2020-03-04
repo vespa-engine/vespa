@@ -14,7 +14,6 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
-import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import org.junit.ComparisonFailure;
 
@@ -25,7 +24,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -47,15 +45,9 @@ public class ContainerTester {
         this.container = container;
         this.responseFilePath = responseFilePath;
     }
-    
-    public JDisc container() { return container; }
 
     public Controller controller() {
         return (Controller) container.components().getComponent(Controller.class.getName());
-    }
-
-    public ConfigServerMock configServer() {
-        return serviceRegistry().configServerMock();
     }
 
     public AthenzClientFactoryMock athenzClientFactory() {

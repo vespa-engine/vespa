@@ -379,7 +379,7 @@ public class VersionStatusTest {
 
         // Stale override was removed
         assertFalse("Stale override removed", tester.controller().curator().readConfidenceOverrides()
-                                                    .keySet().contains(version0));
+                                                    .containsKey(version0));
     }
 
     @Test

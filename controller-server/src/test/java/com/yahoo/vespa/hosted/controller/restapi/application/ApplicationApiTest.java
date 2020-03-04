@@ -1654,8 +1654,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private OktaIdentityToken oktaIdentityToken;
         private OktaAccessToken oktaAccessToken;
         private String contentType = "application/json";
-        private Map<String, List<String>> headers = new HashMap<>();
-        private Map<String, String> properties = new HashMap<>();
+        private final Map<String, List<String>> headers = new HashMap<>();
+        private final Map<String, String> properties = new HashMap<>();
 
         private RequestBuilder(String path, Request.Method method) {
             this.path = path;

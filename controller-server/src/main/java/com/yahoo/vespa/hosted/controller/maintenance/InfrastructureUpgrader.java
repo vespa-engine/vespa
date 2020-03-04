@@ -112,7 +112,7 @@ public abstract class InfrastructureUpgrader extends Maintainer {
         }
     }
 
-    private class UnreachableNodeRepositoryException extends RuntimeException {
+    private static class UnreachableNodeRepositoryException extends RuntimeException {
         private UnreachableNodeRepositoryException(String reason) {
             super(reason);
         }

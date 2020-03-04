@@ -62,6 +62,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -98,7 +99,7 @@ public class JobRunnerTest {
             jobs.start(id, systemTest, versions);
             fail("Job is already running, so this should not be allowed!");
         }
-        catch (IllegalStateException e) { }
+        catch (IllegalStateException ignored) { }
         jobs.start(id, stagingTest, versions);
 
         assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
@@ -184,7 +185,7 @@ public class JobRunnerTest {
         runner.maintain();
         assertTrue(run.get().hasFailed());
         assertTrue(run.get().hasEnded());
-        assertTrue(run.get().status() == aborted);
+        assertSame(aborted, run.get().status());
 
         // A new run is attempted.
         jobs.start(id, systemTest, versions);
@@ -195,7 +196,7 @@ public class JobRunnerTest {
         runner.maintain();
         assertTrue(run.get().hasEnded());
         assertTrue(run.get().hasFailed());
-        assertFalse(run.get().status() == aborted);
+        assertNotSame(aborted, run.get().status());
         assertEquals(failed, run.get().stepStatuses().get(deployTester));
         assertEquals(unfinished, run.get().stepStatuses().get(installTester));
         assertEquals(succeeded, run.get().stepStatuses().get(report));
@@ -241,7 +242,7 @@ public class JobRunnerTest {
             jobs.locked(id, systemTest, deactivateTester, step -> { });
             fail("deployTester step should still be locked!");
         }
-        catch (TimeoutException e) { }
+        catch (TimeoutException ignored) { }
 
         // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
         assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
@@ -413,7 +414,7 @@ public class JobRunnerTest {
 
     public static ExecutorService inThreadExecutor() {
         return new AbstractExecutorService() {
-            AtomicBoolean shutDown = new AtomicBoolean(false);
+            final AtomicBoolean shutDown = new AtomicBoolean(false);
             @Override public void shutdown() { shutDown.set(true); }
             @Override public List<Runnable> shutdownNow() { shutDown.set(true); return Collections.emptyList(); }
             @Override public boolean isShutdown() { return shutDown.get(); }
@@ -425,7 +426,7 @@ public class JobRunnerTest {
 
     private static ExecutorService phasedExecutor(Phaser phaser) {
         return new AbstractExecutorService() {
-            ExecutorService delegate = Executors.newFixedThreadPool(32);
+            final ExecutorService delegate = Executors.newFixedThreadPool(32);
             @Override public void shutdown() { delegate.shutdown(); }
             @Override public List<Runnable> shutdownNow() { return delegate.shutdownNow(); }
             @Override public boolean isShutdown() { return delegate.isShutdown(); }

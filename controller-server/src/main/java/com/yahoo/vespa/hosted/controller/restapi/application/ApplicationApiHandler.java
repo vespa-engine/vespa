@@ -1132,7 +1132,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void sourceRevisionToSlime(Optional<SourceRevision> revision, Cursor object) {
-        if ( ! revision.isPresent()) return;
+        if (revision.isEmpty()) return;
         object.setString("gitRepository", revision.get().repository());
         object.setString("gitBranch", revision.get().branch());
         object.setString("gitCommit", revision.get().commit());
@@ -1431,7 +1431,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 change = change.withPin();
 
             controller.applications().deploymentTrigger().forceChange(id, change);
-            response.append("Triggered " + change + " for " + id);
+            response.append("Triggered ").append(change).append(" for ").append(id);
         });
         return new MessageResponse(response.toString());
     }
@@ -1444,7 +1444,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             Change change = Change.of(application.get().latestVersion().get());
             controller.applications().deploymentTrigger().forceChange(id, change);
-            response.append("Triggered " + change + " for " + id);
+            response.append("Triggered ").append(change).append(" for ").append(id);
         });
         return new MessageResponse(response.toString());
     }
@@ -1456,14 +1456,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             Change change = application.get().require(id.instance()).change();
             if (change.isEmpty()) {
-                response.append("No deployment in progress for " + id + " at this time");
+                response.append("No deployment in progress for ").append(id).append(" at this time");
                 return;
             }
 
             ChangesToCancel cancel = ChangesToCancel.valueOf(choice.toUpperCase());
             controller.applications().deploymentTrigger().cancelChange(id, cancel);
-            response.append("Changed deployment from '" + change + "' to '" +
-                            controller.applications().requireInstance(id).change() + "' for " + id);
+            response.append("Changed deployment from '").append(change).append("' to '").append(controller.applications().requireInstance(id).change()).append("' for ").append(id);
         });
 
         return new MessageResponse(response.toString());

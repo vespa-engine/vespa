@@ -82,7 +82,7 @@ public class JobController {
     private final Badges badges;
     private final JobMetrics metric;
 
-    private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
+    private final AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
     public JobController(Controller controller) {
         this.controller = controller;
@@ -572,7 +572,8 @@ public class JobController {
     public void locked(ApplicationId id, JobType type, Step step, Consumer<LockedStep> action) throws TimeoutException {
         try (Lock lock = curator.lock(id, type, step)) {
             for (Step prerequisite : step.prerequisites()) // Check that no prerequisite is still running.
-                try (Lock __ = curator.lock(id, type, prerequisite)) { ; }
+                try (Lock __ = curator.lock(id, type, prerequisite)) {
+                }
 
             action.accept(new LockedStep(lock, step));
         }

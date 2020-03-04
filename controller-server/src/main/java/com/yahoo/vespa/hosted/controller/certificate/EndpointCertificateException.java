@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.certificate;
 
 public class EndpointCertificateException extends RuntimeException {
 
-    private Type type;
+    private final Type type;
 
     public EndpointCertificateException(Type type, String message) {
         super(message);

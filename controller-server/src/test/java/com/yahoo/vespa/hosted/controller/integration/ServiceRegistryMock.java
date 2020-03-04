@@ -209,10 +209,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         return mockContactRetriever;
     }
 
-    public ArtifactRepositoryMock artifactRepositoryMock() {
-        return artifactRepositoryMock;
-    }
-
     public EndpointCertificateMock endpointCertificateMock() {
         return endpointCertificateMock;
     }
