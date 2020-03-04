@@ -140,23 +140,20 @@ public class Autoscaler {
         }
         else {
             // return the cheapest flavor satisfying the target resources, if any
-            double bestCost = Double.MAX_VALUE;
-            Optional<Flavor> bestFlavor = Optional.empty();
+            Optional<AllocatableClusterResources> best = Optional.empty();
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
                 if ( ! flavor.resources().satisfies(resources.nodeResources())) continue;
+
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote)
                     flavor = flavor.with(FlavorOverrides.ofDisk(resources.nodeResources().diskGb()));
-                if (bestFlavor.isEmpty() || bestCost > costOf(flavor.resources())) {
-                    bestFlavor = Optional.of(flavor);
-                    bestCost = costOf(flavor);
-                }
+                var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
+                                                                costOf(flavor) * resources.nodes(),
+                                                                hostResourcesCalculator.availableCapacityOf(flavor.name(), flavor.resources()));
+
+                if (best.isEmpty() || best.get().cost() > costOf(flavor.resources()))
+                    best = Optional.of(candidate);
             }
-            if (bestFlavor.isEmpty())
-                return Optional.empty();
-            else
-                return Optional.of(new AllocatableClusterResources(resources.with(bestFlavor.get().resources()),
-                                                                   bestCost * resources.nodes(),
-                                                                   hostResourcesCalculator.availableCapacityOf(bestFlavor.get().name(), bestFlavor.get().resources())));
+            return best;
         }
     }
 
