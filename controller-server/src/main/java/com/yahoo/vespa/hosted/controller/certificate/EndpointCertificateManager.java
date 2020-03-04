@@ -187,10 +187,13 @@ public class EndpointCertificateManager {
     }
 
     private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
-        var certVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.certName()));
-        var keyVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.keyName()));
-
-        return Sets.intersection(certVersions, keyVersions).stream().mapToInt(Integer::intValue).max();
+        try {
+            var certVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.certName()));
+            var keyVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.keyName()));
+            return Sets.intersection(certVersions, keyVersions).stream().mapToInt(Integer::intValue).max();
+        } catch (SecretNotFoundException s) {
+            return OptionalInt.empty(); // Likely because the certificate is very recently provisioned - keep current version
+        }
     }
 
     private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance, Optional<EndpointCertificateMetadata> currentMetadata) {
