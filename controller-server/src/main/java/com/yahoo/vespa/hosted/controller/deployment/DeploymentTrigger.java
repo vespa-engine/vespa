@@ -180,7 +180,7 @@ public class DeploymentTrigger {
         if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(versions));
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), reason, clock.instant()));
+            trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), clock.instant()));
         });
         return List.copyOf(jobs.keySet());
     }
@@ -277,7 +277,6 @@ public class DeploymentTrigger {
                                                      versions,
                                                      job.type(),
                                                      status.instanceJobs(job.application().instance()).get(job.type()),
-                                                     "unknown reason",
                                                      readyAt));
                           });
         });
@@ -380,7 +379,7 @@ public class DeploymentTrigger {
 
     // ---------- Version and job helpers ----------
 
-    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, String reason, Instant availableSince) {
+    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, Instant availableSince) {
         return new Job(instance, versions, jobType, availableSince, jobStatus.isOutOfCapacity(), instance.change().application().isPresent());
     }
 
