@@ -605,7 +605,8 @@ public class HttpServerTest {
                 .build();
 
         assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, "TLSv1.1", null, "Received fatal alert: protocol_version");
+                driver, clientCtx, "TLSv1.1", null,
+                "(Received fatal alert: protocol_version|No appropriate protocol \\(protocol is disabled or cipher suites are inappropriate\\))");
         verify(metricConsumer.mockitoMock())
                 .add(Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertThat(driver.close(), is(true));
@@ -673,7 +674,7 @@ public class HttpServerTest {
             client.get("/status.html");
             fail("SSLHandshakeException expected");
         } catch (SSLHandshakeException e) {
-            assertThat(e.getMessage(), containsString(expectedExceptionSubstring));
+            assertThat(e.getMessage(), matchesPattern(expectedExceptionSubstring));
         } catch (SSLException e) {
             // Jetty may sometime close the connection before the apache client has fully consumed the TLS handshake frame
             log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
