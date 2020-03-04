@@ -64,7 +64,7 @@ PersistenceThreads = element persistence-threads {
   attribute highest-priority-to-block { xsd:string } ? &
   ## Operations with priority better than this can block others
   attribute lowest-priority-to-block-others { xsd:string } ? &
-  Thread+
+  Thread*
 }
 
 MinNodeRatioPerGroup = element min-node-ratio-per-group {
