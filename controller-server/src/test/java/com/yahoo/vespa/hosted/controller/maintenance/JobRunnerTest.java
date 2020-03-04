@@ -414,7 +414,7 @@ public class JobRunnerTest {
 
     public static ExecutorService inThreadExecutor() {
         return new AbstractExecutorService() {
-            AtomicBoolean shutDown = new AtomicBoolean(false);
+            final AtomicBoolean shutDown = new AtomicBoolean(false);
             @Override public void shutdown() { shutDown.set(true); }
             @Override public List<Runnable> shutdownNow() { shutDown.set(true); return Collections.emptyList(); }
             @Override public boolean isShutdown() { return shutDown.get(); }
@@ -426,7 +426,7 @@ public class JobRunnerTest {
 
     private static ExecutorService phasedExecutor(Phaser phaser) {
         return new AbstractExecutorService() {
-            ExecutorService delegate = Executors.newFixedThreadPool(32);
+            final ExecutorService delegate = Executors.newFixedThreadPool(32);
             @Override public void shutdown() { delegate.shutdown(); }
             @Override public List<Runnable> shutdownNow() { return delegate.shutdownNow(); }
             @Override public boolean isShutdown() { return delegate.isShutdown(); }

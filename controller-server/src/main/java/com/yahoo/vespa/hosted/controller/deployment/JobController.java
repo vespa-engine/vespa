@@ -82,7 +82,7 @@ public class JobController {
     private final Badges badges;
     private final JobMetrics metric;
 
-    private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
+    private final AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
     public JobController(Controller controller) {
         this.controller = controller;

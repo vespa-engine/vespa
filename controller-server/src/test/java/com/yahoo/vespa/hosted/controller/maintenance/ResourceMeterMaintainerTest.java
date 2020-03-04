@@ -28,8 +28,8 @@ import static org.junit.Assert.assertEquals;
 public class ResourceMeterMaintainerTest {
 
     private final ControllerTester tester = new ControllerTester();
-    private MockMeteringClient snapshotConsumer = new MockMeteringClient();
-    private MetricsMock metrics = new MetricsMock();
+    private final MockMeteringClient snapshotConsumer = new MockMeteringClient();
+    private final MetricsMock metrics = new MetricsMock();
 
     @Test
     public void testMaintainer() {

@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
  */
 public class ResourceTagMaintainerTest {
 
-    ControllerTester tester = new ControllerTester();
+    final ControllerTester tester = new ControllerTester();
 
     @Test
     public void maintain() {
