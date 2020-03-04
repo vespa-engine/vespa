@@ -31,9 +31,8 @@ public class Autoscaler {
     /*
      TODO:
      - Scale group size
-     - Have a better idea about whether we have sufficient information to make decisions
      - Consider taking spikes/variance into account
-     - Measure observed regulation lag (startup+redistribution) into account when deciding regulation observation window
+     - Measure observed regulation lag (startup+redistribution) and take it into account when deciding regulation observation window
      - Test AutoscalingMaintainer
      - Scale by performance not just load+cost
      */
@@ -78,11 +77,11 @@ public class Autoscaler {
             return Optional.empty();
         }
 
-        Optional<ClusterResourcesWithCost> bestAllocation = findBestAllocation(cpuLoad.get(),
-                                                                               memoryLoad.get(),
-                                                                               diskLoad.get(),
-                                                                               currentAllocation,
-                                                                               cluster);
+        Optional<AllocatableClusterResources> bestAllocation = findBestAllocation(cpuLoad.get(),
+                                                                                  memoryLoad.get(),
+                                                                                  diskLoad.get(),
+                                                                                  currentAllocation,
+                                                                                  cluster);
         if (bestAllocation.isEmpty()) {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Could not find a better allocation");
             return Optional.empty();
@@ -95,15 +94,15 @@ public class Autoscaler {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Resources are almost ideal and price difference is small");
             return Optional.empty(); // Avoid small, unnecessary changes
         }
-        return bestAllocation.map(a -> a.clusterResources());
+        return bestAllocation.map(a -> a.advertisedResources());
     }
 
-    private Optional<ClusterResourcesWithCost> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
-                                                                  ClusterResources currentAllocation, ClusterSpec cluster) {
-        Optional<ClusterResourcesWithCost> bestAllocation = Optional.empty();
+    private Optional<AllocatableClusterResources> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
+                                                                     ClusterResources currentAllocation, ClusterSpec cluster) {
+        Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
-            Optional<ClusterResourcesWithCost> allocatableResources = toAllocatableResources(allocation, cluster);
+            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(allocation, cluster);
             if (allocatableResources.isEmpty()) continue;
             if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
                 bestAllocation = allocatableResources;
@@ -127,14 +126,16 @@ public class Autoscaler {
      * Returns the smallest allocatable node resources larger than the given node resources,
      * or empty if none available.
      */
-    private Optional<ClusterResourcesWithCost> toAllocatableResources(ClusterResources resources, ClusterSpec cluster) {
+    private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources, ClusterSpec cluster) {
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // Return the requested resources, adjusted to be legal or empty if they cannot fit on existing hosts
             NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), cluster.type());
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
                 if (flavor.resources().satisfies(nodeResources))
-                    return Optional.of(new ClusterResourcesWithCost(resources.with(nodeResources),
-                                                                    costOf(nodeResources) * resources.nodes()));
+                    return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
+                                                                       costOf(nodeResources) * resources.nodes(),
+                                                                       nodeResources
+                                                                       ));
             return Optional.empty();
         }
         else {
@@ -153,8 +154,9 @@ public class Autoscaler {
             if (bestFlavor.isEmpty())
                 return Optional.empty();
             else
-                return Optional.of(new ClusterResourcesWithCost(resources.with(bestFlavor.get().resources()),
-                                                                bestCost * resources.nodes()));
+                return Optional.of(new AllocatableClusterResources(resources.with(bestFlavor.get().resources()),
+                                                                   bestCost * resources.nodes(),
+                                                                   hostResourcesCalculator.availableCapacityOf(bestFlavor.get().name(), bestFlavor.get().resources())));
         }
     }
 

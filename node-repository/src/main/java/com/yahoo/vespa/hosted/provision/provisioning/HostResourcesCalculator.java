@@ -8,7 +8,14 @@ import com.yahoo.config.provision.NodeResources;
  */
 public interface HostResourcesCalculator {
 
-    /** Calculates the resources that are reserved for host level processes and returns the remainder. */
+    /**
+     * Returns the advertised resources for this flavor, which may be more than the actual resources
+     *
+     * @param flavorName the name of the flavor
+     * @param hostResources the real resources of the flavor
+     * @return the advertised resources of this flavor, or the host resources if this flavor is not a host
+     *         flavor with a difference between advertised and real resources
+     */
     NodeResources availableCapacityOf(String flavorName, NodeResources hostResources);
 
 }

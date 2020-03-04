@@ -53,15 +53,15 @@ class AutoscalingTester {
 
     public AutoscalingTester(Zone zone, List<Flavor> flavors) {
         this(zone,
-             new MockHostProvisioner(flavors),
+             flavors,
              new InMemoryFlagSource().withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true),
              asConfig(flavors));
     }
 
-    private AutoscalingTester(Zone zone, MockHostProvisioner hostProvisioner, FlagSource flagSource, FlavorsConfig flavorsConfig) {
+    private AutoscalingTester(Zone zone, List<Flavor> flavors, FlagSource flagSource, FlavorsConfig flavorsConfig) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavorsConfig(flavorsConfig)
-                                                             .hostProvisioner(hostProvisioner)
+                                                             .hostProvisioner(new MockHostProvisioner(flavors))
                                                              .flagSource(flagSource)
                                                              .build();
 
@@ -210,7 +210,7 @@ class AutoscalingTester {
 
     }
 
-    private static class MockHostProvisioner implements HostProvisioner {
+    private class MockHostProvisioner implements HostProvisioner {
 
         private final List<Flavor> hostFlavors;
 
@@ -245,7 +245,7 @@ class AutoscalingTester {
         }
 
         private boolean matches(Flavor flavor, NodeResources resources) {
-            NodeResources flavorResources = flavor.resources();
+            NodeResources flavorResources = hostResourcesCalculator.availableCapacityOf(flavor.name(), flavor.resources());
             if (flavorResources.storageType() == NodeResources.StorageType.remote
                 && resources.diskGb() <= flavorResources.diskGb())
                 flavorResources = flavorResources.withDiskGb(resources.diskGb());
