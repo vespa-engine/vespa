@@ -49,15 +49,15 @@ public class Autoscaler {
     private static final double memoryUnitCost = 1.2;
     private static final double diskUnitCost = 0.045;
 
-    private final HostResourcesCalculator hostResourcesCalculator;
+    private final HostResourcesCalculator resourcesCalculator;
     private final NodeMetricsDb metricsDb;
     private final NodeRepository nodeRepository;
     private final NodeResourceLimits nodeResourceLimits;
 
-    public Autoscaler(HostResourcesCalculator hostResourcesCalculator,
+    public Autoscaler(HostResourcesCalculator resourcesCalculator,
                       NodeMetricsDb metricsDb,
                       NodeRepository nodeRepository) {
-        this.hostResourcesCalculator = hostResourcesCalculator;
+        this.resourcesCalculator = resourcesCalculator;
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository.zone());
@@ -68,7 +68,7 @@ public class Autoscaler {
                                                    node.allocation().get().membership().retired() ||
                                                    node.allocation().get().isRemovable()))
             return Optional.empty(); // Don't autoscale clusters that are in flux
-        ClusterResources currentAllocation = new ClusterResources(clusterNodes);
+        AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, resourcesCalculator);
         Optional<Double> cpuLoad    = averageLoad(Resource.cpu, cluster, clusterNodes);
         Optional<Double> memoryLoad = averageLoad(Resource.memory, cluster, clusterNodes);
         Optional<Double> diskLoad   = averageLoad(Resource.disk, cluster, clusterNodes);
@@ -80,7 +80,7 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation = findBestAllocation(cpuLoad.get(),
                                                                                   memoryLoad.get(),
                                                                                   diskLoad.get(),
-                                                                                  currentAllocation,
+                                                                                  currentAllocation.advertisedResources(),
                                                                                   cluster);
         if (bestAllocation.isEmpty()) {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Could not find a better allocation");
@@ -90,7 +90,7 @@ public class Autoscaler {
         if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
             closeToIdeal(Resource.memory, memoryLoad.get()) &&
             closeToIdeal(Resource.disk, diskLoad.get()) &&
-            similarCost(bestAllocation.get().cost(), currentAllocation.nodes() * costOf(currentAllocation.nodeResources()))) {
+            similarCost(bestAllocation.get().cost(), currentAllocation.advertisedResources().nodes() * costOf(currentAllocation.advertisedResources().nodeResources()))) {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Resources are almost ideal and price difference is small");
             return Optional.empty(); // Avoid small, unnecessary changes
         }
@@ -145,7 +145,8 @@ public class Autoscaler {
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote)
                     flavor = flavor.with(FlavorOverrides.ofDisk(resources.nodeResources().diskGb()));
                 var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
-                                                                hostResourcesCalculator.availableCapacityOf(flavor.name(), flavor.resources()));
+                                                                flavor,
+                                                                resourcesCalculator);
 
                 if (best.isEmpty() || candidate.cost() <= best.get().cost())
                     best = Optional.of(candidate);

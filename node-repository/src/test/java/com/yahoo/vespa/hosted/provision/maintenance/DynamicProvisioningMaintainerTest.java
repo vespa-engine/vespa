@@ -163,10 +163,10 @@ public class DynamicProvisioningMaintainerTest {
     @Before
     public void setup() {
         doAnswer(invocation ->  {
-            String flavorName = invocation.getArgument(0, String.class);
-            if ("default".equals(flavorName)) return new NodeResources(2, 4, 8, 1);
+            Flavor flavor = invocation.getArgument(0, Flavor.class);
+            if ("default".equals(flavor.name())) return new NodeResources(2, 4, 8, 1);
             return invocation.getArguments()[1];
-        }).when(hostResourcesCalculator).availableCapacityOf(any(), any());
+        }).when(hostResourcesCalculator).advertisedResourcesOf(any());
     }
 
     public void addNodes() {

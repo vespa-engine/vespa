@@ -1,7 +1,9 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 
 import java.util.Optional;
@@ -10,6 +12,7 @@ import java.util.Optional;
  * @author freva
  */
 public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
+
     private final HostResourcesCalculator hostResourcesCalculator = new NoopHostResourcesCalculator();
 
     @Override
@@ -30,8 +33,14 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
     public static class NoopHostResourcesCalculator implements HostResourcesCalculator {
 
         @Override
-        public NodeResources availableCapacityOf(String flavorName, NodeResources hostResources) {
-            return hostResources;
+        public NodeResources realResourcesOf(Node node) {
+            return node.flavor().resources();
         }
+
+        @Override
+        public NodeResources advertisedResourcesOf(Flavor flavor) {
+            return flavor.resources();
+        }
+
     }
 }

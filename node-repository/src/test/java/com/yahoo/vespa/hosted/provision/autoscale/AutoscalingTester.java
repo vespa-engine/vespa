@@ -201,11 +201,19 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources availableCapacityOf(String flavorName, NodeResources hostResources) {
+        public NodeResources realResourcesOf(Node node) {
             if (zone.cloud().value().equals("aws"))
-                return hostResources.withMemoryGb(hostResources.memoryGb() + 3);
+                return node.flavor().resources().withMemoryGb(node.flavor().resources().memoryGb() - 3);
             else
-                return hostResources;
+                return node.flavor().resources();
+        }
+
+        @Override
+        public NodeResources advertisedResourcesOf(Flavor flavor) {
+            if (zone.cloud().value().equals("aws"))
+                return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + 3);
+            else
+                return flavor.resources();
         }
 
     }
@@ -245,7 +253,7 @@ class AutoscalingTester {
         }
 
         private boolean matches(Flavor flavor, NodeResources resources) {
-            NodeResources flavorResources = hostResourcesCalculator.availableCapacityOf(flavor.name(), flavor.resources());
+            NodeResources flavorResources = hostResourcesCalculator.advertisedResourcesOf(flavor);
             if (flavorResources.storageType() == NodeResources.StorageType.remote
                 && resources.diskGb() <= flavorResources.diskGb())
                 flavorResources = flavorResources.withDiskGb(resources.diskGb());
