@@ -30,6 +30,8 @@ vespa_add_library(vespalib
     ${VESPA_GCC_LIB}
 )
 
+set(BLA_VENDOR OpenBLAS)
+vespa_add_target_package_dependency(vespalib BLAS)
 vespa_add_target_package_dependency(vespalib OpenSSL)
 vespa_add_target_package_dependency(vespalib RE2)
 
