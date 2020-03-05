@@ -52,7 +52,7 @@ public class NodeAgentImpl implements NodeAgent {
     private static final long BYTES_IN_GB = 1_000_000_000L;
 
     // Container is started with uncapped CPU and is kept that way until the first successful health check + this duration
-    private static final Duration DEFAULT_WARM_UP_DURATION = Duration.ofSeconds(30);
+    private static final Duration DEFAULT_WARM_UP_DURATION = Duration.ofMinutes(1);
 
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
 
