@@ -57,6 +57,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.canary;
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.conservative;
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.defaultPolicy;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
@@ -612,7 +613,8 @@ class JobControllerApiHandlerHelper {
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");
                 List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
-                latestVersionPreferablyWithNormalConfidenceAndNotNewerThanSystem(controller.versionStatus().versions())
+                latestVersionWithCompatibleConfidenceAndNotNewerThanSystem(controller.versionStatus().versions(),
+                                                                           application.deploymentSpec().requireInstance(stepStatus.instance()).upgradePolicy())
                           .ifPresent(latestPlatform -> {
                               Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
                               latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
@@ -695,7 +697,8 @@ class JobControllerApiHandlerHelper {
         });
     }
 
-    private static Optional<VespaVersion> latestVersionPreferablyWithNormalConfidenceAndNotNewerThanSystem(List<VespaVersion> versions) {
+    private static Optional<VespaVersion> latestVersionWithCompatibleConfidenceAndNotNewerThanSystem(List<VespaVersion> versions,
+                                                                                                     DeploymentSpec.UpgradePolicy policy) {
         int i;
         for (i = versions.size(); i-- > 0; )
             if (versions.get(i).isSystemVersion())
@@ -704,8 +707,9 @@ class JobControllerApiHandlerHelper {
         if (i < 0)
             return Optional.empty();
 
+        VespaVersion.Confidence required = policy == canary ? broken : normal;
         for (int j = i; j >= 0; j--)
-            if (versions.get(j).confidence().equalOrHigherThan(normal))
+            if (versions.get(j).confidence().equalOrHigherThan(required))
                 return Optional.of(versions.get(j));
 
         return Optional.of(versions.get(i));
