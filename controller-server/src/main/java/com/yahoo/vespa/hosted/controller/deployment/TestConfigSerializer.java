@@ -9,6 +9,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -32,7 +33,7 @@ public class TestConfigSerializer {
     public Slime configSlime(ApplicationId id,
                              JobType type,
                              boolean isCI,
-                             Map<ZoneId, Map<URI, ClusterSpec.Id>> deployments,
+                             Map<ZoneId, List<Endpoint>> deployments,
                              Map<ZoneId, List<String>> clusters) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -42,19 +43,11 @@ public class TestConfigSerializer {
         root.setString("system", system.value());
         root.setBool("isCI", isCI);
 
-        Cursor endpointsObject = root.setObject("endpoints"); // TODO jvenstad: remove.
-        deployments.forEach((zone, endpoints) -> {
-            Cursor endpointArray = endpointsObject.setArray(zone.value());
-            for (URI endpoint : endpoints.keySet())
-                endpointArray.addString(endpoint.toString());
-        });
-
         Cursor zoneEndpointsObject = root.setObject("zoneEndpoints");
         deployments.forEach((zone, endpoints) -> {
             Cursor clusterEndpointsObject = zoneEndpointsObject.setObject(zone.value());
-            endpoints.forEach((endpoint, cluster) -> {
-                clusterEndpointsObject.setString(cluster.value(), endpoint.toString());
-            });
+            for (Endpoint endpoint : endpoints)
+                clusterEndpointsObject.setString(endpoint.name(), endpoint.url().toString());
         });
 
         if ( ! clusters.isEmpty()) {
@@ -73,7 +66,7 @@ public class TestConfigSerializer {
     public byte[] configJson(ApplicationId id,
                              JobType type,
                              boolean isCI,
-                             Map<ZoneId, Map<URI, ClusterSpec.Id>> deployments,
+                             Map<ZoneId, List<Endpoint>> deployments,
                              Map<ZoneId, List<String>> clusters) {
         try {
             return SlimeUtils.toJsonBytes(configSlime(id, type, isCI, deployments, clusters));

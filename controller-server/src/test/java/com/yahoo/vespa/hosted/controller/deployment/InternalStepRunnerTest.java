@@ -315,8 +315,8 @@ public class InternalStepRunnerTest {
         assertEquals(app.instanceId().serializedForm(), configObject.field("application").asString());
         assertEquals(testZone.value(), configObject.field("zone").asString());
         assertEquals(system().value(), configObject.field("system").asString());
-        assertEquals(1, configObject.field("endpoints").children());
-        assertEquals(1, configObject.field("endpoints").field(testZone.value()).entries());
+        assertEquals(1, configObject.field("zoneEndpoints").children());
+        assertEquals(1, configObject.field("zoneEndpoints").field(testZone.value()).children());
 
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
         tester.cloud().add(new LogEntry(0, Instant.ofEpochMilli(123), info, "Ready!"));

@@ -3,11 +3,6 @@
   "zone": "prod.us-central-1",
   "system": "main",
   "isCI": false,
-  "endpoints": {
-    "prod.us-central-1": [
-      "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
-    ]
-  },
   "zoneEndpoints": {
     "prod.us-central-1": {
       "default": "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"

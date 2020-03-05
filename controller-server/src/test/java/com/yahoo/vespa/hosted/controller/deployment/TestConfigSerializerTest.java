@@ -1,11 +1,14 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -29,8 +32,10 @@ public class TestConfigSerializerTest {
         byte[] json = new TestConfigSerializer(SystemName.PublicCd).configJson(instanceId,
                                                                                JobType.systemTest,
                                                                                true,
-                                                                               Map.of(zone, Map.of(URI.create("https://server/"),
-                                                                                                   ClusterSpec.Id.from("ai"))),
+                                                                               Map.of(zone, List.of(Endpoint.of(ApplicationId.defaultId())
+                                                                                                            .named(EndpointId.of("ai"))
+                                                                                                            .on(Endpoint.Port.tls())
+                                                                                                            .in(SystemName.main))),
                                                                                Map.of(zone, List.of("facts")));
         byte[] expected = Files.readAllBytes(Paths.get("src/test/resources/testConfig.json"));
         assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlime(expected))),

@@ -11,7 +11,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
@@ -39,9 +41,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Deployment
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
@@ -440,9 +444,9 @@ public class InternalStepRunner implements StepRunner {
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
-        for (var endpoint : endpoints.get(zoneId).keySet()) {
-            boolean ready = controller.jobController().cloud().ready(endpoint);
-            if (!ready) {
+        for (var endpoint : endpoints.get(zoneId)) {
+            boolean ready = controller.jobController().cloud().ready(endpoint.url());
+            if ( ! ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);
                 return false;
             }
@@ -478,12 +482,13 @@ public class InternalStepRunner implements StepRunner {
         return true;
     }
 
-    private void logEndpoints(Map<ZoneId, Map<URI, ClusterSpec.Id>> endpoints, DualLogger logger) {
+    private void logEndpoints(Map<ZoneId, List<Endpoint>> zoneEndpoints, DualLogger logger) {
         List<String> messages = new ArrayList<>();
         messages.add("Found endpoints:");
-        endpoints.forEach((zone, urls) -> {
+        zoneEndpoints.forEach((zone, endpoints) -> {
             messages.add("- " + zone);
-            urls.forEach((url, cluster) -> messages.add(" |-- " + url + " (" + cluster + ")"));
+            for (Endpoint endpoint : endpoints)
+                messages.add(" |-- " + endpoint.url() + " (cluster '" + endpoint.name() + "')");
         });
         logger.log(messages);
     }
