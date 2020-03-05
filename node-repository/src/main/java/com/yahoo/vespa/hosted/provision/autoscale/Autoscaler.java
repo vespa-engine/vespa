@@ -90,7 +90,7 @@ public class Autoscaler {
         if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
             closeToIdeal(Resource.memory, memoryLoad.get()) &&
             closeToIdeal(Resource.disk, diskLoad.get()) &&
-            similarCost(bestAllocation.get().cost(), currentAllocation.advertisedResources().nodes() * costOf(currentAllocation.advertisedResources().nodeResources()))) {
+            similarCost(bestAllocation.get().cost(), currentAllocation.cost())) {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Resources are almost ideal and price difference is small");
             return Optional.empty(); // Avoid small, unnecessary changes
         }
