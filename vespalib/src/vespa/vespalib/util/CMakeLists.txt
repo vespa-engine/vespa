@@ -36,6 +36,9 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     random.cpp
     rcuvector.cpp
     regexp.cpp
+    reusable_set.cpp
+    reusable_set_handle.cpp
+    reusable_set_pool.cpp
     runnable.cpp
     runnable_pair.cpp
     rwlock.cpp
