@@ -392,6 +392,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"skipTests\":true}")
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Triggered production-us-west-1 for tenant2.application2.instance1\"}");
+        app2.runJob(JobType.productionUsWest1);
+
+        // POST a re-triggering to force a production job to start with previous parameters
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/instance1/job/production-us-west-1", POST)
+                                      .data("{\"reTrigger\":true}")
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Triggered production-us-west-1 for tenant2.application2.instance1\"}");
+
+        // DELETE manually deployed prod deployment again
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/instance1/environment/prod/region/us-west-1", DELETE)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"message\":\"Deactivated tenant2.application2.instance1 in prod.us-west-1\"}");
 
         // GET application having both change and outstanding change
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
