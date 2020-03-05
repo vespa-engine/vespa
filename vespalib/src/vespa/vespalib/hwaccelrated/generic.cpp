@@ -52,7 +52,7 @@ bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) 
     }
 
     auto a(static_cast<uint8_t *>(aOrg));
-    auto *b(static_cast<const uint8_t *>(bOrg));
+    auto b(static_cast<const uint8_t *>(bOrg));
     for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
         a[i] = operation(a[i], b[i]);
     }
