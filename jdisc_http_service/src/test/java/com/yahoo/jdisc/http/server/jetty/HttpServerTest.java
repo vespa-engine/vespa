@@ -605,7 +605,7 @@ public class HttpServerTest {
                 .build();
 
         assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, "TLSv1.1", null, "Received fatal alert: protocol_version");
+                driver, clientCtx, "TLSv1.3", null, "Received fatal alert: protocol_version");
         verify(metricConsumer.mockitoMock())
                 .add(Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertThat(driver.close(), is(true));
@@ -675,7 +675,7 @@ public class HttpServerTest {
         } catch (SSLHandshakeException e) {
             assertThat(e.getMessage(), containsString(expectedExceptionSubstring));
         } catch (SSLException e) {
-            // Jetty may sometime close the connection before the apache client has fully consumed the TLS handshake frame
+            // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
             log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
             assertThat(e.getMessage(), containsString("readHandshakeRecord")); // Only ignore this specific ssl exception
         }
