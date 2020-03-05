@@ -30,7 +30,7 @@ TEST("that caught silenced exception causes exitcode 0") {
 }
 
 TEST("that mmap within limits are fine cause exitcode 0") {
-    SlaveProc proc("exec ./vespalib_mmap_app 100000000 10485760 1");
+    SlaveProc proc("exec ./vespalib_mmap_app 150000000 10485760 1");
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 0);
 }

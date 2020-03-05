@@ -12,9 +12,6 @@ namespace vespalib::hwaccelrated {
 class Sse2Accelrator : public GenericAccelrator
 {
 public:
-    float dotProduct(const float * a, const float * b, size_t sz) const override;
-    double dotProduct(const double * a, const double * b, size_t sz) const override;
-
     size_t populationCount(const uint64_t *a, size_t sz) const override;
 };
 
