@@ -48,6 +48,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -422,6 +423,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
+        if (controller.tenants().get(tenantName).isEmpty())
+            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+
         Slime slime = new Slime();
         Cursor applicationArray = slime.setArray();
         for (Application application : controller.applications().asList(tenant)) {
