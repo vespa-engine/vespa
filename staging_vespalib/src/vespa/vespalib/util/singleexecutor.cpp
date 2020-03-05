@@ -59,7 +59,7 @@ SingleExecutor::setTaskLimit(uint32_t taskLimit) {
 SingleExecutor &
 SingleExecutor::sync() {
     uint64_t wp = _wp.load(std::memory_order_relaxed);
-    while (wp > _rp.load(std::memory_order_relaxed)) {
+    while (wp > _rp.load(std::memory_order_acquire)) {
         std::this_thread::sleep_for(1ms);
     }
     return *this;
