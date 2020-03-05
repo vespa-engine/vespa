@@ -67,10 +67,6 @@ public enum RoleDefinition {
                    Policy.deploymentPipeline,
                    Policy.productionDeployment),
 
-    /** Athenz user with access to development resources under its instances. */
-    athenzUser(everyone,
-               Policy.developmentDeployment),
-
     /** Tenant administrator with full access to all child resources. */
     athenzTenantAdmin(everyone,
                       Policy.tenantRead,

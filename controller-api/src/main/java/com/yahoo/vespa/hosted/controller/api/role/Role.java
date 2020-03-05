@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 
 import java.util.Objects;
@@ -46,11 +45,6 @@ public abstract class Role {
     /** Returns a {@link RoleDefinition#tenantPipeline} for the current system and given tenant and application. */
     public static ApplicationRole tenantPipeline(TenantName tenant, ApplicationName application) {
         return new ApplicationRole(RoleDefinition.tenantPipeline, tenant, application);
-    }
-
-    /** Returns a {@link RoleDefinition#athenzUser} for the current system and given tenant and application. */
-    public static InstanceRole athenzUser(TenantName tenant, ApplicationName application, InstanceName instance) {
-        return new InstanceRole(RoleDefinition.athenzUser, tenant, application, instance);
     }
 
     /** Returns a {@link RoleDefinition#reader} for the current system and given tenant. */

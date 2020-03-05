@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import org.junit.Test;
@@ -79,14 +78,6 @@ public class RoleTest {
         assertFalse(publicEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
         assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/jobreport")));
         assertFalse("No global read access", publicEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
-    }
-
-    @Test
-    public void athenz_user_membership() {
-        Role role = Role.athenzUser(TenantName.from("t8"), ApplicationName.from("a6"), InstanceName.from("i1"));
-        assertTrue(mainEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/deploy/some-job")));
-        assertTrue(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
-        assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/prod/region/r1")));
     }
 
     @Test
