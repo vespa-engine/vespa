@@ -18,25 +18,13 @@ public class MockTesterCloud implements TesterCloud {
     private List<LogEntry> log = new ArrayList<>();
     private Status status = NOT_STARTED;
     private byte[] config;
-    private URI testerUrl;
 
-    @Override
-    public void startTests(URI testerUrl, Suite suite, byte[] config) {
-        this.status = RUNNING;
-        this.config = config;
-        this.testerUrl = testerUrl;
     }
 
     @Override
     public void startTests(DeploymentId deploymentId, Suite suite, byte[] config) {
         this.status = RUNNING;
         this.config = config;
-        this.testerUrl = null;
-    }
-
-    @Override
-    public List<LogEntry> getLog(URI testerUrl, long after) {
-        return log.stream().filter(entry -> entry.id() > after).collect(Collectors.toList());
     }
 
     @Override
@@ -45,18 +33,10 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public Status getStatus(URI testerUrl) { return status; }
-
-    @Override
     public Status getStatus(DeploymentId deploymentId) { return status; }
 
     @Override
     public boolean ready(URI testerUrl) {
-        return true;
-    }
-
-    @Override
-    public boolean testerReady(URI testerUrl) {
         return true;
     }
 
@@ -85,10 +65,6 @@ public class MockTesterCloud implements TesterCloud {
 
     public byte[] config() {
         return config;
-    }
-
-    public URI testerUrl() {
-        return testerUrl;
     }
 
 }

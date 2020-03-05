@@ -15,28 +15,16 @@ import java.util.List;
 public interface TesterCloud {
 
     /** Signals the tester to run its tests. */
-    void startTests(URI testerUrl, Suite suite, byte[] config);
-
-    /** Signals the tester to run its tests. */
     void startTests(DeploymentId deploymentId, Suite suite, byte[] config);
 
     /** Returns the log entries from the tester with ids after the given threshold. */
-    List<LogEntry> getLog(URI testerUrl, long after);
-
-    /** Returns the log entries from the tester with ids after the given threshold. */
     List<LogEntry> getLog(DeploymentId deploymentId, long after);
-
-    /** Returns the current status of the tester. */
-    Status getStatus(URI testerUrl);
 
     /** Returns the current status of the tester. */
     Status getStatus(DeploymentId deploymentId);
 
     /** Returns whether the container is ready to serve. */
     boolean ready(URI endpointUrl);
-
-    /** Returns whether the test container is ready to serve */
-    boolean testerReady(URI endpointUrl);
 
     /** Returns whether the test container is ready to serve */
     boolean testerReady(DeploymentId deploymentId);
