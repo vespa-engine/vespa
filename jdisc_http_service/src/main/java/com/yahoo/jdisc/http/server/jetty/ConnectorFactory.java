@@ -42,7 +42,7 @@ public class ConnectorFactory {
 
     public ServerConnector createConnector(final Metric metric, final Server server, final ServerSocketChannel ch) {
         ServerConnector connector = new JDiscServerConnector(
-                connectorConfig, metric, server, ch, createConnectionFactories().toArray(ConnectionFactory[]::new));
+                connectorConfig, metric, server, ch, createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
         connector.setPort(connectorConfig.listenPort());
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
@@ -51,14 +51,14 @@ public class ConnectorFactory {
         return connector;
     }
 
-    private List<ConnectionFactory> createConnectionFactories() {
+    private List<ConnectionFactory> createConnectionFactories(Metric metric) {
         HttpConnectionFactory httpConnectionFactory = newHttpConnectionFactory();
         if (connectorConfig.healthCheckProxy().enable()) {
             return List.of(httpConnectionFactory);
         } else if (connectorConfig.ssl().enabled()) {
-            return List.of(newSslConnectionFactory(), httpConnectionFactory);
+            return List.of(newSslConnectionFactory(metric), httpConnectionFactory);
         } else if (TransportSecurityUtils.isTransportSecurityEnabled()) {
-            SslConnectionFactory sslConnectionsFactory = newSslConnectionFactory();
+            SslConnectionFactory sslConnectionsFactory = newSslConnectionFactory(metric);
             switch (TransportSecurityUtils.getInsecureMixedMode()) {
                 case TLS_CLIENT_MIXED_SERVER:
                 case PLAINTEXT_CLIENT_MIXED_SERVER:
@@ -88,9 +88,11 @@ public class ConnectorFactory {
         return new HttpConnectionFactory(httpConfig);
     }
 
-    private SslConnectionFactory newSslConnectionFactory() {
-        SslContextFactory factory = sslContextFactoryProvider.getInstance(connectorConfig.name(), connectorConfig.listenPort());
-        return new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString());
+    private SslConnectionFactory newSslConnectionFactory(Metric metric) {
+        SslContextFactory ctxFactory = sslContextFactoryProvider.getInstance(connectorConfig.name(), connectorConfig.listenPort());
+        SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, HttpVersion.HTTP_1_1.asString());
+        connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
+        return connectionFactory;
     }
 
 }
