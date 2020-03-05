@@ -1,11 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
-#include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/policy_checking_certificate_verifier.h>
 #include <vespa/vespalib/test/peer_policy_utils.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 using namespace vespalib;
 using namespace vespalib::net::tls;

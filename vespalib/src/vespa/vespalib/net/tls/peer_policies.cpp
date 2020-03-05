@@ -1,28 +1,34 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "peer_policies.h"
+#include <vespa/vespalib/regex/regex.h>
 #include <iostream>
-#include <regex>
 
 namespace vespalib::net::tls {
 
 namespace {
 
-// Note: this is for basix regexp only, _not_ extended regexp
-bool is_basic_regex_special_char(char c) noexcept {
+bool is_regex_special_char(char c) noexcept {
     switch (c) {
-        case '^':
-        case '$':
-        case '.':
-        case '[':
-        case '\\':
-            return true;
-        default:
-            return false;
+    case '^':
+    case '$':
+    case '|':
+    case '{':
+    case '}':
+    case '(':
+    case ')':
+    case '[':
+    case ']':
+    case '\\':
+    case '+':
+    case '.':
+        return true;
+    default:
+        return false;
     }
 }
 
-std::string glob_to_basic_regex(vespalib::stringref glob) {
+std::string dot_separated_glob_to_regex(vespalib::stringref glob) {
     std::string ret = "^";
     ret.reserve(glob.size() + 2);
     for (auto c : glob) {
@@ -34,7 +40,7 @@ std::string glob_to_basic_regex(vespalib::stringref glob) {
             // Same applies for single chars; they should only match _within_ a dot boundary.
             ret += "[^.]";
         } else {
-            if (is_basic_regex_special_char(c)) {
+            if (is_regex_special_char(c)) {
                 ret += '\\';
             }
             ret += c;
@@ -45,16 +51,16 @@ std::string glob_to_basic_regex(vespalib::stringref glob) {
 }
 
 class RegexHostMatchPattern : public HostGlobPattern {
-    std::regex _pattern_as_regex;
+    Regex _pattern_as_regex;
 public:
     explicit RegexHostMatchPattern(vespalib::stringref glob_pattern)
-        : _pattern_as_regex(glob_to_basic_regex(glob_pattern), std::regex_constants::basic)
+        : _pattern_as_regex(Regex::from_pattern(dot_separated_glob_to_regex(glob_pattern)))
     {
     }
     ~RegexHostMatchPattern() override = default;
 
-    bool matches(vespalib::stringref str) const override {
-        return std::regex_match(str.begin(), str.end(), _pattern_as_regex);
+    [[nodiscard]] bool matches(vespalib::stringref str) const override {
+        return _pattern_as_regex.full_match(std::string_view(str.data(), str.size()));
     }
 };
 
