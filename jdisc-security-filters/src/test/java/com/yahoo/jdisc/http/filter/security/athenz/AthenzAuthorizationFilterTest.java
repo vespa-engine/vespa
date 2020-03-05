@@ -34,6 +34,7 @@ import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFil
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
 import static com.yahoo.vespa.athenz.zpe.AuthorizationResult.Type;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -108,6 +109,8 @@ public class AthenzAuthorizationFilterTest {
         filter.filter(request, responseHandler);
 
         assertStatusCode(responseHandler, 401);
+        assertErrorMessage(responseHandler, "Not authorized - request did not contain any of the allowed credentials: " +
+                "[Athenz X.509 role certificate, Athenz access token with X.509 identity certificate]");
     }
 
     @Test
@@ -182,6 +185,13 @@ public class AthenzAuthorizationFilterTest {
 
     private static void assertMatchedRole(DiscFilterRequest request, AthenzRole role) {
         verify(request).setAttribute(MATCHED_ROLE_ATTRIBUTE, role.roleName());
+    }
+
+    private static void assertErrorMessage(MockResponseHandler responseHandler, String errorMessage) {
+        Response response = responseHandler.getResponse();
+        assertThat(response, notNullValue());
+        String content = responseHandler.readAll();
+        assertThat(content, containsString(errorMessage));
     }
 
     private static class AllowingZpe implements Zpe {
