@@ -56,6 +56,9 @@ public class RoleTest {
         assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t1/application/a1")));
         assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t2/application/a2")));
         assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
+
+        // Check that we are allowed to create tenants in public
+        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1")));
     }
 
     @Test
