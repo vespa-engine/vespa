@@ -578,6 +578,7 @@ class JobControllerApiHandlerHelper {
         Cursor responseObject = slime.setObject();
         responseObject.setString("tenant", id.tenant().value());
         responseObject.setString("application", id.application().value());
+        application.projectId().ifPresent(projectId -> responseObject.setLong("projectId", projectId));
 
         Map<JobId, List<Versions>> jobsToRun = status.jobsToRun();
         Cursor stepsArray = responseObject.setArray("steps");
