@@ -182,6 +182,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.http.request.content_size.sum"));
         metrics.add(new Metric("jdisc.http.request.content_size.count"));
         metrics.add(new Metric("jdisc.http.request.content_size.average")); // TODO: Remove in Vespa 8
+
+        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.missing_client_cert.rate"));
+        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.invalid_client_cert.rate"));
+        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.incompatible_protocols.rate"));
+        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.incompatible_ciphers.rate"));
+        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.unknown.rate"));
         return metrics;
     }
 
