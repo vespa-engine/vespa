@@ -112,7 +112,7 @@ public class DynamicProvisioningMaintainer extends Maintainer {
             NodeResources resources = it.next();
             removableHosts.stream()
                     .filter(host -> NodePrioritizer.ALLOCATABLE_HOST_STATES.contains(host.state()))
-                    .filter(host -> hostResourcesCalculator.availableCapacityOf(host.flavor().name(), host.flavor().resources()).satisfies(resources))
+                    .filter(host -> hostResourcesCalculator.advertisedResourcesOf(host.flavor()).satisfies(resources))
                     .min(Comparator.comparingInt(n -> n.flavor().cost()))
                     .ifPresent(host -> {
                         removableHosts.remove(host);

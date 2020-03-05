@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -37,7 +38,7 @@ public class DockerHostCapacityTest {
 
     @Before
     public void setup() {
-        doAnswer(invocation -> invocation.getArguments()[1]).when(hostResourcesCalculator).availableCapacityOf(any(), any());
+        doAnswer(invocation -> ((Flavor)invocation.getArguments()[0]).resources()).when(hostResourcesCalculator).advertisedResourcesOf(any());
 
         // Create flavors
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
@@ -95,9 +96,9 @@ public class DockerHostCapacityTest {
                      capacity.freeCapacityOf(host3, false));
 
         doAnswer(invocation -> {
-            NodeResources totalHostResources = (NodeResources) invocation.getArguments()[1];
+            NodeResources totalHostResources = ((Flavor) invocation.getArguments()[0]).resources();
             return totalHostResources.subtract(new NodeResources(1, 2, 3, 0.5, NodeResources.DiskSpeed.any));
-        }).when(hostResourcesCalculator).availableCapacityOf(any(), any());
+        }).when(hostResourcesCalculator).advertisedResourcesOf(any());
 
         assertEquals(new NodeResources(4, 2, 5, 1.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
                      capacity.freeCapacityOf(host1, false));

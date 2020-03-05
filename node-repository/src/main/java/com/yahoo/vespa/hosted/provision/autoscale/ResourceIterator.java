@@ -19,7 +19,7 @@ public class ResourceIterator {
     private static final double fixedCpuCostFraction = 0.1;
 
     // Describes the observed state
-    private final ClusterResources allocation;
+    private final AllocatableClusterResources allocation;
     private final double cpuLoad;
     private final double memoryLoad;
     private final double diskLoad;
@@ -32,7 +32,7 @@ public class ResourceIterator {
     // Iterator state
     private int currentNodes;
 
-    public ResourceIterator(double cpuLoad, double memoryLoad, double diskLoad, ClusterResources currentAllocation) {
+    public ResourceIterator(double cpuLoad, double memoryLoad, double diskLoad, AllocatableClusterResources currentAllocation) {
         this.cpuLoad = cpuLoad;
         this.memoryLoad = memoryLoad;
         this.diskLoad = diskLoad;
@@ -90,15 +90,15 @@ public class ResourceIterator {
             memory = totalGroupUsage(Resource.memory, memoryLoad) / groupSize / Resource.memory.idealAverageLoad();
             disk = totalGroupUsage(Resource.disk, diskLoad) / groupSize / Resource.disk.idealAverageLoad();
         }
-        return allocation.nodeResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
+        return allocation.realResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }
 
     private double totalUsage(Resource resource, double load) {
-        return load * resource.valueFrom(allocation.nodeResources()) * allocation.nodes();
+        return load * resource.valueFrom(allocation.realResources()) * allocation.nodes();
     }
 
     private double totalGroupUsage(Resource resource, double load) {
-        return load * resource.valueFrom(allocation.nodeResources()) * groupSize;
+        return load * resource.valueFrom(allocation.realResources()) * groupSize;
     }
 
 }

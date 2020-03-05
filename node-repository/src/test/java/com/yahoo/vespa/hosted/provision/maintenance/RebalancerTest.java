@@ -152,8 +152,13 @@ public class RebalancerTest {
     private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
 
         @Override
-        public NodeResources availableCapacityOf(String flavorName, NodeResources hostResources) {
-            return hostResources;
+        public NodeResources realResourcesOf(Node node) {
+            return node.flavor().resources();
+        }
+
+        @Override
+        public NodeResources advertisedResourcesOf(Flavor flavor) {
+            return flavor.resources();
         }
 
     }
