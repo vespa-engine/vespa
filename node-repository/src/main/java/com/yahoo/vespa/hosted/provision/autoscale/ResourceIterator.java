@@ -90,15 +90,15 @@ public class ResourceIterator {
             memory = totalGroupUsage(Resource.memory, memoryLoad) / groupSize / Resource.memory.idealAverageLoad();
             disk = totalGroupUsage(Resource.disk, diskLoad) / groupSize / Resource.disk.idealAverageLoad();
         }
-        return allocation.realResources().nodeResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
+        return allocation.realResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }
 
     private double totalUsage(Resource resource, double load) {
-        return load * resource.valueFrom(allocation.realResources().nodeResources()) * allocation.nodes();
+        return load * resource.valueFrom(allocation.realResources()) * allocation.nodes();
     }
 
     private double totalGroupUsage(Resource resource, double load) {
-        return load * resource.valueFrom(allocation.realResources().nodeResources()) * groupSize;
+        return load * resource.valueFrom(allocation.realResources()) * groupSize;
     }
 
 }

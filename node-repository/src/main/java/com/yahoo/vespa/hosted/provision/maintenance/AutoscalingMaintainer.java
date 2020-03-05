@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
@@ -48,10 +49,10 @@ public class AutoscalingMaintainer extends Maintainer {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
             if ( ! deployment.isValid()) return; // Another config server will consider this application
             nodesByCluster(applicationNodes).forEach((clusterSpec, clusterNodes) -> {
-                Optional<ClusterResources> target = autoscaler.autoscale(application, clusterSpec, clusterNodes);
+                Optional<AllocatableClusterResources> target = autoscaler.autoscale(application, clusterSpec, clusterNodes);
                 target.ifPresent(t -> log.info("Autoscale: Application " + application + " cluster " + clusterSpec +
                                                " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
-                                               " to " + t.nodes() + " * " + t.nodeResources()));
+                                               " to " + t.nodes() + " * " + t.advertisedResources()));
             });
         }
     }

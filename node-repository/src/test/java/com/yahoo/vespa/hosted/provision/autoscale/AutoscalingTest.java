@@ -41,9 +41,9 @@ public class AutoscalingTest {
         assertTrue("Too few measurements -> No change", tester.autoscale(application1, cluster1).isEmpty());
 
         tester.addMeasurements(Resource.cpu,  0.25f, 1f, 60, application1);
-        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                 15, 1, 1.3,  28.6, 28.6,
-                                                                  tester.autoscale(application1, cluster1));
+        AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
+                                                                             15, 1, 1.3,  28.6, 28.6,
+                                                                             tester.autoscale(application1, cluster1));
 
         tester.deploy(application1, cluster1, scaledResources);
         assertTrue("Cluster in flux -> No further change", tester.autoscale(application1, cluster1).isEmpty());
@@ -128,7 +128,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 103, 100, 1));
 
         tester.addMeasurements(Resource.memory, 0.9f, 0.6f, 120, application1);
-        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high.",
+        AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high.",
                                                                   8, 1, 3,  83, 34.3,
                                                                   tester.autoscale(application1, cluster1));
 

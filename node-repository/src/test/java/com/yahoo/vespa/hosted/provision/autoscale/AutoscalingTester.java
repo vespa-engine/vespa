@@ -82,8 +82,8 @@ class AutoscalingTester {
                                    Optional.empty());
     }
 
-    public void deploy(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
-        deploy(application, cluster, resources.nodes(), resources.groups(), resources.nodeResources());
+    public void deploy(ApplicationId application, ClusterSpec cluster, AllocatableClusterResources resources) {
+        deploy(application, cluster, resources.nodes(), resources.groups(), resources.advertisedResources());
     }
 
     public void deploy(ApplicationId application, ClusterSpec cluster, int nodes, int groups, NodeResources resources) {
@@ -103,7 +103,7 @@ class AutoscalingTester {
             nodeRepository().setReady(List.of(host), Agent.system, getClass().getSimpleName());
     }
 
-    public void deactivateRetired(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
+    public void deactivateRetired(ApplicationId application, ClusterSpec cluster, AllocatableClusterResources resources) {
         try (Mutex lock = nodeRepository().lock(application)){
             for (Node node : nodeRepository().getNodes(application, Node.State.active)) {
                 if (node.allocation().get().membership().retired())
@@ -143,21 +143,21 @@ class AutoscalingTester {
         }
     }
 
-    public Optional<ClusterResources> autoscale(ApplicationId application, ClusterSpec cluster) {
+    public Optional<AllocatableClusterResources> autoscale(ApplicationId application, ClusterSpec cluster) {
         return autoscaler.autoscale(application, cluster, nodeRepository().getNodes(application, Node.State.active));
     }
 
-    public ClusterResources assertResources(String message,
+    public AllocatableClusterResources assertResources(String message,
                                             int nodeCount, int groupCount,
                                             double approxCpu, double approxMemory, double approxDisk,
-                                            Optional<ClusterResources> actualResources) {
+                                            Optional<AllocatableClusterResources> actualResources) {
         double delta = 0.0000000001;
         assertTrue(message, actualResources.isPresent());
         assertEquals("Node count:  " + message, nodeCount, actualResources.get().nodes());
         assertEquals("Group count: " + message, groupCount, actualResources.get().groups());
-        assertEquals("Cpu: "    + message, approxCpu, Math.round(actualResources.get().nodeResources().vcpu() * 10) / 10.0, delta);
-        assertEquals("Memory: " + message, approxMemory, Math.round(actualResources.get().nodeResources().memoryGb() * 10) / 10.0, delta);
-        assertEquals("Disk: "   + message, approxDisk, Math.round(actualResources.get().nodeResources().diskGb() * 10) / 10.0, delta);
+        assertEquals("Cpu: "    + message, approxCpu, Math.round(actualResources.get().advertisedResources().vcpu() * 10) / 10.0, delta);
+        assertEquals("Memory: " + message, approxMemory, Math.round(actualResources.get().advertisedResources().memoryGb() * 10) / 10.0, delta);
+        assertEquals("Disk: "   + message, approxDisk, Math.round(actualResources.get().advertisedResources().diskGb() * 10) / 10.0, delta);
         return actualResources.get();
     }
 

@@ -63,7 +63,7 @@ public class Autoscaler {
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository.zone());
     }
 
-    public Optional<ClusterResources> autoscale(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
+    public Optional<AllocatableClusterResources> autoscale(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
         if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                                    node.allocation().get().membership().retired() ||
                                                    node.allocation().get().isRemovable()))
@@ -94,7 +94,7 @@ public class Autoscaler {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Resources are almost ideal and price difference is small");
             return Optional.empty(); // Avoid small, unnecessary changes
         }
-        return bestAllocation.map(a -> a.advertisedResources());
+        return bestAllocation;
     }
 
     private Optional<AllocatableClusterResources> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,

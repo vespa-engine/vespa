@@ -13,40 +13,52 @@ import java.util.List;
  */
 public class AllocatableClusterResources {
 
-    private final ClusterResources realResources;
-    private final ClusterResources advertisedResources;
+    /** The node count in the cluster */
+    private final int nodes;
+
+    /** The number of node groups in the cluster */
+    private final int groups;
+
+    private final NodeResources realResources;
+    private final NodeResources advertisedResources;
 
     public AllocatableClusterResources(List<Node> nodes, HostResourcesCalculator calculator) {
-        this.advertisedResources = new ClusterResources(nodes);
-        this.realResources = advertisedResources.with(calculator.realResourcesOf(nodes.get(0)));
+        this.advertisedResources = nodes.get(0).flavor().resources();
+        this.realResources = calculator.realResourcesOf(nodes.get(0));
+        this.nodes = nodes.size();
+        this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
     }
 
     public AllocatableClusterResources(ClusterResources realResources, NodeResources advertisedResources) {
-        this.realResources = realResources;
-        this.advertisedResources = realResources.with(advertisedResources);
+        this.realResources = realResources.nodeResources();
+        this.advertisedResources = advertisedResources;
+        this.nodes = realResources.nodes();
+        this.groups = realResources.groups();
     }
 
     public AllocatableClusterResources(ClusterResources realResources, Flavor flavor, HostResourcesCalculator calculator) {
-        this.realResources = realResources;
-        this.advertisedResources = realResources.with(calculator.advertisedResourcesOf(flavor));
+        this.realResources = realResources.nodeResources();
+        this.advertisedResources = calculator.advertisedResourcesOf(flavor);
+        this.nodes = realResources.nodes();
+        this.groups = realResources.groups();
     }
 
     /**
      * Returns the resources which will actually be available in this cluster with this allocation.
      * These should be used for reasoning about allocation to meet measured demand.
      */
-    public ClusterResources realResources() { return realResources; }
+    public NodeResources realResources() { return realResources; }
 
     /**
      * Returns the resources advertised by the cloud provider, which are the basis for charging
      * and which must be used in resource allocation requests
      */
-    public ClusterResources advertisedResources() { return advertisedResources; }
+    public NodeResources advertisedResources() { return advertisedResources; }
 
-    public double cost() { return advertisedResources.nodes() * Autoscaler.costOf(advertisedResources.nodeResources()); }
+    public double cost() { return nodes * Autoscaler.costOf(advertisedResources); }
 
-    public int nodes() { return realResources.nodes(); }
-    public int groups() { return realResources.groups(); }
+    public int nodes() { return nodes; }
+    public int groups() { return groups; }
 
     @Override
     public String toString() {
