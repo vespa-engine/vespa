@@ -13,6 +13,7 @@ import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContexts;
+import org.eclipse.jetty.server.DetectorConnectionFactory;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
@@ -74,6 +75,8 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 .orElseThrow(() -> new IllegalArgumentException("Could not find any connector with listen port " + targetPort));
         SslContextFactory.Server sslContextFactory =
                 Optional.ofNullable(targetConnector.getConnectionFactory(SslConnectionFactory.class))
+                        .or(() -> Optional.ofNullable(targetConnector.getConnectionFactory(DetectorConnectionFactory.class))
+                                .map(detectorConnFactory -> detectorConnFactory.getBean(SslConnectionFactory.class)))
                         .map(connFactory -> (SslContextFactory.Server) connFactory.getSslContextFactory())
                         .orElseThrow(() -> new IllegalArgumentException("Health check proxy can only target https port"));
         return new ProxyTarget(targetPort, sslContextFactory);
