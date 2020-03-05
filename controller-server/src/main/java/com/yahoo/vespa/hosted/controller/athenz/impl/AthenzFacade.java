@@ -35,6 +35,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import javax.ws.rs.ForbiddenException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -296,15 +297,34 @@ public class AthenzFacade implements AccessControl {
         _modify_
     }
 
+
     private static class AccessTuple {
+
         private final String resource;
         private final String action;
         private final AthenzIdentity identity;
+
         private AccessTuple(String resource, String action, AthenzIdentity identity) {
             this.resource = resource;
             this.action = action;
             this.identity = identity;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            AccessTuple that = (AccessTuple) o;
+            return resource.equals(that.resource) &&
+                   action.equals(that.action) &&
+                   identity.equals(that.identity);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(resource, action, identity);
+        }
+
     }
 
 }
