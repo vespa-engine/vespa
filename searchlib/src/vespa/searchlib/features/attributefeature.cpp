@@ -356,7 +356,7 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
     if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning default values.",
                 attrName.c_str());
-        std::vector<feature_t> values(4, 0.0f);
+        std::vector<feature_t> values(numOutputs, 0.0f);
         return stash.create<ValueExecutor>(values);
     }
     CollectionType collectionType = attribute->getCollectionType();

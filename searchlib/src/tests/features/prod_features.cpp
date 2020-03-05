@@ -67,6 +67,7 @@ using AVC = search::attribute::Config;
 using AVBT = search::attribute::BasicType;
 using AVCT = search::attribute::CollectionType;
 using CollectionType = FieldInfo::CollectionType;
+using DataType = FieldInfo::DataType;
 
 const double EPS = 10e-6;
 
@@ -258,8 +259,8 @@ Test::testAttribute()
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "slong")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbyte")
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbool")
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sebool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL, "sbool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL, "sebool")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sfloat")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sdouble")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sstr")
@@ -410,8 +411,8 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "slong")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sdouble")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbyte")
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbool")
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sebool");
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL,"sbool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL,"sebool");
     }
 
     for (const auto & attr : avs) {
