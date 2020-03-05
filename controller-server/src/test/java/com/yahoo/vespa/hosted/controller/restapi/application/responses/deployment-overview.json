@@ -1,6 +1,7 @@
 {
   "tenant": "tenant1",
   "application": "application1",
+  "projectId": 123,
   "steps": [
     {
       "type": "instance",
