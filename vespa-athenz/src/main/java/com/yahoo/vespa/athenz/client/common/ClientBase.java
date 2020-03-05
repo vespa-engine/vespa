@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.client.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.client.common.bindings.ErrorResponseEntity;
@@ -16,6 +17,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -23,11 +25,15 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author bjorncs
  */
 public abstract class ClientBase implements AutoCloseable {
+
+    private static final Logger logger = Logger.getLogger(ClientBase.class.getName());
 
     private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -59,15 +65,22 @@ public abstract class ClientBase implements AutoCloseable {
     }
 
     protected <T> T readEntity(HttpResponse response, Class<T> entityType) throws IOException {
-        if (isSuccess(response.getStatusLine().getStatusCode())) {
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (isSuccess(statusCode)) {
             if (entityType.equals(Void.class)) {
                 return null;
             } else {
                 return objectMapper.readValue(response.getEntity().getContent(), entityType);
             }
         } else {
-            ErrorResponseEntity errorEntity = objectMapper.readValue(response.getEntity().getContent(), ErrorResponseEntity.class);
-            throw exceptionFactory.createException(errorEntity.code, errorEntity.description);
+            byte[] entity = EntityUtils.toByteArray(response.getEntity());
+            try {
+                ErrorResponseEntity errorEntity = objectMapper.readValue(entity, ErrorResponseEntity.class);
+                throw exceptionFactory.createException(errorEntity.code, errorEntity.description);
+            } catch (JsonMappingException e) {
+                logger.log(Level.INFO, String.format("Response returned status %d, but error response not parseable: %s", statusCode, new String(entity)), e);
+                throw new RuntimeException("Non JSON response from Athenz.");
+            }
         }
     }
 
