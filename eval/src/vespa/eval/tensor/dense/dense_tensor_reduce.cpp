@@ -14,8 +14,7 @@ DimensionReducer::calcCellsSize(const eval::ValueType &type)
     return cellsSize;
 }
 
-DimensionReducer::DimensionReducer(const eval::ValueType &oldType,
-                 const string &dimensionToRemove)
+DimensionReducer::DimensionReducer(const eval::ValueType &oldType, const string &dimensionToRemove)
         : _type(oldType.reduce({ dimensionToRemove })),
           _innerDimSize(1),
           _sumDimSize(1),
