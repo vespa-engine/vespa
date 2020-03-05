@@ -22,7 +22,7 @@ private:
     // (note that child expression order is inverted by the stack)
     std::vector<std::pair<int64_t,size_t>> _spec;
 public:
-    DenseTensorPeekFunction(std::vector<Child> children, const std::vector<std::pair<int64_t,size_t>> &spec);
+    DenseTensorPeekFunction(std::vector<Child> children, std::vector<std::pair<int64_t,size_t>> spec);
     ~DenseTensorPeekFunction();
     const eval::ValueType &result_type() const override { return eval::DoubleValue::double_type(); }
     void push_children(std::vector<Child::CREF> &children) const override;

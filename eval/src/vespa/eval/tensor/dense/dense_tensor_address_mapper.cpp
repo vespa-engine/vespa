@@ -2,7 +2,6 @@
 
 #include "dense_tensor_address_mapper.h"
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/eval/tensor/types.h>
 #include <vespa/eval/tensor/tensor_address.h>
 #include <vespa/eval/tensor/tensor_address_element_iterator.h>
 

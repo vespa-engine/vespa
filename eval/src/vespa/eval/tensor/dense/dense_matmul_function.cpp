@@ -3,12 +3,9 @@
 #include "dense_matmul_function.h"
 #include "dense_tensor_view.h"
 #include <vespa/vespalib/objects/objectvisitor.h>
-#include <vespa/vespalib/util/overload.h>
-#include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <assert.h>
+#include <cassert>
 
 #include <cblas.h>
 

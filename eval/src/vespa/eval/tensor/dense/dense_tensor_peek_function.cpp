@@ -2,8 +2,6 @@
 
 #include "dense_tensor_peek_function.h"
 #include "dense_tensor_view.h"
-#include <vespa/vespalib/util/overload.h>
-#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/tensor.h>
 
@@ -17,7 +15,6 @@ using eval::TensorFunction;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;
-using namespace eval::operation;
 
 namespace {
 
@@ -41,7 +38,7 @@ void my_tensor_peek_op(eval::InterpretedFunction::State &state, uint64_t param) 
     auto cells = DenseTensorView::typify_cells<CT>(state.peek(0));
     state.stack.pop_back();
     const Value &result = state.stash.create<DoubleValue>(valid ? cells[idx] : 0.0);
-    state.stack.push_back(result);
+    state.stack.emplace_back(result);
 }
 
 struct MyTensorPeekOp {
@@ -52,10 +49,10 @@ struct MyTensorPeekOp {
 } // namespace vespalib::tensor::<unnamed>
 
 DenseTensorPeekFunction::DenseTensorPeekFunction(std::vector<Child> children,
-                                                 const std::vector<std::pair<int64_t,size_t>> &spec)
+                                                 std::vector<std::pair<int64_t,size_t>> spec)
     : TensorFunction(),
       _children(std::move(children)),
-      _spec(spec)
+      _spec(std::move(spec))
 {
 }
 
@@ -65,7 +62,7 @@ void
 DenseTensorPeekFunction::push_children(std::vector<Child::CREF> &target) const
 {
     for (const Child &c: _children) {
-        target.push_back(c);
+        target.emplace_back(c);
     }
 }
 
@@ -100,7 +97,7 @@ DenseTensorPeekFunction::optimize(const eval::TensorFunction &expr, Stash &stash
                                }
                            }, dim_spec->second);
             }
-            return stash.create<DenseTensorPeekFunction>(peek->copy_children(), spec);
+            return stash.create<DenseTensorPeekFunction>(peek->copy_children(), std::move(spec));
         }
     }
     return expr;
