@@ -64,12 +64,12 @@ public class AthenzFacade implements AccessControl {
         this.service = factory.getControllerIdentity();
         this.userDomains = factory.cacheLookups()
                            ? CacheBuilder.newBuilder()
-                                         .expireAfterWrite(1, TimeUnit.MINUTES)
+                                         .expireAfterWrite(10, TimeUnit.MINUTES)
                                          .build(CacheLoader.from(this::getUserDomains))::getUnchecked
                            : this::getUserDomains;
         this.accessRights = factory.cacheLookups()
                             ? CacheBuilder.newBuilder()
-                                          .expireAfterWrite(1, TimeUnit.MINUTES)
+                                          .expireAfterWrite(10, TimeUnit.MINUTES)
                                           .build(CacheLoader.from(this::lookupAccess))::getUnchecked
                             : this::lookupAccess;
     }
