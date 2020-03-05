@@ -233,12 +233,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_RPM_PACKAGES_FOR_DATA_HIGHWAY = defineFeatureFlag(
-            "use-rpm-packages-for-data-highway", false,
-            "Whether RPM packages should be used for Data Highway",
-            "Takes effect on restart of Docker container",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundStringFlag DOCKER_IMAGE_OVERRIDE = defineStringFlag(
             "docker-image-override", "",
             "Override the Docker image to use for deployments. This must containing the image name only, without tag",
