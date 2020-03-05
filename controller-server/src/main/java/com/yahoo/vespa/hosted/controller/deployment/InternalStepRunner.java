@@ -53,7 +53,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
-import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -472,11 +471,41 @@ public class InternalStepRunner implements StepRunner {
             logger.log("Endpoints not yet ready.");
             return false;
         }
-        for (var endpoint : endpoints.get(zone).keySet())
-            if ( ! controller.jobController().cloud().exists(endpoint)) {
-                logger.log(INFO, "DNS lookup yielded no IP address for '" + endpoint + "'.");
+        var policies = controller.routing().policies().get(new DeploymentId(id, zone));
+        for (var endpoint : endpoints.get(zone)) {
+            HostName endpointName = HostName.from(endpoint.dnsName());
+            var ipAddress = controller.jobController().cloud().resolveHostName(endpointName);
+            if (ipAddress.isEmpty()) {
+                logger.log(INFO, "DNS lookup yielded no IP address for '" + endpointName + "'.");
                 return false;
             }
+            if (endpoint.routingMethod() == RoutingMethod.exclusive)  {
+                var policy = policies.get(new RoutingPolicyId(id, ClusterSpec.Id.from(endpoint.name()), zone));
+                if (policy == null)
+                    throw new IllegalStateException(endpoint + " has no matching policy in " + policies);
+
+                var cNameValue = controller.jobController().cloud().resolveCName(endpointName);
+                if (cNameValue.isEmpty()) {
+                    logger.log(INFO, "CNAME '" + endpointName + "' does not yet point to anything");
+                    return false;
+                }
+                if ( ! cNameValue.get().equals(policy.canonicalName())) {
+                    logger.log(INFO, "CNAME '" + endpointName + "' doesn't point to expected host name '" + policy.canonicalName() + "'");
+                    return false;
+                }
+                var loadBalancerAddress = controller.jobController().cloud().resolveHostName(policy.canonicalName());
+                if (loadBalancerAddress.isEmpty()) {
+                    logger.log(INFO, "DNS lookup yielded no IP address for load balancer '" + policy.canonicalName() + "'");
+                    return false;
+                }
+                // Verify that the JVMs internal DNS cache has seen the update. Both names should resolve to the same IP address.
+                if ( ! loadBalancerAddress.equals(ipAddress)) {
+                    logger.log(INFO, "IP address of CNAME '" + endpointName + "' (" + ipAddress.get() + ") and load balancer '" +
+                                     policy.canonicalName() + "' (" + loadBalancerAddress.get() + ") are not equal");
+                    return false;
+                }
+            }
+        }
 
         logEndpoints(endpoints, logger);
         return true;

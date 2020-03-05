@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -121,13 +122,11 @@ public class RoutingController {
     }
 
     /** Returns all non-global endpoints and corresponding cluster IDs for given deployments, grouped by their zone */
-    public Map<ZoneId, Map<URI, ClusterSpec.Id>> zoneEndpointsOf(Collection<DeploymentId> deployments) {
-        var endpoints = new TreeMap<ZoneId, Map<URI, ClusterSpec.Id>>(Comparator.comparing(ZoneId::value));
+    public Map<ZoneId, List<Endpoint>> zoneEndpointsOf(Collection<DeploymentId> deployments) {
+        var endpoints = new TreeMap<ZoneId, List<Endpoint>>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {
-            var zoneEndpoints = endpointsOf(deployment).scope(Endpoint.Scope.zone).asList().stream()
-                                                       .collect(Collectors.toUnmodifiableMap(Endpoint::url,
-                                                                                             endpoint -> ClusterSpec.Id.from(endpoint.name())));
-            if (!zoneEndpoints.isEmpty()) {
+            var zoneEndpoints = endpointsOf(deployment).scope(Endpoint.Scope.zone).asList();
+            if  ( ! zoneEndpoints.isEmpty()) {
                 endpoints.put(deployment.zoneId(), zoneEndpoints);
             }
         }

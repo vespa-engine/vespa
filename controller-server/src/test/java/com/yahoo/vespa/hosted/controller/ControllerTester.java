@@ -164,7 +164,9 @@ public final class ControllerTester {
 
     public AthenzDbMock athenzDb() { return athenzDb; }
 
-    public MemoryNameService nameService() { return serviceRegistry.nameServiceMock(); }
+    public MemoryNameService nameService() {
+        return serviceRegistry.nameService();
+    }
 
     public ZoneRegistryMock zoneRegistry() { return serviceRegistry.zoneRegistry(); }
 

@@ -1,11 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
+import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Allows running some predefined tests -- typically remotely.
@@ -29,14 +32,11 @@ public interface TesterCloud {
     /** Returns whether the test container is ready to serve */
     boolean testerReady(DeploymentId deploymentId);
 
-    /** Returns whether the given URL is registered in DNS. */
-    boolean exists(URI endpointUrl);
+    /** Returns the IP address of the given host name, if any. */
+    Optional<String> resolveHostName(HostName hostname);
 
-    /**
-     * Returns whether the given URL is registered in DNS. Always returns true,
-     * as endpoints are not use in this case
-     */
-    default boolean exists(DeploymentId deploymentId) { return true; }
+    /** Returns the host name of the given CNAME, if any. */
+    Optional<HostName> resolveCName(HostName hostName);
 
     enum Status {
 

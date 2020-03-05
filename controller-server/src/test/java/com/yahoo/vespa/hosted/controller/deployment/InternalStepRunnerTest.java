@@ -260,11 +260,13 @@ public class InternalStepRunnerTest {
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(systemTestZone), ZoneApiMock.from(stagingZone));
         app.newRun(JobType.systemTest);
         tester.runner().run();
-        tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
-        tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
-        tester.runner().run();
+
+        app.flushDnsUpdates();
+        tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
+        tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
+        tester.runner().run();;
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
     }
