@@ -73,10 +73,10 @@ public class RoleTest {
 
     @Test
     public void build_service_membership() {
-        Role role = Role.tenantPipeline(TenantName.from("t1"), ApplicationName.from("a1"));
+        Role role = Role.buildService(TenantName.from("t1"), ApplicationName.from("a1"));
         assertFalse(publicEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
         assertFalse(publicEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
-        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/jobreport")));
+        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/submit")));
         assertFalse("No global read access", publicEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
     }
 

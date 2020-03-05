@@ -46,11 +46,6 @@ public class RolesTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void illegalRole() {
-        Roles.valueOf(Role.tenantPipeline(TenantName.from("my-tenant"), ApplicationName.from("my-app")));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void illegalRoleValue() {
         Roles.toRole("my-tenant.awesomePerson");
     }

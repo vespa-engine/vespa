@@ -95,14 +95,14 @@ public class AthenzRoleFilterTest {
         assertEquals(Set.of(Role.athenzTenantAdmin(TENANT)),
                      filter.roles(TENANT_ADMIN, APPLICATION2_CONTEXT_PATH));
 
-        // Build services are members of the tenantPipeline role within their application subtree.
+        // Build services are members of the buildService role within their application subtree.
         assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, NO_CONTEXT_PATH));
 
         assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(Role.tenantPipeline(TENANT, APPLICATION)),
+        assertEquals(Set.of(Role.buildService(TENANT, APPLICATION)),
                      filter.roles(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH));
 
         assertEquals(Set.of(Role.everyone()),
@@ -112,7 +112,7 @@ public class AthenzRoleFilterTest {
         assertEquals(Set.of(Role.athenzTenantAdmin(TENANT)),
                      filter.roles(TENANT_ADMIN_AND_PIPELINE, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(Role.athenzTenantAdmin(TENANT), Role.tenantPipeline(TENANT, APPLICATION)),
+        assertEquals(Set.of(Role.athenzTenantAdmin(TENANT), Role.buildService(TENANT, APPLICATION)),
                      filter.roles(TENANT_ADMIN_AND_PIPELINE, APPLICATION_CONTEXT_PATH));
 
         // Users have nothing special under their instance

@@ -61,12 +61,6 @@ public enum RoleDefinition {
     /** Headless — the application specific role identified by deployment keys for production */
     headless(Policy.submission),
 
-    /** Build and continuous delivery service. */ // TODO replace with buildService, when everyone is on new pipeline.
-    tenantPipeline(everyone,
-                   Policy.submission,
-                   Policy.deploymentPipeline,
-                   Policy.productionDeployment),
-
     /** Tenant administrator with full access to all child resources. */
     athenzTenantAdmin(everyone,
                       Policy.tenantRead,
@@ -90,12 +84,8 @@ public enum RoleDefinition {
         this(Set.of(), policies);
     }
 
-    RoleDefinition(RoleDefinition first, Policy... policies) {
-        this(Set.of(first), policies);
-    }
-
-    RoleDefinition(RoleDefinition first, RoleDefinition second, Policy... policies) {
-        this(Set.of(first, second), policies);
+    RoleDefinition(RoleDefinition parent, Policy... policies) {
+        this(Set.of(parent), policies);
     }
 
     RoleDefinition(Set<RoleDefinition> parents, Policy... policies) {

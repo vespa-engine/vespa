@@ -211,16 +211,8 @@ enum PathGroup {
         this(List.of(), prefix, List.of(pathSpecs));
     }
 
-    PathGroup(Matcher first, String... pathSpecs) {
-        this(List.of(first), Optional.empty(), List.of(pathSpecs));
-    }
-
     PathGroup(Matcher first, Optional<String> prefix, String... pathSpecs) {
         this(List.of(first), prefix, List.of(pathSpecs));
-    }
-
-    PathGroup(Matcher first, Matcher second, String... pathSpecs) {
-        this(List.of(first, second), Optional.empty(), List.of(pathSpecs));
     }
 
     PathGroup(Matcher first, Matcher second, Optional<String> prefix, String... pathSpecs) {

@@ -42,11 +42,6 @@ public abstract class Role {
         return new TenantRole(RoleDefinition.athenzTenantAdmin, tenant);
     }
 
-    /** Returns a {@link RoleDefinition#tenantPipeline} for the current system and given tenant and application. */
-    public static ApplicationRole tenantPipeline(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.tenantPipeline, tenant, application);
-    }
-
     /** Returns a {@link RoleDefinition#reader} for the current system and given tenant. */
     public static TenantRole reader(TenantName tenant) {
         return new TenantRole(RoleDefinition.reader, tenant);
