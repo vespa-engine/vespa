@@ -48,6 +48,11 @@ enum Policy {
                           .on(PathGroup.tenant)
                           .in(SystemName.main, SystemName.cd, SystemName.dev)), // TODO SystemName.all()
 
+    /** Access to create a tenant in public */
+    tenantCreatePublic(Privilege.grant(Action.create)
+                                .on(PathGroup.tenant)
+                                .in(SystemName.PublicCd, SystemName.Public)),
+
     /** Full access to tenant information and settings. */
     tenantDelete(Privilege.grant(Action.delete)
                           .on(PathGroup.tenant)

@@ -22,7 +22,8 @@ public enum RoleDefinition {
     hostedOperator(Policy.operator),
 
     /** Machina autem exspiravit. */
-    hostedSupporter(Policy.supporter),
+    hostedSupporter(Policy.supporter,
+                    Policy.tenantCreatePublic),
 
     /** Base role which every user is part of. */
     everyone(Policy.classifiedRead,
