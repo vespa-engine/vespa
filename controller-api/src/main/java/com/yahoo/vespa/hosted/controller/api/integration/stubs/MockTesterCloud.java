@@ -5,7 +5,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -21,14 +20,14 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Teste
 
 public class MockTesterCloud implements TesterCloud {
 
-    private final NameService cNames;
+    private final NameService nameService;
 
     private List<LogEntry> log = new ArrayList<>();
     private Status status = NOT_STARTED;
     private byte[] config;
 
-    public MockTesterCloud(NameService cNames) {
-        this.cNames = cNames;
+    public MockTesterCloud(NameService nameService) {
+        this.nameService = nameService;
     }
 
     @Override
@@ -61,10 +60,10 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public Optional<HostName> resolveCName(HostName hostName) {
-        return cNames.findRecords(Record.Type.CNAME, RecordName.from(hostName.value())).stream()
-                     .findFirst()
-                     .map(record -> HostName.from(record.data().asString().substring(0, record.data().asString().length() - 1)));
+    public Optional<HostName> resolveCname(HostName hostName) {
+        return nameService.findRecords(Record.Type.CNAME, RecordName.from(hostName.value())).stream()
+                          .findFirst()
+                          .map(record -> HostName.from(record.data().asString().substring(0, record.data().asString().length() - 1)));
     }
 
     public void add(LogEntry entry) {

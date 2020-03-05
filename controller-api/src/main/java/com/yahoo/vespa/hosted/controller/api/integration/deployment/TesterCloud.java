@@ -36,7 +36,7 @@ public interface TesterCloud {
     Optional<String> resolveHostName(HostName hostname);
 
     /** Returns the host name of the given CNAME, if any. */
-    Optional<HostName> resolveCName(HostName hostName);
+    Optional<HostName> resolveCname(HostName hostName);
 
     enum Status {
 

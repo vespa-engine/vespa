@@ -484,24 +484,17 @@ public class InternalStepRunner implements StepRunner {
                 if (policy == null)
                     throw new IllegalStateException(endpoint + " has no matching policy in " + policies);
 
-                var cNameValue = controller.jobController().cloud().resolveCName(endpointName);
-                if (cNameValue.isEmpty()) {
-                    logger.log(INFO, "CNAME '" + endpointName + "' does not yet point to anything");
-                    return false;
-                }
-                if ( ! cNameValue.get().equals(policy.canonicalName())) {
-                    logger.log(INFO, "CNAME '" + endpointName + "' doesn't point to expected host name '" + policy.canonicalName() + "'");
+                var cNameValue = controller.jobController().cloud().resolveCname(endpointName);
+                if ( ! cNameValue.map(policy.canonicalName()::equals).orElse(false)) {
+                    logger.log(INFO, "CNAME '" + endpointName + "' points at " +
+                                     cNameValue.map(name -> "'" + name + "'").orElse("nothing") +
+                                     " but should point at load balancer '" + policy.canonicalName() + "'");
                     return false;
                 }
                 var loadBalancerAddress = controller.jobController().cloud().resolveHostName(policy.canonicalName());
-                if (loadBalancerAddress.isEmpty()) {
-                    logger.log(INFO, "DNS lookup yielded no IP address for load balancer '" + policy.canonicalName() + "'");
-                    return false;
-                }
-                // Verify that the JVMs internal DNS cache has seen the update. Both names should resolve to the same IP address.
                 if ( ! loadBalancerAddress.equals(ipAddress)) {
                     logger.log(INFO, "IP address of CNAME '" + endpointName + "' (" + ipAddress.get() + ") and load balancer '" +
-                                     policy.canonicalName() + "' (" + loadBalancerAddress.get() + ") are not equal");
+                                     policy.canonicalName() + "' (" + loadBalancerAddress.orElse("empty") + ") are not equal");
                     return false;
                 }
             }
