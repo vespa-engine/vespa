@@ -35,8 +35,16 @@ class MaintenanceDeployment implements Closeable {
 
     public MaintenanceDeployment(ApplicationId application, Deployer deployer, NodeRepository nodeRepository) {
         this.application = application;
-        lock = tryLock(application, nodeRepository);
-        deployment = tryDeployment(lock, application, deployer, nodeRepository);
+        Optional<Mutex> lock = tryLock(application, nodeRepository);
+
+        try {
+            deployment = tryDeployment(lock, application, deployer, nodeRepository);
+
+            this.lock = lock;
+            lock = Optional.empty();
+        } finally {
+            lock.ifPresent(Mutex::close);
+        }
     }
 
     /** Return whether this is - as yet - functional and can be used to carry out the deployment */
