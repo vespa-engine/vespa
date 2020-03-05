@@ -380,9 +380,8 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
             if (attribute->isIntegerType()) {
                 if (basicType == BasicType::BOOL) {
                     auto boolAttribute = dynamic_cast<const SingleBoolAttribute *>(attribute);
-                    if (boolAttribute && (numOutputs == 1)) {
-                        return stash.create<BoolAttributeExecutor>(*boolAttribute);
-                    }
+                    assert (boolAttribute && (numOutputs == 1));
+                    return stash.create<BoolAttributeExecutor>(*boolAttribute);
                 } else {
                     assert(numOutputs == 4);
                     if (basicType == BasicType::INT8) {
