@@ -6,6 +6,7 @@ import com.yahoo.restapi.Path;
 import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -20,11 +21,12 @@ import java.util.Set;
 enum PathGroup {
 
     /** Paths exclusive to operators (including read), used for system management. */
-    classifiedOperator(Optional.of("/api"),
+    classifiedOperator(PathPrefix.api,
                        "/configserver/v1/{*}"),
 
     /** Paths used for system management by operators. */
-    operator("/controller/v1/{*}",
+    operator(PathPrefix.none,
+             "/controller/v1/{*}",
              "/flags/v1/{*}",
              "/nodes/v2/{*}",
              "/orchestrator/v1/{*}",
@@ -36,41 +38,41 @@ enum PathGroup {
              "/routing/v1/inactive/environment/{*}"),
 
     /** Paths used for creating and reading user resources. */
-    user(Optional.of("/api"),
+    user(PathPrefix.api,
          "/application/v4/user",
          "/athenz/v1/{*}"),
 
     /** Paths used for creating tenants with proper access control. */
     tenant(Matcher.tenant,
-           Optional.of("/api"),
+           PathPrefix.api,
            "/application/v4/tenant/{tenant}"),
 
     /** Paths used for user management on the tenant level. */
     tenantUsers(Matcher.tenant,
-                Optional.of("/api"),
+                PathPrefix.api,
                 "/user/v1/tenant/{tenant}"),
 
     /** Paths used by tenant administrators. */
     tenantInfo(Matcher.tenant,
-               Optional.of("/api"),
+               PathPrefix.api,
                "/application/v4/tenant/{tenant}/application/",
                "/application/v4/tenant/{tenant}/cost",
                "/application/v4/tenant/{tenant}/cost/{date}",
                "/routing/v1/status/tenant/{tenant}/{*}"),
 
     tenantKeys(Matcher.tenant,
-               Optional.of("/api"),
+               PathPrefix.api,
                "/application/v4/tenant/{tenant}/key/"),
 
     applicationKeys(Matcher.tenant,
                     Matcher.application,
-                    Optional.of("/api"),
+                    PathPrefix.api,
                     "/application/v4/tenant/{tenant}/application/{application}/key/"),
 
     /** Path for the base application resource. */
     application(Matcher.tenant,
                 Matcher.application,
-                Optional.of("/api"),
+                PathPrefix.api,
                 "/application/v4/tenant/{tenant}/application/{application}",
                 "/application/v4/tenant/{tenant}/application/{application}/instance/",
                 "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}"),
@@ -78,13 +80,13 @@ enum PathGroup {
     /** Paths used for user management on the application level. */
     applicationUsers(Matcher.tenant,
                      Matcher.application,
-                     Optional.of("/api"),
+                     PathPrefix.api,
                      "/user/v1/tenant/{tenant}/application/{application}"),
 
     /** Paths used by application administrators. */
     applicationInfo(Matcher.tenant,
                     Matcher.application,
-                    Optional.of("/api"),
+                    PathPrefix.api,
                     "/application/v4/tenant/{tenant}/application/{application}/package",
                     "/application/v4/tenant/{tenant}/application/{application}/deployment",
                     "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
@@ -108,7 +110,7 @@ enum PathGroup {
     developmentRestart(Matcher.tenant,
                        Matcher.application,
                        Matcher.instance,
-                       Optional.of("/api"),
+                       PathPrefix.api,
                        "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/dev/region/{region}/restart",
                        "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/perf/region/{region}/restart",
                        "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}/restart",
@@ -118,7 +120,7 @@ enum PathGroup {
     /** Path used to restart production nodes. */
     productionRestart(Matcher.tenant,
                       Matcher.application,
-                      Optional.of("/api"),
+                      PathPrefix.api,
                       "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/prod/region/{region}/restart",
                       "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/test/region/{region}/restart",
                       "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/staging/region/{region}/restart",
@@ -130,7 +132,7 @@ enum PathGroup {
     developmentDeployment(Matcher.tenant,
                           Matcher.application,
                           Matcher.instance,
-                          Optional.of("/api"),
+                          PathPrefix.api,
                           "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{job}",
                           "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/dev/region/{region}",
                           "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/dev/region/{region}/deploy",
@@ -145,7 +147,7 @@ enum PathGroup {
     /** Paths used for production deployments. */
     productionDeployment(Matcher.tenant,
                          Matcher.application,
-                         Optional.of("/api"),
+                         PathPrefix.api,
                          "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/prod/region/{region}",
                          "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/prod/region/{region}/deploy",
                          "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/test/region/{region}",
@@ -162,77 +164,74 @@ enum PathGroup {
     /** Paths used for continuous deployment to production. */
     submission(Matcher.tenant,
                Matcher.application,
-               Optional.of("/api"),
+               PathPrefix.api,
                "/application/v4/tenant/{tenant}/application/{application}/submit",
                "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/submit"),
 
     /** Paths used for other tasks by build services. */ // TODO: This will vanish.
     buildService(Matcher.tenant,
                  Matcher.application,
-                 Optional.of("/api"),
+                 PathPrefix.api,
                  "/application/v4/tenant/{tenant}/application/{application}/jobreport",
                  "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/jobreport"),
 
     /** Paths which contain (not very strictly) classified information about customers. */
-    classifiedTenantInfo(Optional.of("/api"),
+    classifiedTenantInfo(PathPrefix.api,
                          "/application/v4/",
                          "/application/v4/tenant/"),
 
     /** Paths which contain (not very strictly) classified information about, e.g., customers. */
-    classifiedInfo("/",
+    classifiedInfo(PathPrefix.none,
+                   "/",
                    "/d/{*}"),
 
     /** Same as classifiedInfo, but with optional /api prefix */
-    classifiedApiInfo(Optional.of("/api"),
+    classifiedApiInfo(PathPrefix.api,
                       "/deployment/v1/{*}",
                       "/user/v1/user"),
 
     /** Paths providing public information. */
-    publicInfo(Optional.of("/api"),
+    publicInfo(PathPrefix.api,
                "/badge/v1/{*}",
                "/zone/v1/{*}"),
 
     /** Paths used for deploying system-wide feature flags. */
-    systemFlagsDeploy("/system-flags/v1/deploy"),
+    systemFlagsDeploy(PathPrefix.none, "/system-flags/v1/deploy"),
 
 
     /** Paths used for "dry-running" system-wide feature flags. */
-    systemFlagsDryrun("/system-flags/v1/dryrun");
+    systemFlagsDryrun(PathPrefix.none, "/system-flags/v1/dryrun");
 
     final List<String> pathSpecs;
-    final String prefix;
+    final PathPrefix prefix;
     final List<Matcher> matchers;
 
-    PathGroup(String... pathSpecs) {
-        this(List.of(), Optional.empty(), List.of(pathSpecs));
-    }
-
-    PathGroup(Optional<String> prefix, String... pathSpecs) {
+    PathGroup(PathPrefix prefix, String... pathSpecs) {
         this(List.of(), prefix, List.of(pathSpecs));
     }
 
-    PathGroup(Matcher first, Optional<String> prefix, String... pathSpecs) {
+    PathGroup(Matcher first, PathPrefix prefix, String... pathSpecs) {
         this(List.of(first), prefix, List.of(pathSpecs));
     }
 
-    PathGroup(Matcher first, Matcher second, Optional<String> prefix, String... pathSpecs) {
+    PathGroup(Matcher first, Matcher second, PathPrefix prefix, String... pathSpecs) {
         this(List.of(first, second), prefix, List.of(pathSpecs));
     }
 
-    PathGroup(Matcher first, Matcher second, Matcher third, Optional<String> prefix, String... pathSpecs) {
+    PathGroup(Matcher first, Matcher second, Matcher third, PathPrefix prefix, String... pathSpecs) {
         this(List.of(first, second, third), prefix, List.of(pathSpecs));
     }
 
     /** Creates a new path group, if the given context matchers are each present exactly once in each of the given specs. */
-    PathGroup(List<Matcher> matchers, Optional<String> prefix, List<String> pathSpecs) {
+    PathGroup(List<Matcher> matchers, PathPrefix prefix, List<String> pathSpecs) {
         this.matchers = matchers;
-        this.prefix = prefix.orElse("");
+        this.prefix = prefix;
         this.pathSpecs = pathSpecs;
     }
 
     /** Returns path if it matches any spec in this group, with match groups set by the match. */
     private Optional<Path> get(URI uri) {
-        Path matcher = new Path(uri, prefix);
+        Path matcher = new Path(uri, prefix.prefix);
         for (String spec : pathSpecs) // Iterate to be sure the Path's state is that of the match.
             if (matcher.matches(spec)) return Optional.of(matcher);
         return Optional.empty();
@@ -281,6 +280,23 @@ enum PathGroup {
         Matcher(String pattern) {
             this.pattern = pattern;
             this.name = pattern.substring(1, pattern.length() - 1);
+        }
+
+    }
+
+    /**
+     * The valid prefixes of paths in a {@link PathGroup}. Provides flexibility in cases where paths are made available
+     * under a non-root path.
+     */
+    enum PathPrefix {
+
+        none(""),
+        api("/api");
+
+        private final String prefix;
+
+        PathPrefix(String prefix) {
+            this.prefix = Objects.requireNonNull(prefix);
         }
 
     }
