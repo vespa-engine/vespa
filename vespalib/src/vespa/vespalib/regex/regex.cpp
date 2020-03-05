@@ -58,7 +58,7 @@ Regex Regex::from_pattern(std::string_view pattern, uint32_t opt_mask) {
     if ((opt_mask & Options::IgnoreCase) != 0) {
         opts.set_case_sensitive(false);
     }
-    return Regex(std::make_shared<Impl>(pattern, opts));
+    return Regex(std::make_shared<const Impl>(pattern, opts));
 }
 
 bool Regex::parsed_ok() const noexcept {
