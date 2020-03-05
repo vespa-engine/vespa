@@ -159,16 +159,10 @@ public class ApplicationController {
         return curator.readApplication(id);
     }
 
-    /** Returns the application with the given id, or null if it is not present */
-    // TODO jonmv: remove
-    public Optional<Application> getApplication(ApplicationId id) {
-        return getApplication(TenantAndApplicationId.from(id));
-    }
-
     /** Returns the instance with the given id, or null if it is not present */
     // TODO jonmv: remove or inline
     public Optional<Instance> getInstance(ApplicationId id) {
-        return getApplication(id).flatMap(application -> application.get(id.instance()));
+        return getApplication(TenantAndApplicationId.from(id)).flatMap(application -> application.get(id.instance()));
     }
 
     /**

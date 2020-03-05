@@ -59,7 +59,12 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
     /** Returns all global endpoints for given routing ID and system provided by given routing methods */
     public static EndpointList global(RoutingId routingId, SystemName system, List<RoutingMethod> routingMethods) {
         var endpoints = new ArrayList<Endpoint>();
+        var directMethods = 0;
         for (var method : routingMethods) {
+            if (method.isDirect() && ++directMethods > 1) {
+                throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
+                                                   "direct methods, got " + routingMethods);
+            }
             endpoints.add(Endpoint.of(routingId.application())
                                   .named(routingId.endpointId())
                                   .on(Port.fromRoutingMethod(method))

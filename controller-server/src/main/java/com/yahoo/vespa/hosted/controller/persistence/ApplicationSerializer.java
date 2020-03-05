@@ -6,7 +6,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
@@ -54,7 +53,6 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -316,7 +314,7 @@ public class ApplicationSerializer {
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
-        List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
+        List<Instance> instances = instancesFromSlime(id, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
 
@@ -330,13 +328,13 @@ public class ApplicationSerializer {
                        .filter(version -> ! version.isUnknown());
     }
 
-    private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {
+    private List<Instance> instancesFromSlime(TenantAndApplicationId id, Inspector field) {
         List<Instance> instances = new ArrayList<>();
         field.traverse((ArrayTraverser) (name, object) -> {
             InstanceName instanceName = InstanceName.from(object.field(instanceNameField).asString());
             List<Deployment> deployments = deploymentsFromSlime(object.field(deploymentsField));
             Map<JobType, Instant> jobPauses = jobPausesFromSlime(object.field(deploymentJobsField));
-            List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, instanceName, object);
+            List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
             Change change = changeFromSlime(object.field(deployingField));
             instances.add(new Instance(id.instance(instanceName),
@@ -465,32 +463,20 @@ public class ApplicationSerializer {
         return change;
     }
 
-    private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, InstanceName instance, Inspector root) {
+    private List<AssignedRotation> assignedRotationsFromSlime(Inspector root) {
         var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
-        root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
+        root.field(assignedRotationsField).traverse((ArrayTraverser) (i, inspector) -> {
             var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
             var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
             var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
-            // TODO(mpolden): Read regions from field instead of deployment spec after next release
-            var regions = deploymentSpec.instance(instance)
-                                        .map(spec -> globalEndpointRegions(spec, endpointId))
-                                        .orElse(Set.of());
+            var regions = new LinkedHashSet<RegionName>();
+            inspector.field(assignedRotationRegionsField).traverse((ArrayTraverser) (j, regionInspector) -> {
+                regions.add(RegionName.from(regionInspector.asString()));
+            });
             assignedRotations.putIfAbsent(endpointId, new AssignedRotation(clusterId, endpointId, rotationId, regions));
         });
 
         return List.copyOf(assignedRotations.values());
-    }
-
-    private Set<RegionName> globalEndpointRegions(DeploymentInstanceSpec spec, EndpointId endpointId) {
-        if (spec.globalServiceId().isPresent())
-            return spec.zones().stream()
-                       .flatMap(zone -> zone.region().stream())
-                       .collect(Collectors.toSet());
-
-        return spec.endpoints().stream()
-                   .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
-                   .flatMap(endpoint -> endpoint.regions().stream())
-                   .collect(Collectors.toSet());
     }
 
 }

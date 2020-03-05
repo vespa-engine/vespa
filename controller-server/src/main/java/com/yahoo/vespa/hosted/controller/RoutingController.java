@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -102,21 +104,29 @@ public class RoutingController {
         var endpoints = new LinkedHashSet<Endpoint>();
         // Add global endpoints provided by rotations
         for (var rotation : instance.rotations()) {
+            var zones = rotation.regions().stream()
+                                .map(region -> ZoneId.from(Environment.prod, region))
+                                .collect(Collectors.toList());
             EndpointList.global(RoutingId.of(instance.id(), rotation.endpointId()),
-                                controller.system(), systemRoutingMethods())
+                                controller.system(), commonRoutingMethodsOf(zones))
                         .requiresRotation()
                         .forEach(endpoints::add);
         }
         // Add global endpoints provided by routing policices
+        var zonesByRoutingId = new LinkedHashMap<RoutingId, List<ZoneId>>();
         for (var policy : routingPolicies.get(instance.id()).values()) {
             if (!policy.status().isActive()) continue;
             for (var endpointId : policy.endpoints()) {
-                EndpointList.global(RoutingId.of(instance.id(), endpointId),
-                                    controller.system(), systemRoutingMethods())
-                            .not().requiresRotation()
-                            .forEach(endpoints::add);
+                var routingId = RoutingId.of(instance.id(), endpointId);
+                zonesByRoutingId.putIfAbsent(routingId, new ArrayList<>());
+                zonesByRoutingId.get(routingId).add(policy.id().zone());
             }
         }
+        zonesByRoutingId.forEach((routingId, zones) -> {
+            EndpointList.global(routingId, controller.system(), commonRoutingMethodsOf(zones))
+                        .not().requiresRotation()
+                        .forEach(endpoints::add);
+        });
         return EndpointList.copyOf(endpoints);
     }
 
@@ -222,12 +232,22 @@ public class RoutingController {
                                                                            Priority.normal));
     }
 
-    /** Returns all routing methods supported by this system */
-    private List<RoutingMethod> systemRoutingMethods() {
-        return controller.zoneRegistry().zones().all().ids().stream()
-                         .flatMap(zone -> controller.zoneRegistry().routingMethods(zone).stream())
-                         .distinct()
-                         .collect(Collectors.toUnmodifiableList());
+    /** Returns the routing methods that are common across given zones */
+    private List<RoutingMethod> commonRoutingMethodsOf(List<ZoneId> zones) {
+        var zonesByMethod = new HashMap<RoutingMethod, Set<ZoneId>>();
+        for (var zone : zones) {
+            for (var method : controller.zoneRegistry().routingMethods(zone)) {
+                zonesByMethod.putIfAbsent(method, new LinkedHashSet<>());
+                zonesByMethod.get(method).add(zone);
+            }
+        }
+        var routingMethods = new ArrayList<RoutingMethod>();
+        zonesByMethod.forEach((method, z) -> {
+            if (z.containsAll(zones)) {
+                routingMethods.add(method);
+            }
+        });
+        return Collections.unmodifiableList(routingMethods);
     }
 
 }

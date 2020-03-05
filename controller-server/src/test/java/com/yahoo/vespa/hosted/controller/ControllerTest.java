@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -18,6 +19,8 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -798,6 +801,50 @@ public class ControllerTest {
         context.deferLoadBalancerProvisioningIn(zones.stream().map(ZoneId::environment).collect(Collectors.toSet()))
                .submit(applicationPackage)
                .deploy();
+    }
+
+    @Test
+    public void testDeployWithGlobalEndpointsAndMultipleRoutingMethods() {
+        var context = tester.newDeploymentContext();
+        var zone1 = ZoneId.from("prod", "us-west-1");
+        var zone2 = ZoneId.from("prod", "us-east-3");
+        var applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .environment(Environment.prod)
+                .endpoint("default", "default", zone1.region().value(), zone2.region().value())
+                .endpoint("east", "default", zone2.region().value())
+                .region(zone1.region())
+                .region(zone2.region())
+                .build();
+
+        // Zone 1 supports shared and sharedLayer4
+        tester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone1), RoutingMethod.shared,
+                                                                  RoutingMethod.sharedLayer4);
+        // Zone 2 supports shared and exclusive
+        tester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone2), RoutingMethod.shared,
+                                                                  RoutingMethod.exclusive);
+
+        context.submit(applicationPackage).deploy();
+        var expectedRecords = List.of(
+                // The 'east' global endpoint, pointing to zone 2 with exclusive routing
+                new Record(Record.Type.ALIAS,
+                           RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
+                           RecordData.from("lb-0--tenant:application:default--prod.us-east-3/dns-zone-1/prod.us-east-3")),
+                // The 'default' global endpoint, pointing to both zones with shared routing, via rotation
+                new Record(Record.Type.CNAME,
+                           RecordName.from("application--tenant.global.vespa.oath.cloud"),
+                           RecordData.from("rotation-fqdn-01.")),
+
+                // The zone-scoped endpoint pointing to zone 2 with exclusive routing
+                new Record(Record.Type.CNAME,
+                           RecordName.from("application.tenant.us-east-3.vespa.oath.cloud"),
+                           RecordData.from("lb-0--tenant:application:default--prod.us-east-3.")),
+
+                // The 'east' global endpoint, pointing to zone 2 with shared routing, via rotation
+                new Record(Record.Type.CNAME,
+                           RecordName.from("east--application--tenant.global.vespa.oath.cloud"),
+                           RecordData.from("rotation-fqdn-02.")));
+        assertEquals(expectedRecords, List.copyOf(tester.controllerTester().nameService().records()));
     }
 
 }
