@@ -11,7 +11,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
@@ -39,9 +41,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Deployment
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
@@ -49,7 +53,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
-import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -440,9 +443,9 @@ public class InternalStepRunner implements StepRunner {
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
-        for (var endpoint : endpoints.get(zoneId).keySet()) {
-            boolean ready = controller.jobController().cloud().ready(endpoint);
-            if (!ready) {
+        for (var endpoint : endpoints.get(zoneId)) {
+            boolean ready = controller.jobController().cloud().ready(endpoint.url());
+            if ( ! ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);
                 return false;
             }
@@ -468,22 +471,46 @@ public class InternalStepRunner implements StepRunner {
             logger.log("Endpoints not yet ready.");
             return false;
         }
-        for (var endpoint : endpoints.get(zone).keySet())
-            if ( ! controller.jobController().cloud().exists(endpoint)) {
-                logger.log(INFO, "DNS lookup yielded no IP address for '" + endpoint + "'.");
+        var policies = controller.routing().policies().get(new DeploymentId(id, zone));
+        for (var endpoint : endpoints.get(zone)) {
+            HostName endpointName = HostName.from(endpoint.dnsName());
+            var ipAddress = controller.jobController().cloud().resolveHostName(endpointName);
+            if (ipAddress.isEmpty()) {
+                logger.log(INFO, "DNS lookup yielded no IP address for '" + endpointName + "'.");
                 return false;
             }
+            if (endpoint.routingMethod() == RoutingMethod.exclusive)  {
+                var policy = policies.get(new RoutingPolicyId(id, ClusterSpec.Id.from(endpoint.name()), zone));
+                if (policy == null)
+                    throw new IllegalStateException(endpoint + " has no matching policy in " + policies);
+
+                var cNameValue = controller.jobController().cloud().resolveCname(endpointName);
+                if ( ! cNameValue.map(policy.canonicalName()::equals).orElse(false)) {
+                    logger.log(INFO, "CNAME '" + endpointName + "' points at " +
+                                     cNameValue.map(name -> "'" + name + "'").orElse("nothing") +
+                                     " but should point at load balancer '" + policy.canonicalName() + "'");
+                    return false;
+                }
+                var loadBalancerAddress = controller.jobController().cloud().resolveHostName(policy.canonicalName());
+                if ( ! loadBalancerAddress.equals(ipAddress)) {
+                    logger.log(INFO, "IP address of CNAME '" + endpointName + "' (" + ipAddress.get() + ") and load balancer '" +
+                                     policy.canonicalName() + "' (" + loadBalancerAddress.orElse("empty") + ") are not equal");
+                    return false;
+                }
+            }
+        }
 
         logEndpoints(endpoints, logger);
         return true;
     }
 
-    private void logEndpoints(Map<ZoneId, Map<URI, ClusterSpec.Id>> endpoints, DualLogger logger) {
+    private void logEndpoints(Map<ZoneId, List<Endpoint>> zoneEndpoints, DualLogger logger) {
         List<String> messages = new ArrayList<>();
         messages.add("Found endpoints:");
-        endpoints.forEach((zone, urls) -> {
+        zoneEndpoints.forEach((zone, endpoints) -> {
             messages.add("- " + zone);
-            urls.forEach((url, cluster) -> messages.add(" |-- " + url + " (" + cluster + ")"));
+            for (Endpoint endpoint : endpoints)
+                messages.add(" |-- " + endpoint.url() + " (cluster '" + endpoint.name() + "')");
         });
         logger.log(messages);
     }

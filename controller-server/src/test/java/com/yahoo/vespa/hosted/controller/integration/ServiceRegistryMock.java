@@ -42,7 +42,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
-    private final RoutingGeneratorMock routingGeneratorMock;
+    private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock();
     private final MockMailer mockMailer = new MockMailer();
     private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
@@ -55,7 +55,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockBilling mockBilling = new MockBilling();
     private final MockAwsEventFetcher mockAwsEventFetcher = new MockAwsEventFetcher();
     private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
-    private final MockTesterCloud mockTesterCloud = new MockTesterCloud();
+    private final MockTesterCloud mockTesterCloud;
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockTenantCost mockTenantCost = new MockTenantCost();
@@ -64,7 +64,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
         this.configServerMock = new ConfigServerMock(zoneRegistryMock);
-        this.routingGeneratorMock = new RoutingGeneratorMock();
+        this.mockTesterCloud = new MockTesterCloud(nameService());
     }
 
     @Inject
@@ -191,10 +191,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public ConfigServerMock configServerMock() {
         return configServerMock;
-    }
-
-    public MemoryNameService nameServiceMock() {
-        return memoryNameService;
     }
 
     public MemoryGlobalRoutingService globalRoutingServiceMock() {

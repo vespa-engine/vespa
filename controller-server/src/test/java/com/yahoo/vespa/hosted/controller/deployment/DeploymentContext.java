@@ -309,9 +309,6 @@ public class DeploymentContext {
                     throw new AssertionError("Job '" + run.id() + "' was run twice");
 
         assertFalse("Change should have no targets, but was " + instance().change(), instance().change().hasTargets());
-        if (!deferDnsUpdates) {
-            flushDnsUpdates();
-        }
         return this;
     }
 
@@ -411,6 +408,8 @@ public class DeploymentContext {
         var id = newRun(JobType.systemTest);
         var testZone = JobType.systemTest.zone(tester.controller().system());
         runner.run();
+        if ( ! deferDnsUpdates)
+            flushDnsUpdates();
         configServer().convergeServices(instanceId, testZone);
         configServer().convergeServices(testerId.id(), testZone);
         runner.run();
@@ -437,6 +436,9 @@ public class DeploymentContext {
 
         // First step is always a deployment.
         runner.advance(currentRun(job));
+
+        if ( ! deferDnsUpdates)
+            flushDnsUpdates();
 
         if (job.type().isTest())
             doInstallTester(job);
