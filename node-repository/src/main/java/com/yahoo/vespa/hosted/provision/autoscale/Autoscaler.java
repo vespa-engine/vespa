@@ -127,9 +127,9 @@ public class Autoscaler {
      * or empty if none available.
      */
     private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources, ClusterSpec cluster) {
+        NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), cluster.type());
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
-            // Return the requested resources, adjusted to be legal or empty if they cannot fit on existing hosts
-            NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), cluster.type());
+            // return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
                 if (flavor.resources().satisfies(nodeResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
@@ -140,10 +140,10 @@ public class Autoscaler {
             // return the cheapest flavor satisfying the target resources, if any
             Optional<AllocatableClusterResources> best = Optional.empty();
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
-                if ( ! flavor.resources().satisfies(resources.nodeResources())) continue;
+                if ( ! flavor.resources().satisfies(nodeResources)) continue;
 
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote)
-                    flavor = flavor.with(FlavorOverrides.ofDisk(resources.nodeResources().diskGb()));
+                    flavor = flavor.with(FlavorOverrides.ofDisk(nodeResources.diskGb()));
                 var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
                                                                 flavor,
                                                                 resourcesCalculator);
