@@ -1039,6 +1039,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'tenant1' does not exist\"}",
                               404);
 
+        // GET non-existing tenant's applications
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'tenant1' does not exist\"}",
+                              404);
+
         // GET non-existing application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
                                       .userIdentity(USER_ID),
