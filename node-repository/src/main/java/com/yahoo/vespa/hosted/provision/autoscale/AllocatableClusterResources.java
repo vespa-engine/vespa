@@ -45,6 +45,9 @@ public class AllocatableClusterResources {
 
     public double cost() { return advertisedResources.nodes() * Autoscaler.costOf(advertisedResources.nodeResources()); }
 
+    public int nodes() { return realResources.nodes(); }
+    public int groups() { return realResources.groups(); }
+
     @Override
     public String toString() {
         return "$" + cost() + ": " + realResources();

@@ -80,7 +80,7 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation = findBestAllocation(cpuLoad.get(),
                                                                                   memoryLoad.get(),
                                                                                   diskLoad.get(),
-                                                                                  currentAllocation.advertisedResources(),
+                                                                                  currentAllocation,
                                                                                   cluster);
         if (bestAllocation.isEmpty()) {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Could not find a better allocation");
@@ -98,7 +98,7 @@ public class Autoscaler {
     }
 
     private Optional<AllocatableClusterResources> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
-                                                                     ClusterResources currentAllocation, ClusterSpec cluster) {
+                                                                     AllocatableClusterResources currentAllocation, ClusterSpec cluster) {
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
