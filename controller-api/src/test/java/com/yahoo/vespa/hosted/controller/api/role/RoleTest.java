@@ -90,54 +90,6 @@ public class RoleTest {
     }
 
     @Test
-    public void implications() {
-        TenantName tenant1 = TenantName.from("t1");
-        ApplicationName application1 = ApplicationName.from("a1");
-        TenantName tenant2 = TenantName.from("t2");
-        ApplicationName application2 = ApplicationName.from("a2");
-
-        Role tenantOwner1 = Role.tenantOwner(tenant1);
-        Role tenantAdmin1 = Role.tenantAdmin(tenant1);
-        Role tenantAdmin2 = Role.tenantAdmin(tenant2);
-        Role tenantOperator1 = Role.tenantOperator(tenant1);
-        Role applicationAdmin11 = Role.applicationAdmin(tenant1, application1);
-        Role applicationOperator11 = Role.applicationOperator(tenant1, application1);
-        Role applicationDeveloper11 = Role.applicationDeveloper(tenant1, application1);
-        Role applicationReader11 = Role.applicationReader(tenant1, application1);
-        Role applicationReader12 = Role.applicationReader(tenant1, application2);
-        Role applicationReader22 = Role.applicationReader(tenant2, application2);
-
-        assertFalse(tenantOwner1.implies(tenantOwner1));
-        assertTrue(tenantOwner1.implies(tenantAdmin1));
-        assertFalse(tenantOwner1.implies(tenantAdmin2));
-        assertTrue(tenantOwner1.implies(tenantOperator1));
-        assertTrue(tenantOwner1.implies(applicationAdmin11));
-        assertTrue(tenantOwner1.implies(applicationReader11));
-        assertTrue(tenantOwner1.implies(applicationReader12));
-        assertFalse(tenantOwner1.implies(applicationReader22));
-
-        assertFalse(tenantAdmin1.implies(tenantOwner1));
-        assertFalse(tenantAdmin1.implies(tenantAdmin2));
-        assertTrue(tenantAdmin1.implies(applicationDeveloper11));
-
-        assertFalse(tenantOperator1.implies(applicationReader11));
-
-        assertFalse(applicationAdmin11.implies(tenantAdmin1));
-        assertFalse(applicationAdmin11.implies(tenantOperator1));
-        assertTrue(applicationAdmin11.implies(applicationOperator11));
-        assertTrue(applicationAdmin11.implies(applicationDeveloper11));
-        assertTrue(applicationAdmin11.implies(applicationReader11));
-        assertFalse(applicationAdmin11.implies(applicationReader12));
-        assertFalse(applicationAdmin11.implies(applicationReader22));
-
-        assertFalse(applicationOperator11.implies(applicationDeveloper11));
-        assertTrue(applicationOperator11.implies(applicationReader11));
-
-        assertFalse(applicationDeveloper11.implies(applicationOperator11));
-        assertTrue(applicationDeveloper11.implies(applicationReader11));
-    }
-
-    @Test
     public void new_implications() {
         TenantName tenant1 = TenantName.from("t1");
         ApplicationName application1 = ApplicationName.from("a1");
@@ -188,8 +140,8 @@ public class RoleTest {
         // Write
         {
             var url = URI.create("/routing/v1/inactive/tenant/t1/application/a1/instance/i1/environment/prod/region/us-north-1");
-            var allowedRole = Role.applicationAdmin(TenantName.from("t1"), ApplicationName.from("a1"));
-            var disallowedRole = Role.applicationAdmin(TenantName.from("t2"), ApplicationName.from("a2"));
+            var allowedRole = Role.developer(TenantName.from("t1"));
+            var disallowedRole = Role.developer(TenantName.from("t2"));
             assertTrue(allowedRole + " can override status at " + url, mainEnforcer.allows(allowedRole, Action.create, url));
             assertTrue(allowedRole + " can clear status at " + url, mainEnforcer.allows(allowedRole, Action.delete, url));
             assertFalse(disallowedRole + " cannot override status at " + url, mainEnforcer.allows(disallowedRole, Action.create, url));

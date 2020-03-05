@@ -29,11 +29,6 @@ public class RolesTest {
                      Roles.toRole("hostedOperator"));
         assertEquals(Role.hostedSupporter(),
                      Roles.toRole("hostedSupporter"));
-        assertEquals(Role.tenantOperator(tenant),
-                     Roles.toRole("my-tenant.tenantOperator"));
-        assertEquals(Role.applicationReader(tenant, application),
-                     Roles.toRole("my-tenant.my-application.applicationReader"));
-
         assertEquals(Role.administrator(tenant), Roles.toRole("my-tenant.administrator"));
         assertEquals(Role.developer(tenant), Roles.toRole("my-tenant.developer"));
         assertEquals(Role.reader(tenant), Roles.toRole("my-tenant.reader"));
@@ -42,12 +37,12 @@ public class RolesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalTenantName() {
-        Roles.valueOf(Role.tenantAdmin(TenantName.from("my.tenant")));
+        Roles.valueOf(Role.developer(TenantName.from("my.tenant")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalApplicationName() {
-        Roles.valueOf(Role.applicationOperator(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
+        Roles.valueOf(Role.headless(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
     }
 
     @Test(expected = IllegalArgumentException.class)

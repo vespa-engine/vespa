@@ -102,7 +102,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", POST)
                                       .roles(Set.of(Role.administrator(TenantName.from("my-tenant"))))
                                       .data("{\"user\":\"headless@app\",\"roleName\":\"headless\"}"),
-                              "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"NullPointerException\"}", 500);
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"role 'headless' of 'my-app' owned by 'my-tenant' not found\"}", 400);
 
         // POST an application is allowed for a tenant developer.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", POST)
@@ -193,10 +193,13 @@ public class UserApiTest extends ControllerContainerCloudTest {
                              .data("{\"user\":\"administrator@tenant\",\"roleName\":\"administrator\"}"),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can't remove the last administrator of a tenant.\"}", 400);
 
-        // DELETE the tenant is available to the tenant owner.
+        // DELETE the tenant is not allowed
         tester.assertResponse(request("/application/v4/tenant/my-tenant", DELETE)
-                                      .roles(Set.of(Role.tenantOwner(id.tenant()))),
-                              new File("tenant-without-applications.json"));
+                                      .roles(Set.of(Role.developer(id.tenant()))),
+                              "{\n" +
+                              "  \"code\" : 403,\n" +
+                              "  \"message\" : \"Access denied\"\n" +
+                              "}", 403);
     }
 
     @Test
