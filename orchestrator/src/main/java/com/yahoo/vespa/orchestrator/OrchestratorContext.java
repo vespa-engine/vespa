@@ -23,6 +23,7 @@ public class OrchestratorContext implements AutoCloseable {
     private static final Logger logger = Logger.getLogger(OrchestratorContext.class.getName());
     private static final Duration DEFAULT_TIMEOUT_FOR_SINGLE_OP = Duration.ofSeconds(10);
     private static final Duration DEFAULT_TIMEOUT_FOR_BATCH_OP = Duration.ofSeconds(60);
+    private static final Duration DEFAULT_TIMEOUT_FOR_ADMIN_OP = Duration.ofMinutes(5);
     private static final Duration TIMEOUT_OVERHEAD = Duration.ofMillis(500);
 
     private final Optional<OrchestratorContext> parent;
@@ -53,6 +54,11 @@ public class OrchestratorContext implements AutoCloseable {
     public static OrchestratorContext createContextForSingleAppOp(Clock clock, boolean usePermanentlyDownStatus) {
         return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP),
                 false, false, usePermanentlyDownStatus);
+    }
+
+    public static OrchestratorContext createContextForAdminOp(Clock clock) {
+        return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_ADMIN_OP),
+                false, false, false);
     }
 
     private OrchestratorContext(OrchestratorContext parentOrNull,

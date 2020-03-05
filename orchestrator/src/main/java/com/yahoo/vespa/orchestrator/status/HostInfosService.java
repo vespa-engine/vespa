@@ -4,12 +4,20 @@ package com.yahoo.vespa.orchestrator.status;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 
+import java.util.Set;
+
 /**
  * @author hakonhall
  */
 interface HostInfosService {
-    HostInfos getHostInfos(ApplicationInstanceReference application);
+    HostInfos getHostInfos(ApplicationInstanceReference reference);
 
     /** Returns false if it is known that the operation was a no-op. */
-    boolean setHostStatus(ApplicationInstanceReference application, HostName hostName, HostStatus hostStatus);
+    boolean setHostStatus(ApplicationInstanceReference reference, HostName hostName, HostStatus hostStatus);
+
+    /** Remove application. */
+    void removeApplication(ApplicationInstanceReference reference);
+
+    /** Remove hosts for application. */
+    void removeHosts(ApplicationInstanceReference reference, Set<HostName> hostnames);
 }

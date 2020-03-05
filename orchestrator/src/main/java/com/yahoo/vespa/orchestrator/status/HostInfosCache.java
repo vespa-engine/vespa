@@ -7,6 +7,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -35,22 +36,22 @@ public class HostInfosCache implements HostInfosService {
         }
     }
 
-    public HostInfos getCachedHostInfos(ApplicationInstanceReference application) {
-        return suspendedHosts.computeIfAbsent(application, wrappedService::getHostInfos);
+    public HostInfos getCachedHostInfos(ApplicationInstanceReference reference) {
+        return suspendedHosts.computeIfAbsent(reference, wrappedService::getHostInfos);
     }
 
     @Override
-    public HostInfos getHostInfos(ApplicationInstanceReference application) {
+    public HostInfos getHostInfos(ApplicationInstanceReference reference) {
         refreshCache();
-        return getCachedHostInfos(application);
+        return getCachedHostInfos(reference);
     }
 
     @Override
-    public boolean setHostStatus(ApplicationInstanceReference application, HostName hostName, HostStatus hostStatus) {
+    public boolean setHostStatus(ApplicationInstanceReference reference, HostName hostName, HostStatus hostStatus) {
         boolean isException = true;
         boolean modified = false;
         try {
-            modified = wrappedService.setHostStatus(application, hostName, hostStatus);
+            modified = wrappedService.setHostStatus(reference, hostName, hostStatus);
             isException = false;
         } finally {
             if (modified || isException) {
@@ -60,5 +61,19 @@ public class HostInfosCache implements HostInfosService {
         }
 
         return modified;
+    }
+
+    @Override
+    public void removeApplication(ApplicationInstanceReference reference) {
+        wrappedService.removeApplication(reference);
+        suspendedHosts.remove(reference);
+    }
+
+    @Override
+    public void removeHosts(ApplicationInstanceReference reference, Set<HostName> hostnames) {
+        if (hostnames.size() > 0) {
+            wrappedService.removeHosts(reference, hostnames);
+            counter.next();
+        }
     }
 }

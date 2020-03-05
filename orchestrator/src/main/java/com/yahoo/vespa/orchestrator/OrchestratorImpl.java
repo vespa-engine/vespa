@@ -104,6 +104,8 @@ public class OrchestratorImpl implements Orchestrator {
         this.clock = clock;
         this.applicationApiFactory = applicationApiFactory;
         this.retireWithPermanentlyDownFlag = Flags.RETIRE_WITH_PERMANENTLY_DOWN.bindTo(flagSource);
+
+        serviceMonitor.registerListener(statusService);
     }
 
     @Override
@@ -353,6 +355,10 @@ public class OrchestratorImpl implements Orchestrator {
             throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         ApplicationInstanceReference reference = OrchestratorUtil.toApplicationInstanceReference(appId, serviceMonitor);
+
+        ApplicationInstance application = serviceMonitor.getApplication(reference)
+                .orElseThrow(ApplicationIdNotFoundException::new);
+
         try (ApplicationLock lock = statusService.lockApplication(context, reference)) {
 
             // Short-circuit if already in wanted state
@@ -360,8 +366,6 @@ public class OrchestratorImpl implements Orchestrator {
 
             // Set content clusters for this application in maintenance on suspend
             if (status == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
-                ApplicationInstance application = getApplicationInstance(reference);
-
                 HostInfos hostInfosSnapshot = lock.getHostInfos();
 
                 // Mark it allowed to be down before we manipulate the clustercontroller
@@ -419,11 +423,6 @@ public class OrchestratorImpl implements Orchestrator {
     private ApplicationInstance getApplicationInstance(HostName hostName) throws HostNameNotFoundException{
         return serviceMonitor.getApplication(hostName).orElseThrow(
                 () -> new HostNameNotFoundException(hostName));
-    }
-
-    private ApplicationInstance getApplicationInstance(ApplicationInstanceReference reference)
-            throws ApplicationIdNotFoundException {
-        return serviceMonitor.getApplication(reference).orElseThrow(ApplicationIdNotFoundException::new);
     }
 
     private static void sleep(long time, TimeUnit timeUnit) {

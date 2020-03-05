@@ -76,6 +76,8 @@ public class OrchestratorImplTest {
 
     private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final MockCurator curator = new MockCurator();
+    private ZkStatusService statusService = new ZkStatusService(curator, mock(Metric.class), new TestTimer(), flagSource);
 
     private ApplicationId app1;
     private ApplicationId app2;
@@ -96,7 +98,7 @@ public class OrchestratorImplTest {
         clustercontroller = new ClusterControllerClientFactoryMock();
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clustercontroller, applicationApiFactory),
                                             clustercontroller,
-                                            new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer()),
+                                            statusService,
                                             new DummyServiceMonitor(),
                                             0,
                                             new ManualClock(),
@@ -356,6 +358,9 @@ public class OrchestratorImplTest {
 
         HostName parentHostname = new HostName("parent.vespa.ai");
 
+        verify(serviceMonitor, atLeastOnce()).registerListener(zookeeperStatusService);
+        verifyNoMoreInteractions(serviceMonitor);
+
         orchestrator.suspendAll(parentHostname, List.of(parentHostname));
 
         ArgumentCaptor<OrchestratorContext> contextCaptor = ArgumentCaptor.forClass(OrchestratorContext.class);
@@ -390,7 +395,7 @@ public class OrchestratorImplTest {
     @Test
     public void testGetHost() throws Exception {
         ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
-        StatusService statusService = new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
+        StatusService statusService = new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer(), flagSource);
 
         HostName hostName = new HostName("host.yahoo.com");
         TenantId tenantId = new TenantId("tenant");

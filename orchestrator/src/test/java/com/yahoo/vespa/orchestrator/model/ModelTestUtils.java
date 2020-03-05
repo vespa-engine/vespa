@@ -58,7 +58,7 @@ class ModelTestUtils {
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
     private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
-    private final StatusService statusService = new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
+    private final StatusService statusService = new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer(), flagSource);
     private final TestTimer timer = new TestTimer();
     private final ServiceMonitor serviceMonitor = new ServiceModelCache(() -> new ServiceModel(applications), timer);
     private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory()),
