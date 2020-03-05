@@ -168,6 +168,18 @@ public class DeploymentTrigger {
         });
     }
 
+    /** Force triggering of a job for given instance, with same versions as last run. */
+    public JobId reTrigger(ApplicationId applicationId, JobType jobType) {
+        Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
+        Instance instance = application.require(applicationId.instance());
+        DeploymentStatus status = jobs.deploymentStatus(application);
+        JobId job = new JobId(instance.id(), jobType);
+        JobStatus jobStatus = status.jobs().get(new JobId(applicationId, jobType)).get();
+        Versions versions = jobStatus.lastTriggered().get().versions();
+        trigger(deploymentJob(instance, versions, jobType, jobStatus, clock.instant()));
+        return job;
+    }
+
     /** Force triggering of a job for given instance. */
     public List<JobId> forceTrigger(ApplicationId applicationId, JobType jobType, String user, boolean requireTests) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));

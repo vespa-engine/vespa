@@ -707,9 +707,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse trigger(ApplicationId id, JobType type, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
         boolean requireTests = ! requestObject.field("skipTests").asBool();
-        String triggered = controller.applications().deploymentTrigger()
-                                     .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
-                                     .stream().map(job -> job.type().jobName()).collect(joining(", "));
+        boolean reTrigger = requestObject.field("reTrigger").asBool();
+        String triggered = reTrigger
+                           ? controller.applications().deploymentTrigger()
+                                       .reTrigger(id, type).type().jobName()
+                           : controller.applications().deploymentTrigger()
+                                       .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
+                                       .stream().map(job -> job.type().jobName()).collect(joining(", "));
         return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
                                                        : "Triggered " + triggered + " for " + id);
     }
