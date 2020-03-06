@@ -30,8 +30,9 @@ public abstract class Properties extends com.yahoo.processing.request.Properties
         return (Properties)super.clone();
     }
 
-    /** The query owning this property object.
-     *  Only guaranteed to work if this instance is accessible as query.properties()
+    /**
+     * Returns the query owning this property object.
+     * Only guaranteed to work if this instance is accessible as query.properties()
      */
     public Query getParentQuery() {
         if (chained() == null) {
@@ -48,4 +49,5 @@ public abstract class Properties extends com.yahoo.processing.request.Properties
         if (chained() != null)
             chained().setParentQuery(query);
     }
+
 }

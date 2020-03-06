@@ -8,9 +8,15 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.ToolBox;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.query.profile.QueryProfileProperties;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -54,7 +60,7 @@ public class ValidateNearestNeighborSearcher extends Searcher {
     }
 
     private Optional<ErrorMessage> validate(Query query) {
-        NNVisitor visitor = new NNVisitor(query.getRanking().getProperties(), validAttributes);
+        NNVisitor visitor = new NNVisitor(query.getRanking().getProperties(), validAttributes, query);
         ToolBox.visit(visitor, query.getModel().getQueryTree().getRoot());
         return visitor.errorMessage;
     }
@@ -63,18 +69,20 @@ public class ValidateNearestNeighborSearcher extends Searcher {
 
         public Optional<ErrorMessage> errorMessage = Optional.empty();
 
-        private RankProperties rankProperties;
-        private Map<String, TensorType> validAttributes;
+        private final RankProperties rankProperties;
+        private final Map<String, TensorType> validAttributes;
+        private final Query query;
 
-        public NNVisitor(RankProperties rankProperties, Map<String, TensorType> validAttributes) {
+        public NNVisitor(RankProperties rankProperties, Map<String, TensorType> validAttributes, Query query) {
             this.rankProperties = rankProperties;
             this.validAttributes = validAttributes;
+            this.query = query;
         }
 
         @Override
         public boolean visit(Item item) {
             if (item instanceof NearestNeighborItem) {
-                String error = validate((NearestNeighborItem) item);
+                String error = validate((NearestNeighborItem)item);
                 if (error != null)
                     errorMessage = Optional.of(ErrorMessage.createIllegalQuery(error));
             }
@@ -105,8 +113,9 @@ public class ValidateNearestNeighborSearcher extends Searcher {
 
             Object rankPropValue = rankPropValList.get(0);
             if (! (rankPropValue instanceof Tensor)) {
-                return item + " query tensor should be a tensor, was: " +
-                       (rankPropValue == null ? "null" : rankPropValue.getClass());
+                return item + " expected a query tensor but got " +
+                       (rankPropValue == null ? "null" : rankPropValue.getClass()) +
+                       resolvedTypeInfo();
             }
 
             String field = item.getIndexName();
@@ -124,6 +133,46 @@ public class ValidateNearestNeighborSearcher extends Searcher {
 
         @Override
         public void onExit() {}
+
+        // TODO: Remove
+        private String resolvedTypeInfo() {
+            StringBuilder b = new StringBuilder();
+            QueryProfileProperties properties = query.properties().getInstance(QueryProfileProperties.class);
+            if (properties == null) return b.toString();
+            CompiledQueryProfile profile = properties.getQueryProfile();
+            b.append(", profile: ").append(profile);
+
+            CompoundName name = new CompoundName("ranking.features.query(q_vec)");
+
+            if ( ! profile.getTypes().isEmpty()) {
+                QueryProfileType type = null;
+                for (int i = 0; i < name.size(); i++) {
+                    if (type == null) // We're on the first iteration, or no type is explicitly specified
+                        type = profile.getType(name.first(i), new HashMap<>());
+                    if (type == null) continue;
+                    String localName = name.get(i);
+                    FieldDescription fieldDescription = type.getField(localName);
+                    if (fieldDescription == null && type.isStrict())
+                        throw new IllegalArgumentException("'" + localName + "' is not declared in " + type + ", and the type is strict");
+
+                    // TODO: In addition to strictness, check legality along the way
+
+                    if (fieldDescription != null) {
+                        if (i == name.size() - 1) { // at the end of the path, check the assignment type
+                            b.append(", field description: ").append(fieldDescription);
+                        } else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
+                            // If a type is specified, use that instead of the type implied by the name
+                            type = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
+                        }
+                    }
+
+                }
+            }
+            else {
+                b.append(", profile types is empty");
+            }
+            return b.toString();
+        }
 
     }
 

@@ -164,9 +164,9 @@ public class ValidateNearestNeighborTestCase {
     public void testQueryTensorWrongType() {
         String q = makeQuery("dvector", "qvector");
         Result r = doSearch(searcher, q, "tensor string");
-        assertErrMsg(desc("dvector", "qvector", 1, "query tensor should be a tensor, was: class java.lang.String"), r);
+        assertErrMsg(desc("dvector", "qvector", 1, "expected a query tensor but got class java.lang.String"), r);
         r = doSearch(searcher, q, null);
-        assertErrMsg(desc("dvector", "qvector", 1, "query tensor should be a tensor, was: null"), r);
+        assertErrMsg(desc("dvector", "qvector", 1, "expected a query tensor but got null"), r);
     }
 
     @Test
