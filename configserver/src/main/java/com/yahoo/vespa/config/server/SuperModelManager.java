@@ -102,19 +102,12 @@ public class SuperModelManager implements SuperModelProvider {
                     .getForVersionOrLatest(Optional.empty(), Instant.now())
                     .toApplicationInfo();
 
-            SuperModel oldSuperModel = superModelConfigProvider.getSuperModel();
-            SuperModel newSuperModel = oldSuperModel
-                    .cloneAndSetApplication(applicationInfo, isComplete(oldSuperModel));
+            SuperModel newSuperModel = superModelConfigProvider.getSuperModel()
+                    .cloneAndSetApplication(applicationInfo);
 
             generationCounter.increment();
             makeNewSuperModelConfigProvider(newSuperModel);
             listeners.forEach(listener -> listener.applicationActivated(newSuperModel, applicationInfo));
-
-            if (!oldSuperModel.isComplete() && newSuperModel.isComplete()) {
-                for (var listener : listeners) {
-                    listener.notifyOfCompleteness(newSuperModel);
-                }
-            }
         }
     }
 
@@ -131,37 +124,13 @@ public class SuperModelManager implements SuperModelProvider {
         }
     }
 
-    public void setBootstrapApplicationSet(Set<ApplicationId> bootstrapApplicationSet) {
-        logger.log(LogLevel.INFO, "Bootstrap applications: " + bootstrapApplicationSet);
-
-        synchronized (monitor) {
-            // Make HashSet to be able to remove applications from it.
-            this.bootstrapApplicationSet = Optional.of(new HashSet<>(bootstrapApplicationSet));
-
-            SuperModel superModel = superModelConfigProvider.getSuperModel();
-            if (!superModel.isComplete() && isComplete(superModel)) {
-                // We do NOT increment the generation since completeness is not part of the config:
-                // generationCounter.increment()
-
-                SuperModel newSuperModel = superModel.cloneAsComplete();
-                makeNewSuperModelConfigProvider(newSuperModel);
-                listeners.forEach(listener -> listener.notifyOfCompleteness(newSuperModel));
-            }
-        }
-    }
-
-    /** Returns freshly calculated value of isComplete. */
-    private boolean isComplete(SuperModel superModel) {
-        if (superModel.isComplete()) return true;
-        if (bootstrapApplicationSet.isEmpty()) return false;
-
-        Set<ApplicationId> currentApplicationIds = superModel.getApplicationIds();
-        if (currentApplicationIds.size() < bootstrapApplicationSet.get().size()) return false;
-        if (!currentApplicationIds.containsAll(bootstrapApplicationSet.get())) return false;
-
-        // We only arrive here when transitioning from incomplete to complete.
+    public void markAsComplete() {
+        // Invoked on component graph bootstrap (even before ConfigServerBootstrap),
+        // there is no need to bump generation counter.
         logger.log(LogLevel.INFO, "Super model is complete");
-        return true;
+        SuperModel newSuperModel = getSuperModel().cloneAsComplete();
+        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone, flagSource);
+        listeners.forEach(listener -> listener.notifyOfCompleteness(newSuperModel));
     }
 
     private void makeNewSuperModelConfigProvider(SuperModel newSuperModel) {

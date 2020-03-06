@@ -125,5 +125,7 @@ public class SuperModelRequestHandler implements RequestHandler {
 
     public void enable() {
         enabled = true;
+        superModelManager.markAsComplete();
+        updateHandler();
     }
 }

@@ -58,7 +58,7 @@ public class SuperModel {
         return applicationInfo == null ? Optional.empty() : Optional.of(applicationInfo);
     }
 
-    public SuperModel cloneAndSetApplication(ApplicationInfo application, boolean complete) {
+    public SuperModel cloneAndSetApplication(ApplicationInfo application) {
         Map<ApplicationId, ApplicationInfo> newModels = cloneModels(models);
         newModels.put(application.getApplicationId(), application);
         return new SuperModel(newModels, complete);

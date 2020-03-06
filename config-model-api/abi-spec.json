@@ -997,7 +997,7 @@
       "public boolean isComplete()",
       "public java.util.List getAllApplicationInfos()",
       "public java.util.Optional getApplicationInfo(com.yahoo.config.provision.ApplicationId)",
-      "public com.yahoo.config.model.api.SuperModel cloneAndSetApplication(com.yahoo.config.model.api.ApplicationInfo, boolean)",
+      "public com.yahoo.config.model.api.SuperModel cloneAndSetApplication(com.yahoo.config.model.api.ApplicationInfo)",
       "public com.yahoo.config.model.api.SuperModel cloneAndRemoveApplication(com.yahoo.config.provision.ApplicationId)",
       "public com.yahoo.config.model.api.SuperModel cloneAsComplete()",
       "public java.util.Set getApplicationIds()"
