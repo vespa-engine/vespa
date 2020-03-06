@@ -123,10 +123,17 @@ TEST_F(Pool, reuse_works)
     exercise(handle7);
     EXPECT_TRUE(1000 < pool.memory_usage().allocatedBytes());
     EXPECT_TRUE(3000 > pool.memory_usage().allocatedBytes());
-    auto handle8 = pool.get(2500);
-    auto handle9 = pool.get(2500);
-    EXPECT_TRUE(11000 < pool.memory_usage().allocatedBytes());
-    EXPECT_TRUE(13000 > pool.memory_usage().allocatedBytes());
+    {
+        auto handle8 = pool.get(2500);
+        auto handle9 = pool.get(2500);
+        EXPECT_TRUE(11000 < pool.memory_usage().allocatedBytes());
+        EXPECT_TRUE(13000 > pool.memory_usage().allocatedBytes());
+        auto handleA = pool.get(25000);
+        auto handleB = pool.get(25000);
+        EXPECT_TRUE(111000 < pool.memory_usage().usedBytes());
+        EXPECT_TRUE(113000 > pool.memory_usage().usedBytes());
+    }
+    EXPECT_TRUE(3000 > pool.memory_usage().usedBytes());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
