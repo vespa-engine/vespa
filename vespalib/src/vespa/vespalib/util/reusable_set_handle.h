@@ -21,24 +21,24 @@ private:
 
 public:
     ReusableSetHandle(RSUP backing, ReusableSetPool& owner)
-      : _bits(backing->bits),
-        _curval(backing->curval),
+      : _bits(backing->bits()),
+        _curval(backing->generation()),
         _owned(std::move(backing)),
         _pool(owner)
     {}
 
     ~ReusableSetHandle();
 
-    void mark(uint32_t id) {
+    void mark(size_t id) {
         _bits[id] = _curval;
     }
 
-    bool isMarked(uint32_t id) const {
+    bool is_marked(size_t id) const {
         return (_bits[id] == _curval);
     }
 
     // for unit tests and statistics
-    size_t capacity() const { return _owned->sz; }
+    size_t capacity() const { return _owned->capacity(); }
     Mark generation() const { return _curval; }
 };
 

@@ -2,46 +2,59 @@
 
 #pragma once
 
-#include <vector>
+#include "array.h"
+#include "array.hpp"
 #include <memory>
 #include <cstring>
 
+
 namespace vespalib {
 
-struct ReusableSet
+class ReusableSet
 {
+public:
     using Mark = unsigned short;
 
-    Mark *bits;
-    Mark curval;
-    size_t sz;
-
     explicit ReusableSet(size_t size)
-      : bits((Mark *)malloc(size * sizeof(Mark))),
-        curval(-1),
-        sz(size)
+      : _array(size),
+        _curval(-1),
+        _sz(size)
     {
         clear();
     }
 
     ~ReusableSet() {
-        free(bits);
     }
 
     void clear() {
-        if (++curval == 0) {
-            memset(bits, 0, sz * sizeof(Mark));
-            ++curval;
+        if (++_curval == 0) {
+            memset(bits(), 0, _sz * sizeof(Mark));
+            ++_curval;
         }
     }
 
     void mark(size_t id) {
-        bits[id] = curval;
+        _array[id] = _curval;
     }
 
-    bool isMarked(size_t id) const {
-        return (bits[id] == curval);
+    bool is_marked(size_t id) const {
+        return (_array[id] == _curval);
     }
+
+    Mark *bits() { return _array.begin(); }
+
+    Mark generation() const { return _curval; }
+
+    size_t memory_usage() const {
+        return (_sz * sizeof(Mark)) + sizeof(ReusableSet);
+    }
+
+    size_t capacity() const { return _sz; }
+
+private:
+    Array<Mark> _array;
+    Mark _curval;
+    size_t _sz;
 };
 
 } // namespace

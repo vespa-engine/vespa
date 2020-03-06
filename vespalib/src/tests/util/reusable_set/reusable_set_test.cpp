@@ -8,11 +8,11 @@ using namespace vespalib;
 using Mark = ReusableSet::Mark;
 
 void verify_set(const ReusableSet &set, size_t sz, Mark val, size_t marked) {
-    EXPECT_EQ(sz, set.sz);
-    EXPECT_EQ(val, set.curval);
+    EXPECT_EQ(sz, set.capacity());
+    EXPECT_EQ(val, set.generation());
     size_t count = 0;
-    for (size_t i = 0; i < set.sz; ++i) {
-        if (set.isMarked(i)) ++count;
+    for (size_t i = 0; i < set.capacity(); ++i) {
+        if (set.is_marked(i)) ++count;
     }
     EXPECT_EQ(marked, count);
 }
@@ -22,7 +22,7 @@ void verify_handle(const ReusableSetHandle &set, size_t sz, Mark val, size_t mar
     EXPECT_EQ(val, set.generation());
     size_t count = 0;
     for (size_t i = 0; i < set.capacity(); ++i) {
-        if (set.isMarked(i)) ++count;
+        if (set.is_marked(i)) ++count;
     }
     EXPECT_EQ(marked, count);
 }
@@ -36,7 +36,7 @@ public:
         size_t sz = set.capacity();
         size_t count = 0;
         for (size_t i = 0; i < sz; ++i) {
-            if (set.isMarked(i)) ++count;
+            if (set.is_marked(i)) ++count;
         }
         EXPECT_EQ(0, count);
         for (int i = 0; i < 17; ++i) {
@@ -44,7 +44,7 @@ public:
         }
         count = 0;
         for (size_t i = 0; i < sz; ++i) {
-            if (set.isMarked(i)) ++count;
+            if (set.is_marked(i)) ++count;
         }
         EXPECT_EQ(17, count);
         for (int i = 0; i < 17; ++i) {
@@ -52,7 +52,7 @@ public:
         }
         count = 0;
         for (size_t i = 0; i < sz; ++i) {
-            if (set.isMarked(i)) ++count;
+            if (set.is_marked(i)) ++count;
         }
         EXPECT_EQ(17, count);
    }
@@ -66,11 +66,19 @@ TEST(ReusableSetTest, simple_usage)
     visited.mark(1);
     visited.mark(2);
     visited.mark(4);
+    EXPECT_EQ(false, visited.is_marked(0));
+    EXPECT_EQ(true, visited.is_marked(1));
+    EXPECT_EQ(true, visited.is_marked(2));
+    EXPECT_EQ(false, visited.is_marked(3));
     verify_set(visited, 7, 1, 3);
     visited.mark(4);
     visited.mark(1);
     visited.mark(2);
     verify_set(visited, 7, 1, 3);
+    EXPECT_EQ(false, visited.is_marked(0));
+    EXPECT_EQ(true, visited.is_marked(1));
+    EXPECT_EQ(true, visited.is_marked(2));
+    EXPECT_EQ(false, visited.is_marked(3));
     visited.clear();
     verify_set(visited, 7, 2, 0);
     visited.clear();
@@ -83,24 +91,38 @@ TEST_F(Pool, reuse_works)
         auto handle = pool.get(7);
         EXPECT_EQ(i, pool.reuse_count());
         EXPECT_EQ(1, pool.create_count());
-        verify_handle(handle, 250, i+1, 0);
+        verify_handle(handle, 248, i+1, 0);
         exercise(handle);
     }
+    EXPECT_TRUE(500 < pool.memory_usage());
+    EXPECT_TRUE(1000 > pool.memory_usage());
     for (int i = 0; i < 5; ++i) {
         auto handle = pool.get(7);
         EXPECT_EQ(65535+i, pool.reuse_count());
         EXPECT_EQ(1, pool.create_count());
-        verify_handle(handle, 250, i+1, 0);
+        verify_handle(handle, 248, i+1, 0);
         exercise(handle);
     }
-    auto handle3 = pool.get(300);
+    auto handle3 = pool.get(260);
     EXPECT_EQ(2, pool.create_count());
-    verify_handle(handle3, 600, 1, 0);
+    verify_handle(handle3, 297, 1, 0);
     exercise(handle3);
-    auto handle7 = pool.get(700);
-    EXPECT_EQ(3, pool.create_count());
-    verify_handle(handle7, 1400, 1, 0);
+    {
+        auto handle4 = pool.get(400);
+        EXPECT_EQ(3, pool.create_count());
+        verify_handle(handle4, 400, 1, 0);
+        exercise(handle4);
+    }
+    auto handle7 = pool.get(401);
+    EXPECT_EQ(4, pool.create_count());
+    verify_handle(handle7, 480, 1, 0);
     exercise(handle7);
+    EXPECT_TRUE(1000 < pool.memory_usage());
+    EXPECT_TRUE(3000 > pool.memory_usage());
+    auto handle8 = pool.get(2500);
+    auto handle9 = pool.get(2500);
+    EXPECT_TRUE(11000 < pool.memory_usage());
+    EXPECT_TRUE(13000 > pool.memory_usage());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
