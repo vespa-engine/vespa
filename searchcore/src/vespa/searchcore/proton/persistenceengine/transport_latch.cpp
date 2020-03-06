@@ -12,7 +12,11 @@ TransportLatch::TransportLatch(uint32_t cnt)
     : _latch(cnt),
       _lock(),
       _result()
-{}
+{
+    if (cnt == 0u) {
+        _result = std::make_unique<Result>();
+    }
+}
 
 TransportLatch::~TransportLatch() = default;
 
