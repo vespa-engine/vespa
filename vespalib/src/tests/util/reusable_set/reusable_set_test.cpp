@@ -94,8 +94,8 @@ TEST_F(Pool, reuse_works)
         verify_handle(handle, 248, i+1, 0);
         exercise(handle);
     }
-    EXPECT_TRUE(500 < pool.memory_usage());
-    EXPECT_TRUE(1000 > pool.memory_usage());
+    EXPECT_TRUE(500 < pool.memory_usage().allocatedBytes());
+    EXPECT_TRUE(1000 > pool.memory_usage().allocatedBytes());
     for (int i = 0; i < 5; ++i) {
         auto handle = pool.get(7);
         EXPECT_EQ(65535+i, pool.reuse_count());
@@ -112,17 +112,21 @@ TEST_F(Pool, reuse_works)
         EXPECT_EQ(3, pool.create_count());
         verify_handle(handle4, 400, 1, 0);
         exercise(handle4);
+        EXPECT_TRUE(1000 < pool.memory_usage().usedBytes());
+        EXPECT_TRUE(2000 > pool.memory_usage().usedBytes());
     }
+    EXPECT_TRUE(500 < pool.memory_usage().usedBytes());
+    EXPECT_TRUE(1000 > pool.memory_usage().usedBytes());
     auto handle7 = pool.get(401);
     EXPECT_EQ(4, pool.create_count());
     verify_handle(handle7, 480, 1, 0);
     exercise(handle7);
-    EXPECT_TRUE(1000 < pool.memory_usage());
-    EXPECT_TRUE(3000 > pool.memory_usage());
+    EXPECT_TRUE(1000 < pool.memory_usage().allocatedBytes());
+    EXPECT_TRUE(3000 > pool.memory_usage().allocatedBytes());
     auto handle8 = pool.get(2500);
     auto handle9 = pool.get(2500);
-    EXPECT_TRUE(11000 < pool.memory_usage());
-    EXPECT_TRUE(13000 > pool.memory_usage());
+    EXPECT_TRUE(11000 < pool.memory_usage().allocatedBytes());
+    EXPECT_TRUE(13000 > pool.memory_usage().allocatedBytes());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

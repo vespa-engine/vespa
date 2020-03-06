@@ -35,6 +35,7 @@ public:
     void incAllocatedBytes(size_t inc) { _allocatedBytes += inc; }
     void decAllocatedBytes(size_t dec) { _allocatedBytes -= dec; }
     void incUsedBytes(size_t inc) { _usedBytes += inc; }
+    void decUsedBytes(size_t dec) { _usedBytes -= dec; }
     void incDeadBytes(size_t inc) { _deadBytes += inc; }
     void incAllocatedBytesOnHold(size_t inc) { _allocatedBytesOnHold += inc; }
     void decAllocatedBytesOnHold(size_t inc) { _allocatedBytesOnHold -= inc; }
