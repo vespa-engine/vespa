@@ -19,11 +19,10 @@ public class AthenzAccessToken {
     private static final String BEARER_TOKEN_PREFIX = "Bearer ";
 
     private final String value;
-    private final DecodedJWT jwt;
+    private volatile DecodedJWT jwt;
 
     public AthenzAccessToken(String value) {
         this.value = stripBearerTokenPrefix(value);
-        this.jwt = JWT.decode(this.value);
     }
 
     private static String stripBearerTokenPrefix(String rawValue) {
@@ -40,7 +39,16 @@ public class AthenzAccessToken {
     public String value() { return value; }
     public String valueWithBearerPrefix() { return BEARER_TOKEN_PREFIX + value; }
     public Instant getExpiryTime () {
-        return jwt.getExpiresAt().toInstant();
+        return jwt().getExpiresAt().toInstant();
+    }
+
+    private DecodedJWT jwt() {
+        if (jwt == null) {
+            // Decoding a token is expensive and involves construction of at least one Jackson ObjectMapper instance
+            // TODO Cache encoder/decoder as static field in AthenzAccessToken
+            jwt = JWT.decode(this.value);
+        }
+        return jwt;
     }
 
     @Override public String toString() { return "AthenzAccessToken{value='" + value + "'}"; }
