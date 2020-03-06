@@ -122,7 +122,7 @@ public interface NodeRepository {
                         clusterTypeOf(node.getMembership()),
                         node.getWantToRetire(),
                         node.getWantToDeprovision(),
-                        Optional.ofNullable(node.getReservedTo()).map(name -> TenantName.from(name)));
+                        Optional.ofNullable(node.getReservedTo()).map(TenantName::from));
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {
