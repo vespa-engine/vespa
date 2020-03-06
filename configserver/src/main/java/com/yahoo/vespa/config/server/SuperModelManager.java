@@ -11,6 +11,7 @@ import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
@@ -18,15 +19,19 @@ import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Provides a SuperModel - a model of all application instances,  and makes it stays
  * up to date as applications are added, redeployed, and removed.
  */
 public class SuperModelManager implements SuperModelProvider {
+    private static final Logger logger = Logger.getLogger(SuperModelManager.class.getName());
+
     private final Zone zone;
 
     private final Object monitor = new Object();
@@ -115,6 +120,8 @@ public class SuperModelManager implements SuperModelProvider {
 
     public void applicationRemoved(ApplicationId applicationId) {
         synchronized (monitor) {
+            bootstrapApplicationSet.ifPresent(set -> set.remove(applicationId));
+
             SuperModel newSuperModel = this.superModelConfigProvider
                     .getSuperModel()
                     .cloneAndRemoveApplication(applicationId);
@@ -125,8 +132,11 @@ public class SuperModelManager implements SuperModelProvider {
     }
 
     public void setBootstrapApplicationSet(Set<ApplicationId> bootstrapApplicationSet) {
+        logger.log(LogLevel.INFO, "Bootstrap applications: " + bootstrapApplicationSet);
+
         synchronized (monitor) {
-            this.bootstrapApplicationSet = Optional.of(bootstrapApplicationSet);
+            // Make HashSet to be able to remove applications from it.
+            this.bootstrapApplicationSet = Optional.of(new HashSet<>(bootstrapApplicationSet));
 
             SuperModel superModel = superModelConfigProvider.getSuperModel();
             if (!superModel.isComplete() && isComplete(superModel)) {
@@ -141,13 +151,17 @@ public class SuperModelManager implements SuperModelProvider {
     }
 
     /** Returns freshly calculated value of isComplete. */
-    private boolean isComplete(SuperModel currentSuperModel) {
-        if (currentSuperModel.isComplete()) return true;
+    private boolean isComplete(SuperModel superModel) {
+        if (superModel.isComplete()) return true;
         if (bootstrapApplicationSet.isEmpty()) return false;
 
-        Set<ApplicationId> currentApplicationIds = superModelConfigProvider.getSuperModel().getApplicationIds();
+        Set<ApplicationId> currentApplicationIds = superModel.getApplicationIds();
         if (currentApplicationIds.size() < bootstrapApplicationSet.get().size()) return false;
-        return currentApplicationIds.containsAll(bootstrapApplicationSet.get());
+        if (!currentApplicationIds.containsAll(bootstrapApplicationSet.get())) return false;
+
+        // We only arrive here when transitioning from incomplete to complete.
+        logger.log(LogLevel.INFO, "Super model is complete");
+        return true;
     }
 
     private void makeNewSuperModelConfigProvider(SuperModel newSuperModel) {

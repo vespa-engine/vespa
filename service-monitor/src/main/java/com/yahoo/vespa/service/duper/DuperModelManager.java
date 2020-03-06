@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,6 +32,8 @@ import java.util.stream.Stream;
  * @author hakonhall
  */
 public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi {
+
+    private static final Logger logger = Logger.getLogger(DuperModelManager.class.getName());
 
     // Infrastructure applications
     static final ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
@@ -96,6 +100,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
                 synchronized (monitor) {
                     if (!superModelIsComplete) {
                         superModelIsComplete = true;
+                        logger.log(LogLevel.INFO, "All bootstrap tenant applications have been activated");
                         maybeSetDuperModelAsComplete();
                     }
                 }
@@ -168,6 +173,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
         synchronized (monitor) {
             if (!infraApplicationsIsComplete) {
                 infraApplicationsIsComplete = true;
+                logger.log(LogLevel.INFO, "All infrastructure applications have been activated");
                 maybeSetDuperModelAsComplete();
             }
         }

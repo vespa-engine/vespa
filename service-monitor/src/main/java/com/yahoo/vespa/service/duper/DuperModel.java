@@ -42,7 +42,7 @@ public class DuperModel {
 
     void setComplete() {
         if (!isComplete) {
-            logger.log(LogLevel.INFO, "Bootstrap done - duper model is complete");
+            logger.log(LogLevel.INFO, "All applications have been activated: duper model is complete");
             isComplete = true;
 
             listeners.forEach(DuperModelListener::bootstrapComplete);
