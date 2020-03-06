@@ -48,6 +48,9 @@ numJrtTransportThreads int default=8
 # Number of JRT connections per backend node
 numJrtConnectionsPerNode int default=8
 
+# Number of seconds to spend warming up code to prevent JIT cold start issues.
+warmuptime double default=0.1
+
 # The unique key of a search node
 node[].key int
 

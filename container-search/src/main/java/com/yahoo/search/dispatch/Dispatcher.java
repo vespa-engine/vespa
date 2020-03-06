@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
+import com.yahoo.compress.Compressor;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
@@ -30,7 +31,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
@@ -118,10 +125,18 @@ public class Dispatcher extends AbstractComponent {
         this.metricContext = metric.createContext(null);
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
         searchCluster.addMonitoring(clusterMonitor);
+        Thread warmup = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                warmupLZ4(dispatchConfig.warmuptime());
+            }
+        });
+        warmup.start();
         try {
             while ( ! searchCluster.hasInformationAboutAllNodes()) {
                 Thread.sleep(1);
             }
+            warmup.join();
         } catch (InterruptedException e) {}
 
         /*
@@ -131,6 +146,21 @@ public class Dispatcher extends AbstractComponent {
          * of its groups are also known.
          */
         searchCluster.pingIterationCompleted();
+    }
+
+    private static long warmupLZ4(double seconds) {
+        byte [] input = new byte[0x4000];
+        Compressor lz4 = new Compressor();
+        new Random().nextBytes(input);
+        long timeDone = System.nanoTime() + (long)(seconds*1000000000);
+        long compressedBytes = 0;
+        byte [] decompressed = new byte [input.length];
+        while (System.nanoTime() < timeDone) {
+                byte [] compressed = lz4.compressUnconditionally(input);
+                lz4.decompressUnconditionally(compressed, decompressed);
+                compressedBytes += compressed.length;
+        }
+        return compressedBytes;
     }
 
     /** Returns the search cluster this dispatches to */
