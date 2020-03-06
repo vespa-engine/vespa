@@ -103,7 +103,6 @@ public class CapacityPolicies {
     /**
      * Throw if the node count is 1 for container and content clusters and we're in a production zone
      *
-     * @return the argument node count
      * @throws IllegalArgumentException if only one node is requested and we can fail
      */
     private void ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType, boolean canFail) {
