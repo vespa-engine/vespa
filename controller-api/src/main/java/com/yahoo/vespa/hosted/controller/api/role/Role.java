@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 
 import java.util.Objects;
@@ -43,31 +42,6 @@ public abstract class Role {
         return new TenantRole(RoleDefinition.athenzTenantAdmin, tenant);
     }
 
-    /** Returns a {@link RoleDefinition#tenantPipeline} for the current system and given tenant and application. */
-    public static ApplicationRole tenantPipeline(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.tenantPipeline, tenant, application);
-    }
-
-    /** Returns a {@link RoleDefinition#athenzUser} for the current system and given tenant and application. */
-    public static InstanceRole athenzUser(TenantName tenant, ApplicationName application, InstanceName instance) {
-        return new InstanceRole(RoleDefinition.athenzUser, tenant, application, instance);
-    }
-
-    /** Returns a {@link RoleDefinition#tenantOwner} for the current system and given tenant. */
-    public static TenantRole tenantOwner(TenantName tenant) {
-        return new TenantRole(RoleDefinition.tenantOwner, tenant);
-    }
-
-    /** Returns a {@link RoleDefinition#tenantAdmin} for the current system and given tenant. */
-    public static TenantRole tenantAdmin(TenantName tenant) {
-        return new TenantRole(RoleDefinition.tenantAdmin, tenant);
-    }
-
-    /** Returns a {@link RoleDefinition#tenantOperator} for the current system and given tenant. */
-    public static TenantRole tenantOperator(TenantName tenant) {
-        return new TenantRole(RoleDefinition.tenantOperator, tenant);
-    }
-
     /** Returns a {@link RoleDefinition#reader} for the current system and given tenant. */
     public static TenantRole reader(TenantName tenant) {
         return new TenantRole(RoleDefinition.reader, tenant);
@@ -86,26 +60,6 @@ public abstract class Role {
     /** Returns a {@link RoleDefinition#headless} for the current system, given tenant, and application */
     public static ApplicationRole headless(TenantName tenant, ApplicationName application) {
         return new ApplicationRole(RoleDefinition.headless, tenant, application);
-    }
-
-    /** Returns a {@link RoleDefinition#applicationAdmin} for the current system and given tenant and application. */
-    public static ApplicationRole applicationAdmin(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationAdmin, tenant, application);
-    }
-
-    /** Returns a {@link RoleDefinition#applicationOperator} for the current system and given tenant and application. */
-    public static ApplicationRole applicationOperator(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationOperator, tenant, application);
-    }
-
-    /** Returns a {@link RoleDefinition#applicationDeveloper} for the current system and given tenant and application. */
-    public static ApplicationRole applicationDeveloper(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationDeveloper, tenant, application);
-    }
-
-    /** Returns a {@link RoleDefinition#applicationReader} for the current system and given tenant and application. */
-    public static ApplicationRole applicationReader(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationReader, tenant, application);
     }
 
     /** Returns a {@link RoleDefinition#buildService} for the current system and given tenant and application. */

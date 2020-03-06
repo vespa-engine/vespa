@@ -588,8 +588,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
-                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"message\":\"Requested restart of tenant1.application1.instance1 in prod.us-central-1\"}");
+
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(SCREWDRIVER_ID));
 
         // POST a 'restart application' in staging environment command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-central-1/instance/instance1/restart", POST)
@@ -941,10 +943,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
                               new File("instance-reference.json"));
 
-        // Grant deploy access
-        addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
-                                       ATHENZ_TENANT_DOMAIN,
-                                       ApplicationName.from("application1"));
+        // Add build service to operator role
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(SCREWDRIVER_ID));
 
         // POST (deploy) an application to a prod zone - allowed when project ID is not specified
         MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);

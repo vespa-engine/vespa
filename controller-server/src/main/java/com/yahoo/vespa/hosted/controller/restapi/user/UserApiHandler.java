@@ -335,13 +335,6 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private static String valueOf(Role role) {
         switch (role.definition()) {
-            case tenantOwner:           return "tenantOwner";
-            case tenantAdmin:           return "tenantAdmin";
-            case tenantOperator:        return "tenantOperator";
-            case applicationAdmin:      return "applicationAdmin";
-            case applicationOperator:   return "applicationOperator";
-            case applicationDeveloper:  return "applicationDeveloper";
-            case applicationReader:     return "applicationReader";
             case administrator:         return "administrator";
             case developer:             return "developer";
             case reader:                return "reader";

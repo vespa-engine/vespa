@@ -44,9 +44,6 @@ public class Roles {
     /** Returns the {@link Role} the given tenant, application and role names correspond to. */
     public static Role toRole(TenantName tenant, String roleName) {
         switch (roleName) {
-            case "tenantOwner": return Role.tenantOwner(tenant);
-            case "tenantAdmin": return Role.tenantAdmin(tenant);
-            case "tenantOperator": return Role.tenantOperator(tenant);
             case "administrator": return Role.administrator(tenant);
             case "developer": return Role.developer(tenant);
             case "reader": return Role.reader(tenant);
@@ -57,10 +54,6 @@ public class Roles {
     /** Returns the {@link Role} the given tenant and role names correspond to. */
     public static Role toRole(TenantName tenant, ApplicationName application, String roleName) {
         switch (roleName) {
-            case "applicationAdmin": return Role.applicationAdmin(tenant, application);
-            case "applicationOperator": return Role.applicationOperator(tenant, application);
-            case "applicationDeveloper": return Role.applicationDeveloper(tenant, application);
-            case "applicationReader": return Role.applicationReader(tenant, application);
             case "headless": return Role.headless(tenant, application);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
@@ -97,13 +90,6 @@ public class Roles {
 
     private static String valueOf(RoleDefinition role) {
         switch (role) {
-            case tenantOwner:          return "tenantOwner";
-            case tenantAdmin:          return "tenantAdmin";
-            case tenantOperator:       return "tenantOperator";
-            case applicationAdmin:     return "applicationAdmin";
-            case applicationOperator:  return "applicationOperator";
-            case applicationDeveloper: return "applicationDeveloper";
-            case applicationReader:    return "applicationReader";
             case administrator:        return "administrator";
             case developer:            return "developer";
             case reader:               return "reader";
