@@ -5,12 +5,13 @@ import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
+import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.ProxyConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -32,8 +33,26 @@ public class ConnectorFactory {
     @Inject
     public ConnectorFactory(ConnectorConfig connectorConfig,
                             SslContextFactoryProvider sslContextFactoryProvider) {
+        runtimeConnectorConfigValidation(connectorConfig);
         this.connectorConfig = connectorConfig;
         this.sslContextFactoryProvider = sslContextFactoryProvider;
+    }
+
+    // Perform extra connector config validation that can only be performed at runtime,
+    // e.g. due to TLS configuration through environment variables.
+    private static void runtimeConnectorConfigValidation(ConnectorConfig config) {
+        validateProxyProtocolConfiguration(config);
+    }
+
+    private static void validateProxyProtocolConfiguration(ConnectorConfig config) {
+        ConnectorConfig.ProxyProtocol proxyProtocolConfig = config.proxyProtocol();
+        if (proxyProtocolConfig.enabled()) {
+            boolean sslEnabled = config.ssl().enabled() || TransportSecurityUtils.isTransportSecurityEnabled();
+            boolean tlsMixedModeEnabled = TransportSecurityUtils.getInsecureMixedMode() != MixedMode.DISABLED;
+            if (!sslEnabled || tlsMixedModeEnabled) {
+                throw new IllegalArgumentException("Proxy protocol can only be enabled if connector is effectively HTTPS only");
+            }
+        }
     }
 
     public ConnectorConfig getConnectorConfig() {
@@ -52,24 +71,37 @@ public class ConnectorFactory {
     }
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {
-        HttpConnectionFactory httpConnectionFactory = newHttpConnectionFactory();
+        HttpConnectionFactory httpFactory = newHttpConnectionFactory();
         if (connectorConfig.healthCheckProxy().enable()) {
-            return List.of(httpConnectionFactory);
+            return List.of(httpFactory);
         } else if (connectorConfig.ssl().enabled()) {
-            return List.of(newSslConnectionFactory(metric), httpConnectionFactory);
+            return connectionFactoriesForHttps(metric, httpFactory);
         } else if (TransportSecurityUtils.isTransportSecurityEnabled()) {
-            SslConnectionFactory sslConnectionsFactory = newSslConnectionFactory(metric);
             switch (TransportSecurityUtils.getInsecureMixedMode()) {
                 case TLS_CLIENT_MIXED_SERVER:
                 case PLAINTEXT_CLIENT_MIXED_SERVER:
-                    return List.of(new DetectorConnectionFactory(sslConnectionsFactory), httpConnectionFactory);
+                    return List.of(new DetectorConnectionFactory(newSslConnectionFactory(metric, httpFactory)), httpFactory);
                 case DISABLED:
-                    return List.of(sslConnectionsFactory, httpConnectionFactory);
+                    return connectionFactoriesForHttps(metric, httpFactory);
                 default:
                     throw new IllegalStateException();
             }
         } else {
-            return List.of(httpConnectionFactory);
+            return List.of(httpFactory);
+        }
+    }
+
+    private List<ConnectionFactory> connectionFactoriesForHttps(Metric metric, HttpConnectionFactory httpFactory) {
+        ConnectorConfig.ProxyProtocol proxyProtocolConfig = connectorConfig.proxyProtocol();
+        SslConnectionFactory sslFactory = newSslConnectionFactory(metric, httpFactory);
+        if (proxyProtocolConfig.enabled()) {
+            if (proxyProtocolConfig.mixedMode()) {
+                return List.of(new DetectorConnectionFactory(sslFactory, new ProxyConnectionFactory(sslFactory.getProtocol())), sslFactory, httpFactory);
+            } else {
+                return List.of(new ProxyConnectionFactory(), sslFactory, httpFactory);
+            }
+        } else {
+            return List.of(sslFactory, httpFactory);
         }
     }
 
@@ -88,9 +120,9 @@ public class ConnectorFactory {
         return new HttpConnectionFactory(httpConfig);
     }
 
-    private SslConnectionFactory newSslConnectionFactory(Metric metric) {
+    private SslConnectionFactory newSslConnectionFactory(Metric metric, HttpConnectionFactory httpFactory) {
         SslContextFactory ctxFactory = sslContextFactoryProvider.getInstance(connectorConfig.name(), connectorConfig.listenPort());
-        SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, HttpVersion.HTTP_1_1.asString());
+        SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, httpFactory.getProtocol());
         connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
         return connectionFactory;
     }
