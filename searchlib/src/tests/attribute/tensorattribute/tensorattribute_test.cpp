@@ -148,8 +148,10 @@ public:
 class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
 
     std::unique_ptr<NearestNeighborIndex> make(const DocVectorAccess& vectors,
+                                               size_t vector_size,
                                                ValueType::CellType cell_type,
                                                const search::attribute::HnswIndexParams& params) const override {
+        (void) vector_size;
         (void) params;
         assert(cell_type == ValueType::CellType::DOUBLE);
         return std::make_unique<MockNearestNeighborIndex>(vectors);

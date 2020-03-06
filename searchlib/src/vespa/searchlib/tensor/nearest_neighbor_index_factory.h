@@ -19,6 +19,7 @@ class NearestNeighborIndexFactory {
 public:
     virtual ~NearestNeighborIndexFactory() {}
     virtual std::unique_ptr<NearestNeighborIndex> make(const DocVectorAccess& vectors,
+                                                       size_t vector_size,
                                                        vespalib::eval::ValueType::CellType cell_type,
                                                        const search::attribute::HnswIndexParams& params) const = 0;
 };

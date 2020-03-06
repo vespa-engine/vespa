@@ -71,7 +71,11 @@ DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, con
       _index()
 {
     if (cfg.hnsw_index_params().has_value()) {
-        _index = index_factory.make(*this, cfg.tensorType().cell_type(), cfg.hnsw_index_params().value());
+        auto tensor_type = cfg.tensorType();
+        assert(tensor_type.dimensions().size() == 1);
+        assert(tensor_type.is_dense());
+        size_t vector_size = tensor_type.dimensions()[0].size;
+        _index = index_factory.make(*this, vector_size, tensor_type.cell_type(), cfg.hnsw_index_params().value());
     }
 }
 
