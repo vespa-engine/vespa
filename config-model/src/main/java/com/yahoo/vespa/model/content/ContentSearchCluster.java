@@ -52,6 +52,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private final String clusterName;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
+    private Double visibilityDelay = 0.0;
 
     /** The search nodes of this if it does not have an indexed cluster */
     private List<SearchNode> nonIndexed = new ArrayList<>();
@@ -142,7 +143,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
                 Double visibilityDelay = clusterElem.childAsDouble("engine.proton.visibility-delay");
                 if (visibilityDelay != null) {
-                    isc.setVisibilityDelay(visibilityDelay);
+                    search.setVisibilityDelay(visibilityDelay);
                 }
 
                 search.addSearchCluster(deployState, isc, getQueryTimeout(clusterElem), indexedDefs);
@@ -177,6 +178,13 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.flushOnShutdown = flushOnShutdown;
+    }
+
+    public void setVisibilityDelay(double delay) {
+        this.visibilityDelay=delay;
+        if (hasIndexedCluster()) {
+            indexedCluster.setVisibilityDelay(delay);
+        }
     }
 
     private void addSearchCluster(DeployState deployState, SearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
@@ -307,7 +315,6 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
-        double visibilityDelay = hasIndexedCluster() ? getIndexed().getVisibilityDelay() : 0.0;
         builder.feeding.concurrency(0.40); // As if specified 0.8 in services.xml
         boolean hasAnyNonIndexedCluster = false;
         for (NewDocumentType type : TopologicalDocumentTypeSorter.sort(documentDefinitions.values())) {

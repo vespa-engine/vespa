@@ -136,10 +136,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             c.rootGroup = new StorageGroup.Builder(contentElement, context).buildRootGroup(deployState, redundancyBuilder, c);
             validateThatGroupSiblingsAreUnique(c.clusterName, c.rootGroup);
             c.search.handleRedundancy(c.redundancy);
-
-            IndexedSearchCluster index = c.search.getIndexed();
-            if (index != null)
-                setupIndexedCluster(index, contentElement, deployState.getDeployLogger());
+            setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
 
             if (c.search.hasIndexedCluster() && !(c.persistenceFactory instanceof ProtonEngine.Factory) )
                 throw new RuntimeException("Indexed search requires proton as engine");
@@ -166,17 +163,25 @@ public class ContentCluster extends AbstractConfigProducer implements
             return c;
         }
 
-        private void setupIndexedCluster(IndexedSearchCluster index, ModelElement element, DeployLogger logger) {
+        private void setupSearchCluster(ContentSearchCluster csc, ModelElement element, DeployLogger logger) {
             ContentSearch search = DomContentSearchBuilder.build(element);
+            Double visibilityDelay = search.getVisibilityDelay();
+            if (visibilityDelay != null) {
+                csc.setVisibilityDelay(visibilityDelay);
+            }
+            if (csc.hasIndexedCluster()) {
+                setupIndexedCluster(csc.getIndexed(), search, element, logger);
+            }
+
+
+        }
+        private void setupIndexedCluster(IndexedSearchCluster index, ContentSearch search, ModelElement element, DeployLogger logger) {
             Double queryTimeout = search.getQueryTimeout();
             if (queryTimeout != null) {
                 Preconditions.checkState(index.getQueryTimeout() == null,
-                                         "In " + index + ": You may not specify query-timeout in both proton and content.");
+                        "In " + index + ": You may not specify query-timeout in both proton and content.");
                 index.setQueryTimeout(queryTimeout);
             }
-            Double visibilityDelay = search.getVisibilityDelay();
-            if (visibilityDelay != null)
-                index.setVisibilityDelay(visibilityDelay);
             index.setSearchCoverage(DomSearchCoverageBuilder.build(element));
             index.setDispatchSpec(DomDispatchBuilder.build(element));
 
