@@ -16,13 +16,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ServiceModelProviderTest {
+public class ServiceMonitorImplTest {
     @Test
     public void sanityCheck() {
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         DuperModelManager duperModelManager = mock(DuperModelManager.class);
         ModelGenerator modelGenerator = mock(ModelGenerator.class);
-        ServiceModelProvider provider = new ServiceModelProvider(
+        ServiceMonitorImpl serviceMonitor = new ServiceMonitorImpl(
                 slobrokMonitorManager,
                 mock(ServiceMonitorMetrics.class),
                 duperModelManager,
@@ -34,7 +34,7 @@ public class ServiceModelProviderTest {
                 .collect(Collectors.toList());
         when(duperModelManager.getApplicationInfos()).thenReturn(applications);
 
-        ServiceModel serviceModel = provider.getServiceModelSnapshot();
+        ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
         verify(duperModelManager, times(1)).getApplicationInfos();
         verify(modelGenerator).toServiceModel(applications, slobrokMonitorManager);
     }

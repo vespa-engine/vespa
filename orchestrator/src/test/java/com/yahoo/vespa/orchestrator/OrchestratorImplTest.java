@@ -30,7 +30,6 @@ import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
-import com.yahoo.vespa.service.model.ServiceModelCache;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import org.junit.Before;
@@ -421,9 +420,7 @@ public class OrchestratorImplTest {
                                                hostName,
                                                ServiceStatus.NOT_CHECKED)))));
 
-        ServiceMonitor serviceMonitor = new ServiceModelCache(
-                () -> new ServiceModel(Map.of(reference, applicationInstance)),
-                new TestTimer());
+        ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance));
 
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory),
                                             clusterControllerClientFactory,
