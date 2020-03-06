@@ -8,6 +8,11 @@ namespace vespalib {
 
 class ReusableSetPool;
 
+/**
+ * Wraps a ReusableSet allocated from a ReusableSetPool.
+ * Note that the handle returns the wrapped set to the pool
+ * on destruction.
+ **/
 class ReusableSetHandle
 {
 private:
@@ -29,10 +34,12 @@ public:
 
     ~ReusableSetHandle();
 
+    /** mark an ID */
     void mark(size_t id) {
         _bits[id] = _curval;
     }
 
+    /** check if an ID has been marked */
     bool is_marked(size_t id) const {
         return (_bits[id] == _curval);
     }

@@ -10,6 +10,11 @@
 
 namespace vespalib {
 
+/**
+ * A resource pool for ReusableSet instances.
+ * Note that the pool should have a guaranteed lifetime
+ * that is longer than any Handle retrieved from the pool.
+ **/
 class ReusableSetPool
 {
     using RSUP = std::unique_ptr<ReusableSet>;
@@ -33,6 +38,7 @@ public:
         _min_size(248), _grow_percent(20)
     {}
 
+    /** Create or re-use a set with (at least) the given size. */
     ReusableSetHandle get(size_t size) {
         Guard guard(_lock);
         size_t last_used_size = 0;
@@ -56,6 +62,7 @@ public:
         return ReusableSetHandle(std::move(r), *this);
     }
 
+    /** Return a ReusableSet to the pool. */
     void reuse(RSUP used) {
         Guard guard(_lock);
         _lru_stack.push_back(std::move(used));
