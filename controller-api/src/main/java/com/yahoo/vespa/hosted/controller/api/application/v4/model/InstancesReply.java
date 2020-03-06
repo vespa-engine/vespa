@@ -3,9 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import java.net.URI;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author Tony Vaagenes

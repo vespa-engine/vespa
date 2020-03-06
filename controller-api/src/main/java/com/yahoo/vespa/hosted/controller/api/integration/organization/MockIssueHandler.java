@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.google.inject.Inject;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.net.URI;
 import java.time.Clock;
@@ -131,7 +130,7 @@ public class MockIssueHandler implements IssueHandler {
         issues.get(issueId).updated = clock.instant();
     }
 
-    private class PropertyInfo {
+    private static class PropertyInfo {
 
         private List<List<User>> contacts = Collections.emptyList();
         private URI issueUrl = URI.create("issues.tld");

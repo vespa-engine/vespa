@@ -1,10 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 
-/**
- * @author bjorncs
- */
-
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 
@@ -17,6 +13,9 @@ import static com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget.c
 import static com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget.defaultFile;
 import static com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget.systemFile;
 
+/**
+ * @author bjorncs
+ */
 class ControllerFlagsTarget implements FlagsTarget {
     private final SystemName system;
 

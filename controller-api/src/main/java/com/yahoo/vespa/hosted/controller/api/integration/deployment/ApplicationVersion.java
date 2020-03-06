@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.component.Version;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -100,7 +99,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         return String.format("%s.%d-%s",
                              majorVersion,
                              buildNumber.getAsLong(),
-                             source.map(SourceRevision::commit).map(commit -> abbreviateCommit(commit))
+                             source.map(SourceRevision::commit).map(ApplicationVersion::abbreviateCommit)
                                    .or(this::commit)
                                    .orElse("unknown"));
     }

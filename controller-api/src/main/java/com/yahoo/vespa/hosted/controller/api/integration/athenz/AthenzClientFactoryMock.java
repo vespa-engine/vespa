@@ -7,7 +7,6 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
