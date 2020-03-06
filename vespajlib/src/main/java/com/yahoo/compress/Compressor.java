@@ -31,6 +31,10 @@ public class Compressor {
         this(type, 9, 0.95, 0);
     }
 
+    public Compressor(CompressionType type, int level) {
+        this(type, level, 0.95, 0);
+    }
+
     /**
      * Creates a compressor.
      *
@@ -79,14 +83,16 @@ public class Compressor {
             case LZ4:
                 int dataSize = uncompressedSize.isPresent() ? uncompressedSize.get() : data.length;
                 if (dataSize < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
-                LZ4Compressor compressor = level < 7 ? factory.fastCompressor() : factory.highCompressor();
-                byte[] compressedData = compressor.compress(data, 0, dataSize);
+                byte[] compressedData = getCompressor().compress(data, 0, dataSize);
                 if (compressedData.length + 8 >= dataSize * compressionThresholdFactor)
                     return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
                 return new Compression(CompressionType.LZ4, dataSize, compressedData);
             default:
                 throw new IllegalArgumentException(requestedCompression + " is not supported");
         }
+    }
+    private LZ4Compressor getCompressor() {
+        return level < 7 ? factory.fastCompressor() : factory.highCompressor();
     }
     /** Compresses some data using the requested compression type */
     public Compression compress(CompressionType requestedCompression, byte[] data) { return compress(requestedCompression, data, Optional.empty()); }
@@ -131,6 +137,15 @@ public class Compressor {
     /** Decompresses some data */
     public byte[] decompress(Compression compression) {
         return decompress(compression.type(), compression.data(), 0, compression.uncompressedSize(), Optional.empty());
+    }
+
+    public byte[] compressUnconditionally(byte[] input) {
+        return getCompressor().compress(input);
+    }
+    public void decompressUnconditionally(byte[] input, byte[] output) {
+        if (input.length > 0) {
+            factory.safeDecompressor().decompress(input, output);
+        }
     }
 
     public static class Compression {
