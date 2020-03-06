@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.component.Version;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;

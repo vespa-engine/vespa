@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.google.inject.Inject;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.net.URI;
 import java.time.Clock;
