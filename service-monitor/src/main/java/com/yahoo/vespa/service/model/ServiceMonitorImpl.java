@@ -2,6 +2,8 @@
 package com.yahoo.vespa.service.model;
 
 import com.google.inject.Inject;
+import com.yahoo.config.model.api.ApplicationInfo;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
@@ -9,13 +11,13 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
+import com.yahoo.vespa.service.manager.MonitorManager;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.ServiceHostListener;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
+import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -24,62 +26,93 @@ import java.util.Set;
 
 public class ServiceMonitorImpl implements ServiceMonitor {
 
-    private final ServiceMonitor delegate;
+    private final ServiceMonitorMetrics metrics;
+    private final DuperModelManager duperModelManager;
+    private final ModelGenerator modelGenerator;
+    private final ServiceStatusProvider serviceStatusProvider;
 
     @Inject
     public ServiceMonitorImpl(DuperModelManager duperModelManager,
                               UnionMonitorManager monitorManager,
                               Metric metric,
                               Timer timer,
-                              Zone zone,
-                              FlagSource flagSource) {
-        duperModelManager.registerListener(monitorManager);
-
-        ServiceMonitor serviceMonitor = new ServiceModelProvider(
-                monitorManager,
+                              Zone zone) {
+        this(monitorManager,
                 new ServiceMonitorMetrics(metric, timer),
                 duperModelManager,
-                new ModelGenerator(zone));
+                new ModelGenerator(zone)
+        );
+    }
 
-        if (Flags.SERVICE_MODEL_CACHE.bindTo(flagSource).value()) {
-            delegate = new ServiceModelCache(serviceMonitor, timer);
-        } else {
-            delegate = serviceMonitor;
+    ServiceMonitorImpl(MonitorManager monitorManager,
+                       ServiceMonitorMetrics metrics,
+                       DuperModelManager duperModelManager,
+                       ModelGenerator modelGenerator) {
+        this.serviceStatusProvider = monitorManager;
+        this.metrics = metrics;
+        this.duperModelManager = duperModelManager;
+        this.modelGenerator = modelGenerator;
+
+        duperModelManager.registerListener(monitorManager);
+    }
+    @Override
+    public ServiceModel getServiceModelSnapshot() {
+        try (LatencyMeasurement measurement = metrics.startServiceModelSnapshotLatencyMeasurement()) {
+            return modelGenerator.toServiceModel(duperModelManager.getApplicationInfos(), serviceStatusProvider);
         }
     }
 
     @Override
-    public ServiceModel getServiceModelSnapshot() {
-        return delegate.getServiceModelSnapshot();
-    }
-
-    @Override
     public Set<ApplicationInstanceReference> getAllApplicationInstanceReferences() {
-        return delegate.getAllApplicationInstanceReferences();
+        return modelGenerator.toApplicationInstanceReferenceSet(duperModelManager.getApplicationInfos());
     }
 
     @Override
     public Optional<ApplicationInstance> getApplication(HostName hostname) {
-        return delegate.getApplication(hostname);
+        Optional<ApplicationInfo> applicationInfo = getApplicationInfo(hostname);
+        if (applicationInfo.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(modelGenerator.toApplicationInstance(applicationInfo.get(), serviceStatusProvider));
     }
 
     @Override
     public Optional<ApplicationInstance> getApplication(ApplicationInstanceReference reference) {
-        return delegate.getApplication(reference);
+        return getApplicationInfo(reference)
+                .map(applicationInfo -> modelGenerator.toApplicationInstance(applicationInfo, serviceStatusProvider));
     }
 
     @Override
     public Optional<ApplicationInstance> getApplicationNarrowedTo(HostName hostname) {
-        return delegate.getApplicationNarrowedTo(hostname);
+        Optional<ApplicationInfo> applicationInfo = getApplicationInfo(hostname);
+        if (applicationInfo.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(modelGenerator.toApplicationNarrowedToHost(
+                applicationInfo.get(), hostname, serviceStatusProvider));
     }
 
     @Override
     public Map<HostName, List<ServiceInstance>> getServicesByHostname() {
-        return delegate.getServicesByHostname();
+        return getServiceModelSnapshot().getServiceInstancesByHostName();
     }
 
     @Override
     public void registerListener(ServiceHostListener listener) {
-        delegate.registerListener(listener);
+        var duperModelListener = ServiceHostListenerAdapter.asDuperModelListener(listener, modelGenerator);
+        duperModelManager.registerListener(duperModelListener);
+    }
+
+    private Optional<ApplicationInfo> getApplicationInfo(ApplicationInstanceReference reference) {
+        ApplicationId applicationId = ApplicationInstanceGenerator.toApplicationId(reference);
+        return duperModelManager.getApplicationInfo(applicationId);
+    }
+
+    private Optional<ApplicationInfo> getApplicationInfo(HostName hostname) {
+        // The duper model uses HostName from config.provision, which is more natural than applicationmodel.
+        var configProvisionHostname = com.yahoo.config.provision.HostName.from(hostname.s());
+        return duperModelManager.getApplicationInfo(configProvisionHostname);
     }
 }

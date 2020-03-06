@@ -31,7 +31,6 @@ import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
-import com.yahoo.vespa.service.model.ServiceModelCache;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
@@ -60,7 +59,7 @@ class ModelTestUtils {
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
     private final StatusService statusService = new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer(), flagSource);
     private final TestTimer timer = new TestTimer();
-    private final ServiceMonitor serviceMonitor = new ServiceModelCache(() -> new ServiceModel(applications), timer);
+    private final ServiceMonitor serviceMonitor = () -> new ServiceModel(applications);
     private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory()),
                                                                    clusterControllerClientFactory,
                                                                    statusService,
