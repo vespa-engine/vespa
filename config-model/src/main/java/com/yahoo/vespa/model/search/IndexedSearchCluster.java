@@ -334,6 +334,7 @@ public class IndexedSearchCluster extends SearchCluster
             if (searchCoverage.getMaxWaitAfterCoverageFactor() != null)
                 builder.maxWaitAfterCoverageFactor(searchCoverage.getMaxWaitAfterCoverageFactor());
         }
+        builder.warmuptime(5.0);
     }
 
     @Override
