@@ -80,10 +80,12 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     
     private String name() { return this.getClass().getSimpleName(); }
 
-    /** A utility to group active tenant applications by application */
+    /** A utility to group active tenant nodes by application */
     protected Map<ApplicationId, List<Node>> activeNodesByApplication() {
         return nodeRepository().list().nodeType(NodeType.tenant).state(Node.State.active).asList()
-                               .stream().collect(Collectors.groupingBy(n -> n.allocation().get().owner()));
+                               .stream()
+                               .filter(node -> ! node.allocation().get().owner().instance().isTester())
+                               .collect(Collectors.groupingBy(node -> node.allocation().get().owner()));
     }
 
     static long staggeredDelay(List<HostName> cluster, HostName host, Instant now, Duration interval) {
