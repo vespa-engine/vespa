@@ -20,10 +20,12 @@ import static java.util.Collections.singleton;
  */
 public class DefaultPublicMetrics {
 
+    public static final String DEFAULT_METRIC_SET_ID = "default";
+
     public static MetricSet defaultPublicMetricSet = createMetricSet();
 
     private static MetricSet createMetricSet() {
-        return new MetricSet("public",
+        return new MetricSet(DEFAULT_METRIC_SET_ID,
                              getAllMetrics(),
                              singleton(defaultVespaMetricSet));
     }
