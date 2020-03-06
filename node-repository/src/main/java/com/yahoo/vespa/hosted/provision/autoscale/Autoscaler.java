@@ -66,8 +66,10 @@ public class Autoscaler {
     public Optional<AllocatableClusterResources> autoscale(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
         if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                                    node.allocation().get().membership().retired() ||
-                                                   node.allocation().get().isRemovable()))
+                                                   node.allocation().get().isRemovable())) {
+            log.fine("Autoscaling " + applicationId + " " + cluster + ": Cluster is in flux");
             return Optional.empty(); // Don't autoscale clusters that are in flux
+        }
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, resourcesCalculator);
         Optional<Double> cpuLoad    = averageLoad(Resource.cpu, cluster, clusterNodes);
         Optional<Double> memoryLoad = averageLoad(Resource.memory, cluster, clusterNodes);
@@ -164,8 +166,14 @@ public class Autoscaler {
                                                           resource,
                                                           clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
 
-        if (window.measurementCount() < minimumMeasurements) return Optional.empty();
-        if (window.hostnames() != clusterNodes.size()) return Optional.empty(); // Regulate only when all nodes are measured
+        if (window.measurementCount() < minimumMeasurements) {
+            log.fine("Autoscaling " + cluster + " resource " + resource + ": Not enough measurements, has " + window.measurementCount());
+            return Optional.empty();
+        }
+        if (window.hostnames() != clusterNodes.size()) {
+            log.fine("Autoscaling " + cluster + " resource " + resource + ": Measurements are not stable. Hosts in cluster: " + clusterNodes.size() + ", window: " + window.hostnames());
+            return Optional.empty(); // Regulate only when all nodes are measured
+        }
 
         return Optional.of(window.average());
     }
