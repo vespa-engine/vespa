@@ -128,7 +128,7 @@ public class Dispatcher extends AbstractComponent {
         Thread warmup = new Thread(new Runnable() {
             @Override
             public void run() {
-                warmupLZ4(dispatchConfig.warmuptime());
+                warmup(dispatchConfig.warmuptime());
             }
         });
         warmup.start();
@@ -148,19 +148,13 @@ public class Dispatcher extends AbstractComponent {
         searchCluster.pingIterationCompleted();
     }
 
-    private static long warmupLZ4(double seconds) {
-        byte [] input = new byte[0x4000];
-        Compressor lz4 = new Compressor();
-        new Random().nextBytes(input);
-        long timeDone = System.nanoTime() + (long)(seconds*1000000000);
-        long compressedBytes = 0;
-        byte [] decompressed = new byte [input.length];
-        while (System.nanoTime() < timeDone) {
-                byte [] compressed = lz4.compressUnconditionally(input);
-                lz4.decompressUnconditionally(compressed, decompressed);
-                compressedBytes += compressed.length;
-        }
-        return compressedBytes;
+    /*
+     Will run important code in order to trigger JIT compilation and avoid cold start issues.
+     Currently warms up lz4 compression code.
+     */
+
+    private static long warmup(double seconds) {
+        return new Compressor().warmup(seconds);
     }
 
     /** Returns the search cluster this dispatches to */

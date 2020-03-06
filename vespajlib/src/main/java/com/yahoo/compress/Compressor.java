@@ -3,8 +3,12 @@ package com.yahoo.compress;
 
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
+import net.jpountz.lz4.LZ4FastDecompressor;
+import net.jpountz.lz4.LZ4SafeDecompressor;
+
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Random;
 
 /**
  * Compressor which can compress and decompress in various formats.
@@ -146,6 +150,28 @@ public class Compressor {
         if (input.length > 0) {
             factory.safeDecompressor().decompress(input, output);
         }
+    }
+
+    public long warmup(double seconds) {
+        byte [] input = new byte[0x4000];
+        new Random().nextBytes(input);
+        long timeDone = System.nanoTime() + (long)(seconds*1000000000);
+        long compressedBytes = 0;
+        byte [] decompressed = new byte [input.length];
+        LZ4FastDecompressor fastDecompressor = factory.fastDecompressor();
+        LZ4SafeDecompressor safeDecompressor = factory.safeDecompressor();
+        LZ4Compressor fastCompressor = factory.fastCompressor();
+        LZ4Compressor highCompressor = factory.highCompressor();
+        while (System.nanoTime() < timeDone) {
+            byte [] compressedFast = fastCompressor.compress(input);
+            byte [] compressedHigh = highCompressor.compress(input);
+            fastDecompressor.decompress(compressedFast, decompressed);
+            fastDecompressor.decompress(compressedHigh, decompressed);
+            safeDecompressor.decompress(compressedFast, decompressed);
+            safeDecompressor.decompress(compressedHigh, decompressed);
+            compressedBytes += compressedFast.length + compressedHigh.length;
+        }
+        return compressedBytes;
     }
 
     public static class Compression {
