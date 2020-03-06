@@ -85,4 +85,5 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         buffer.append(",approximate=").append(String.valueOf(approximate));
         buffer.append(",targetNumHits=").append(targetNumHits).append("}");
     }
+
 }

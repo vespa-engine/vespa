@@ -1,14 +1,11 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-package com.yahoo.prelude.searcher;
+package com.yahoo.search.searchers;
 
 import com.google.common.util.concurrent.MoreExecutors;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.RawSource;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -20,14 +17,10 @@ import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.Searcher;
-import com.yahoo.search.searchers.ValidateNearestNeighborSearcher;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
-
-import java.util.*;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
