@@ -18,12 +18,21 @@ class LevelZeroGenerator : public RandomLevelGenerator {
 };
 
 DistanceFunction::UP
-make_distance_function(ValueType::CellType cell_type)
+make_distance_function(size_t vector_size, ValueType::CellType cell_type)
 {
-    if (cell_type == ValueType::CellType::FLOAT) {
-        return std::make_unique<SquaredEuclideanDistance<float>>();
+    bool hw_accelerated = (vector_size % 32) == 0;
+    if (hw_accelerated) {
+        if (cell_type == ValueType::CellType::FLOAT) {
+            return std::make_unique<HwAccelSquaredEuclideanDistance<float, 32>>();
+        } else {
+            return std::make_unique<HwAccelSquaredEuclideanDistance<double, 32>>();
+        }
     } else {
-        return std::make_unique<SquaredEuclideanDistance<double>>();
+        if (cell_type == ValueType::CellType::FLOAT) {
+            return std::make_unique<SquaredEuclideanDistance<float>>();
+        } else {
+            return std::make_unique<SquaredEuclideanDistance<double>>();
+        }
     }
 }
 
@@ -37,6 +46,7 @@ make_random_level_generator(uint32_t m)
 
 std::unique_ptr<NearestNeighborIndex>
 DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
+                                         size_t vector_size,
                                          vespalib::eval::ValueType::CellType cell_type,
                                          const search::attribute::HnswIndexParams& params) const
 {
@@ -45,7 +55,7 @@ DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
                           m,
                           params.neighbors_to_explore_at_insert(),
                           true);
-    return std::make_unique<HnswIndex>(vectors, make_distance_function(cell_type), make_random_level_generator(m), cfg);
+    return std::make_unique<HnswIndex>(vectors, make_distance_function(vector_size, cell_type), make_random_level_generator(m), cfg);
 }
 
 }

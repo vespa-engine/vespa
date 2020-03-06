@@ -12,6 +12,7 @@ namespace search::tensor {
 class DefaultNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
 public:
     std::unique_ptr<NearestNeighborIndex> make(const DocVectorAccess& vectors,
+                                               size_t vector_size,
                                                vespalib::eval::ValueType::CellType cell_type,
                                                const search::attribute::HnswIndexParams& params) const override;
 };
