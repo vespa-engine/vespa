@@ -72,6 +72,7 @@ class SslHandshakeFailedListener implements SslHandshakeListener {
 
         static Optional<SslHandshakeFailure> fromSslHandshakeException(SSLHandshakeException exception) {
             String message = exception.getMessage();
+            if (message == null || message.isBlank()) return Optional.empty();
             for (SslHandshakeFailure failure : values()) {
                 if (failure.messageMatcher.test(message)) {
                     return Optional.of(failure);
