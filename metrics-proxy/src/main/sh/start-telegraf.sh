@@ -95,5 +95,5 @@ configfile=${conf_dir}/telegraf.conf
 pidfile="${VESPA_HOME}/var/run/telegraf.pid"
 
 vespa-run-as-vespa-user vespa-runserver -s telegraf -r 30 -p $pidfile -- \
-telegraf --config ${configfile}
+/opt/vespa-deps/bin/telegraf --config ${configfile}
 
