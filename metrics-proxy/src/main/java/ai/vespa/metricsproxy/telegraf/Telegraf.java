@@ -6,7 +6,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
 import com.yahoo.system.execution.ProcessExecutor;
 import com.yahoo.system.execution.ProcessResult;
-import com.yahoo.vespa.defaults.Defaults;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 
@@ -16,6 +15,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
@@ -23,9 +23,15 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class Telegraf extends AbstractComponent {
 
-    private static final String TELEGRAF_CONFIG_PATH = "/etc/telegraf/telegraf.conf";
+    // These paths must coincide with the paths in the start/stop-telegraf shell scripts.
+    private static final String TELEGRAF_CONFIG_PATH = getDefaults().underVespaHome("conf/telegraf/telegraf.conf");
+    private static final String TELEGRAF_LOG_FILE_PATH = getDefaults().underVespaHome("logs/telegraf/telegraf.log");
+
+    private static final String START_TELEGRAF_SCRIPT = getDefaults().underVespaHome("libexec/vespa/start-telegraf.sh");
+    private static final String STOP_TELEGRAF_SCRIPT = getDefaults().underVespaHome("libexec/vespa/stop-telegraf.sh");
+
     private static final String TELEGRAF_CONFIG_TEMPLATE_PATH = "templates/telegraf.conf.vm";
-    private static final String TELEGRAF_LOG_FILE_PATH = Defaults.getDefaults().underVespaHome("logs/telegraf/telegraf.log");
+
     private final TelegrafRegistry telegrafRegistry;
 
     private static final Logger logger = Logger.getLogger(Telegraf.class.getName());
@@ -53,11 +59,12 @@ public class Telegraf extends AbstractComponent {
     }
 
     private void restartTelegraf() {
-        executeCommand("service telegraf restart");
+        executeCommand(STOP_TELEGRAF_SCRIPT);
+        executeCommand(START_TELEGRAF_SCRIPT);
     }
 
     private void stopTelegraf() {
-        executeCommand("service telegraf stop");
+        executeCommand(STOP_TELEGRAF_SCRIPT);
     }
 
     private void executeCommand(String command) {
