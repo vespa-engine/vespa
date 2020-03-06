@@ -212,9 +212,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private boolean redeployAllApplications() throws InterruptedException {
         Instant end = Instant.now().plus(maxDurationOfRedeployment);
         Set<ApplicationId> applicationsNotRedeployed = applicationRepository.listApplications();
-        if (superModelManager != null) {
-            superModelManager.setBootstrapApplicationSet(applicationsNotRedeployed);
-        }
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
             if ( ! applicationsNotRedeployed.isEmpty()) {
