@@ -154,8 +154,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
         ddbB.inputdoctypename(sdoc.getInputDocType())
-            .configid(sdoc.getConfigId())
-            .visibilitydelay(getVisibilityDelay());
+            .configid(sdoc.getConfigId());
     }
 
     @Override
