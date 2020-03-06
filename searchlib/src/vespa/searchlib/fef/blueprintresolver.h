@@ -68,7 +68,7 @@ public:
      * problems for 'sane' developers and low enough to avoid stack
      * overflow.
      **/
-    static const uint32_t MAX_DEP_DEPTH = 64;
+    static const uint32_t MAX_DEP_DEPTH = 256;
 
 private:
     const BlueprintFactory       &_factory;
