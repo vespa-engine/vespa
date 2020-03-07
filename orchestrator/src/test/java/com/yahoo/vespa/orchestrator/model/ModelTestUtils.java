@@ -17,6 +17,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.orchestrator.DummyAntiServiceMonitor;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -57,9 +58,13 @@ class ModelTestUtils {
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
     private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
-    private final StatusService statusService = new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer(), flagSource);
-    private final TestTimer timer = new TestTimer();
     private final ServiceMonitor serviceMonitor = () -> new ServiceModel(applications);
+    private final StatusService statusService = new ZkStatusService(
+            new MockCurator(),
+            mock(Metric.class),
+            new TestTimer(),
+            flagSource,
+            new DummyAntiServiceMonitor());
     private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory()),
                                                                    clusterControllerClientFactory,
                                                                    statusService,

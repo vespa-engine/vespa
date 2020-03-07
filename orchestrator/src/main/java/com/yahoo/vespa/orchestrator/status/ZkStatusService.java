@@ -16,6 +16,8 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
+import com.yahoo.vespa.service.monitor.AntiServiceMonitor;
+import com.yahoo.vespa.service.monitor.CriticalRegion;
 import org.apache.zookeeper.data.Stat;
 
 import javax.inject.Inject;
@@ -46,6 +48,7 @@ public class ZkStatusService implements StatusService {
     private final Metric metric;
     private final Timer timer;
     private final boolean doCleanup;
+    private final AntiServiceMonitor antiServiceMonitor;
 
     /**
      * A cache of metric contexts for each possible dimension map. In practice, there is one dimension map
@@ -58,21 +61,25 @@ public class ZkStatusService implements StatusService {
             @Component Curator curator,
             @Component Metric metric,
             @Component Timer timer,
-            @Component FlagSource flagSource) {
+            @Component FlagSource flagSource,
+            @Component AntiServiceMonitor antiServiceMonitor) {
         this(curator,
                 metric,
                 timer,
                 new HostInfosCache(curator, new HostInfosServiceImpl(curator, timer)),
-                Flags.CLEANUP_STATUS_SERVICE.bindTo(flagSource).value());
+                Flags.CLEANUP_STATUS_SERVICE.bindTo(flagSource).value(),
+                antiServiceMonitor);
     }
 
     /** Non-private for testing only. */
-    ZkStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache, boolean doCleanup) {
+    ZkStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache,
+                    boolean doCleanup, AntiServiceMonitor antiServiceMonitor) {
         this.curator = curator;
         this.metric = metric;
         this.timer = timer;
         this.hostInfosCache = hostInfosCache;
         this.doCleanup = doCleanup;
+        this.antiServiceMonitor = antiServiceMonitor;
     }
 
     @Override
@@ -186,6 +193,9 @@ public class ZkStatusService implements StatusService {
             metric.add(acquireResultMetricName, 1, metricContext);
         }
 
+        CriticalRegion inaccessibleDuperModelRegion = antiServiceMonitor
+                .disallowDuperModelLockAcquisition(ZkStatusService.class.getSimpleName() + " application lock");
+
         return () -> {
             try {
                 lock.close();
@@ -196,6 +206,8 @@ public class ZkStatusService implements StatusService {
                                 ZkStatusService.class.getSimpleName() + ", will ignore and continue",
                         e);
             }
+
+            inaccessibleDuperModelRegion.close();
 
             Instant lockReleasedTime = timer.currentTime();
             double seconds = durationInSeconds(acquireEndTime, lockReleasedTime);

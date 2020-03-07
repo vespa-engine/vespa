@@ -16,6 +16,9 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.TestIds;
+import com.yahoo.vespa.service.monitor.AntiServiceMonitor;
+import com.yahoo.vespa.service.monitor.CriticalRegion;
+import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.test.KillSession;
@@ -57,6 +60,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,7 +72,10 @@ public class ZkStatusServiceTest {
     private final Timer timer = mock(Timer.class);
     private final Metric metric = mock(Metric.class);
     private final OrchestratorContext context = mock(OrchestratorContext.class);
-    private InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
+    private final CriticalRegion criticalRegion = mock(CriticalRegion.class);
+    private final AntiServiceMonitor antiServiceMonitor = mock(AntiServiceMonitor.class);
 
     @Captor
     private ArgumentCaptor<Map<String, String>> captor;
@@ -78,11 +85,12 @@ public class ZkStatusServiceTest {
 
         testingServer = new TestingServer();
         curator = createConnectedCurator(testingServer);
-        statusService = new ZkStatusService(curator, metric, timer, flagSource);
+        statusService = new ZkStatusService(curator, metric, timer, flagSource, antiServiceMonitor);
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(10));
         when(context.isProbe()).thenReturn(false);
         when(timer.currentTime()).thenReturn(Instant.ofEpochMilli(1));
         when(timer.toUtcClock()).thenReturn(new ManualClock(Instant.ofEpochMilli(1)));
+        when(antiServiceMonitor.disallowDuperModelLockAcquisition(any())).thenReturn(criticalRegion);
     }
 
     private static Curator createConnectedCurator(TestingServer server) throws InterruptedException {
@@ -151,7 +159,7 @@ public class ZkStatusServiceTest {
     public void locks_are_exclusive() throws Exception {
         setUp();
         ZkStatusService zkStatusService2 =
-                new ZkStatusService(curator, mock(Metric.class), new TestTimer(), flagSource);
+                new ZkStatusService(curator, mock(Metric.class), new TestTimer(), flagSource, antiServiceMonitor);
 
         final CompletableFuture<Void> lockedSuccessfullyFuture;
         try (ApplicationLock lock = statusService
@@ -178,7 +186,7 @@ public class ZkStatusServiceTest {
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
         setUp();
         ZkStatusService zkStatusService2 =
-                new ZkStatusService(curator, mock(Metric.class), new TestTimer(), flagSource);
+                new ZkStatusService(curator, mock(Metric.class), new TestTimer(), flagSource, antiServiceMonitor);
 
         try (ApplicationLock lock = statusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
@@ -309,16 +317,28 @@ public class ZkStatusServiceTest {
 
         HostName strayHostname = new HostName("stray1.com");
 
+        verify(antiServiceMonitor, times(0)).disallowDuperModelLockAcquisition(any());
         try (ApplicationLock lock = statusService.lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+            verify(antiServiceMonitor, times(1)).disallowDuperModelLockAcquisition(any());
+
             lock.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
             lock.setHostState(TestIds.HOST_NAME1, HostStatus.ALLOWED_TO_BE_DOWN);
 
             lock.setHostState(strayHostname, HostStatus.PERMANENTLY_DOWN);
-        }
 
-        try (ApplicationLock lock = statusService.lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE2)) {
-            lock.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
+            verify(criticalRegion, times(0)).close();
         }
+        verify(criticalRegion, times(1)).close();
+
+        verify(antiServiceMonitor, times(1)).disallowDuperModelLockAcquisition(any());
+        try (ApplicationLock lock = statusService.lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE2)) {
+            verify(antiServiceMonitor, times(2)).disallowDuperModelLockAcquisition(any());
+
+            lock.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
+
+            verify(criticalRegion, times(1)).close();
+        }
+        verify(criticalRegion, times(2)).close();
 
         ApplicationId applicationId = OrchestratorUtil.toApplicationId(TestIds.APPLICATION_INSTANCE_REFERENCE);
         assertEquals("test-tenant:test-application:test-environment:test-region:test-instance-key",
