@@ -365,7 +365,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         if (run.noNodesDownSince()
-               .map(since -> since.isBefore(controller.clock().instant().minus(installationTimeout).multipliedBy(2)))
+               .map(since -> since.isBefore(controller.clock().instant().minus(installationTimeout.multipliedBy(2))))
                .orElse(false)) {
             if (summary.needPlatformUpgrade() > 0 || summary.needReboot() > 0 || summary.needRestart() > 0)
                 failureReason = "No nodes allowed to suspend to progress installation for " + 2 * installationTimeout.toMinutes() + " minutes.";
