@@ -12,6 +12,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
 import com.yahoo.vespa.service.monitor.DuperModelProvider;
@@ -23,8 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,7 +49,10 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
 
     private final Map<ApplicationId, InfraApplication> supportedInfraApplications;
 
-    private final Object monitor = new Object();
+    private static CriticalRegionChecker disallowedDuperModeLockAcquisitionRegions =
+            new CriticalRegionChecker("duper model deadlock detection");
+
+    private final ReentrantLock lock = new ReentrantLock(true);
     private final DuperModel duperModel;
     // The set of active infrastructure ApplicationInfo. Not all are necessarily in the DuperModel for historical reasons.
     private final Set<ApplicationId> activeInfraInfos = new HashSet<>(10);
@@ -83,27 +89,23 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
         superModelProvider.registerListener(new SuperModelListener() {
             @Override
             public void applicationActivated(SuperModel superModel, ApplicationInfo application) {
-                synchronized (monitor) {
-                    duperModel.add(application);
-                }
+                lockedRunnable(() -> duperModel.add(application));
             }
 
             @Override
             public void applicationRemoved(SuperModel superModel, ApplicationId applicationId) {
-                synchronized (monitor) {
-                    duperModel.remove(applicationId);
-                }
+                lockedRunnable(() -> duperModel.remove(applicationId));
             }
 
             @Override
             public void notifyOfCompleteness(SuperModel superModel) {
-                synchronized (monitor) {
+                lockedRunnable(() -> {
                     if (!superModelIsComplete) {
                         superModelIsComplete = true;
                         logger.log(LogLevel.INFO, "All bootstrap tenant applications have been activated");
                         maybeSetDuperModelAsComplete();
                     }
-                }
+                });
             }
         });
     }
@@ -114,9 +116,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
      */
     @Override
     public void registerListener(DuperModelListener listener) {
-        synchronized (monitor) {
-            duperModel.registerListener(listener);
-        }
+        lockedRunnable(() -> duperModel.registerListener(listener));
     }
 
     @Override
@@ -138,9 +138,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
 
     @Override
     public boolean infraApplicationIsActive(ApplicationId applicationId) {
-        synchronized (monitor) {
-            return activeInfraInfos.contains(applicationId);
-        }
+        return lockedSupplier(() -> activeInfraInfos.contains(applicationId));
     }
 
     @Override
@@ -150,10 +148,10 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
             throw new IllegalArgumentException("There is no infrastructure application with ID '" + applicationId + "'");
         }
 
-        synchronized (monitor) {
+        lockedRunnable(() -> {
             activeInfraInfos.add(applicationId);
             duperModel.add(application.makeApplicationInfo(hostnames));
-        }
+        });
     }
 
     @Override
@@ -162,44 +160,78 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
             throw new IllegalArgumentException("There is no infrastructure application with ID '" + applicationId + "'");
         }
 
-        synchronized (monitor) {
+        lockedRunnable(() -> {
             activeInfraInfos.remove(applicationId);
             duperModel.remove(applicationId);
-        }
+        });
     }
 
     @Override
     public void infraApplicationsIsNowComplete() {
-        synchronized (monitor) {
+        lockedRunnable(() -> {
             if (!infraApplicationsIsComplete) {
                 infraApplicationsIsComplete = true;
                 logger.log(LogLevel.INFO, "All infrastructure applications have been activated");
                 maybeSetDuperModelAsComplete();
             }
-        }
+        });
     }
 
     public Optional<ApplicationInfo> getApplicationInfo(ApplicationId applicationId) {
-        synchronized (monitor) {
-            return duperModel.getApplicationInfo(applicationId);
-        }
+        return lockedSupplier(() -> duperModel.getApplicationInfo(applicationId));
     }
 
     public Optional<ApplicationInfo> getApplicationInfo(HostName hostname) {
-        synchronized (monitor) {
-            return duperModel.getApplicationInfo(hostname);
-        }
+        return lockedSupplier(() -> duperModel.getApplicationInfo(hostname));
     }
 
     public List<ApplicationInfo> getApplicationInfos() {
-        synchronized (monitor) {
-            return duperModel.getApplicationInfos();
-        }
+        return lockedSupplier(() -> duperModel.getApplicationInfos());
+    }
+
+    /**
+     * Within the region, trying to accesss the duper model (without already having the lock)
+     * will cause an IllegalStateException to be thrown.
+     */
+    public CriticalRegion disallowDuperModelLockAcquisition(String regionDescription) {
+        return disallowedDuperModeLockAcquisitionRegions.startCriticalRegion(regionDescription);
     }
 
     private void maybeSetDuperModelAsComplete() {
         if (superModelIsComplete && infraApplicationsIsComplete) {
             duperModel.setComplete();
+        }
+    }
+
+    private <T> T lockedSupplier(Supplier<T> supplier) {
+        if (lock.isHeldByCurrentThread()) {
+            return supplier.get();
+        }
+
+        disallowedDuperModeLockAcquisitionRegions
+                .assertOutsideCriticalRegions("acquiring duper model lock");
+
+        lock.lock();
+        try {
+            return supplier.get();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void lockedRunnable(Runnable runnable) {
+        if (lock.isHeldByCurrentThread()) {
+            runnable.run();
+        }
+
+        disallowedDuperModeLockAcquisitionRegions
+                .assertOutsideCriticalRegions("acquiring duper model lock");
+
+        lock.lock();
+        try {
+            runnable.run();
+        } finally {
+            lock.unlock();
         }
     }
 }

@@ -14,6 +14,8 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.manager.MonitorManager;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
+import com.yahoo.vespa.service.monitor.AntiServiceMonitor;
+import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.ServiceHostListener;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -24,7 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class ServiceMonitorImpl implements ServiceMonitor {
+public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
 
     private final ServiceMonitorMetrics metrics;
     private final DuperModelManager duperModelManager;
@@ -103,6 +105,11 @@ public class ServiceMonitorImpl implements ServiceMonitor {
     public void registerListener(ServiceHostListener listener) {
         var duperModelListener = ServiceHostListenerAdapter.asDuperModelListener(listener, modelGenerator);
         duperModelManager.registerListener(duperModelListener);
+    }
+
+    @Override
+    public CriticalRegion disallowDuperModelLockAcquisition(String regionDescription) {
+        return duperModelManager.disallowDuperModelLockAcquisition(regionDescription);
     }
 
     private Optional<ApplicationInfo> getApplicationInfo(ApplicationInstanceReference reference) {

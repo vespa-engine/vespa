@@ -15,6 +15,8 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
+import com.yahoo.vespa.service.monitor.AntiServiceMonitor;
+import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
@@ -31,7 +33,7 @@ import java.util.stream.Collectors;
  * @author oyving
  * @author smorgrav
  */
-public class DummyServiceMonitor implements ServiceMonitor {
+public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
 
     public static final HostName TEST1_HOST_NAME = new HostName("test1.hostname.tld");
     public static final HostName TEST3_HOST_NAME = new HostName("test3.hostname.tld");
@@ -163,6 +165,11 @@ public class DummyServiceMonitor implements ServiceMonitor {
     @Override
     public Map<HostName, List<ServiceInstance>> getServicesByHostname() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CriticalRegion disallowDuperModelLockAcquisition(String regionDescription) {
+        return () -> {};
     }
 
     public static Set<HostName> getContentHosts(ApplicationInstanceReference appRef) {

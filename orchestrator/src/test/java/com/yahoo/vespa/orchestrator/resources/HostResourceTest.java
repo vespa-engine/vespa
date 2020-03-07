@@ -19,6 +19,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
+import com.yahoo.vespa.orchestrator.DummyAntiServiceMonitor;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
@@ -79,11 +80,12 @@ public class HostResourceTest {
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
+    private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZkStatusService(
-            new MockCurator(), mock(Metric.class), new TestTimer(), new InMemoryFlagSource());
+            new MockCurator(), mock(Metric.class), new TestTimer(), new InMemoryFlagSource(),
+            new DummyAntiServiceMonitor());
     private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
-    private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     static {
         when(serviceMonitor.getApplication(any(HostName.class)))
                 .thenReturn(Optional.of(

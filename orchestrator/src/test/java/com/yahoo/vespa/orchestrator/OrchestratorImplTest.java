@@ -76,7 +76,12 @@ public class OrchestratorImplTest {
     private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final MockCurator curator = new MockCurator();
-    private ZkStatusService statusService = new ZkStatusService(curator, mock(Metric.class), new TestTimer(), flagSource);
+    private ZkStatusService statusService = new ZkStatusService(
+            curator,
+            mock(Metric.class),
+            new TestTimer(),
+            flagSource,
+            new DummyAntiServiceMonitor());
 
     private ApplicationId app1;
     private ApplicationId app2;
@@ -394,7 +399,12 @@ public class OrchestratorImplTest {
     @Test
     public void testGetHost() throws Exception {
         ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
-        StatusService statusService = new ZkStatusService(new MockCurator(), mock(Metric.class), new TestTimer(), flagSource);
+        StatusService statusService = new ZkStatusService(
+                new MockCurator(),
+                mock(Metric.class),
+                new TestTimer(),
+                flagSource,
+                new DummyAntiServiceMonitor());
 
         HostName hostName = new HostName("host.yahoo.com");
         TenantId tenantId = new TenantId("tenant");
