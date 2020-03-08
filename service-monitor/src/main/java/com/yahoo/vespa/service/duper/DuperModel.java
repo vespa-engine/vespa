@@ -27,7 +27,7 @@ public class DuperModel {
 
     private final Map<ApplicationId, ApplicationInfo> applicationsById = new HashMap<>();
     private final Map<HostName, ApplicationId> idsByHostname = new HashMap<>();
-    private final Map<ApplicationId, Set<HostName>> hostnamesById = new HashMap<>();
+    private final Map<ApplicationId, HashSet<HostName>> hostnamesById = new HashMap<>();
 
     private final List<DuperModelListener> listeners = new ArrayList<>();
     private boolean isComplete = false;
@@ -75,6 +75,16 @@ public class DuperModel {
         return List.copyOf(applicationsById.values());
     }
 
+    /** Note: Returns an empty set for unknown application. */
+    public Set<HostName> getHostnames(ApplicationId applicationId) {
+        HashSet<HostName> set = hostnamesById.get(applicationId);
+        return set == null ? Set.of() : Set.copyOf(set);
+    }
+
+    public Optional<ApplicationId> getApplicationId(HostName hostname) {
+        return Optional.ofNullable(idsByHostname.get(hostname));
+    }
+
     public void add(ApplicationInfo applicationInfo) {
         ApplicationId id = applicationInfo.getApplicationId();
         ApplicationInfo oldApplicationInfo = applicationsById.put(id, applicationInfo);
@@ -87,15 +97,35 @@ public class DuperModel {
         }
         logger.log(LogLevel.INFO, logPrefix + id.toFullString());
 
-        Set<HostName> hostnames = hostnamesById.computeIfAbsent(id, k -> new HashSet<>());
-        Set<HostName> removedHosts = new HashSet<>(hostnames);
+        updateHostnameVsIdMaps(applicationInfo, id);
+
+        listeners.forEach(listener -> listener.applicationActivated(applicationInfo));
+    }
+
+    public void remove(ApplicationId applicationId) {
+        Set<HostName> hostnames = hostnamesById.remove(applicationId);
+        if (hostnames != null) {
+            hostnames.forEach(idsByHostname::remove);
+        }
+
+        ApplicationInfo application = applicationsById.remove(applicationId);
+        if (application != null) {
+            logger.log(LogLevel.INFO, "Removed application " + applicationId.toFullString());
+            listeners.forEach(listener -> listener.applicationRemoved(applicationId));
+        }
+    }
+
+    /** Update hostnamesById and idsByHostname based on a new applicationInfo. */
+    private void updateHostnameVsIdMaps(ApplicationInfo applicationInfo, ApplicationId id) {
+        Set<HostName> removedHosts = new HashSet<>(hostnamesById.computeIfAbsent(id, k -> new HashSet<>()));
 
         applicationInfo.getModel().getHosts().stream()
                 .map(HostInfo::getHostname)
                 .map(HostName::from)
                 .forEach(hostname -> {
                     if (!removedHosts.remove(hostname)) {
-                        hostnames.add(hostname);
+                        // hostname has been added
+                        hostnamesById.get(id).add(hostname);
                         ApplicationId previousId = idsByHostname.put(hostname, id);
 
                         if (previousId != null && !previousId.equals(id)) {
@@ -113,21 +143,10 @@ public class DuperModel {
                     }
                 });
 
-        removedHosts.forEach(idsByHostname::remove);
-
-        listeners.forEach(listener -> listener.applicationActivated(applicationInfo));
-    }
-
-    public void remove(ApplicationId applicationId) {
-        Set<HostName> hostnames = hostnamesById.remove(applicationId);
-        if (hostnames != null) {
-            hostnames.forEach(idsByHostname::remove);
-        }
-
-        ApplicationInfo application = applicationsById.remove(applicationId);
-        if (application != null) {
-            logger.log(LogLevel.INFO, "Removed application " + applicationId.toFullString());
-            listeners.forEach(listener -> listener.applicationRemoved(applicationId));
-        }
+        removedHosts.forEach(hostname -> {
+            // hostname has been removed
+            idsByHostname.remove(hostname);
+            hostnamesById.get(id).remove(hostname);
+        });
     }
 }
