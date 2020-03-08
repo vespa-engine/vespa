@@ -5,13 +5,29 @@ import com.yahoo.compress.CompressionType;
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.document.serialization.DeserializationException;
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.DataValue;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.Int8Value;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.Values;
 import com.yahoo.log.LogSetup;
-import com.yahoo.slime.*;
+import com.yahoo.slime.BinaryFormat;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.Slime;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +42,7 @@ import java.util.List;
 public class VespaSummaryBenchmark {
 
     private final Supervisor supervisor = new Supervisor(new Transport());
+    private static final LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
 
     private VespaSummaryBenchmark() { }
 
@@ -82,8 +99,7 @@ public class VespaSummaryBenchmark {
             int uncompressedSize = ret.get(1).asInt32();
             byte [] blob = ret.get(2).asData();
             if (type == CompressionType.LZ4) {
-                LZ4Factory factory = LZ4Factory.fastestInstance();
-                LZ4FastDecompressor decompressor = factory.fastDecompressor();
+                LZ4FastDecompressor decompressor = lz4Factory.fastDecompressor();
                 byte [] uncompressed = new byte [uncompressedSize];
                 int compressedLength = decompressor.decompress(blob, 0, uncompressed, 0, uncompressedSize);
                 if (compressedLength != blob.length) {

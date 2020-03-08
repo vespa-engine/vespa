@@ -23,7 +23,7 @@ public class Compressor {
     private final double compressionThresholdFactor;
     private final int compressMinSizeBytes;
 
-    private final LZ4Factory factory = LZ4Factory.fastestInstance();
+    private static final LZ4Factory factory = LZ4Factory.fastestInstance();
 
     /** Creates a compressor with default settings. */
     public Compressor() {
