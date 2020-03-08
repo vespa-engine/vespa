@@ -197,14 +197,14 @@ public class MetricsConsumersTest {
     }
 
     @Test
-    public void consumer_with_default_public_metric_set_has_all_public_metrics_plus_all_system_metrics_plus_its_own() {
+    public void consumer_with_default_metric_set_has_all_its_metrics_plus_all_system_metrics_plus_its_own() {
         String services = String.join("\n",
                                       "<services>",
                                       "    <admin version='2.0'>",
                                       "        <adminserver hostalias='node1'/>",
                                       "        <metrics>",
                                       "            <consumer id='consumer-with-public-default-set'>",
-                                      "                <metric-set id='public'/>",
+                                      "                <metric-set id='default'/>",
                                       "                <metric id='custom.metric'/>",
                                       "            </consumer>",
                                       "        </metrics>",
