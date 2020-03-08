@@ -29,7 +29,7 @@ public interface ServiceMonitor {
     }
 
     default Optional<ApplicationInstanceReference> getApplicationInstanceReference(HostName hostname) {
-        return getServiceModelSnapshot().getApplication(hostname).map(ApplicationInstance::reference);
+        return getApplication(hostname).map(ApplicationInstance::reference);
     }
 
     default Optional<ApplicationInstance> getApplication(HostName hostname) {
