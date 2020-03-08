@@ -13,9 +13,13 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -114,5 +118,37 @@ public class DuperModelTest {
         assertEquals(1, duperModel.numberOfHosts());
         assertEquals(Optional.of(application2), duperModel.getApplicationInfo(hostname1_1));
         assertEquals(Optional.empty(), duperModel.getApplicationInfo(hostname2_1));
+    }
+
+    @Test
+    public void hostIndicesForOneApplication() {
+        assertEquals(0, duperModel.numberOfApplications());
+        assertEquals(0, duperModel.numberOfHosts());
+        assertEquals(Set.of(), duperModel.getHostnames(id1));
+
+        addAndVerifyApplication1("host1");
+        addAndVerifyApplication1("host1", "host2");
+        addAndVerifyApplication1("host2", "host3");
+        assertEquals(Optional.empty(), duperModel.getApplicationId(HostName.from("host1")));
+
+        duperModel.remove(id1);
+        assertEquals(0, duperModel.numberOfApplications());
+        assertEquals(0, duperModel.numberOfHosts());
+        assertEquals(Set.of(), duperModel.getHostnames(id1));
+    }
+
+    private void addAndVerifyApplication1(String... hostnameStrings) {
+        HostName[] hostnameArray = Stream.of(hostnameStrings).map(HostName::from).toArray(HostName[]::new);
+        setUpApplication(id1, application1, hostnameArray);
+        duperModel.add(application1);
+
+        assertEquals(1, duperModel.numberOfApplications());
+        Optional<ApplicationInfo> applicationInfo = duperModel.getApplicationInfo(id1);
+        assertTrue(applicationInfo.isPresent());
+        assertSame(application1, applicationInfo.get());
+
+        assertEquals(hostnameArray.length, duperModel.numberOfHosts());
+        assertEquals(Set.of(hostnameArray), duperModel.getHostnames(id1));
+        Stream.of(hostnameArray).forEach(hostname -> assertEquals(Optional.of(id1), duperModel.getApplicationId(hostname)));
     }
 }
