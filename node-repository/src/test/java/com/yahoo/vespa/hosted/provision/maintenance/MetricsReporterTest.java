@@ -11,6 +11,8 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.applicationmodel.ApplicationInstance;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -26,7 +28,9 @@ import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Clock;
@@ -40,6 +44,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +54,23 @@ import static org.mockito.Mockito.when;
  * @author smorgrav
  */
 public class MetricsReporterTest {
+    private final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
+    private final ApplicationInstanceReference reference = mock(ApplicationInstanceReference.class);
+
+    @Before
+    public void setUp() {
+        // On the serviceModel returned by serviceMonitor.getServiceModelSnapshot(),
+        // 2 methods should be used by MetricsReporter:
+        //  - getServiceInstancesByHostName() -> empty Map
+        //  - getApplication() which is mapped to a dummy ApplicationInstanceReference and
+        //    used for lookup.
+        ServiceModel serviceModel = mock(ServiceModel.class);
+        when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
+        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
+        ApplicationInstance applicationInstance = mock(ApplicationInstance.class);
+        when(serviceModel.getApplication(any())).thenReturn(Optional.of(applicationInstance));
+        when(applicationInstance.reference()).thenReturn(reference);
+    }
 
     @Test
     public void test_registered_metric() {
@@ -91,12 +114,10 @@ public class MetricsReporterTest {
         expectedMetrics.put("numberOfServices", 0L);
 
         ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
+
         Orchestrator orchestrator = mock(Orchestrator.class);
-        ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getHostResolver()).thenReturn(hostName ->
-            Optional.of(HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)))
-        );
-        when(serviceMonitor.getServicesByHostname()).thenReturn(Map.of());
+        when(orchestrator.getHostInfo(eq(reference), any())).thenReturn(
+                HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)));
 
         TestMetric metric = new TestMetric();
         MetricsReporter metricsReporter = new MetricsReporter(
@@ -141,9 +162,7 @@ public class MetricsReporterTest {
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockUnallocated()));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
-        ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getHostResolver()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
-        when(serviceMonitor.getServicesByHostname()).thenReturn(Map.of());
+        when(orchestrator.getHostInfo(eq(reference), any())).thenReturn(HostInfo.createNoRemarks());
 
         TestMetric metric = new TestMetric();
         ManualClock clock = new ManualClock();

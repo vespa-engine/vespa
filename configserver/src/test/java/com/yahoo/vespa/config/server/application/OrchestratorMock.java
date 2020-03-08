@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -38,6 +39,12 @@ public class OrchestratorMock implements Orchestrator {
     public HostStatus getNodeStatus(HostName hostName) {
         HostInfo hostInfo = hostInfos.get(hostName);
         return hostInfo == null ? HostStatus.NO_REMARKS : hostInfo.status();
+    }
+
+    @Override
+    public HostInfo getHostInfo(ApplicationInstanceReference reference, HostName hostname) {
+        HostInfo hostInfo = hostInfos.get(hostname);
+        return hostInfo == null ? HostInfo.createNoRemarks() : hostInfo;
     }
 
     @Override

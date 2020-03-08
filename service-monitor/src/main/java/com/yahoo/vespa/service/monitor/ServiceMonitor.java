@@ -4,10 +4,7 @@ package com.yahoo.vespa.service.monitor;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,8 +28,12 @@ public interface ServiceMonitor {
         return getServiceModelSnapshot().getAllApplicationInstances().keySet();
     }
 
+    default Optional<ApplicationInstanceReference> getApplicationInstanceReference(HostName hostname) {
+        return getServiceModelSnapshot().getApplication(hostname).map(ApplicationInstance::reference);
+    }
+
     default Optional<ApplicationInstance> getApplication(HostName hostname) {
-        return Optional.ofNullable(getServiceModelSnapshot().getApplicationsByHostName().get(hostname));
+        return getServiceModelSnapshot().getApplication(hostname);
     }
 
     default Optional<ApplicationInstance> getApplication(ApplicationInstanceReference reference) {
@@ -41,10 +42,6 @@ public interface ServiceMonitor {
 
     default Optional<ApplicationInstance> getApplicationNarrowedTo(HostName hostname) {
         return getApplication(hostname);
-    }
-
-    default Map<HostName, List<ServiceInstance>> getServicesByHostname() {
-        return getServiceModelSnapshot().getServiceInstancesByHostName();
     }
 
     /**

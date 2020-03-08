@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -37,6 +38,12 @@ public class OrchestratorMock extends AbstractComponent implements Orchestrator 
     public HostStatus getNodeStatus(HostName hostName) {
         HostInfo hostInfo = suspendedHosts.get(hostName);
         return hostInfo == null ? HostStatus.NO_REMARKS : hostInfo.status();
+    }
+
+    @Override
+    public HostInfo getHostInfo(ApplicationInstanceReference reference, HostName hostname) {
+        HostInfo hostInfo = suspendedHosts.get(hostname);
+        return hostInfo == null ? HostInfo.createNoRemarks() : hostInfo;
     }
 
     @Override
