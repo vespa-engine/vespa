@@ -308,49 +308,36 @@
 {
    RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
    Memcheck:Cond
-   fun:contains
+   ...
+   fun:_ZN3re28Compiler7CompileEPNS_6RegexpEbl
+}
+{
+   RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
+   Memcheck:Value8
    ...
    fun:_ZN3re28Compiler7CompileEPNS_6RegexpEbl
 }
 {
    RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
    Memcheck:Cond
-   fun:has_index
-   ...
-   fun:_ZN3re28Compiler7CompileEPNS_6RegexpEbl
-}
-{
-   RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
-   Memcheck:Value8
-   fun:has_index
-   ...
-   fun:_ZN3re28Compiler7CompileEPNS_6RegexpEbl
-}
-{
-   RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
-   Memcheck:Cond
-   fun:contains
    ...
    fun:_ZN3re23RE2C1ERKNS_11StringPieceERKNS0_7OptionsE
 }
 {
    RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
    Memcheck:Value8
-   fun:contains
    ...
    fun:_ZN3re23RE2C1ERKNS_11StringPieceERKNS0_7OptionsE
 }
 {
    RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
    Memcheck:Value8
-   fun:contains
    ...
    fun:_ZNK3re23RE25MatchERKNS_11StringPieceEmmNS0_6AnchorEPS1_i
 }
 {
    RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
    Memcheck:Cond
-   fun:contains
    ...
    fun:_ZNK3re23RE25MatchERKNS_11StringPieceEmmNS0_6AnchorEPS1_i
 }
