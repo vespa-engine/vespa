@@ -121,6 +121,17 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.push_back(tensor_function::create(node.type(), spec, stash));
     }
 
+    void make_lambda(const TensorLambda &node) {
+        InterpretedFunction my_fun(tensor_engine, node.lambda().root(), node.type().dimensions().size(), types);
+        if (node.bindings().empty()) {
+            NoParams no_params;
+            TensorSpec spec = tensor_function::Lambda::create_spec_impl(node.type(), no_params, node.bindings(), my_fun);
+            make_const(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
+        } else {
+            stack.push_back(tensor_function::lambda(node.type(), node.bindings(), std::move(my_fun), stash));
+        }
+    }
+
     void make_peek(const TensorPeek &node) {
         assert(stack.size() >= node.num_children());
         const tensor_function::Node &param = stack[stack.size()-node.num_children()];
@@ -220,6 +231,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const TensorCreate &node) override {
         make_create(node);
+    }
+    void visit(const TensorLambda &node) override {
+        make_lambda(node);
     }
     void visit(const TensorPeek &node) override {
         make_peek(node);

@@ -46,5 +46,14 @@ struct SimpleParams : LazyParams {
     const Value &resolve(size_t idx, Stash &stash) const override;
 };
 
+/**
+ * Simple wrapper for cases where you have no parameters.
+ **/
+struct NoParams : LazyParams {
+    const Value &resolve(size_t, Stash &) const override {
+        abort();
+    }
+};
+
 } // namespace vespalib::eval
 } // namespace vespalib

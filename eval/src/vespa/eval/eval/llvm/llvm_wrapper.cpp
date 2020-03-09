@@ -485,6 +485,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const TensorCreate &node) override {
         make_error(node.num_children());
     }
+    void visit(const TensorLambda &node) override {
+        make_error(node.num_children());
+    }
     void visit(const TensorPeek &node) override {
         make_error(node.num_children());
     }

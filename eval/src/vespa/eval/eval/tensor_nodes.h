@@ -267,6 +267,39 @@ public:
     }
 };
 
+class TensorLambda : public Node {
+private:
+    ValueType _type;
+    std::vector<size_t> _bindings;
+    std::shared_ptr<Function const> _lambda;
+public:
+    TensorLambda(ValueType type_in, std::vector<size_t> bindings, std::shared_ptr<Function const> lambda)
+        : _type(std::move(type_in)), _bindings(std::move(bindings)), _lambda(std::move(lambda))
+    {
+        assert(_type.is_dense());
+        assert(_lambda->num_params() == (_type.dimensions().size() + _bindings.size()));
+    }
+    const ValueType &type() const { return _type; }
+    const std::vector<size_t> &bindings() const { return _bindings; }
+    const Function &lambda() const { return *_lambda; }
+    vespalib::string dump(DumpContext &) const override {
+        vespalib::string str = _type.to_spec();
+        vespalib::string expr = _lambda->dump();
+        if (starts_with(expr, "(")) {
+            str += expr;
+        } else {
+            str += "(";
+            str += expr;
+            str += ")";
+        }
+        return str;
+    }
+    void accept(NodeVisitor &visitor) const override;
+    size_t num_children() const override { return 0; }
+    const Node &get_child(size_t) const override { abort(); }
+    void detach_children(NodeHandler &) override {}
+};
+
 class TensorPeek : public Node {
 public:
     struct MyLabel {

@@ -20,12 +20,6 @@ struct Frame {
     const Node &next_child() { return node.get_child(child_idx++); }
 };
 
-struct NoParams : LazyParams {
-    const Value &resolve(size_t, Stash &) const override {
-        abort();
-    }
-};
-
 } // namespace vespalib::eval::nodes::<unnamed>
 
 double
