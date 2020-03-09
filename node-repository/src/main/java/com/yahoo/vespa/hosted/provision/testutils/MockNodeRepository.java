@@ -128,7 +128,7 @@ public class MockNodeRepository extends NodeRepository {
                              flavors.getFlavorOrThrow("default"), Optional.empty(), NodeType.config));
 
         // Ready all nodes, except 7 and 55
-        nodes = addNodes(nodes);
+        nodes = addNodes(nodes, Agent.system);
         nodes.remove(node7);
         nodes.remove(node55);
         nodes = setDirty(nodes, Agent.system, getClass().getSimpleName());
@@ -170,7 +170,7 @@ public class MockNodeRepository extends NodeRepository {
                                   new Flavor(new NodeResources(10, 48, 500, 1, fast, local)), Optional.empty(), NodeType.tenant));
         largeNodes.add(createNode("node14", "host14.yahoo.com", ipConfig(14), Optional.empty(),
                                   new Flavor(new NodeResources(10, 48, 500, 1, fast, local)), Optional.empty(), NodeType.tenant));
-        addNodes(largeNodes);
+        addNodes(largeNodes, Agent.system);
         setReady(largeNodes, Agent.system, getClass().getSimpleName());
         ApplicationId app4 = ApplicationId.from(TenantName.from("tenant4"), ApplicationName.from("application4"), InstanceName.from("instance4"));
         ClusterSpec cluster4 = ClusterSpec.request(ClusterSpec.Type.container,

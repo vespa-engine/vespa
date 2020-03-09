@@ -15,6 +15,7 @@ import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 
 import java.util.List;
 import java.util.Optional;
@@ -98,7 +99,7 @@ public class GroupPreparer {
                     List<Node> hosts = provisionedHosts.stream()
                                                        .map(ProvisionedHost::generateHost)
                                                        .collect(Collectors.toList());
-                    nodeRepository.addNodes(hosts);
+                    nodeRepository.addNodes(hosts, Agent.application);
 
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
                     List<PrioritizableNode> nodes = provisionedHosts.stream()

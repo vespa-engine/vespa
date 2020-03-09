@@ -222,7 +222,7 @@ public class PeriodicApplicationMaintainerTest {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), flavor, NodeType.tenant));
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
@@ -231,7 +231,7 @@ public class PeriodicApplicationMaintainerTest {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }

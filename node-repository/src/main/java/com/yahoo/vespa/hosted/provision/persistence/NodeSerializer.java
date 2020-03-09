@@ -411,6 +411,7 @@ public class NodeSerializer {
             case "InactiveExpirer" : return Agent.InactiveExpirer;
             case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
             case "ReservationExpirer" : return Agent.ReservationExpirer;
+            case "DynamicProvisioningMaintainer" : return Agent.DynamicProvisioningMaintainer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
@@ -426,6 +427,7 @@ public class NodeSerializer {
             case InactiveExpirer : return "InactiveExpirer";
             case ProvisionedExpirer : return "ProvisionedExpirer";
             case ReservationExpirer : return "ReservationExpirer";
+            case DynamicProvisioningMaintainer : return "DynamicProvisioningMaintainer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

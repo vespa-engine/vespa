@@ -83,9 +83,9 @@ public class MetricsReporterTest {
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            true, new InMemoryFlagSource());
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
-        nodeRepository.addNodes(List.of(node));
+        nodeRepository.addNodes(List.of(node), Agent.system);
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
-        nodeRepository.addNodes(List.of(hostNode));
+        nodeRepository.addNodes(List.of(hostNode), Agent.system);
 
         Map<String, Number> expectedMetrics = new HashMap<>();
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
@@ -150,7 +150,7 @@ public class MetricsReporterTest {
 
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
                                       Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
-        nodeRepository.addNodes(List.of(dockerHost));
+        nodeRepository.addNodes(List.of(dockerHost), Agent.system);
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 

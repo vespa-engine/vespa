@@ -80,7 +80,7 @@ import java.util.stream.Stream;
  * @author bratseth
  */
 // Node state transitions:
-// 1) (new) - > provisioned -> (dirty ->) ready -> reserved -> active -> inactive -> dirty -> ready
+// 1) (new) | deprovisioned - > provisioned -> (dirty ->) ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved | parked
 // 3) reserved -> dirty
 // 3) * -> failed | parked -> dirty | active | deprovisioned
@@ -347,23 +347,38 @@ public class NodeRepository extends AbstractComponent {
         return db.addNodesInState(nodes.asList(), State.reserved);
     }
 
-    /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
-    public List<Node> addNodes(List<Node> nodes) {
+    /**
+     * Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes.
+     * If any of the nodes already exists in the deprovisioned state, they will be moved back to provisioned instead
+     * and the returned list will contain the existing (moved) node.
+     */
+    public List<Node> addNodes(List<Node> nodes, Agent agent) {
         try (Mutex lock = lockUnallocated()) {
+            List<Node> nodesToAdd =  new ArrayList<>();
+            List<Node> nodesToMove = new ArrayList<>();
             for (int i = 0; i < nodes.size(); i++) {
                 var node = nodes.get(i);
-                var message = "Cannot add " + node.hostname() + ": A node with this name already exists";
 
-                // Check for existing node
-                if (getNode(node.hostname()).isPresent()) throw new IllegalArgumentException(message);
-
-                // Check for duplicates in given list
+                // Check for duplicates
                 for (int j = 0; j < i; j++) {
-                    var other = nodes.get(j);
-                    if (node.equals(other)) throw new IllegalArgumentException(message);
+                    if (node.equals(nodes.get(j)))
+                        illegal("Cannot add nodes: " + node + " is duplicated in the argument list");
+                }
+
+                Optional<Node> existing = getNode(node.hostname());
+                if (existing.isPresent()) {
+                    if (existing.get().state() != State.deprovisioned)
+                        illegal("Cannot add " + node + ": A node with this name already exists");
+                    nodesToMove.add(existing.get());
+                }
+                else {
+                    nodesToAdd.add(node);
                 }
             }
-            return db.addNodesInState(IP.Config.verify(nodes, list(lock)), State.provisioned);
+            List<Node> resultingNodes = new ArrayList<>();
+            resultingNodes.addAll(db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), State.provisioned));
+            nodesToMove.forEach(node -> resultingNodes.add(move(node, State.provisioned, agent, Optional.empty())));
+            return resultingNodes;
         }
     }
 
@@ -578,7 +593,7 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Removes all the nodes that are children of hostname before finally removing the hostname itself.
      *
-     * @return List of all the nodes that have been removed
+     * @return a List of all the nodes that have been removed or (for hosts) deprovisioned
      */
     public List<Node> removeRecursively(String hostname) {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));

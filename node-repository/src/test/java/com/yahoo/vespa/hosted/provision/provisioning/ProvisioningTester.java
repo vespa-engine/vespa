@@ -305,7 +305,7 @@ public class ProvisioningTester {
                                                 reservedTo,
                                                 type));
         }
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         return nodes;
     }
 
@@ -328,7 +328,7 @@ public class ProvisioningTester {
             nodes.add(node);
         }
 
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
 
@@ -400,7 +400,7 @@ public class ProvisioningTester {
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
                                                 new Flavor(flavor), NodeType.tenant));
         }
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         return nodes;

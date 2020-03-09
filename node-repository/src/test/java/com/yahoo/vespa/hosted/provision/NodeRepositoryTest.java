@@ -2,11 +2,14 @@
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -19,6 +22,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -141,6 +145,24 @@ public class NodeRepositoryTest {
         assertEquals(4, tester.nodeRepository().getNodes().size());
         tester.nodeRepository().removeRecursively("host1");
         assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host1").get().state());
+    }
+
+    @Test
+    public void deprovisioned_hosts_are_resurrected_on_add() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        Instant testStart = tester.nodeRepository().clock().instant();
+
+        ((ManualClock)tester.nodeRepository().clock()).advance(Duration.ofSeconds(1));
+        tester.addNode("id1", "host1", "default", NodeType.host);
+        tester.addNode("id2", "host2", "default", NodeType.host);
+        assertFalse(tester.nodeRepository().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+
+        tester.nodeRepository().removeRecursively("host1");
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host1").get().state());
+        assertTrue(tester.nodeRepository().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+
+        Node existing = tester.addNode("id1", "host1", "default", NodeType.host);
+        assertTrue(existing.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
     }
 
     @Test

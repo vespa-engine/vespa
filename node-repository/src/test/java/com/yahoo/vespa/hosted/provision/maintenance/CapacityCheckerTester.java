@@ -25,6 +25,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -181,7 +182,7 @@ public class CapacityCheckerTester {
         nodes.addAll(createHostsWithChildren(childrenPerHost, possibleChildren, numHosts, hostExcessCapacity, hostExcessIps));
         nodes.addAll(createEmptyHosts(numHosts, numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps));
 
-        nodeRepository.addNodes(nodes);
+        nodeRepository.addNodes(nodes, Agent.system);
         updateCapacityChecker();
     }
 
@@ -288,7 +289,7 @@ public class CapacityCheckerTester {
             nodes.add(createNodeFromModel(nmod));
         }
 
-        nodeRepository.addNodes(nodes);
+        nodeRepository.addNodes(nodes, Agent.system);
         updateCapacityChecker();
     }
 

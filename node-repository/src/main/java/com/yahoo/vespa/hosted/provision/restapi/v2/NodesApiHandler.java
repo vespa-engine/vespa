@@ -202,7 +202,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     public int addNodes(InputStream jsonStream) {
         List<Node> nodes = createNodesFromSlime(toSlime(jsonStream).get());
-        return nodeRepository.addNodes(nodes).size();
+        return nodeRepository.addNodes(nodes, Agent.operator).size();
     }
 
     private Slime toSlime(InputStream jsonStream) {
