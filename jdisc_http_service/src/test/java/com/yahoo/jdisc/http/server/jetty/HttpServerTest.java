@@ -65,6 +65,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -188,7 +189,7 @@ public class HttpServerTest {
 
     private static class AccessLogMock extends AccessLog {
 
-        final List<AccessLogEntry> logEntries = new ArrayList<>();
+        final List<AccessLogEntry> logEntries = new CopyOnWriteArrayList<>();
 
         AccessLogMock() { super(null); }
 
