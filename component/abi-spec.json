@@ -129,6 +129,7 @@
       "public int getMicro()",
       "public java.lang.String getQualifier()",
       "public java.lang.String toString()",
+      "public com.yahoo.text.Utf8Array toUtf8()",
       "public int hashCode()",
       "public boolean isEmpty()",
       "public boolean equals(java.lang.Object)",
