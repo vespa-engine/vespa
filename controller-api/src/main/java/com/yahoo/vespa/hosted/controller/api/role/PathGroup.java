@@ -88,6 +88,7 @@ enum PathGroup {
                     Matcher.application,
                     PathPrefix.api,
                     "/application/v4/tenant/{tenant}/application/{application}/package",
+                    "/application/v4/tenant/{tenant}/application/{application}/compile-version",
                     "/application/v4/tenant/{tenant}/application/{application}/deployment",
                     "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/deploying/{*}",

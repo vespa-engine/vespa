@@ -444,6 +444,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"majorVersion\":null}"),
                               "{\"message\":\"Set major version to empty\"}");
 
+        // GET compile version for an application
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/compile-version", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"compileVersion\":\"6.1.0\"}");
+
         // DELETE the pem deploy key
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", DELETE)
                                       .userIdentity(USER_ID)
