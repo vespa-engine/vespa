@@ -671,6 +671,50 @@ public class ProvisioningTest {
                 assertEquals(version2, node.allocation().get().membership().cluster().vespaVersion()));
     }
 
+    @Test
+    public void change_to_and_from_combined_cluster_does_not_change_node_allocation() {
+        var tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        var application = tester.makeApplicationId();
+
+        tester.makeReadyNodes(4, defaultResources);
+
+        // Application allocates two content nodes initially, with cluster type content
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("music"),
+                                                  Version.fromString("1.2.3"),
+                                                  false);
+        var initalNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                                       Capacity.fromCount(2, defaultResources, false, false),
+                                                                       1));
+
+        // Application is redeployed with cluster type combined
+        cluster = ClusterSpec.request(ClusterSpec.Type.combined,
+                                      ClusterSpec.Id.from("music"),
+                                      Version.fromString("1.2.3"),
+                                      false);
+        var newNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                                   Capacity.fromCount(2, defaultResources, false, false),
+                                                                   1));
+
+        assertEquals("Node allocation remains the same", initalNodes, newNodes);
+        assertEquals("Cluster type is updated",
+                     Set.of(ClusterSpec.Type.combined),
+                     newNodes.stream().map(n -> n.membership().get().cluster().type()).collect(Collectors.toSet()));
+
+        // Application is redeployed with cluster type content again
+        cluster = ClusterSpec.request(ClusterSpec.Type.content,
+                                      ClusterSpec.Id.from("music"),
+                                      Version.fromString("1.2.3"),
+                                      false);
+        newNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                               Capacity.fromCount(2, defaultResources, false, false),
+                                                               1));
+        assertEquals("Node allocation remains the same", initalNodes, newNodes);
+        assertEquals("Cluster type is updated",
+                     Set.of(ClusterSpec.Type.content),
+                     newNodes.stream().map(n -> n.membership().get().cluster().type()).collect(Collectors.toSet()));
+    }
+
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
                                 int content1Size, NodeResources flavor, ProvisioningTester tester) {
         return prepare(application, container0Size, container1Size, content0Size, content1Size, flavor,
