@@ -127,19 +127,25 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException {
-        return getNodeStatus(getApplicationInstance(hostName).reference(), hostName);
+        ApplicationInstanceReference reference = getApplicationInstanceReference(hostName);
+        return statusService.getHostInfo(reference, hostName).status();
+    }
+
+    @Override
+    public HostInfo getHostInfo(ApplicationInstanceReference reference, HostName hostname) {
+        return statusService.getHostInfo(reference, hostname);
     }
 
     @Override
     public Function<HostName, Optional<HostInfo>> getHostResolver() {
         return hostName -> serviceMonitor
-                .getApplication(hostName)
-                .map(application -> statusService.getHostInfo(application.reference(), hostName));
+                .getApplicationInstanceReference(hostName)
+                .map(reference -> statusService.getHostInfo(reference, hostName));
     }
 
     @Override
     public void setNodeStatus(HostName hostName, HostStatus status) throws OrchestrationException {
-        ApplicationInstanceReference reference = getApplicationInstance(hostName).reference();
+        ApplicationInstanceReference reference = getApplicationInstanceReference(hostName);
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (ApplicationLock lock = statusService.lockApplication(context, reference)) {
             lock.setHostState(hostName, status);
@@ -347,11 +353,7 @@ public class OrchestratorImpl implements Orchestrator {
         return leftApplicationReference.asString().compareTo(rightApplicationReference.asString());
     }
 
-    private HostStatus getNodeStatus(ApplicationInstanceReference applicationRef, HostName hostName) {
-        return statusService.getHostInfo(applicationRef, hostName).status();
-    }
-
-    private void setApplicationStatus(ApplicationId appId, ApplicationInstanceStatus status) 
+    private void setApplicationStatus(ApplicationId appId, ApplicationInstanceStatus status)
             throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         ApplicationInstanceReference reference = OrchestratorUtil.toApplicationInstanceReference(appId, serviceMonitor);
@@ -420,9 +422,14 @@ public class OrchestratorImpl implements Orchestrator {
         }
     }
 
+    private ApplicationInstanceReference getApplicationInstanceReference(HostName hostname) throws HostNameNotFoundException {
+        return serviceMonitor.getApplicationInstanceReference(hostname)
+                .orElseThrow(() -> new HostNameNotFoundException(hostname));
+    }
+
     private ApplicationInstance getApplicationInstance(HostName hostName) throws HostNameNotFoundException{
-        return serviceMonitor.getApplication(hostName).orElseThrow(
-                () -> new HostNameNotFoundException(hostName));
+        return serviceMonitor.getApplication(hostName)
+                .orElseThrow(() -> new HostNameNotFoundException(hostName));
     }
 
     private static void sleep(long time, TimeUnit timeUnit) {

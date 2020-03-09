@@ -10,7 +10,6 @@ import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.manager.MonitorManager;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
@@ -21,8 +20,6 @@ import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -70,13 +67,16 @@ public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
     }
 
     @Override
-    public Optional<ApplicationInstance> getApplication(HostName hostname) {
-        Optional<ApplicationInfo> applicationInfo = getApplicationInfo(hostname);
-        if (applicationInfo.isEmpty()) {
-            return Optional.empty();
-        }
+    public Optional<ApplicationInstanceReference> getApplicationInstanceReference(HostName hostname) {
+        return duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname))
+                .map(ApplicationInfo::getApplicationId)
+                .map(modelGenerator::toApplicationInstanceReference);
+    }
 
-        return Optional.of(modelGenerator.toApplicationInstance(applicationInfo.get(), serviceStatusProvider));
+    @Override
+    public Optional<ApplicationInstance> getApplication(HostName hostname) {
+        return getApplicationInfo(hostname)
+                .map(applicationInfo -> modelGenerator.toApplicationInstance(applicationInfo, serviceStatusProvider));
     }
 
     @Override
@@ -97,11 +97,6 @@ public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
     }
 
     @Override
-    public Map<HostName, List<ServiceInstance>> getServicesByHostname() {
-        return getServiceModelSnapshot().getServiceInstancesByHostName();
-    }
-
-    @Override
     public void registerListener(ServiceHostListener listener) {
         var duperModelListener = ServiceHostListenerAdapter.asDuperModelListener(listener, modelGenerator);
         duperModelManager.registerListener(duperModelListener);
@@ -118,8 +113,11 @@ public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
     }
 
     private Optional<ApplicationInfo> getApplicationInfo(HostName hostname) {
-        // The duper model uses HostName from config.provision, which is more natural than applicationmodel.
-        var configProvisionHostname = com.yahoo.config.provision.HostName.from(hostname.s());
-        return duperModelManager.getApplicationInfo(configProvisionHostname);
+        return duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname));
+    }
+
+    /** The duper model uses HostName from config.provision. */
+    private static com.yahoo.config.provision.HostName toConfigProvisionHostName(HostName hostname) {
+        return com.yahoo.config.provision.HostName.from(hostname.s());
     }
 }

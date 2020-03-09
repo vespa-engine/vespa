@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -15,7 +16,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.orchestrator.status.HostInfo;
+import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Clock;
@@ -24,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -36,7 +36,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
 public class MetricsReporter extends Maintainer {
 
     private final Metric metric;
-    private final Function<HostName, Optional<HostInfo>> orchestrator;
+    private final Orchestrator orchestrator;
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
@@ -51,7 +51,7 @@ public class MetricsReporter extends Maintainer {
                     Clock clock) {
         super(nodeRepository, interval);
         this.metric = metric;
-        this.orchestrator = orchestrator.getHostResolver();
+        this.orchestrator = orchestrator;
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
         this.clock = clock;
@@ -60,9 +60,9 @@ public class MetricsReporter extends Maintainer {
     @Override
     public void maintain() {
         NodeList nodes = nodeRepository().list();
-        Map<HostName, List<ServiceInstance>> servicesByHost = serviceMonitor.getServicesByHostname();
+        ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
 
-        nodes.forEach(node -> updateNodeMetrics(node, servicesByHost));
+        nodes.forEach(node -> updateNodeMetrics(node, serviceModel));
         updateStateMetrics(nodes);
         updateMaintenanceMetrics();
         updateDockerMetrics(nodes);
@@ -73,7 +73,7 @@ public class MetricsReporter extends Maintainer {
         metric.set("hostedVespa.pendingRedeployments", pendingRedeploymentsSupplier.get(), null);
     }
 
-    private void updateNodeMetrics(Node node, Map<HostName, List<ServiceInstance>> servicesByHost) {
+    private void updateNodeMetrics(Node node, ServiceModel serviceModel) {
         Metric.Context context;
 
         Optional<Allocation> allocation = node.allocation();
@@ -128,19 +128,23 @@ public class MetricsReporter extends Maintainer {
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
         metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
 
-        orchestrator.apply(new HostName(node.hostname())).ifPresent(info -> {
-            int suspended = info.status().isSuspended() ? 1 : 0;
-            metric.set("suspended", suspended, context);
-            metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
-            long suspendedSeconds = info.suspendedSince()
-                    .map(suspendedSince -> Duration.between(suspendedSince, clock.instant()).getSeconds())
-                    .orElse(0L);
-            metric.set("suspendedSeconds", suspendedSeconds, context);
-        });
+        HostName hostname = new HostName(node.hostname());
+
+        serviceModel.getApplication(hostname)
+                .map(ApplicationInstance::reference)
+                .map(reference -> orchestrator.getHostInfo(reference, hostname))
+                .ifPresent(info -> {
+                    int suspended = info.status().isSuspended() ? 1 : 0;
+                    metric.set("suspended", suspended, context);
+                    metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
+                    long suspendedSeconds = info.suspendedSince()
+                            .map(suspendedSince -> Duration.between(suspendedSince, clock.instant()).getSeconds())
+                            .orElse(0L);
+                    metric.set("suspendedSeconds", suspendedSeconds, context);
+                });
 
         long numberOfServices;
-        HostName hostName = new HostName(node.hostname());
-        List<ServiceInstance> services = servicesByHost.get(hostName);
+        List<ServiceInstance> services = serviceModel.getServiceInstancesByHostName().get(hostname);
         if (services == null) {
             numberOfServices = 0;
         } else {

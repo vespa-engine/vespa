@@ -163,11 +163,6 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
     }
 
     @Override
-    public Map<HostName, List<ServiceInstance>> getServicesByHostname() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public CriticalRegion disallowDuperModelLockAcquisition(String regionDescription) {
         return () -> {};
     }

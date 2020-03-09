@@ -186,7 +186,7 @@ public class NodeFailer extends Maintainer {
         Map<String, Node> activeNodesByHostname = nodeRepository().getNodes(Node.State.active).stream()
                 .collect(Collectors.toMap(Node::hostname, node -> node));
 
-        serviceMonitor.getServicesByHostname()
+        serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName()
                 .forEach((hostName, serviceInstances) -> {
                     Node node = activeNodesByHostname.get(hostName.s());
                     if (node == null) return;

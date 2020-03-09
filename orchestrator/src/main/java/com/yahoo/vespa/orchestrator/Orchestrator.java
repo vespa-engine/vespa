@@ -2,8 +2,8 @@
 package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
@@ -45,9 +45,12 @@ public interface Orchestrator {
      *
      * @param hostName The FQDN which are used in the noderepo.
      * @return The enum describing the current state.
-     * @throws HostNameNotFoundException if hostName is unrecognized (in node repo)
+     * @throws HostNameNotFoundException if hostName is not associated with any application
      */
     HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException;
+
+    /** Get host info for hostname in application, returning no-remarks if not in application. */
+    HostInfo getHostInfo(ApplicationInstanceReference reference, HostName hostname);
 
     /**
      * Returns a lambda, which when invoked with a hostname, returns its current host info.
