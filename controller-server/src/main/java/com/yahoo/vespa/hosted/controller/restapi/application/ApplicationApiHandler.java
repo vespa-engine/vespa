@@ -48,7 +48,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -85,6 +84,7 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.yolean.Exceptions;
@@ -212,6 +212,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/cost/{month}")) return tenantCost(path.get("tenant"), path.get("month"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return JobControllerApiHandlerHelper.overviewResponse(controller, TenantAndApplicationId.from(path.get("tenant"), path.get("application")), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/package")) return applicationPackage(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), "default", request);
@@ -500,6 +501,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
+    private HttpResponse compileVersion(String tenantName, String applicationName) {
+        Slime slime = new Slime();
+        slime.setObject().setString("compileVersion",
+                                    compileVersion(TenantAndApplicationId.from(tenantName, applicationName)).toFullString());
+        return new SlimeJsonResponse(slime);
+    }
+
     private HttpResponse instance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         Slime slime = new Slime();
         toSlime(slime.setObject(), getInstance(tenantName, applicationName, instanceName),
@@ -754,6 +762,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
         });
 
+        // TODO jonmv: remove once clients use new path
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", compileVersion(application.id()).toFullString());
 
@@ -938,6 +947,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }));
         }
 
+        // TODO jonmv: remove once clients use new path
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", compileVersion(application.id()).toFullString());
 
@@ -1176,20 +1186,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
      */
     private Version compileVersion(TenantAndApplicationId id) {
         Version oldestPlatform = controller.applications().oldestInstalledPlatform(id);
-        return controller.versionStatus().versions().stream()
-                         .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
-                         .filter(VespaVersion::isReleased)
-                         .map(VespaVersion::versionNumber)
-                         .filter(version -> ! version.isAfter(oldestPlatform))
-                         .max(Comparator.naturalOrder())
-                         .orElseGet(() -> controller.mavenRepository().metadata().versions().stream()
-                                                    .filter(version -> ! version.isAfter(oldestPlatform))
-                                                    .filter(version -> ! controller.versionStatus().versions().stream()
-                                                                                   .map(VespaVersion::versionNumber)
-                                                                                   .collect(Collectors.toSet()).contains(version))
-                                                    .max(Comparator.naturalOrder())
-                                                    .orElseThrow(() -> new IllegalStateException("No available releases of " +
-                                                                                                 controller.mavenRepository().artifactId())));
+        VersionStatus versionStatus = controller.versionStatus();
+        return versionStatus.versions().stream()
+                            .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
+                            .filter(VespaVersion::isReleased)
+                            .map(VespaVersion::versionNumber)
+                            .filter(version -> ! version.isAfter(oldestPlatform))
+                            .max(Comparator.naturalOrder())
+                            .orElseGet(() -> controller.mavenRepository().metadata().versions().stream()
+                                                  .filter(version -> ! version.isAfter(oldestPlatform))
+                                                  .filter(version -> ! versionStatus.versions().stream()
+                                                                                    .map(VespaVersion::versionNumber)
+                                                                                    .collect(Collectors.toSet()).contains(version))
+                                                  .max(Comparator.naturalOrder())
+                                                  .orElseThrow(() -> new IllegalStateException("No available releases of " +
+                                                                                               controller.mavenRepository().artifactId())));
     }
 
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {
