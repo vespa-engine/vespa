@@ -881,7 +881,8 @@
       "public abstract double defaultTermwiseLimit()",
       "public abstract boolean useBucketSpaceMetric()",
       "public boolean useNewAthenzFilter()",
-      "public boolean usePhraseSegmenting()"
+      "public boolean usePhraseSegmenting()",
+      "public java.lang.String proxyProtocol()"
     ],
     "fields": []
   },
