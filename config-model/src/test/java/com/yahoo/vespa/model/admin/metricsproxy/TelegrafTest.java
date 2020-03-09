@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
@@ -123,6 +124,28 @@ public class TelegrafTest {
         assertEquals("", cloudWatch1.accessKeyName());
         assertEquals("", cloudWatch1.secretKeyName());
         assertEquals("profile-2", cloudWatch1.profile());
+    }
+
+    @Test
+    public void profile_named_default_is_used_when_no_profile_is_given_in_shared_credentials() {
+        String services = String.join("\n",
+                                      "<services>",
+                                      "    <admin version='2.0'>",
+                                      "        <adminserver hostalias='node1'/>",
+                                      "        <metrics>",
+                                      "            <consumer id='cloudwatch-consumer'>",
+                                      "                <metric id='my-metric'/>",
+                                      "                <cloudwatch region='us-east-1' namespace='foo' >",
+                                      "                    <shared-credentials file='/path/to/file' />",
+                                      "                </cloudwatch>",
+                                      "            </consumer>",
+                                      "        </metrics>",
+                                      "    </admin>",
+                                      "</services>"
+        );
+        VespaModel model = getModel(services, self_hosted);
+        TelegrafConfig config = model.getConfig(TelegrafConfig.class, CLUSTER_CONFIG_ID);
+        assertEquals("default", config.cloudWatch(0).profile());
     }
 
 }

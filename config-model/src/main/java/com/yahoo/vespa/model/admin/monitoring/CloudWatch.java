@@ -32,27 +32,27 @@ public class CloudWatch {
         hostedAuth = new HostedAuth(accessKeyName, secretKeyName);
     }
 
-    public void setSharedCredentials(String profile, String file) {
-        sharedCredentials = new SharedCredentials(profile, file);
+    public void setSharedCredentials(String file, Optional<String> profile) {
+        sharedCredentials = new SharedCredentials(file, profile);
     }
 
     public static class HostedAuth {
         public final String accessKeyName;
         public final String secretKeyName;
 
-        public HostedAuth(String accessKeyName, String secretKeyName) {
+        HostedAuth(String accessKeyName, String secretKeyName) {
             this.accessKeyName = accessKeyName;
             this.secretKeyName = secretKeyName;
         }
     }
 
     public static class SharedCredentials {
-        public final String profile;
         public final String file;
+        public final Optional<String> profile;
 
-        public SharedCredentials(String profile, String file) {
-            this.profile = profile;
+        SharedCredentials(String file, Optional<String> profile) {
             this.file = file;
+            this.profile = profile;
         }
     }
 

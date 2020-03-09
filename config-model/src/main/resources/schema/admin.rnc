@@ -97,8 +97,8 @@ Cloudwatch = element cloudwatch {
       }
       |
       element shared-credentials {
-          attribute profile { xsd:Name } &
-          attribute file { string }?
+          attribute file { string } &
+          attribute profile { xsd:Name }?
       }
     )?
 }
