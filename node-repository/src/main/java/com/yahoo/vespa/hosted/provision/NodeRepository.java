@@ -450,7 +450,7 @@ public class NodeRepository extends AbstractComponent {
                 new IllegalArgumentException("Could not deallocate " + hostname + ": Node not found"));
 
         List<Node> nodesToDirty =
-                (nodeToDirty.type().isDockerHost() ?
+                (nodeToDirty.type().isHost() ?
                         Stream.concat(list().childrenOf(hostname).asList().stream(), Stream.of(nodeToDirty)) :
                         Stream.of(nodeToDirty))
                 .filter(node -> node.state() != State.dirty)
@@ -587,30 +587,35 @@ public class NodeRepository extends AbstractComponent {
 
     public List<Node> removeRecursively(Node node, boolean force) {
         try (Mutex lock = lockUnallocated()) {
-            List<Node> removed = new ArrayList<>();
+            requireRemovable(node, false, force);
 
-             if (node.type().isDockerHost()) {
-                 list().childrenOf(node).asList().stream()
-                       .filter(child -> force || canRemove(child, true))
-                       .forEach(removed::add);
-             }
-
-            if (force || canRemove(node, false)) removed.add(node);
-            db.removeNodes(removed);
-
-            return removed;
+            if (node.type().isHost()) {
+                List<Node> children = list().childrenOf(node).asList();
+                children.forEach(child -> requireRemovable(child, true, force));
+                db.removeNodes(children);
+                move(node, State.deprovisioned, Agent.system, Optional.empty());
+                List<Node> removed = new ArrayList<>(children);
+                removed.add(node);
+                return removed;
+            }
+            else {
+                db.removeNodes(List.of(node));
+                return List.of(node);
+            }
         }
     }
 
     /**
      * Throws if the given node cannot be removed. Removal is allowed if:
-     *  Tenant node: node is unallocated
-     *  Non-Docker-container node: iff in state provisioned|failed|parked
-     *  Docker-container-node:
-     *    If only removing the container node: node in state ready
-     *    If also removing the parent node: child is in state provisioned|failed|parked|dirty|ready
+     *  - Tenant node: node is unallocated
+     *  - Non-Docker-container node: iff in state provisioned|failed|parked
+     *  - Docker-container-node:
+     *      If only removing the container node: node in state ready
+     *      If also removing the parent node: child is in state provisioned|failed|parked|dirty|ready
      */
-    private boolean canRemove(Node node, boolean removingAsChild) {
+    private void requireRemovable(Node node, boolean removingAsChild, boolean force) {
+        if (force) return;
+
         if (node.type() == NodeType.tenant && node.allocation().isPresent())
             illegal(node + " is currently allocated and cannot be removed");
 
@@ -628,12 +633,6 @@ public class NodeRepository extends AbstractComponent {
             if (! legalStates.contains(node.state()))
                 illegal(node + " can not be removed as it is not in the states " + legalStates);
         }
-
-        return true;
-    }
-
-    private void illegal(String message) {
-        throw new IllegalArgumentException(message);
     }
 
     /**
@@ -740,6 +739,10 @@ public class NodeRepository extends AbstractComponent {
     /** Acquires the appropriate lock for this node */
     public Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
+    }
+
+    private void illegal(String message) {
+        throw new IllegalArgumentException(message);
     }
 
 }

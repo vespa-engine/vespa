@@ -62,7 +62,7 @@ public class DockerImages {
 
     /** Returns the image to use for given node and zone */
     public DockerImage dockerImageFor(Node node) {
-        if (node.type().isDockerHost()) {
+        if (node.type().isHost()) {
             // Docker hosts do not run in containers, and thus has no image. Return the image of the child node type
             // instead as this allows the host to pre-download the (likely) image its node will run.
             //
@@ -92,7 +92,7 @@ public class DockerImages {
 
     /** Set the docker image for nodes of given type */
     public void setDockerImage(NodeType nodeType, Optional<DockerImage> dockerImage) {
-        if (nodeType.isDockerHost()) {
+        if (nodeType.isHost()) {
             throw new IllegalArgumentException("Setting docker image for " + nodeType + " nodes is unsupported");
         }
         try (Lock lock = db.lockDockerImages()) {

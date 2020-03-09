@@ -175,7 +175,6 @@ public class CapacityCheckerTester {
     void createNodes(int childrenPerHost, int numDistinctChildren, List<NodeResources> childResources,
                      int numHosts, NodeResources hostExcessCapacity, int hostExcessIps,
                      int numEmptyHosts, NodeResources emptyHostExcessCapacity, int emptyHostExcessIps) {
-        cleanRepository();
         List<NodeModel> possibleChildren = createDistinctChildren(numDistinctChildren, childResources);
 
         List<Node> nodes = new ArrayList<>();
@@ -275,7 +274,7 @@ public class CapacityCheckerTester {
         }
     }
 
-    public void restoreNodeRepositoryFromJsonFile(Path path) throws IOException {
+    public void populateNodeRepositoryFromJsonFile(Path path) throws IOException {
         byte[] jsonData = Files.readAllBytes(path);
         ObjectMapper om = new ObjectMapper();
 
@@ -293,11 +292,4 @@ public class CapacityCheckerTester {
         updateCapacityChecker();
     }
 
-    void cleanRepository() {
-        nodeRepository.getNodes(NodeType.host).forEach(n -> nodeRepository.removeRecursively(n, true));
-        nodeRepository.getNodes().forEach(n -> nodeRepository.removeRecursively(n, true));
-        if (nodeRepository.getNodes().size() != 0) {
-            throw new IllegalStateException("Cleaning repository didn't remove all nodes! [" + nodeRepository.getNodes().size() + "]");
-        }
-    }
 }

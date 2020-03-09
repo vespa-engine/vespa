@@ -398,7 +398,7 @@ public final class Node {
 
     public enum State {
 
-        /** This node has been requested (from OpenStack) but is not yet ready for use */
+        /** This host has been requested (from OpenStack) but is not yet ready for use */
         provisioned,
 
         /** This node is free and ready for use */
@@ -424,7 +424,10 @@ public final class Node {
          * This state follows the same rules as failed except that it will never be automatically moved out of
          * this state.
          */
-        parked;
+        parked,
+
+        /** This host has previously been in use but is now removed. */
+        deprovisioned;
 
         /** Returns whether this is a state where the node is assigned to an application */
         public boolean isAllocated() {

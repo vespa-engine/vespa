@@ -45,7 +45,7 @@ public enum NodeType {
         this.description = description;
     }
 
-    public boolean isDockerHost() {
+    public boolean isHost() {
         return !childNodeTypes.isEmpty();
     }
 
@@ -66,7 +66,7 @@ public enum NodeType {
      * @throws IllegalStateException if this type is not a host
      */
     public List<NodeType> childNodeTypes() {
-        if (! isDockerHost())
+        if (! isHost())
             throw new IllegalStateException(this + " has no children");
         return childNodeTypes;
     }

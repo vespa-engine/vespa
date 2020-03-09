@@ -65,7 +65,7 @@ public enum SystemApplication {
 
     /** Returns whether this should receive OS upgrades */
     public boolean shouldUpgradeOs() {
-        return nodeType.isDockerHost();
+        return nodeType.isHost();
     }
 
     /** All known system applications */

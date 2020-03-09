@@ -96,7 +96,7 @@ public class NodePatcher {
     private List<Node> applyFieldRecursive(String name, Inspector value) {
         switch (name) {
             case WANT_TO_RETIRE:
-                List<Node> childNodes = node.type().isDockerHost() ? nodes.get().childrenOf(node).asList() : List.of();
+                List<Node> childNodes = node.type().isHost() ? nodes.get().childrenOf(node).asList() : List.of();
                 return childNodes.stream()
                         .map(child -> applyField(child, name, value))
                         .collect(Collectors.toList());

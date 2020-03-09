@@ -141,7 +141,7 @@ public class OsVersions {
     }
 
     private static void require(NodeType nodeType) {
-        if (!nodeType.isDockerHost()) {
+        if (!nodeType.isHost()) {
             throw new IllegalArgumentException("Node type '" + nodeType + "' does not support OS upgrades");
         }
     }

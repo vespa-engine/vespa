@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.when;
  * @author smorgrav
  */
 public class MetricsReporterTest {
+
     private final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private final ApplicationInstanceReference reference = mock(ApplicationInstanceReference.class);
 
@@ -94,6 +96,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.inactiveHosts", 0);
         expectedMetrics.put("hostedVespa.dirtyHosts", 0);
         expectedMetrics.put("hostedVespa.failedHosts", 0);
+        expectedMetrics.put("hostedVespa.deprovisionedHosts", 0);
         expectedMetrics.put("hostedVespa.pendingRedeployments", 42);
         expectedMetrics.put("hostedVespa.docker.totalCapacityDisk", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityMem", 0.0);
@@ -219,8 +222,8 @@ public class MetricsReporterTest {
 
     public static class TestMetric implements Metric {
 
-        public Map<String, Number> values = new HashMap<>();
-        public Map<String, List<Context>> context = new HashMap<>();
+        public Map<String, Number> values = new LinkedHashMap<>();
+        public Map<String, List<Context>> context = new LinkedHashMap<>();
 
         @Override
         public void set(String key, Number val, Context ctx) {

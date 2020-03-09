@@ -245,7 +245,7 @@ public class CuratorDatabaseClient {
     /** Returns whether to reboot node as part of transition to given state. This is done to get rid of any lingering
      * unwanted state (e.g. processes) on non-host nodes. */
     private boolean rebootOnTransitionTo(Node.State state, Node node) {
-        if (node.type().isDockerHost()) return false; // Reboot of host nodes is handled by NodeRebooter
+        if (node.type().isHost()) return false; // Reboot of host nodes is handled by NodeRebooter
         if (zone.environment().isTest()) return false; // We want to reuse nodes quickly in test environments
 
         return node.state() != Node.State.dirty && state == Node.State.dirty;
@@ -333,6 +333,7 @@ public class CuratorDatabaseClient {
             case provisioned: return "provisioned";
             case ready: return "ready";
             case reserved: return "reserved";
+            case deprovisioned: return "deprovisioned";
             default: throw new RuntimeException("Node state " + state + " does not map to a directory name");
         }
     }

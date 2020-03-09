@@ -131,16 +131,16 @@ public class NodeRepositoryTest {
 
         // Should be OK to delete host2 as both host2 and its only child, node20, are in state provisioned
         tester.nodeRepository().removeRecursively("host2");
-        assertEquals(4, tester.nodeRepository().getNodes().size());
+        assertEquals(5, tester.nodeRepository().getNodes().size());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host2").get().state());
 
         // Now node10 is in provisioned, set node11 to failed and node12 to ready, and it should be OK to delete host1
         tester.nodeRepository().fail("node11", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().setReady("node12", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().removeRecursively("node12"); // Remove one of the children first instead
-        assertEquals(3, tester.nodeRepository().getNodes().size());
-
+        assertEquals(4, tester.nodeRepository().getNodes().size());
         tester.nodeRepository().removeRecursively("host1");
-        assertEquals(0, tester.nodeRepository().getNodes().size());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host1").get().state());
     }
 
     @Test

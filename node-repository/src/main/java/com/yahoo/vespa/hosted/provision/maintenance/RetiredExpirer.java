@@ -81,7 +81,7 @@ public class RetiredExpirer extends Maintainer {
      * - Orchestrator allows it
      */
     private boolean canRemove(Node node) {
-        if (node.type().isDockerHost()) {
+        if (node.type().isHost()) {
             if (nodeRepository()
                     .list().childrenOf(node).asList().stream()
                     .allMatch(child -> child.state() == Node.State.parked ||
