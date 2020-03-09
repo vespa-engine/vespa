@@ -4,6 +4,7 @@
 
 #include "tensor_store.h"
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/tensor/dense/typed_cells.h>
 
 namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
 
@@ -65,6 +66,7 @@ public:
     EntryRef move(EntryRef ref) override;
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
     void getTensor(EntryRef ref, vespalib::tensor::MutableDenseTensorView &tensor) const;
+    vespalib::tensor::TypedCells get_typed_cells(EntryRef ref) const;
     EntryRef setTensor(const Tensor &tensor);
     // The following method is meant to be used only for unit tests.
     uint32_t getArraySize() const { return _bufferType.getArraySize(); }
