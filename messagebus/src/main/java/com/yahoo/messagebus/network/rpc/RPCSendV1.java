@@ -64,7 +64,7 @@ public class RPCSendV1 extends RPCSend {
                                     long timeRemaining, byte[] payload, int traceLevel) {
         Request req = new Request(METHOD_NAME);
         Values v = req.parameters();
-        v.add(new StringValue(version.toString()));
+        v.add(new StringValue(version.toUtf8()));
         v.add(new StringValue(route.toString()));
         v.add(new StringValue(address.getSessionName()));
         v.add(new Int8Value(msg.getRetryEnabled() ? (byte)1 : (byte)0));
@@ -140,7 +140,7 @@ public class RPCSendV1 extends RPCSend {
             eMessages[i] = error.getMessage();
             eServices[i] = error.getService() != null ? error.getService() : "";
         }
-        ret.add(new StringValue(version.toString()));
+        ret.add(new StringValue(version.toUtf8()));
         ret.add(new DoubleValue(reply.getRetryDelay()));
         ret.add(new Int32Array(eCodes));
         ret.add(new StringArray(eMessages));
