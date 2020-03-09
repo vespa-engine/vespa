@@ -8,7 +8,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
@@ -140,7 +139,6 @@ public class JettyHttpServer extends AbstractServerProvider {
             final FilterBindings filterBindings,
             final ComponentRegistry<ConnectorFactory> connectorFactories,
             final ComponentRegistry<ServletHolder> servletHolders,
-            final OsgiFramework osgiFramework,
             final FilterInvoker filterInvoker,
             final AccessLog accessLog) {
         super(container);
@@ -160,8 +158,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
             connectorConfigs.add(connectorConfig);
-            ServerSocketChannel preBoundChannel = getChannelFromServiceLayer(connectorConfig.listenPort(), osgiFramework.bundleContext());
-            server.addConnector(connectorFactory.createConnector(metric, server, preBoundChannel));
+            server.addConnector(connectorFactory.createConnector(metric, server));
             listenedPorts.add(connectorConfig.listenPort());
         }
 

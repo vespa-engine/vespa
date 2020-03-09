@@ -9,12 +9,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Test;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -25,41 +22,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 public class ConnectorFactoryTest {
 
     @Test
-    public void requireThatNoPreBoundChannelWorks() throws Exception {
+    public void requireThatServerCanBindChannel() throws Exception {
         Server server = new Server();
         try {
             ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
             ConnectorFactory factory = createConnectorFactory(config);
             JDiscServerConnector connector =
-                    (JDiscServerConnector)factory.createConnector(new DummyMetric(), server, null);
-            server.addConnector(connector);
-            server.setHandler(new HelloWorldHandler());
-            server.start();
-
-            SimpleHttpClient client = new SimpleHttpClient(null, connector.getLocalPort(), false);
-            SimpleHttpClient.RequestExecutor ex = client.newGet("/blaasdfnb");
-            SimpleHttpClient.ResponseValidator val = ex.execute();
-            val.expectContent(equalTo("Hello world"));
-        } finally {
-            try {
-                server.stop();
-            } catch (Exception e) {
-                //ignore
-            }
-        }
-    }
-
-    @Test
-    public void requireThatPreBoundChannelWorks() throws Exception {
-        Server server = new Server();
-        try {
-            ServerSocketChannel serverChannel = ServerSocketChannel.open();
-            serverChannel.socket().bind(new InetSocketAddress(0));
-
-            ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
-            ConnectorFactory factory = createConnectorFactory(config);
-            JDiscServerConnector connector =
-                    (JDiscServerConnector) factory.createConnector(new DummyMetric(), server, serverChannel);
+                    (JDiscServerConnector)factory.createConnector(new DummyMetric(), server);
             server.addConnector(connector);
             server.setHandler(new HelloWorldHandler());
             server.start();
@@ -83,7 +52,7 @@ public class ConnectorFactoryTest {
 
     private static class HelloWorldHandler extends AbstractHandler {
         @Override
-        public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
             response.getWriter().write("Hello world");
             response.getWriter().flush();
             response.getWriter().close();

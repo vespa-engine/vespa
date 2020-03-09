@@ -40,9 +40,9 @@ public class ConnectorFactory {
         return connectorConfig;
     }
 
-    public ServerConnector createConnector(final Metric metric, final Server server, final ServerSocketChannel ch) {
+    public ServerConnector createConnector(final Metric metric, final Server server) {
         ServerConnector connector = new JDiscServerConnector(
-                connectorConfig, metric, server, ch, createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
+                connectorConfig, metric, server, createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
         connector.setPort(connectorConfig.listenPort());
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
