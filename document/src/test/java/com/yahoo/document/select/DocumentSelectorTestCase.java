@@ -82,6 +82,7 @@ public class DocumentSelectorTestCase {
         assertParse("id.hash() > 0");
         assertParse("id.namespace.hash() > 0");
         assertParse("music.artist = \"*\"");
+        assertParse("music.artist = \"&\"");
         assertParse("music.artist.lowercase() = \"*\"");
         assertParse("music_.artist = \"*\"");
         assertParse("music_foo.artist = \"*\"");
@@ -339,6 +340,7 @@ public class DocumentSelectorTestCase {
         documents.add(createDocument("id:myspace:test:n=2345:mail2", 15, 1.0f, "bar", "baz"));
         documents.add(createDocument("id:myspace:test:g=mygroup:qux", 15, 1.0f, "quux", "corge"));
         documents.add(createDocument("id:myspace:test::missingint", null, 2.0f, null, "bar"));
+        documents.add(createDocument("id:myspace:test::ampersand", null, 2.0f, null, "&"));
 
         // Add some array/struct info to doc 1
         Struct sval = new Struct(documents.get(1).getDocument().getField("mystruct").getDataType());
@@ -483,6 +485,8 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.FALSE, evaluate("test.hstring == test.content", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.hstring == test.content", documents.get(2)));
         assertEquals(Result.TRUE, evaluate("test.hint + 1 > 13", documents.get(1)));
+        assertEquals(Result.FALSE, evaluate("test.content = \"&\"", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.content = \"&\"", documents.get(7)));
         // Case where field is not present (i.e. null) is defined for (in)equality comparisons, but
         // not for other relations.
         DocumentPut doc1234 = documents.get(6);
@@ -874,7 +878,6 @@ public class DocumentSelectorTestCase {
         } catch (ParseException e) {
             fail("The expression '" + expressionString + "' should assertEquals ok.");
         } catch (RuntimeException e) {
-            System.err.println("Error was : " + e);
             assertTrue(e.getMessage().length() >= expectedError.length());
             assertEquals(expectedError, e.getMessage().substring(0, expectedError.length()));
         }
