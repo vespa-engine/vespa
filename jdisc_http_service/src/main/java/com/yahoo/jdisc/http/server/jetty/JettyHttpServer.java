@@ -154,10 +154,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 
-        List<ConnectorConfig> connectorConfigs = new ArrayList<>();
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
-            connectorConfigs.add(connectorConfig);
             server.addConnector(connectorFactory.createConnector(metric, server));
             listenedPorts.add(connectorConfig.listenPort());
         }
