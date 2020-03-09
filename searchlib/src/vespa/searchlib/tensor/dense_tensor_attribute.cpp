@@ -210,11 +210,9 @@ DenseTensorAttribute::removeOldGenerations(generation_t first_used_gen)
 vespalib::tensor::TypedCells
 DenseTensorAttribute::get_vector(uint32_t docid) const
 {
-    MutableDenseTensorView tensor_view(_denseTensorStore.type());
     assert(docid < _refVector.size());
     EntryRef ref = _refVector[docid];
-    _denseTensorStore.getTensor(ref, tensor_view);
-    return tensor_view.cellsRef();
+    return _denseTensorStore.get_typed_cells(ref);
 }
 
 }
