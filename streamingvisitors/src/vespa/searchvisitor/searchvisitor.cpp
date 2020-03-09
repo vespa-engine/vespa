@@ -70,34 +70,31 @@ createMultiValueAttribute(const vespalib::string & name, const document::FieldVa
     }
     LOG(debug, "Create %s attribute '%s' with data type '%s' (%s)",
         arrayType ? "array" : "weighted set", name.c_str(), ndt->getName().c_str(), fv.getClass().name());
-    AttributeVector::SP attr;
     if (ndt->getId() == DataType::T_BYTE ||
         ndt->getId() == DataType::T_INT ||
         ndt->getId() == DataType::T_LONG)
     {
-        attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiIntegerExtAttribute(name))
-                             : static_cast<AttributeVector *>(new search::WeightedSetIntegerExtAttribute(name)));
+        return arrayType ? std::make_shared<search::MultiIntegerExtAttribute>(name)
+                         : std::make_shared<search::WeightedSetIntegerExtAttribute>(name));
     } else if (ndt->getId() == DataType::T_DOUBLE ||
                ndt->getId() == DataType::T_FLOAT)
     {
-        attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiFloatExtAttribute(name))
-                             : static_cast<AttributeVector *>(new search::WeightedSetFloatExtAttribute(name)));
+        return arrayType ? std::make_shared<search::MultiFloatExtAttribute>(name)
+                         : std::make_shared<search::WeightedSetFloatExtAttribute>(name));
     } else if (ndt->getId() == DataType::T_STRING) {
-        attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiStringExtAttribute(name))
-                             : static_cast<AttributeVector *>(new search::WeightedSetStringExtAttribute(name)));
+        return arrayType ? std::make_shared<search::MultiStringExtAttribute>(name)
+                         : std:.make_shared<search::WeightedSetStringExtAttribute>(name));
     } else {
         LOG(debug, "Can not make an multivalue attribute out of %s with data type '%s' (%s)",
             name.c_str(), ndt->getName().c_str(), fv.getClass().name());
     }
-    return attr;
+    return AttributeVector::SP();
 }
 
 AttributeVector::SP
 createAttribute(const vespalib::string & name, const document::FieldValue & fv)
 {
     LOG(debug, "Create single value attribute '%s' with value type '%s'", name.c_str(), fv.getClass().name());
-    AttributeVector::SP attr;
-
     if (fv.inherits(document::ByteFieldValue::classId) || fv.inherits(document::IntFieldValue::classId) || fv.inherits(document::LongFieldValue::classId)) {
         return std::make_shared<search::SingleIntegerExtAttribute>(name);
     } else if (fv.inherits(document::DoubleFieldValue::classId) || fv.inherits(document::FloatFieldValue::classId)) {
@@ -107,7 +104,7 @@ createAttribute(const vespalib::string & name, const document::FieldValue & fv)
     } else {
         LOG(debug, "Can not make an attribute out of %s of type '%s'.", name.c_str(), fv.getClass().name());
     }
-    return attr;
+    return AttributeVector::SP();
 }
 
 SearchVisitor::SummaryGenerator::SummaryGenerator() :
@@ -242,7 +239,7 @@ void SearchVisitor::init(const Parameters & params)
 
     if (params.lookup("rankproperties", valueRef) && ! valueRef.empty()) {
         LOG(spam, "Received rank properties of %zd bytes", valueRef.size());
-        uint32_t len = uint32_t(valueRef.size());
+        uint32_t len = valueRef.size();
         char * data = const_cast<char *>(valueRef.data());
         FNET_DataBuffer src(data, len);
         uint32_t cnt = src.ReadInt32();
