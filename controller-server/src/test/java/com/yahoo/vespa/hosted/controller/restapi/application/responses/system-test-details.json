@@ -112,6 +112,11 @@
       {
         "at": "(ignore)",
         "type": "info",
+        "message": "######## Details for all nodes ########"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
         "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
       },
       {
@@ -269,7 +274,7 @@
       }
     ]
   },
-  "lastId": 49,
+  "lastId": 50,
   "steps": {
     "deployTester": {
       "status": "succeeded",

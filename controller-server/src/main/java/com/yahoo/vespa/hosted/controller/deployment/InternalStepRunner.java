@@ -338,6 +338,7 @@ public class InternalStepRunner implements StepRunner {
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
         boolean firstTick = run.convergenceSummary().isEmpty();
         if (firstTick) { // Run the first time (for each convergence step).
+            logger.log("######## Details for all nodes ########");
             logger.log(nodeList.asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
                                .collect(toList()));
@@ -380,7 +381,18 @@ public class InternalStepRunner implements StepRunner {
         }
 
         if (failureReason != null) {
+            logger.log("######## Details for all nodes ########");
             logger.log(nodeList.asList().stream()
+                               .flatMap(node -> nodeDetails(node, true))
+                               .collect(toList()));
+            logger.log("######## Details for nodes with pending changes ########");
+            logger.log(nodeList.not().in(nodeList.not().needsNewConfig()
+                                                 .not().needsPlatformUpgrade()
+                                                 .not().needsReboot()
+                                                 .not().needsRestart()
+                                                 .not().needsFirmwareUpgrade()
+                                                 .not().needsOsUpgrade())
+                               .asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
                                .collect(toList()));
             logger.log(INFO, failureReason);
