@@ -28,6 +28,11 @@
       {
         "at": 0,
         "type": "info",
+        "message": "######## Details for all nodes ########"
+      },
+      {
+        "at": 0,
+        "type": "info",
         "message": "host-tenant:application:default-dev.us-east-1: unorchestrated"
       },
       {
@@ -49,7 +54,7 @@
       }
     ]
   },
-  "lastId": 7,
+  "lastId": 8,
   "steps": {
     "deployReal": {
       "status": "succeeded",

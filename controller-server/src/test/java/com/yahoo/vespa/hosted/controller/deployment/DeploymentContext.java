@@ -364,7 +364,7 @@ public class DeploymentContext {
         triggerJobs();
         RunId id = currentRun(job).id();
         doDeploy(job);
-        tester.clock().advance(InternalStepRunner.installationTimeout.plusSeconds(1));
+        tester.clock().advance(InternalStepRunner.noNodesDownTimeout.plusSeconds(1));
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
@@ -378,7 +378,7 @@ public class DeploymentContext {
         RunId id = currentRun(job).id();
         doDeploy(job);
         doUpgrade(job);
-        tester.clock().advance(InternalStepRunner.installationTimeout.plusSeconds(1));
+        tester.clock().advance(InternalStepRunner.noNodesDownTimeout.plusSeconds(1));
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());

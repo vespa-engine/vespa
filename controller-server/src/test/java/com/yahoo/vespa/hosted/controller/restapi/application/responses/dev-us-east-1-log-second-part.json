@@ -6,6 +6,11 @@
       {
         "at": 0,
         "type": "info",
+        "message": "- dev.us-east-1"
+      },
+      {
+        "at": 0,
+        "type": "info",
         "message": " |-- https://application--tenant.us-east-1.dev.vespa.oath.cloud:4443/ (cluster 'default')"
       },
       {
@@ -15,7 +20,7 @@
       }
     ]
   },
-  "lastId": 11,
+  "lastId": 12,
   "steps": {
     "deployReal": {
       "status": "succeeded",
