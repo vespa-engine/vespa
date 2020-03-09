@@ -390,10 +390,10 @@ public final class Node {
 
     @Override
     public String toString() {
-        return state + " node " +
+        return state +
+               ( parentHostname.isPresent() ? " child node " : " host " ) +
                hostname +
-               (allocation.map(allocation1 -> " " + allocation1).orElse("")) +
-               (parentHostname.map(parent -> " [on: " + parent + "]").orElse(""));
+               ( allocation.isPresent() ? " " + allocation : "");
     }
 
     public enum State {
