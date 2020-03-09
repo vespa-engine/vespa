@@ -608,8 +608,11 @@ public class NodeRepository extends AbstractComponent {
                 List<Node> children = list().childrenOf(node).asList();
                 children.forEach(child -> requireRemovable(child, true, force));
                 db.removeNodes(children);
-                move(node, State.deprovisioned, Agent.system, Optional.empty());
                 List<Node> removed = new ArrayList<>(children);
+                if (zone.cloud().value().equals("aws"))
+                    db.removeNodes(List.of(node));
+                else
+                    move(node, State.deprovisioned, Agent.system, Optional.empty());
                 removed.add(node);
                 return removed;
             }
