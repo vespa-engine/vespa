@@ -393,7 +393,7 @@ public final class Node {
         return state +
                ( parentHostname.isPresent() ? " child node " : " host " ) +
                hostname +
-               ( allocation.isPresent() ? " " + allocation : "");
+               ( allocation.isPresent() ? " " + allocation.get() : "");
     }
 
     public enum State {

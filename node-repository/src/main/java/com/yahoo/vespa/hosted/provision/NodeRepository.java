@@ -290,9 +290,7 @@ public class NodeRepository extends AbstractComponent {
                 break;
 
             default:
-                throw new IllegalArgumentException(
-                        String.format("Don't know how to create ACL for node [hostname=%s type=%s]",
-                                      node.hostname(), node.type()));
+                illegal("Don't know how to create ACL for " + node + " of type " + node.type());
         }
 
         return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
@@ -324,9 +322,8 @@ public class NodeRepository extends AbstractComponent {
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
     public Node createNode(String openStackId, String hostname, IP.Config ipConfig, Optional<String> parentHostname,
                            Flavor flavor, Optional<TenantName> reservedTo, NodeType type) {
-        if (ipConfig.primary().isEmpty()) { // TODO: Remove this. Only test code hits this path
+        if (ipConfig.primary().isEmpty()) // TODO: Remove this. Only test code hits this path
             ipConfig = ipConfig.with(nameResolver.getAllByNameOrThrow(hostname));
-        }
         return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, reservedTo, type);
     }
 
@@ -337,17 +334,15 @@ public class NodeRepository extends AbstractComponent {
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
     public List<Node> addDockerNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
-            if (!node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
-                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": This is not a docker node");
-            }
-            if (!node.allocation().isPresent()) {
-                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": Docker containers needs to be allocated");
-            }
+            if ( ! node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))
+                illegal("Cannot add " + node + ": This is not a docker node");
+            if ( ! node.allocation().isPresent())
+                illegal("Cannot add " + node + ": Docker containers needs to be allocated");
             Optional<Node> existing = getNode(node.hostname());
             if (existing.isPresent())
-                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists (" +
-                                                   existing.get() + ", " + existing.get().history() + "). Node to be added: " +
-                                                   node + ", " + node.history());
+                illegal("Cannot add " + node + ": A node with this name already exists (" +
+                        existing.get() + ", " + existing.get().history() + "). Node to be added: " +
+                        node + ", " + node.history());
         }
         return db.addNodesInState(nodes.asList(), State.reserved);
     }
@@ -378,7 +373,7 @@ public class NodeRepository extends AbstractComponent {
             List<Node> nodesWithResetFields = nodes.stream()
                     .map(node -> {
                         if (node.state() != State.provisioned && node.state() != State.dirty)
-                            throw new IllegalArgumentException("Can not set " + node + " ready. It is not provisioned or dirty.");
+                            illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
                         return node.with(node.status().withWantToRetire(false).withWantToDeprovision(false));
                     })
                     .collect(Collectors.toList());
@@ -467,14 +462,11 @@ public class NodeRepository extends AbstractComponent {
                 .filter(node -> node.state() != State.parked)
                 .map(Node::hostname)
                 .collect(Collectors.toList());
-        if (!hostnamesNotAllowedToDirty.isEmpty()) {
-            throw new IllegalArgumentException("Could not deallocate " + hostname + ": " +
-                    String.join(", ", hostnamesNotAllowedToDirty) + " must be in either provisioned, failed or parked state");
-        }
+        if ( ! hostnamesNotAllowedToDirty.isEmpty())
+            illegal("Could not deallocate " + nodeToDirty + ": " +
+                    hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked]");
 
-        return nodesToDirty.stream()
-                .map(node -> setDirty(node, agent, reason))
-                .collect(Collectors.toList());
+        return nodesToDirty.stream().map(node -> setDirty(node, agent, reason)).collect(Collectors.toList());
     }
 
     /**
@@ -547,15 +539,14 @@ public class NodeRepository extends AbstractComponent {
 
     private Node move(Node node, State toState, Agent agent, Optional<String> reason) {
         if (toState == Node.State.active && ! node.allocation().isPresent())
-            throw new IllegalArgumentException("Could not set " + node.hostname() + " active. It has no allocation.");
+            illegal("Could not set " + node + " active. It has no allocation.");
 
         try (Mutex lock = lock(node)) {
             if (toState == State.active) {
                 for (Node currentActive : getNodes(node.allocation().get().owner(), State.active)) {
                     if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
                         && node.allocation().get().membership().index() == currentActive.allocation().get().membership().index())
-                        throw new IllegalArgumentException("Could not move " + node + " to active:" +
-                                                           "It has the same cluster and index as an existing node");
+                        illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
                 }
             }
             return db.writeTo(toState, node, agent, reason);
@@ -569,10 +560,8 @@ public class NodeRepository extends AbstractComponent {
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
         if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
-            if (node.state() != State.dirty) {
-                throw new IllegalArgumentException("Cannot make " + hostname + " available for new allocation, " +
-                                                   "must be in state dirty, but was in " + node.state());
-            }
+            if (node.state() != State.dirty)
+                illegal("Cannot make " + node  + " available for new allocation as it is not in state [dirty]");
             return removeRecursively(node, true).get(0);
         }
 
@@ -580,10 +569,8 @@ public class NodeRepository extends AbstractComponent {
 
         Node parentHost = node.parentHostname().flatMap(this::getNode).orElse(node);
         List<String> failureReasons = NodeFailer.reasonsToFailParentHost(parentHost);
-        if (!failureReasons.isEmpty()) {
-            throw new IllegalArgumentException("Node " + hostname + " cannot be readied because it has hard failures: " +
-                                               failureReasons);
-        }
+        if ( ! failureReasons.isEmpty())
+            illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
 
         return setReady(Collections.singletonList(node), agent, reason).get(0);
     }
@@ -612,8 +599,6 @@ public class NodeRepository extends AbstractComponent {
             db.removeNodes(removed);
 
             return removed;
-        } catch (RuntimeException e) {
-            throw new IllegalArgumentException("Failed to delete " + node.hostname(), e);
         }
     }
 
@@ -627,7 +612,7 @@ public class NodeRepository extends AbstractComponent {
      */
     private boolean canRemove(Node node, boolean removingAsChild) {
         if (node.type() == NodeType.tenant && node.allocation().isPresent())
-            illegal("Node is currently allocated and cannot be removed: " + node.allocation().get());
+            illegal(node + " is currently allocated and cannot be removed");
 
         if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !removingAsChild) {
             if (node.state() != State.ready)

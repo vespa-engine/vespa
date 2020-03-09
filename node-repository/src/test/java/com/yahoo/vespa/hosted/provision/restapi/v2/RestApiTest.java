@@ -363,7 +363,7 @@ public class RestApiTest {
                 "{\"message\":\"Updated host12.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host12.yahoo.com", new byte[0], Request.Method.PUT),
                 400,
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Node host12.yahoo.com cannot be readied because it has " +
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"provisioned host host12.yahoo.com cannot be readied because it has " +
                         "hard failures: [diskSpace reported 1970-01-01T00:00:00.002Z: " + msg + "]\"}");
     }
 
@@ -428,7 +428,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
                        400,
-                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make host1.yahoo.com available for new allocation, must be in state dirty, but was in failed\"}");
+                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make failed host host1.yahoo.com allocated to tenant1.application1.instance1 as 'container/id1/0/0' available for new allocation as it is not in state [dirty]\"}");
 
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host1.yahoo.com",
@@ -444,7 +444,7 @@ public class RestApiTest {
                        "{\"message\":\"Moved host2.yahoo.com to parked\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make host2.yahoo.com available for new allocation, must be in state dirty, but was in parked\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make parked host host2.yahoo.com allocated to tenant2.application2.instance2 as 'content/id2/0/0' available for new allocation as it is not in state [dirty]\"}");
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
@@ -461,7 +461,7 @@ public class RestApiTest {
         // Attempt to DELETE allocated node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Failed to delete host4.yahoo.com: Node is currently allocated and cannot be removed: allocated to tenant3.application3.instance3 as 'content/id3/0/0'\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"active child node host4.yahoo.com allocated to tenant3.application3.instance3 as 'content/id3/0/0' is currently allocated and cannot be removed\"}");
 
         // PUT current restart generation with string instead of long
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
