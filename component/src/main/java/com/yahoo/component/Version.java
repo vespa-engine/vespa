@@ -279,7 +279,7 @@ public final class Version implements Comparable<Version> {
     public String toString() { return toStringValue(); }
 
     public Utf8Array toUtf8() {
-        return utf8 != null ? utf8 : new Utf8String(toString());
+        return utf8;
     }
 
     @Override
