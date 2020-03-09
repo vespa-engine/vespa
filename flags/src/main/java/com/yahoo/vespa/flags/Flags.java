@@ -67,12 +67,6 @@ public class Flags {
             "Takes effect on next host admin tick.",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag SERVICE_MODEL_CACHE = defineFeatureFlag(
-            "service-model-cache", true,
-            "Whether the service model is cached.",
-            "Takes effect on restart of config server.",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag CLEANUP_STATUS_SERVICE = defineFeatureFlag(
             "cleanup-status-service", false,
             "Whether to remove orphaned hosts and applications in the ZooKeeper status service.",
