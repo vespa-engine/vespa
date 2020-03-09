@@ -169,6 +169,12 @@ public class Flags {
             "Takes effect on next tick or on host-admin restart (may vary where used).",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag TCP_ABORT_ON_OVERFLOW = defineFeatureFlag(
+            "tcp-abort-on-overflow", false,
+            "Whether to set /proc/sys/net/ipv4/tcp_abort_on_overflow to 0 (false) or 1 (true)",
+            "Takes effect on next host-admin tick.",
+            HOSTNAME);
+
     public static final UnboundStringFlag ZOOKEEPER_SERVER_MAJOR_MINOR_VERSION = defineStringFlag(
             "zookeeper-server-version", "3.5",
             "The version of ZooKeeper server to use (major.minor, not full version)",
