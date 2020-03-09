@@ -173,7 +173,8 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.usePhraseSegmenting = Flags.PHRASE_SEGMENTING.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource).value();
+            this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override

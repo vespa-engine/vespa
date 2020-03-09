@@ -264,7 +264,8 @@ public class Flags {
     public static final UnboundStringFlag PROXY_PROTOCOL = defineStringFlag(
             "proxy-protocol", "https-only",
             "Enable proxy protocol support on application containers. Allowed values: ['https-only', 'https+proxy-protocol', 'proxy-protocol-only']",
-            "Takes effect on internal redeploy");
+            "Takes effect on internal redeploy",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
