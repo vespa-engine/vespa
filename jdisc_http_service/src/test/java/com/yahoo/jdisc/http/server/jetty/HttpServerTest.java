@@ -678,11 +678,12 @@ public class HttpServerTest {
         int proxiedRemotePort = 12345;
         sendJettyClientRequest(driver, client, new V1.Tag(proxiedRemoteAddress, proxiedRemotePort));
         sendJettyClientRequest(driver, client, new V2.Tag(proxiedRemoteAddress, proxiedRemotePort));
+        client.stop();
+        assertThat(driver.close(), is(true));
+
         assertThat(accessLogMock.logEntries, hasSize(2));
         assertLogEntryHasRemote(accessLogMock.logEntries.get(0), proxiedRemoteAddress, proxiedRemotePort);
         assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, proxiedRemotePort);
-        client.stop();
-        assertThat(driver.close(), is(true));
     }
 
     @Test
@@ -694,17 +695,15 @@ public class HttpServerTest {
         TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, accessLogMock, /*mixedMode*/true);
         HttpClient client = createJettyHttpClient(certificateFile);
 
-        sendJettyClientRequest(driver, client, null);
-        assertThat(accessLogMock.logEntries, hasSize(1));
-        assertLogEntryHasRemote(accessLogMock.logEntries.get(0), "127.0.0.1", 0);
-
         String proxiedRemoteAddress = "192.168.0.100";
+        sendJettyClientRequest(driver, client, null);
         sendJettyClientRequest(driver, client, new V2.Tag(proxiedRemoteAddress, 12345));
-        assertThat(accessLogMock.logEntries, hasSize(2));
-        assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, 0);
-
         client.stop();
         assertThat(driver.close(), is(true));
+
+        assertThat(accessLogMock.logEntries, hasSize(2));
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(0), "127.0.0.1", 0);
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, 0);
     }
 
     private void sendJettyClientRequest(TestDriver testDriver, HttpClient client, Object tag)
