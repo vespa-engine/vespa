@@ -261,6 +261,11 @@ public class Flags {
             "Takes effect on redeploy",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag PROXY_PROTOCOL = defineStringFlag(
+            "proxy-protocol", "https-only",
+            "Enable proxy protocol support on application containers. Allowed values: ['https-only', 'https+proxy-protocol', 'proxy-protocol-only']",
+            "Takes effect on internal redeploy");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
