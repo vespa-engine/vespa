@@ -82,8 +82,7 @@ public class HostResourceTest {
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
     private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZkStatusService(
-            new MockCurator(), mock(Metric.class), new TestTimer(), new InMemoryFlagSource(),
-            new DummyAntiServiceMonitor());
+            new MockCurator(), mock(Metric.class), new TestTimer(), new DummyAntiServiceMonitor());
     private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
     static {

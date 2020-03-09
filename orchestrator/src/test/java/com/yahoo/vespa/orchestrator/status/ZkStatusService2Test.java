@@ -37,7 +37,7 @@ public class ZkStatusService2Test {
     private final CriticalRegion criticalRegion = mock(CriticalRegion.class);
     private final AntiServiceMonitor antiServiceMonitor = mock(AntiServiceMonitor.class);
     private final ZkStatusService zkStatusService =
-            new ZkStatusService(curator, metric, timer, cache, false, antiServiceMonitor);
+            new ZkStatusService(curator, metric, timer, cache, antiServiceMonitor);
 
     private final OrchestratorContext context = mock(OrchestratorContext.class);
     private final InterProcessMutex mutex = mock(InterProcessMutex.class);
