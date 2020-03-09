@@ -82,7 +82,7 @@ public class JobControllerApiHandlerHelperTest {
         assertEquals(deploymentFailed, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
 
         tester.runner().run();
-        tester.clock().advance(Duration.ofHours(1).plusSeconds(1));
+        tester.clock().advance(Duration.ofHours(2).plusSeconds(1));
         tester.runner().run();
         assertEquals(installationFailed, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
         assertEquals(revision2, app.deployment(productionUsCentral1.zone(tester.controller().system())).applicationVersion());

@@ -37,7 +37,7 @@
   "deployments": [
     {
       "us-central-1": {
-        "at": 3603000,
+        "at": 7203000,
         "platform": "6.1",
         "application": {
           "hash": "1.0.3-commit1",
@@ -97,8 +97,8 @@
         {
           "id": 3,
           "status": "success",
-          "start": 3603000,
-          "end": 3603000,
+          "start": 7203000,
+          "end": 7203000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -265,8 +265,8 @@
         {
           "id": 5,
           "status": "installationFailed",
-          "start": 3703000,
-          "end": 3703000,
+          "start": 7303000,
+          "end": 7303000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -313,8 +313,8 @@
         {
           "id": 4,
           "status": "installationFailed",
-          "start": 3603000,
-          "end": 3603000,
+          "start": 7203000,
+          "end": 7203000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -361,8 +361,8 @@
         {
           "id": 3,
           "status": "success",
-          "start": 3603000,
-          "end": 3603000,
+          "start": 7203000,
+          "end": 7203000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -510,7 +510,7 @@
         {
           "id": 3,
           "status": "running",
-          "start": 3603000,
+          "start": 7203000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.3-commit1",
@@ -774,7 +774,7 @@
           "id": 2,
           "status": "installationFailed",
           "start": 1000,
-          "end": 3602000,
+          "end": 7202000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "1.0.2-commit1",

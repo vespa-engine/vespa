@@ -128,8 +128,8 @@
         {
           "id": 3,
           "url": "https://some.url:43/instance/default/job/system-test/run/3",
-          "start": 3603000,
-          "end": 3603000,
+          "start": 7203000,
+          "end": 7203000,
           "status": "success",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -320,9 +320,9 @@
       "dependencies": [],
       "declared": true,
       "instance": "default",
-      "readyAt": 4353000,
-      "delayedUntil": 4353000,
-      "coolingDownUntil": 4353000,
+      "readyAt": 7953000,
+      "delayedUntil": 7953000,
+      "coolingDownUntil": 7953000,
       "jobName": "staging-test",
       "url": "https://some.url:43/instance/default/job/staging-test",
       "environment": "staging",
@@ -351,8 +351,8 @@
         {
           "id": 5,
           "url": "https://some.url:43/instance/default/job/staging-test/run/5",
-          "start": 3703000,
-          "end": 3703000,
+          "start": 7303000,
+          "end": 7303000,
           "status": "installationFailed",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -432,8 +432,8 @@
         {
           "id": 4,
           "url": "https://some.url:43/instance/default/job/staging-test/run/4",
-          "start": 3603000,
-          "end": 3603000,
+          "start": 7203000,
+          "end": 7203000,
           "status": "installationFailed",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -513,8 +513,8 @@
         {
           "id": 3,
           "url": "https://some.url:43/instance/default/job/staging-test/run/3",
-          "start": 3603000,
-          "end": 3603000,
+          "start": 7203000,
+          "end": 7203000,
           "status": "success",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -756,7 +756,7 @@
       ],
       "declared": true,
       "instance": "default",
-      "readyAt": 3603000,
+      "readyAt": 7203000,
       "jobName": "production-us-central-1",
       "url": "https://some.url:43/instance/default/job/production-us-central-1",
       "environment": "prod",
@@ -773,7 +773,7 @@
         {
           "id": 3,
           "url": "https://some.url:43/instance/default/job/production-us-central-1/run/3",
-          "start": 3603000,
+          "start": 7203000,
           "status": "running",
           "versions": {
             "targetPlatform": "6.1.0",
@@ -1050,7 +1050,7 @@
           "id": 2,
           "url": "https://some.url:43/instance/default/job/production-us-west-1/run/2",
           "start": 1000,
-          "end": 3602000,
+          "end": 7202000,
           "status": "installationFailed",
           "versions": {
             "targetPlatform": "6.1.0",

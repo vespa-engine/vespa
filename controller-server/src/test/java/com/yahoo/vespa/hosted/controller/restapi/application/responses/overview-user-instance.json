@@ -30,8 +30,8 @@
         {
           "id": 1,
           "status": "success",
-          "start": 3703000,
-          "end": 3703000,
+          "start": 7303000,
+          "end": 7303000,
           "wantedPlatform": "7.1",
           "wantedApplication": {
             "hash": "unknown"
@@ -58,8 +58,8 @@
         {
           "id": 1,
           "url": "https://some.url:43/root//run/1",
-          "start": 3703000,
-          "end": 3703000,
+          "start": 7303000,
+          "end": 7303000,
           "status": "success",
           "versions": {
             "targetPlatform": "7.1.0",

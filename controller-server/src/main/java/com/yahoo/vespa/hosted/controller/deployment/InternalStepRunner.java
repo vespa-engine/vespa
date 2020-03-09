@@ -121,7 +121,8 @@ public class InternalStepRunner implements StepRunner {
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration endpointCertificateTimeout = Duration.ofMinutes(15);
     static final Duration testerTimeout = Duration.ofMinutes(30);
-    static final Duration installationTimeout = Duration.ofMinutes(60);
+    static final Duration nodesDownTimeout = Duration.ofMinutes(60);
+    static final Duration noNodesDownTimeout = Duration.ofMinutes(120);
     static final Duration certificateTimeout = Duration.ofMinutes(300);
 
     private final Controller controller;
@@ -358,17 +359,17 @@ public class InternalStepRunner implements StepRunner {
 
         String failureReason = null;
 
-        NodeList suspendedTooLong = nodeList.suspendedSince(controller.clock().instant().minus(installationTimeout));
+        NodeList suspendedTooLong = nodeList.suspendedSince(controller.clock().instant().minus(nodesDownTimeout));
         if ( ! suspendedTooLong.isEmpty()) {
-            failureReason = "Some nodes have been suspended for more than " + installationTimeout.toMinutes() + " minutes:\n" +
+            failureReason = "Some nodes have been suspended for more than " + nodesDownTimeout.toMinutes() + " minutes:\n" +
                             suspendedTooLong.asList().stream().map(node -> node.node().hostname().value()).collect(joining("\n"));
         }
 
         if (run.noNodesDownSince()
-               .map(since -> since.isBefore(controller.clock().instant().minus(installationTimeout)))
+               .map(since -> since.isBefore(controller.clock().instant().minus(noNodesDownTimeout)))
                .orElse(false)) {
             if (summary.needPlatformUpgrade() > 0 || summary.needReboot() > 0 || summary.needRestart() > 0)
-                failureReason ="No nodes allowed to suspend to progress installation for " + installationTimeout.toMinutes() + " minutes.";
+                failureReason = "No nodes allowed to suspend to progress installation for " + noNodesDownTimeout.toMinutes() + " minutes.";
             else
                 failureReason = "Nodes not able to start with new application package.";
         }
