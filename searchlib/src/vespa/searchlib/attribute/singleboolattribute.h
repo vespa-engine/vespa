@@ -12,7 +12,7 @@ namespace search {
  * Attributevector for boolean field values occupying a bit per document
  * and backed by a growable rcu bit vector.
  */
-class SingleBoolAttribute : public IntegerAttributeTemplate<int8_t>
+class SingleBoolAttribute final : public IntegerAttributeTemplate<int8_t>
 {
 public:
     SingleBoolAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow);

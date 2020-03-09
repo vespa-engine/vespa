@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/singlenumericpostattribute.h>
-#include <vespa/searchlib/attribute/enumstore.h>
-#include <vespa/searchlib/attribute/enumcomparator.h>
-#include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
+#include "singlenumericpostattribute.h"
+#include "enumstore.h"
+#include "enumcomparator.h"
+#include "singlenumericenumattribute.hpp"
 
 namespace search {
 
@@ -141,9 +141,7 @@ AttributeVector::SearchContext::UP
 SingleValueNumericPostingAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {
-    return std::make_unique<SinglePostingSearchContext>(std::move(qTerm),
-                                                        params,
-                                                        *this);
+    return std::make_unique<SinglePostingSearchContext>(std::move(qTerm), params, *this);
 }
 
 } // namespace search

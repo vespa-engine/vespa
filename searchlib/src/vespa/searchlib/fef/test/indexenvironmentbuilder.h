@@ -3,9 +3,7 @@
 
 #include "indexenvironment.h"
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 /**
  * This class is used to setup an IndexEnvironment for testing.
@@ -57,7 +55,4 @@ private:
     IndexEnvironment &_env;
 };
 
-} // namespace test
-} // namespace fef
-} // namespace search
-
+}
