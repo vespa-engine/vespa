@@ -102,7 +102,7 @@ public class NodeFailer extends Maintainer {
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
                 if (throttle(node)) {
-                    if (node.type().isHost()) throttledHostFailures++;
+                    if (node.type().isDockerHost()) throttledHostFailures++;
                     else throttledNodeFailures++;
                     continue;
                 }
@@ -121,7 +121,7 @@ public class NodeFailer extends Maintainer {
                 continue;
             }
             if (throttle(node)) {
-                if (node.type().isHost()) throttledHostFailures++;
+                if (node.type().isDockerHost()) throttledHostFailures++;
                 else throttledNodeFailures++;
                 continue;
             }
@@ -207,7 +207,7 @@ public class NodeFailer extends Maintainer {
                 nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
             } else if (hostSuspended(node, activeNodes)) {
                 Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
-                if (hostNode.type().isHost()) {
+                if (hostNode.type().isDockerHost()) {
                     List<String> failureReports = reasonsToFailParentHost(hostNode);
                     if (failureReports.size() > 0) {
                         if (hostNode.equals(node)) {
@@ -237,7 +237,7 @@ public class NodeFailer extends Maintainer {
     }
 
     private boolean expectConfigRequests(Node node) {
-        return !node.type().isHost();
+        return !node.type().isDockerHost();
     }
 
     private boolean hasNodeRequestedConfigAfter(Node node, Instant instant) {

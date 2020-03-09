@@ -465,7 +465,7 @@ public class NodeRepository extends AbstractComponent {
                 new IllegalArgumentException("Could not deallocate " + hostname + ": Node not found"));
 
         List<Node> nodesToDirty =
-                (nodeToDirty.type().isHost() ?
+                (nodeToDirty.type().isDockerHost() ?
                         Stream.concat(list().childrenOf(hostname).asList().stream(), Stream.of(nodeToDirty)) :
                         Stream.of(nodeToDirty))
                 .filter(node -> node.state() != State.dirty)
@@ -604,7 +604,7 @@ public class NodeRepository extends AbstractComponent {
         try (Mutex lock = lockUnallocated()) {
             requireRemovable(node, false, force);
 
-            if (node.type().isHost()) {
+            if (node.type().isDockerHost()) {
                 List<Node> children = list().childrenOf(node).asList();
                 children.forEach(child -> requireRemovable(child, true, force));
                 db.removeNodes(children);

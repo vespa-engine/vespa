@@ -24,7 +24,7 @@ public class OsUpgradeActivator extends Maintainer {
     @Override
     protected void maintain() {
         for (var nodeType : NodeType.values()) {
-            if (!nodeType.isHost()) continue;
+            if (!nodeType.isDockerHost()) continue;
             var active = canUpgradeOsOf(nodeType);
             nodeRepository().osVersions().setActive(nodeType, active);
         }

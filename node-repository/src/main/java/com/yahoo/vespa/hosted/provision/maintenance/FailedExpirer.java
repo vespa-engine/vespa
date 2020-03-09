@@ -100,7 +100,7 @@ public class FailedExpirer extends Maintainer {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node candidate : nodes) {
             if (NodeFailer.hasHardwareIssue(candidate, nodeRepository)) {
-                List<String> unparkedChildren = !candidate.type().isHost() ? Collections.emptyList() :
+                List<String> unparkedChildren = !candidate.type().isDockerHost() ? Collections.emptyList() :
                                                 nodeRepository.list().childrenOf(candidate).asList().stream()
                                       .filter(node -> node.state() != Node.State.parked)
                                       .map(Node::hostname)
