@@ -108,8 +108,7 @@ public final class Tokenizer {
             if (i >= source.length()) break;
 
             int c = source.codePointAt(i);
-            if (characterClasses.isLetterOrDigit(c)
-                    || (c == '\'' && acceptApostropheAsWordCharacter(currentIndex))) {
+            if (characterClasses.isLetterOrDigit(c) || (c == '\'' && acceptApostropheAsWordCharacter(currentIndex))) {
                 i = consumeWordOrNumber(i, currentIndex);
             } else if (Character.isWhitespace(c)) {
                 addToken(SPACE, " ", i, i + 1);
@@ -187,7 +186,6 @@ public final class Tokenizer {
         return true;
     }
 
-    @SuppressWarnings({"deprecation"})
     private Index determineCurrentIndex(Index defaultIndex, IndexFacts.Session indexFacts) {
         int backtrack = tokens.size();
         int tokencnt = 0;
@@ -328,7 +326,6 @@ public final class Tokenizer {
                     wantEndQuote = true;
                     actualStart = curPos+1;
                 } else if (wantEndQuote && looksLikeExactEnd(curPos+1)) {
-                    // System.err.println("seen quoted token from "+actualStart+" to "+curPos);
                     seenSome = true;
                     wantEndQuote = false;
                     isQuoted = true;
@@ -435,7 +432,7 @@ public final class Tokenizer {
         if (suffStar) {
             addToken(STAR, "*", starPos, starPos + 1);
         }
-        tokens.add(new Token(WORD, source.substring(actualStart, end), true, new Substring(actualStart, end, source))); // XXX: Unsafe?
+        tokens.add(new Token(WORD, source.substring(actualStart, end), true, new Substring(actualStart, end, source)));
 
         // skip terminating quote
         if (isQuoted) {
@@ -451,17 +448,17 @@ public final class Tokenizer {
                 break;
             end++;
         }
-        tokens.add(new Token(WORD, source.substring(start, end), true, new Substring(start, end, source))); // XXX: Unsafe start?
-        if (end>=source.length())
+        tokens.add(new Token(WORD, source.substring(start, end), true, new Substring(start, end, source)));
+        if (end >= source.length())
             return end;
         else
-            return end+terminator.length(); // Don't create a token for the terminator
+            return end + terminator.length(); // Don't create a token for the terminator
     }
 
     private boolean terminatorStartsAt(int start,String terminator) {
-        int terminatorPosition=0;
-        while ((terminatorPosition+start)<source.length()) {
-            if (source.charAt(start+terminatorPosition)!=terminator.charAt(terminatorPosition))
+        int terminatorPosition = 0;
+        while ((terminatorPosition + start) < source.length()) {
+            if (source.charAt(start+terminatorPosition) != terminator.charAt(terminatorPosition))
                 return false;
             terminatorPosition++;
             if (terminatorPosition >= terminator.length())
@@ -481,8 +478,8 @@ public final class Tokenizer {
 
         while (tokenEnd < source.length()) {
             if (substringSpecialTokens) {
-                substringSpecialToken=getSpecialToken(tokenEnd);
-                if (substringSpecialToken!=null) break;
+                substringSpecialToken = getSpecialToken(tokenEnd);
+                if (substringSpecialToken != null) break;
             }
 
             int c = source.codePointAt(tokenEnd);
@@ -506,7 +503,7 @@ public final class Tokenizer {
                 // underscoresOnly = false;
                 quotesOnly = false;
             } else if (c == '\'') {
-                if (!acceptApostropheAsWordCharacter(currentIndex)) {
+                if ( ! acceptApostropheAsWordCharacter(currentIndex)) {
                     break;
                 }
                 // Otherwise consume apostrophes...
@@ -530,15 +527,15 @@ public final class Tokenizer {
             }
         }
 
-        if (substringSpecialToken==null)
+        if (substringSpecialToken == null)
             return --tokenEnd;
         // TODO: test the logic around tokenEnd with friends
-        addToken(substringSpecialToken.toToken(tokenEnd,source));
-        return --tokenEnd+substringSpecialToken.token().length();
+        addToken(substringSpecialToken.toToken(tokenEnd, source));
+        return --tokenEnd + substringSpecialToken.token().length();
     }
 
     private void addToken(Token.Kind kind, String word, int start, int end) {
-        addToken(new Token(kind, word, false, new Substring(start, end, source))); // XXX: Unsafe?
+        addToken(new Token(kind, word, false, new Substring(start, end, source)));
     }
 
     private void addToken(Token token) {

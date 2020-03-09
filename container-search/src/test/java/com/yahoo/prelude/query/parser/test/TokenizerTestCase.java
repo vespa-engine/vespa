@@ -46,7 +46,7 @@ public class TokenizerTestCase {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
         tokenizer.setSpecialTokens(createSpecialTokens());
-        List<?> tokens = tokenizer.tokenize("drive (to hwy88, 88) +or language:en ugcapi_1");
+        List<?> tokens = tokenizer.tokenize("drive (to hwy88, 88) +or language:en ugcapi_1 & &a");
 
         assertEquals(new Token(WORD, "drive"), tokens.get(0));
         assertEquals(new Token(SPACE, " "), tokens.get(1));
@@ -69,6 +69,11 @@ public class TokenizerTestCase {
         assertEquals(new Token(WORD, "ugcapi"), tokens.get(18));
         assertEquals(new Token(UNDERSCORE, "_"), tokens.get(19));
         assertEquals(new Token(NUMBER, "1"), tokens.get(20));
+        assertEquals(new Token(SPACE, " "), tokens.get(21));
+        assertEquals(new Token(NOISE, "<NOISE>"), tokens.get(22));
+        assertEquals(new Token(SPACE, " "), tokens.get(23));
+        assertEquals(new Token(NOISE, "<NOISE>"), tokens.get(24));
+        assertEquals(new Token(WORD, "a"), tokens.get(25));
     }
 
     @Test
