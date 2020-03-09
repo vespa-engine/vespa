@@ -40,7 +40,7 @@ public class ClusterSpecTest {
                 List.of(spec(ClusterSpec.Type.admin, "id1"), spec(ClusterSpec.Type.container, "id1")), false,
                 List.of(spec(ClusterSpec.Type.admin, "id1"), spec(ClusterSpec.Type.content, "id1")), false,
                 List.of(spec(ClusterSpec.Type.combined, "id1"), spec(ClusterSpec.Type.container, "id1")), false,
-                List.of(spec(ClusterSpec.Type.combined, "id1"), spec(ClusterSpec.Type.content, "id1")), false,
+                List.of(spec(ClusterSpec.Type.combined, "id1"), spec(ClusterSpec.Type.content, "id1")), true,
                 List.of(spec(ClusterSpec.Type.content, "id1"), spec(ClusterSpec.Type.content, "id1")), true
         );
         tests.forEach((specs, satisfies) -> {
