@@ -13,20 +13,15 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
-import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,29 +30,8 @@ import java.util.stream.Collectors;
  */
 public class StandaloneContainerActivator implements BundleActivator {
 
-    @Override
-    public void start(BundleContext bundleContext) throws Exception {
-        for (ConnectorConfig config: getConnectorConfigs(getContainer())) {
-            ServerSocketChannel socketChannel = bindChannel(config);
-            registerChannels(bundleContext, config.listenPort(), socketChannel);
-        }
-    }
-
-    static void registerChannels(BundleContext bundleContext, int listenPort, ServerSocketChannel boundChannel) {
-        Hashtable<String, Integer> properties = new Hashtable<>();
-        properties.put("port", listenPort);
-        bundleContext.registerService(ServerSocketChannel.class, boundChannel, properties);
-    }
-
-    static ServerSocketChannel bindChannel(ConnectorConfig channelInfo) throws IOException {
-        ServerSocketChannel serverChannel = ServerSocketChannel.open();
-        InetSocketAddress bindAddress = new InetSocketAddress(channelInfo.listenPort());
-        serverChannel.socket().bind(bindAddress, channelInfo.acceptQueueSize());
-        return serverChannel;
-    }
-
-    @Override
-    public void stop(BundleContext bundleContext) throws Exception { }
+    @Override public void start(BundleContext bundleContext) {}
+    @Override public void stop(BundleContext bundleContext) {}
 
     static Container getContainer(Module... modules) {
         Module activatorModule = new ActivatorModule();
