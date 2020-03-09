@@ -8,6 +8,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.log.LogLevel;
+import com.yahoo.text.Utf8Array;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -133,7 +134,7 @@ public class RPCTarget implements RequestWaiter {
         synchronized (this) {
             targetInvoked = false;
             if (req.checkReturnTypes("s")) {
-                String str = req.returnValues().get(0).asString();
+                Utf8Array str = req.returnValues().get(0).asUtf8Array();
                 try {
                     version = new Version(str);
                     if (shouldLog) {

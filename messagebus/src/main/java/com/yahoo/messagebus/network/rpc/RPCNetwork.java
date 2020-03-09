@@ -473,7 +473,7 @@ public class RPCNetwork implements Network, MethodHandler {
             synchronized (this) {
                 if (version == null) {
                     hasError = true;
-                } else if (version.compareTo(this.version) < 0) {
+                } else if (version.isBefore(this.version)) {
                     this.version = version;
                 }
                 if (--pending == 0) {

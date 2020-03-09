@@ -21,7 +21,6 @@ import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 
 /**
@@ -88,7 +87,7 @@ public class RPCSendV2 extends RPCSend {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        root.setString(VERSION_F, version.toString());
+        root.setString(VERSION_F, version.toUtf8().getBytes());
         root.setString(ROUTE_F, route.toString());
         root.setString(SESSION_F, address.getSessionName());
         root.setString(PROTOCOL_F, msg.getProtocol().toString());
@@ -162,7 +161,7 @@ public class RPCSendV2 extends RPCSend {
         p.retryEnabled = root.field(USERETRY_F).asBool();
         p.retry = (int)root.field(RETRY_F).asLong();
         p.timeRemaining = root.field(TIMEREMAINING_F).asLong();
-        p.protocolName = new Utf8Array(Utf8.toBytes(root.field(PROTOCOL_F).asString()));
+        p.protocolName = new Utf8Array(root.field(PROTOCOL_F).asUtf8());
         p.payload = root.field(BLOB_F).asData();
         p.traceLevel = (int)root.field(TRACELEVEL_F).asLong();
         return p;
@@ -177,9 +176,9 @@ public class RPCSendV2 extends RPCSend {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        root.setString(VERSION_F, version.toString());
+        root.setString(VERSION_F, version.toUtf8().getBytes());
         root.setDouble(RETRYDELAY_F, reply.getRetryDelay());
-        root.setString(PROTOCOL_F, reply.getProtocol().toString());
+        root.setString(PROTOCOL_F, reply.getProtocol().getBytes());
         root.setData(BLOB_F, payload);
         if (reply.getTrace().getLevel() > 0) {
             root.setString(TRACE_F, reply.getTrace().getRoot().encode());
