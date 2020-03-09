@@ -41,6 +41,7 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder ssl(com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder tlsClientAuthEnforcer(com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder healthCheckProxy(com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Builder proxyProtocol(com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -51,7 +52,8 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder throttling",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder ssl",
       "public com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder tlsClientAuthEnforcer",
-      "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder healthCheckProxy"
+      "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder healthCheckProxy",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder proxyProtocol"
     ]
   },
   "com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder": {
@@ -97,6 +99,37 @@
     ],
     "methods": [
       "public abstract void getConfig(com.yahoo.jdisc.http.ConnectorConfig$Builder)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigBuilder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder enabled(boolean)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder mixedMode(boolean)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol": {
+    "superClass": "com.yahoo.config.InnerNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder)",
+      "public boolean enabled()",
+      "public boolean mixedMode()"
     ],
     "fields": []
   },
@@ -289,7 +322,8 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Throttling throttling()",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl ssl()",
       "public com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer tlsClientAuthEnforcer()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy healthCheckProxy()"
+      "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy healthCheckProxy()",
+      "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol proxyProtocol()"
     ],
     "fields": [
       "public static final java.lang.String CONFIG_DEF_MD5",
