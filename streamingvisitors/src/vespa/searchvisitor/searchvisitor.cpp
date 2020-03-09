@@ -75,15 +75,15 @@ createMultiValueAttribute(const vespalib::string & name, const document::FieldVa
         ndt->getId() == DataType::T_LONG)
     {
         return arrayType ? std::make_shared<search::MultiIntegerExtAttribute>(name)
-                         : std::make_shared<search::WeightedSetIntegerExtAttribute>(name));
+                         : std::make_shared<search::WeightedSetIntegerExtAttribute>(name);
     } else if (ndt->getId() == DataType::T_DOUBLE ||
                ndt->getId() == DataType::T_FLOAT)
     {
         return arrayType ? std::make_shared<search::MultiFloatExtAttribute>(name)
-                         : std::make_shared<search::WeightedSetFloatExtAttribute>(name));
+                         : std::make_shared<search::WeightedSetFloatExtAttribute>(name);
     } else if (ndt->getId() == DataType::T_STRING) {
         return arrayType ? std::make_shared<search::MultiStringExtAttribute>(name)
-                         : std:.make_shared<search::WeightedSetStringExtAttribute>(name));
+                         : std::make_shared<search::WeightedSetStringExtAttribute>(name);
     } else {
         LOG(debug, "Can not make an multivalue attribute out of %s with data type '%s' (%s)",
             name.c_str(), ndt->getName().c_str(), fv.getClass().name());
