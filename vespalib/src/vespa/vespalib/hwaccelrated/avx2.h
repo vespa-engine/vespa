@@ -2,17 +2,19 @@
 
 #pragma once
 
-#include "avx.h"
+#include "generic.h"
 
 namespace vespalib::hwaccelrated {
 
 /**
  * Avx-512 implementation.
  */
-class Avx2Accelrator : public AvxAccelrator
+class Avx2Accelrator : public GenericAccelrator
 {
 public:
     size_t populationCount(const uint64_t *a, size_t sz) const override;
+    double squaredEuclideanDistance(const float * a, const float * b, size_t sz) const override;
+    double squaredEuclideanDistance(const double * a, const double * b, size_t sz) const override;
 };
 
 }

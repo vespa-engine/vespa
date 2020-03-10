@@ -58,6 +58,7 @@ vespa_define_module(
     src/tests/gencnt
     src/tests/guard
     src/tests/host_name
+    src/tests/hwaccelrated
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
     src/tests/latch

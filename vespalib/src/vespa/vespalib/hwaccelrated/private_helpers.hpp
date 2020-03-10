@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/optimized.h>
+#include <cstring>
 
 namespace vespalib::hwaccelrated::helper {
 namespace {

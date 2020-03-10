@@ -4,7 +4,6 @@
 
 #include "private_helpers.hpp"
 #include <vespa/fastos/dynamiclibrary.h>
-#include <cstring>
 
 namespace vespalib::hwaccelrated::avx {
 
@@ -83,6 +82,54 @@ T dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
             return computeDotProduct<T, VLEN, 1, VLEN, VectorsPerChunk>(af, bf, sz);
         } else {
             return computeDotProduct<T, VLEN, 1, 1, VectorsPerChunk>(af, bf, sz);
+        }
+    }
+}
+
+template <typename T, unsigned VLEN, unsigned AlignA, unsigned AlignB>
+double
+euclideanDistanceT(const T * af, const T * bf, size_t sz)
+{
+    constexpr unsigned VectorsPerChunk = 4;
+    constexpr unsigned ChunkSize = VLEN*VectorsPerChunk/sizeof(T);
+    typedef T V __attribute__ ((vector_size (VLEN)));
+    typedef T A __attribute__ ((vector_size (VLEN), aligned(AlignA)));
+    typedef T B __attribute__ ((vector_size (VLEN), aligned(AlignB)));
+    V partial[VectorsPerChunk];
+    memset(partial, 0, sizeof(partial));
+    const A * a = reinterpret_cast<const A *>(af);
+    const B * b = reinterpret_cast<const B *>(bf);
+
+    const size_t numChunks(sz/ChunkSize);
+    for (size_t i(0); i < numChunks; i++) {
+        for (size_t j(0); j < VectorsPerChunk; j++) {
+            partial[j] += (a[VectorsPerChunk*i+j] - b[VectorsPerChunk*i+j]) * (a[VectorsPerChunk*i+j] - b[VectorsPerChunk*i+j]);
+        }
+    }
+    double sum(0);
+    for (size_t i(numChunks*ChunkSize); i < sz; i++) {
+        sum += (af[i] - bf[i]) * (af[i] - bf[i]);
+    }
+    partial[0] = sumR<V, VectorsPerChunk>(partial);
+
+    return sum + sumT<T, V>(partial[0]);
+}
+
+template <typename T, unsigned VLEN>
+double euclideanDistanceSelectAlignment(const T * af, const T * bf, size_t sz)
+{
+    constexpr unsigned ALIGN = 32;
+    if (validAlignment(af, ALIGN)) {
+        if (validAlignment(bf, ALIGN)) {
+            return euclideanDistanceT<T, VLEN, ALIGN, ALIGN>(af, bf, sz);
+        } else {
+            return euclideanDistanceT<T, ALIGN, ALIGN, 1>(af, bf, sz);
+        }
+    } else {
+        if (validAlignment(bf, ALIGN)) {
+            return euclideanDistanceT<T, VLEN, 1, ALIGN>(af, bf, sz);
+        } else {
+            return euclideanDistanceT<T, VLEN, 1, 1>(af, bf, sz);
         }
     }
 }
