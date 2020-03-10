@@ -100,3 +100,9 @@ healthCheckProxy.enable        bool    default=false
 
 # Which port to proxy
 healthCheckProxy.port          int     default=8080
+
+# Enable PROXY protocol V1/V2 support (only for https connectors).
+proxyProtocol.enabled          bool    default=false
+
+# Allow https in parallel with proxy protocol
+proxyProtocol.mixedMode        bool    default=false

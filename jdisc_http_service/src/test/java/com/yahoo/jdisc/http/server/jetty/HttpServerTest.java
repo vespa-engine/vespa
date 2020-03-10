@@ -30,9 +30,15 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.content.StringBody;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
+import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -59,7 +65,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -89,6 +98,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
@@ -178,7 +189,7 @@ public class HttpServerTest {
 
     private static class AccessLogMock extends AccessLog {
 
-        final List<AccessLogEntry> logEntries = new ArrayList<>();
+        final List<AccessLogEntry> logEntries = new CopyOnWriteArrayList<>();
 
         AccessLogMock() { super(null); }
 
@@ -653,6 +664,91 @@ public class HttpServerTest {
         verify(metricConsumer.mockitoMock())
                 .add(Metrics.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertThat(driver.close(), is(true));
+    }
+
+    @Test
+    public void requireThatProxyProtocolIsAcceptedAndActualRemoteAddressStoredInAccessLog() throws Exception {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        AccessLogMock accessLogMock = new AccessLogMock();
+        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, accessLogMock, /*mixedMode*/false);
+        HttpClient client = createJettyHttpClient(certificateFile);
+
+        String proxiedRemoteAddress = "192.168.0.100";
+        int proxiedRemotePort = 12345;
+        sendJettyClientRequest(driver, client, new V1.Tag(proxiedRemoteAddress, proxiedRemotePort));
+        sendJettyClientRequest(driver, client, new V2.Tag(proxiedRemoteAddress, proxiedRemotePort));
+        client.stop();
+        assertThat(driver.close(), is(true));
+
+        assertThat(accessLogMock.logEntries, hasSize(2));
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(0), proxiedRemoteAddress, proxiedRemotePort);
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, proxiedRemotePort);
+    }
+
+    @Test
+    public void requireThatConnectorWithProxyProtocolMixedEnabledAcceptsBothProxyProtocolAndHttps() throws Exception {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        AccessLogMock accessLogMock = new AccessLogMock();
+        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, accessLogMock, /*mixedMode*/true);
+        HttpClient client = createJettyHttpClient(certificateFile);
+
+        String proxiedRemoteAddress = "192.168.0.100";
+        sendJettyClientRequest(driver, client, null);
+        sendJettyClientRequest(driver, client, new V2.Tag(proxiedRemoteAddress, 12345));
+        client.stop();
+        assertThat(driver.close(), is(true));
+
+        assertThat(accessLogMock.logEntries, hasSize(2));
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(0), "127.0.0.1", 0);
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, 0);
+    }
+
+    private void sendJettyClientRequest(TestDriver testDriver, HttpClient client, Object tag)
+            throws InterruptedException, ExecutionException, TimeoutException {
+        ContentResponse response = client.newRequest(URI.create("https://localhost:" + testDriver.server().getListenPort() + "/"))
+                .tag(tag)
+                .send();
+        assertEquals(200, response.getStatus());
+    }
+
+    // Using Jetty's http client as Apache httpclient does not support the proxy-protocol v1/v2.
+    private static HttpClient createJettyHttpClient(Path certificateFile) throws Exception {
+        SslContextFactory.Client clientSslCtxFactory = new SslContextFactory.Client();
+        clientSslCtxFactory.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+        clientSslCtxFactory.setSslContext(new SslContextBuilder().withTrustStore(certificateFile).build());
+
+        HttpClient client = new HttpClient(clientSslCtxFactory);
+        client.start();
+        return client;
+    }
+
+    private static void assertLogEntryHasRemote(AccessLogEntry entry, String expectedAddress, int expectedPort) {
+        assertEquals(expectedAddress, entry.getPeerAddress());
+        if (expectedPort > 0) {
+            assertEquals(expectedPort, entry.getPeerPort());
+        }
+    }
+
+    private static TestDriver createSslWithProxyProtocolTestDriver(
+            Path certificateFile, Path privateKeyFile, AccessLogMock accessLogMock, boolean mixedMode) throws IOException {
+        ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
+                .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
+                                       .enabled(true)
+                                       .mixedMode(mixedMode))
+                .ssl(new ConnectorConfig.Ssl.Builder()
+                             .enabled(true)
+                             .privateKeyFile(privateKeyFile.toString())
+                             .certificateFile(certificateFile.toString())
+                             .caCertificateFile(certificateFile.toString()));
+        return TestDrivers.newConfiguredInstance(
+                new EchoRequestHandler(),
+                new ServerConfig.Builder(),
+                connectorConfig,
+                binder -> binder.bind(AccessLog.class).toInstance(accessLogMock));
     }
 
     private static TestDriver createSslTestDriver(
