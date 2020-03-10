@@ -32,6 +32,30 @@ multiplyAdd(const T * a, const T * b, size_t sz)
     return sum;
 }
 
+template <typename T, size_t UNROLL>
+double
+euclidianDistanceT(const T * a, const T * b, size_t sz)
+{
+    T partial[UNROLL];
+    for (size_t i(0); i < UNROLL; i++) {
+        partial[i] = 0;
+    }
+    size_t i(0);
+    for (; i + UNROLL <= sz; i += UNROLL) {
+        for (size_t j(0); j < UNROLL; j++) {
+            partial[j] += (a[i+j] - b[i+j]) * (a[i+j] - b[i+j]);
+        }
+    }
+    for (;i < sz; i++) {
+        partial[i%UNROLL] += (a[i] - b[i]) * (a[i] - b[i]);
+    }
+    double sum(0);
+    for (size_t j(0); j < UNROLL; j++) {
+        sum += partial[j];
+    }
+    return sum;
+}
+
 template<size_t UNROLL, typename Operation>
 void
 bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) {
@@ -133,12 +157,12 @@ GenericAccelrator::populationCount(const uint64_t *a, size_t sz) const {
 
 double
 GenericAccelrator::squaredEuclidianDistance(const float * a, const float * b, size_t sz) const {
-    return helper::euclidianDistanceT<float, 8>(a, b, sz);
+    return euclidianDistanceT<float, 8>(a, b, sz);
 }
 
 double
 GenericAccelrator::squaredEuclidianDistance(const double * a, const double * b, size_t sz) const {
-    return helper::euclidianDistanceT<double, 4>(a, b, sz);
+    return euclidianDistanceT<double, 4>(a, b, sz);
 }
 
 }
