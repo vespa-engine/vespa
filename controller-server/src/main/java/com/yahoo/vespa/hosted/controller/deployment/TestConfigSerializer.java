@@ -43,6 +43,14 @@ public class TestConfigSerializer {
         root.setString("system", system.value());
         root.setBool("isCI", isCI);
 
+        // TODO jvenstad: remove when clients can be updated
+        Cursor endpointsObject = root.setObject("endpoints");
+        deployments.forEach((zone, endpoints) -> {
+            Cursor endpointArray = endpointsObject.setArray(zone.value());
+            for (Endpoint endpoint : endpoints)
+                endpointArray.addString(endpoint.url().toString());
+        });
+
         Cursor zoneEndpointsObject = root.setObject("zoneEndpoints");
         deployments.forEach((zone, endpoints) -> {
             Cursor clusterEndpointsObject = zoneEndpointsObject.setObject(zone.value());
