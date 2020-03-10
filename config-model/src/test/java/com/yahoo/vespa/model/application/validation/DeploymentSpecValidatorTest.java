@@ -31,6 +31,22 @@ public class DeploymentSpecValidatorTest {
                               "deployment.xml does not match any container cluster ID", deploymentXml);
     }
 
+    @Test
+    public void testEndpointNonExistentContainerId() {
+        var deploymentXml = "<?xml version='1.0' encoding='UTF-8'?>" +
+                            "<deployment version='1.0'>" +
+                            "  <test />" +
+                            "  <prod>" +
+                            "    <region active='true'>us-east</region>" +
+                            "  </prod>" +
+                            "  <endpoints>" +
+                            "    <endpoint container-id='non-existing'/>" +
+                            "  </endpoints>" +
+                            "</deployment>";
+        assertValidationError("Endpoint 'default' in instance default: 'non-existing' specified in " +
+                              "deployment.xml does not match any container cluster ID", deploymentXml);
+    }
+
     private static void assertValidationError(String message, String deploymentXml) {
         var simpleHosts = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                           "<hosts>  " +
@@ -70,3 +86,4 @@ public class DeploymentSpecValidatorTest {
     }
 
 }
+
