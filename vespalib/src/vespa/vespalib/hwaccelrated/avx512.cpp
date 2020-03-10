@@ -22,4 +22,14 @@ Avx512Accelrator::populationCount(const uint64_t *a, size_t sz) const {
     return helper::populationCount(a, sz);
 }
 
+double
+Avx512Accelrator::squaredEuclidianDistance(const float * a, const float * b, size_t sz) const {
+    return helper::euclidianDistanceT<float, 64>(a, b, sz);
+}
+
+double
+Avx512Accelrator::squaredEuclidianDistance(const double * a, const double * b, size_t sz) const {
+    return helper::euclidianDistanceT<double, 32>(a, b, sz);
+}
+
 }
