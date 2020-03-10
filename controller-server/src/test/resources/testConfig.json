@@ -3,6 +3,11 @@
   "zone": "test.aws-us-east-1c",
   "system": "publiccd",
   "isCI": true,
+  "endpoints": {
+    "test.aws-us-east-1c": [
+      "https://ai--default--default.global.vespa.oath.cloud/"
+    ]
+  },
   "zoneEndpoints": {
     "test.aws-us-east-1c": {
       "ai": "https://ai--default--default.global.vespa.oath.cloud/"
