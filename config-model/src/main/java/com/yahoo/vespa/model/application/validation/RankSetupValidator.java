@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 
 /**
  * Validate rank setup for all search clusters (rank-profiles, index-schema, attributes configs), validating done
- * by running through the binary 'vespa-verify-ranksetup'. Will not delete temporary files if <em>force</em> is true
+ * by running through the binary 'vespa-verify-ranksetup'
  *
  * @author vegardh
  */
@@ -71,7 +71,7 @@ public class RankSetupValidator extends Validator {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            if (cfgDir != null && !force)
+            if (cfgDir != null)
                 deleteTempDir(cfgDir);
         }
     }
@@ -80,7 +80,7 @@ public class RankSetupValidator extends Validator {
         Instant start = Instant.now();
         try {
             boolean ret = execValidate(configId, searchCluster, sdName, deployLogger);
-            if (!ret && !force) {
+            if (!ret) {
                 // Give up, don't say same error msg repeatedly
                 deleteTempDir(tempDir);
             }
