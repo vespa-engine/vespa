@@ -1,10 +1,10 @@
 package com.yahoo.vespa.model.admin.monitoring.builder.xml;
 
 import com.yahoo.vespa.model.admin.monitoring.CloudWatch;
-import com.yahoo.vespa.model.admin.monitoring.CloudWatch.HostedAuth;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import org.w3c.dom.Element;
 
+import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalAttribute;
 import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalChild;
 
 /**
@@ -31,8 +31,8 @@ public class CloudWatchBuilder {
                                                             elem.getAttribute(SECRET_KEY_ATTRIBUTE)));
 
         getOptionalChild(cloudwatchElement, SHARED_CREDENTIALS_ELEMENT)
-                .ifPresent(elem -> cloudWatch.setSharedCredentials(elem.getAttribute(PROFILE_ATTRIBUTE),
-                                                                   elem.getAttribute(FILE_ATTRIBUTE)));
+                .ifPresent(elem -> cloudWatch.setSharedCredentials(elem.getAttribute(FILE_ATTRIBUTE),
+                                                                   getOptionalAttribute(elem, PROFILE_ATTRIBUTE)));
 
         return cloudWatch;
     }
