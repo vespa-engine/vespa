@@ -63,7 +63,7 @@ public class TelegrafTest {
         assertEquals("my-namespace", cloudWatch0.namespace());
         assertEquals("my-access-key", cloudWatch0.accessKeyName());
         assertEquals("my-secret-key", cloudWatch0.secretKeyName());
-        assertEquals("", cloudWatch0.profile());
+        assertEquals("default", cloudWatch0.profile());
     }
 
     private String servicesWithCloudwatch() {
@@ -115,7 +115,7 @@ public class TelegrafTest {
         assertEquals("namespace-1", cloudWatch0.namespace());
         assertEquals("access-key-1", cloudWatch0.accessKeyName());
         assertEquals("secret-key-1", cloudWatch0.secretKeyName());
-        assertEquals("", cloudWatch0.profile());
+        assertEquals("default", cloudWatch0.profile());
 
         var cloudWatch1 = config.cloudWatch(1);
         assertEquals("cloudwatch-consumer", cloudWatch1.consumer());
