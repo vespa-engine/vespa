@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.Response.Status.FORBIDDEN;
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
@@ -104,7 +105,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
             return checkAccessWithRoleToken(request, resourceAndAction);
         } else {
             throw new IllegalArgumentException(
-                    "Not authorized - request did not contain any of the allowed credentials: " + enabledCredentials);
+                    "Not authorized - request did not contain any of the allowed credentials: " + toPrettyString(enabledCredentials));
         }
     }
 
@@ -151,6 +152,25 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
 
     private ZToken getRoleToken(DiscFilterRequest request) {
         return new ZToken(request.getHeader(roleTokenHeaderName));
+    }
+
+    private static String toPrettyString(EnumSet<EnabledCredentials.Enum> enabledCredentialSet) {
+        return enabledCredentialSet.stream()
+                .map(AthenzAuthorizationFilter::toPrettyString)
+                .collect(Collectors.joining(", ", "[", "]"));
+    }
+
+    private static String toPrettyString(EnabledCredentials.Enum enabledCredential) {
+        switch (enabledCredential) {
+            case ACCESS_TOKEN:
+                return "Athenz access token with X.509 identity certificate";
+            case ROLE_TOKEN:
+                return "Athenz role token (ZToken)";
+            case ROLE_CERTIFICATE:
+                return "Athenz X.509 role certificate";
+            default:
+                throw new IllegalArgumentException("Unknown credential type: " + enabledCredential);
+        }
     }
 
     private static void populateRequestWithResult(DiscFilterRequest request, Result result) {
