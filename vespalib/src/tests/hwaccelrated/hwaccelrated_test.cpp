@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
@@ -10,14 +10,15 @@ template<typename T>
 std::vector<T> createAndFill(size_t sz) {
     std::vector<T> v(sz);
     for (size_t i(0); i < sz; i++) {
-        v[i] = i;
+        v[i] = rand()%500;
     }
     return v;
 }
 
 template<typename T>
-void verifyEuclidianDistance(const hwaccelrated::IAccelrated & accel) {
+void verifyEuclideanDistance(const hwaccelrated::IAccelrated & accel) {
     const size_t testLength(255);
+    srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
@@ -25,15 +26,15 @@ void verifyEuclidianDistance(const hwaccelrated::IAccelrated & accel) {
         for (size_t i(j); i < testLength; i++) {
             sum += (a[i] - b[i]) * (a[i] - b[i]);
         }
-        T hwComputedSum(accel.squaredEuclidianDistance(&a[j], &b[j], testLength - j));
-        EXPECT_EQUAL (sum, hwComputedSum);
+        T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
+        EXPECT_EQUAL(sum, hwComputedSum);
     }
 }
 
-TEST("test euclidian distance") {
+TEST("test euclidean distance") {
     hwaccelrated::GenericAccelrator genericAccelrator;
-    verifyEuclidianDistance<float>(genericAccelrator);
-    verifyEuclidianDistance<double >(genericAccelrator);
+    verifyEuclideanDistance<float>(genericAccelrator);
+    verifyEuclideanDistance<double >(genericAccelrator);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

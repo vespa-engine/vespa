@@ -88,7 +88,7 @@ T dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
 
 template <typename T, unsigned VLEN, unsigned AlignA, unsigned AlignB>
 double
-euclidianDistanceT(const T * af, const T * bf, size_t sz)
+euclideanDistanceT(const T * af, const T * bf, size_t sz)
 {
     constexpr unsigned VectorsPerChunk = 4;
     constexpr unsigned ChunkSize = VLEN*VectorsPerChunk/sizeof(T);
@@ -116,20 +116,20 @@ euclidianDistanceT(const T * af, const T * bf, size_t sz)
 }
 
 template <typename T, unsigned VLEN>
-double euclidianDistanceSelectAlignment(const T * af, const T * bf, size_t sz)
+double euclideanDistanceSelectAlignment(const T * af, const T * bf, size_t sz)
 {
     constexpr unsigned ALIGN = 32;
     if (validAlignment(af, ALIGN)) {
         if (validAlignment(bf, ALIGN)) {
-            return euclidianDistanceT<T, VLEN, ALIGN, ALIGN>(af, bf, sz);
+            return euclideanDistanceT<T, VLEN, ALIGN, ALIGN>(af, bf, sz);
         } else {
-            return euclidianDistanceT<T, ALIGN, ALIGN, 1>(af, bf, sz);
+            return euclideanDistanceT<T, ALIGN, ALIGN, 1>(af, bf, sz);
         }
     } else {
         if (validAlignment(bf, ALIGN)) {
-            return euclidianDistanceT<T, VLEN, 1, ALIGN>(af, bf, sz);
+            return euclideanDistanceT<T, VLEN, 1, ALIGN>(af, bf, sz);
         } else {
-            return euclidianDistanceT<T, VLEN, 1, 1>(af, bf, sz);
+            return euclideanDistanceT<T, VLEN, 1, 1>(af, bf, sz);
         }
     }
 }

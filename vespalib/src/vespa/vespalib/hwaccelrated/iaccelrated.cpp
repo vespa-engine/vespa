@@ -40,7 +40,7 @@ template<typename T>
 std::vector<T> createAndFill(size_t sz) {
     std::vector<T> v(sz);
     for (size_t i(0); i < sz; i++) {
-        v[i] = i;
+        v[i] = rand()%100;
     }
     return v;
 }
@@ -49,12 +49,13 @@ template<typename T>
 void verifyDotproduct(const IAccelrated & accel)
 {
     const size_t testLength(255);
+    srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
         T sum(0);
         for (size_t i(j); i < testLength; i++) {
-            sum += i*i;
+            sum += a[i]*b[i];
         }
         T hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
@@ -67,6 +68,7 @@ void verifyDotproduct(const IAccelrated & accel)
 template<typename T>
 void verifyEuclidianDistance(const IAccelrated & accel) {
     const size_t testLength(255);
+    srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
@@ -74,7 +76,7 @@ void verifyEuclidianDistance(const IAccelrated & accel) {
         for (size_t i(j); i < testLength; i++) {
             sum += (a[i] - b[i]) * (a[i] - b[i]);
         }
-        T hwComputedSum(accel.squaredEuclidianDistance(&a[j], &b[j], testLength - j));
+        T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
             fprintf(stderr, "Accelrator is not computing euclidian distance correctly.\n");
             LOG_ABORT("should not be reached");

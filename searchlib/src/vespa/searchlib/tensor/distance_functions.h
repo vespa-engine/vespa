@@ -10,6 +10,7 @@ namespace search::tensor {
 
 /**
  * Calculates the square of the standard Euclidean distance.
+ * Will use instruction optimal for the cpu it is running on.
  */
 template <typename FloatType>
 class SquaredEuclideanDistance : public DistanceFunction {
@@ -22,7 +23,7 @@ public:
         auto rhs_vector = rhs.typify<FloatType>();
         size_t sz = lhs_vector.size();
         assert(sz == rhs_vector.size());
-        return _computer->squaredEuclidianDistance(&lhs_vector[0], &rhs_vector[0], sz);
+        return _computer->squaredEuclideanDistance(&lhs_vector[0], &rhs_vector[0], sz);
     }
     vespalib::hwaccelrated::IAccelrated::UP _computer;
 };

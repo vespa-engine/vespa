@@ -13,8 +13,8 @@ class Avx2Accelrator : public GenericAccelrator
 {
 public:
     size_t populationCount(const uint64_t *a, size_t sz) const override;
-    double squaredEuclidianDistance(const float * a, const float * b, size_t sz) const override;
-    double squaredEuclidianDistance(const double * a, const double * b, size_t sz) const override;
+    double squaredEuclideanDistance(const float * a, const float * b, size_t sz) const override;
+    double squaredEuclideanDistance(const double * a, const double * b, size_t sz) const override;
 };
 
 }
