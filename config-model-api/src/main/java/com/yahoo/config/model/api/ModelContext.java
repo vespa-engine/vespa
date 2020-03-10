@@ -61,6 +61,7 @@ public interface ModelContext {
         boolean useBucketSpaceMetric();
         default boolean useNewAthenzFilter() { return false; }
         default boolean usePhraseSegmenting() { return false; }
+        default String proxyProtocol() { return "https-only"; }
     }
 
 }

@@ -136,6 +136,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useBucketSpaceMetric;
         private final boolean useNewAthenzFilter;
         private final boolean usePhraseSegmenting;
+        private final String proxyProtocol;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -171,6 +172,8 @@ public class ModelContextImpl implements ModelContext {
             this.useNewAthenzFilter = Flags.USE_NEW_ATHENZ_FILTER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.usePhraseSegmenting = Flags.PHRASE_SEGMENTING.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
@@ -232,6 +235,8 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean usePhraseSegmenting() { return usePhraseSegmenting; }
 
+        @Override
+        public String proxyProtocol() { return proxyProtocol; }
     }
 
 }
