@@ -17,7 +17,7 @@ public enum Resource {
     },
 
     memory {
-        String metricName() { return "memory.util"; }
+        String metricName() { return "mem.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.memoryGb(); }
     },
