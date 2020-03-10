@@ -275,10 +275,12 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario withNode(NodeType type, NodeResources flavor, String hostname, String parentHostname) {
-            nodeRepository.addNodes(List.of(
-                    nodeRepository.createNode(UUID.randomUUID().toString(), hostname,
-                                              Optional.ofNullable(parentHostname), new Flavor(flavor), type)
-            ));
+            nodeRepository.addNodes(List.of(nodeRepository.createNode(UUID.randomUUID().toString(),
+                                                                      hostname,
+                                                                      Optional.ofNullable(parentHostname),
+                                                                      new Flavor(flavor),
+                                                                      type)),
+                                    Agent.system);
             return this;
         }
 

@@ -393,7 +393,6 @@ public class DynamicDockerAllocationTest {
                      NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testSwitchingFromLegacyFlavorSyntaxToResourcesDoesNotCauseReallocation() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
@@ -430,7 +429,7 @@ public class DynamicDockerAllocationTest {
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, node1a.flavor().resources(), Instant.now());
 
-        tester.nodeRepository().addNodes(Collections.singletonList(node1aAllocation));
+        tester.nodeRepository().addNodes(Collections.singletonList(node1aAllocation), Agent.system);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(tester.getCurator()));
         tester.nodeRepository().activate(Collections.singletonList(node1aAllocation), transaction);
         transaction.commit();

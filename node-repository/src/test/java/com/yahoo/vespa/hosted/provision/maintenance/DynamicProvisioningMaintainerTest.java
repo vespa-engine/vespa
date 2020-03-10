@@ -121,8 +121,8 @@ public class DynamicProvisioningMaintainerTest {
         verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host2")));
         verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host3")));
         verifyNoMoreInteractions(hostProvisioner);
-        assertFalse(tester.nodeRepository.getNode("host2").isPresent());
-        assertFalse(tester.nodeRepository.getNode("host3").isPresent());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository.getNode("host2").get().state());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository.getNode("host3").get().state());
     }
 
     @Test
@@ -137,11 +137,14 @@ public class DynamicProvisioningMaintainerTest {
 
     @Test
     public void provision_deficit_and_deprovision_excess() {
-        flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new PreprovisionCapacity(2, 4, 8, 1), new PreprovisionCapacity(2, 3, 2, 2)), PreprovisionCapacity.class);
+        flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+                                List.of(new PreprovisionCapacity(2, 4, 8, 1),
+                                        new PreprovisionCapacity(2, 3, 2, 2)),
+                                PreprovisionCapacity.class);
         addNodes();
 
         maintainer.convergeToCapacity(tester.nodeRepository.list());
-        assertFalse(tester.nodeRepository.getNode("host2").isPresent());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository.getNode("host2").get().state());
         assertTrue(tester.nodeRepository.getNode("host3").isPresent());
         verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host2")));
         verify(hostProvisioner, times(2)).provisionHosts(argThatLambda(list -> list.size() == 1), eq(new NodeResources(2, 3, 2, 1)), any());

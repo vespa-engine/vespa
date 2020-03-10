@@ -358,6 +358,7 @@ public class NodeSerializer {
     private History.Event.Type eventTypeFromString(String eventTypeString) {
         switch (eventTypeString) {
             case "provisioned" : return History.Event.Type.provisioned;
+            case "deprovisioned" : return History.Event.Type.deprovisioned;
             case "readied" : return History.Event.Type.readied;
             case "reserved" : return History.Event.Type.reserved;
             case "activated" : return History.Event.Type.activated;
@@ -379,6 +380,7 @@ public class NodeSerializer {
     private String toString(History.Event.Type nodeEventType) {
         switch (nodeEventType) {
             case provisioned : return "provisioned";
+            case deprovisioned : return "deprovisioned";
             case readied : return "readied";
             case reserved : return "reserved";
             case activated : return "activated";
@@ -409,6 +411,7 @@ public class NodeSerializer {
             case "InactiveExpirer" : return Agent.InactiveExpirer;
             case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
             case "ReservationExpirer" : return Agent.ReservationExpirer;
+            case "DynamicProvisioningMaintainer" : return Agent.DynamicProvisioningMaintainer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
@@ -424,6 +427,7 @@ public class NodeSerializer {
             case InactiveExpirer : return "InactiveExpirer";
             case ProvisionedExpirer : return "ProvisionedExpirer";
             case ReservationExpirer : return "ReservationExpirer";
+            case DynamicProvisioningMaintainer : return "DynamicProvisioningMaintainer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

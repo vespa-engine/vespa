@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.when;
  * @author smorgrav
  */
 public class MetricsReporterTest {
+
     private final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private final ApplicationInstanceReference reference = mock(ApplicationInstanceReference.class);
 
@@ -81,9 +83,9 @@ public class MetricsReporterTest {
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            true, new InMemoryFlagSource());
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
-        nodeRepository.addNodes(List.of(node));
+        nodeRepository.addNodes(List.of(node), Agent.system);
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
-        nodeRepository.addNodes(List.of(hostNode));
+        nodeRepository.addNodes(List.of(hostNode), Agent.system);
 
         Map<String, Number> expectedMetrics = new HashMap<>();
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
@@ -94,6 +96,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.inactiveHosts", 0);
         expectedMetrics.put("hostedVespa.dirtyHosts", 0);
         expectedMetrics.put("hostedVespa.failedHosts", 0);
+        expectedMetrics.put("hostedVespa.deprovisionedHosts", 0);
         expectedMetrics.put("hostedVespa.pendingRedeployments", 42);
         expectedMetrics.put("hostedVespa.docker.totalCapacityDisk", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityMem", 0.0);
@@ -147,7 +150,7 @@ public class MetricsReporterTest {
 
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
                                       Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
-        nodeRepository.addNodes(List.of(dockerHost));
+        nodeRepository.addNodes(List.of(dockerHost), Agent.system);
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
@@ -219,8 +222,8 @@ public class MetricsReporterTest {
 
     public static class TestMetric implements Metric {
 
-        public Map<String, Number> values = new HashMap<>();
-        public Map<String, List<Context>> context = new HashMap<>();
+        public Map<String, Number> values = new LinkedHashMap<>();
+        public Map<String, List<Context>> context = new LinkedHashMap<>();
 
         @Override
         public void set(String key, Number val, Context ctx) {

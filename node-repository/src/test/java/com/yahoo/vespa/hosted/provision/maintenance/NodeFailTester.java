@@ -242,7 +242,7 @@ public class NodeFailTester {
         for (int i = startIndex; i < startIndex + count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, parentHostname, flavor, nodeType));
 
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
@@ -251,7 +251,7 @@ public class NodeFailTester {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }

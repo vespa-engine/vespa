@@ -54,13 +54,13 @@ public class NodeRepositoryTester {
     public Node addNode(String id, String hostname, String flavor, NodeType type) {
         Node node = nodeRepository.createNode(id, hostname, Optional.empty(), 
                                               nodeFlavors.getFlavorOrThrow(flavor), type);
-        return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
+        return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
     }
 
     public Node addNode(String id, String hostname, String parentHostname, String flavor, NodeType type) {
         Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
                                               nodeFlavors.getFlavorOrThrow(flavor), type);
-        return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
+        return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
     }
 
     /**

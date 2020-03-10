@@ -127,7 +127,7 @@ public class DynamicProvisioningMaintainer extends Maintainer {
                         nodeRepository().database().getProvisionIndexes(1), resources, preprovisionAppId).stream()
                         .map(ProvisionedHost::generateHost)
                         .collect(Collectors.toList());
-                nodeRepository().addNodes(hosts);
+                nodeRepository().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
             } catch (OutOfCapacityException | IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.WARNING, "Failed to pre-provision " + resources + ":" + e.getMessage());
             } catch (RuntimeException e) {

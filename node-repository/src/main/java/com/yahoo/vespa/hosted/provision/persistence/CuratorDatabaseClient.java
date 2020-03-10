@@ -333,6 +333,7 @@ public class CuratorDatabaseClient {
             case provisioned: return "provisioned";
             case ready: return "ready";
             case reserved: return "reserved";
+            case deprovisioned: return "deprovisioned";
             default: throw new RuntimeException("Node state " + state + " does not map to a directory name");
         }
     }
