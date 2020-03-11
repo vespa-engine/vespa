@@ -87,6 +87,20 @@ public class HostedDeployTest {
     }
 
     @Test
+    public void testDeployWithWantedDockerImageRepository() throws IOException {
+        CountingModelFactory modelFactory = createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
+        DeployTester tester = new DeployTester(List.of(modelFactory), createConfigserverConfig());
+        String dockerImageRepository = "docker.foo.com:4443/bar/baz";
+        tester.deployApp("src/test/apps/hosted/", "4.5.6", dockerImageRepository);
+
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
+        assertTrue(deployment.isPresent());
+        deployment.get().activate();
+        assertEquals("4.5.6", ((Deployment) deployment.get()).session().getVespaVersion().toString());
+        assertEquals(dockerImageRepository, ((Deployment) deployment.get()).session().getDockerImageRepository().get());
+    }
+
+    @Test
     public void testDeployMultipleVersions() throws IOException {
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.1.0")),
                                                     createHostedModelFactory(Version.fromString("6.2.0")),

@@ -32,6 +32,9 @@ public interface ModelContext {
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
 
+    /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
+    default Optional<String> wantedDockerImageRepository() { return Optional.empty(); }
+
     /** The Vespa version this model is built for */
     Version modelVespaVersion();
 

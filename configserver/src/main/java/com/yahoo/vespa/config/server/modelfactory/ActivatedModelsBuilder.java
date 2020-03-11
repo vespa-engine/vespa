@@ -83,6 +83,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     protected Application buildModelVersion(ModelFactory modelFactory,
                                             ApplicationPackage applicationPackage,
                                             ApplicationId applicationId,
+                                            Optional<String> wantedDockerImageRepository,
                                             Version wantedNodeVespaVersion,
                                             Optional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
                                             Instant now) {
@@ -99,6 +100,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 createStaticProvisioner(applicationPackage.getAllocatedHosts(), modelContextProperties),
                 modelContextProperties,
                 Optional.empty(),
+                wantedDockerImageRepository,
                 modelFactory.version(),
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));

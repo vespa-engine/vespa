@@ -216,12 +216,28 @@ public class DeployTester {
         return deployApp(applicationPath, vespaVersion, Instant.now());
     }
 
+
+    /**
+     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
+     */
+    public PrepareResult deployApp(String applicationPath, String vespaVersion, String dockerImageRepository) {
+        return deployApp(applicationPath, vespaVersion, Instant.now(), dockerImageRepository);
+    }
+
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public PrepareResult deployApp(String applicationPath, String vespaVersion, Instant now)  {
+        return deployApp(applicationPath, vespaVersion, now, null);
+    }
+
+    /**
+     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
+     */
+    public PrepareResult deployApp(String applicationPath, String vespaVersion, Instant now, String dockerImageRepository)  {
         PrepareParams.Builder paramsBuilder = new PrepareParams.Builder()
                 .applicationId(applicationId)
+                .dockerImageRepository(dockerImageRepository)
                 .timeoutBudget(new TimeoutBudget(clock, Duration.ofSeconds(60)));
         if (vespaVersion != null)
             paramsBuilder.vespaVersion(vespaVersion);

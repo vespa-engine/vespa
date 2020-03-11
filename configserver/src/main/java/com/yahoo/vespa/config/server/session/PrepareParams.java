@@ -35,6 +35,7 @@ public final class PrepareParams {
     static final String CONTAINER_ENDPOINTS_PARAM_NAME = "containerEndpoints";
     static final String TLS_SECRETS_KEY_NAME_PARAM_NAME = "tlsSecretsKeyName";
     static final String ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME = "endpointCertificateMetadata";
+    static final String DOCKER_IMAGE_REPOSITORY = "dockerImageRepository";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -46,11 +47,13 @@ public final class PrepareParams {
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<String> tlsSecretsKeyName;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
+    private final Optional<String> dockerImageRepository;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
                           List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName,
-                          Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
+                          Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
+                          Optional<String> dockerImageRepository) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -61,6 +64,7 @@ public final class PrepareParams {
         this.containerEndpoints = containerEndpoints;
         this.tlsSecretsKeyName = tlsSecretsKeyName;
         this.endpointCertificateMetadata = endpointCertificateMetadata;
+        this.dockerImageRepository = dockerImageRepository;
     }
 
     public static class Builder {
@@ -75,6 +79,7 @@ public final class PrepareParams {
         private List<ContainerEndpoint> containerEndpoints = List.of();
         private Optional<String> tlsSecretsKeyName = Optional.empty();
         private Optional<EndpointCertificateMetadata> endpointCertificateMetadata = Optional.empty();
+        private Optional<String> dockerImageRepository = Optional.empty();
 
         public Builder() { }
 
@@ -142,9 +147,16 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder dockerImageRepository(String dockerImageRepository) {
+            if (dockerImageRepository == null) return this;
+            this.dockerImageRepository = Optional.of(dockerImageRepository);
+            return this;
+        }
+
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
-                                     verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName, endpointCertificateMetadata);
+                                     verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName,
+                                     endpointCertificateMetadata, dockerImageRepository);
         }
 
     }
@@ -159,6 +171,7 @@ public final class PrepareParams {
                             .containerEndpoints(request.getProperty(CONTAINER_ENDPOINTS_PARAM_NAME))
                             .tlsSecretsKeyName(request.getProperty(TLS_SECRETS_KEY_NAME_PARAM_NAME))
                             .endpointCertificateMetadata(request.getProperty(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME))
+                            .dockerImageRepository(request.getProperty(DOCKER_IMAGE_REPOSITORY))
                             .build();
     }
 
@@ -219,4 +232,9 @@ public final class PrepareParams {
     public Optional<EndpointCertificateMetadata> endpointCertificateMetadata() {
         return endpointCertificateMetadata;
     }
+
+    public Optional<String> dockerImageRepository() {
+        return dockerImageRepository;
+    }
+
 }

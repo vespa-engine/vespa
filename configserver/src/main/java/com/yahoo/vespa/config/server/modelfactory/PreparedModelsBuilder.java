@@ -82,8 +82,9 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     @Override
     protected PreparedModelResult buildModelVersion(ModelFactory modelFactory, 
                                                     ApplicationPackage applicationPackage,
-                                                    ApplicationId applicationId, 
-                                                    com.yahoo.component.Version wantedNodeVespaVersion,
+                                                    ApplicationId applicationId,
+                                                    Optional<String> wantedDockerImageRepository,
+                                                    Version wantedNodeVespaVersion,
                                                     Optional<AllocatedHosts> allocatedHosts,
                                                     Instant now) {
         Version modelVersion = modelFactory.version();
@@ -101,6 +102,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 createHostProvisioner(allocatedHosts),
                 properties,
                 getAppDir(applicationPackage),
+                wantedDockerImageRepository,
                 modelVersion,
                 wantedNodeVespaVersion);
 

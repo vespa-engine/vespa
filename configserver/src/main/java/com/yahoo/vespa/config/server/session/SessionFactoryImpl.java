@@ -131,6 +131,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         session.setApplicationId(existingApplicationId);
         session.setVespaVersion(existingSession.getVespaVersion());
+        session.setDockerImageRepository(existingSession.getDockerImageRepository());
         return session;
     }
 

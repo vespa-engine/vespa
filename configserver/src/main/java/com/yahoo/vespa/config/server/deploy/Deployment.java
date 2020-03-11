@@ -6,8 +6,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -25,7 +23,6 @@ import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -49,7 +46,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Duration timeout;
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
-    
+
+    /** The repository part of docker image this application should run on. Version is separate from image repo */
+    Optional<String> dockerImageRepository;
+
     /** The Vespa version this application should run on */
     private final Version version;
 
@@ -65,8 +65,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
                        Optional<Provisioner> hostProvisioner, Tenant tenant,
-                       Duration timeout, Clock clock, boolean prepared, boolean validate, Version version,
-                       boolean isBootstrap) {
+                       Duration timeout, Clock clock, boolean prepared, boolean validate,
+                       Optional<String> dockerImageRepository, Version version, boolean isBootstrap) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.hostProvisioner = hostProvisioner;
@@ -75,23 +75,26 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.clock = clock;
         this.prepared = prepared;
         this.validate = validate;
+        this.dockerImageRepository = dockerImageRepository;
         this.version = version;
         this.isBootstrap = isBootstrap;
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> hostProvisioner, Tenant tenant,
-                                        Duration timeout, Clock clock, boolean validate, Version version,
+                                        Duration timeout, Clock clock, boolean validate,
+                                        Optional<String> dockerImageRepository, Version version,
                                         boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, false, validate, version, isBootstrap);
+                              timeout, clock, false, validate, dockerImageRepository, version, isBootstrap);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> hostProvisioner, Tenant tenant,
                                       Duration timeout, Clock clock, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, true, true, session.getVespaVersion(), isBootstrap);
+                              timeout, clock, true, true, session.getDockerImageRepository(),
+                              session.getVespaVersion(), isBootstrap);
     }
 
     public void setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
@@ -105,16 +108,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.prepareMillis")) {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
-            session.prepare(logger,
-                            new PrepareParams.Builder().applicationId(session.getApplicationId())
-                                                       .timeoutBudget(timeoutBudget)
-                                                       .ignoreValidationErrors(!validate)
-                                                       .vespaVersion(version.toString())
-                                                       .isBootstrap(isBootstrap)
-                                                       .build(),
-                            Optional.empty(),
-                            tenant.getPath(),
-                            clock.instant());
+            PrepareParams.Builder params = new PrepareParams.Builder().applicationId(session.getApplicationId())
+                    .timeoutBudget(timeoutBudget)
+                    .ignoreValidationErrors(!validate)
+                    .vespaVersion(version.toString())
+                    .isBootstrap(isBootstrap);
+            dockerImageRepository.ifPresent(params::dockerImageRepository);
+            session.prepare(logger, params.build(), Optional.empty(), tenant.getPath(), clock.instant());
             this.prepared = true;
         }
     }
