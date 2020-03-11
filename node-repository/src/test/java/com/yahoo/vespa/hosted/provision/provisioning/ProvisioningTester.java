@@ -418,10 +418,13 @@ public class ProvisioningTester {
         activate(applicationId, Set.copyOf(list));
     }
 
+    public ClusterSpec clusterSpec() {
+        return ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
+                                   Version.fromString("6.42"), false, Optional.empty());
+    }
+
     public List<Node> deploy(ApplicationId application, Capacity capacity) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false, Optional.empty());
-        List<HostSpec> prepared = prepare(application, cluster, capacity, 1);
+        List<HostSpec> prepared = prepare(application, clusterSpec(), capacity, 1);
         activate(application, Set.copyOf(prepared));
         return getNodes(application, Node.State.active).asList();
     }

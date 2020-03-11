@@ -24,9 +24,9 @@ public interface NodeMetrics {
         private final String hostname;
         private final String name;
         private long timestamp;
-        private final float value;
+        private final double value;
 
-        public MetricValue(String hostname, String name, long timestamp, float value) {
+        public MetricValue(String hostname, String name, long timestamp, double value) {
             this.hostname = hostname;
             this.name = name;
             this.timestamp = timestamp;
@@ -36,7 +36,7 @@ public interface NodeMetrics {
         public String hostname() { return hostname; }
         public String name() { return name; }
         public long timestamp() { return timestamp; }
-        public float value() { return value; }
+        public double value() { return value; }
 
         @Override
         public String toString() {

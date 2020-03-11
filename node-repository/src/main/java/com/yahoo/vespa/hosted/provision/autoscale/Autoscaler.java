@@ -132,10 +132,11 @@ public class Autoscaler {
         NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), cluster.type());
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // return the requested resources, or empty if they cannot fit on existing hosts
-            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
+            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
                 if (flavor.resources().satisfies(nodeResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
                                                                        nodeResources));
+            }
             return Optional.empty();
         }
         else {

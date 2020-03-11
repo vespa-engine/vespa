@@ -38,6 +38,7 @@ public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics
     private final HttpClient httpClient;
 
     @Inject
+    @SuppressWarnings("unused")
     public NodeMetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator) {
         this(nodeRepository, orchestrator, new ApacheHttpClient());
     }
