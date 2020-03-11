@@ -14,6 +14,7 @@
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/reusable_set_pool.h>
 
 namespace search::tensor {
 
@@ -87,6 +88,7 @@ protected:
     NodeRefVector _node_refs;
     NodeStore _nodes;
     LinkStore _links;
+    mutable vespalib::ReusableSetPool _visited_set_pool;
     uint32_t _entry_docid;
     int _entry_level;
 

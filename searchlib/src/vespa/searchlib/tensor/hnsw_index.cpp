@@ -246,11 +246,12 @@ void
 HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& best_neighbors, uint32_t level) const
 {
     NearestPriQ candidates;
-    // TODO: Add proper handling of visited set.
-    auto visited = BitVector::create(_node_refs.size());
+    uint32_t doc_id_limit = _node_refs.size();
+    auto visited = _visited_set_pool.get(doc_id_limit);
     for (const auto &entry : best_neighbors.peek()) {
+        assert(entry.docid < doc_id_limit);
         candidates.push(entry);
-        visited->setBit(entry.docid);
+        visited.mark(entry.docid);
     }
     double limit_dist = std::numeric_limits<double>::max();
 
@@ -261,10 +262,10 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, Fur
         }
         candidates.pop();
         for (uint32_t neighbor_docid : get_link_array(cand.docid, level)) {
-            if (visited->testBit(neighbor_docid)) {
+            if ((neighbor_docid >= doc_id_limit) || visited.is_marked(neighbor_docid)) {
                 continue;
             }
-            visited->setBit(neighbor_docid);
+            visited.mark(neighbor_docid);
             double dist_to_input = calc_distance(input, neighbor_docid);
             if (dist_to_input < limit_dist) {
                 candidates.emplace(neighbor_docid, dist_to_input);
