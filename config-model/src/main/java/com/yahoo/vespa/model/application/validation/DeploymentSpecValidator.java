@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerModel;
 
@@ -12,8 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Validates that deployment spec (deployment.xml) has valid values (for now
- * only global-service-id is validated)
+ * Validate deployment spec (deployment.xml).
  *
  * @author hmusum
  * @author bratseth
@@ -30,11 +30,20 @@ public class DeploymentSpecValidator extends Validator {
         List<ContainerModel> containers = model.getRoot().configModelRepo().getModels(ContainerModel.class);
         for (DeploymentInstanceSpec instance : deploymentSpec.instances()) {
             instance.globalServiceId().ifPresent(globalServiceId -> {
-                if ( containers.stream().noneMatch(container -> container.getCluster().getName().equals(globalServiceId)))
-                    throw new IllegalArgumentException("The global-service-id in " + instance + ", '" + globalServiceId +
-                                                       "' specified in deployment.xml does not match any container cluster id");
+                requireClusterId(containers, instance.name(), "Attribute 'globalServiceId'", globalServiceId);
+            });
+            instance.endpoints().forEach(endpoint -> {
+                requireClusterId(containers, instance.name(), "Endpoint '" + endpoint.endpointId() + "'",
+                                 endpoint.containerId());
             });
         }
+    }
+
+    private static void requireClusterId(List<ContainerModel> containers, InstanceName instanceName, String context,
+                                         String id) {
+        if (containers.stream().noneMatch(container -> container.getCluster().getName().equals(id)))
+            throw new IllegalArgumentException(context + " in instance " + instanceName + ": '" + id +
+                                               "' specified in deployment.xml does not match any container cluster ID");
     }
 
 }
