@@ -76,14 +76,23 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
             // another controller instance is running this job at the moment; ok
         }
         catch (Throwable t) {
-            log.log(Level.WARNING, "Maintainer " + this.getClass().getSimpleName() + " failed. Will retry in " +
+            log.log(Level.WARNING, "Maintainer " + name() + " failed. Will retry in " +
                                    maintenanceInterval + ": " + Exceptions.toMessageString(t));
         }
     }
 
     @Override
     public void deconstruct() {
-        this.service.shutdown();
+        var timeout = Duration.ofSeconds(30);
+        service.shutdown();
+        try {
+            if (!service.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.log(Level.WARNING, "Maintainer " + name() + " failed to shutdown " +
+                                       "within " + timeout);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Called once each time this maintenance job should run */

@@ -109,9 +109,8 @@ public class ApplicationController {
     private final ApplicationPackageValidator applicationPackageValidator;
     private final EndpointCertificateManager endpointCertificateManager;
 
-    ApplicationController(Controller controller, CuratorDb curator,
-	                  AccessControl accessControl, Clock clock,
-			  SecretStore secretStore, FlagSource flagSource) {
+    ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
+                          SecretStore secretStore, FlagSource flagSource) {
 
         this.controller = controller;
         this.curator = curator;
