@@ -88,7 +88,7 @@ protected:
     NodeRefVector _node_refs;
     NodeStore _nodes;
     LinkStore _links;
-    mutable vespalib::ReusableSetPool _visitedSetPool;
+    mutable vespalib::ReusableSetPool _visited_set_pool;
     uint32_t _entry_docid;
     int _entry_level;
 

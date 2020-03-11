@@ -247,7 +247,7 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find, Fur
 {
     NearestPriQ candidates;
     uint32_t doc_id_limit = _node_refs.size();
-    auto visited = _visitedSetPool.get(doc_id_limit);
+    auto visited = _visited_set_pool.get(doc_id_limit);
     for (const auto &entry : best_neighbors.peek()) {
         assert(entry.docid < doc_id_limit);
         candidates.push(entry);
