@@ -6,7 +6,9 @@ import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * To hide JRT implementations.
@@ -18,7 +20,6 @@ public class JRTConfigRequestFactory {
     public static final String VESPA_CONFIG_PROTOCOL_VERSION = "VESPA_CONFIG_PROTOCOL_VERSION"; // Unused, but should be used if we add a new version
     private static final CompressionType compressionType = getCompressionType();
     private static final String VESPA_CONFIG_PROTOCOL_COMPRESSION = "VESPA_CONFIG_PROTOCOL_COMPRESSION";
-    public static final String VESPA_VERSION = "VESPA_VERSION";
 
     public static <T extends ConfigInstance> JRTClientConfigRequest createFromSub(JRTConfigSubscription<T> sub) {
         // TODO: Get trace from caller
@@ -53,10 +54,6 @@ public class JRTConfigRequestFactory {
     }
 
     static Optional<VespaVersion> getVespaVersion() {
-        final String envValue = ConfigUtils.getEnvValue("", System.getenv(VESPA_VERSION), System.getProperty(VESPA_VERSION));
-        if (envValue != null && !envValue.isEmpty()) {
-            return Optional.of(VespaVersion.fromString(envValue));
-        }
         return Optional.of(getCompiledVespaVersion());
     }
 

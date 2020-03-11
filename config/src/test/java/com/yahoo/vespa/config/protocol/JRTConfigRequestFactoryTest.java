@@ -106,15 +106,6 @@ public class JRTConfigRequestFactoryTest {
         JRTClientConfigRequest request = JRTConfigRequestFactory.createFromSub(sub);
         assertThat(request.getProtocolVersion(), is(3L));
         assertThat(request.getVespaVersion().get(), is(defaultVespaVersion));
-
-        // Create with vespa version set
-        String version = "5.37.38";
-        System.setProperty(JRTConfigRequestFactory.VESPA_VERSION, version);
-        request = JRTConfigRequestFactory.createFromSub(sub);
-        assertThat(request.getProtocolVersion(), is(3L));
-        assertThat(request.getVespaVersion().get(), is(VespaVersion.fromString(version)));
-
-        System.clearProperty(JRTConfigRequestFactory.VESPA_VERSION);
     }
 
     @Test
@@ -127,15 +118,6 @@ public class JRTConfigRequestFactoryTest {
         JRTClientConfigRequest request = JRTConfigRequestFactory.createFromRaw(config, 1000);
         assertThat(request.getProtocolVersion(), is(3L));
         assertThat(request.getVespaVersion().get(), is(defaultVespaVersion));
-
-        // Create with vespa version set
-        String version = "5.37.38";
-        System.setProperty(JRTConfigRequestFactory.VESPA_VERSION, version);
-        request = JRTConfigRequestFactory.createFromRaw(config, 1000);
-        assertThat(request.getProtocolVersion(), is(3L));
-        assertThat(request.getVespaVersion().get(), is(VespaVersion.fromString(version)));
-
-        System.clearProperty(JRTConfigRequestFactory.VESPA_VERSION);
     }
 
 }
