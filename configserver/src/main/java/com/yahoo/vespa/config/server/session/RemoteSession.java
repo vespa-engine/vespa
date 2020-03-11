@@ -63,6 +63,7 @@ public class RemoteSession extends Session {
         Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
 
         return ApplicationSet.fromList(applicationLoader.buildModels(zooKeeperClient.readApplicationId(),
+                                                                     zooKeeperClient.readDockerImageRepository(),
                                                                      zooKeeperClient.readVespaVersion(),
                                                                      applicationPackage,
                                                                      new SettableOptional<>(allocatedHosts),

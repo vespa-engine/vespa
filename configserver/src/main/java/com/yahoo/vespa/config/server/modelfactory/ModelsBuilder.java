@@ -72,6 +72,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      *                       and assigns to this SettableOptional such that it can be used after this method returns
      */
     public List<MODELRESULT> buildModels(ApplicationId applicationId,
+                                         Optional<String> dockerImageRepository,
                                          Version wantedNodeVespaVersion,
                                          ApplicationPackage applicationPackage,
                                          SettableOptional<AllocatedHosts> allocatedHosts,
@@ -104,8 +105,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             int majorVersion = majorVersions.get(i);
             try {
                 allApplicationModels.addAll(buildModelVersions(keepMajorVersion(majorVersion, versions),
-                                                               applicationId, wantedNodeVespaVersion, applicationPackage,
-                                                               allocatedHosts, now, buildLatestModelForThisMajor, majorVersion));
+                                                               applicationId, dockerImageRepository, wantedNodeVespaVersion,
+                                                               applicationPackage, allocatedHosts, now,
+                                                               buildLatestModelForThisMajor, majorVersion));
                 buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
             }
             catch (OutOfCapacityException | ApplicationLockException | TransientException e) {
@@ -146,6 +148,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     // versions is the set of versions for one particular major version
     private List<MODELRESULT> buildModelVersions(Set<Version> versions,
                                                  ApplicationId applicationId,
+                                                 Optional<String> wantedDockerImageRepository,
                                                  Version wantedNodeVespaVersion,
                                                  ApplicationPackage applicationPackage,
                                                  SettableOptional<AllocatedHosts> allocatedHosts,
@@ -160,6 +163,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest.get()),
                                                                applicationPackage,
                                                                applicationId,
+                                                               wantedDockerImageRepository,
                                                                wantedNodeVespaVersion,
                                                                allocatedHosts.asOptional(),
                                                                now);
@@ -182,6 +186,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
                                                  applicationPackage,
                                                  applicationId,
+                                                 wantedDockerImageRepository,
                                                  wantedNodeVespaVersion,
                                                  allocatedHosts.asOptional(),
                                                  now);
@@ -236,9 +241,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
-                                                     ApplicationId applicationId, 
-                                                     Version wantedNodeVespaVersion,
-                                                     Optional<AllocatedHosts> allocatedHosts,
+                                                     ApplicationId applicationId, Optional<String> dockerImageRepository,
+                                                     Version wantedNodeVespaVersion, Optional<AllocatedHosts> allocatedHosts,
                                                      Instant now);
 
     /**

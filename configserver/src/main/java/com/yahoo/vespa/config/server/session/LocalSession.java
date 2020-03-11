@@ -138,6 +138,10 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         zooKeeperClient.writeVespaVersion(version);
     }
 
+    public void setDockerImageRepository(Optional<String> dockerImageRepository) {
+        zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
+    }
+
     public enum Mode {
         READ, WRITE
     }
@@ -147,6 +151,8 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     }
 
     public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
+
+    public Optional<String> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
 
     public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
 

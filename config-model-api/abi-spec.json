@@ -904,6 +904,7 @@
       "public abstract com.yahoo.config.application.api.FileRegistry getFileRegistry()",
       "public abstract com.yahoo.config.model.api.ModelContext$Properties properties()",
       "public java.util.Optional appDir()",
+      "public java.util.Optional wantedDockerImageRepository()",
       "public abstract com.yahoo.component.Version modelVespaVersion()",
       "public abstract com.yahoo.component.Version wantedNodeVespaVersion()"
     ],

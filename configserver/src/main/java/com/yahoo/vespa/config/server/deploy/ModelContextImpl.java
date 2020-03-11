@@ -43,6 +43,8 @@ public class ModelContextImpl implements ModelContext {
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
 
+    private final Optional<String> wantedDockerImageRepository;
+
     /** The version of Vespa we are building a model for */
     private final Version modelVespaVersion;
 
@@ -64,6 +66,7 @@ public class ModelContextImpl implements ModelContext {
                             Optional<HostProvisioner> hostProvisioner,
                             ModelContext.Properties properties,
                             Optional<File> appDir,
+                            Optional<String> wantedDockerImageRepository,
                             Version modelVespaVersion,
                             Version wantedNodeVespaVersion) {
         this.applicationPackage = applicationPackage;
@@ -75,6 +78,7 @@ public class ModelContextImpl implements ModelContext {
         this.hostProvisioner = hostProvisioner;
         this.properties = properties;
         this.appDir = appDir;
+        this.wantedDockerImageRepository = wantedDockerImageRepository;
         this.modelVespaVersion = modelVespaVersion;
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
     }
@@ -110,6 +114,9 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public Optional<File> appDir() { return appDir; }
+
+    @Override
+    public Optional<String> wantedDockerImageRepository() { return wantedDockerImageRepository; }
 
     @Override
     public Version modelVespaVersion() { return modelVespaVersion; }

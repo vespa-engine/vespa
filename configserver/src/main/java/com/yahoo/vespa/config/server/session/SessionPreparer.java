@@ -139,8 +139,11 @@ public class SessionPreparer {
         final Path tenantPath;
         final ApplicationId applicationId;
 
+        /** The repository part of docker image to be used for this deployment */
+        final Optional<String> dockerImageRepository;
+
         /** The version of Vespa the application to be prepared specifies for its nodes */
-        final com.yahoo.component.Version vespaVersion;
+        final Version vespaVersion;
 
         final ContainerEndpointsCache containerEndpoints;
         final Set<ContainerEndpoint> endpointsSet;
@@ -165,6 +168,7 @@ public class SessionPreparer {
             this.tenantPath = tenantPath;
 
             this.applicationId = params.getApplicationId();
+            this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
@@ -223,7 +227,7 @@ public class SessionPreparer {
 
         AllocatedHosts buildModels(Instant now) {
             SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>();
-            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, vespaVersion, 
+            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, dockerImageRepository, vespaVersion,
                                                                      applicationPackage, allocatedHosts, now);
             checkTimeout("build models");
             return allocatedHosts.get();
@@ -239,6 +243,7 @@ public class SessionPreparer {
             writeStateToZooKeeper(context.getSessionZooKeeperClient(), 
                                   applicationPackage,
                                   applicationId,
+                                  dockerImageRepository,
                                   vespaVersion,
                                   logger,
                                   prepareResult.getFileRegistries(), 
@@ -281,15 +286,18 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
-                                       com.yahoo.component.Version vespaVersion,
+                                       Optional<String> dockerImageRepository,
+                                       Version vespaVersion,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
                                        AllocatedHosts allocatedHosts) {
+        System.out.println("DEBUG DEBUG");
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             zooKeeperClient.writeApplicationId(applicationId);
             zooKeeperClient.writeVespaVersion(vespaVersion);
+            zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);

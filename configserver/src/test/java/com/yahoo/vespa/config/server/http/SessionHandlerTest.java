@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -55,15 +56,27 @@ public class SessionHandlerTest {
     public static final String hostname = "foo";
     public static final int port = 1337;
 
-    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method, Cmd cmd, Long id, String subPath, InputStream data) {
-        return HttpRequest.createTestRequest("http://" + hostname + ":" + port + path + "/" + id + "/" + cmd.toString() + subPath, method, data);
+
+    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method,
+                                                Cmd cmd, Long id, String subPath, InputStream data, Map<String, String> properties) {
+        return HttpRequest.createTestRequest("http://" + hostname + ":" + port + path + "/" + id + "/" +
+                                             cmd.toString() + subPath, method, data, properties);
     }
 
-    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method, Cmd cmd, Long id, String subPath) {
-        return HttpRequest.createTestRequest("http://" + hostname + ":" + port + path + "/" + id + "/" + cmd.toString() + subPath, method);
+    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method,
+                                                Cmd cmd, Long id, String subPath, InputStream data) {
+        return HttpRequest.createTestRequest("http://" + hostname + ":" + port + path + "/" + id + "/" +
+                                             cmd.toString() + subPath, method, data);
     }
 
-    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method, Cmd cmd, Long id) {
+    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method,
+                                                Cmd cmd, Long id, String subPath) {
+        return HttpRequest.createTestRequest("http://" + hostname + ":" + port + path + "/" + id + "/" +
+                                             cmd.toString() + subPath, method);
+    }
+
+    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method,
+                                                Cmd cmd, Long id) {
         return createTestRequest(path, method, cmd, id, "");
     }
 
@@ -88,6 +101,7 @@ public class SessionHandlerTest {
         private ConfigChangeActions actions = new ConfigChangeActions();
         private long createTime = System.currentTimeMillis() / 1000;
         private ApplicationId applicationId;
+        private Optional<String> dockerImageRepository;
 
         public MockSession(long id, ApplicationPackage app) {
             this(id, app, new InMemoryFlagSource());
@@ -115,6 +129,7 @@ public class SessionHandlerTest {
         @Override
         public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath, Instant now) {
             status = Session.Status.PREPARE;
+            this.dockerImageRepository = params.dockerImageRepository();
             if (doVerboseLogging) {
                 logger.log(LogLevel.DEBUG, "debuglog");
             }
@@ -158,6 +173,10 @@ public class SessionHandlerTest {
         @Override
         public void delete(NestedTransaction transaction) {  }
 
+        @Override
+        public Optional<String> getDockerImageRepository() {
+            return dockerImageRepository;
+        }
     }
 
     public enum Cmd {

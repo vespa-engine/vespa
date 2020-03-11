@@ -41,6 +41,7 @@ public class SessionZooKeeperClient {
     static final String APPLICATION_ID_PATH = "applicationId";
     private static final String VERSION_PATH = "version";
     private static final String CREATE_TIME_PATH = "createTime";
+    private static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
     private final Curator curator;
     private final ConfigCurator configCurator;
     private final Path sessionPath;
@@ -165,6 +166,10 @@ public class SessionZooKeeperClient {
         return sessionPath.append(VERSION_PATH).getAbsolute();
     }
 
+    private String dockerImageRepositoryPath() {
+        return sessionPath.append(DOCKER_IMAGE_REPOSITORY_PATH).getAbsolute();
+    }
+
     public void writeVespaVersion(Version version) {
         configCurator.putData(versionPath(), version.toString());
     }
@@ -172,6 +177,16 @@ public class SessionZooKeeperClient {
     public Version readVespaVersion() {
         if ( ! configCurator.exists(versionPath())) return Vtag.currentVersion; // TODO: This should not be possible any more - verify and remove
         return new Version(configCurator.getData(versionPath()));
+    }
+
+    public Optional<String> readDockerImageRepository() {
+        if ( ! configCurator.exists(dockerImageRepositoryPath())) return Optional.empty();
+        String dockerImageRepository = configCurator.getData(dockerImageRepositoryPath());
+        return dockerImageRepository.isEmpty() ? Optional.empty() : Optional.of(dockerImageRepository);
+    }
+
+    public void writeDockerImageRepository(Optional<String> dockerImageRepository) {
+        dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo));
     }
 
     // in seconds
