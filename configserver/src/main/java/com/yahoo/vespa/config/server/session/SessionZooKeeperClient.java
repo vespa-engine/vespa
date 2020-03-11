@@ -186,7 +186,6 @@ public class SessionZooKeeperClient {
     }
 
     public void writeDockerImageRepository(Optional<String> dockerImageRepository) {
-        System.out.println("Writing docker image repo");
         dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo));
     }
 
