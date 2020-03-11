@@ -114,7 +114,6 @@ public class SessionPreparer {
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
-            System.out.println("Dry run: " + params.isDryRun());
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
                 preparation.writeEndpointCertificateMetadataZK();
