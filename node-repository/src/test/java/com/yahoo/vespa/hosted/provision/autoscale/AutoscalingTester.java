@@ -86,12 +86,13 @@ class AutoscalingTester {
         deploy(application, cluster, resources.nodes(), resources.groups(), resources.advertisedResources());
     }
 
-    public void deploy(ApplicationId application, ClusterSpec cluster, int nodes, int groups, NodeResources resources) {
+    public List<HostSpec> deploy(ApplicationId application, ClusterSpec cluster, int nodes, int groups, NodeResources resources) {
         List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.fromCount(nodes, resources), groups);
         for (HostSpec host : hosts)
             makeReady(host.hostname());
         provisioningTester.deployZoneApp();
         provisioningTester.activate(application, hosts);
+        return hosts;
     }
 
     public void makeReady(String hostname) {
@@ -168,6 +169,8 @@ class AutoscalingTester {
     public NodeRepository nodeRepository() {
         return provisioningTester.nodeRepository();
     }
+
+    public NodeMetricsDb nodeMetricsDb() { return db; }
 
     private static FlavorsConfig asConfig(NodeResources hostResources) {
         FlavorsConfig.Builder b = new FlavorsConfig.Builder();

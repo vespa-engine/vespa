@@ -40,11 +40,11 @@ public class NodeMetricsFetcherTest {
             assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=vespa-consumer-metrics",
                          httpClient.requestsReceived.get(0));
             assertEquals(5, values.size());
-            assertEquals("metric value cpu.util: 16.2 at 1234 for host-1.yahoo.com", values.get(0).toString());
-            assertEquals("metric value mem.util: 23.1 at 1234 for host-1.yahoo.com", values.get(1).toString());
-            assertEquals("metric value disk.util: 82.0 at 1234 for host-1.yahoo.com", values.get(2).toString());
-            assertEquals("metric value cpu.util: 20.0 at 1200 for host-2.yahoo.com", values.get(3).toString());
-            assertEquals("metric value disk.util: 40.0 at 1200 for host-2.yahoo.com", values.get(4).toString());
+            assertEquals("metric value cpu.util: 0.162 at 1234 for host-1.yahoo.com", values.get(0).toString());
+            assertEquals("metric value mem.util: 0.231 at 1234 for host-1.yahoo.com", values.get(1).toString());
+            assertEquals("metric value disk.util: 0.82 at 1234 for host-1.yahoo.com", values.get(2).toString());
+            assertEquals("metric value cpu.util: 0.2 at 1200 for host-2.yahoo.com", values.get(3).toString());
+            assertEquals("metric value disk.util: 0.4 at 1200 for host-2.yahoo.com", values.get(4).toString());
         }
 
         {
@@ -53,9 +53,9 @@ public class NodeMetricsFetcherTest {
             assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=vespa-consumer-metrics",
                          httpClient.requestsReceived.get(1));
             assertEquals(3, values.size());
-            assertEquals("metric value cpu.util: 10.0 at 1300 for host-3.yahoo.com", values.get(0).toString());
-            assertEquals("metric value mem.util: 15.0 at 1300 for host-3.yahoo.com", values.get(1).toString());
-            assertEquals("metric value disk.util: 20.0 at 1300 for host-3.yahoo.com", values.get(2).toString());
+            assertEquals("metric value cpu.util: 0.1 at 1300 for host-3.yahoo.com", values.get(0).toString());
+            assertEquals("metric value mem.util: 0.15 at 1300 for host-3.yahoo.com", values.get(1).toString());
+            assertEquals("metric value disk.util: 0.2 at 1300 for host-3.yahoo.com", values.get(2).toString());
         }
     }
 
@@ -117,7 +117,6 @@ public class NodeMetricsFetcherTest {
             "    }\n" +
             "  ]\n" +
             "}\n";
-
 
     final String cannedResponseForApplication2 =
             "{\n" +

@@ -164,6 +164,9 @@ public class NodeMetricsDb {
             this.value = value;
         }
 
+        @Override
+        public String toString() { return "measurement at " + timestamp + ": " + value; }
+
     }
 
 }

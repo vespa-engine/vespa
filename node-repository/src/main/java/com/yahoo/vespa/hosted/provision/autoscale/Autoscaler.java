@@ -86,6 +86,7 @@ public class Autoscaler {
                                                                                   cluster);
         if (bestAllocation.isEmpty()) {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Could not find a better allocation");
+            System.out.println("Autoscaling " + applicationId + " " + cluster + ": Could not find a better allocation");
             return Optional.empty();
         }
 
@@ -94,6 +95,7 @@ public class Autoscaler {
             closeToIdeal(Resource.disk, diskLoad.get()) &&
             similarCost(bestAllocation.get().cost(), currentAllocation.cost())) {
             log.fine("Autoscaling " + applicationId + " " + cluster + ": Resources are almost ideal and price difference is small");
+            System.out.println("Autoscaling " + applicationId + " " + cluster + ": Resources are almost ideal and price difference is small");
             return Optional.empty(); // Avoid small, unnecessary changes
         }
         return bestAllocation;
@@ -132,10 +134,12 @@ public class Autoscaler {
         NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), cluster.type());
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // return the requested resources, or empty if they cannot fit on existing hosts
-            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors())
+            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
+                System.out.println("Host flavor: " + flavor.resources() + " wanted " + resources);
                 if (flavor.resources().satisfies(nodeResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
                                                                        nodeResources));
+            }
             return Optional.empty();
         }
         else {

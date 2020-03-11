@@ -10,22 +10,28 @@ import com.yahoo.config.provision.NodeResources;
  */
 public enum Resource {
 
+    /** Cpu utilization ratio */
     cpu {
         String metricName() { return "cpu.util"; }
         double idealAverageLoad() { return 0.2; }
         double valueFrom(NodeResources resources) { return resources.vcpu(); }
+        double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
     },
 
+    /** Memory utilization ratio */
     memory {
         String metricName() { return "mem.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.memoryGb(); }
+        double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
     },
 
+    /** Disk utilization ratio */
     disk {
         String metricName() { return "disk.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.diskGb(); }
+        double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
     };
 
     abstract String metricName();
@@ -34,6 +40,8 @@ public enum Resource {
     abstract double idealAverageLoad();
 
     abstract double valueFrom(NodeResources resources);
+
+    abstract double valueFromMetric(double metricValue);
 
     public static Resource fromMetric(String metricName) {
         for (Resource resource : values())
