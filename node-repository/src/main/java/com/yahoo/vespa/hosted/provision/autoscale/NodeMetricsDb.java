@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
  */
 public class NodeMetricsDb {
 
+    private Logger log = Logger.getLogger(NodeMetricsDb.class.getName());
     private static final Duration dbWindow = Duration.ofHours(24);
 
     /** Measurements by key. Each list of measurements is sorted by increasing timestamp */
@@ -32,18 +34,21 @@ public class NodeMetricsDb {
 
     /** Add a measurement to this */
     public void add(Collection<NodeMetrics.MetricValue> metricValues) {
+        log.fine("Adding " + metricValues.size() + " metric values" +
+                 (metricValues.size() > 0 ? ". First: " + metricValues.iterator().next() : ""));
         synchronized (lock) {
             for (var value : metricValues) {
-                List<Measurement> measurements = db.computeIfAbsent(new MeasurementKey(value.hostname(),
-                                                                                       Resource.fromMetric(value.name())),
+                Resource resource =  Resource.fromMetric(value.name());
+                List<Measurement> measurements = db.computeIfAbsent(new MeasurementKey(value.hostname(), resource),
                                                                     (__) -> new ArrayList<>());
-                measurements.add(new Measurement(value.timestamp(), value.value()));
+                measurements.add(new Measurement(value.timestamp(), (float)resource.valueFromMetric(value.value())));
             }
         }
     }
 
     /** Must be called intermittently (as long as add is called) to gc old measurements */
     public void gc(Clock clock) {
+        int gcCount = 0;
         synchronized (lock) {
             // TODO: We may need to do something more complicated to avoid spending too much memory to
             // lower the measurement interval (see NodeRepositoryMaintenance)
@@ -53,14 +58,16 @@ public class NodeMetricsDb {
             long oldestTimestamp = clock.instant().minus(dbWindow).toEpochMilli();
             for (Iterator<List<Measurement>> i = db.values().iterator(); i.hasNext(); ) {
                 List<Measurement> measurements = i.next();
-
-                while (!measurements.isEmpty() && measurements.get(0).timestamp < oldestTimestamp)
+                while (!measurements.isEmpty() && measurements.get(0).timestamp < oldestTimestamp) {
                     measurements.remove(0);
+                    gcCount++;
+                }
 
                 if (measurements.isEmpty())
                     i.remove();
             }
         }
+        log.fine("Gc'ed " + gcCount + " metric values");
     }
 
     /** Returns a window within which we can ask for specific information from this db */
@@ -80,6 +87,9 @@ public class NodeMetricsDb {
 
         public int measurementCount() {
             synchronized (lock) {
+                List<MeasurementKey> matches = keys.stream().filter(key -> db.get(key) != null).collect(Collectors.toList());
+                List<MeasurementKey> nonMatches = keys.stream().filter(key -> db.get(key) == null).collect(Collectors.toList());
+                log.fine("Counting measurements after " + startTime + ". Matches: " + matches + ". Non-matches: " + nonMatches);
                 return (int) keys.stream()
                                  .flatMap(key -> db.getOrDefault(key, List.of()).stream())
                                  .filter(measurement -> measurement.timestamp >= startTime)
@@ -148,6 +158,9 @@ public class NodeMetricsDb {
             if ( ! this.resource.equals(other.resource)) return false;
             return true;
         }
+
+        @Override
+        public String toString() { return "measurements of " + resource + " for " + hostname; }
 
     }
 

@@ -138,7 +138,7 @@ class AutoscalingTester {
                     db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
                                                                r.metricName(),
                                                                clock().instant().toEpochMilli(),
-                                                               effectiveValue)));
+                                                               effectiveValue * 100))); // the metrics are in %
                 }
             }
         }

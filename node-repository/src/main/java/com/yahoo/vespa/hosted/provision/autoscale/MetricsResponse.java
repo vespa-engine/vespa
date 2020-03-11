@@ -55,7 +55,7 @@ public class MetricsResponse {
             metricValues.add(new NodeMetrics.MetricValue(hostname,
                                                          resource.metricName(),
                                                          timestamp,
-                                                         (float)resource.valueFromMetric(values.get(resource.metricName()))));
+                                                         values.get(resource.metricName())));
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
