@@ -13,6 +13,8 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -91,6 +93,7 @@ public class DeploymentContext {
             .emailAddress("b@a")
             .trust(generateCertificate())
             .build();
+
     public static final SourceRevision defaultSourceRevision = new SourceRevision("repository1", "master", "commit1");
 
     private final TenantAndApplicationId applicationId;
@@ -104,7 +107,6 @@ public class DeploymentContext {
     private boolean deferDnsUpdates = false;
 
     public DeploymentContext(ApplicationId instanceId, DeploymentTester tester) {
-
         this.applicationId = TenantAndApplicationId.from(instanceId);
         this.instanceId = instanceId;
         this.testerId = TesterId.of(instanceId);
@@ -112,6 +114,7 @@ public class DeploymentContext {
         this.runner = tester.runner();
         this.tester = tester;
         createTenantAndApplication();
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.ALLOW_DIRECT_ROUTING.id(), true);
     }
 
     private void createTenantAndApplication() {

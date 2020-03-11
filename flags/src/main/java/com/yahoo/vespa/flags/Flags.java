@@ -267,6 +267,12 @@ public class Flags {
             "Takes effect on internal redeploy",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ALLOW_DIRECT_ROUTING = defineFeatureFlag(
+            "publish-direct-routing-endpoint", false,
+            "Whether an application should receive a directly routed endpoint in its endpoint list",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

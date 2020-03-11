@@ -1,23 +1,30 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.base.Suppliers;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
@@ -25,7 +32,6 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicies;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,9 +43,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -52,15 +58,21 @@ import java.util.stream.Collectors;
  */
 public class RoutingController {
 
+    /** The minimum Vespa version that supports directly routed endpoints */
+    public static final Version DIRECT_ROUTING_MIN_VERSION = new Version(Integer.MAX_VALUE, Integer.MAX_VALUE,
+                                                                         Integer.MAX_VALUE);
+
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
+    private final BooleanFlag allowDirectRouting;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.routingPolicies = new RoutingPolicies(controller);
         this.rotationRepository = new RotationRepository(rotationsConfig, controller.applications(),
                                                          controller.curator());
+        this.allowDirectRouting = Flags.ALLOW_DIRECT_ROUTING.bindTo(controller.flagSource());
     }
 
     public RoutingPolicies policies() {
@@ -83,9 +95,12 @@ public class RoutingController {
                                                                    .on(Port.fromRoutingMethod(RoutingMethod.shared))
                                                                    .in(controller.system())));
         boolean hasSharedEndpoint = !endpoints.isEmpty();
+        // Avoid reading application more than once per call to this
+        var application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())));
         for (var policy : routingPolicies.get(deployment).values()) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
+                if (routingMethod.isDirect() && !canRouteDirectlyTo(deployment, application.get())) continue;
                 if (hasSharedEndpoint && routingMethod == RoutingMethod.shared) continue;
                 endpoints.add(policy.endpointIn(controller.system(), routingMethod));
             }
@@ -113,7 +128,7 @@ public class RoutingController {
                         .requiresRotation()
                         .forEach(endpoints::add);
         }
-        // Add global endpoints provided by routing policices
+        // Add global endpoints provided by routing policies
         var zonesByRoutingId = new LinkedHashMap<RoutingId, List<ZoneId>>();
         for (var policy : routingPolicies.get(instance.id()).values()) {
             if (!policy.status().isActive()) continue;
@@ -247,6 +262,32 @@ public class RoutingController {
             }
         });
         return Collections.unmodifiableList(routingMethods);
+    }
+
+    /** Returns whether traffic can be directly routed to given deployment */
+    private boolean canRouteDirectlyTo(DeploymentId deploymentId, Application application) {
+        if (controller.system().isPublic()) return true; // Public always supports direct routing
+
+        // Check Athenz service presence. The test framework uses this identity when sending requests to the
+        // deployment's container(s).
+        var athenzService = application.deploymentSpec().instance(deploymentId.applicationId().instance())
+                                       .flatMap(instance -> instance.athenzService(deploymentId.zoneId().environment(),
+                                                                                   deploymentId.zoneId().region()));
+        if (athenzService.isEmpty()) return false;
+
+        // Check minimum required compile-version
+        var instance = application.require(deploymentId.applicationId().instance());
+        var compileVersion = Optional.ofNullable(instance.deployments().get(deploymentId.zoneId()))
+                                     .map(Deployment::applicationVersion)
+                                     .flatMap(ApplicationVersion::compileVersion);
+        if (compileVersion.isEmpty()) return false;
+        if (compileVersion.get().isBefore(DIRECT_ROUTING_MIN_VERSION)) return false;
+
+        // Check feature flag
+        // TODO(mpolden): Remove once we make this default
+        return this.allowDirectRouting.with(FetchVector.Dimension.APPLICATION_ID,
+                                            deploymentId.applicationId().serializedForm())
+                                      .value();
     }
 
 }
