@@ -41,12 +41,38 @@ SingleExecutor::addTask(Task::UP task) {
     return wp;
 }
 
+void
+SingleExecutor::wakeupConsumer() {
+    MonitorGuard guard(_consumerMonitor);
+    guard.signal();
+}
+
+void
+SingleExecutor::sleepConsumer() {
+    _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + (_taskLimit.load(std::memory_order_relaxed) >> 2), std::memory_order_relaxed);
+    MonitorGuard guard(_consumerMonitor);
+    guard.wait(10ms);
+    _wakeupConsumerAt.store(0, std::memory_order_relaxed);
+}
+
+void
+SingleExecutor::wakeupProducer() {
+    MonitorGuard guard(_producerMonitor);
+    guard.signal();
+}
+
+void
+SingleExecutor::sleepProducer(MonitorGuard & guard) {
+    _producerNeedWakeup.store(true, std::memory_order_relaxed);
+    guard.wait(10ms);
+    _producerNeedWakeup.store(false, std::memory_order_relaxed);
+}
+
 Executor::Task::UP
 SingleExecutor::execute(Task::UP task) {
     uint64_t wp = addTask(std::move(task));
     if (wp == _wakeupConsumerAt.load(std::memory_order_relaxed)) {
-        MonitorGuard guard(_consumerMonitor);
-        guard.signal();
+        wakeupConsumer();
     }
     return task;
 }
@@ -60,7 +86,9 @@ SingleExecutor &
 SingleExecutor::sync() {
     uint64_t wp = _wp.load(std::memory_order_relaxed);
     while (wp > _rp.load(std::memory_order_acquire)) {
-        std::this_thread::sleep_for(1ms);
+        wakeupConsumer();
+        MonitorGuard guard(_producerMonitor);
+        guard.wait(1ms);
     }
     return *this;
 }
@@ -69,10 +97,8 @@ void
 SingleExecutor::run() {
     while (!_thread.stopped()) {
         drain_tasks();
-        _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + (_taskLimit.load(std::memory_order_relaxed) >> 2), std::memory_order_relaxed);
-        MonitorGuard guard(_consumerMonitor);
-        guard.wait(10ms);
-        _wakeupConsumerAt.store(0, std::memory_order_relaxed);
+        wakeupProducer();
+        sleepConsumer();
     }
 }
 
@@ -98,8 +124,7 @@ SingleExecutor::run_tasks_till(uint64_t available) {
         task->run();
         _rp.store(++consumed, std::memory_order_release);
         if (wakeupLimit == consumed) {
-            MonitorGuard guard(_producerMonitor);
-            guard.broadcast();
+            wakeupProducer();
         }
     }
 }
@@ -112,9 +137,7 @@ SingleExecutor::wait_for_room(MonitorGuard & producerGuard) {
         _taskLimit = _wantedTaskLimit.load();
     }
     while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
-        _producerNeedWakeup.store(true, std::memory_order_relaxed);
-        producerGuard.wait(10ms);
-        _producerNeedWakeup.store(false, std::memory_order_relaxed);
+        sleepProducer(producerGuard);
     }
 }
 

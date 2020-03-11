@@ -29,6 +29,10 @@ private:
     uint64_t addTask(Task::UP task);
     void run() override;
     void drain_tasks();
+    void wakeupConsumer();
+    void sleepConsumer();
+    void wakeupProducer();
+    void sleepProducer(MonitorGuard & guard);
     void run_tasks_till(uint64_t available);
     void wait_for_room(MonitorGuard & guard);
     uint64_t index(uint64_t counter) const {
