@@ -105,7 +105,7 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
                          const ParameterList & params)
 {
     _posAttr = params[0].getValue();
-    describeOutput("out", "The euclidian distance from the query position.");
+    describeOutput("out", "The euclidean distance from the query position.");
     env.hintAttributeAccess(_posAttr);
     env.hintAttributeAccess(document::PositionDataType::getZCurveFieldName(_posAttr));
     return true;

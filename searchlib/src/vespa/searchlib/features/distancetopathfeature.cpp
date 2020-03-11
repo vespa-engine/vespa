@@ -114,7 +114,7 @@ DistanceToPathBlueprint::setup(const search::fef::IIndexEnvironment & env,
                                const search::fef::ParameterList & params)
 {
     _posAttr = params[0].getValue();
-    describeOutput("distance", "The euclidian distance from the query path.");
+    describeOutput("distance", "The euclidean distance from the query path.");
     describeOutput("traveled", "The normalized distance traveled along the path before intersection.");
     describeOutput("product",  "The cross-product of the intersecting line segment and the intersection-to-document vector.");
     env.hintAttributeAccess(_posAttr);

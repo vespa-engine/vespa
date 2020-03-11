@@ -66,7 +66,7 @@ void verifyDotproduct(const IAccelrated & accel)
 }
 
 template<typename T>
-void verifyEuclidianDistance(const IAccelrated & accel) {
+void verifyEuclideanDistance(const IAccelrated & accel) {
     const size_t testLength(255);
     srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
@@ -78,7 +78,7 @@ void verifyEuclidianDistance(const IAccelrated & accel) {
         }
         T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
-            fprintf(stderr, "Accelrator is not computing euclidian distance correctly.\n");
+            fprintf(stderr, "Accelrator is not computing euclidean distance correctly.\n");
             LOG_ABORT("should not be reached");
         }
     }
@@ -111,8 +111,8 @@ private:
         verifyDotproduct<double>(accelrated);
         verifyDotproduct<int32_t>(accelrated);
         verifyDotproduct<int64_t>(accelrated);
-        verifyEuclidianDistance<float>(accelrated);
-        verifyEuclidianDistance<double>(accelrated);
+        verifyEuclideanDistance<float>(accelrated);
+        verifyEuclideanDistance<double>(accelrated);
         verifyPopulationCount(accelrated);
     }
 };
