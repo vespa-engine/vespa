@@ -10,6 +10,14 @@ using ParamRepo = EvalFixture::ParamRepo;
 
 namespace {
 
+std::shared_ptr<Function const> verify_function(std::shared_ptr<Function const> fun) {
+    if (fun->has_error()) {
+        fprintf(stderr, "eval_fixture: function parse failed: %s\n", fun->get_error().c_str());
+    }
+    ASSERT_TRUE(!fun->has_error());
+    return std::move(fun);
+}
+
 NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
     std::vector<ValueType> param_types;
     for (size_t i = 0; i < function.num_params(); ++i) {
@@ -103,7 +111,7 @@ EvalFixture::EvalFixture(const TensorEngine &engine,
                          bool allow_mutable)
     : _engine(engine),
       _stash(),
-      _function(Function::parse(expr)),
+      _function(verify_function(Function::parse(expr))),
       _node_types(get_types(*_function, param_repo)),
       _mutable_set(get_mutable(*_function, param_repo)),
       _plain_tensor_function(make_tensor_function(_engine, _function->root(), _node_types, _stash)),

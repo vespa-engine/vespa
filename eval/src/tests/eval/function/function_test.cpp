@@ -813,8 +813,8 @@ TEST("require that tensor rename dimension lists must have equal size") {
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor lambda can be parsed") {
-    EXPECT_EQUAL("tensor(x[3]):{{x:0}:0,{x:1}:1,{x:2}:2}", Function::parse({}, "tensor(x[3])(x)")->dump());
-    EXPECT_EQUAL("tensor(x[2],y[2]):{{x:0,y:0}:(0==0),{x:0,y:1}:(0==1),{x:1,y:0}:(1==0),{x:1,y:1}:(1==1)}",
+    EXPECT_EQUAL("tensor(x[3])(x)", Function::parse({}, "tensor(x[3])(x)")->dump());
+    EXPECT_EQUAL("tensor(x[2],y[2])(x==y)",
                  Function::parse({}, " tensor ( x [ 2 ] , y [ 2 ] ) ( x == y ) ")->dump());
 }
 
@@ -825,7 +825,7 @@ TEST("require that tensor lambda requires appropriate tensor type") {
 }
 
 TEST("require that tensor lambda can use non-dimension symbols") {
-    EXPECT_EQUAL("tensor(x[2]):{{x:0}:(0==a),{x:1}:(1==a)}",
+    EXPECT_EQUAL("tensor(x[2])(x==a)",
                  Function::parse({"a"}, "tensor(x[2])(x==a)")->dump());
 }
 
@@ -1002,11 +1002,8 @@ TEST("require that tensor peek empty label is not allowed") {
 //-----------------------------------------------------------------------------
 
 TEST("require that nested tensor lambda using tensor peek can be parsed") {
-    vespalib::string expect("tensor(x[2]):{{x:0}:tensor(y[2]):{{y:0}:((0+0)+a),{y:1}:((0+1)+a)}{y:\"0\"},"
-                            "{x:1}:tensor(y[2]):{{y:0}:((1+0)+a),{y:1}:((1+1)+a)}{y:\"1\"}}");
+    vespalib::string expect("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})");
     EXPECT_EQUAL(Function::parse(expect)->dump(), expect);
-    auto fun = Function::parse("tensor(x[2])(tensor(y[2])(x+y+a){y:(x)})");
-    EXPECT_EQUAL(fun->dump(), expect);
 }
 
 //-----------------------------------------------------------------------------

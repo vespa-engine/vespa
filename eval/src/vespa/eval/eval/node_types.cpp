@@ -53,6 +53,13 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         return state.type(node);
     }
 
+    void import(const NodeTypes &types) {
+        types.each([&](const Node &node, const ValueType &type)
+                   {
+                       state.bind(type, node);
+                   });
+    }
+
     //-------------------------------------------------------------------------
 
     bool check_error(const Node &node) {
@@ -119,6 +126,22 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
                 return bind(ValueType::error_type(), node);
             }
         }
+        bind(node.type(), node);
+    }
+    void visit(const TensorLambda &node) override {
+        std::vector<ValueType> arg_types;
+        for (const auto &dim: node.type().dimensions()) {
+            (void) dim;
+            arg_types.push_back(ValueType::double_type());
+        }
+        for (size_t binding: node.bindings()) {
+            arg_types.push_back(param_type(binding));
+        }
+        NodeTypes lambda_types(node.lambda(), arg_types);
+        if (!lambda_types.get_type(node.lambda().root()).is_double()) {
+            return bind(ValueType::error_type(), node);
+        }
+        import(lambda_types);
         bind(node.type(), node);
     }
     void visit(const TensorPeek &node) override {

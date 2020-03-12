@@ -30,11 +30,13 @@ class Tensor;
  * with information about operation sequencing and intermediate
  * results. Each node in the tree describes a single tensor
  * operation. This is the intermediate representation of a tensor
- * function.
+ * function. Note that some nodes in the tree are already indirectly
+ * implementation-specific in that they are bound to a specific tensor
+ * engine (typically tensor constants and tensor lambdas).
  *
  * A tensor function will initially be created based on a Function
- * (expression AST) and associated type-resolving. In this tree, each
- * node will directly represent a single call to the tensor engine
+ * (expression AST) and associated type-resolving. In this tree, most
+ * nodes will directly represent a single call to the tensor engine
  * immediate API.
  *
  * The generic tree will then be optimized (in-place, bottom-up) where
@@ -323,6 +325,25 @@ public:
 
 //-----------------------------------------------------------------------------
 
+class Lambda : public Node
+{
+    using Super = Node;
+private:
+    std::vector<size_t> _bindings;
+    InterpretedFunction _lambda;
+public:
+    Lambda(const ValueType &result_type_in, const std::vector<size_t> &bindings_in, InterpretedFunction lambda_in)
+        : Node(result_type_in), _bindings(bindings_in), _lambda(std::move(lambda_in)) {}
+    static TensorSpec create_spec_impl(const ValueType &type, const LazyParams &params, const std::vector<size_t> &bind, const InterpretedFunction &fun);
+    TensorSpec create_spec(const LazyParams &params) const { return create_spec_impl(result_type(), params, _bindings, _lambda); }
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    void push_children(std::vector<Child::CREF> &children) const final override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
+};
+
+//-----------------------------------------------------------------------------
+
 class Peek : public Node
 {
     using Super = Node;
@@ -413,6 +434,7 @@ const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &s
 const Node &merge(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
 const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash);
 const Node &create(const ValueType &type, const std::map<TensorSpec::Address, Node::CREF> &spec, Stash &stash);
+const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, InterpretedFunction function, Stash &stash);
 const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash);
 const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
 const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash);
