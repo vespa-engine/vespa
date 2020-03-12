@@ -6,6 +6,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogMessage;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.text.StringUtilities;
@@ -27,6 +28,8 @@ import com.yahoo.vespa.model.search.SearchCluster;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.logging.Logger;
@@ -52,8 +55,7 @@ public class RankSetupValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         File cfgDir = null;
         try {
-            cfgDir = Files.createTempDirectory("deploy_ranksetup").toFile();
-
+            cfgDir = createTempDir(deployState);
             for (AbstractSearchCluster cluster : model.getSearchClusters()) {
                 // Skipping rank expression checking for streaming clusters, not implemented yet
                 if (cluster.isRealtime()) {
@@ -171,6 +173,19 @@ public class RankSetupValidator extends Validator {
         } else {
             throw new IllegalArgumentException(errMsg.toString());
         }
+    }
+
+    // Use tmp under VESPA_HOME if it exists, otherwise use default temp dir (e.g. when running unit tests)
+    private File createTempDir(DeployState deployState) throws IOException {
+        String subDir = "verify-ranksetup." + deployState.getProperties().applicationId().toFullString();
+
+        Path tmp = Paths.get(Defaults.getDefaults().underVespaHome("tmp"));
+        if ( ! tmp.toFile().exists())
+            tmp = Files.createTempDirectory(subDir);
+
+        Path dir = tmp.resolve(subDir);
+        Files.createDirectories(dir);
+        return dir.toFile();
     }
 
 }
