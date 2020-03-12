@@ -62,6 +62,13 @@ void
 SequencedTaskExecutor::sync()
 {
     for (auto &executor : *_executors) {
+        SingleExecutor * single = dynamic_cast<vespalib::SingleExecutor *>(executor.get());
+        if (single) {
+            //Enforce parallel wakeup of napping executors.
+            single->startSync();
+        }
+    }
+    for (auto &executor : *_executors) {
         executor->sync();
     }
 }
