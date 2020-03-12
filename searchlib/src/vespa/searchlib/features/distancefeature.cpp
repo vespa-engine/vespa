@@ -29,6 +29,7 @@ private:
     }
 public:
     ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId);
+    ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, const vespalib::string &label);
     void execute(uint32_t docId) override;
 };
 
@@ -41,6 +42,22 @@ ConvertRawscoreExecutor::ConvertRawscoreExecutor(const fef::IQueryEnvironment &e
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
         if (handle != search::fef::IllegalHandle) {
             _handles.push_back(handle);
+        }
+    }
+}
+
+ConvertRawscoreExecutor::ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, const vespalib::string &label)
+  : _handles(),
+    _md(nullptr)
+{
+    const ITermData *term = util::getTermByLabel(env, label);
+    if (term != nullptr) {
+        // expect numFields() == 1
+        for (uint32_t i = 0; i < term->numFields(); ++i) {
+            TermFieldHandle handle = term->field(i).getHandle();
+            if (handle != IllegalHandle) {
+                _handles.push_back(handle);
+            }
         }
     }
 }
@@ -128,7 +145,7 @@ const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
 
 DistanceBlueprint::DistanceBlueprint() :
     Blueprint("distance"),
-    _posAttr(),
+    _arg_string(),
     _attr_id(search::index::Schema::UNKNOWN_FIELD_ID),
     _use_geo_pos(false),
     _use_nns_tensor(false),
@@ -154,10 +171,10 @@ bool
 DistanceBlueprint::setup_geopos(const IIndexEnvironment & env,
                                 const vespalib::string &attr)
 {
-    _posAttr = attr;
+    _arg_string = attr;
     _use_geo_pos = true;
     describeOutput("out", "The euclidean distance from the query position.");
-    env.hintAttributeAccess(_posAttr);
+    env.hintAttributeAccess(_arg_string);
     return true;
 }
 
@@ -165,10 +182,10 @@ bool
 DistanceBlueprint::setup_nns(const IIndexEnvironment & env,
                              const vespalib::string &attr)
 {
-    _posAttr = attr;
+    _arg_string = attr;
     _use_nns_tensor = true;
     describeOutput("out", "The euclidean distance from the query position.");
-    env.hintAttributeAccess(_posAttr);
+    env.hintAttributeAccess(_arg_string);
     return true;
 }
 
@@ -194,26 +211,32 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
     if (fi != nullptr && fi->hasAttribute()) {
         return setup_geopos(env, z);
     }
-    return false;
+    _arg_string = arg;
+    _use_item_label = true;
+    describeOutput("out", "The euclidean distance from the labeled query item.");
+    return true;
 }
 
 FeatureExecutor &
 DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     if (_use_nns_tensor) {
-        const search::attribute::IAttributeVector * attr = env.getAttributeContext().getAttribute(_posAttr);
+        const search::attribute::IAttributeVector * attr = env.getAttributeContext().getAttribute(_arg_string);
         if (attr != nullptr) {
              return stash.create<ConvertRawscoreExecutor>(env, _attr_id);
         } else {
-             LOG(warning, "unexpected missing attribute '%s'\n", _posAttr.c_str());
+             LOG(warning, "unexpected missing attribute '%s'\n", _arg_string.c_str());
         }
+    }
+    if (_use_item_label) {
+        return stash.create<ConvertRawscoreExecutor>(env, _arg_string);
     }
     const search::attribute::IAttributeVector * pos = nullptr;
     const Location & location = env.getLocation();
     LOG(debug, "DistanceBlueprint::createExecutor location.valid='%s', attribute='%s'",
-        location.isValid() ? "true" : "false", _posAttr.c_str());
+        location.isValid() ? "true" : "false", _arg_string.c_str());
     if (_use_geo_pos && location.isValid()) {
-        pos = env.getAttributeContext().getAttribute(_posAttr);
+        pos = env.getAttributeContext().getAttribute(_arg_string);
         if (pos != nullptr) {
             if (!pos->isIntegerType()) {
                 LOG(warning, "The position attribute '%s' is not an integer attribute. Will use default distance.",
@@ -225,7 +248,7 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
                 pos = nullptr;
             }
         } else {
-            LOG(warning, "The position attribute '%s' was not found. Will use default distance.", _posAttr.c_str());
+            LOG(warning, "The position attribute '%s' was not found. Will use default distance.", _arg_string.c_str());
         }
     }
 
