@@ -9,6 +9,7 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.jdisc.Metric;
 
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -43,7 +44,8 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
                                                              threadpoolConfig.maxthreads(),
                                                              0L, TimeUnit.SECONDS,
                                                              new SynchronousQueue<>(false),
-                                                             ThreadFactoryFactory.getThreadFactory("threadpool"));
+                                                             ThreadFactoryFactory.getThreadFactory("threadpool"),
+                                                             metric);
         // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
         // get the dreaded thread locals initialized even if they will never run.
         // That counters what we we want to achieve with the Q that will prefer thread locality.
@@ -161,17 +163,22 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     /** A thread pool executor which maintains the last time a worker completed */
     private final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
+        private static final String UNHANDLED_EXCEPTION_METRIC = "jdisc.thread_pool.unhandled_exception";
+
         volatile long lastThreadAssignmentTimeMillis = System.currentTimeMillis();
         private final AtomicLong startedCount = new AtomicLong(0);
         private final AtomicLong completedCount = new AtomicLong(0);
+        private final Metric metric;
 
         public WorkerCompletionTimingThreadPoolExecutor(int corePoolSize,
                                                         int maximumPoolSize,
                                                         long keepAliveTime,
                                                         TimeUnit unit,
                                                         BlockingQueue<Runnable> workQueue,
-                                                        ThreadFactory threadFactory) {
+                                                        ThreadFactory threadFactory,
+                                                        Metric metric) {
             super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
+            this.metric = metric;
         }
 
         @Override
@@ -185,6 +192,9 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         protected void afterExecute(Runnable r, Throwable t) {
             super.afterExecute(r, t);
             completedCount.incrementAndGet();
+            if (t != null) {
+                metric.add(UNHANDLED_EXCEPTION_METRIC, 1L, metric.createContext(Map.of("exception", t.getClass().getSimpleName())));
+            }
         }
 
         @Override
