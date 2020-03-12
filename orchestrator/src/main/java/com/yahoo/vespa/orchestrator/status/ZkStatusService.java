@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 /**
  * Stores instance suspension status and which hosts are allowed to go down in zookeeper.
  *
- * TODO: expiry of old application instances
  * @author Tony Vaagenes
  */
 public class ZkStatusService implements StatusService {
