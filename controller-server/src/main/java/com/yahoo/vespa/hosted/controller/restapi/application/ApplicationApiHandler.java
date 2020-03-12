@@ -762,10 +762,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
         });
 
-        // TODO jonmv: remove once clients use new path
-        // Compile version. The version that should be used when building an application
-        object.setString("compileVersion", compileVersion(application.id()).toFullString());
-
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
         Cursor instancesArray = object.setArray("instances");
@@ -946,10 +942,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 changeBlocker.window().hours().forEach(hours::addLong);
             }));
         }
-
-        // TODO jonmv: remove once clients use new path
-        // Compile version. The version that should be used when building an application
-        object.setString("compileVersion", compileVersion(application.id()).toFullString());
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
