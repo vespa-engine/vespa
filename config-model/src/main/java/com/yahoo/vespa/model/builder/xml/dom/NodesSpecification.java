@@ -43,21 +43,21 @@ public class NodesSpecification {
     private final boolean required;
 
     private final boolean canFail;
-    
+
     private final boolean exclusive;
 
     /** The resources each node should have, or empty to use the default */
     private final Optional<NodeResources> resources;
 
-    /** The identifier of the custom docker image layer to use (not supported yet) */
-    private final Optional<String> dockerImage;
+    /** The repo part of a docker image (without tag), optional */
+    private final Optional<String> dockerImageRepo;
 
     /** The ID of the cluster referencing this node specification, if any */
     private final Optional<String> combinedId;
 
     private NodesSpecification(boolean dedicated, int count, int groups, Version version,
                                boolean required, boolean canFail, boolean exclusive,
-                               Optional<NodeResources> resources, Optional<String> dockerImage,
+                               Optional<NodeResources> resources, Optional<String> dockerImageRepo,
                                Optional<String> combinedId) {
         this.dedicated = dedicated;
         this.count = count;
@@ -67,12 +67,12 @@ public class NodesSpecification {
         this.canFail = canFail;
         this.exclusive = exclusive;
         this.resources = resources;
-        this.dockerImage = dockerImage;
+        this.dockerImageRepo = dockerImageRepo;
         this.combinedId = combinedId;
     }
 
     private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement,
-                               Optional<String> combinedId) {
+                               Optional<String> combinedId, Optional<String> dockerImageRepo) {
         this(dedicated,
              nodesElement.integerAttribute("count", 1),
              nodesElement.integerAttribute("groups", 1),
@@ -81,7 +81,7 @@ public class NodesSpecification {
              canFail,
              nodesElement.booleanAttribute("exclusive", false),
              getResources(nodesElement),
-             Optional.ofNullable(nodesElement.stringAttribute("docker-image")),
+             dockerImageToUse(nodesElement, dockerImageRepo),
              combinedId);
     }
 
@@ -95,10 +95,11 @@ public class NodesSpecification {
         return containerIdReferencing(nodesElement);
     }
 
-    private static NodesSpecification create(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement) {
+    private static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
+                                             ModelElement nodesElement, Optional<String> dockerImage) {
         var resolvedElement = resolveElement(nodesElement);
         var combinedId = findCombinedId(nodesElement, resolvedElement);
-        return new NodesSpecification(dedicated, canFail, version, resolvedElement, combinedId);
+        return new NodesSpecification(dedicated, canFail, version, resolvedElement, combinedId, dockerImage);
     }
 
     /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
@@ -106,7 +107,8 @@ public class NodesSpecification {
         return create(true,
                       ! context.getDeployState().getProperties().isBootstrap(),
                       context.getDeployState().getWantedNodeVespaVersion(),
-                      nodesElement);
+                      nodesElement,
+                      context.getDeployState().getWantedDockerImageRepo());
     }
 
     /**
@@ -122,7 +124,7 @@ public class NodesSpecification {
     }
 
     /**
-     * Returns a requirement for undedicated or dedicated nodes taken from the <code>nodes</code> element
+     * Returns a requirement for non-dedicated or dedicated nodes taken from the <code>nodes</code> element
      * contained in the given parent element, or empty if the parent element is null, or the nodes elements
      * is not present.
      */
@@ -133,10 +135,14 @@ public class NodesSpecification {
         if (nodesElement == null) return Optional.empty();
         return Optional.of(create(nodesElement.booleanAttribute("dedicated", false),
                                   ! context.getDeployState().getProperties().isBootstrap(),
-                                  context.getDeployState().getWantedNodeVespaVersion(), nodesElement));
+                                  context.getDeployState().getWantedNodeVespaVersion(),
+                                  nodesElement,
+                                  context.getDeployState().getWantedDockerImageRepo()));
     }
 
-    /** Returns a requirement from <code>count</code> nondedicated nodes in one group */
+    /**
+     * Returns a requirement from <code>count</code> non-dedicated nodes in one group
+     */
     public static NodesSpecification nonDedicated(int count, ConfigModelContext context) {
         return new NodesSpecification(false,
                                       count,
@@ -146,7 +152,7 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       Optional.empty(),
-                                      Optional.empty(),
+                                      context.getDeployState().getWantedDockerImageRepo(),
                                       Optional.empty());
     }
 
@@ -160,7 +166,7 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       Optional.empty(),
-                                      Optional.empty(),
+                                      context.getDeployState().getWantedDockerImageRepo(),
                                       Optional.empty());
     }
 
@@ -342,10 +348,15 @@ public class NodesSpecification {
         return new IllegalArgumentException("referenced service '" + referenceId + "' is not defined");
     }
 
+    private static Optional<String> dockerImageToUse(ModelElement nodesElement, Optional<String> dockerImage) {
+        String dockerImageFromElement = nodesElement.stringAttribute("docker-image");
+        return dockerImageFromElement == null ? dockerImage : Optional.of(dockerImageFromElement);
+    }
+
     @Override
     public String toString() {
         return "specification of " + count + (dedicated ? " dedicated " : " ") + "nodes" +
-               (resources.isPresent() ? " with resources " + resources.get() : "") +
+               (resources.map(nodeResources -> " with resources " + nodeResources).orElse("")) +
                (groups > 1 ? " in " + groups + " groups" : "");
     }
 
