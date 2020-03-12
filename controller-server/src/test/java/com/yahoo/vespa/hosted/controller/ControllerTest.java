@@ -906,12 +906,33 @@ public class ControllerTest {
         assertEquals(ClusterSpec.Id.from("foo"), tester.applications().requireInstance(context.instanceId())
                                                        .rotations().get(0).clusterId());
 
-        // Redeploy with endpoint cluster changed
+        // Redeploy with endpoint cluster changed needs override
         applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .endpoint("default", "bar")
                 .region(west.region().value())
                 .region(east.region().value())
+                .build();
+        try {
+            context.submit(applicationPackage).deploy();
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("global-endpoint-change: application 'tenant.application' has endpoints [endpoint " +
+                         "'default' (cluster foo) -> us-east-3, us-west-1], but does not include all of these in " +
+                         "deployment.xml. Deploying given deployment.xml will remove " +
+                         "[endpoint 'default' (cluster foo) -> us-east-3, us-west-1] and add " +
+                         "[endpoint 'default' (cluster bar) -> us-east-3, us-west-1]. To allow this add " +
+                         "<allow until='yyyy-mm-dd'>global-endpoint-change</allow> to validation-overrides.xml, see " +
+                         "https://docs.vespa.ai/documentation/reference/validation-overrides.html", e.getMessage());
+        }
+
+        // Redeploy with override succeeds
+        applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .endpoint("default", "bar")
+                .region(west.region().value())
+                .region(east.region().value())
+                .allow(ValidationId.globalEndpointChange)
                 .build();
         context.submit(applicationPackage).deploy();
         assertEquals(ClusterSpec.Id.from("bar"), tester.applications().requireInstance(context.instanceId())
