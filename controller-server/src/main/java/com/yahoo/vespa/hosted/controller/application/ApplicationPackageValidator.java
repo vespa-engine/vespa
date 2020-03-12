@@ -108,7 +108,7 @@ public class ApplicationPackageValidator {
         var newEndpoints = allEndpointsOf(applicationPackage.deploymentSpec().requireInstance(instanceName));
 
         if (newEndpoints.containsAll(endpoints)) return; // Adding new endpoints is fine
-        if (containsAllRegions(newEndpoints, endpoints)) return; // Adding regions to endpoints is fine
+        if (containsAllDestinationsOf(endpoints, newEndpoints)) return; // Adding destinations is fine
 
         var removedEndpoints = new ArrayList<>(endpoints);
         removedEndpoints.removeAll(newEndpoints);
@@ -122,19 +122,23 @@ public class ApplicationPackageValidator {
                                            ". " + ValidationOverrides.toAllowMessage(validationId));
     }
 
-    /** Returns whether endpoint regions in newEndpoints contains all regions of corresponding endpoint in endpoints */
-    private static boolean containsAllRegions(List<Endpoint> newEndpoints, List<Endpoint> endpoints) {
+    /** Returns whether newEndpoints contains all destinations in endpoints */
+    private static boolean containsAllDestinationsOf(List<Endpoint> endpoints, List<Endpoint> newEndpoints) {
         var containsAllRegions = true;
+        var hasSameCluster = true;
         for (var endpoint : endpoints) {
             var endpointContainsAllRegions = false;
+            var endpointHasSameCluster = false;
             for (var newEndpoint : newEndpoints) {
                 if (endpoint.endpointId().equals(newEndpoint.endpointId())) {
                     endpointContainsAllRegions = newEndpoint.regions().containsAll(endpoint.regions());
+                    endpointHasSameCluster = newEndpoint.containerId().equals(endpoint.containerId());
                 }
             }
             containsAllRegions &= endpointContainsAllRegions;
+            hasSameCluster &= endpointHasSameCluster;
         }
-        return containsAllRegions;
+        return containsAllRegions && hasSameCluster;
     }
 
     /** Returns all configued endpoints of given deployment instance spec */
