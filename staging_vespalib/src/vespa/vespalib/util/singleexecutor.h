@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/util/thread.h>
+#include <vespa/vespalib/util/time.h>
 #include <thread>
 #include <atomic>
 
@@ -26,15 +27,13 @@ public:
     uint32_t getTaskLimit() const { return _taskLimit.load(std::memory_order_relaxed); }
     Stats getStats() override;
 private:
+    using Lock = std::unique_lock<std::mutex>;
     uint64_t addTask(Task::UP task);
     void run() override;
     void drain_tasks();
-    void wakeupConsumer();
-    void sleepConsumer();
-    void wakeupProducer();
-    void sleepProducer(MonitorGuard & guard);
+    void sleepProducer(Lock & guard, duration maxWaitTime);
     void run_tasks_till(uint64_t available);
-    void wait_for_room(MonitorGuard & guard);
+    void wait_for_room(Lock & guard);
     uint64_t index(uint64_t counter) const {
         return counter & (_taskLimit.load(std::memory_order_relaxed) - 1);
     }
@@ -46,8 +45,10 @@ private:
     std::atomic<uint32_t>       _wantedTaskLimit;
     std::atomic<uint64_t>       _rp;
     std::unique_ptr<Task::UP[]> _tasks;
-    vespalib::Monitor           _consumerMonitor;
-    vespalib::Monitor           _producerMonitor;
+    std::mutex                  _consumerMutex;
+    std::condition_variable     _consumerCondition;
+    std::mutex                  _producerMutex;
+    std::condition_variable     _producerCondition;
     vespalib::Thread            _thread;
     uint64_t                    _lastAccepted;
     std::atomic<uint64_t>       _maxPending;
