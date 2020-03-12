@@ -6,9 +6,7 @@ import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * To hide JRT implementations.
@@ -17,7 +15,6 @@ import java.util.Set;
  */
 public class JRTConfigRequestFactory {
 
-    public static final String VESPA_CONFIG_PROTOCOL_VERSION = "VESPA_CONFIG_PROTOCOL_VERSION"; // Unused, but should be used if we add a new version
     private static final CompressionType compressionType = getCompressionType();
     private static final String VESPA_CONFIG_PROTOCOL_COMPRESSION = "VESPA_CONFIG_PROTOCOL_COMPRESSION";
 
@@ -29,18 +26,6 @@ public class JRTConfigRequestFactory {
     public static JRTClientConfigRequest createFromRaw(RawConfig config, long serverTimeout) {
         // TODO: Get trace from caller
         return JRTClientConfigRequestV3.createFromRaw(config, serverTimeout, Trace.createNew(), compressionType, getVespaVersion());
-    }
-
-    public static String getProtocolVersion() {
-        return "3";
-    }
-
-    static String getProtocolVersion(String env, String alternateEnv, String property) {
-        return ConfigUtils.getEnvValue("3", env, alternateEnv, property);
-    }
-
-    public static Set<Long> supportedProtocolVersions() {
-        return Collections.singleton(3L);
     }
 
     public static CompressionType getCompressionType() {
