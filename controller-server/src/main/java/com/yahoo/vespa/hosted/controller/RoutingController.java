@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller;
 import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -49,8 +48,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * The routing controller encapsulates state and methods for inspecting and manipulating DNS-level routing of traffic
- * in a system.
+ * The routing controller encapsulates state and methods for inspecting and manipulating deployment endpoints in a
+ * hosted Vespa system.
  *
  * The one stop shop for all your routing needs!
  *
@@ -110,22 +109,23 @@ public class RoutingController {
 
     /** Returns global-scoped endpoints for given instance */
     public EndpointList endpointsOf(ApplicationId instance) {
-        return endpointsOf(controller.applications().requireInstance(instance));
+        return endpointsOf(controller.applications().requireApplication(TenantAndApplicationId.from(instance)),
+                                                                        instance.instance());
     }
 
     /** Returns global-scoped endpoints for given instance */
     // TODO(mpolden): Add a endpointsOf(Instance, DeploymentId) variant of this that only returns global endpoint of
     //                which deployment is a member
-    public EndpointList endpointsOf(Instance instance) {
+    public EndpointList endpointsOf(Application application, InstanceName instanceName) {
         var endpoints = new LinkedHashSet<Endpoint>();
         // Add global endpoints provided by rotations
-        var application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(instance.id())));
+        var instance = application.require(instanceName);
         for (var rotation : instance.rotations()) {
             var deployments = rotation.regions().stream()
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
                                       .collect(Collectors.toList());
             EndpointList.global(RoutingId.of(instance.id(), rotation.endpointId()),
-                                controller.system(), routingMethodsAvailableTo(deployments, application.get()))
+                                controller.system(), routingMethodsOfAll(deployments, application))
                         .requiresRotation()
                         .forEach(endpoints::add);
         }
@@ -140,7 +140,7 @@ public class RoutingController {
             }
         }
         deploymentsByRoutingId.forEach((routingId, deployments) -> {
-            EndpointList.global(routingId, controller.system(), routingMethodsAvailableTo(deployments, application.get()))
+            EndpointList.global(routingId, controller.system(), routingMethodsOfAll(deployments, application))
                         .not().requiresRotation()
                         .forEach(endpoints::add);
         });
@@ -201,14 +201,16 @@ public class RoutingController {
      *
      * @return the registered endpoints
      */
-    public Set<ContainerEndpoint> registerEndpointsInDns(DeploymentSpec deploymentSpec, Instance instance, ZoneId zone) {
+    public Set<ContainerEndpoint> registerEndpointsInDns(Application application, InstanceName instanceName, ZoneId zone) {
+        var instance = application.require(instanceName);
         var containerEndpoints = new HashSet<ContainerEndpoint>();
-        boolean registerLegacyNames = deploymentSpec.instance(instance.name())
-                                                    .flatMap(DeploymentInstanceSpec::globalServiceId)
-                                                    .isPresent();
+        boolean registerLegacyNames = application.deploymentSpec().instance(instanceName)
+                                                 .flatMap(DeploymentInstanceSpec::globalServiceId)
+                                                 .isPresent();
         for (var assignedRotation : instance.rotations()) {
             var names = new ArrayList<String>();
-            var endpoints = endpointsOf(instance).named(assignedRotation.endpointId()).requiresRotation();
+            var endpoints = endpointsOf(application, instanceName).named(assignedRotation.endpointId())
+                                                                  .requiresRotation();
 
             // Skip rotations which do not apply to this zone. Legacy names always point to all zones
             if (!registerLegacyNames && !assignedRotation.regions().contains(zone.region())) {
@@ -239,16 +241,16 @@ public class RoutingController {
     }
 
     /** Remove endpoints in DNS for all rotations assigned to given instance */
-    public void removeEndpointsInDns(Instance instance) {
-        endpointsOf(instance).requiresRotation()
-                             .forEach(endpoint -> controller.nameServiceForwarder()
-                                                            .removeRecords(Record.Type.CNAME,
-                                                                           RecordName.from(endpoint.dnsName()),
-                                                                           Priority.normal));
+    public void removeEndpointsInDns(Application application, InstanceName instanceName) {
+        endpointsOf(application, instanceName).requiresRotation()
+                                              .forEach(endpoint -> controller.nameServiceForwarder()
+                                                                             .removeRecords(Record.Type.CNAME,
+                                                                                            RecordName.from(endpoint.dnsName()),
+                                                                                            Priority.normal));
     }
 
-    /** Returns the routing methods that are available across given deployments */
-    private List<RoutingMethod> routingMethodsAvailableTo(List<DeploymentId> deployments, Application application) {
+    /** Returns the routing methods that are available across all given deployments */
+    private List<RoutingMethod> routingMethodsOfAll(List<DeploymentId> deployments, Application application) {
         var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
         for (var deployment : deployments) {
             for (var method : controller.zoneRegistry().routingMethods(deployment.zoneId())) {
@@ -257,8 +259,8 @@ public class RoutingController {
             }
         }
         var routingMethods = new ArrayList<RoutingMethod>();
-        deploymentsByMethod.forEach((method, deploymentsOfMethod) -> {
-            if (deploymentsOfMethod.containsAll(deployments)) {
+        deploymentsByMethod.forEach((method, supportedDeployments) -> {
+            if (supportedDeployments.containsAll(deployments)) {
                 if (method.isDirect() && !canRouteDirectlyTo(deployments, application)) return;
                 routingMethods.add(method);
             }
