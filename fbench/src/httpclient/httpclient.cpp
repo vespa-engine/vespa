@@ -37,7 +37,6 @@ HTTPClient::HTTPClient(vespalib::CryptoEngine::SP engine, const char *hostname, 
     _buf(new char[_bufsize]),
     _bufused(0),
     _bufpos(0),
-    _headerinfo(),
     _isOpen(false),
     _httpVersion(0),
     _requestStatus(0),
@@ -111,8 +110,7 @@ HTTPClient::ReadLine(char *buf, size_t bufsize)
 bool
 HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen)
 {
-    char tmp[4096];
-    char *req = NULL;
+    std::unique_ptr<char[]> req;
     uint32_t req_max = 0;
     uint32_t url_len = strlen(url);
     uint32_t host_len = _hostname.size();
@@ -127,14 +125,8 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
         headers += "X-Yahoo-Vespa-Benchmarkdata-Coverage: true\r\n";
     }
 
-    if (url_len + host_len + headers.length() + FIXED_REQ_MAX < sizeof(tmp)) {
-        req = tmp;
-        req_max = sizeof(tmp);
-    } else {
-        req_max = url_len + host_len + headers.length() + FIXED_REQ_MAX;
-        req = new char[req_max];
-        assert(req != NULL);
-    }
+    req_max = url_len + host_len + headers.length() + FIXED_REQ_MAX;
+    req = std::make_unique<char []>(req_max);
 
     if (!_keepAlive) {
         headers += "Connection: close\r\n";
@@ -143,7 +135,7 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
 
     // create request
     if (usePost) {
-        snprintf(req, req_max,
+        snprintf(req.get(), req_max,
                  "POST %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
                  "Content-Length: %d\r\n"
@@ -151,7 +143,7 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
                  "\r\n",
                  url, _host_header_value.c_str(), cLen, headers.c_str());
     } else {
-        snprintf(req, req_max,
+        snprintf(req.get(), req_max,
                  "GET %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
                  "%s"
@@ -160,18 +152,16 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
     }
 
     // try to reuse connection if keep-alive is enabled
+    ssize_t reqLen = strlen(req.get());
     if (_keepAlive
         && _socket
-        && _socket->write(req, strlen(req)) == (ssize_t)strlen(req)
+        && _socket->write(req.get(), reqLen) == reqLen
         && (!usePost || _socket->write(content, cLen) == (ssize_t)cLen)
         && FillBuffer() > 0) {
 
         // DEBUG
         // printf("Socket Connection reused!\n");
         _reuseCount++;
-        if (req != tmp) {
-            delete [] req;
-        }
         return true;
     } else {
         _socket.reset();
@@ -180,25 +170,14 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
 
     // try to open new connection to server
     if (connect_socket()
-        && _socket->write(req, strlen(req)) == (ssize_t)strlen(req)
+        && _socket->write(req.get(), reqLen) == reqLen
         && (!usePost || _socket->write(content, cLen) == (ssize_t)cLen))
     {
-
-        // DEBUG
-        // printf("New Socket connection!\n");
-        if (req != tmp) {
-            delete [] req;
-        }
         return true;
     } else {
         _socket.reset();
     }
 
-    // DEBUG
-    // printf("Connect FAILED!\n");
-    if (req != tmp) {
-        delete [] req;
-    }
     return false;
 }
 
@@ -215,11 +194,11 @@ HTTPClient::SplitString(char *input, int &argc, char **argv, int maxargs)
         }
     if (*(argv[argc]) != '\0')
         argc++;
-    return NULL;                    // COMPLETE
+    return nullptr;                    // COMPLETE
 }
 
 bool
-HTTPClient::ReadHTTPHeader()
+HTTPClient::ReadHTTPHeader(std::string & headerinfo)
 {
     int     lineLen;
     char    line[4096];
@@ -242,8 +221,7 @@ HTTPClient::ReadHTTPHeader()
     if (argc >= 2) {
         if (strncmp(argv[0], "HTTP/", 5) != 0)
             return false;
-        _httpVersion = (strncmp(argv[0], "HTTP/1.0", 8) == 0) ?
-                       0 : 1;
+        _httpVersion = (strncmp(argv[0], "HTTP/1.0", 8) == 0) ? 0 : 1;
         _requestStatus = atoi(argv[1]);
     } else {
         return false;
@@ -268,8 +246,8 @@ HTTPClient::ReadHTTPHeader()
             }
 
             // Make sure to have enough memory in _headerinfo
-            _headerinfo += benchmark_data;
-            _headerinfo += "\n";
+            headerinfo += benchmark_data;
+            headerinfo += "\n";
         }
 
         SplitString(line, argc, argv, 32);
@@ -320,7 +298,7 @@ HTTPClient::ReadChunkHeader()
     char c;
     int  i;
 
-    if (_chunkSeq++ > 0 && ReadLine(NULL, 0) != 0)
+    if (_chunkSeq++ > 0 && ReadLine(nullptr, 0) != 0)
         return false;                  // no CRLF(/LF) after data block
 
     assert(_chunkLeft == 0);
@@ -345,7 +323,7 @@ HTTPClient::ReadChunkHeader()
     // printf("CHUNK: Length: %d\n", _chunkLeft);
 
     if (_chunkLeft == 0) {
-        while ((lineLen = ReadLine(NULL, 0)) > 0);   // skip trailer
+        while ((lineLen = ReadLine(nullptr, 0)) > 0);   // skip trailer
         if (lineLen < 0)
             return false;                              // data error
         _dataDone = true;                            // got last chunk
@@ -354,7 +332,7 @@ HTTPClient::ReadChunkHeader()
 }
 
 bool
-HTTPClient::Open(const char *url, bool usePost, const char *content, int cLen)
+HTTPClient::Open(std::string & headerinfo, const char *url, bool usePost, const char *content, int cLen)
 {
     if (_isOpen)
         Close();
@@ -363,7 +341,7 @@ HTTPClient::Open(const char *url, bool usePost, const char *content, int cLen)
     _dataRead  = 0;
     _dataDone  = false;
     _isOpen    = Connect(url, usePost, content, cLen);
-    if(!_isOpen || !ReadHTTPHeader()) {
+    if(!_isOpen || !ReadHTTPHeader(headerinfo)) {
         Close();
         return false;
     }
@@ -532,24 +510,24 @@ HTTPClient::Fetch(const char *url, std::ostream *file,
     ssize_t readRes  = 0;
     ssize_t written  = 0;
 
-    if (!Open(url, usePost, content, contentLen)) {
+    std::string headerinfo;
+    if (!Open(headerinfo, url, usePost, content, contentLen)) {
         return FetchStatus(false, _requestStatus, _totalHitCount, 0);
     }
 
     // Write headerinfo
     if (file) {
-        file->write(_headerinfo.c_str(), _headerinfo.length());
+        file->write(headerinfo.c_str(), headerinfo.length());
         if (file->fail()) {
             Close();
             return FetchStatus(false, _requestStatus, _totalHitCount, 0);
         }
         file->write("\r\n", 2);
         // Reset header data.
-        _headerinfo = "";
     }
 
     while((readRes = Read(buf, buflen)) > 0) {
-        if(file != NULL) {
+        if(file != nullptr) {
             if (!file->write(buf, readRes)) {
                 Close();
                 return FetchStatus(false, _requestStatus, _totalHitCount, written);

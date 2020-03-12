@@ -95,22 +95,19 @@ protected:
     vespalib::SocketAddress        _address;
     vespalib::SyncCryptoSocket::UP _socket;
 
-  std::string      _hostname;
-  int              _port;
-  bool             _keepAlive;
-  bool             _headerBenchmarkdataCoverage;
-  std::string      _extraHeaders;
+  const std::string    _hostname;
+  int                  _port;
+  bool                 _keepAlive;
+  bool                 _headerBenchmarkdataCoverage;
+  const std::string    _extraHeaders;
   vespalib::SocketSpec _sni_spec;
-  std::string      _host_header_value;
-  uint64_t         _reuseCount;
+  std::string          _host_header_value;
+  uint64_t             _reuseCount;
 
   size_t           _bufsize;
   char            *_buf;
   ssize_t          _bufused;
   ssize_t          _bufpos;
-
-  std::string      _headerinfo;
-  unsigned int     _headerinfoPos;
 
   bool             _isOpen;
   unsigned int     _httpVersion;
@@ -206,15 +203,14 @@ protected:
    * @param argv the argument array.
    * @param maxargs the size of 'argv'.
    **/
-  static char *SplitString(char *input, int &argc, char **argv,
-				       int maxargs);
+  static char *SplitString(char *input, int &argc, char **argv, int maxargs);
 
   /**
    * Read and parse the HTTP Header.
    *
    * @return success(true)/failure(fail)
    **/
-  bool ReadHTTPHeader();
+  bool ReadHTTPHeader(std::string & headerinfo);
 
   /**
    * Read and parse a chunk header. Only used with chunked encoding.
@@ -223,6 +219,43 @@ protected:
    **/
   bool ReadChunkHeader();
 
+  /**
+   * Connect to the given url and read the response HTTP header. Note
+   * that this method will fail if the host returns a status code
+   * other than 200. This is done in order to make the interface as
+   * simple as possible.
+   *
+   * @return success(true)/failure(false)
+   * @param url the url you want to connect to
+   * @param usePost whether to use POST in the request
+   * @param content if usePost is true, the content to post
+   * @param cLen length of content in bytes
+   **/
+  bool Open(std::string & headerinfo, const char *url, bool usePost = false, const char *content = 0, int cLen = 0);
+  
+  /**
+   * Close the connection to the url we are currently reading
+   * from. Will also close the physical connection if keepAlive is not
+   * enabled or if all the url content was not read. This is done
+   * because skipping will probably be more expencive than creating a
+   * new connection.
+   *
+   * @return success(true)/failure(false)
+   **/
+  bool Close();
+
+  /**
+   * Read data from the url we are currently connected to. This method
+   * should be called repeatedly until it returns 0 in order to
+   * completely read the URL content. If @ref Close is called before
+   * all URL content is read the physical connection will be closed
+   * even if keepAlive is enabled.
+   *
+   * @return bytes read or -1 on failure.
+   * @param buf where to store the incoming data.
+   * @param len length of buf.
+   **/
+  ssize_t Read(void *buf, size_t len);
 public:
 
   /**
@@ -253,44 +286,6 @@ public:
   {
     return _reuseCount;
   }
-
-  /**
-   * Connect to the given url and read the response HTTP header. Note
-   * that this method will fail if the host returns a status code
-   * other than 200. This is done in order to make the interface as
-   * simple as possible.
-   *
-   * @return success(true)/failure(false)
-   * @param url the url you want to connect to
-   * @param usePost whether to use POST in the request
-   * @param content if usePost is true, the content to post
-   * @param cLen length of content in bytes
-   **/
-  bool Open(const char *url, bool usePost = false, const char *content = 0, int cLen = 0);
-
-  /**
-   * Read data from the url we are currently connected to. This method
-   * should be called repeatedly until it returns 0 in order to
-   * completely read the URL content. If @ref Close is called before
-   * all URL content is read the physical connection will be closed
-   * even if keepAlive is enabled.
-   *
-   * @return bytes read or -1 on failure.
-   * @param buf where to store the incoming data.
-   * @param len length of buf.
-   **/
-  ssize_t Read(void *buf, size_t len);
-
-  /**
-   * Close the connection to the url we are currently reading
-   * from. Will also close the physical connection if keepAlive is not
-   * enabled or if all the url content was not read. This is done
-   * because skipping will probably be more expencive than creating a
-   * new connection.
-   *
-   * @return success(true)/failure(false)
-   **/
-  bool Close();
 
   /**
    * Class that provides status about the executed fetch method.
