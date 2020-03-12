@@ -111,7 +111,7 @@ public class RotationRepositoryTest {
 
         // We're now out of rotations
         thrown.expect(IllegalStateException.class);
-        thrown.expectMessage("no rotations available");
+        thrown.expectMessage("out of rotations");
         var application3 = tester.newDeploymentContext("tenant3", "app3", "default");
         application3.submit(applicationPackage);
     }
