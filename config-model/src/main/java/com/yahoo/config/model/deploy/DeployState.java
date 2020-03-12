@@ -77,6 +77,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final ImportedMlModels importedModels;
     private final ValidationOverrides validationOverrides;
     private final Version wantedNodeVespaVersion;
+    private final Optional<String> wantedDockerImageRepo;
     private final Instant now;
     private final HostProvisioner provisioner;
 
@@ -110,7 +111,8 @@ public class DeployState implements ConfigDefinitionStore {
                         SemanticRules semanticRules,
                         Instant now,
                         Version wantedNodeVespaVersion,
-                        boolean accessLoggingEnabledByDefault) {
+                        boolean accessLoggingEnabledByDefault,
+                        Optional<String> wantedDockerImageRepo) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -140,6 +142,7 @@ public class DeployState implements ConfigDefinitionStore {
 
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
+        this.wantedDockerImageRepo = wantedDockerImageRepo;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -160,9 +163,7 @@ public class DeployState implements ConfigDefinitionStore {
     public final Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) {
         if (existingConfigDefs == null) {
             existingConfigDefs = new LinkedHashMap<>();
-            if (configDefinitionRepo.isPresent()) {
-                existingConfigDefs.putAll(createLazyMapping(configDefinitionRepo.get()));
-            }
+            configDefinitionRepo.ifPresent(definitionRepo -> existingConfigDefs.putAll(createLazyMapping(definitionRepo)));
             existingConfigDefs.putAll(applicationPackage.getAllExistingConfigDefs());
         }
         if ( ! existingConfigDefs.containsKey(defKey)) return Optional.empty();
@@ -260,6 +261,8 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
+    public Optional<String> getWantedDockerImageRepo() { return wantedDockerImageRepo; }
+
     public Instant now() { return now; }
 
     public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return properties.endpointCertificateSecrets(); }
@@ -297,6 +300,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
         private boolean accessLoggingEnabledByDefault = true;
+        private Optional<String> wantedDockerImageRepo = Optional.empty();
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -368,6 +372,11 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder wantedDockerImageRepo(Optional<String> dockerImageRepo) {
+            this.wantedDockerImageRepo = dockerImageRepo;
+            return this;
+        }
+
         /**
          * Whether access logging is enabled for an application without an accesslog element in services.xml.
          * True by default.
@@ -404,7 +413,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    semanticRules,
                                    now,
                                    wantedNodeVespaVersion,
-                                   accessLoggingEnabledByDefault);
+                                   accessLoggingEnabledByDefault,
+                                   wantedDockerImageRepo);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
