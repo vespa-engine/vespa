@@ -149,7 +149,7 @@ public class ValidateNearestNeighborTestCase {
         String q = "select * from sources * where nearestNeighbor(dvector,qvector);";
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg(desc("dvector", "qvector", 0, "has invalid targetNumHits"), r);
+        assertErrMsg(desc("dvector", "qvector", 0, "has invalid targetNumHits 0: Must be >= 1"), r);
     }
 
     @Test
@@ -157,16 +157,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("dvector", "foo");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg(desc("dvector", "foo", 1, "query tensor not found"), r);
-    }
-
-    @Test
-    public void testQueryTensorWrongType() {
-        String q = makeQuery("dvector", "qvector");
-        Result r = doSearch(searcher, q, "tensor string");
-        assertErrMsg(desc("dvector", "qvector", 1, "expected a query tensor but got class java.lang.String"), r);
-        r = doSearch(searcher, q, null);
-        assertErrMsg(desc("dvector", "qvector", 1, "expected a query tensor but got null"), r);
+        assertErrMsg(desc("dvector", "foo", 1, "requires a tensor rank feature query(foo) but this is not present"), r);
     }
 
     @Test
@@ -174,7 +165,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("dvector", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_2, 2);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg(desc("dvector", "qvector", 1, "field type tensor(x[3]) does not match query tensor type tensor(x[2])"), r);
+        assertErrMsg(desc("dvector", "qvector", 1, "field type tensor(x[3]) does not match query type tensor(x[2])"), r);
     }
 
     @Test
@@ -209,11 +200,11 @@ public class ValidateNearestNeighborTestCase {
         assertErrMsg(desc("matrix", "qvector", 1, "tensor type tensor(x[3],y[1]) is not a dense vector"), r);
     }
 
-    private static Result doSearch(ValidateNearestNeighborSearcher searcher, String yqlQuery, Object qTensor) {
+    private static Result doSearch(ValidateNearestNeighborSearcher searcher, String yqlQuery, Tensor qTensor) {
         QueryTree queryTree = new YqlParser(new ParserEnvironment()).parse(new Parsable().setQuery(yqlQuery));
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(queryTree.getRoot());
-        query.getRanking().getProperties().put("qvector", qTensor);
+        query.getRanking().getFeatures().put("query(qvector)", qTensor);
         SearchDefinition searchDefinition = new SearchDefinition("document");
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
         Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
