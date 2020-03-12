@@ -14,7 +14,6 @@
     "commit": "commit1"
   },
   "projectId": 1000,
-  "compileVersion": "6.1.0",
   "instances": [
     {
       "instance": "default",
