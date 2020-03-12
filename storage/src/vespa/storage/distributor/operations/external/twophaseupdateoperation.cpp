@@ -36,6 +36,8 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
     _sendState(SendState::NONE_SENT),
     _mode(Mode::FAST_PATH),
     _fast_path_repair_source_node(0xffff),
+    _use_initial_cheap_metadata_fetch_phase(
+            _manager.getDistributor().getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates()),
     _replySent(false)
 {
     document::BucketIdFactory idFactory;
@@ -92,10 +94,12 @@ const char*
 TwoPhaseUpdateOperation::stateToString(SendState state)
 {
     switch (state) {
-    case SendState::NONE_SENT: return "NONE_SENT";
-    case SendState::UPDATES_SENT: return "UPDATES_SENT";
-    case SendState::GETS_SENT: return "GETS_SENT";
-    case SendState::PUTS_SENT: return "PUTS_SENT";
+    case SendState::NONE_SENT:          return "NONE_SENT";
+    case SendState::UPDATES_SENT:       return "UPDATES_SENT";
+    case SendState::METADATA_GETS_SENT: return "METADATA_GETS_SENT";
+    case SendState::SINGLE_GET_SENT:    return "SINGLE_GET_SENT";
+    case SendState::FULL_GETS_SENT:     return "FULL_GETS_SENT";
+    case SendState::PUTS_SENT:          return "PUTS_SENT";
     default:
         assert(!"Unknown state");
         return "";
@@ -159,7 +163,7 @@ void
 TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
 {
     _mode = Mode::FAST_PATH;
-    LOG(debug, "Update(%s) fast path: sending Update commands", _updateCmd->getDocumentId().toString().c_str());
+    LOG(debug, "Update(%s) fast path: sending Update commands", update_doc_id().c_str());
     auto updateOperation = std::make_shared<UpdateOperation>(_manager, _bucketSpace, _updateCmd, _updateMetric);
     UpdateOperation & op = *updateOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(updateOperation), sender);
@@ -174,24 +178,48 @@ TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
 void
 TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
 {
-    LOG(debug, "Update(%s) safe path: sending Get commands", _updateCmd->getDocumentId().toString().c_str());
-
     _mode = Mode::SLOW_PATH;
-    document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
-    auto get = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(),"[all]");
-    copyMessageSettings(*_updateCmd, *get);
-    auto getOperation = std::make_shared<GetOperation>(
-            _manager, _bucketSpace, _bucketSpace.getBucketDatabase().acquire_read_guard(), get, _getMetric);
-    GetOperation & op = *getOperation;
-    IntermediateMessageSender intermediate(_sentMessageMap, std::move(getOperation), sender);
+    auto get_operation = create_initial_safe_path_get_operation();
+    GetOperation& op = *get_operation;
+    IntermediateMessageSender intermediate(_sentMessageMap, std::move(get_operation), sender);
     _replicas_at_get_send_time = op.replicas_in_db(); // Populated at construction time, not at start()-time
     op.start(intermediate, _manager.getClock().getTimeInMillis());
-    transitionTo(SendState::GETS_SENT);
+
+    transitionTo(_use_initial_cheap_metadata_fetch_phase
+                 ? SendState::METADATA_GETS_SENT
+                 : SendState::FULL_GETS_SENT);
 
     if (intermediate._reply.get()) {
         assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
+        // We always trigger the safe path Get reply handling here regardless of whether
+        // metadata-only or full Gets were sent. This is because we might get an early
+        // reply due to there being no replicas in existence at all for the target bucket.
+        // In this case, we rely on the safe path fallback to implicitly create the bucket
+        // by performing the update locally and sending CreateBucket+Put to the ideal nodes.
         handleSafePathReceivedGet(sender, static_cast<api::GetReply&>(*intermediate._reply));
     }
+}
+
+std::shared_ptr<GetOperation>
+TwoPhaseUpdateOperation::create_initial_safe_path_get_operation() {
+    document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
+    const char* field_set = _use_initial_cheap_metadata_fetch_phase ? "[none]" : "[all]";
+    auto get = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), field_set);
+    copyMessageSettings(*_updateCmd, *get);
+    // Metadata-only Gets just look at the data in the meta-store, not any fields.
+    // The meta-store is always updated before any ACK is returned for a mutation,
+    // so all the information we need is guaranteed to be consistent even with a
+    // weak read. But since weak reads allow the Get operation to bypass commit
+    // queues, latency may be greatly reduced in contended situations.
+    auto read_consistency = (_use_initial_cheap_metadata_fetch_phase
+                             ? api::InternalReadConsistency::Weak
+                             : api::InternalReadConsistency::Strong);
+    LOG(debug, "Update(%s) safe path: sending Get commands with field set '%s' "
+               "and internal read consistency %s",
+               update_doc_id().c_str(), field_set, api::to_string(read_consistency));
+    return std::make_shared<GetOperation>(
+            _manager, _bucketSpace, _bucketSpace.getBucketDatabase().acquire_read_guard(),
+            get, _getMetric, read_consistency);
 }
 
 void
@@ -247,7 +275,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
     transitionTo(SendState::PUTS_SENT);
 
     LOG(debug, "Update(%s): sending Put commands with doc %s",
-        _updateCmd->getDocumentId().toString().c_str(), doc->toString(true).c_str());
+        update_doc_id().c_str(), doc->toString(true).c_str());
 
     if (intermediate._reply.get()) {
         sendReplyWithResult(sender, intermediate._reply->getResult());
@@ -269,13 +297,12 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
                                                const std::shared_ptr<api::StorageReply>& msg)
 {
     if (msg->getType() == api::MessageType::GET_REPLY) {
-        assert(_sendState == SendState::GETS_SENT);
-        api::GetReply& getReply = static_cast<api::GetReply&> (*msg);
+        assert(_sendState == SendState::FULL_GETS_SENT);
+        auto& getReply = static_cast<api::GetReply&>(*msg);
         addTraceFromReply(getReply);
 
-        LOG(debug, "Update(%s) Get reply had result: %s",
-            _updateCmd->getDocumentId().toString().c_str(),
-            getReply.getResult().toString().c_str());
+        LOG(debug, "Update(%s) fast path: Get reply had result %s",
+            update_doc_id().c_str(), getReply.getResult().toString().c_str());
 
         if (!getReply.getResult().success()) {
             sendReplyWithResult(sender, getReply.getResult());
@@ -310,7 +337,7 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
                 // Failed or was consistent
                 sendReply(sender, intermediate._reply);
             } else {
-                LOG(debug, "Update(%s) fast path: was inconsistent!", _updateCmd->getDocumentId().toString().c_str());
+                LOG(debug, "Update(%s) fast path: was inconsistent!", update_doc_id().c_str());
 
                 _updateReply = intermediate._reply;
                 _fast_path_repair_source_node = bestNode.second;
@@ -319,7 +346,7 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
                 copyMessageSettings(*_updateCmd, *cmd);
 
                 sender.sendToNode(lib::NodeType::STORAGE, _fast_path_repair_source_node, cmd);
-                transitionTo(SendState::GETS_SENT);
+                transitionTo(SendState::FULL_GETS_SENT);
             }
         }
     } else {
@@ -328,7 +355,7 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
             addTraceFromReply(*intermediate._reply);
             sendReplyWithResult(sender, intermediate._reply->getResult());
             LOG(warning, "Forced convergence of '%s' using document from node %u",
-                _updateCmd->getDocumentId().toString().c_str(), _fast_path_repair_source_node);
+                update_doc_id().c_str(), _fast_path_repair_source_node);
         }
     }
 }
@@ -337,6 +364,15 @@ void
 TwoPhaseUpdateOperation::handleSafePathReceive(DistributorMessageSender& sender,
                                                const std::shared_ptr<api::StorageReply>& msg)
 {
+    // No explicit operation is associated with the direct replica Get operation,
+    // so we handle its reply separately.
+    if (_sendState == SendState::SINGLE_GET_SENT) {
+        assert(msg->getType() == api::MessageType::GET_REPLY);
+        LOG(spam, "Received single full Get reply for '%s'", update_doc_id().c_str());
+        addTraceFromReply(*msg);
+        handleSafePathReceivedGet(sender, dynamic_cast<api::GetReply&>(*msg));
+        return;
+    }
     std::shared_ptr<Operation> callback = _sentMessageMap.pop(msg->getMsgId());
     assert(callback.get());
     Operation & callbackOp = *callback;
@@ -348,7 +384,12 @@ TwoPhaseUpdateOperation::handleSafePathReceive(DistributorMessageSender& sender,
         return; // Not enough replies received yet or we're draining callbacks.
     }
     addTraceFromReply(*intermediate._reply);
-    if (_sendState == SendState::GETS_SENT) {
+    if (_sendState == SendState::METADATA_GETS_SENT) {
+        assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
+        const auto& get_op = dynamic_cast<const GetOperation&>(*intermediate.callback);
+        handle_safe_path_received_metadata_get(sender, static_cast<api::GetReply&>(*intermediate._reply),
+                                               get_op.newest_replica(), get_op.any_replicas_failed());
+    } else if (_sendState == SendState::FULL_GETS_SENT) {
         assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
         handleSafePathReceivedGet(sender, static_cast<api::GetReply&>(*intermediate._reply));
     } else if (_sendState == SendState::PUTS_SENT) {
@@ -357,6 +398,60 @@ TwoPhaseUpdateOperation::handleSafePathReceive(DistributorMessageSender& sender,
     } else {
         assert(!"Unknown state");
     }
+}
+
+void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
+        DistributorMessageSender& sender, api::GetReply& reply,
+        const std::optional<NewestReplica>& newest_replica,
+        bool any_replicas_failed)
+{
+    LOG(debug, "Update(%s): got (metadata only) Get reply with result %s",
+        update_doc_id().c_str(), reply.getResult().toString().c_str());
+
+    if (!reply.getResult().success()) {
+        sendReplyWithResult(sender, reply.getResult());
+        return;
+    }
+    // It's possible for a single replica to fail during processing without the entire
+    // Get operation failing. Although we know a priori if replicas are out of sync,
+    // we don't know which one has the highest timestamp (it might have been the one
+    // on the node that the metadata Get just failed towards). To err on the side of
+    // caution we abort the update if this happens. If a simple metadata Get fails, it
+    // is highly likely that a full partial update or put operation would fail as well.
+    if (any_replicas_failed) {
+        LOG(debug, "Update(%s): had failed replicas, aborting update", update_doc_id().c_str());
+        sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::Result::ABORTED,
+                            "One or more metadata Get operations failed; aborting Update"));
+        return;
+    }
+    if (!replica_set_unchanged_after_get_operation()) {
+        // Use BUCKET_NOT_FOUND to trigger a silent retry.
+        LOG(debug, "Update(%s): replica set has changed after metadata get phase", update_doc_id().c_str());
+        sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::Result::BUCKET_NOT_FOUND,
+                                                    "Replica sets changed between update phases, client must retry"));
+        return;
+    }
+    if (reply.had_consistent_replicas()) {
+        LOG(debug, "Update(%s): metadata Gets consistent; restarting in fast path", update_doc_id().c_str());
+        restart_with_fast_path_due_to_consistent_get_timestamps(sender);
+        return;
+    }
+    // If we've gotten here, we must have had no Get failures and replicas must
+    // be somehow inconsistent. Replicas can only be inconsistent if their timestamps
+    // mismatch, so we must have observed at least one non-zero timestamp.
+    assert(newest_replica.has_value() && (newest_replica->timestamp != api::Timestamp(0)));
+    // Timestamps were not in sync, so we have to fetch the document from the highest
+    // timestamped replica, apply the update to it and then explicitly Put the result
+    // to all replicas.
+    document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), newest_replica->bucket_id);
+    LOG(debug, "Update(%s): sending single payload Get to %s on node %u (had timestamp %" PRIu64 ")",
+        update_doc_id().c_str(), bucket.toString().c_str(),
+        newest_replica->node, newest_replica->timestamp);
+    auto cmd = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), "[all]");
+    copyMessageSettings(*_updateCmd, *cmd);
+    sender.sendToNode(lib::NodeType::STORAGE, newest_replica->node, cmd);
+
+    transitionTo(SendState::SINGLE_GET_SENT);
 }
 
 void
@@ -395,7 +490,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sen
         return;
     } else if (shouldCreateIfNonExistent()) {
         LOG(debug, "No existing documents found for %s, creating blank document to update",
-            _updateCmd->getUpdate()->getId().toString().c_str());
+            update_doc_id().c_str());
         docToUpdate = createBlankDocument();
         setUpdatedForTimestamp(putTimestamp);
     } else {
@@ -412,7 +507,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sen
 
 bool TwoPhaseUpdateOperation::may_restart_with_fast_path(const api::GetReply& reply) {
     return (_manager.getDistributor().getConfig().update_fast_path_restart_enabled() &&
-            reply.wasFound() &&
+            !_replicas_at_get_send_time.empty() && // To ensure we send CreateBucket+Put if no replicas exist.
             reply.had_consistent_replicas() &&
             replica_set_unchanged_after_get_operation());
 }
@@ -434,12 +529,15 @@ bool TwoPhaseUpdateOperation::replica_set_unchanged_after_get_operation() const 
 
 void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_timestamps(DistributorMessageSender& sender) {
     LOG(debug, "Update(%s): all Gets returned in initial safe path were consistent, restarting in fast path mode",
-               _updateCmd->getDocumentId().toString().c_str());
+               update_doc_id().c_str());
     if (lostBucketOwnershipBetweenPhases()) {
         sendLostOwnershipTransientErrorReply(sender);
         return;
     }
     _updateMetric.fast_path_restarts.inc();
+    // Must not be any other messages in flight, or we might mis-interpret them when we
+    // have switched back to fast-path mode.
+    assert(_sentMessageMap.empty());
     startFastPathUpdate(sender);
 }
 
@@ -551,6 +649,11 @@ TwoPhaseUpdateOperation::onClose(DistributorMessageSender& sender) {
     if (!_replySent) {
         sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::ABORTED));
     }
+}
+
+vespalib::string TwoPhaseUpdateOperation::update_doc_id() const {
+    assert(_updateCmd.get() != nullptr);
+    return _updateCmd->getDocumentId().toString();
 }
 
 }

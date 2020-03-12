@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <set>
+#include "newest_replica.h"
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/document/update/documentupdate.h>
+#include <set>
 
 namespace document {
 class Document;
@@ -23,6 +24,7 @@ class UpdateMetricSet;
 namespace distributor {
 
 class DistributorBucketSpace;
+class GetOperation;
 
 /*
  * General functional outline:
@@ -45,6 +47,7 @@ class DistributorBucketSpace;
  *
  * Note that the above case also implicitly handles the case in which a
  * bucket does not exist.
+ *
 */
 
 
@@ -56,7 +59,7 @@ public:
                             const std::shared_ptr<api::UpdateCommand> & msg,
                             DistributorMetricSet& metrics,
                             SequencingHandle sequencingHandle = SequencingHandle());
-    ~TwoPhaseUpdateOperation();
+    ~TwoPhaseUpdateOperation() override;
 
     void onStart(DistributorMessageSender& sender) override;
 
@@ -69,13 +72,13 @@ public:
 
     void onClose(DistributorMessageSender& sender) override;
 
-    bool canSendHeaderOnly() const;
-
 private:
     enum class SendState {
         NONE_SENT,
         UPDATES_SENT,
-        GETS_SENT,
+        METADATA_GETS_SENT,
+        SINGLE_GET_SENT,
+        FULL_GETS_SENT,
         PUTS_SENT,
     };
 
@@ -85,7 +88,7 @@ private:
     };
 
     void transitionTo(SendState newState);
-    const char* stateToString(SendState);
+    static const char* stateToString(SendState);
 
     void sendReply(DistributorMessageSender&,
                    std::shared_ptr<api::StorageReply>&);
@@ -108,10 +111,13 @@ private:
                                const std::shared_ptr<api::StorageReply>&);
     void handleSafePathReceive(DistributorMessageSender&,
                                const std::shared_ptr<api::StorageReply>&);
-    void handleSafePathReceivedGet(DistributorMessageSender&,
-                                   api::GetReply&);
-    void handleSafePathReceivedPut(DistributorMessageSender&,
-                                   const api::PutReply&);
+    std::shared_ptr<GetOperation> create_initial_safe_path_get_operation();
+    void handle_safe_path_received_metadata_get(DistributorMessageSender&,
+                                                api::GetReply&,
+                                                const std::optional<NewestReplica>&,
+                                                bool any_replicas_failed);
+    void handleSafePathReceivedGet(DistributorMessageSender&, api::GetReply&);
+    void handleSafePathReceivedPut(DistributorMessageSender&, const api::PutReply&);
     bool shouldCreateIfNonExistent() const;
     bool processAndMatchTasCondition(
             DistributorMessageSender& sender,
@@ -124,6 +130,8 @@ private:
     bool may_restart_with_fast_path(const api::GetReply& reply);
     bool replica_set_unchanged_after_get_operation() const;
     void restart_with_fast_path_due_to_consistent_get_timestamps(DistributorMessageSender& sender);
+    // Precondition: reply has not yet been sent.
+    vespalib::string update_doc_id() const;
 
     UpdateMetricSet& _updateMetric;
     PersistenceOperationMetricSet& _putMetric;
@@ -139,6 +147,7 @@ private:
     document::BucketId _updateDocBucketId;
     std::vector<std::pair<document::BucketId, uint16_t>> _replicas_at_get_send_time;
     uint16_t _fast_path_repair_source_node;
+    bool _use_initial_cheap_metadata_fetch_phase;
     bool _replySent;
 };
 

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "newest_replica.h"
 #include <vespa/storageapi/defs.h>
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
@@ -38,6 +39,9 @@ public:
     std::string getStatus() const override { return ""; }
 
     bool all_bucket_metadata_initially_consistent() const;
+    bool any_replicas_failed() const noexcept {
+        return _any_replicas_failed;
+    }
 
     // Exposed for unit testing. TODO feels a bit dirty :I
     const DistributorBucketSpace& bucketSpace() const noexcept { return _bucketSpace; }
@@ -48,6 +52,13 @@ public:
 
     api::InternalReadConsistency desired_read_consistency() const noexcept {
         return _desired_read_consistency;
+    }
+
+    // Note: in the case the document could not be found on any replicas, but
+    // at least one node returned a non-error response, the returned value will
+    // have a timestamp of zero and the most recently asked node as its node.
+    const std::optional<NewestReplica>& newest_replica() const noexcept {
+        return _newest_replica;
     }
 
 private:
@@ -66,20 +77,19 @@ private:
         int _node;
     };
 
-    class BucketChecksumGroup {
-    public:
-        BucketChecksumGroup(const BucketCopy& c) :
-            copy(c),
-            sent(0), received(false), returnCode(api::ReturnCode::OK)
+    struct BucketChecksumGroup {
+        explicit BucketChecksumGroup(const BucketCopy& c)
+            : copy(c), sent(0), returnCode(api::ReturnCode::OK), to_node(UINT16_MAX), received(false)
         {}
 
         BucketCopy copy;
         api::StorageMessage::Id sent;
-        bool received;
         api::ReturnCode returnCode;
+        uint16_t to_node;
+        bool received;
     };
 
-    typedef std::vector<BucketChecksumGroup> GroupVector;
+    using GroupVector = std::vector<BucketChecksumGroup>;
 
     // Organize the different copies by bucket/checksum pairs. We should
     // try to request GETs from each bucket and each different checksum
@@ -94,13 +104,14 @@ private:
     api::ReturnCode _returnCode;
     std::shared_ptr<document::Document> _doc;
 
-    std::optional<api::Timestamp> _lastModified;
+    std::optional<NewestReplica> _newest_replica;
 
     PersistenceOperationMetricSet& _metric;
     framework::MilliSecTimer _operationTimer;
     std::vector<std::pair<document::BucketId, uint16_t>> _replicas_in_db;
     api::InternalReadConsistency _desired_read_consistency;
     bool _has_replica_inconsistency;
+    bool _any_replicas_failed;
 
     void sendReply(DistributorMessageSender& sender);
     bool sendForChecksum(DistributorMessageSender& sender, const document::BucketId& id, GroupVector& res);
