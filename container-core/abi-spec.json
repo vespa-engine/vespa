@@ -871,5 +871,55 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
+  },
+  "ai.vespa.cloud.Environment": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static ai.vespa.cloud.Environment[] values()",
+      "public static ai.vespa.cloud.Environment valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum ai.vespa.cloud.Environment dev",
+      "public static final enum ai.vespa.cloud.Environment perf",
+      "public static final enum ai.vespa.cloud.Environment test",
+      "public static final enum ai.vespa.cloud.Environment staging",
+      "public static final enum ai.vespa.cloud.Environment prod"
+    ]
+  },
+  "ai.vespa.cloud.SystemInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.cloud.config.ConfigserverConfig)",
+      "public void <init>(ai.vespa.cloud.Zone)",
+      "public ai.vespa.cloud.Zone zone()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.cloud.Zone": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(ai.vespa.cloud.Environment, java.lang.String)",
+      "public ai.vespa.cloud.Environment environment()",
+      "public java.lang.String region()",
+      "public java.lang.String toString()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public static ai.vespa.cloud.Zone from(java.lang.String)"
+    ],
+    "fields": []
   }
 }
