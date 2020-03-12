@@ -200,7 +200,7 @@ public class Flags {
             NODE_TYPE, HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
-            "enable-disk-write-test", false,
+            "enable-disk-write-test", true,
             "Regularly issue a small write to disk and fail the host if it is not successful",
             "Takes effect on next node agent tick (but does not clear existing failure reports)",
             HOSTNAME);
