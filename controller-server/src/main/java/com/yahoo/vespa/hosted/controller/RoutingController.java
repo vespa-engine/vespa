@@ -119,27 +119,28 @@ public class RoutingController {
     public EndpointList endpointsOf(Instance instance) {
         var endpoints = new LinkedHashSet<Endpoint>();
         // Add global endpoints provided by rotations
+        var application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(instance.id())));
         for (var rotation : instance.rotations()) {
-            var zones = rotation.regions().stream()
-                                .map(region -> ZoneId.from(Environment.prod, region))
-                                .collect(Collectors.toList());
+            var deployments = rotation.regions().stream()
+                                      .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
+                                      .collect(Collectors.toList());
             EndpointList.global(RoutingId.of(instance.id(), rotation.endpointId()),
-                                controller.system(), commonRoutingMethodsOf(zones))
+                                controller.system(), routingMethodsAvailableTo(deployments, application.get()))
                         .requiresRotation()
                         .forEach(endpoints::add);
         }
         // Add global endpoints provided by routing policies
-        var zonesByRoutingId = new LinkedHashMap<RoutingId, List<ZoneId>>();
+        var deploymentsByRoutingId = new LinkedHashMap<RoutingId, List<DeploymentId>>();
         for (var policy : routingPolicies.get(instance.id()).values()) {
             if (!policy.status().isActive()) continue;
             for (var endpointId : policy.endpoints()) {
                 var routingId = RoutingId.of(instance.id(), endpointId);
-                zonesByRoutingId.putIfAbsent(routingId, new ArrayList<>());
-                zonesByRoutingId.get(routingId).add(policy.id().zone());
+                deploymentsByRoutingId.putIfAbsent(routingId, new ArrayList<>());
+                deploymentsByRoutingId.get(routingId).add(new DeploymentId(instance.id(), policy.id().zone()));
             }
         }
-        zonesByRoutingId.forEach((routingId, zones) -> {
-            EndpointList.global(routingId, controller.system(), commonRoutingMethodsOf(zones))
+        deploymentsByRoutingId.forEach((routingId, deployments) -> {
+            EndpointList.global(routingId, controller.system(), routingMethodsAvailableTo(deployments, application.get()))
                         .not().requiresRotation()
                         .forEach(endpoints::add);
         });
@@ -246,22 +247,28 @@ public class RoutingController {
                                                                            Priority.normal));
     }
 
-    /** Returns the routing methods that are common across given zones */
-    private List<RoutingMethod> commonRoutingMethodsOf(List<ZoneId> zones) {
-        var zonesByMethod = new HashMap<RoutingMethod, Set<ZoneId>>();
-        for (var zone : zones) {
-            for (var method : controller.zoneRegistry().routingMethods(zone)) {
-                zonesByMethod.putIfAbsent(method, new LinkedHashSet<>());
-                zonesByMethod.get(method).add(zone);
+    /** Returns the routing methods that are available across given deployments */
+    private List<RoutingMethod> routingMethodsAvailableTo(List<DeploymentId> deployments, Application application) {
+        var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
+        for (var deployment : deployments) {
+            for (var method : controller.zoneRegistry().routingMethods(deployment.zoneId())) {
+                deploymentsByMethod.putIfAbsent(method, new LinkedHashSet<>());
+                deploymentsByMethod.get(method).add(deployment);
             }
         }
         var routingMethods = new ArrayList<RoutingMethod>();
-        zonesByMethod.forEach((method, z) -> {
-            if (z.containsAll(zones)) {
+        deploymentsByMethod.forEach((method, deploymentsOfMethod) -> {
+            if (deploymentsOfMethod.containsAll(deployments)) {
+                if (method.isDirect() && !canRouteDirectlyTo(deployments, application)) return;
                 routingMethods.add(method);
             }
         });
         return Collections.unmodifiableList(routingMethods);
+    }
+
+    /** Returns whether traffic can be directly routed to all given deployments */
+    private boolean canRouteDirectlyTo(List<DeploymentId> deployments, Application application) {
+        return deployments.stream().allMatch(deployment -> canRouteDirectlyTo(deployment, application));
     }
 
     /** Returns whether traffic can be directly routed to given deployment */
@@ -279,7 +286,11 @@ public class RoutingController {
         var instance = application.require(deploymentId.applicationId().instance());
         var compileVersion = Optional.ofNullable(instance.deployments().get(deploymentId.zoneId()))
                                      .map(Deployment::applicationVersion)
-                                     .flatMap(ApplicationVersion::compileVersion);
+                                     // Use compile version of the deployed version
+                                     .flatMap(ApplicationVersion::compileVersion)
+                                     // ... or compile version of the last submitted application package. This is the
+                                     //     case for initial deployments.
+                                     .or(() -> application.latestVersion().flatMap(ApplicationVersion::compileVersion));
         if (compileVersion.isEmpty()) return false;
         if (compileVersion.get().isBefore(DIRECT_ROUTING_MIN_VERSION)) return false;
 

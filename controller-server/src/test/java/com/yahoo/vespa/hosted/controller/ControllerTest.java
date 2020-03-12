@@ -817,8 +817,8 @@ public class ControllerTest {
         var zone1 = ZoneId.from("prod", "us-west-1");
         var zone2 = ZoneId.from("prod", "us-east-3");
         var applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("default")
-                .environment(Environment.prod)
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                 .endpoint("default", "default", zone1.region().value(), zone2.region().value())
                 .endpoint("east", "default", zone2.region().value())
                 .region(zone1.region())
@@ -838,6 +838,7 @@ public class ControllerTest {
                 new Record(Record.Type.ALIAS,
                            RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
                            RecordData.from("lb-0--tenant:application:default--prod.us-east-3/dns-zone-1/prod.us-east-3")),
+
                 // The 'default' global endpoint, pointing to both zones with shared routing, via rotation
                 new Record(Record.Type.CNAME,
                            RecordName.from("application--tenant.global.vespa.oath.cloud"),
