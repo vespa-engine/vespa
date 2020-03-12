@@ -15,7 +15,6 @@ public class SystemInfo {
     private final Zone zone;
 
     /** Do not use */
-    @SuppressWarnings("unused")
     @Inject
     public SystemInfo(ConfigserverConfig config) {
         this.zone = new Zone(Environment.valueOf(config.environment()), config.region());
