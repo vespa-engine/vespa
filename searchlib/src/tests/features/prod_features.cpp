@@ -474,11 +474,11 @@ Test::testCloseness()
     }
 
     { // Test executor.
-        assertCloseness(1,   "pos", 0);
+        TEST_DO(assertCloseness(1,   "pos", 0));
         assertCloseness(0.8, "pos", 1802661);
         assertCloseness(0,   "pos", 9013306);
         // use non-existing attribute -> default distance
-        assertCloseness(0, "no", 0);
+        TEST_DO(assertCloseness(0, "no", 0));
 
         // use non-default maxDistance
         assertCloseness(1,   "pos", 0,   100);
@@ -852,15 +852,23 @@ Test::testDistance()
         { // test default distance
             { // non-existing attribute
                 FtFeatureTest ft(_factory, "distance(pos)");
+                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
                 ft.getQueryEnv().getLocation().setValid(true);
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
+            }
+            { // non-existing field
+                FtFeatureTest ft(_factory, "distance(pos)");
+                ft.getQueryEnv().getLocation().setValid(true);
+                ASSERT_TRUE(ft.setup());
+                ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", std::numeric_limits<feature_t>::max())));
             }
             { // wrong attribute type (float)
                 FtFeatureTest ft(_factory, "distance(pos)");
                 AttributePtr pos = AttributeFactory::createAttribute("pos", AVC(AVBT::FLOAT,  AVCT::SINGLE));
                 pos->commit();
                 ft.getIndexEnv().getAttributeMap().add(pos);
+                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
                 ft.getQueryEnv().getLocation().setValid(true);
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
@@ -870,6 +878,7 @@ Test::testDistance()
                 AttributePtr pos = AttributeFactory::createAttribute("pos", AVC(AVBT::STRING,  AVCT::SINGLE));
                 pos->commit();
                 ft.getIndexEnv().getAttributeMap().add(pos);
+                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
                 ft.getQueryEnv().getLocation().setValid(true);
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
@@ -879,6 +888,7 @@ Test::testDistance()
                 AttributePtr pos = AttributeFactory::createAttribute("pos", AVC(AVBT::INT64,  AVCT::WSET));
                 pos->commit();
                 ft.getIndexEnv().getAttributeMap().add(pos);
+                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, DataType::INT64, "pos");
                 ft.getQueryEnv().getLocation().setValid(true);
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
@@ -896,6 +906,7 @@ Test::setupForDistanceTest(FtFeatureTest &ft, const vespalib::string & attrName,
     pos->addReservedDoc();
     pos->addDocs(1);
     ft.getIndexEnv().getAttributeMap().add(pos);
+    ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, DataType::INT64, attrName);
 
     auto ia = dynamic_cast<IntegerAttribute *>(pos.get());
     for (const auto & p : positions) {
