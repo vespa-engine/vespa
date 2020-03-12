@@ -1066,9 +1066,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setString("instance", deploymentId.applicationId().instance().value()); // pointless
         response.setString("environment", deploymentId.zoneId().environment().value());
         response.setString("region", deploymentId.zoneId().region().value());
-
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
-        var instance = application.instances().get(deploymentId.applicationId().instance());
 
         // Add zone endpoints
         var endpointArray = response.setArray("endpoints");
@@ -1081,7 +1079,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         // Add global endpoints
         if (deploymentId.zoneId().environment().isProduction()) { // Global endpoints can only point to production deployments
-            for (var endpoint : controller.routing().endpointsOf(instance).not().legacy()) {
+            for (var endpoint : controller.routing().endpointsOf(application, deploymentId.applicationId().instance()).not().legacy()) {
                 // TODO(mpolden): Pass cluster name. Cluster that a global endpoint points to is not available at this level.
                 toSlime(endpoint, "", endpointArray.addObject());
             }
@@ -1102,6 +1100,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
+        var instance = application.instances().get(deploymentId.applicationId().instance());
         if (instance != null) {
             if (!instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
                 toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);

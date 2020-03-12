@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -1503,6 +1504,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
                                                                             List.of(RoutingMethod.exclusive, RoutingMethod.shared));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                 .environment(Environment.prod)
                 .instances("instance1")
                 .region(zone.region().value())

@@ -30,7 +30,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * An application. Belongs to a {@link Tenant}, and may have many {@link Instance}s.
+ * An application. Belongs to a {@link Tenant}, and may have multiple {@link Instance}s.
  *
  * This is immutable.
  *

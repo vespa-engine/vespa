@@ -6,6 +6,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -13,6 +15,8 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -26,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
@@ -42,6 +47,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -697,7 +703,9 @@ public class ControllerTest {
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodZone = ZoneId.from("prod", "us-west-1");
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
-        var applicationPackage = new ApplicationPackageBuilder().environment(prodZone.environment())
+        var applicationPackage = new ApplicationPackageBuilder().athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                                                                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                                                                .environment(prodZone.environment())
                                                                 .region(prodZone.region())
                                                                 .build();
         // Deploy app1 in production
@@ -809,8 +817,8 @@ public class ControllerTest {
         var zone1 = ZoneId.from("prod", "us-west-1");
         var zone2 = ZoneId.from("prod", "us-east-3");
         var applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("default")
-                .environment(Environment.prod)
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                 .endpoint("default", "default", zone1.region().value(), zone2.region().value())
                 .endpoint("east", "default", zone2.region().value())
                 .region(zone1.region())
@@ -830,6 +838,7 @@ public class ControllerTest {
                 new Record(Record.Type.ALIAS,
                            RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
                            RecordData.from("lb-0--tenant:application:default--prod.us-east-3/dns-zone-1/prod.us-east-3")),
+
                 // The 'default' global endpoint, pointing to both zones with shared routing, via rotation
                 new Record(Record.Type.CNAME,
                            RecordName.from("application--tenant.global.vespa.oath.cloud"),
@@ -845,6 +854,42 @@ public class ControllerTest {
                            RecordName.from("east--application--tenant.global.vespa.oath.cloud"),
                            RecordData.from("rotation-fqdn-02.")));
         assertEquals(expectedRecords, List.copyOf(tester.controllerTester().nameService().records()));
+    }
+
+    @Test
+    public void testDirectRoutingSupport() {
+        var context = tester.newDeploymentContext();
+        var zone = ZoneId.from("prod", "us-west-1");
+        var applicationPackageBuilder = new ApplicationPackageBuilder()
+                .region(zone.region());
+        tester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.shared, RoutingMethod.sharedLayer4);
+        Supplier<Set<RoutingMethod>> routingMethods = () -> tester.controller().routing().endpointsOf(context.deploymentIdIn(zone))
+                                                                  .asList()
+                                                                  .stream()
+                                                                  .map(Endpoint::routingMethod)
+                                                                  .collect(Collectors.toSet());
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.ALLOW_DIRECT_ROUTING.id(), false);
+
+        // Without everything
+        context.submit(applicationPackageBuilder.build()).deploy();
+        assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
+
+        // Without Athenz service
+        context.submit(applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION).build())
+               .deploy();
+        assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
+
+        // Without feature flag
+        var applicationPackage = applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                                                          .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                                                          .build();
+        context.submit(applicationPackage).deploy();
+        assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
+
+        // With everything required
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.ALLOW_DIRECT_ROUTING.id(), true);
+        context.submit(applicationPackage).deploy();
+        assertEquals(Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4), routingMethods.get());
     }
 
 }

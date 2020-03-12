@@ -5,6 +5,8 @@ import com.google.common.collect.Sets;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
@@ -14,6 +16,7 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -57,10 +60,9 @@ public class RoutingPoliciesTest {
     private final ZoneId zone2 = ZoneId.from("prod", "us-central-1");
     private final ZoneId zone3 = ZoneId.from("prod", "us-east-3");
 
-    private final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .region(zone1.region())
-            .region(zone2.region())
-            .build();
+    private final ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                                                     .region(zone2.region())
+                                                                                     .build();
 
     @Test
     public void global_routing_policies() {
@@ -69,7 +71,7 @@ public class RoutingPoliciesTest {
         var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
         int clustersPerZone = 2;
         int numberOfDeployments = 2;
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0")
@@ -88,7 +90,7 @@ public class RoutingPoliciesTest {
                      tester.policiesOf(context1.instance().id()).size());
 
         // Applications gains a new deployment
-        ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
+        ApplicationPackage applicationPackage2 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
@@ -108,7 +110,7 @@ public class RoutingPoliciesTest {
         // Another application is deployed with a single cluster and global endpoint
         var endpoint4 = "r0.app2.tenant1.global.vespa.oath.cloud";
         tester.provisionLoadBalancers(1, context2.instanceId(), zone1, zone2);
-        var applicationPackage3 = new ApplicationPackageBuilder()
+        var applicationPackage3 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0")
@@ -117,7 +119,7 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context2.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
 
         // All endpoints for app1 are removed
-        ApplicationPackage applicationPackage4 = new ApplicationPackageBuilder()
+        ApplicationPackage applicationPackage4 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
@@ -231,7 +233,7 @@ public class RoutingPoliciesTest {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
 
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region().value())
                 .endpoint("r0", "c0")
                 .build();
@@ -300,7 +302,7 @@ public class RoutingPoliciesTest {
 
         // Initial load balancer is provisioned
         tester.provisionLoadBalancers(1, context.instanceId(), zone1);
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .build();
 
@@ -341,7 +343,7 @@ public class RoutingPoliciesTest {
 
         // Provision load balancers and deploy application
         tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
@@ -395,7 +397,7 @@ public class RoutingPoliciesTest {
         assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().globalRouting().changedAt());
 
         // Deployment is set out through a new deployment.xml
-        var applicationPackage2 = new ApplicationPackageBuilder()
+        var applicationPackage2 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region(), false)
                 .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
@@ -406,7 +408,7 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1);
 
         // ... back in
-        var applicationPackage3 = new ApplicationPackageBuilder()
+        var applicationPackage3 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
@@ -425,7 +427,7 @@ public class RoutingPoliciesTest {
         var contexts = List.of(context1, context2);
 
         // Deploy applications
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("default", "c0", zone1.region().value(), zone2.region().value())
@@ -493,7 +495,7 @@ public class RoutingPoliciesTest {
 
         var context = tester.tester.newDeploymentContext();
         var endpointId = EndpointId.of("r0");
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .trustDefaultCertificate()
                 .region(sharedRegion)
                 .endpoint(endpointId.id(), "default")
@@ -523,7 +525,7 @@ public class RoutingPoliciesTest {
 
         // Provision load balancers and deploy application
         tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
@@ -570,6 +572,13 @@ public class RoutingPoliciesTest {
             assertSame(GlobalRouting.Status.in, policy.status().globalRouting().status());
         }
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+    }
+
+    /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
+    private static ApplicationPackageBuilder applicationPackageBuilder() {
+        return new ApplicationPackageBuilder()
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION);
     }
     
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count) {

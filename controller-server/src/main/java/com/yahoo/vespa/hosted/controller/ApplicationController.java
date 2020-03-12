@@ -320,7 +320,7 @@ public class ApplicationController {
 
                 endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(instance, zone);
 
-                endpoints = controller.routing().registerEndpointsInDns(applicationPackage.deploymentSpec(), instance, zone);
+                endpoints = controller.routing().registerEndpointsInDns(application.get(), job.application().instance(), zone);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
@@ -393,7 +393,7 @@ public class ApplicationController {
 
                 endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(application.get().require(instance), zone);
 
-                endpoints = controller.routing().registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
+                endpoints = controller.routing().registerEndpointsInDns(application.get(), instance, zone);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
@@ -565,7 +565,7 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments: " + deployments);
 
             for (Instance instance : application.get().instances().values()) {
-                controller.routing().removeEndpointsInDns(instance);
+                controller.routing().removeEndpointsInDns(application.get(), instance.name());
                 application = application.without(instance.name());
             }
 
@@ -600,7 +600,7 @@ public class ApplicationController {
                 &&   application.get().deploymentSpec().instanceNames().contains(instanceId.instance()))
                 throw new IllegalArgumentException("Can not delete '" + instanceId + "', which is specified in 'deployment.xml'; remove it there first");
 
-            controller.routing().removeEndpointsInDns(application.get().require(instanceId.instance()));
+            controller.routing().removeEndpointsInDns(application.get(), instanceId.instance());
             curator.writeApplication(application.without(instanceId.instance()).get());
             controller.jobController().collectGarbage();
             log.info("Deleted " + instanceId);

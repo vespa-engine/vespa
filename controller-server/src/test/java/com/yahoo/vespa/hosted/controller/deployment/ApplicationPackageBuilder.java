@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -57,6 +58,7 @@ public class ApplicationPackageBuilder {
     private String searchDefinition = "search test { }";
     private boolean explicitSystemTest = false;
     private boolean explicitStagingTest = false;
+    private Version compileVersion = Version.fromString("6.1");
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = OptionalInt.of(majorVersion);
@@ -164,6 +166,11 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder compileVersion(Version version) {
+        compileVersion = version;
+        return this;
+    }
+
     public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
         this.athenzIdentityAttributes = String.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
                                                       service.value());
@@ -260,8 +267,8 @@ public class ApplicationPackageBuilder {
         return searchDefinition.getBytes(UTF_8);
     }
 
-    private static byte[] buildMeta() {
-        return "{\"compileVersion\":\"6.1\",\"buildTime\":1000}".getBytes(UTF_8);
+    private static byte[] buildMeta(Version compileVersion) {
+        return ("{\"compileVersion\":\"" + compileVersion.toFullString() + "\",\"buildTime\":1000}").getBytes(UTF_8);
     }
 
     public ApplicationPackage build() {
@@ -285,7 +292,7 @@ public class ApplicationPackageBuilder {
             out.write(searchDefinition());
             out.closeEntry();
             out.putNextEntry(new ZipEntry(dir + "build-meta.json"));
-            out.write(buildMeta());
+            out.write(buildMeta(compileVersion));
             out.closeEntry();
             out.putNextEntry(new ZipEntry(dir + "security/clients.pem"));
             out.write(X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
@@ -307,7 +314,7 @@ public class ApplicationPackageBuilder {
             out.write(deploymentXml.getBytes(UTF_8));
             out.closeEntry();
             out.putNextEntry(new ZipEntry("build-meta.json"));
-            out.write(buildMeta());
+            out.write(buildMeta(Version.fromString("6.1")));
             out.closeEntry();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

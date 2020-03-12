@@ -1087,7 +1087,7 @@ public class DeploymentTriggerTest {
         services.zoneRegistry()
                 .setSystemName(SystemName.cd)
                 .setZones(zones)
-                .setRoutingMethod(zones, RoutingMethod.exclusive);
+                .setRoutingMethod(zones, RoutingMethod.shared);
         tester = new DeploymentTester(new ControllerTester(services));
         tester.configServer().bootstrap(services.zoneRegistry().zones().all().ids(), SystemApplication.values());
         tester.controllerTester().upgradeSystem(Version.fromString("6.1"));

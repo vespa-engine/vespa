@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
@@ -11,6 +13,7 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
@@ -258,7 +261,16 @@ public class InternalStepRunnerTest {
         var systemTestZone =  JobType.systemTest.zone(system());
         var stagingZone =  JobType.stagingTest.zone(system());
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(systemTestZone), ZoneApiMock.from(stagingZone));
-        app.newRun(JobType.systemTest);
+        var applicationPackage = new ApplicationPackageBuilder()
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .upgradePolicy("default")
+                .region("us-central-1")
+                .parallel("us-west-1", "us-east-3")
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                .build();
+        app.submit(applicationPackage)
+           .triggerJobs();
+
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
@@ -266,7 +278,7 @@ public class InternalStepRunnerTest {
         app.flushDnsUpdates();
         tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
         tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
-        tester.runner().run();;
+        tester.runner().run();
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
     }
