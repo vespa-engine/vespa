@@ -95,21 +95,20 @@ protected:
     vespalib::SocketAddress        _address;
     vespalib::SyncCryptoSocket::UP _socket;
 
-  std::string      _hostname;
-  int              _port;
-  bool             _keepAlive;
-  bool             _headerBenchmarkdataCoverage;
-  std::string      _extraHeaders;
+  const std::string    _hostname;
+  int                  _port;
+  bool                 _keepAlive;
+  bool                 _headerBenchmarkdataCoverage;
+  const std::string    _extraHeaders;
   vespalib::SocketSpec _sni_spec;
-  std::string      _host_header_value;
-  uint64_t         _reuseCount;
+  std::string          _host_header_value;
+  uint64_t             _reuseCount;
 
   size_t           _bufsize;
   char            *_buf;
   ssize_t          _bufused;
   ssize_t          _bufpos;
 
-  std::string      _headerinfo;
   unsigned int     _headerinfoPos;
 
   bool             _isOpen;
@@ -206,15 +205,14 @@ protected:
    * @param argv the argument array.
    * @param maxargs the size of 'argv'.
    **/
-  static char *SplitString(char *input, int &argc, char **argv,
-				       int maxargs);
+  static char *SplitString(char *input, int &argc, char **argv, int maxargs);
 
   /**
    * Read and parse the HTTP Header.
    *
    * @return success(true)/failure(fail)
    **/
-  bool ReadHTTPHeader();
+  bool ReadHTTPHeader(std::string & headerinfo);
 
   /**
    * Read and parse a chunk header. Only used with chunked encoding.
@@ -266,7 +264,7 @@ public:
    * @param content if usePost is true, the content to post
    * @param cLen length of content in bytes
    **/
-  bool Open(const char *url, bool usePost = false, const char *content = 0, int cLen = 0);
+  bool Open(std::string & headerinfo, const char *url, bool usePost = false, const char *content = 0, int cLen = 0);
 
   /**
    * Read data from the url we are currently connected to. This method

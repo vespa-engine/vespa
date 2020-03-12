@@ -37,7 +37,6 @@ HTTPClient::HTTPClient(vespalib::CryptoEngine::SP engine, const char *hostname, 
     _buf(new char[_bufsize]),
     _bufused(0),
     _bufpos(0),
-    _headerinfo(),
     _isOpen(false),
     _httpVersion(0),
     _requestStatus(0),
@@ -219,7 +218,7 @@ HTTPClient::SplitString(char *input, int &argc, char **argv, int maxargs)
 }
 
 bool
-HTTPClient::ReadHTTPHeader()
+HTTPClient::ReadHTTPHeader(std::string & headerinfo)
 {
     int     lineLen;
     char    line[4096];
@@ -268,8 +267,8 @@ HTTPClient::ReadHTTPHeader()
             }
 
             // Make sure to have enough memory in _headerinfo
-            _headerinfo += benchmark_data;
-            _headerinfo += "\n";
+            headerinfo += benchmark_data;
+            headerinfo += "\n";
         }
 
         SplitString(line, argc, argv, 32);
@@ -354,7 +353,7 @@ HTTPClient::ReadChunkHeader()
 }
 
 bool
-HTTPClient::Open(const char *url, bool usePost, const char *content, int cLen)
+HTTPClient::Open(std::string & headerinfo, const char *url, bool usePost, const char *content, int cLen)
 {
     if (_isOpen)
         Close();
@@ -363,7 +362,7 @@ HTTPClient::Open(const char *url, bool usePost, const char *content, int cLen)
     _dataRead  = 0;
     _dataDone  = false;
     _isOpen    = Connect(url, usePost, content, cLen);
-    if(!_isOpen || !ReadHTTPHeader()) {
+    if(!_isOpen || !ReadHTTPHeader(headerinfo)) {
         Close();
         return false;
     }
@@ -532,20 +531,20 @@ HTTPClient::Fetch(const char *url, std::ostream *file,
     ssize_t readRes  = 0;
     ssize_t written  = 0;
 
-    if (!Open(url, usePost, content, contentLen)) {
+    std::string headerinfo;
+    if (!Open(headerinfo, url, usePost, content, contentLen)) {
         return FetchStatus(false, _requestStatus, _totalHitCount, 0);
     }
 
     // Write headerinfo
     if (file) {
-        file->write(_headerinfo.c_str(), _headerinfo.length());
+        file->write(headerinfo.c_str(), headerinfo.length());
         if (file->fail()) {
             Close();
             return FetchStatus(false, _requestStatus, _totalHitCount, 0);
         }
         file->write("\r\n", 2);
         // Reset header data.
-        _headerinfo = "";
     }
 
     while((readRes = Read(buf, buflen)) > 0) {
