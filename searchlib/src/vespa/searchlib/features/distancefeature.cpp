@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distancefeature.h"
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/document/datatype/positiondatatype.h>
@@ -8,13 +9,58 @@
 #include <vespa/vespalib/util/stash.h>
 #include <cmath>
 #include <limits>
+#include "utils.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.distancefeature");
 
 using namespace search::fef;
+using namespace search::index::schema;
 
 namespace search::features {
+
+/** Implements the executor for converting NNS rawscore to a distance feature. */
+class ConvertRawscoreExecutor : public fef::FeatureExecutor {
+private:
+    std::vector<fef::TermFieldHandle> _handles;
+    const fef::MatchData             *_md;
+    void handle_bind_match_data(const fef::MatchData &md) override {
+        _md = &md;
+    }
+public:
+    ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId);
+    void execute(uint32_t docId) override;
+};
+
+ConvertRawscoreExecutor::ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId)
+  : _handles(),
+    _md(nullptr)
+{
+    _handles.reserve(env.getNumTerms());
+    for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
+        search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
+        if (handle != search::fef::IllegalHandle) {
+            _handles.push_back(handle);
+        }
+    }
+}
+
+void
+ConvertRawscoreExecutor::execute(uint32_t docId)
+{
+    feature_t output = std::numeric_limits<feature_t>::max();
+    assert(_md);
+    for (auto handle : _handles) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(handle);
+        if (tfmd->getDocId() == docId) {
+            // add conversion from "closeness" RawScore later:
+            feature_t converted =  tfmd->getRawScore();
+            output = std::min(output, converted);
+        }
+    }
+    outputs().set_number(0, output);
+}
+
 
 feature_t
 DistanceExecutor::calculateDistance(uint32_t docId)
@@ -82,7 +128,11 @@ const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
 
 DistanceBlueprint::DistanceBlueprint() :
     Blueprint("distance"),
-    _posAttr()
+    _posAttr(),
+    _attr_id(search::index::Schema::UNKNOWN_FIELD_ID),
+    _use_geo_pos(false),
+    _use_nns_tensor(false),
+    _use_item_label(false)
 {
 }
 
@@ -101,30 +151,69 @@ DistanceBlueprint::createInstance() const
 }
 
 bool
+DistanceBlueprint::setup_geopos(const IIndexEnvironment & env,
+                                const vespalib::string &attr)
+{
+    _posAttr = attr;
+    _use_geo_pos = true;
+    describeOutput("out", "The euclidean distance from the query position.");
+    env.hintAttributeAccess(_posAttr);
+    return true;
+}
+
+bool
+DistanceBlueprint::setup_nns(const IIndexEnvironment & env,
+                             const vespalib::string &attr)
+{
+    _posAttr = attr;
+    _use_nns_tensor = true;
+    describeOutput("out", "The euclidean distance from the query position.");
+    env.hintAttributeAccess(_posAttr);
+    return true;
+}
+
+bool
 DistanceBlueprint::setup(const IIndexEnvironment & env,
                          const ParameterList & params)
 {
-    _posAttr = params[0].getValue();
-    describeOutput("out", "The euclidean distance from the query position.");
-    env.hintAttributeAccess(_posAttr);
-    env.hintAttributeAccess(document::PositionDataType::getZCurveFieldName(_posAttr));
-    return true;
+    vespalib::string arg = params[0].getValue();
+    const FieldInfo *fi = env.getFieldByName(arg);
+    if (fi != nullptr && fi->hasAttribute()) {
+        auto dt = fi->get_data_type();
+        auto ct = fi->collection();
+        if (dt == DataType::TENSOR && ct == CollectionType::SINGLE) {
+            _attr_id = fi->id();
+            return setup_nns(env, arg);
+        }
+        // could check if dt is DataType::INT64
+        // could check if ct is CollectionType::SINGLE or CollectionType::ARRAY)
+        return setup_geopos(env, arg);
+    }
+    vespalib::string z = document::PositionDataType::getZCurveFieldName(arg);
+    fi = env.getFieldByName(z);
+    if (fi != nullptr && fi->hasAttribute()) {
+        return setup_geopos(env, z);
+    }
+    return false;
 }
 
 FeatureExecutor &
 DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
+    if (_use_nns_tensor) {
+        const search::attribute::IAttributeVector * attr = env.getAttributeContext().getAttribute(_posAttr);
+        if (attr != nullptr) {
+             return stash.create<ConvertRawscoreExecutor>(env, _attr_id);
+        } else {
+             LOG(warning, "unexpected missing attribute '%s'\n", _posAttr.c_str());
+        }
+    }
     const search::attribute::IAttributeVector * pos = nullptr;
     const Location & location = env.getLocation();
-    LOG(debug, "DistanceBlueprint::createExecutor location.valid='%s', '%s', alternatively '%s'",
-               location.isValid() ? "true" : "false", _posAttr.c_str(), document::PositionDataType::getZCurveFieldName(_posAttr).c_str());
-    if (location.isValid()) {
+    LOG(debug, "DistanceBlueprint::createExecutor location.valid='%s', attribute='%s'",
+        location.isValid() ? "true" : "false", _posAttr.c_str());
+    if (_use_geo_pos && location.isValid()) {
         pos = env.getAttributeContext().getAttribute(_posAttr);
-        if (pos == nullptr) {
-            LOG(debug, "Failed to find attribute '%s', resorting too '%s'",
-                       _posAttr.c_str(), document::PositionDataType::getZCurveFieldName(_posAttr).c_str());
-            pos = env.getAttributeContext().getAttribute(document::PositionDataType::getZCurveFieldName(_posAttr));
-        }
         if (pos != nullptr) {
             if (!pos->isIntegerType()) {
                 LOG(warning, "The position attribute '%s' is not an integer attribute. Will use default distance.",
