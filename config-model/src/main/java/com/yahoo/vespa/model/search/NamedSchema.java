@@ -30,9 +30,9 @@ public class NamedSchema {
     }
 
     //Find search definition from a collection with the name specified
-    public static NamedSchema findByName(final String searchDefinitionName, Collection<NamedSchema> searchDefinitions) {
-        for (NamedSchema candidate : searchDefinitions) {
-            if (candidate.getName().equals(searchDefinitionName) )
+    public static NamedSchema findByName(String schemaName, Collection<NamedSchema> schemas) {
+        for (NamedSchema candidate : schemas) {
+            if (candidate.getName().equals(schemaName) )
                 return candidate;
         }
 

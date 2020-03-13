@@ -7,15 +7,15 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Represents a single searchdefinition file.
+ * Represents a single schema file.
  *
  * @author arnej27959
  */
-public class SearchDefinitionXMLHandler implements Serializable {
+public class SchemaDefinitionXMLHandler implements Serializable {
 
     private String sdName;
 
-    public SearchDefinitionXMLHandler(ModelElement elem) {
+    public SchemaDefinitionXMLHandler(ModelElement elem) {
         sdName = elem.stringAttribute("name");
         if (sdName == null) {
             sdName = elem.stringAttribute("type");
@@ -24,8 +24,8 @@ public class SearchDefinitionXMLHandler implements Serializable {
 
     public String getName() { return sdName; }
 
-    public NamedSchema getResponsibleSearchDefinition(List<NamedSchema> searchDefinitions) {
-        return NamedSchema.findByName(getName(), searchDefinitions );
+    public NamedSchema getResponsibleSearchDefinition(List<NamedSchema> schemas) {
+        return NamedSchema.findByName(getName(), schemas );
     }
 
 }

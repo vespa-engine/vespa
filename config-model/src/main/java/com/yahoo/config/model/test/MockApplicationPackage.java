@@ -108,7 +108,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public Reader getHosts() {
-        if (hostsS==null) return null;
+        if (hostsS == null) return null;
         return new StringReader(hostsS);
     }
 
@@ -200,9 +200,9 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     public static ApplicationPackage fromSearchDefinitionDirectory(String dir) {
         return new MockApplicationPackage.Builder()
-                .withEmptyHosts()
-                .withEmptyServices()
-                .withSearchDefinitionDir(dir).build();
+                       .withEmptyHosts()
+                       .withEmptyServices()
+                       .withSchemaDir(dir).build();
     }
 
     public static class Builder {
@@ -210,8 +210,8 @@ public class MockApplicationPackage implements ApplicationPackage {
         private File root = new File("nonexisting");
         private String hosts = null;
         private String services = null;
-        private List<String> searchDefinitions = Collections.emptyList();
-        private String searchDefinitionDir = null;
+        private List<String> schemas = Collections.emptyList();
+        private String schemaDir = null;
         private String deploymentSpec = null;
         private String validationOverrides = null;
         private boolean failOnValidateXml = false;
@@ -245,17 +245,17 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public Builder withSearchDefinition(String searchDefinition) {
-            this.searchDefinitions = Collections.singletonList(searchDefinition);
+            this.schemas = Collections.singletonList(searchDefinition);
             return this;
         }
 
         public Builder withSearchDefinitions(List<String> searchDefinition) {
-            this.searchDefinitions = Collections.unmodifiableList(searchDefinition);
+            this.schemas = Collections.unmodifiableList(searchDefinition);
             return this;
         }
 
-        public Builder withSearchDefinitionDir(String searchDefinitionDir) {
-            this.searchDefinitionDir = searchDefinitionDir;
+        public Builder withSchemaDir(String schemaDir) {
+            this.schemaDir = schemaDir;
             return this;
         }
 
@@ -285,7 +285,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public ApplicationPackage build() {
-                return new MockApplicationPackage(root, hosts, services, searchDefinitions, searchDefinitionDir,
+                return new MockApplicationPackage(root, hosts, services, schemas, schemaDir,
                                                   deploymentSpec, validationOverrides, failOnValidateXml,
                                                   queryProfile, queryProfileType);
         }
