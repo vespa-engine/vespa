@@ -106,6 +106,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String DEPRECATED_CONTAINER_TAG = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
+    static final String SEARCH_HANDLER_CLASS = com.yahoo.search.handler.SearchHandler.class.getName();
+    static final String SEARCH_HANDLER_BINDING = "http://*/search/*";
+
     public enum Networking { disable, enable }
 
     private ApplicationPackage app;
@@ -769,7 +772,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(cluster.getSearch().getChains(),
                                                                                 "com.yahoo.search.handler.SearchHandler");
-        String[] defaultBindings = {"http://*/search/*"};
+        String[] defaultBindings = {SEARCH_HANDLER_BINDING};
         for (String binding: serverBindings(searchElement, defaultBindings)) {
             searchHandler.addServerBindings(binding);
         }
