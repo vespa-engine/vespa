@@ -143,6 +143,7 @@ public class Yum {
         return modified;
     }
 
+
     public GenericYumCommand install(YumPackageName... packages) {
         return newYumCommand("install", packages, INSTALL_NOOP_PATTERN);
     }
@@ -150,6 +151,11 @@ public class Yum {
     public GenericYumCommand install(String package1, String... packages) {
         return install(toYumPackageNameArray(package1, packages));
     }
+
+    public GenericYumCommand install(List<String> packages) {
+        return install(packages.stream().map(YumPackageName::fromString).toArray(YumPackageName[]::new));
+    }
+
 
     public GenericYumCommand upgrade(YumPackageName... packages) {
         return newYumCommand("upgrade", packages, UPGRADE_NOOP_PATTERN);
@@ -159,12 +165,21 @@ public class Yum {
         return upgrade(toYumPackageNameArray(package1, packages));
     }
 
+    public GenericYumCommand upgrade(List<String> packages) {
+        return upgrade(packages.stream().map(YumPackageName::fromString).toArray(YumPackageName[]::new));
+    }
+
+
     public GenericYumCommand remove(YumPackageName... packages) {
         return newYumCommand("remove", packages, REMOVE_NOOP_PATTERN);
     }
 
     public GenericYumCommand remove(String package1, String... packages) {
         return remove(toYumPackageNameArray(package1, packages));
+    }
+
+    public GenericYumCommand remove(List<String> packages) {
+        return remove(packages.stream().map(YumPackageName::fromString).toArray(YumPackageName[]::new));
     }
 
     static YumPackageName[] toYumPackageNameArray(String package1, String... packages) {
@@ -176,14 +191,9 @@ public class Yum {
         return array;
     }
 
-    private GenericYumCommand newYumCommand(String yumCommand,
-                                            YumPackageName[] packages,
-                                            Pattern noopPattern) {
-        return new GenericYumCommand(
-                terminal,
-                yumCommand,
-                List.of(packages),
-                noopPattern);
+
+    private GenericYumCommand newYumCommand(String yumCommand, YumPackageName[] packages, Pattern noopPattern) {
+        return new GenericYumCommand(terminal, yumCommand, List.of(packages), noopPattern);
     }
 
     public static class GenericYumCommand {
