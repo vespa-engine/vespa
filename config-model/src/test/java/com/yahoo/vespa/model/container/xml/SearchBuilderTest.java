@@ -16,8 +16,11 @@ import org.w3c.dom.Element;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
+import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_BINDING;
+import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_CLASS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.*;
 
@@ -54,8 +57,6 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         if (guiHandler == null) fail();
     }
 
-
-
     @Test
     public void search_handler_bindings_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
@@ -89,6 +90,25 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
         assertThat(discBindingsConfig, not(containsString("/search/*")));
+    }
+
+    @Test
+    public void search_handler_binding_can_be_stolen_by_user_configured_handler() {
+        var myHandler = "replaces_search_handler";
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <search />",
+                "  <handler id='" + myHandler + "'>",
+                "    <binding>" + SEARCH_HANDLER_BINDING + "</binding>",
+                "  </handler>",
+                nodesXml,
+                "</container>");
+
+        createModel(root, clusterElem);
+
+        var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
+        assertThat(discBindingsConfig.handlers(myHandler).serverBindings(0), is(SEARCH_HANDLER_BINDING));
+        assertThat(discBindingsConfig.handlers(SEARCH_HANDLER_CLASS), is(nullValue()));
     }
 
     // TODO: remove test when all containers are named 'container'
