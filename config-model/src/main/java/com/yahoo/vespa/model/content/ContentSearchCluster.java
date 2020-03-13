@@ -16,7 +16,7 @@ import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SearchCluster;
-import com.yahoo.vespa.model.search.Schemas;
+import com.yahoo.vespa.model.search.NamedSchema;
 import com.yahoo.vespa.model.search.SearchDefinitionXMLHandler;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
@@ -201,15 +201,15 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private void addSearchDefinitions(DeployState deployState, List<ModelElement> searchDefs, AbstractSearchCluster sc) {
         for (ModelElement e : searchDefs) {
             SearchDefinitionXMLHandler searchDefinitionXMLHandler = new SearchDefinitionXMLHandler(e);
-            Schemas searchDefinition =
-                    searchDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSearchDefinitions());
+            NamedSchema searchDefinition =
+                    searchDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSchemas());
             if (searchDefinition == null)
                 throw new RuntimeException("Search definition parsing error or file does not exist: '" +
                         searchDefinitionXMLHandler.getName() + "'");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
-            sc.getLocalSDS().add(new AbstractSearchCluster.SearchDefinitionSpec(searchDefinition,
-                    UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
+            sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(searchDefinition,
+                                                                      UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
             //need to get the document names from this sdfile
             sc.addDocumentNames(searchDefinition);
         }

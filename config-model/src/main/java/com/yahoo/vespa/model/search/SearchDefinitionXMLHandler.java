@@ -24,8 +24,8 @@ public class SearchDefinitionXMLHandler implements Serializable {
 
     public String getName() { return sdName; }
 
-    public Schemas getResponsibleSearchDefinition(List<Schemas> searchDefinitions) {
-        return Schemas.findByName(getName(), searchDefinitions );
+    public NamedSchema getResponsibleSearchDefinition(List<NamedSchema> searchDefinitions) {
+        return NamedSchema.findByName(getName(), searchDefinitions );
     }
 
 }

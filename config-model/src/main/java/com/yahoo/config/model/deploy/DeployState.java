@@ -36,7 +36,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
-import com.yahoo.vespa.model.search.Schemas;
+import com.yahoo.vespa.model.search.NamedSchema;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -61,7 +61,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final DeployLogger logger;
     private final FileRegistry fileRegistry;
     private final DocumentModel documentModel;
-    private final List<Schemas> schemas;
+    private final List<NamedSchema> schemas;
     private final ApplicationPackage applicationPackage;
     private final Optional<ConfigDefinitionRepo> configDefinitionRepo;
     private final Optional<ApplicationPackage> permanentApplicationPackage;
@@ -119,7 +119,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.previousModel = previousModel;
         this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
         this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
-        this.schemas = searchDocumentModel.getSearchDefinitions();
+        this.schemas = searchDocumentModel.getSchemas();
         this.documentModel = searchDocumentModel.getDocumentModel();
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
@@ -207,7 +207,7 @@ public class DeployState implements ConfigDefinitionStore {
         return applicationPackage;
     }
 
-    public List<Schemas> getSearchDefinitions() {
+    public List<NamedSchema> getSchemas() {
         return schemas;
     }
 

@@ -55,23 +55,23 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final File root;
     private final String hostsS;
     private final String servicesS;
-    private final List<String> searchDefinitions;
-    private final String searchDefinitionDir;
+    private final List<String> schemas;
+    private final String schemaDir;
     private final Optional<String> deploymentSpec;
     private final Optional<String> validationOverrides;
     private final boolean failOnValidateXml;
     private final QueryProfileRegistry queryProfileRegistry;
     private final ApplicationMetaData applicationMetaData;
 
-    protected MockApplicationPackage(File root, String hosts, String services, List<String> searchDefinitions,
-                                     String searchDefinitionDir,
+    protected MockApplicationPackage(File root, String hosts, String services, List<String> schemas,
+                                     String schemaDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
                                      String queryProfile, String queryProfileType) {
         this.root = root;
         this.hostsS = hosts;
         this.servicesS = services;
-        this.searchDefinitions = searchDefinitions;
-        this.searchDefinitionDir = searchDefinitionDir;
+        this.schemas = schemas;
+        this.schemaDir = schemaDir;
         this.deploymentSpec = Optional.ofNullable(deploymentSpec);
         this.validationOverrides = Optional.ofNullable(validationOverrides);
         this.failOnValidateXml = failOnValidateXml;
@@ -118,7 +118,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         SearchBuilder searchBuilder = new SearchBuilder(this,
                                                         new RankProfileRegistry(),
                                                         queryProfileRegistry);
-        for (String sd : searchDefinitions) {
+        for (String sd : schemas) {
             try  {
                 String name = searchBuilder.importString(sd);
                 readers.add(new NamedReader(name + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
@@ -184,7 +184,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public Reader getRankingExpression(String name) {
-        File expressionFile = new File(searchDefinitionDir, name);
+        File expressionFile = new File(schemaDir, name);
         try {
             return IOUtils.createReader(expressionFile, "utf-8");
         }

@@ -20,7 +20,7 @@ import com.yahoo.searchdefinition.DocumentOnlySearch;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.Schemas;
+import com.yahoo.vespa.model.search.NamedSchema;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,9 +59,9 @@ public class ApplicationDeployTest {
     public void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
         VespaModel model = new VespaModel(tester.app());
-        List<Schemas> searchDefinitions = tester.getSearchDefinitions();
+        List<NamedSchema> searchDefinitions = tester.getSearchDefinitions();
         assertEquals(searchDefinitions.size(), 5);
-        for (Schemas searchDefinition : searchDefinitions) {
+        for (NamedSchema searchDefinition : searchDefinitions) {
             Search s = searchDefinition.getSearch();
             switch (s.getName()) {
                 case "music":
@@ -99,7 +99,7 @@ public class ApplicationDeployTest {
 
         // Check that getFilename works
         ArrayList<String> sdFileNames = new ArrayList<>();
-        for (Schemas sd : searchDefinitions)
+        for (NamedSchema sd : searchDefinitions)
             sdFileNames.add(sd.getFilename());
         Collections.sort(sdFileNames);
         assertEquals("laptop.sd", sdFileNames.get(0));

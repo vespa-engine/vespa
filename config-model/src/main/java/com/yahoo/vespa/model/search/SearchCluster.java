@@ -132,7 +132,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
         return false;
     }
 
-    protected abstract void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState);
+    protected abstract void deriveAllSearchDefinitions(List<SchemaSpec> localSearches, DeployState deployState);
 
     public abstract void defaultDocumentsConfig();
     public abstract DerivedConfiguration getSdConfig();

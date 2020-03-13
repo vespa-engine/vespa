@@ -91,7 +91,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     }
 
     @Override
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> local, DeployState deployState) {
+    protected void deriveAllSearchDefinitions(List<SchemaSpec> local, DeployState deployState) {
         if (local.size() == 1) {
             deriveSingleSearchDefinition(local.get(0).getSearchDefinition().getSearch(), deployState);
         } else if (local.size() > 1){
