@@ -221,12 +221,7 @@ FeatureExecutor &
 DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     if (_use_nns_tensor) {
-        const search::attribute::IAttributeVector * attr = env.getAttributeContext().getAttribute(_arg_string);
-        if (attr != nullptr) {
-             return stash.create<ConvertRawscoreExecutor>(env, _attr_id);
-        } else {
-             LOG(warning, "unexpected missing attribute '%s'\n", _arg_string.c_str());
-        }
+        return stash.create<ConvertRawscoreExecutor>(env, _attr_id);
     }
     if (_use_item_label) {
         return stash.create<ConvertRawscoreExecutor>(env, _arg_string);
