@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
@@ -111,11 +112,9 @@ public class RoutingController {
             var deployments = rotation.regions().stream()
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
                                       .collect(Collectors.toList());
-            var targets = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
-            EndpointList.global(RoutingId.of(instance.id(), rotation.endpointId()), controller.system(), targets,
-                                routingMethodsOfAll(deployments, application))
-                        .requiresRotation()
-                        .forEach(endpoints::add);
+            computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()),
+                                   application, deployments).requiresRotation()
+                                                            .forEach(endpoints::add);
         }
         // Add global endpoints provided by routing policies
         var deploymentsByRoutingId = new LinkedHashMap<RoutingId, List<DeploymentId>>();
@@ -128,10 +127,7 @@ public class RoutingController {
             }
         }
         deploymentsByRoutingId.forEach((routingId, deployments) -> {
-            var targets = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
-            EndpointList.global(routingId, controller.system(), targets, routingMethodsOfAll(deployments, application))
-                        .not().requiresRotation()
-                        .forEach(endpoints::add);
+            computeGlobalEndpoints(routingId, application, deployments).not().requiresRotation().forEach(endpoints::add);
         });
         return EndpointList.copyOf(endpoints);
     }
@@ -291,6 +287,40 @@ public class RoutingController {
         return this.allowDirectRouting.with(FetchVector.Dimension.APPLICATION_ID,
                                             deploymentId.applicationId().serializedForm())
                                       .value();
+    }
+
+    /** Compute global endpoints for given routing ID, application and deployments */
+    private EndpointList computeGlobalEndpoints(RoutingId routingId, Application application, List<DeploymentId> deployments) {
+        var endpoints = new ArrayList<Endpoint>();
+        var directMethods = 0;
+        var targets = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
+        for (var method : routingMethodsOfAll(deployments, application)) {
+            if (method.isDirect() && ++directMethods > 1) {
+                throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
+                                                   "direct methods");
+            }
+            endpoints.add(Endpoint.of(routingId.application())
+                                  .named(routingId.endpointId(), targets)
+                                  .on(Port.fromRoutingMethod(method))
+                                  .routingMethod(method)
+                                  .in(controller.system()));
+            // TODO(mpolden): Remove this once all applications have migrated away from legacy endpoints
+            if (method == RoutingMethod.shared) {
+                endpoints.add(Endpoint.of(routingId.application())
+                                      .named(routingId.endpointId(), targets)
+                                      .on(Port.plain(4080))
+                                      .legacy()
+                                      .routingMethod(method)
+                                      .in(controller.system()));
+                endpoints.add(Endpoint.of(routingId.application())
+                                      .named(routingId.endpointId(), targets)
+                                      .on(Port.tls(4443))
+                                      .legacy()
+                                      .routingMethod(method)
+                                      .in(controller.system()));
+            }
+        }
+        return EndpointList.copyOf(endpoints);
     }
 
 }
