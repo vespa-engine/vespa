@@ -18,15 +18,18 @@ import static java.util.logging.Level.INFO;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_1;
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_2;
+import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
+import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_2;
 
 /**
  * @author gjoranv
  */
 public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
 
-    private static final Set<String> reservedBindings = Set.of(METRICS_V2_HANDLER_BINDING_1,
+    private static final Set<String> reservedBindings = Set.of(STATE_HANDLER_BINDING_1,
+                                                               STATE_HANDLER_BINDING_2,
+                                                               METRICS_V2_HANDLER_BINDING_1,
                                                                METRICS_V2_HANDLER_BINDING_2);
-
     private final ApplicationContainerCluster cluster;
 
     public DomHandlerBuilder(ApplicationContainerCluster cluster) {

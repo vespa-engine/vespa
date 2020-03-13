@@ -111,11 +111,14 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public static final String APPLICATION_STATUS_HANDLER_CLASS = "com.yahoo.container.handler.observability.ApplicationStatusHandler";
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
-    public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
     public static final String LOG_HANDLER_CLASS = com.yahoo.container.handler.LogHandler.class.getName();
     public static final String DEFAULT_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.DefaultLinguisticsProvider";
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
+
+    public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
+    public static final String STATE_HANDLER_BINDING_1 = "http://*" + StateHandler.STATE_API_ROOT;
+    public static final String STATE_HANDLER_BINDING_2 = STATE_HANDLER_BINDING_1 + "/*";
 
     public static final String ROOT_HANDLER_PATH = "/";
     public static final String ROOT_HANDLER_BINDING = "http://*" + ROOT_HANDLER_PATH;
@@ -200,8 +203,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void addMetricStateHandler() {
         Handler<AbstractConfigProducer<?>> stateHandler = new Handler<>(
                 new ComponentModel(STATE_HANDLER_CLASS, null, null, null));
-        stateHandler.addServerBindings("http://*" + StateHandler.STATE_API_ROOT,
-                                       "http://*" + StateHandler.STATE_API_ROOT + "/*");
+        stateHandler.addServerBindings(STATE_HANDLER_BINDING_1, STATE_HANDLER_BINDING_2);
         addComponent(stateHandler);
     }
 
