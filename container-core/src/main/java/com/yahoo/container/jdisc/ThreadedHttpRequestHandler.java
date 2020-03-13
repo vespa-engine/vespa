@@ -32,7 +32,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
 
     public static final String CONTENT_TYPE = "Content-Type";
     private static final String RENDERING_ERRORS = "rendering_errors";
-    private static final String UNHANDLED_EXCEPTION_METRIC = "jdisc.http.handler.unhandled_exception";
+    private static final String UNHANDLED_EXCEPTION_METRIC = "jdisc.http.handler.unhandled_exceptions";
 
     /** Logger for subclasses */
     protected final Logger log;

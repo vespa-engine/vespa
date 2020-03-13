@@ -163,7 +163,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     /** A thread pool executor which maintains the last time a worker completed */
     private final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
-        private static final String UNHANDLED_EXCEPTION_METRIC = "jdisc.thread_pool.unhandled_exception";
+        private static final String UNHANDLED_EXCEPTION_METRIC = "jdisc.thread_pool.unhandled_exceptions";
 
         volatile long lastThreadAssignmentTimeMillis = System.currentTimeMillis();
         private final AtomicLong startedCount = new AtomicLong(0);

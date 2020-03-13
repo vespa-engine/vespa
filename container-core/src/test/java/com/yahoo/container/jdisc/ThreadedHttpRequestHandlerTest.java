@@ -22,7 +22,7 @@ public class ThreadedHttpRequestHandlerTest {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
 
         driver.sendRequest("http://localhost/myhandler");
-        String expectedMetricName = "jdisc.http.handler.unhandled_exception";
+        String expectedMetricName = "jdisc.http.handler.unhandled_exceptions";
         assertThat(metricMock.addInvocations)
                 .containsKey(expectedMetricName);
         assertThat(metricMock.addInvocations.get(expectedMetricName).dimensions)
