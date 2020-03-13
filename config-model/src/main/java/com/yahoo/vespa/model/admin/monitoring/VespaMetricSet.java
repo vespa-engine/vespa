@@ -129,6 +129,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("serverActiveThreads.count"));
         metrics.add(new Metric("serverActiveThreads.last"));
 
+        metrics.add(new Metric("jdisc.thread_pool.unhandled_exceptions.rate"));
+
         metrics.add(new Metric("httpapi_latency.max"));
         metrics.add(new Metric("httpapi_latency.sum"));
         metrics.add(new Metric("httpapi_latency.count"));
@@ -188,6 +190,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.http.ssl.handshake.failure.incompatible_protocols.rate"));
         metrics.add(new Metric("jdisc.http.ssl.handshake.failure.incompatible_ciphers.rate"));
         metrics.add(new Metric("jdisc.http.ssl.handshake.failure.unknown.rate"));
+
+        metrics.add(new Metric("jdisc.http.handler.unhandled_exceptions.rate"));
         return metrics;
     }
 
