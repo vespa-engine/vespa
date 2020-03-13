@@ -9,6 +9,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -29,22 +30,29 @@ public class Endpoint {
 
     private final String name;
     private final URI url;
+    private final List<ZoneId> zones;
     private final Scope scope;
     private final boolean legacy;
     private final RoutingMethod routingMethod;
     private final boolean tls;
     private final boolean wildcard;
 
-    private Endpoint(String name, ApplicationId application, ZoneId zone, SystemName system, Port port, boolean legacy,
-                     RoutingMethod routingMethod, boolean wildcard) {
+    private Endpoint(String name, ApplicationId application, List<ZoneId> zones, Scope scope, SystemName system, Port port,
+                     boolean legacy, RoutingMethod routingMethod, boolean wildcard) {
         Objects.requireNonNull(name, "name must be non-null");
         Objects.requireNonNull(application, "application must be non-null");
+        Objects.requireNonNull(zones, "zones must be non-null");
+        Objects.requireNonNull(scope, "scope must be non-null");
         Objects.requireNonNull(system, "system must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
+        if (scope == Scope.zone && zones.size() != 1) {
+            throw new IllegalArgumentException("A single zone must be given for zone-scoped endpoints");
+        }
         this.name = name;
-        this.url = createUrl(name, application, zone, system, port, legacy, routingMethod);
-        this.scope = zone == null ? Scope.global : Scope.zone;
+        this.url = createUrl(name, application, zones, scope, system, port, legacy, routingMethod);
+        this.zones = List.copyOf(zones);
+        this.scope = scope;
         this.legacy = legacy;
         this.routingMethod = routingMethod;
         this.tls = port.tls;
@@ -71,6 +79,11 @@ public class Endpoint {
     public String dnsName() {
         // because getHost returns "null" for wildcard endpoints
         return url.getAuthority().replaceAll(":.*", "");
+    }
+
+    /** Returns the zone(s) to which this routes traffic */
+    public List<ZoneId> zones() {
+        return zones;
     }
 
     /** Returns the scope of this */
@@ -133,8 +146,8 @@ public class Endpoint {
         return dnsSuffix(system, false);
     }
 
-    private static URI createUrl(String name, ApplicationId application, ZoneId zone, SystemName system,
-                                 Port port, boolean legacy, RoutingMethod routingMethod) {
+    private static URI createUrl(String name, ApplicationId application, List<ZoneId> zones, Scope scope,
+                                 SystemName system, Port port, boolean legacy, RoutingMethod routingMethod) {
         String scheme = port.tls ? "https" : "http";
         String separator = separator(system, routingMethod, port.tls);
         String portPart = port.isDefault() ? "" : ":" + port.port;
@@ -146,7 +159,7 @@ public class Endpoint {
                           separator +
                           sanitize(application.tenant().value()) +
                           "." +
-                          scopePart(zone, legacy) +
+                          scopePart(scope, zones, legacy) +
                           dnsSuffix(system, legacy) +
                           portPart +
                           "/");
@@ -168,8 +181,9 @@ public class Endpoint {
         return name + separator;
     }
 
-    private static String scopePart(ZoneId zone, boolean legacy) {
-        if (zone == null) return "global";
+    private static String scopePart(Scope scope, List<ZoneId> zones, boolean legacy) {
+        if (scope == Scope.global) return "global";
+        var zone = zones.get(0);
         if (!legacy && zone.environment().isProduction()) return zone.region().value(); // Skip prod environment for non-legacy endpoints
         return zone.region().value() + "." + zone.environment().value();
     }
@@ -283,7 +297,8 @@ public class Endpoint {
 
         private final ApplicationId application;
 
-        private ZoneId zone;
+        private Scope scope;
+        private List<ZoneId> zones;
         private ClusterSpec.Id cluster;
         private EndpointId endpointId;
         private Port port;
@@ -301,35 +316,44 @@ public class Endpoint {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.cluster = cluster;
-            this.zone = zone;
+            this.scope = Scope.zone;
+            this.zones = List.of(zone);
             return this;
         }
 
         /** Sets the endpoint target ID for this (as defined in deployments.xml) */
         public EndpointBuilder named(EndpointId endpointId) {
+           return named(endpointId, List.of());
+        }
+
+        /** Sets the endpoint ID for this (as defined in deployments.xml) */
+        public EndpointBuilder named(EndpointId endpointId, List<ZoneId> targets) {
             if (cluster != null || wildcard) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.endpointId = endpointId;
+            this.zones = targets;
+            this.scope = Scope.global;
             return this;
         }
 
         /** Sets the global wildcard target for this */
         public EndpointBuilder wildcard() {
-            if (endpointId != null || cluster != null) {
-                throw new IllegalArgumentException("Cannot set multiple target types");
-            }
-            this.wildcard = true;
-            return this;
+            return wildcard(Scope.global, List.of());
         }
 
         /** Sets the zone wildcard target for this */
         public EndpointBuilder wildcard(ZoneId zone) {
-            if(endpointId != null || cluster != null) {
+            return wildcard(Scope.zone, List.of(zone));
+        }
+
+        private EndpointBuilder wildcard(Scope scope, List<ZoneId> zones) {
+            if (endpointId != null || cluster != null) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
-            this.zone = zone;
             this.wildcard = true;
+            this.scope = scope;
+            this.zones = zones;
             return this;
         }
 
@@ -369,7 +393,7 @@ public class Endpoint {
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            return new Endpoint(name, application, zone, system, port, legacy, routingMethod, wildcard);
+            return new Endpoint(name, application, zones, scope, system, port, legacy, routingMethod, wildcard);
         }
 
     }

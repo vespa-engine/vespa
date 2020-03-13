@@ -103,8 +103,6 @@ public class RoutingController {
     }
 
     /** Returns global-scoped endpoints for given instance */
-    // TODO(mpolden): Add a endpointsOf(Instance, DeploymentId) variant of this that only returns global endpoint of
-    //                which deployment is a member
     public EndpointList endpointsOf(Application application, InstanceName instanceName) {
         var endpoints = new LinkedHashSet<Endpoint>();
         // Add global endpoints provided by rotations
@@ -113,8 +111,9 @@ public class RoutingController {
             var deployments = rotation.regions().stream()
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
                                       .collect(Collectors.toList());
-            EndpointList.global(RoutingId.of(instance.id(), rotation.endpointId()),
-                                controller.system(), routingMethodsOfAll(deployments, application))
+            var targets = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
+            EndpointList.global(RoutingId.of(instance.id(), rotation.endpointId()), controller.system(), targets,
+                                routingMethodsOfAll(deployments, application))
                         .requiresRotation()
                         .forEach(endpoints::add);
         }
@@ -129,7 +128,8 @@ public class RoutingController {
             }
         }
         deploymentsByRoutingId.forEach((routingId, deployments) -> {
-            EndpointList.global(routingId, controller.system(), routingMethodsOfAll(deployments, application))
+            var targets = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
+            EndpointList.global(routingId, controller.system(), targets, routingMethodsOfAll(deployments, application))
                         .not().requiresRotation()
                         .forEach(endpoints::add);
         });
