@@ -417,30 +417,24 @@ public class DeployState implements ConfigDefinitionStore {
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();
-                    String searchName = builder.importReader(reader, readerName, logger);
+                    String topLevelName = builder.importReader(reader, readerName, logger);
                     String sdName = stripSuffix(readerName, ApplicationPackage.SD_NAME_SUFFIX);
-                    names.put(searchName, sdName);
-                    if ( ! sdName.equals(searchName)) {
-                        throw new IllegalArgumentException("Search definition file name ('" + sdName + "') and name of " +
-                                                           "search element ('" + searchName +
+                    names.put(topLevelName, sdName);
+                    if ( ! sdName.equals(topLevelName)) {
+                        throw new IllegalArgumentException("Schema definition file name ('" + sdName + "') and name of " +
+                                                           "top level element ('" + topLevelName +
                                                            "') are not equal for file '" + readerName + "'");
                     }
                 } catch (ParseException e) {
-                    throw new IllegalArgumentException("Could not parse search definition file '" +
-                                                       getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);
+                    throw new IllegalArgumentException("Could not parse sd file '" + reader.getName(), e);
                 } catch (IOException e) {
-                    throw new IllegalArgumentException("Could not read search definition file '" +
-                                                       getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);
+                    throw new IllegalArgumentException("Could not read sd file '" + reader.getName(), e);
                 } finally {
                     closeIgnoreException(reader.getReader());
                 }
             }
             builder.build(! validationParameters.ignoreValidationErrors(), logger);
             return SearchDocumentModel.fromBuilderAndNames(builder, names);
-        }
-
-        private String getSearchDefinitionRelativePath(String name) {
-            return ApplicationPackage.SEARCH_DEFINITIONS_DIR + File.separator + name;
         }
 
         private static String stripSuffix(String nodeName, String postfix) {

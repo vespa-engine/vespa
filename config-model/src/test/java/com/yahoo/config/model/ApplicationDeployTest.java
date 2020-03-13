@@ -72,21 +72,18 @@ public class ApplicationDeployTest {
                     break;
                 case "product":
                     assertTrue(s instanceof DocumentOnlySearch);
-                    assertEquals(s.getDocument().getField("title").getDataType(), DataType.STRING);
+                    assertEquals(DataType.STRING, s.getDocument().getField("title").getDataType());
                     break;
                 default:
                     fail();
             }
         }
-        File[] truth = new File[]{new File(TESTSDDIR + "laptop.sd"),
-                new File(TESTSDDIR + "music.sd"),
-                new File(TESTSDDIR + "pc.sd"),
-                new File(TESTSDDIR + "product.sd"),
-                new File(TESTSDDIR + "sock.sd")};
-        Arrays.sort(truth);
-        List<File> appSdFiles = tester.app().getSearchDefinitionFiles();
-        Collections.sort(appSdFiles);
-        assertEquals(appSdFiles, Arrays.asList(truth));
+        assertEquals(Set.of(new File(TESTSDDIR + "laptop.sd"),
+                            new File(TESTSDDIR + "music.sd"),
+                            new File(TESTSDDIR + "pc.sd"),
+                            new File(TESTSDDIR + "product.sd"),
+                            new File(TESTSDDIR + "sock.sd")),
+                     new HashSet<>(tester.app().getSearchDefinitionFiles()));
 
         List<FilesApplicationPackage.Component> components = tester.app().getComponents();
         assertEquals(1, components.size());
