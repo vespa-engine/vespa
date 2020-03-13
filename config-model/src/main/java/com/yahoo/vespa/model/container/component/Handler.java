@@ -42,6 +42,10 @@ public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<
         serverBindings.addAll(Arrays.asList(bindings));
     }
 
+    public void removeServerBinding(String binding) {
+        serverBindings.remove(binding);
+    }
+
     public void addClientBindings(String... bindings) {
         clientBindings.addAll(Arrays.asList(bindings));
     }
