@@ -2,10 +2,11 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
@@ -15,6 +16,12 @@ import org.w3c.dom.Element;
  * @author gjoranv
  */
 public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
+
+    private final ApplicationContainerCluster cluster;
+
+    public DomHandlerBuilder(ApplicationContainerCluster cluster) {
+        this.cluster = cluster;
+    }
 
     @Override
     protected Handler doBuild(DeployState deployState, AbstractConfigProducer parent, Element handlerElement) {
@@ -35,4 +42,5 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         BundleInstantiationSpecification bundleSpec = BundleInstantiationSpecificationBuilder.build(handlerElement);
         return new Handler<>(new ComponentModel(bundleSpec));
     }
+
 }

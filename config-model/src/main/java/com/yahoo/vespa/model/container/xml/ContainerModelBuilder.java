@@ -290,7 +290,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addClientProviders(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
         for (Element clientSpec: XML.getChildren(spec, "client")) {
-            cluster.addComponent(new DomClientProviderBuilder().build(deployState, cluster, clientSpec));
+            cluster.addComponent(new DomClientProviderBuilder(cluster).build(deployState, cluster, clientSpec));
         }
     }
 
@@ -448,7 +448,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
-                    new DomHandlerBuilder().build(deployState, cluster, component));
+                    new DomHandlerBuilder(cluster).build(deployState, cluster, component));
         }
     }
 
