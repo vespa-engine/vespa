@@ -315,6 +315,8 @@ public class DockerOperationsImpl implements DockerOperations {
         boolean isMain = context.zone().getSystemName() == SystemName.cd || context.zone().getSystemName() == SystemName.main;
         if (isMain && context.nodeType() == NodeType.tenant)
             command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
+
+        command.withSharedVolume(Paths.get("/dev/log"), Paths.get("/dev/log"));
     }
 
     @Override
