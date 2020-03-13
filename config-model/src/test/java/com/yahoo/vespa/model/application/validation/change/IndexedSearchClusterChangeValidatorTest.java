@@ -7,7 +7,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
-import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
+import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -41,7 +41,7 @@ public class IndexedSearchClusterChangeValidatorTest {
         public static VespaModel newOneDocModel(String sdContent) {
             return new ApplicationPackageBuilder().
                     addCluster(new ContentClusterBuilder().name("foo").docTypes("d1")).
-                    addSearchDefinition(new SearchDefinitionBuilder().
+                    addSearchDefinition(new SchemaBuilder().
                             name("d1").content(sdContent).build()).buildCreator().create();
         }
 
@@ -52,9 +52,9 @@ public class IndexedSearchClusterChangeValidatorTest {
         public static VespaModel newTwoDocModel(String d1Content, String d2Content) {
             return new ApplicationPackageBuilder().
                     addCluster(new ContentClusterBuilder().name("foo").docTypes("d1", "d2")).
-                    addSearchDefinition(new SearchDefinitionBuilder().
+                    addSearchDefinition(new SchemaBuilder().
                             name("d1").content(d1Content).build()).
-                    addSearchDefinition(new SearchDefinitionBuilder().
+                    addSearchDefinition(new SchemaBuilder().
                             name("d2").content(d2Content).build()).
                     buildCreator().create();
         }
@@ -67,9 +67,9 @@ public class IndexedSearchClusterChangeValidatorTest {
             return new ApplicationPackageBuilder().
                     addCluster(new ContentClusterBuilder().name("foo").docTypes("d1")).
                     addCluster(new ContentClusterBuilder().name("bar").docTypes("d2")).
-                    addSearchDefinition(new SearchDefinitionBuilder().
+                    addSearchDefinition(new SchemaBuilder().
                             name("d1").content(d1Content).build()).
-                    addSearchDefinition(new SearchDefinitionBuilder().
+                    addSearchDefinition(new SchemaBuilder().
                             name("d2").content(d2Content).build()).
                     buildCreator().create();
         }

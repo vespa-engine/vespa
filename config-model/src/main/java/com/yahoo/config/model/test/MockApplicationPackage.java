@@ -249,7 +249,7 @@ public class MockApplicationPackage implements ApplicationPackage {
             return this;
         }
 
-        public Builder withSearchDefinitions(List<String> searchDefinition) {
+        public Builder withSchemas(List<String> searchDefinition) {
             this.schemas = Collections.unmodifiableList(searchDefinition);
             return this;
         }

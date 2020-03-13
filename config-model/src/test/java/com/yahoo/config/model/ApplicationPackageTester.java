@@ -39,7 +39,7 @@ public class ApplicationPackageTester {
 
     public FilesApplicationPackage app() { return applicationPackage; }
 
-    public List<NamedSchema> getSearchDefinitions() {
+    public List<NamedSchema> getSchemas() {
         return new DeployState.Builder().applicationPackage(app()).build().getSchemas();
     }
 

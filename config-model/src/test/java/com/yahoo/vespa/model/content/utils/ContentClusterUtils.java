@@ -30,7 +30,7 @@ import java.util.Optional;
 public class ContentClusterUtils {
 
     public static MockRoot createMockRoot(String[] hosts) {
-        return createMockRoot(hosts, SearchDefinitionBuilder.createSearchDefinitions("test"));
+        return createMockRoot(hosts, SchemaBuilder.createSchemas("test"));
     }
 
     private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions) {
@@ -38,7 +38,7 @@ public class ContentClusterUtils {
     }
 
     private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions, DeployState.Builder deployStateBuilder) {
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSearchDefinitions(searchDefinitions).build();
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSchemas(searchDefinitions).build();
         DeployState deployState = deployStateBuilder.applicationPackage(applicationPackage)
                           .modelHostProvisioner(provisioner)
                           .build();
@@ -77,7 +77,7 @@ public class ContentClusterUtils {
     }
 
     public static ContentCluster createCluster(String clusterXml) throws Exception {
-        return createCluster(clusterXml, SearchDefinitionBuilder.createSearchDefinitions("test"));
+        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"));
     }
 
     public static String createClusterXml(String groupXml, int redundancy, int searchableCopies) {
