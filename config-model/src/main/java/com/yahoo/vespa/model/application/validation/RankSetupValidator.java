@@ -158,7 +158,8 @@ public class RankSetupValidator extends Validator {
     }
 
     private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        StringBuilder errMsg = new StringBuilder("For search cluster '" + sc.getClusterName() + "', search definition '" + sdName + "': error in rank setup. Details:\n");
+        StringBuilder errMsg = new StringBuilder("For search cluster '").append(sc.getClusterName()).append("', ")
+                .append("search definition '").append(sdName).append("': error in rank setup. Details:\n");
         for (String line : output.split("\n")) {
             // Remove debug lines from start script
             if (line.startsWith("debug\t")) continue;
@@ -170,7 +171,7 @@ public class RankSetupValidator extends Validator {
             }
         }
         if (ignoreValidationErrors) {
-            deployLogger.log(LogLevel.WARNING, errMsg + "(Continuing since ignoreValidationErrors flag is set.)");
+            deployLogger.log(LogLevel.WARNING, errMsg.append("(Continuing since ignoreValidationErrors flag is set.)").toString());
         } else {
             throw new IllegalArgumentException(errMsg.toString());
         }
