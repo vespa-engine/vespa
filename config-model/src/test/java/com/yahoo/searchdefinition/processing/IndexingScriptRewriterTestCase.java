@@ -7,7 +7,7 @@ import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Simon Thoresen Hult
  */
-public class IndexingScriptRewriterTestCase extends SchemaTestCase {
+public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testSetLanguageRewriting() {

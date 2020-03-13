@@ -8,8 +8,7 @@ import java.util.Collection;
 /**
  * @author Tony Vaagenes
  */
-// TODO: This class is quite pointless
-public class NamedSchema {
+public class SearchDefinition {
 
     private final Search search;
     private final String name;
@@ -24,15 +23,15 @@ public class NamedSchema {
         return name;
     }
 
-    public NamedSchema(String name, Search search) {
+    public SearchDefinition(String name, Search search) {
         this.name = name;
         this.search = search;
     }
 
     //Find search definition from a collection with the name specified
-    public static NamedSchema findByName(String schemaName, Collection<NamedSchema> schemas) {
-        for (NamedSchema candidate : schemas) {
-            if (candidate.getName().equals(schemaName) )
+    public static SearchDefinition findByName(final String searchDefinitionName, Collection<SearchDefinition> searchDefinitions) {
+        for (SearchDefinition candidate : searchDefinitions) {
+            if (candidate.getName().equals(searchDefinitionName) )
                 return candidate;
         }
 

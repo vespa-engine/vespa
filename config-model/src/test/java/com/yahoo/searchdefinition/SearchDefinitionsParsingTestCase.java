@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
  *
  * @author hmusum
  */
-public class SchemaParsingTestCase extends SchemaTestCase {
+public class SearchDefinitionsParsingTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void requireThatIndexingExpressionsCanBeParsed() throws Exception {

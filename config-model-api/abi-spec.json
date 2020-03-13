@@ -137,7 +137,6 @@
     "fields": [
       "public static final java.lang.String HOSTS",
       "public static final java.lang.String SERVICES",
-      "public static final com.yahoo.path.Path SCHEMAS_DIR",
       "public static final com.yahoo.path.Path SEARCH_DEFINITIONS_DIR",
       "public static final java.lang.String COMPONENT_DIR",
       "public static final java.lang.String SEARCHCHAINS_DIR",

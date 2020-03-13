@@ -112,12 +112,12 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     private VespaModelCreatorWithMockPkg getIndexedVespaModelCreator() {
-        List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2", "type3");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2", "type3");
         return new VespaModelCreatorWithMockPkg(getHosts(), createProtonIndexedVespaServices(Arrays.asList("type1", "type2", "type3")), sds);
     }
 
     private VespaModel getStreamingVespaModel() {
-        List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1");
         return new VespaModelCreatorWithMockPkg(getHosts(), createProtonStreamingVespaServices(Arrays.asList("type1")), sds).create();
     }
 
@@ -229,7 +229,7 @@ public class IndexedTest extends ContentBaseTest {
                 "  </content>\n" +
                 "  </services>";
 
-        List<String> sds = ApplicationPackageUtils.generateSchemas("docstorebench");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("docstorebench");
         VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), services, sds).create();
         ProtonConfig.Builder pb = new ProtonConfig.Builder();
         model.getConfig(pb, "docstore/search/cluster.docstore/0");
@@ -252,7 +252,7 @@ public class IndexedTest extends ContentBaseTest {
                 "  </content>" +
                 "</services>";
 
-        List<String> sds = ApplicationPackageUtils.generateSchemas("index_me", "store_me");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("index_me", "store_me");
         VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), services, sds).create();
         ProtonConfig.Builder pb = new ProtonConfig.Builder();
         model.getConfig(pb, "docstore/search/cluster.docstore/0");

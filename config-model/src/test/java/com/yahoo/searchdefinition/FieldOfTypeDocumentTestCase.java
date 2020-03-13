@@ -19,7 +19,7 @@ import static org.junit.Assert.assertSame;
 /**
  * @author Einar M R Rosenvinge
  */
-public class FieldOfTypeDocumentTestCase extends SchemaTestCase {
+public class FieldOfTypeDocumentTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testDocument() throws IOException {

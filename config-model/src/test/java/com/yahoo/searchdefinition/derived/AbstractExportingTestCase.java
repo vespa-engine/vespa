@@ -7,7 +7,7 @@ import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
@@ -21,7 +21,7 @@ import java.io.IOException;
  *
  * @author bratseth
  */
-public abstract class AbstractExportingTestCase extends SchemaTestCase {
+public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase {
 
     private static final String tempDir = "temp/";
     private static final String searchDefRoot = "src/test/derived/";

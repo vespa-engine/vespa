@@ -41,8 +41,8 @@ public abstract class SearchCluster extends AbstractSearchCluster
      * Also stores the document names contained in the search
      * definitions.
      */
-    public void deriveSchemas(DeployState deployState) {
-        deriveAllSchemas(getLocalSDS(), deployState);
+    public void deriveSearchDefinitions(DeployState deployState) {
+        deriveAllSearchDefinitions(getLocalSDS(), deployState);
     }
 
     @Override
@@ -132,7 +132,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
         return false;
     }
 
-    protected abstract void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState);
+    protected abstract void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState);
 
     public abstract void defaultDocumentsConfig();
     public abstract DerivedConfiguration getSdConfig();

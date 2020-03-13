@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author  bratseth
  */
-public class OutsideTestCase extends SchemaTestCase {
+public class OutsideTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testOutsideIndex() throws IOException, ParseException {

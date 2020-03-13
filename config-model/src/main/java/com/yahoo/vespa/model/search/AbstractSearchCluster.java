@@ -29,7 +29,7 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     protected int index;
     private Double visibilityDelay = 0.0;
     private List<String> documentNames = new ArrayList<>();
-    private List<SchemaSpec> localSDS = new LinkedList<>();
+    private List<SearchDefinitionSpec> localSDS = new LinkedList<>();
 
     public AbstractSearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
@@ -38,11 +38,11 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     }
 
     public void prepareToDistributeFiles(List<SearchNode> backends) {
-        for (SchemaSpec sds : localSDS)
+        for (SearchDefinitionSpec sds : localSDS)
             sds.getSearchDefinition().getSearch().rankingConstants().sendTo(backends);
     }
 
-    public void addDocumentNames(NamedSchema searchDefinition) {
+    public void addDocumentNames(SearchDefinition searchDefinition) {
         String dName = searchDefinition.getSearch().getDocument().getDocumentName().getName();
         documentNames.add(dName);
     }
@@ -50,7 +50,7 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     /** Returns a List with document names used in this search cluster */
     public List<String> getDocumentNames() { return documentNames; }
 
-    public List<SchemaSpec> getLocalSDS() {
+    public List<SearchDefinitionSpec> getLocalSDS() {
         return localSDS;
     }
 
@@ -107,17 +107,18 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
         }
     }
 
-    public static final class SchemaSpec {
+    public static final class SearchDefinitionSpec {
 
-        private final NamedSchema searchDefinition;
+        private final SearchDefinition searchDefinition;
         private final UserConfigRepo userConfigRepo;
 
-        public SchemaSpec(NamedSchema searchDefinition, UserConfigRepo userConfigRepo) {
+        public SearchDefinitionSpec(SearchDefinition searchDefinition,
+                                    UserConfigRepo userConfigRepo) {
             this.searchDefinition = searchDefinition;
             this.userConfigRepo = userConfigRepo;
         }
 
-        public NamedSchema getSearchDefinition() {
+        public SearchDefinition getSearchDefinition() {
             return searchDefinition;
         }
 

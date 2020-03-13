@@ -3,7 +3,7 @@ package com.yahoo.config.model.deploy;
 
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.model.search.NamedSchema;
+import com.yahoo.vespa.model.search.SearchDefinition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,15 +13,16 @@ import java.util.Map;
  * Internal helper class to retrieve document model and search definitions.
  *
  * @author Ulf Lilleengen
+ * @since 5.1
  */
 public class SearchDocumentModel {
 
     private final DocumentModel documentModel;
-    private final List<NamedSchema> schemas;
+    private final List<SearchDefinition> searchDefinitions;
 
-    public SearchDocumentModel(DocumentModel documentModel, List<NamedSchema> schemas) {
+    public SearchDocumentModel(DocumentModel documentModel, List<SearchDefinition> searchDefinitions) {
         this.documentModel = documentModel;
-        this.schemas = schemas;
+        this.searchDefinitions = searchDefinitions;
 
     }
 
@@ -29,22 +30,22 @@ public class SearchDocumentModel {
         return documentModel;
     }
 
-    public List<NamedSchema> getSchemas() {
-        return schemas;
+    public List<SearchDefinition> getSearchDefinitions() {
+        return searchDefinitions;
     }
 
     public static SearchDocumentModel fromBuilderAndNames(SearchBuilder builder, Map<String, String> names) {
-        List<NamedSchema> ret = new ArrayList<>();
+        List<SearchDefinition> ret = new ArrayList<>();
         for (com.yahoo.searchdefinition.Search search : builder.getSearchList()) {
-            ret.add(new NamedSchema(names.get(search.getName()), search));
+            ret.add(new SearchDefinition(names.get(search.getName()), search));
         }
         return new SearchDocumentModel(builder.getModel(), ret);
     }
 
     public static SearchDocumentModel fromBuilder(SearchBuilder builder) {
-        List<NamedSchema> ret = new ArrayList<>();
+        List<SearchDefinition> ret = new ArrayList<>();
         for (com.yahoo.searchdefinition.Search search : builder.getSearchList()) {
-            ret.add(new NamedSchema(search.getName(), search));
+            ret.add(new SearchDefinition(search.getName(), search));
         }
         return new SearchDocumentModel(builder.getModel(), ret);
     }

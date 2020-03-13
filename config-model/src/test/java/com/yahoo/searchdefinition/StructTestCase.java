@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class StructTestCase extends SchemaTestCase {
+public class StructTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testStruct() throws IOException {

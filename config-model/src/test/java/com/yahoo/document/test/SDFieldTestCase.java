@@ -2,7 +2,7 @@
 package com.yahoo.document.test;
 
 import com.yahoo.document.DataType;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import org.junit.Test;
 
@@ -11,7 +11,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Thomas Gundersen
  */
-public class SDFieldTestCase extends SchemaTestCase {
+public class SDFieldTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testIdSettingConflict() {

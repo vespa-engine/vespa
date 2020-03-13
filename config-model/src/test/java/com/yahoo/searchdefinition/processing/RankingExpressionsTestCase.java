@@ -19,7 +19,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class RankingExpressionsTestCase extends SchemaTestCase {
+public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testFunctions() throws IOException, ParseException {

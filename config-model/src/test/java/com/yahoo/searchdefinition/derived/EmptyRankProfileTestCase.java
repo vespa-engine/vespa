@@ -6,7 +6,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
@@ -17,7 +17,7 @@ import org.junit.Test;
  *
  * @author bratseth
  */
-public class EmptyRankProfileTestCase extends SchemaTestCase {
+public class EmptyRankProfileTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testDeriving() {

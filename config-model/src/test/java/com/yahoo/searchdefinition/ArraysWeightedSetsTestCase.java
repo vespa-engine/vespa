@@ -16,7 +16,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Einar M R Rosenvinge
  */
-public class ArraysWeightedSetsTestCase extends SchemaTestCase {
+public class ArraysWeightedSetsTestCase extends SearchDefinitionTestCase {
     @Test
     public void testArrayWeightedSetsImporting() throws java.io.IOException, com.yahoo.searchdefinition.parser.ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/arraysweightedsets.sd");

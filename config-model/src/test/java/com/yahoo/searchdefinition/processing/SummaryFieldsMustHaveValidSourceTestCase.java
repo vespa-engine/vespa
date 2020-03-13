@@ -6,7 +6,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
@@ -16,7 +16,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class SummaryFieldsMustHaveValidSourceTestCase extends SchemaTestCase {
+public class SummaryFieldsMustHaveValidSourceTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void requireThatInvalidSourceIsCaught() throws IOException, ParseException {

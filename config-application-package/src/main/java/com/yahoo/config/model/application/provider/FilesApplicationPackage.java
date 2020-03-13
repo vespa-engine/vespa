@@ -49,7 +49,6 @@ import java.security.MessageDigest;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -337,72 +336,76 @@ public class FilesApplicationPackage implements ApplicationPackage {
     public static Map<String, String> allSdsFromDocprocBundlesAndClasspath(File appDir) throws IOException {
         File dpChains = new File(appDir, ApplicationPackage.COMPONENT_DIR);
         if (!dpChains.exists() || !dpChains.isDirectory()) return Collections.emptyMap();
-        Set<String> usedNames = new HashSet<>();
-        Map<String, String> schemas = new LinkedHashMap<>();
+        List<String> usedNames = new ArrayList<>();
+        Map<String, String> ret = new LinkedHashMap<>();
 
         // try classpath first
-        allSdsOnClassPath(usedNames, schemas);
+        allSdsOnClassPath(usedNames, ret);
 
-        for (File bundle : dpChains.listFiles((File dir, String name) -> name.endsWith(".jar"))) {
+        for (File bundle : dpChains.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".jar");
+            }})) {
             for(Map.Entry<String, String> entry : ApplicationPackage.getBundleSdFiles("", new JarFile(bundle)).entrySet()) {
                 String sdName = entry.getKey();
                 if (usedNames.contains(sdName)) {
-                    throw new IllegalArgumentException("The search definition name '" + sdName + "' used in bundle '"+
-                                                       bundle.getName()+ "' is already used in classpath or previous bundle.");
+                    throw new IllegalArgumentException("The search definition name '"+sdName+"' used in bundle '"+
+                                                       bundle.getName()+"' is already used in classpath or previous bundle.");
                 }
                 usedNames.add(sdName);
                 String sdPayload = entry.getValue();
-                schemas.put(sdName, sdPayload);
+                ret.put(sdName, sdPayload);
             }
         }
-        return schemas;
+        return ret;
     }
 
-	private static void allSdsOnClassPath(Set<String> usedNames, Map<String, String> schemas) {
-        ClassLoader cl = FilesApplicationPackage.class.getClassLoader();
-        Stream<URL> resources = Stream.concat(cl.resources(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative()),
-                                              cl.resources(ApplicationPackage.SCHEMAS_DIR.getRelative()));
-        resources.forEach(resource -> addSchemaFrom(resource, schemas, usedNames));
-    }
+	private static void allSdsOnClassPath(List<String> usedNames, Map<String, String> ret) throws IOException {
+		Enumeration<java.net.URL> resources = FilesApplicationPackage.class.getClassLoader().getResources(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
 
-    private static void addSchemaFrom(URL resource, Map<String, String> schemas, Set<String> usedNames) {
-        try {
-            switch (resource.getProtocol()) {
-                case "file":
-                    File file = new File(resource.toURI());
-                    if (file.isDirectory()) {
-                        List<File> sdFiles = getSearchDefinitionFiles(file);
-                        for (File sdFile : sdFiles) {
-                            String sdName = sdFile.getName();
-                            if (usedNames.contains(sdName)) {
-                                throw new IllegalArgumentException("The search definition name '" + sdName +
-                                                                   "' found in classpath already used earlier in classpath.");
-                            }
-                            usedNames.add(sdName);
-                            String contents = IOUtils.readAll(new FileReader(sdFile));
-                            schemas.put(sdFile.getName(), contents);
-                        }
-                    }
-                    break;
-                case "jar":
-                    JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
-                    JarFile jarFile = jarConnection.getJarFile();
-                    for (Map.Entry<String, String> entry : ApplicationPackage.getBundleSdFiles("", jarFile).entrySet()) {
-                        String sdName = entry.getKey();
+        while(resources.hasMoreElements()) {
+            URL resource = resources.nextElement();
+
+            String protocol = resource.getProtocol();
+
+            if ("file".equals(protocol)) {
+                File file;
+                try {
+                    file = new File(resource.toURI());
+                } catch (URISyntaxException e) {
+                    continue;
+                }
+                // only interested in directories
+                if (file.isDirectory()) {
+                    List<File> sdFiles = getSearchDefinitionFiles(file);
+                    for (File sdFile : sdFiles) {
+                        String sdName = sdFile.getName();
                         if (usedNames.contains(sdName)) {
-                            throw new IllegalArgumentException("The search definitions name '" + sdName +
-                                                               "' used in bundle '" + jarFile.getName() + "' " +
-                                                               "is already used in classpath or previous bundle.");
+                            throw new IllegalArgumentException("The search definition name '"+sdName+
+                                                               "' found in classpath already used earlier in classpath.");
                         }
                         usedNames.add(sdName);
-                        String sdPayload = entry.getValue();
-                        schemas.put(sdName, sdPayload);
+                        String contents = IOUtils.readAll(new FileReader(sdFile));
+                        ret.put(sdFile.getName(), contents);
                     }
-                    break;
+                }
             }
-        }
-        catch (IOException | URISyntaxException e) {
-            throw new IllegalArgumentException("Could not read schema from '" + resource + "'", e);
+            else if ("jar".equals(protocol)) {
+                JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
+                JarFile jarFile = jarConnection.getJarFile();
+                for(Map.Entry<String, String> entry : ApplicationPackage.getBundleSdFiles("", jarFile).entrySet()) {
+                    String sdName = entry.getKey();
+                    if (usedNames.contains(sdName)) {
+                        throw new IllegalArgumentException("The search definitions name '"+sdName+
+                                                           "' used in bundle '"+jarFile.getName()+"' " +
+                                                           "is already used in classpath or previous bundle.");
+                    }
+                    usedNames.add(sdName);
+                    String sdPayload = entry.getValue();
+                    ret.put(sdName, sdPayload);
+                }
+            }
         }
 	}
 
@@ -459,7 +462,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
         if (! configDefsDir.isDirectory()) return;
 
         log.log(LogLevel.DEBUG, "Getting all config definitions from '" + configDefsDir + "'");
-        for (File def : configDefsDir.listFiles((File dir, String name) -> name.matches(".*\\.def"))) {
+        for (File def : configDefsDir.listFiles(
+                new FilenameFilter() { @Override public boolean accept(File dir, String name) { // TODO: Fix
+                    return name.matches(".*\\.def");}})) {
+
+            log.log(LogLevel.DEBUG, "Processing config definition '" + def + "'");
             String[] nv = def.getName().split("\\.def");
             ConfigDefinitionKey key;
             try {
@@ -514,25 +521,30 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
     }
 
+    //Only intended for DeployProcessor, others should use the member version
     static List<File> getSearchDefinitionFiles(File appDir) {
-        List<File> schemaFiles = new ArrayList<>();
+        //The dot is escaped later in this method:
+        assert (ApplicationPackage.SD_NAME_SUFFIX.charAt(0) == '.');
 
-        File sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
-        if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + ApplicationPackage.SD_NAME_SUFFIX))));
+        List<File> ret = new ArrayList<>();
+        File sdDir;
 
-        sdDir = new File(appDir, ApplicationPackage.SCHEMAS_DIR.getRelative());
-        if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + ApplicationPackage.SD_NAME_SUFFIX))));
-
-        return schemaFiles;
+        sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
+        if (!sdDir.isDirectory()) {
+            return ret;
+        }
+        ret.addAll(Arrays.asList(
+                sdDir.listFiles(
+                        new FilenameFilter() { @Override public boolean accept(File dir, String name) {
+                            return name.matches(".*\\" + ApplicationPackage.SD_NAME_SUFFIX);}})));
+        return ret;
     }
 
     public List<File> getSearchDefinitionFiles() {
         return getSearchDefinitionFiles(appDir);
     }
 
-    // Only for use by deploy processor
+    //Only for use by deploy processor
     public static List<Component> getComponents(File appDir) {
         List<Component> components = new ArrayList<>();
         for (Bundle bundle : Bundle.getBundles(new File(appDir, ApplicationPackage.COMPONENT_DIR))) {
@@ -610,7 +622,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
         public Bundle getBundle() {
             return bundle;
         }
-
     } // class Component
 
     /**
@@ -632,14 +643,12 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private File expressionFileNameToFile(String name) {
-        if (new File(name).isAbsolute())
+        File expressionFile = new File(name);
+        if (expressionFile.isAbsolute()) {
             throw new IllegalArgumentException("Absolute path to ranking expression file is not allowed: " + name);
-
-        File sdDir = new File(appDir, ApplicationPackage.SCHEMAS_DIR.getRelative());
-        File expressionFile = new File(sdDir, name);
-        if ( !expressionFile.exists())
-            expressionFile = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
-        return expressionFile;
+        }
+        File sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
+        return new File(sdDir, name);
     }
 
     @Override
@@ -691,8 +700,9 @@ public class FilesApplicationPackage implements ApplicationPackage {
                                                                                          ! name.equals(HOSTS) &&
                                                                                          ! name.equals(CONFIG_DEFINITIONS_DIR));
         preprocessXML(new File(preprocessedDir, SERVICES), getServicesFile(), zone);
-        if (getHostsFile().exists())
+        if (getHostsFile().exists()) {
             preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
+        }
         FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
@@ -732,12 +742,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     /**
      * Adds the given path to the digest, or does nothing if path is neither file nor dir
-     *
      * @param path path to add to message digest
      * @param suffix only files with this suffix are considered
      * @param digest the {link @MessageDigest} to add the file paths to
      * @param recursive whether to recursively find children in the paths
-     * @param fullPathNames whether to include the full paths in checksum or only the names
+     * @param fullPathNames Whether to include the full paths in checksum or only the names
      * @throws java.io.IOException if adding path to digest fails when reading files from path
      */
     private static void addPathToDigest(File path, String suffix, MessageDigest digest, boolean recursive, boolean fullPathNames) throws IOException {
@@ -764,17 +773,16 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private static final int MD5_BUFFER_SIZE = 65536;
-
     private static void addToDigest(InputStream is, MessageDigest digest) throws IOException {
-        if (is == null) return;
+        if (is==null) return;
         byte[] buffer = new byte[MD5_BUFFER_SIZE];
         int i;
         do {
-            i = is.read(buffer);
+            i=is.read(buffer);
             if (i > 0) {
                 digest.update(buffer, 0, i);
             }
-        } while(i != -1);
+        } while(i!=-1);
     }
 
     /**

@@ -127,7 +127,7 @@ public class SearchClusterTest {
                 "  </content>" +
                 "</services>";
 
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, services, ApplicationPackageUtils.generateSchemas("music")).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, services, ApplicationPackageUtils.generateSearchDefinitions("music")).create();
 
         ContainerCluster containerCluster1 = (ContainerCluster)model.getConfigProducer("j1").get();
         assertFalse(containerCluster1.getSearch().getChains().localProviders().isEmpty());
