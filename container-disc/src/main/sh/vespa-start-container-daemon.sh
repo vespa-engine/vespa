@@ -216,6 +216,7 @@ exec $numactlcmd $envcmd java \
         --add-opens=java.base/java.lang=ALL-UNNAMED \
         --add-opens=java.base/java.net=ALL-UNNAMED \
         --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
+        -Djava.io.tmpdir="${VESPA_HOME}/tmp" \
         -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
