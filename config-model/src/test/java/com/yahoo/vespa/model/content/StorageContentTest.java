@@ -49,7 +49,7 @@ public class StorageContentTest extends ContentBaseTest {
     }
 
     private VespaModel getStorageVespaModel(String cluster1docs, String cluster2docs) {
-        List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2", "type3");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2", "type3");
         return new VespaModelCreatorWithMockPkg(getHosts(), createStorageVespaServices(cluster1docs, cluster2docs), sds).create();
     }
 

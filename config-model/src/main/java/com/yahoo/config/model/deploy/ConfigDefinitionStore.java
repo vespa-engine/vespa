@@ -8,6 +8,7 @@ import java.util.Optional;
 
 /**
  * @author Ulf Lilleengen
+ * @since 5.1
  */
 public interface ConfigDefinitionStore {
 

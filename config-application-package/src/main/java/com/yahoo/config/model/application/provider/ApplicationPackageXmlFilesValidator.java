@@ -35,11 +35,20 @@ public class ApplicationPackageXmlFilesValidator {
         return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), vespaVersion);
     }
 
+    @SuppressWarnings("deprecation")
     public void checkApplication() throws IOException {
         validate(validators.servicesXmlValidator(), servicesFileName());
         validateOptional(validators.hostsXmlValidator(), FilesApplicationPackage.HOSTS);
         validateOptional(validators.deploymentXmlValidator(), FilesApplicationPackage.DEPLOYMENT_FILE.getName());
         validateOptional(validators.validationOverridesXmlValidator(), FilesApplicationPackage.VALIDATION_OVERRIDES.getName());
+
+        if (appDirs.searchdefinitions().exists()) {
+            if (FilesApplicationPackage.getSearchDefinitionFiles(appDirs.root()).isEmpty()) {
+                throw new IllegalArgumentException("Application package in " + appDirs.root() +
+                        " must contain at least one search definition (.sd) file when directory searchdefinitions/ exists.");
+            }
+        }
+
         validateRouting(appDirs.routingtables);
     }
 
@@ -62,6 +71,7 @@ public class ApplicationPackageXmlFilesValidator {
         validator.validate(appDirs.file(filename));
     }
 
+    @SuppressWarnings("deprecation")
     private String servicesFileName() {
         String servicesFile = FilesApplicationPackage.SERVICES;
         if ( ! appDirs.file(servicesFile).exists()) {

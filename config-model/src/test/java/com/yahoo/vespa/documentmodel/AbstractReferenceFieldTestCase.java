@@ -3,7 +3,7 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 
@@ -12,7 +12,7 @@ import java.io.IOException;
 /**
  * Utility functions for testing generated configs for reference/imported fields.
  */
-public abstract class AbstractReferenceFieldTestCase extends SchemaTestCase {
+public abstract class AbstractReferenceFieldTestCase extends SearchDefinitionTestCase {
 
     private static String TEST_FOLDER = "src/test/configmodel/types/references/";
 

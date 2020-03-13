@@ -87,16 +87,17 @@ public class ZooKeeperClient {
 
     /** Sets the app id and attempts to set up zookeeper. The app id must be ordered for purge to work OK. */
     private void createZooKeeperNodes() {
-        if ( ! configCurator.exists(rootPath.getAbsolute()))
+        if (!configCurator.exists(rootPath.getAbsolute())) {
             configCurator.createNode(rootPath.getAbsolute());
+        }
 
-        for (String subPath : Arrays.asList(ConfigCurator.DEFCONFIGS_ZK_SUBPATH,
-                                            ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH,
-                                            ConfigCurator.USERAPP_ZK_SUBPATH,
-                                            ZKApplicationPackage.fileRegistryNode)) {
-            // TODO: The replaceFirst below is hackish.
-            configCurator.createNode(getZooKeeperAppPath(null).getAbsolute(),
-                                     subPath.replaceFirst("/", ""));
+        for (String subPath : Arrays.asList(
+                ConfigCurator.DEFCONFIGS_ZK_SUBPATH,
+                ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH,
+                ConfigCurator.USERAPP_ZK_SUBPATH,
+                ZKApplicationPackage.fileRegistryNode)) {
+            // TODO The replaceFirst below is hackish.
+            configCurator.createNode(getZooKeeperAppPath(null).getAbsolute(), subPath.replaceFirst("/", ""));
         }
     }
 
@@ -107,6 +108,7 @@ public class ZooKeeperClient {
      */
     void write(ApplicationPackage app) {
         logFine("Feeding application config into ZooKeeper");
+        // gives lots and lots of debug output: // BasicConfigurator.configure();
         try {
             logFine("Feeding user def files into ZooKeeper");
             writeUserDefs(app);
@@ -119,33 +121,43 @@ public class ZooKeeperClient {
             write(app.getMetaData());
         } catch (Exception e) {
             throw new IllegalStateException("Unable to write vespa model to config server(s) " + System.getProperty("configsources") + "\n" +
-                                            "Please ensure that cloudconfig_server is started on the config server node(s), " +
-                                            "and check the vespa log for configserver errors. ", e);
+                    "Please ensure that cloudconfig_server is started on the config server node(s), " +
+                    "and check the vespa log for configserver errors. ", e);
         }
     }
 
     private void writeSearchDefinitions(ApplicationPackage app) throws IOException {
         Collection<NamedReader> sds = app.getSearchDefinitions();
-        if (sds.isEmpty()) return;
-
-        Path zkPath = getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.SCHEMAS_DIR);
+        if (sds.isEmpty()) {
+            return;
+        }
+        Path zkPath = getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.SEARCH_DEFINITIONS_DIR);
         configCurator.createNode(zkPath.getAbsolute());
-        // Ensures that ranking expressions and other files are also written
+        // Ensures that ranking expressions and other files are also fed.
         writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, false);
-        writeDir(app.getFile(ApplicationPackage.SCHEMAS_DIR), zkPath, false);
         for (NamedReader sd : sds) {
-            configCurator.putData(zkPath.getAbsolute(), sd.getName(), com.yahoo.io.IOUtils.readAll(sd.getReader()));
-            sd.getReader().close();
+            String name = sd.getName();
+            Reader reader = sd.getReader();
+            String data = com.yahoo.io.IOUtils.readAll(reader);
+            reader.close();
+            configCurator.putData(zkPath.getAbsolute(), name, data);
         }
     }
 
     /**
      * Puts some of the application package files into ZK - see write(app).
      *
-     * @param app the application package to use as input.
-     * @throws java.io.IOException if not able to write to Zookeeper
+     * @param app The application package to use as input.
+     * @throws java.io.IOException  if not able to write to Zookeeper
      */
     private void writeSomeOf(ApplicationPackage app) throws IOException {
+        ApplicationFile.PathFilter srFilter = new ApplicationFile.PathFilter() {
+            @Override
+            public boolean accept(Path path) {
+                return path.getName().endsWith(ApplicationPackage.RULES_NAME_SUFFIX);
+            }
+        };
+        // Copy app package files and subdirs into zk
         // TODO: We should have a way of doing this which doesn't require repeating all the content
         writeFile(app.getFile(Path.fromString(ApplicationPackage.SERVICES)),
                   getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
@@ -157,8 +169,7 @@ public class ZooKeeperClient {
                   getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
         writeDir(app.getFile(ApplicationPackage.RULES_DIR),
                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.RULES_DIR),
-                 (path) -> path.getName().endsWith(ApplicationPackage.RULES_NAME_SUFFIX),
-                 true);
+                 srFilter, true);
         writeDir(app.getFile(ApplicationPackage.QUERY_PROFILES_DIR),
                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.QUERY_PROFILES_DIR),
                  xmlFilter, true);
@@ -183,12 +194,20 @@ public class ZooKeeperClient {
     }
 
     private void writeDir(ApplicationFile file, Path zooKeeperAppPath, boolean recurse) throws IOException {
-        writeDir(file, zooKeeperAppPath, (__) -> true, recurse);
+        writeDir(file, zooKeeperAppPath, new ApplicationFile.PathFilter() {
+            @Override
+            public boolean accept(Path path) {
+                return true;
+            }
+        }, recurse);
     }
 
     private void writeDir(ApplicationFile dir, Path path, ApplicationFile.PathFilter filenameFilter, boolean recurse) throws IOException {
-        if ( ! dir.isDirectory()) return;
-        for (ApplicationFile file : listFiles(dir, filenameFilter)) {
+        if (!dir.isDirectory()) {
+            logger.log(LogLevel.FINE, dir.getPath().getAbsolute()+" is not a directory. Not feeding the files into ZooKeeper.");
+            return;
+        }
+        for (ApplicationFile file: listFiles(dir, filenameFilter)) {
             String name = file.getPath().getName();
             if (name.startsWith(".")) continue; //.svn , .git ...
             if ("CVS".equals(name)) continue;
@@ -204,8 +223,7 @@ public class ZooKeeperClient {
     }
 
     /**
-     * Like {@link ApplicationFile#listFiles(com.yahoo.config.application.api.ApplicationFile.PathFilter)}
-     * with slightly different semantics: Never filter out directories.
+     * Like {@link ApplicationFile#listFiles(com.yahoo.config.application.api.ApplicationFile.PathFilter)} with a slightly different semantic. Never filter out directories.
      */
     private List<ApplicationFile> listFiles(ApplicationFile dir, ApplicationFile.PathFilter filter) {
         List<ApplicationFile> rawList = dir.listFiles();
@@ -225,8 +243,9 @@ public class ZooKeeperClient {
     }
 
     private void writeFile(ApplicationFile file, Path zkPath) throws IOException {
-        if ( ! file.exists()) return;
-
+        if (!file.exists()) {
+            return;
+        }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (InputStream inputStream = file.createInputStream()) {
             inputStream.transferTo(baos);
@@ -273,8 +292,8 @@ public class ZooKeeperClient {
         String exportedRegistry = PreGeneratedFileRegistry.exportRegistry(fileRegistry);
 
         configCurator.putData(getZooKeeperAppPath(null).append(ZKApplicationPackage.fileRegistryNode).getAbsolute(),
-                              vespaVersion.toFullString(),
-                              exportedRegistry);
+                vespaVersion.toFullString(),
+                exportedRegistry);
     }
 
     /**
@@ -324,8 +343,9 @@ public class ZooKeeperClient {
     }
 
     public void write(AllocatedHosts hosts) throws IOException {
-        configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(),
-                              AllocatedHostsSerializer.toJson(hosts));
+        configCurator.putData(
+                rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(),
+                AllocatedHostsSerializer.toJson(hosts));
     }
 
     public void write(Map<Version, FileRegistry> fileRegistryMap) {

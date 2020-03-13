@@ -164,7 +164,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                         "  </container>\n" +
                         "</services>\n";
 
-        List<String> sds = ApplicationPackageUtils.generateSchemas("music", "title", "artist");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("music", "title", "artist");
         VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(),
                 services, sds).create();
         assertIndexing(model, new DocprocClusterSpec("dokprok"));
@@ -448,7 +448,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
     }
 
     private VespaModel getIndexedSearchVespaModel(String xml) {
-        List<String> sds = ApplicationPackageUtils.generateSchemas("music", "album", "artist");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("music", "album", "artist");
         return new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
     }
 

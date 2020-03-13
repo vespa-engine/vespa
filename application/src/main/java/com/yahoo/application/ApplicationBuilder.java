@@ -37,13 +37,13 @@ public class ApplicationBuilder {
     }
 
     public ApplicationBuilder documentType(String name, String searchDefinition) throws IOException {
-        Path path = nestedResource(ApplicationPackage.SCHEMAS_DIR, name, ApplicationPackage.SD_NAME_SUFFIX);
+        Path path = nestedResource(ApplicationPackage.SEARCH_DEFINITIONS_DIR, name, ApplicationPackage.SD_NAME_SUFFIX);
         createFile(path, searchDefinition);
         return this;
     }
 
     public ApplicationBuilder rankExpression(String name, String rankExpressionContent) throws IOException {
-        Path path = nestedResource(ApplicationPackage.SCHEMAS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
+        Path path = nestedResource(ApplicationPackage.SEARCH_DEFINITIONS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
         createFile(path, rankExpressionContent);
         return this;
     }

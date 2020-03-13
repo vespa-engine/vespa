@@ -20,7 +20,7 @@ import com.yahoo.searchdefinition.DocumentOnlySearch;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.NamedSchema;
+import com.yahoo.vespa.model.search.SearchDefinition;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,9 +60,9 @@ public class ApplicationDeployTest {
     public void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
         VespaModel model = new VespaModel(tester.app());
-        List<NamedSchema> schemas = tester.getSchemas();
-        assertEquals(schemas.size(), 5);
-        for (NamedSchema searchDefinition : schemas) {
+        List<SearchDefinition> searchDefinitions = tester.getSearchDefinitions();
+        assertEquals(searchDefinitions.size(), 5);
+        for (SearchDefinition searchDefinition : searchDefinitions) {
             Search s = searchDefinition.getSearch();
             switch (s.getName()) {
                 case "music":
@@ -71,18 +72,21 @@ public class ApplicationDeployTest {
                     break;
                 case "product":
                     assertTrue(s instanceof DocumentOnlySearch);
-                    assertEquals(DataType.STRING, s.getDocument().getField("title").getDataType());
+                    assertEquals(s.getDocument().getField("title").getDataType(), DataType.STRING);
                     break;
                 default:
                     fail();
             }
         }
-        assertEquals(Set.of(new File(TESTSDDIR + "laptop.sd"),
-                            new File(TESTSDDIR + "music.sd"),
-                            new File(TESTSDDIR + "pc.sd"),
-                            new File(TESTSDDIR + "product.sd"),
-                            new File(TESTSDDIR + "sock.sd")),
-                     new HashSet<>(tester.app().getSearchDefinitionFiles()));
+        File[] truth = new File[]{new File(TESTSDDIR + "laptop.sd"),
+                new File(TESTSDDIR + "music.sd"),
+                new File(TESTSDDIR + "pc.sd"),
+                new File(TESTSDDIR + "product.sd"),
+                new File(TESTSDDIR + "sock.sd")};
+        Arrays.sort(truth);
+        List<File> appSdFiles = tester.app().getSearchDefinitionFiles();
+        Collections.sort(appSdFiles);
+        assertEquals(appSdFiles, Arrays.asList(truth));
 
         List<FilesApplicationPackage.Component> components = tester.app().getComponents();
         assertEquals(1, components.size());
@@ -99,7 +103,7 @@ public class ApplicationDeployTest {
 
         // Check that getFilename works
         ArrayList<String> sdFileNames = new ArrayList<>();
-        for (NamedSchema sd : schemas)
+        for (SearchDefinition sd : searchDefinitions)
             sdFileNames.add(sd.getFilename());
         Collections.sort(sdFileNames);
         assertEquals("laptop.sd", sdFileNames.get(0));
@@ -186,11 +190,11 @@ public class ApplicationDeployTest {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
         ApplicationPackageTester tester = ApplicationPackageTester.create(tmpDir.getAbsolutePath());
-        assertEquals(5, tester.getSchemas().size());
-        File sdDir = new File(tmpDir, "schemas");
+        assertEquals(5, tester.getSearchDefinitions().size());
+        File sdDir = new File(tmpDir, "searchdefinitions");
         File sd = new File(sdDir, "testfoo.sd");
         IOUtils.writeFile(sd, "search testfoo { document testfoo { field bar type string { } } }", false);
-        assertEquals(6, tester.getSchemas().size());
+        assertEquals(6, tester.getSearchDefinitions().size());
     }
 
     @Test
@@ -296,16 +300,6 @@ public class ApplicationDeployTest {
 
     @Test
     public void testGetJarEntryName() {
-        JarEntry e = new JarEntry("/schemas/foo.sd");
-        assertEquals(ApplicationPackage.getFileName(e), "foo.sd");
-        e = new JarEntry("bar");
-        assertEquals(ApplicationPackage.getFileName(e), "bar");
-        e = new JarEntry("");
-        assertEquals(ApplicationPackage.getFileName(e), "");
-    }
-
-    @Test
-    public void testGetJarEntryNameForLegacyPath() {
         JarEntry e = new JarEntry("/searchdefinitions/foo.sd");
         assertEquals(ApplicationPackage.getFileName(e), "foo.sd");
         e = new JarEntry("bar");

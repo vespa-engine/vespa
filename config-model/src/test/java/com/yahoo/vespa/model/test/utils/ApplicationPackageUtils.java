@@ -44,14 +44,14 @@ public class ApplicationPackageUtils {
     }
 
     public static List<String> generateSearchDefinition(String name) {
-        return generateSchemas(name);
+        return generateSearchDefinitions(name);
     }
 
-    public static List<String> generateSchemas(String ... sdNames) {
-        return generateSchemas(Arrays.asList(sdNames));
+    public static List<String> generateSearchDefinitions(String ... sdNames) {
+        return generateSearchDefinitions(Arrays.asList(sdNames));
     }
 
-    public static List<String> generateSchemas(List<String> sdNames) {
+    public static List<String> generateSearchDefinitions(List<String> sdNames) {
         List<String> sds = new ArrayList<>();
         int i = 0;
         for (String sdName : sdNames) {

@@ -32,10 +32,9 @@ public class ApplicationBuilderTest {
     @Test
     public void query_profile_can_be_added() throws Exception {
         withApplicationBuilder(builder -> {
-            builder.queryProfile("MyProfile",
-                                 "<query-profile id=\"MyProfile\">" +
-                                 "<field name=\"message\">Hello world!</field>" +
-                                 "</query-profile>");
+            builder.queryProfile("MyProfile", "<query-profile id=\"MyProfile\">" + //
+            "<field name=\"message\">Hello world!</field>" + //
+            "</query-profile>");
 
             assertTrue(Files.exists(builder.getPath().resolve("search/query-profiles/MyProfile.xml")));
         });
@@ -45,7 +44,7 @@ public class ApplicationBuilderTest {
     public void rank_expression_can_be_added() throws Exception {
         withApplicationBuilder(builder -> {
             builder.rankExpression("myExpression", "content");
-            assertTrue(Files.exists(builder.getPath().resolve("schemas/myExpression.expression")));
+            assertTrue(Files.exists(builder.getPath().resolve("searchdefinitions/myExpression.expression")));
         });
     }
 

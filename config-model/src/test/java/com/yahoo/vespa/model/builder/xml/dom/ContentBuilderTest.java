@@ -236,8 +236,8 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void requireThatContentStreamingHandlesMultipleSchemas() {
-        String musicClusterId = "music-cluster-id";
+    public void requireThatContentStreamingHandlesMultipleSearchDefinitions() {
+        final String musicClusterId = "music-cluster-id";
 
         ContentCluster cluster = createContentWithBooksToo(
                 "<content version='1.0' id='" + musicClusterId + "'>" +
@@ -825,8 +825,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                                                                 .withHosts(getHosts())
                                                                 .withServices(combined)
-                                                                .withSchemas(Arrays.asList(MockApplicationPackage.MUSIC_SEARCHDEFINITION,
-                                                                                           MockApplicationPackage.BOOK_SEARCHDEFINITION))
+                                                                .withSearchDefinitions(Arrays.asList(MockApplicationPackage.MUSIC_SEARCHDEFINITION,
+                                                                                                     MockApplicationPackage.BOOK_SEARCHDEFINITION))
                                                                 .build())
                 .create();
 

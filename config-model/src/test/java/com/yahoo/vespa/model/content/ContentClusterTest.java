@@ -26,7 +26,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
-import com.yahoo.vespa.model.content.utils.SchemaBuilder;
+import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
 import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -218,7 +218,7 @@ public class ContentClusterTest extends ContentBaseTest {
             "\n" +
             "</services>";
 
-        List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
         VespaModel model = (new VespaModelCreatorWithMockPkg(null, xml, sds)).create();
         assertEquals(2, model.getContentClusters().get("bar").getDocumentDefinitions().size());
         ContainerCluster cluster = model.getAdmin().getClusterControllers();
@@ -259,7 +259,7 @@ public class ContentClusterTest extends ContentBaseTest {
                         " </services>";
 
         DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties);
-        List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1");
         return (new VespaModelCreatorWithMockPkg(null, services, sds)).create(deployStateBuilder);
     }
     @Test
@@ -301,7 +301,7 @@ public class ContentClusterTest extends ContentBaseTest {
             "\n" +
             "</services>";
 
-        List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
         VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
 
         assertTrue(model.getContentClusters().get("bar").getPersistence() instanceof ProtonEngine.Factory);
@@ -340,7 +340,7 @@ public class ContentClusterTest extends ContentBaseTest {
             "   </content>\n" +
             "</services>\n";
 
-        List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
         try{
             new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
             assertTrue("Deploying without redundancy should fail", false);
@@ -697,7 +697,7 @@ public class ContentClusterTest extends ContentBaseTest {
             "</services>";
 
 
-        List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
         VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
 
         {
@@ -818,7 +818,7 @@ public class ContentClusterTest extends ContentBaseTest {
               "  </group>" +
               "</content>";
 
-        List<String> sds = ApplicationPackageUtils.generateSchemas("true");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("true");
         new VespaModelCreatorWithMockPkg(null, xml, sds).create();
     }
 
@@ -865,7 +865,7 @@ public class ContentClusterTest extends ContentBaseTest {
                         "  </group>" +
                         "</content>" +
                         "</services>";
-        List<String> sds = ApplicationPackageUtils.generateSchemas("bunnies", "hares", "rabbits");
+        List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("bunnies", "hares", "rabbits");
         return new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
     }
 
@@ -912,8 +912,8 @@ public class ContentClusterTest extends ContentBaseTest {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .zone(zone)
                 .properties(new TestProperties().setHostedVespa(true));
-        List<String> schemas = SchemaBuilder.createSchemas("test");
-        MockRoot root = ContentClusterUtils.createMockRoot(schemas, deployStateBuilder);
+        List<String> searchDefinitions = SearchDefinitionBuilder.createSearchDefinitions("test");
+        MockRoot root = ContentClusterUtils.createMockRoot(searchDefinitions, deployStateBuilder);
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
         root.freezeModelTopology();
         cluster.validate();

@@ -190,7 +190,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
 
     private VespaModel getVespaModelWithMusic(String hosts, String services) {
-        return new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSchemas("music")).create();
+        return new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSearchDefinitions("music")).create();
     }
 
     private String hostsXml() {

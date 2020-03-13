@@ -11,7 +11,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author bratseth
  */
-public class ReservedWordsAsFieldNamesTestCase extends SchemaTestCase {
+public class ReservedWordsAsFieldNamesTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testIt() throws IOException, ParseException {

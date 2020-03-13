@@ -18,7 +18,7 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
-public class IncorrectRankingExpressionFileRefTestCase extends SchemaTestCase {
+public class IncorrectRankingExpressionFileRefTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testIncorrectRef() throws IOException, ParseException {

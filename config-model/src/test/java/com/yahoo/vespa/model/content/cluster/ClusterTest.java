@@ -176,7 +176,7 @@ public class ClusterTest {
                         "    </tuning>",
                         "  </content>",
                         "</services>"))
-                .withSchemas(ApplicationPackageUtils.generateSearchDefinition("my_document"))
+                .withSearchDefinitions(ApplicationPackageUtils.generateSearchDefinition("my_document"))
                 .build();
         List<Content> contents = new TestDriver().buildModel(app).getConfigModels(Content.class);
         assertEquals(1, contents.size());

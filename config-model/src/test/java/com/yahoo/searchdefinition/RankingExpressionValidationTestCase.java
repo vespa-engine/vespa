@@ -15,7 +15,7 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
-public class RankingExpressionValidationTestCase extends SchemaTestCase {
+public class RankingExpressionValidationTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testInvalidExpressionProducesException() throws ParseException {

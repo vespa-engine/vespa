@@ -2,7 +2,9 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.document.SDDocumentType;
+import com.yahoo.searchdefinition.document.TemporaryImportedFields;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -11,17 +13,17 @@ import java.util.List;
  */
 public class ImportedFieldsEnumerator {
 
-    private final List<Search> schemas;
+    private final List<Search> searchDefinitions;
 
-    public ImportedFieldsEnumerator(List<Search> schemas) {
-        this.schemas = schemas;
+    public ImportedFieldsEnumerator(List<Search> searchDefinitions) {
+        this.searchDefinitions = searchDefinitions;
     }
 
     public void enumerateImportedFields(SDDocumentType documentType) {
-        var search = this.schemas.stream()
-                                 .filter(s -> s.getDocument() != null)
-                                 .filter(s -> s.getDocument().getName().equals(documentType.getName()))
-                                 .findFirst();
+        var search = this.searchDefinitions.stream()
+                .filter(s -> s.getDocument() != null)
+                .filter(s -> s.getDocument().getName().equals(documentType.getName()))
+                .findFirst();
         if (search.isEmpty()) {
             return; // No imported fields present.
         }

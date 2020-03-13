@@ -24,7 +24,7 @@ public class DistributorTest {
 
     ContentCluster parseCluster(String xml) {
         try {
-            List<String> searchDefs = ApplicationPackageUtils.generateSchemas("music", "movies", "bunnies");
+            List<String> searchDefs = ApplicationPackageUtils.generateSearchDefinitions("music", "movies", "bunnies");
             MockRoot root = ContentClusterUtils.createMockRoot(searchDefs);
             return ContentClusterUtils.createCluster(xml, root);
         } catch (Exception e) {

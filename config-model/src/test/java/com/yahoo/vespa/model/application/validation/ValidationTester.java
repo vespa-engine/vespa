@@ -65,7 +65,7 @@ public class ValidationTester {
         Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
         ApplicationPackage newApp = new MockApplicationPackage.Builder()
                 .withServices(services)
-                .withSchemas(ImmutableList.of(MUSIC_SEARCHDEFINITION, BOOK_SEARCHDEFINITION))
+                .withSearchDefinitions(ImmutableList.of(MUSIC_SEARCHDEFINITION, BOOK_SEARCHDEFINITION))
                 .withValidationOverrides(validationOverrides)
                 .build();
         VespaModelCreatorWithMockPkg newModelCreator = new VespaModelCreatorWithMockPkg(newApp);

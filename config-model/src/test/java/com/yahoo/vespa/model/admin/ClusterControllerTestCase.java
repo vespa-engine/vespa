@@ -52,7 +52,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
     @Before
     public void setup() {
-        sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
+        sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
     }
 
     @Test
@@ -457,7 +457,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     private VespaModel createVespaModel(String servicesXml, boolean isHosted) throws IOException, SAXException {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
-                .withSchemas(sds)
+                .withSearchDefinitions(sds)
                 .build();
         // Need to create VespaModel to make deploy properties have effect
         DeployLogger logger = new DeployLoggerStub();
