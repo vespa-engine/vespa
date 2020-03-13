@@ -8,7 +8,7 @@ import java.util.Collection;
 /**
  * @author Tony Vaagenes
  */
-public class SearchDefinition {
+public class Schemas {
 
     private final Search search;
     private final String name;
@@ -23,14 +23,14 @@ public class SearchDefinition {
         return name;
     }
 
-    public SearchDefinition(String name, Search search) {
+    public Schemas(String name, Search search) {
         this.name = name;
         this.search = search;
     }
 
     //Find search definition from a collection with the name specified
-    public static SearchDefinition findByName(final String searchDefinitionName, Collection<SearchDefinition> searchDefinitions) {
-        for (SearchDefinition candidate : searchDefinitions) {
+    public static Schemas findByName(final String searchDefinitionName, Collection<Schemas> searchDefinitions) {
+        for (Schemas candidate : searchDefinitions) {
             if (candidate.getName().equals(searchDefinitionName) )
                 return candidate;
         }

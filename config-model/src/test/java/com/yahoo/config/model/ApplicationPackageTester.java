@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.model.search.SearchDefinition;
+import com.yahoo.vespa.model.search.Schemas;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +39,7 @@ public class ApplicationPackageTester {
 
     public FilesApplicationPackage app() { return applicationPackage; }
 
-    public List<SearchDefinition> getSearchDefinitions() {
+    public List<Schemas> getSearchDefinitions() {
         return new DeployState.Builder().applicationPackage(app()).build().getSearchDefinitions();
     }
 

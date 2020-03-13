@@ -20,7 +20,7 @@ import com.yahoo.searchdefinition.DocumentOnlySearch;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.SearchDefinition;
+import com.yahoo.vespa.model.search.Schemas;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,9 +59,9 @@ public class ApplicationDeployTest {
     public void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
         VespaModel model = new VespaModel(tester.app());
-        List<SearchDefinition> searchDefinitions = tester.getSearchDefinitions();
+        List<Schemas> searchDefinitions = tester.getSearchDefinitions();
         assertEquals(searchDefinitions.size(), 5);
-        for (SearchDefinition searchDefinition : searchDefinitions) {
+        for (Schemas searchDefinition : searchDefinitions) {
             Search s = searchDefinition.getSearch();
             switch (s.getName()) {
                 case "music":
@@ -100,7 +99,7 @@ public class ApplicationDeployTest {
 
         // Check that getFilename works
         ArrayList<String> sdFileNames = new ArrayList<>();
-        for (SearchDefinition sd : searchDefinitions)
+        for (Schemas sd : searchDefinitions)
             sdFileNames.add(sd.getFilename());
         Collections.sort(sdFileNames);
         assertEquals("laptop.sd", sdFileNames.get(0));

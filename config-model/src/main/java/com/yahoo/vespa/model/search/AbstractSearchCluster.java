@@ -42,7 +42,7 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
             sds.getSearchDefinition().getSearch().rankingConstants().sendTo(backends);
     }
 
-    public void addDocumentNames(SearchDefinition searchDefinition) {
+    public void addDocumentNames(Schemas searchDefinition) {
         String dName = searchDefinition.getSearch().getDocument().getDocumentName().getName();
         documentNames.add(dName);
     }
@@ -109,16 +109,16 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
 
     public static final class SearchDefinitionSpec {
 
-        private final SearchDefinition searchDefinition;
+        private final Schemas searchDefinition;
         private final UserConfigRepo userConfigRepo;
 
-        public SearchDefinitionSpec(SearchDefinition searchDefinition,
+        public SearchDefinitionSpec(Schemas searchDefinition,
                                     UserConfigRepo userConfigRepo) {
             this.searchDefinition = searchDefinition;
             this.userConfigRepo = userConfigRepo;
         }
 
-        public SearchDefinition getSearchDefinition() {
+        public Schemas getSearchDefinition() {
             return searchDefinition;
         }
 

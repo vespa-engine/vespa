@@ -16,7 +16,7 @@ import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SearchCluster;
-import com.yahoo.vespa.model.search.SearchDefinition;
+import com.yahoo.vespa.model.search.Schemas;
 import com.yahoo.vespa.model.search.SearchDefinitionXMLHandler;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
@@ -201,7 +201,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private void addSearchDefinitions(DeployState deployState, List<ModelElement> searchDefs, AbstractSearchCluster sc) {
         for (ModelElement e : searchDefs) {
             SearchDefinitionXMLHandler searchDefinitionXMLHandler = new SearchDefinitionXMLHandler(e);
-            SearchDefinition searchDefinition =
+            Schemas searchDefinition =
                     searchDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSearchDefinitions());
             if (searchDefinition == null)
                 throw new RuntimeException("Search definition parsing error or file does not exist: '" +
