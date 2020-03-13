@@ -3,13 +3,14 @@
 #include "blueprint.h"
 #include "parametervalidator.h"
 #include <cassert>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.blueprint");
 
 namespace search::fef {
 
-const FeatureType &
+std::optional<FeatureType>
 Blueprint::defineInput(vespalib::stringref inName, AcceptInput accept)
 {
     assert(_dependency_handler != nullptr);
@@ -19,11 +20,23 @@ Blueprint::defineInput(vespalib::stringref inName, AcceptInput accept)
 void
 Blueprint::describeOutput(vespalib::stringref outName,
                           vespalib::stringref desc,
-                          const FeatureType &type)
+                          FeatureType type)
 {
     (void) desc;
     assert(_dependency_handler != nullptr);
-    _dependency_handler->define_output(outName, type);
+    _dependency_handler->define_output(outName, std::move(type));
+}
+
+bool
+Blueprint::fail(const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    vespalib::string msg = vespalib::make_string_va(format, ap);
+    va_end(ap);
+    assert(_dependency_handler != nullptr);
+    _dependency_handler->fail(msg);
+    return false;
 }
 
 Blueprint::Blueprint(vespalib::stringref baseName)
@@ -52,9 +65,8 @@ Blueprint::setup(const IIndexEnvironment &indexEnv,
     if (result.valid()) {
         return setup(indexEnv, result.getParameters());
     } else {
-        LOG(error, "The parameter list used for setting up rank feature %s is not valid: %s",
-            getBaseName().c_str(), result.getError().c_str());
-        return false;
+        return fail("The parameter list used for setting up rank feature %s is not valid: %s",
+                    getBaseName().c_str(), result.getError().c_str());
     }
 }
 
@@ -62,9 +74,8 @@ bool
 Blueprint::setup(const IIndexEnvironment &indexEnv, const ParameterList &params)
 {
     (void) indexEnv; (void) params;
-    LOG(error, "The setup function using a typed parameter list does not have a default implementation. "
-        "Make sure the setup function is implemented in the rank feature %s.", getBaseName().c_str());
-    return false;
+    return fail("The setup function using a typed parameter list does not have a default implementation. "
+                "Make sure the setup function is implemented in the rank feature %s.", getBaseName().c_str());
 }
 
 void

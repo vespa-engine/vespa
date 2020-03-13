@@ -26,12 +26,14 @@ struct DummyDependencyHandler : public Blueprint::DependencyHandler
     std::vector<Blueprint::AcceptInput>    accept_input;
     std::vector<vespalib::string>          output;
     std::vector<FeatureType>               output_type;
+    vespalib::string                       fail_msg;
 
     explicit DummyDependencyHandler(Blueprint &blueprint_in);
     ~DummyDependencyHandler();
     void define_object_input(const vespalib::string &name, const vespalib::eval::ValueType &type);
-    const FeatureType &resolve_input(const vespalib::string &feature_name, Blueprint::AcceptInput accept_type) override;
-    void define_output(const vespalib::string &output_name, const FeatureType &type) override;
+    std::optional<FeatureType> resolve_input(const vespalib::string &feature_name, Blueprint::AcceptInput accept_type) override;
+    void define_output(const vespalib::string &output_name, FeatureType type) override;
+    void fail(const vespalib::string &msg) override;
 };
 
 } // namespace search::fef::test

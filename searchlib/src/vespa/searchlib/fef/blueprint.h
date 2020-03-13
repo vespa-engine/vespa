@@ -9,6 +9,7 @@
 #include "parameter.h"
 #include "parameterdescriptions.h"
 #include "feature_type.h"
+#include <optional>
 
 namespace vespalib { class Stash; }
 
@@ -43,8 +44,9 @@ public:
      * executor setup.
      **/
     struct DependencyHandler {
-        virtual const FeatureType &resolve_input(const vespalib::string &feature_name, AcceptInput accept_type) = 0;
-        virtual void define_output(const vespalib::string &output_name, const FeatureType &type) = 0;
+        virtual std::optional<FeatureType> resolve_input(const vespalib::string &feature_name, AcceptInput accept_type) = 0;
+        virtual void define_output(const vespalib::string &output_name, FeatureType type) = 0;
+        virtual void fail(const vespalib::string &msg) = 0;
         virtual ~DependencyHandler() = default;
     };
 
@@ -87,8 +89,8 @@ protected:
      * @param inName feature name of input
      * @param type accepted input type
      **/
-    const FeatureType &defineInput(vespalib::stringref inName,
-                                   AcceptInput accept = AcceptInput::NUMBER);
+    std::optional<FeatureType> defineInput(vespalib::stringref inName,
+                                           AcceptInput accept = AcceptInput::NUMBER);
 
     /**
      * Describe an output for this blueprint. This method should be
@@ -104,7 +106,22 @@ protected:
      * @param desc output description
      **/
     void describeOutput(vespalib::stringref outName, vespalib::stringref desc,
-                        const FeatureType &type = FeatureType::number());
+                        FeatureType type = FeatureType::number());
+
+    /**
+     * Fail the setup of this blueprint with the given message. This
+     * function should be called by the @ref setup function when it
+     * fails. The failure is handled by the dependency handler to make
+     * sure we only report the first error for each feature.
+     *
+     * @return false
+     * @param format printf-style format string
+     **/
+    bool fail(const char *format, ...)
+#ifdef __GNUC__
+        __attribute__ ((format (printf,2,3)))
+#endif
+        ;
 
     /**
      * Used to store a reference to the attribute during prepareSharedState

@@ -139,7 +139,7 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
     for (const auto &entry: features) {
         const auto &name = entry.first;
         auto ref = entry.second;
-        bool is_object = specs[ref.executor].output_types[ref.output];
+        bool is_object = specs[ref.executor].output_types[ref.output].is_object();
         FeatureExecutor *executor = _executors[ref.executor];
         const NumberOrObject *raw_value = executor->outputs().get_raw(ref.output);
         LazyValue lazy_value = check_const(raw_value) ? LazyValue(raw_value) : LazyValue(raw_value, executor);
@@ -215,7 +215,7 @@ RankProgram::setup(const MatchData &md,
     }
     for (const auto &seed_entry: _resolver->getSeedMap()) {
         auto seed = seed_entry.second;
-        if (specs[seed.executor].output_types[seed.output]) {
+        if (specs[seed.executor].output_types[seed.output].is_object()) {
             unbox(seed, md);
         }
     }

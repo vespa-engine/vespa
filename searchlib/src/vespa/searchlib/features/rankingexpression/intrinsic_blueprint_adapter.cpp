@@ -12,14 +12,14 @@ namespace search::features::rankingexpression {
 
 namespace {
 
-bool is_valid(const FeatureType *type) {
-    if (type == nullptr) {
+bool is_valid(const std::optional<FeatureType> &type) {
+    if (!type.has_value()) {
         return false;
     }
-    if (!type->is_object()) {
+    if (!type.value().is_object()) {
         return true;
     }
-    return !type->type().is_error();
+    return !type.value().type().is_error();
 }
 
 struct IntrinsicBlueprint : IntrinsicExpression {
@@ -38,19 +38,21 @@ struct IntrinsicBlueprint : IntrinsicExpression {
 };
 
 struct ResultTypeExtractor : Blueprint::DependencyHandler {
-    std::unique_ptr<FeatureType> result_type;
+    std::optional<FeatureType> result_type;
     bool too_much;
-    ResultTypeExtractor() : result_type(), too_much(false) {}
-    const FeatureType &resolve_input(const vespalib::string &, Blueprint::AcceptInput) override {
+    bool failed;
+    ResultTypeExtractor() : result_type(), too_much(false), failed(false) {}
+    std::optional<FeatureType> resolve_input(const vespalib::string &, Blueprint::AcceptInput) override {
         too_much = true;
-        return FeatureType::number();
+        return std::nullopt;
     }
-    void define_output(const vespalib::string &, const FeatureType &type) override {
-        too_much = (too_much || bool(result_type));
-        result_type = std::make_unique<FeatureType>(type);
+    void define_output(const vespalib::string &, FeatureType type) override {
+        too_much = (too_much || result_type.has_value());
+        result_type.emplace(std::move(type));
     }
-    bool valid() const { return (is_valid(result_type.get()) && !too_much); }
-    const FeatureType &get() const { return *result_type; }
+    void fail(const vespalib::string &) override { failed = true; }
+    bool valid() const { return (is_valid(result_type) && !too_much && !failed); }
+    const FeatureType &get() const { return result_type.value(); }
 };
 
 } // namespace search::features::rankingexpression::<unnamed>

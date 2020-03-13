@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stack>
 #include <cassert>
+#include <set>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.blueprintresolver");
@@ -13,6 +14,8 @@ LOG_SETUP(".fef.blueprintresolver");
 namespace search::fef {
 
 namespace {
+
+static const size_t MAX_TRACE_SIZE = 16;
 
 using Accept = Blueprint::AcceptInput;
 
@@ -51,15 +54,19 @@ struct Compiler : public Blueprint::DependencyHandler {
     struct FrameGuard {
         Stack &stack;
         explicit FrameGuard(Stack &stack_in) : stack(stack_in) {}
-        ~FrameGuard() { stack.pop_back(); }
+        ~FrameGuard() {
+            stack.back().spec.blueprint->detach_dependency_handler();
+            stack.pop_back();
+        }
     };
 
     const BlueprintFactory  &factory;
     const IIndexEnvironment &index_env;
-    bool                     compile_error;
     Stack                    resolve_stack;
     ExecutorSpecList        &spec_list;
     FeatureMap              &feature_map;
+    std::set<vespalib::string> setup_set;
+    std::set<vespalib::string> failed_set;
 
     Compiler(const BlueprintFactory &factory_in,
              const IIndexEnvironment &index_env_in,
@@ -67,106 +74,116 @@ struct Compiler : public Blueprint::DependencyHandler {
              FeatureMap &feature_map_out)
         : factory(factory_in),
           index_env(index_env_in),
-          compile_error(false),
           resolve_stack(),
           spec_list(spec_list_out),
-          feature_map(feature_map_out) {}
+          feature_map(feature_map_out),
+          setup_set(),
+          failed_set() {}
+    ~Compiler();
 
     Frame &self() { return resolve_stack.back(); }
+    bool failed() const { return !failed_set.empty(); }
 
-    FeatureRef failed(const vespalib::string &feature_name, const vespalib::string &reason) {
-        if (!compile_error) {
-            LOG(warning, "invalid rank feature: '%s' (%s)", feature_name.c_str(), reason.c_str());
+    FeatureRef fail(const vespalib::string &feature_name, const vespalib::string &reason, bool skip_self = false) {
+        if (failed_set.count(feature_name) == 0) {
+            failed_set.insert(feature_name);
+            LOG(warning, "invalid rank feature '%s': %s", feature_name.c_str(), reason.c_str());
+            size_t trace_size = 0;
             for (size_t i = resolve_stack.size(); i > 0; --i) {
                 const auto &frame = resolve_stack[i - 1];
-                if (&frame != &self()) {
-                    LOG(warning, "  ... needed by rank feature '%s'", frame.parser.featureName().c_str());
+                failed_set.insert(frame.parser.featureName());
+                if (!skip_self || (&frame != &self())) {
+                    if (++trace_size <= MAX_TRACE_SIZE) {
+                        LOG(warning, "  ... needed by rank feature '%s'", frame.parser.featureName().c_str());
+                    }
                 }
             }
-            compile_error = true;
+            if (trace_size > MAX_TRACE_SIZE) {
+                LOG(warning, "  ... (%zu more)", (trace_size - MAX_TRACE_SIZE));
+            }
         }
-        fixup_feature_map();
         return FeatureRef();
     }
 
-    void fixup_feature_map() {
-        auto itr = feature_map.begin();
-        while (itr != feature_map.end()) {
-            if (itr->second.executor >= spec_list.size()) {
-                itr = feature_map.erase(itr);
-            } else {
-                ++itr;
-            }
-        }
+    void fail_self(const vespalib::string &reason) {
+        fail(self().parser.featureName(), reason, true);
     }
 
     FeatureRef verify_type(const FeatureNameParser &parser, FeatureRef ref, Accept accept_type) {
         const auto &spec = spec_list[ref.executor];
-        bool is_object = spec.output_types[ref.output];
+        bool is_object = spec.output_types[ref.output].is_object();
         if (!is_compatible(is_object, accept_type)) {
-            return failed(parser.featureName(),
-                          vespalib::make_string("output '%s' has wrong type: was %s, expected %s",
-                                  parser.output().c_str(), type_str(is_object), accept_type_str(accept_type)));
+            return fail(parser.featureName(),
+                        vespalib::make_string("output '%s' has wrong type: was %s, expected %s",
+                                parser.output().c_str(), type_str(is_object), accept_type_str(accept_type)));
         }
         return ref;
     }
 
-    FeatureRef setup_feature(const FeatureNameParser &parser, Accept accept_type) {
-        Blueprint::SP blueprint = factory.createBlueprint(parser.baseName());
-        if ( ! blueprint) {
-            return failed(parser.featureName(),
-                          vespalib::make_string("unknown basename: '%s'", parser.baseName().c_str()));
+    void setup_executor(const FeatureNameParser &parser) {
+        if (setup_set.count(parser.executorName()) == 0) {
+            setup_set.insert(parser.executorName());
+            if (Blueprint::SP blueprint = factory.createBlueprint(parser.baseName())) {
+                resolve_stack.emplace_back(std::move(blueprint), parser);
+                FrameGuard frame_guard(resolve_stack);
+                self().spec.blueprint->setName(parser.executorName());
+                self().spec.blueprint->attach_dependency_handler(*this);
+                if (!self().spec.blueprint->setup(index_env, parser.parameters())) {
+                    fail_self("invalid parameters");
+                }
+                if (parser.output().empty() && self().spec.output_types.empty()) {
+                    fail_self("has no output value");
+                }
+                spec_list.push_back(self().spec); // keep all feature_map refs valid
+            } else {
+                fail(parser.featureName(),
+                     vespalib::make_string("unknown basename: '%s'", parser.baseName().c_str()));
+            }
         }
-        resolve_stack.emplace_back(std::move(blueprint), parser);
-        FrameGuard frame_guard(resolve_stack);
-        self().spec.blueprint->setName(parser.executorName());
-        self().spec.blueprint->attach_dependency_handler(*this);
-        if (!self().spec.blueprint->setup(index_env, parser.parameters())) {
-            return failed(parser.featureName(), "invalid parameters");
-        }
-        if (parser.output().empty() && self().spec.output_types.empty()) {
-            return failed(parser.featureName(), "has no output value");
-        }
-        const auto &feature = feature_map.find(parser.featureName());
-        if (feature == feature_map.end()) {
-            return failed(parser.featureName(),
-                          vespalib::make_string("unknown output: '%s'", parser.output().c_str()));
-        }
-        spec_list.push_back(self().spec);
-        return verify_type(parser, feature->second, accept_type);
     }
 
     FeatureRef resolve_feature(const vespalib::string &feature_name, Accept accept_type) {
         FeatureNameParser parser(feature_name);
         if (!parser.valid()) {
-            return failed(feature_name, "malformed name");
+            return fail(feature_name, "malformed name");
         }
-        const auto &feature = feature_map.find(parser.featureName());
-        if (feature != feature_map.end()) {
-            return verify_type(parser, feature->second, accept_type);
+        if (failed_set.count(parser.featureName()) > 0) {
+            return FeatureRef();
+        }
+        auto old_feature = feature_map.find(parser.featureName());
+        if (old_feature != feature_map.end()) {
+            return verify_type(parser, old_feature->second, accept_type);
         }
         if ((resolve_stack.size() + 1) > BlueprintResolver::MAX_DEP_DEPTH) {
-            return failed(parser.featureName(), "dependency graph too deep");
+            return fail(parser.featureName(), "dependency graph too deep");
         }
         for (const Frame &frame: resolve_stack) {
             if (frame.parser.executorName() == parser.executorName()) {
-                return failed(parser.featureName(), "dependency cycle detected");
+                return fail(parser.featureName(), "dependency cycle detected");
             }
         }
-        return setup_feature(parser, accept_type);
+        setup_executor(parser);
+        auto new_feature = feature_map.find(parser.featureName());
+        if (new_feature != feature_map.end()) {
+            return verify_type(parser, new_feature->second, accept_type);
+        }
+        return fail(parser.featureName(),
+                    vespalib::make_string("unknown output: '%s'", parser.output().c_str()));
     }
 
-    const FeatureType &resolve_input(const vespalib::string &feature_name, Accept accept_type) override {
+    std::optional<FeatureType> resolve_input(const vespalib::string &feature_name, Accept accept_type) override {
         assert(self().spec.output_types.empty()); // require: 'resolve inputs' before 'define outputs'
         auto ref = resolve_feature(feature_name, accept_type);
         if (!ref.valid()) {
-            return FeatureType::number();
+            // fail silently here to avoid mutiple traces for the same root error
+            failed_set.insert(self().parser.featureName());
+            return std::nullopt;
         }
         self().spec.inputs.push_back(ref);
         return spec_list[ref.executor].output_types[ref.output];
     }
 
-    void define_output(const vespalib::string &output_name, const FeatureType &type) override {
+    void define_output(const vespalib::string &output_name, FeatureType type) override {
         vespalib::string feature_name = self().parser.executorName();
         if (!output_name.empty()) {
             feature_name.push_back('.');
@@ -177,9 +194,15 @@ struct Compiler : public Blueprint::DependencyHandler {
             feature_map.emplace(self().parser.executorName(), output_ref);
         }
         feature_map.emplace(feature_name, output_ref);
-        self().spec.output_types.push_back(type);
+        self().spec.output_types.push_back(std::move(type));
+    }
+
+    void fail(const vespalib::string &msg) override {
+        fail_self(msg);
     }
 };
+
+Compiler::~Compiler() = default;
 
 } // namespace search::fef::<unnamed>
 
@@ -216,7 +239,7 @@ BlueprintResolver::compile()
     Compiler compiler(_factory, _indexEnv, _executorSpecs, _featureMap);
     for (const auto &seed: _seeds) {
         auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
-        if (compiler.compile_error) {
+        if (compiler.failed()) {
             return false;
         }
         _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
