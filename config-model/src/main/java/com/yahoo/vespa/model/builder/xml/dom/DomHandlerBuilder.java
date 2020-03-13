@@ -18,7 +18,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
 
     @Override
     protected Handler doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element handlerElement) {
-        Handler<? super Component<?, ?>> handler = getHandler(handlerElement);
+        Handler<? super Component<?, ?>> handler = createHandler(handlerElement);
 
         for (Element binding : XML.getChildren(handlerElement, "binding"))
             handler.addServerBindings(XML.getValue(binding));
@@ -31,7 +31,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         return handler;
     }
 
-    protected Handler<? super Component<?, ?>> getHandler(Element handlerElement) {
+    protected Handler<? super Component<?, ?>> createHandler(Element handlerElement) {
         BundleInstantiationSpecification bundleSpec = BundleInstantiationSpecificationBuilder.build(handlerElement);
         return new Handler<>(new ComponentModel(bundleSpec));
     }

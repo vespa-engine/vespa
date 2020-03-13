@@ -16,7 +16,7 @@ public class DomClientProviderBuilder extends DomHandlerBuilder {
 
     @Override
     protected Handler doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element clientElement) {
-        Handler<? super Component<?, ?>> client = getHandler(clientElement);
+        Handler<? super Component<?, ?>> client = createHandler(clientElement);
 
         for (Element binding : XML.getChildren(clientElement, "binding"))
             client.addClientBindings(XML.getValue(binding));
