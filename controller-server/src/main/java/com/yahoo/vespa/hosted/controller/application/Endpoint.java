@@ -35,10 +35,9 @@ public class Endpoint {
     private final boolean legacy;
     private final RoutingMethod routingMethod;
     private final boolean tls;
-    private final boolean wildcard;
 
-    private Endpoint(String name, ApplicationId application, List<ZoneId> zones, Scope scope, SystemName system, Port port,
-                     boolean legacy, RoutingMethod routingMethod, boolean wildcard) {
+    private Endpoint(String name, ApplicationId application, List<ZoneId> zones, Scope scope, SystemName system,
+                     Port port, boolean legacy, RoutingMethod routingMethod) {
         Objects.requireNonNull(name, "name must be non-null");
         Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(zones, "zones must be non-null");
@@ -56,7 +55,6 @@ public class Endpoint {
         this.legacy = legacy;
         this.routingMethod = routingMethod;
         this.tls = port.tls;
-        this.wildcard = wildcard;
     }
 
     /**
@@ -109,11 +107,6 @@ public class Endpoint {
     /** Returns whether this requires a rotation to be reachable */
     public boolean requiresRotation() {
         return routingMethod.isShared() && scope == Scope.global;
-    }
-
-    /** Returns whether this is a wildcard endpoint (used only in certificates) */
-    public boolean wildcard() {
-        return wildcard;
     }
 
     /** Returns the upstream ID of given deployment. This *must* match what the routing layer generates */
@@ -393,7 +386,7 @@ public class Endpoint {
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            return new Endpoint(name, application, zones, scope, system, port, legacy, routingMethod, wildcard);
+            return new Endpoint(name, application, zones, scope, system, port, legacy, routingMethod);
         }
 
     }
