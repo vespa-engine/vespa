@@ -187,7 +187,7 @@ public class ApplicationDeployTest {
         IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
         ApplicationPackageTester tester = ApplicationPackageTester.create(tmpDir.getAbsolutePath());
         assertEquals(5, tester.getSchemas().size());
-        File sdDir = new File(tmpDir, "searchdefinitions");
+        File sdDir = new File(tmpDir, "schemas");
         File sd = new File(sdDir, "testfoo.sd");
         IOUtils.writeFile(sd, "search testfoo { document testfoo { field bar type string { } } }", false);
         assertEquals(6, tester.getSchemas().size());
@@ -296,6 +296,16 @@ public class ApplicationDeployTest {
 
     @Test
     public void testGetJarEntryName() {
+        JarEntry e = new JarEntry("/schemas/foo.sd");
+        assertEquals(ApplicationPackage.getFileName(e), "foo.sd");
+        e = new JarEntry("bar");
+        assertEquals(ApplicationPackage.getFileName(e), "bar");
+        e = new JarEntry("");
+        assertEquals(ApplicationPackage.getFileName(e), "");
+    }
+
+    @Test
+    public void testGetJarEntryNameForLegacyPath() {
         JarEntry e = new JarEntry("/searchdefinitions/foo.sd");
         assertEquals(ApplicationPackage.getFileName(e), "foo.sd");
         e = new JarEntry("bar");

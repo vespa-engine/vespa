@@ -211,10 +211,10 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatWeCanHaveMultipleSearchDefinitions() {
-        final List<String> sds = Arrays.asList("type1", "type2", "type3");
+    public void testMultipleSchemas() {
+        List<String> sds = List.of("type1", "type2", "type3");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
-                ApplicationPackageUtils.generateSchemas(sds)).create();
+                                                            ApplicationPackageUtils.generateSchemas(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         String type1Id = "test/search/cluster.test/type1";

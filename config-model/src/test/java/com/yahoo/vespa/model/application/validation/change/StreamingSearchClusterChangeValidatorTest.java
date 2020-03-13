@@ -40,7 +40,7 @@ public class StreamingSearchClusterChangeValidatorTest {
         public static VespaModel createOneDocModel(String sdContent) {
             return new ApplicationPackageBuilder()
                     .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"))))
-                    .addSearchDefinition(new SchemaBuilder().name("d1").content(sdContent).build())
+                    .addSchemas(new SchemaBuilder().name("d1").content(sdContent).build())
                     .buildCreator().create();
         }
 
@@ -51,8 +51,8 @@ public class StreamingSearchClusterChangeValidatorTest {
         public static VespaModel createTwoDocModel(String d1Content, String d2Content) {
             return new ApplicationPackageBuilder()
                     .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"), DocType.streaming("d2"))))
-                    .addSearchDefinition(new SchemaBuilder().name("d1").content(d1Content).build())
-                    .addSearchDefinition(new SchemaBuilder().name("d2").content(d2Content).build())
+                    .addSchemas(new SchemaBuilder().name("d1").content(d1Content).build())
+                    .addSchemas(new SchemaBuilder().name("d2").content(d2Content).build())
                     .buildCreator().create();
         }
 
@@ -64,8 +64,8 @@ public class StreamingSearchClusterChangeValidatorTest {
             return new ApplicationPackageBuilder()
                     .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"))))
                     .addCluster(new ContentClusterBuilder().name("bar").docTypes(Arrays.asList(DocType.streaming("d2"))))
-                    .addSearchDefinition(new SchemaBuilder().name("d1").content(d1Content).build())
-                    .addSearchDefinition(new SchemaBuilder().name("d2").content(d2Content).build())
+                    .addSchemas(new SchemaBuilder().name("d1").content(d1Content).build())
+                    .addSchemas(new SchemaBuilder().name("d2").content(d2Content).build())
                     .buildCreator().create();
         }
 

@@ -41,7 +41,7 @@ public class IndexedSearchClusterChangeValidatorTest {
         public static VespaModel newOneDocModel(String sdContent) {
             return new ApplicationPackageBuilder().
                     addCluster(new ContentClusterBuilder().name("foo").docTypes("d1")).
-                    addSearchDefinition(new SchemaBuilder().
+                                                                                              addSchemas(new SchemaBuilder().
                             name("d1").content(sdContent).build()).buildCreator().create();
         }
 
@@ -52,9 +52,9 @@ public class IndexedSearchClusterChangeValidatorTest {
         public static VespaModel newTwoDocModel(String d1Content, String d2Content) {
             return new ApplicationPackageBuilder().
                     addCluster(new ContentClusterBuilder().name("foo").docTypes("d1", "d2")).
-                    addSearchDefinition(new SchemaBuilder().
+                                                                                                    addSchemas(new SchemaBuilder().
                             name("d1").content(d1Content).build()).
-                    addSearchDefinition(new SchemaBuilder().
+                                                                          addSchemas(new SchemaBuilder().
                             name("d2").content(d2Content).build()).
                     buildCreator().create();
         }
@@ -67,9 +67,9 @@ public class IndexedSearchClusterChangeValidatorTest {
             return new ApplicationPackageBuilder().
                     addCluster(new ContentClusterBuilder().name("foo").docTypes("d1")).
                     addCluster(new ContentClusterBuilder().name("bar").docTypes("d2")).
-                    addSearchDefinition(new SchemaBuilder().
+                                                                                              addSchemas(new SchemaBuilder().
                             name("d1").content(d1Content).build()).
-                    addSearchDefinition(new SchemaBuilder().
+                                                                          addSchemas(new SchemaBuilder().
                             name("d2").content(d2Content).build()).
                     buildCreator().create();
         }
