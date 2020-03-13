@@ -33,17 +33,19 @@ import java.util.logging.Logger;
 
 /**
  * Validate rank setup for all search clusters (rank-profiles, index-schema, attributes configs), validating done
- * by running through the binary 'vespa-verify-ranksetup'
+ * by running the binary 'vespa-verify-ranksetup-bin'
  *
  * @author vegardh
  */
 public class RankSetupValidator extends Validator {
 
     private static final Logger log = Logger.getLogger(RankSetupValidator.class.getName());
-    private final boolean force;
+    private static final String binaryName = "vespa-verify-ranksetup-bin ";
 
-    public RankSetupValidator(boolean force) {
-        this.force = force;
+    private final boolean ignoreValidationErrors;
+
+    public RankSetupValidator(boolean ignoreValidationErrors) {
+        this.ignoreValidationErrors = ignoreValidationErrors;
     }
 
     @Override
@@ -100,29 +102,29 @@ public class RankSetupValidator extends Validator {
         IOUtils.recursiveDeleteDir(dir);
     }
 
-    private void writeConfigs(String dir, AbstractConfigProducer producer) throws IOException {
+    private void writeConfigs(String dir, AbstractConfigProducer<?> producer) throws IOException {
             RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
-            RankProfilesConfig.Producer.class.cast(producer).getConfig(rpcb);
+            ((RankProfilesConfig.Producer) producer).getConfig(rpcb);
             RankProfilesConfig rpc = new RankProfilesConfig(rpcb);
             writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpc);
 
             IndexschemaConfig.Builder iscb = new IndexschemaConfig.Builder();
-            IndexschemaConfig.Producer.class.cast(producer).getConfig(iscb);
+            ((IndexschemaConfig.Producer) producer).getConfig(iscb);
             IndexschemaConfig isc = new IndexschemaConfig(iscb);
             writeConfig(dir, IndexschemaConfig.getDefName() + ".cfg", isc);
 
             AttributesConfig.Builder acb = new AttributesConfig.Builder();
-            AttributesConfig.Producer.class.cast(producer).getConfig(acb);
+            ((AttributesConfig.Producer) producer).getConfig(acb);
             AttributesConfig ac = new AttributesConfig(acb);
             writeConfig(dir, AttributesConfig.getDefName() + ".cfg", ac);
 
             RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
-            RankingConstantsConfig.Producer.class.cast(producer).getConfig(rccb);
+            ((RankingConstantsConfig.Producer) producer).getConfig(rccb);
             RankingConstantsConfig rcc = new RankingConstantsConfig(rccb);
             writeConfig(dir, RankingConstantsConfig.getDefName() + ".cfg", rcc);
 
             ImportedFieldsConfig.Builder ifcb = new ImportedFieldsConfig.Builder();
-            ImportedFieldsConfig.Producer.class.cast(producer).getConfig(ifcb);
+            ((ImportedFieldsConfig.Producer) producer).getConfig(ifcb);
             ImportedFieldsConfig ifc = new ImportedFieldsConfig(ifcb);
             writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifc);
     }
@@ -132,7 +134,7 @@ public class RankSetupValidator extends Validator {
     }
 
     private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        String job = "vespa-verify-ranksetup-bin " + configId;
+        String job = String.format("%s %s", binaryName, configId);
         ProcessExecuter executer = new ProcessExecuter();
         try {
             Pair<Integer, String> ret = executer.exec(job);
@@ -147,27 +149,27 @@ public class RankSetupValidator extends Validator {
     }
 
     private void validateWarn(Exception e, DeployLogger deployLogger) {
-        String msg = "Unable to execute 'vespa-verify-ranksetup', validation of rank expressions will only take place when you start Vespa: " +
+        String msg = "Unable to execute '"+ binaryName + "', validation of rank expressions will only take place when you start Vespa: " +
                 Exceptions.toMessageString(e);
         deployLogger.log(LogLevel.WARNING, msg);
     }
 
     private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        String errMsg = "For search cluster '" + sc.getClusterName() + "', search definition '" + sdName + "': error in rank setup. Details:\n";
+        StringBuilder errMsg = new StringBuilder("For search cluster '" + sc.getClusterName() + "', search definition '" + sdName + "': error in rank setup. Details:\n");
         for (String line : output.split("\n")) {
             // Remove debug lines from start script
             if (line.startsWith("debug\t")) continue;
             try {
-                LogMessage logmsg = LogMessage.parseNativeFormat(line);
-                errMsg = errMsg + logmsg.getLevel() + ": " + logmsg.getPayload() + "\n";
+                LogMessage logMessage = LogMessage.parseNativeFormat(line);
+                errMsg.append(logMessage.getLevel()).append(": ").append(logMessage.getPayload()).append("\n");
             } catch (InvalidLogFormatException e) {
-                errMsg = errMsg + line + "\n";
+                errMsg.append(line).append("\n");
             }
         }
-        if (force) {
-            deployLogger.log(LogLevel.WARNING, errMsg + "(Continuing because of force.)");
+        if (ignoreValidationErrors) {
+            deployLogger.log(LogLevel.WARNING, errMsg + "(Continuing since ignoreValidationErrors flag is set.)");
         } else {
-            throw new IllegalArgumentException(errMsg);
+            throw new IllegalArgumentException(errMsg.toString());
         }
     }
 
