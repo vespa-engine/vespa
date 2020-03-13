@@ -96,10 +96,9 @@ public class StorageMaintainer {
     }
 
 
-    /** Deletes old log files for vespa, nginx, logstash, etc. */
+    /** Deletes old log files for vespa and nginx */
     public void removeOldFilesFromNode(NodeAgentContext context) {
         Path[] logPaths = {
-                context.pathInNodeUnderVespaHome("logs/daemontools_y"),
                 context.pathInNodeUnderVespaHome("logs/nginx"),
                 context.pathInNodeUnderVespaHome("logs/vespa")
         };
