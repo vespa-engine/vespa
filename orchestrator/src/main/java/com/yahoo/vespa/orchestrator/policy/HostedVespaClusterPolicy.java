@@ -81,7 +81,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
         }
 
         if (clusterApi.getApplication().applicationId().equals(VespaModelUtil.TENANT_HOST_APPLICATION_ID)) {
-            return ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
+            return ConcurrentSuspensionLimitForCluster.TEN_PERCENT;
         }
 
         return ConcurrentSuspensionLimitForCluster.TEN_PERCENT;
