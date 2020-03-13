@@ -178,7 +178,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec);
-        addHandlers(deployState, cluster, spec);
 
         addRestApis(deployState, spec, cluster);
         addServlets(deployState, spec, cluster);
@@ -191,6 +190,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
+        addUserHandlers(deployState, cluster, spec);
 
         addHttp(deployState, spec, cluster, context.getApplicationType(), deployState.getProperties().applicationId().instance().isTester());
 
@@ -445,7 +445,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         containerSearch.setPageTemplates(PageTemplates.create(applicationPackage));
     }
 
-    private void addHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
+    private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
                     new DomHandlerBuilder(cluster).build(deployState, cluster, component));

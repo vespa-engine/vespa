@@ -206,9 +206,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addDefaultRootHandler() {
-        if (hasHandlerWithBinding(ROOT_HANDLER_BINDING))
-            return;
-
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getFromStrings(
                         BINDINGS_OVERVIEW_HANDLER_CLASS, null, null), null));  // null bundle, as the handler is in container-disc
@@ -216,13 +213,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addComponent(handler);
     }
 
-    private boolean hasHandlerWithBinding(String binding) {
+    public Optional<Handler<?>> handlerWithBinding(String binding) {
         Collection<Handler<?>> handlers = getHandlers();
         for (Handler handler : handlers) {
             if (handler.getServerBindings().contains(binding))
-                return true;
+                return Optional.of(handler);
         }
-        return false;
+        return Optional.empty();
     }
 
     public void addApplicationStatusHandler() {
