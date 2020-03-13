@@ -8,7 +8,9 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Models a jdisc RequestHandler (including ClientProvider).
@@ -21,7 +23,7 @@ import java.util.List;
  */
 public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<CHILD, ComponentModel> {
 
-    private List<String> serverBindings = new ArrayList<>();
+    private Set<String> serverBindings = new LinkedHashSet<>();
     private List<String> clientBindings = new ArrayList<>();
 
     public Handler(ComponentModel model) {
@@ -44,8 +46,8 @@ public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<
         clientBindings.addAll(Arrays.asList(bindings));
     }
 
-    public final List<String> getServerBindings() {
-        return Collections.unmodifiableList(serverBindings);
+    public final Set<String> getServerBindings() {
+        return Collections.unmodifiableSet(serverBindings);
     }
 
     public final List<String> getClientBindings() {
