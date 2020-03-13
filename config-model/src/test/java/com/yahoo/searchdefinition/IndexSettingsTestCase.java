@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
-public class IndexSettingsTestCase extends SearchDefinitionTestCase {
+public class IndexSettingsTestCase extends SchemaTestCase {
 
     @Test
     public void testStemmingSettings() throws IOException, ParseException {

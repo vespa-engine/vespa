@@ -30,31 +30,31 @@ import java.util.Optional;
 public class ContentClusterUtils {
 
     public static MockRoot createMockRoot(String[] hosts) {
-        return createMockRoot(hosts, SearchDefinitionBuilder.createSearchDefinitions("test"));
+        return createMockRoot(hosts, SchemaBuilder.createSchemas("test"));
     }
 
-    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions) {
-        return createMockRoot(provisioner, searchDefinitions, new DeployState.Builder());
+    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas) {
+        return createMockRoot(provisioner, schemas, new DeployState.Builder());
     }
 
-    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions, DeployState.Builder deployStateBuilder) {
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSearchDefinitions(searchDefinitions).build();
+    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas, DeployState.Builder deployStateBuilder) {
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSchemas(schemas).build();
         DeployState deployState = deployStateBuilder.applicationPackage(applicationPackage)
                           .modelHostProvisioner(provisioner)
                           .build();
         return new MockRoot("", deployState);
     }
 
-    public static MockRoot createMockRoot(String[] hosts, List<String> searchDefinitions) {
-        return createMockRoot(new InMemoryProvisioner(true, hosts), searchDefinitions);
+    public static MockRoot createMockRoot(String[] hosts, List<String> schemas) {
+        return createMockRoot(new InMemoryProvisioner(true, hosts), schemas);
     }
 
-    public static MockRoot createMockRoot(List<String> searchDefinitions) {
-        return createMockRoot(new SingleNodeProvisioner(), searchDefinitions);
+    public static MockRoot createMockRoot(List<String> schemas) {
+        return createMockRoot(new SingleNodeProvisioner(), schemas);
     }
 
-    public static MockRoot createMockRoot(List<String> searchDefinitions, DeployState.Builder deployStateBuilder) {
-        return createMockRoot(new SingleNodeProvisioner(), searchDefinitions, deployStateBuilder);
+    public static MockRoot createMockRoot(List<String> schemas, DeployState.Builder deployStateBuilder) {
+        return createMockRoot(new SingleNodeProvisioner(), schemas, deployStateBuilder);
     }
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) {
@@ -63,13 +63,13 @@ public class ContentClusterUtils {
                                 new FileDistributionConfigProducer(root, new MockFileRegistry(), null),
                                 root.getDeployState().isHosted());
         ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(),
-                                                    null,null, root, null);
+                                                               null,null, root, null);
 
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());
     }
 
-    public static ContentCluster createCluster(String clusterXml, List<String> searchDefinitions) throws Exception {
-        MockRoot root = createMockRoot(searchDefinitions);
+    public static ContentCluster createCluster(String clusterXml, List<String> schemas) throws Exception {
+        MockRoot root = createMockRoot(schemas);
         ContentCluster cluster = createCluster(clusterXml, root);
         root.freezeModelTopology();
         cluster.validate();
@@ -77,7 +77,7 @@ public class ContentClusterUtils {
     }
 
     public static ContentCluster createCluster(String clusterXml) throws Exception {
-        return createCluster(clusterXml, SearchDefinitionBuilder.createSearchDefinitions("test"));
+        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"));
     }
 
     public static String createClusterXml(String groupXml, int redundancy, int searchableCopies) {

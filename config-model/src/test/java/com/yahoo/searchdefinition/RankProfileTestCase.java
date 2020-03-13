@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class RankProfileTestCase extends SearchDefinitionTestCase {
+public class RankProfileTestCase extends SchemaTestCase {
 
     @Test
     public void testRankProfileInheritance() {

@@ -197,6 +197,7 @@ TOKEN :
   < NL: "\n" >
 | < ANNOTATION: "annotation" >
 | < ANNOTATIONREFERENCE: "annotationreference" >
+| < SCHEMA: "schema" >
 | < SEARCH: "search" >
 | < DIVERSITY: "diversity" >
 | < MIN_GROUPS: "min-groups" >
@@ -403,38 +404,38 @@ Search search(DocumentTypeManager docMan, String dir) :
     Search search;
 }
 {
-    (<NL>)* (search = rootSearch(dir) | search = rootDocument(dir))
+    (<NL>)* (search = rootSchema(dir) | search = rootDocument(dir))
     { return search; }
 }
 
 /**
- * This rule consumes a proper search block. This and rootDocument() are the only rules that should ever consume
+ * This rule consumes a proper schema block. This and rootDocument() are the only rules that should ever consume
  * trailing newline tokens.
  *
- * @param dir The directory containing the file being parsed.
- * @return The search definition object.
+ * @param dir the directory containing the file being parsed.
+ * @return the schema definition object.
  */
-Search rootSearch(String dir) :
+Search rootSchema(String dir) :
 {
     String name;
     Search search;
 }
 {
-    ( <SEARCH> name = identifier() { search = new Search(name, app);
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app);
                                      rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
                                      rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
-      lbrace() (rootSearchItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
+      lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
     { return search; }
 }
 
 /**
- * Consumes an element of a search block. This and rootSearch() are the only rules that should ever consume
+ * Consumes an element of a schema block. This and rootSearch() are the only rules that should ever consume
  * trailing newline tokens.
  *
  * @param search The search object to modify.
  * @return Null.
  */
-Object rootSearchItem(Search search) : { }
+Object rootSchemaItem(Search search) : { }
 {
     ( document(search)
       | documentSummary(search)
@@ -452,10 +453,10 @@ Object rootSearchItem(Search search) : { }
 }
 
 /**
- * Consumes a search definition that contains only documents to be used for inheritance, etc.
+ * Consumes a schema definition that contains only documents to be used for inheritance, etc.
  *
- * @param dir The directory containing the file being parsed.
- * @return The search definition object.
+ * @param dir the directory containing the file being parsed.
+ * @return the schema definition object.
  */
 Search rootDocument(String dir) :
 {
@@ -481,7 +482,7 @@ Object rootDocumentItem(Search search) : { }
 /**
  * Consumes a use-document statement. This currently does nothing.
  *
- * @param search The search object to modify.
+ * @param search the search object to modify.
  */
 void useDocument(Search search) : { }
 {
@@ -491,7 +492,7 @@ void useDocument(Search search) : { }
 /**
  * Consumes a document element. The name defaults to the search's name, but may be set.
  *
- * @param search The search object to add content to.
+ * @param search the search object to add content to.
  */
 void document(Search search) :
 {
@@ -510,7 +511,7 @@ void document(Search search) :
 /**
  * Consumes a document element, explicitly named
  *
- * @param search The search object to add content to.
+ * @param search the search object to add content to.
  */
 void namedDocument(Search search) :
 {
@@ -2617,6 +2618,7 @@ String identifier() : { }
       | <REFERENCE>
       | <REMOVEIFZERO>
       | <RERANKCOUNT>
+      | <SCHEMA>
       | <SEARCH>
       | <SECONDARY>
       | <SECONDPHASE>

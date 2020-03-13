@@ -4,7 +4,7 @@ package com.yahoo.document.test;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DataTypeName;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
  * @author Thomas Gundersen
  * @author bratseth
  */
-public class SDDocumentTypeTestCase extends SearchDefinitionTestCase {
+public class SDDocumentTypeTestCase extends SchemaTestCase {
 
     // Verify that we can register and retrieve fields.
     @Test

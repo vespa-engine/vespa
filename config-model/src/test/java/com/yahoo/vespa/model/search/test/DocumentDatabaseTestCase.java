@@ -90,7 +90,7 @@ public class DocumentDatabaseTestCase {
     private void assertSingleSD(String mode) {
         final List<String> sds = Arrays.asList("type1");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, mode),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         assertEquals(1, indexedSearchCluster.getDocumentDbs().size());
@@ -111,7 +111,7 @@ public class DocumentDatabaseTestCase {
             sds.add(nameAndMode.getType());
         }
         return new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServicesXml(nameAndModes, xmlTuning),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
     }
 
     @Test
@@ -211,10 +211,10 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatWeCanHaveMultipleSearchDefinitions() {
-        final List<String> sds = Arrays.asList("type1", "type2", "type3");
+    public void testMultipleSchemas() {
+        List<String> sds = List.of("type1", "type2", "type3");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                                                            ApplicationPackageUtils.generateSchemas(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         String type1Id = "test/search/cluster.test/type1";
@@ -264,7 +264,7 @@ public class DocumentDatabaseTestCase {
     public void requireThatRelevantConfigIsAvailableForClusterSearcher() {
         final List<String> sds = Arrays.asList("type1", "type2");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
         String searcherId = "container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher";
 
         { // documentdb-info config
@@ -325,7 +325,7 @@ public class DocumentDatabaseTestCase {
     private void assertDocumentDBConfigAvailableForStreaming(String mode) {
         final List<String> sds = Arrays.asList("type");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
 
         DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.type");
         assertEquals(1, dcfg.documentdb().size());
@@ -343,7 +343,7 @@ public class DocumentDatabaseTestCase {
                                                          List<String> documentDBConfigIds,
                                                          Map<String, List<String>> expectedAttributesMap) {
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
 
         ProtonConfig proton = getProtonCfg(contentSearchCluster);

@@ -11,7 +11,7 @@ import java.io.IOException;
  *
  * @author bratseth
  */
-public class MultipleSummariesTestCase extends SearchDefinitionTestCase {
+public class MultipleSummariesTestCase extends SchemaTestCase {
     @Test
     public void testArrayImporting() throws IOException, ParseException {
         SearchBuilder.buildFromFile("src/test/examples/multiplesummaries.sd");
