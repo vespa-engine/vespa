@@ -9,17 +9,12 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Optional;
 
-import static com.yahoo.config.provision.ClusterSpec.Type.admin;
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
-import static com.yahoo.config.provision.ClusterSpec.Type.content;
 import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -54,7 +49,8 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false);
+        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0),
+                                Version.fromString("6.42"), false, Optional.empty());
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership membership) {
