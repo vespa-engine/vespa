@@ -23,13 +23,9 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         }
     }
 
-    private EndpointList(Collection<? extends Endpoint> endpoints) {
-        this(endpoints, false);
-    }
-
     /** Returns the primary (non-legacy) endpoint, if any */
     public Optional<Endpoint> primary() {
-        return not().matching(Endpoint::legacy).asList().stream().findFirst();
+        return not().legacy().asList().stream().findFirst();
     }
 
     /** Returns the subset of endpoints named according to given ID */
@@ -63,7 +59,7 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
     }
 
     public static EndpointList copyOf(Collection<Endpoint> endpoints) {
-        return new EndpointList(endpoints);
+        return new EndpointList(endpoints, false);
     }
 
 }
