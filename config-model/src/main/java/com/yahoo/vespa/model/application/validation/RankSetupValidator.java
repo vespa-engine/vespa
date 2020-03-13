@@ -52,7 +52,10 @@ public class RankSetupValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         File cfgDir = null;
         try {
-            cfgDir = Files.createTempDirectory("deploy_ranksetup").toFile();
+            cfgDir = Files.createTempDirectory("verify-ranksetup." +
+                                               deployState.getProperties().applicationId().toFullString() +
+                                               ".")
+                    .toFile();
 
             for (AbstractSearchCluster cluster : model.getSearchClusters()) {
                 // Skipping rank expression checking for streaming clusters, not implemented yet
