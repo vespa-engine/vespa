@@ -15,7 +15,7 @@ import org.w3c.dom.Element;
 public class DomClientProviderBuilder extends DomHandlerBuilder {
 
     @Override
-    protected Handler doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element clientElement) {
+    protected Handler doBuild(DeployState deployState, AbstractConfigProducer parent, Element clientElement) {
         Handler<? super Component<?, ?>> client = createHandler(clientElement);
 
         for (Element binding : XML.getChildren(clientElement, "binding"))
@@ -24,7 +24,7 @@ public class DomClientProviderBuilder extends DomHandlerBuilder {
         for (Element serverBinding : XML.getChildren(clientElement, "serverBinding"))
             client.addServerBindings(XML.getValue(serverBinding));
 
-        DomComponentBuilder.addChildren(deployState, ancestor, clientElement, client);
+        DomComponentBuilder.addChildren(deployState, parent, clientElement, client);
 
         return client;
     }

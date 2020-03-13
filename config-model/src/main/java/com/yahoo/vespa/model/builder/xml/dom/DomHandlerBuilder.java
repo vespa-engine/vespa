@@ -17,7 +17,7 @@ import org.w3c.dom.Element;
 public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
 
     @Override
-    protected Handler doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element handlerElement) {
+    protected Handler doBuild(DeployState deployState, AbstractConfigProducer parent, Element handlerElement) {
         Handler<? super Component<?, ?>> handler = createHandler(handlerElement);
 
         for (Element binding : XML.getChildren(handlerElement, "binding"))
@@ -26,7 +26,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         for (Element clientBinding : XML.getChildren(handlerElement, "clientBinding"))
             handler.addClientBindings(XML.getValue(clientBinding));
 
-        DomComponentBuilder.addChildren(deployState, ancestor, handlerElement, handler);
+        DomComponentBuilder.addChildren(deployState, parent, handlerElement, handler);
 
         return handler;
     }
