@@ -38,7 +38,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         return handler;
     }
 
-    protected Handler<? super Component<?, ?>> createHandler(Element handlerElement) {
+    Handler<? super Component<?, ?>> createHandler(Element handlerElement) {
         BundleInstantiationSpecification bundleSpec = BundleInstantiationSpecificationBuilder.build(handlerElement);
         return new Handler<>(new ComponentModel(bundleSpec));
     }
