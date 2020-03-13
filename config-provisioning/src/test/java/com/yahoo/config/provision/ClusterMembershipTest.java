@@ -59,7 +59,7 @@ public class ClusterMembershipTest {
     @Test
     public void testServiceInstanceWithGroup() {
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               ClusterSpec.Group.from(4), Version.fromString("6.42"), false);
+                                               ClusterSpec.Group.from(4), Version.fromString("6.42"), false, Optional.empty());
         assertContentServiceWithGroup(ClusterMembership.from(cluster, 37));
     }
 
@@ -77,7 +77,7 @@ public class ClusterMembershipTest {
     @Test
     public void testServiceInstanceWithGroupAndRetire() {
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               ClusterSpec.Group.from(4), Version.fromString("6.42"), false);
+                                               ClusterSpec.Group.from(4), Version.fromString("6.42"), false, Optional.empty());
         assertContentServiceWithGroupAndRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 

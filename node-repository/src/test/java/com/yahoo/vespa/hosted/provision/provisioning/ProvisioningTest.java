@@ -682,8 +682,9 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("music"),
                                                   Version.fromString("1.2.3"),
-                                                  false);
-        var initalNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                  false,
+                                                  Optional.empty());
+        var initialNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                        Capacity.fromCount(2, defaultResources, false, false),
                                                                        1));
 
@@ -691,12 +692,13 @@ public class ProvisioningTest {
         cluster = ClusterSpec.request(ClusterSpec.Type.combined,
                                       ClusterSpec.Id.from("music"),
                                       Version.fromString("1.2.3"),
-                                      false);
+                                      false,
+                                      Optional.empty());
         var newNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                    Capacity.fromCount(2, defaultResources, false, false),
                                                                    1));
 
-        assertEquals("Node allocation remains the same", initalNodes, newNodes);
+        assertEquals("Node allocation remains the same", initialNodes, newNodes);
         assertEquals("Cluster type is updated",
                      Set.of(ClusterSpec.Type.combined),
                      newNodes.stream().map(n -> n.membership().get().cluster().type()).collect(Collectors.toSet()));
@@ -705,11 +707,12 @@ public class ProvisioningTest {
         cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                       ClusterSpec.Id.from("music"),
                                       Version.fromString("1.2.3"),
-                                      false);
+                                      false,
+                                      Optional.empty());
         newNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                Capacity.fromCount(2, defaultResources, false, false),
                                                                1));
-        assertEquals("Node allocation remains the same", initalNodes, newNodes);
+        assertEquals("Node allocation remains the same", initialNodes, newNodes);
         assertEquals("Cluster type is updated",
                      Set.of(ClusterSpec.Type.content),
                      newNodes.stream().map(n -> n.membership().get().cluster().type()).collect(Collectors.toSet()));

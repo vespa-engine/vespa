@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -52,7 +53,8 @@ public class ClusterSpecTest {
     }
 
     private static ClusterSpec spec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(1), Version.emptyVersion, false);
+        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(1), Version.emptyVersion,
+                                false, Optional.empty());
     }
 
 }
