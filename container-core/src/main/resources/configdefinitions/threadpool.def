@@ -8,3 +8,8 @@ maxthreads int default=500
 # get out of a bad state. This should be set a bit higher than the expected max execution
 # time of each request when in a state of overload, i.e about "worst case execution time*2"
 maxThreadExecutionTimeSeconds int default=190
+
+# Length of period for soft start
+# During this period number of availble threads will be gradually increased.
+# Currently used to avoid feeding overload in container during cold start.
+softStartSeconds double default=0

@@ -43,6 +43,9 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     protected final ReplyHandler feedReplyHandler;
     private final Metric metric;
     private final Object monitor = new Object();
+    private int remainingThreadsForFeedingAllowance;
+    private final long msBetweenBumpingMaxThreads;
+    private long nextTimeToAllocateAnotherThread;
     private final AtomicInteger threadsAvailableForFeeding;
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
@@ -60,10 +63,20 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
         this.metric = parentCtx.getMetric();
         // 40% of the threads can be blocking on feeding before we deny requests.
         if (threadpoolConfig != null) {
-            threadsAvailableForFeeding = new AtomicInteger(Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1));
+            remainingThreadsForFeedingAllowance = Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1);
+            if (threadpoolConfig.softStartSeconds() > 0.0) {
+                threadsAvailableForFeeding = new AtomicInteger(0);
+                msBetweenBumpingMaxThreads = (long)threadpoolConfig.softStartSeconds() * 1000 / remainingThreadsForFeedingAllowance;
+            } else {
+                threadsAvailableForFeeding = new AtomicInteger(remainingThreadsForFeedingAllowance);
+                remainingThreadsForFeedingAllowance = 0;
+                msBetweenBumpingMaxThreads = 0;
+            }
         } else {
             log.warning("No config for threadpool, using 200 for max blocking threads for feeding.");
             threadsAvailableForFeeding = new AtomicInteger(200);
+            remainingThreadsForFeedingAllowance = 0;
+            msBetweenBumpingMaxThreads = 0;
         }
     }
 
@@ -78,6 +91,11 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
         String clientId = clientId(request);
         ClientFeederV3 clientFeederV3;
         synchronized (monitor) {
+            if ((remainingThreadsForFeedingAllowance > 0) && (System.currentTimeMillis() > nextTimeToAllocateAnotherThread)) {
+                threadsAvailableForFeeding.incrementAndGet();
+                remainingThreadsForFeedingAllowance --;
+                nextTimeToAllocateAnotherThread = System.currentTimeMillis() + msBetweenBumpingMaxThreads;
+            }
             if (! clientFeederByClientId.containsKey(clientId)) {
                 SourceSessionParams sourceSessionParams = sourceSessionParams(request);
                 clientFeederByClientId.put(clientId,
