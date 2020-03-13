@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ThreadedHttpRequestHandlerTest {
 
     @Test
-    public void unhandled_exception_metric_is_incremented_if_subclassed_handler_throws_exception() {
+    public void unhandled_exceptions_metric_is_incremented_if_subclassed_handler_throws_exception() {
         MetricMock metricMock = new MetricMock();
         ThreadedHttpRequestHandlerThrowingException handler = new ThreadedHttpRequestHandlerThrowingException(metricMock);
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);

@@ -163,7 +163,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     /** A thread pool executor which maintains the last time a worker completed */
     private final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
-        private static final String UNHANDLED_EXCEPTION_METRIC = "jdisc.thread_pool.unhandled_exceptions";
+        private static final String UNHANDLED_EXCEPTIONS_METRIC = "jdisc.thread_pool.unhandled_exceptions";
 
         volatile long lastThreadAssignmentTimeMillis = System.currentTimeMillis();
         private final AtomicLong startedCount = new AtomicLong(0);
@@ -193,7 +193,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
             super.afterExecute(r, t);
             completedCount.incrementAndGet();
             if (t != null) {
-                metric.add(UNHANDLED_EXCEPTION_METRIC, 1L, metric.createContext(Map.of("exception", t.getClass().getSimpleName())));
+                metric.add(UNHANDLED_EXCEPTIONS_METRIC, 1L, metric.createContext(Map.of("exception", t.getClass().getSimpleName())));
             }
         }
 
