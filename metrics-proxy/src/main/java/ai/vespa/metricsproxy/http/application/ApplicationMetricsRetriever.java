@@ -6,6 +6,7 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.log.LogLevel;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -68,7 +69,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     }
 
     public Map<Node, List<MetricsPacket.Builder>> getMetrics(ConsumerId consumer) {
-        log.info(() -> "Retrieving metrics from " + clients.size() + " nodes.");
+        log.log(LogLevel.DEBUG, () -> "Retrieving metrics from " + clients.size() + " nodes.");
         var forkJoinTask = forkJoinPool.submit(() -> clients.parallelStream()
                 .map(client -> getNodeMetrics(client, consumer))
                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue)));
@@ -76,7 +77,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
         try {
             var metricsByNode = forkJoinTask.get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
-            log.info(() -> "Finished retrieving metrics from " + clients.size() + " nodes.");
+            log.log(LogLevel.DEBUG, () -> "Finished retrieving metrics from " + clients.size() + " nodes.");
             return metricsByNode;
 
         } catch (Exception e) {
