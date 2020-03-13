@@ -10,13 +10,14 @@ SingleExecutor::SingleExecutor(uint32_t taskLimit)
       _wantedTaskLimit(_taskLimit.load()),
       _rp(0),
       _tasks(std::make_unique<Task::UP[]>(_taskLimit)),
-      _consumerMonitor(),
-      _producerMonitor(),
+      _mutex(),
+      _consumerCondition(),
+      _producerCondition(),
       _thread(*this),
       _lastAccepted(0),
       _maxPending(0),
       _wakeupConsumerAt(0),
-      _producerNeedWakeup(false),
+      _producerNeedWakeupAt(0),
       _wp(0)
 {
     _thread.start();
@@ -33,7 +34,7 @@ SingleExecutor::getNumThreads() const {
 
 uint64_t
 SingleExecutor::addTask(Task::UP task) {
-    MonitorGuard guard(_producerMonitor);
+    Lock guard(_mutex);
     wait_for_room(guard);
     uint64_t wp = _wp.load(std::memory_order_relaxed);
     _tasks[index(wp)] = std::move(task);
@@ -41,12 +42,18 @@ SingleExecutor::addTask(Task::UP task) {
     return wp;
 }
 
+void
+SingleExecutor::sleepProducer(Lock & lock, duration maxWaitTime, uint64_t wakeupAt) {
+    _producerNeedWakeupAt.store(wakeupAt, std::memory_order_relaxed);
+    _producerCondition.wait_for(lock, maxWaitTime);
+    _producerNeedWakeupAt.store(0, std::memory_order_relaxed);
+}
+
 Executor::Task::UP
 SingleExecutor::execute(Task::UP task) {
     uint64_t wp = addTask(std::move(task));
     if (wp == _wakeupConsumerAt.load(std::memory_order_relaxed)) {
-        MonitorGuard guard(_consumerMonitor);
-        guard.signal();
+        _consumerCondition.notify_one();
     }
     return task;
 }
@@ -56,11 +63,27 @@ SingleExecutor::setTaskLimit(uint32_t taskLimit) {
     _wantedTaskLimit = vespalib::roundUp2inN(taskLimit);
 }
 
+void
+SingleExecutor::drain(Lock & lock) {
+    uint64_t wp = _wp.load(std::memory_order_relaxed);
+    while (numTasks() > 0) {
+        _consumerCondition.notify_one();
+        sleepProducer(lock, 100us, wp);
+    }
+}
+
+void
+SingleExecutor::startSync() {
+    _consumerCondition.notify_one();
+}
+
 SingleExecutor &
 SingleExecutor::sync() {
+    Lock lock(_mutex);
     uint64_t wp = _wp.load(std::memory_order_relaxed);
     while (wp > _rp.load(std::memory_order_acquire)) {
-        std::this_thread::sleep_for(1ms);
+        _consumerCondition.notify_one();
+        sleepProducer(lock, 100us, wp);
     }
     return *this;
 }
@@ -69,9 +92,12 @@ void
 SingleExecutor::run() {
     while (!_thread.stopped()) {
         drain_tasks();
-        _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + (_taskLimit.load(std::memory_order_relaxed) >> 2), std::memory_order_relaxed);
-        MonitorGuard guard(_consumerMonitor);
-        guard.wait(10ms);
+        _producerCondition.notify_all();
+        _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + (_taskLimit.load(std::memory_order_relaxed) / 4), std::memory_order_relaxed);
+        Lock lock(_mutex);
+        if (numTasks() <= 0) {
+            _consumerCondition.wait_for(lock, 10ms);
+        }
         _wakeupConsumerAt.store(0, std::memory_order_relaxed);
     }
 }
@@ -90,31 +116,29 @@ SingleExecutor::run_tasks_till(uint64_t available) {
     if (_maxPending.load(std::memory_order_relaxed) < left) {
         _maxPending.store(left, std::memory_order_relaxed);
     }
-    uint64_t wakeupLimit = _producerNeedWakeup.load(std::memory_order_relaxed)
-            ? (available - (left >> 2))
-            : 0;
+    uint64_t wakeupLimit = _producerNeedWakeupAt.load(std::memory_order_relaxed);
     while (consumed  < available) {
         Task::UP task = std::move(_tasks[index(consumed)]);
         task->run();
         _rp.store(++consumed, std::memory_order_release);
         if (wakeupLimit == consumed) {
-            MonitorGuard guard(_producerMonitor);
-            guard.broadcast();
+            _producerCondition.notify_all();
         }
     }
 }
 
 void
-SingleExecutor::wait_for_room(MonitorGuard & producerGuard) {
-    if (_taskLimit.load(std::memory_order_relaxed) != _wantedTaskLimit.load(std::memory_order_relaxed)) {
-        sync();
+SingleExecutor::wait_for_room(Lock & lock) {
+    uint64_t wp = _wp.load(std::memory_order_relaxed);
+    uint64_t taskLimit = _taskLimit.load(std::memory_order_relaxed);
+    if (taskLimit != _wantedTaskLimit.load(std::memory_order_relaxed)) {
+        drain(lock);
         _tasks = std::make_unique<Task::UP[]>(_wantedTaskLimit);
         _taskLimit = _wantedTaskLimit.load();
+        taskLimit = _taskLimit;
     }
     while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
-        _producerNeedWakeup.store(true, std::memory_order_relaxed);
-        producerGuard.wait(10ms);
-        _producerNeedWakeup.store(false, std::memory_order_relaxed);
+        sleepProducer(lock, 10ms, wp - taskLimit/4);
     }
 }
 
