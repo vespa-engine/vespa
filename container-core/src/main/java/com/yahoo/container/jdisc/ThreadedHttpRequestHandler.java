@@ -13,6 +13,7 @@ import com.yahoo.log.LogLevel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -31,6 +32,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
 
     public static final String CONTENT_TYPE = "Content-Type";
     private static final String RENDERING_ERRORS = "rendering_errors";
+    private static final String UNHANDLED_EXCEPTIONS_METRIC = "jdisc.http.handler.unhandled_exceptions";
 
     /** Logger for subclasses */
     protected final Logger log;
@@ -79,6 +81,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
             channel.setHttpResponse(httpResponse); // may or may not have already been done
             render(httpRequest, httpResponse, channel, jdiscRequest.creationTime(TimeUnit.MILLISECONDS));
         } catch (Exception e) {
+            metric.add(UNHANDLED_EXCEPTIONS_METRIC, 1L, contextFor(request, Map.of("exception", e.getClass().getSimpleName())));
             metric.add(RENDERING_ERRORS, 1, null);
             log.log(LogLevel.ERROR, "Uncaught exception handling request", e);
             if (channel != null) {
