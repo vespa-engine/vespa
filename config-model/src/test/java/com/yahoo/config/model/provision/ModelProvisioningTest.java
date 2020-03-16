@@ -1374,7 +1374,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testNoNodeTagMeans1Node() {
+    public void testNoNodeTagMeans1NodePerCluster() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
@@ -1389,9 +1389,9 @@ public class ModelProvisioningTest {
                 "  </content>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(1);
+        tester.addHosts(2);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
+        assertEquals(2, model.getRoot().hostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
         assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
