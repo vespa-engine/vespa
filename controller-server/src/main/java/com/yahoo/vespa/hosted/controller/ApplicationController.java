@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
@@ -17,7 +18,10 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -108,6 +112,7 @@ public class ApplicationController {
     private final DeploymentTrigger deploymentTrigger;
     private final ApplicationPackageValidator applicationPackageValidator;
     private final EndpointCertificateManager endpointCertificateManager;
+    private final StringFlag dockerImageRepoFlag;
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
                           SecretStore secretStore, FlagSource flagSource) {
@@ -119,6 +124,7 @@ public class ApplicationController {
         this.clock = clock;
         this.artifactRepository = controller.serviceRegistry().artifactRepository();
         this.applicationStore = controller.serviceRegistry().applicationStore();
+        this.dockerImageRepoFlag = Flags.DOCKER_IMAGE_REPO.bindTo(flagSource);
 
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
@@ -485,9 +491,16 @@ public class ApplicationController {
                                   ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
                                   Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
         try {
+            Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
+                    dockerImageRepoFlag
+                            .with(FetchVector.Dimension.ZONE_ID, zone.value())
+                            .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                            .value())
+                    .filter(s -> !s.isBlank())
+                    .map(DockerImage::fromString);
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
-                                                           endpoints, endpointCertificateMetadata));
+                                                           endpoints, endpointCertificateMetadata, dockerImageRepo));
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {

@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -24,16 +25,19 @@ public class DeploymentData {
     private final Version platform;
     private final Set<ContainerEndpoint> containerEndpoints;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
+    private final Optional<DockerImage> dockerImageRepo;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
-                          Optional<EndpointCertificateMetadata> endpointCertificateMetadata) {
+                          Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
+                          Optional<DockerImage> dockerImageRepo) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
         this.containerEndpoints = requireNonNull(containerEndpoints);
         this.endpointCertificateMetadata = requireNonNull(endpointCertificateMetadata);
+        this.dockerImageRepo = requireNonNull(dockerImageRepo);
     }
 
     public ApplicationId instance() {
@@ -60,4 +64,7 @@ public class DeploymentData {
         return endpointCertificateMetadata;
     }
 
+    public Optional<DockerImage> dockerImageRepo() {
+        return dockerImageRepo;
+    }
 }
