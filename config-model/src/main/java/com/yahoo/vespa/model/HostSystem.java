@@ -11,7 +11,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,13 +33,11 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     private static Logger log = Logger.getLogger(HostSystem.class.getName());
 
-    private Map<String,String> hostnames = new LinkedHashMap<>();
-
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
     private final DeployLogger deployLogger;
 
-    public HostSystem(AbstractConfigProducer parent, String name, HostProvisioner provisioner, DeployLogger deployLogger) {
+    public HostSystem(AbstractConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger) {
         super(parent, name);
         this.provisioner = provisioner;
         this.deployLogger = deployLogger;
@@ -49,7 +46,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     void checkName(String hostname) {
         // Give a warning if the host does not exist
         try {
-            Object address = java.net.InetAddress.getByName(hostname);
+            @SuppressWarnings("unused")
+            Object ignore = java.net.InetAddress.getByName(hostname);
         } catch (UnknownHostException e) {
             deployLogger.log(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
         }
@@ -78,36 +76,10 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         return hostname2host.get(name);
     }
 
-    /**
-     * Returns the canonical name of a given host. This will cache names for faster lookup.
-     *
-     * @param hostname the hostname to retrieve the canonical hostname for.
-     * @return The canonical hostname, or null if unable to resolve.
-     * @throws UnknownHostException if the hostname cannot be resolved
-     */
-    public String getCanonicalHostname(String hostname) throws UnknownHostException {
-        if ( ! hostnames.containsKey(hostname)) {
-            hostnames.put(hostname, lookupCanonicalHostname(hostname));
-        }
-        return hostnames.get(hostname);
-    }
-
-    /**
-     * Static helper method that looks up the canonical name of a given host.
-     *
-     * @param hostname the hostname to retrieve the canonical hostname for.
-     * @return The canonical hostname, or null if unable to resolve.
-     * @throws UnknownHostException if the hostname cannot be resolved
-     */
-    // public - This is used by amenders outside this repo
-    public static String lookupCanonicalHostname(String hostname) throws UnknownHostException {
-        return java.net.InetAddress.getByName(hostname).getCanonicalHostName();
-    }
-
     @Override
     public String toString() {
         return "hosts [" + hostname2host.values().stream()
-                                                 .map(host -> host.getHostname())
+                                                 .map(HostResource::getHostname)
                                                  .collect(Collectors.joining(", ")) +
                "]";
     }
@@ -169,7 +141,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     Set<HostSpec> getHostSpecs() {
-        return getHosts().stream().map(host -> host.spec()).collect(Collectors.toCollection(LinkedHashSet::new));
+        return getHosts().stream().map(HostResource::spec).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** A provision logger which forwards to a deploy logger */
