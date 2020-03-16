@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -781,6 +782,30 @@ public class ControllerTest {
         context.submit(applicationPackage, Optional.empty())
                .deploy();
         assertEquals("Deployed application", 1, context.instance().deployments().size());
+    }
+
+    @Test
+    public void testDeployWithRoutingGeneratorEndpoints() {
+        var context = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+
+        var zones = Set.of(systemTest.zone(tester.controller().system()),
+                           stagingTest.zone(tester.controller().system()),
+                           ZoneId.from("prod", "us-west-1"));
+        for (var zone : zones) {
+            tester.controllerTester().serviceRegistry().routingGeneratorMock()
+                  .putEndpoints(context.deploymentIdIn(zone),
+                                List.of(new RoutingEndpoint("http://legacy-endpoint", "hostname",
+                                                            false, "upstreamName")));
+        }
+        // Defer load balancer provisioning in all environments so that routing controller uses routing generator
+        context.deferLoadBalancerProvisioningIn(zones.stream().map(ZoneId::environment).collect(Collectors.toSet()))
+               .submit(applicationPackage)
+               .deploy();
     }
 
     @Test
