@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/features/setup.h>
@@ -131,7 +131,7 @@ TEST_FFF("require that no features are dumped", DistanceBlueprint, IndexFixture,
 TEST_FF("require that setup can be done on random label", DistanceBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(random_label)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "random_label")));
+    EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "random_label")));
 }
 
 TEST_FF("require that no label gives max-double distance", NoLabel(), RankFixture(2, 2, f1, labelFeatureName)) {
