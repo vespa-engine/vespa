@@ -145,33 +145,4 @@ public class AutoscalingTest {
                                tester.autoscale(application1, cluster1));
     }
 
-    @Test
-    public void testReadLog() throws Exception {
-        int prefixLength = "[2020-03-13 16:03:39.346] DEBUG   : configserver     Container.com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb\t".length();
-
-        Set<String> addingHosts = new HashSet<>();
-        Set<String> countingHosts = new HashSet<>();
-        for (String line : IOUtils.getLines("/Users/bratseth/Documents/log.txt")) {
-            if (line.length() < prefixLength) continue;
-
-            line = line.substring(prefixLength);
-            if (line.startsWith("Adding")) {
-                int i = line.indexOf(" for ");
-                String addedHost = line.substring(i + 5);
-                addingHosts.add(addedHost);
-            }
-            else if (line.startsWith("Counting")) {
-                int i = line.indexOf("Non-matches:");
-                line = line.substring(i + "Non-matches: [".length(), line.length() - 1);
-                for (String m : line.split(",")) {
-                    i = m.indexOf(" for ");
-                    String countingHost = m.substring(i + 5);
-                    countingHosts.add(countingHost);
-                }
-            }
-        }
-        Set<String> overlap = Sets.intersection(addingHosts, countingHosts);
-        System.out.println("Overlap: " + overlap);
-    }
-
 }
