@@ -60,7 +60,7 @@ public class AutoscalingMaintainer extends Maintainer {
                 if (lastLogTime == null || lastLogTime.isBefore(nodeRepository().clock().instant().minus(Duration.ofHours(1)))) {
                     int currentGroups = (int) clusterNodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
                     ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-                    target.ifPresent(t -> log.info("Autoscale: " + application + clusterType + " " + clusterId +
+                    target.ifPresent(t -> log.info("Autoscale: " + application + " " + clusterType + " " + clusterId +
                                                    " from " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
                                                    " to " + toString(t.nodes(), t.groups(), t.advertisedResources())));
                     lastLogged.put(new Pair<>(application, clusterId), nodeRepository().clock().instant());
