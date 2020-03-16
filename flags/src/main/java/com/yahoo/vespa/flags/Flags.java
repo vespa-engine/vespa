@@ -233,6 +233,12 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
+            "docker-image-repo", "",
+            "Override default docker image repo. Docker image version will be Vespa version.",
+            "Takes effect on next deployment from controller",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundStringFlag DOCKER_IMAGE_OVERRIDE = defineStringFlag(
             "docker-image-override", "",
             "Override the Docker image to use for deployments. This must containing the image name only, without tag",
