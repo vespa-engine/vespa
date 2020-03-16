@@ -222,7 +222,7 @@ public class DynamicProvisioningMaintainerTest {
             Optional<Allocation> allocation = application
                     .map(app -> new Allocation(
                             app,
-                            ClusterMembership.from("container/default/0/0", Version.fromString("7.3")),
+                            ClusterMembership.from("container/default/0/0", Version.fromString("7.3"), Optional.empty()),
                             flavor.resources(),
                             Generation.initial(),
                             false));

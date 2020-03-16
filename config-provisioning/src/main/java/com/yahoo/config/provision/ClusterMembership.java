@@ -20,7 +20,7 @@ public class ClusterMembership {
 
     protected ClusterMembership() {}
 
-    private ClusterMembership(String stringValue, Version vespaVersion) {
+    private ClusterMembership(String stringValue, Version vespaVersion, Optional<String> dockerImageRepo) {
         String[] components = stringValue.split("/");
         if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
@@ -41,7 +41,7 @@ public class ClusterMembership {
 
         this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
                                         ClusterSpec.Group.from(Integer.parseInt(components[2])), vespaVersion,
-                                        exclusive, combinedId.map(ClusterSpec.Id::from));
+                                        exclusive, combinedId.map(ClusterSpec.Id::from), dockerImageRepo);
         this.index = Integer.parseInt(components[3]);
         this.stringValue = toStringValue();
     }
@@ -106,8 +106,14 @@ public class ClusterMembership {
     @Override
     public String toString() { return stringValue(); }
 
+    // TODO: Remove when when 7.195 is oldest model version in use
+    @Deprecated
     public static ClusterMembership from(String stringValue, Version vespaVersion) {
-        return new ClusterMembership(stringValue, vespaVersion);
+        return new ClusterMembership(stringValue, vespaVersion, Optional.empty());
+    }
+
+    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<String> dockerImageRepo) {
+        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo);
     }
 
     public static ClusterMembership from(ClusterSpec cluster, int index) {

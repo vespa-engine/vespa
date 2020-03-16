@@ -88,7 +88,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                 Version targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
                 hostSpecs = provisioner.prepare(
                         application.getApplicationId(),
-                        application.getClusterSpecWithVersion(targetVersion),
+                        application.getClusterSpecWithVersion(targetVersion, Optional.empty()), // TODO: Use dockerImageRepo from zk
                         application.getCapacity(),
                         1, // groups
                         logger::log);

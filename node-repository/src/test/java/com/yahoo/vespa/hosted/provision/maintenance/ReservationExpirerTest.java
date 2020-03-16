@@ -61,7 +61,7 @@ public class ReservationExpirerTest {
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
         provisioner.prepare(applicationId, cluster, Capacity.fromCount(2, new NodeResources(2, 8, 50, 1)), 1, null);
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
 

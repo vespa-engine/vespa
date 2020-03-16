@@ -59,6 +59,9 @@ public class AllocatedHostsSerializer {
     /** Wanted version */
     private static final String hostSpecVespaVersionKey = "vespaVersion";
 
+    /** Wanted docker image repo */
+    private static final String hostSpecDockerImageRepoKey = "dockerImageRepo";
+
     /** Current version */
     private static final String hostSpecCurrentVespaVersionKey = "currentVespaVersion";
     private static final String hostSpecNetworkPortsKey = "ports";
@@ -79,6 +82,7 @@ public class AllocatedHostsSerializer {
     private static void toSlime(HostSpec host, Cursor object) {
         object.setString(hostSpecHostNameKey, host.hostname());
         aliasesToSlime(host, object);
+        // TODO serialize dockerImageRepo
         host.membership().ifPresent(membership -> {
             object.setString(hostSpecMembershipKey, membership.stringValue());
             object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
@@ -196,7 +200,10 @@ public class AllocatedHostsSerializer {
 
     private static ClusterMembership membershipFromSlime(Inspector object) {
         return ClusterMembership.from(object.field(hostSpecMembershipKey).asString(),
-                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersionKey).asString()));
+                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersionKey).asString()),
+                                      object.field(hostSpecDockerImageRepoKey).valid()
+                                              ? Optional.of(object.field(hostSpecDockerImageRepoKey).asString())
+                                              : Optional.empty());
     }
 
     private static Optional<String> optionalString(Inspector inspector) {

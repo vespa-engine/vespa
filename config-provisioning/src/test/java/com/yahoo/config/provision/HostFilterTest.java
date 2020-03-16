@@ -71,7 +71,7 @@ public class HostFilterTest {
     }
 
     private Optional<ClusterMembership> membership(String membershipString) {
-        return Optional.of(ClusterMembership.from(membershipString, Vtag.currentVersion));
+        return Optional.of(ClusterMembership.from(membershipString, Vtag.currentVersion, Optional.empty()));
     }
 
 }

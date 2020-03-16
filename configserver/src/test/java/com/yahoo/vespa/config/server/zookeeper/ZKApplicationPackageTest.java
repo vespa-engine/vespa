@@ -39,7 +39,8 @@ public class ZKApplicationPackageTest {
     private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
     private static final AllocatedHosts ALLOCATED_HOSTS = AllocatedHosts.withHosts(
             Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty(),
-                                               Optional.of(com.yahoo.component.Version.fromString("6.0.1")))));
+                                               Optional.of(Version.fromString("6.0.1")), Optional.empty(),
+                                               Optional.empty(), Optional.of("docker repo"))));
 
     private ConfigCurator configCurator;
 
@@ -80,6 +81,8 @@ public class ZKApplicationPackageTest {
         assertThat(Utf8.toString(toJson(readInfo)), is(Utf8.toString(toJson(ALLOCATED_HOSTS))));
         assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
         assertEquals("6.0.1", readInfo.getHosts().iterator().next().version().get().toString());
+        // TODO: Enable when dockerImageRepo is written to zk
+        //assertEquals("docker repo", readInfo.getHosts().iterator().next().dockerImageRepo().get());
         assertTrue(zkApp.getDeployment().isPresent());
         assertEquals("mydisc", DeploymentSpec.fromXml(zkApp.getDeployment().get()).requireInstance("default").globalServiceId().get());
     }

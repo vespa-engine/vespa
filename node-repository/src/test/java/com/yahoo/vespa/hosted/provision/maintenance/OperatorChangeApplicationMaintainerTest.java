@@ -134,9 +134,9 @@ public class OperatorChangeApplicationMaintainerTest {
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app3 = ApplicationId.from(TenantName.from("vespa-hosted"), ApplicationName.from("routing"), InstanceName.from("default"));
-        final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty());
-        final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty());
-        final ClusterSpec clusterApp3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("routing"), Version.fromString("6.42"), false, Optional.empty());
+        final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
+        final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
+        final ClusterSpec clusterApp3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("routing"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
         final int wantedNodesApp3 = 2;

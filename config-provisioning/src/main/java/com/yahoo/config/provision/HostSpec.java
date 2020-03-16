@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.component.Version;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +27,9 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<Flavor> flavor;
 
-    private final Optional<com.yahoo.component.Version> version;
+    private final Optional<Version> version;
+
+    private final Optional<String> dockerImageRepo;
 
     private final Optional<NetworkPorts> networkPorts;
 
@@ -35,7 +39,7 @@ public class HostSpec implements Comparable<HostSpec> {
         this(hostname, new ArrayList<>(), Optional.empty(), membership);
     }
 
-    public HostSpec(String hostname, ClusterMembership membership, Flavor flavor, Optional<com.yahoo.component.Version> version) {
+    public HostSpec(String hostname, ClusterMembership membership, Flavor flavor, Optional<Version> version) {
         this(hostname, new ArrayList<>(), Optional.of(flavor), Optional.of(membership), version);
     }
 
@@ -56,19 +60,26 @@ public class HostSpec implements Comparable<HostSpec> {
     }
 
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version) {
+                    Optional<ClusterMembership> membership, Optional<Version> version) {
         this(hostname, aliases, flavor, membership, version, Optional.empty());
     }
 
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version,
+                    Optional<ClusterMembership> membership, Optional<Version> version,
                     Optional<NetworkPorts> networkPorts) {
         this(hostname, aliases, flavor, membership, version, networkPorts, Optional.empty());
     }
 
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version,
+                    Optional<ClusterMembership> membership, Optional<Version> version,
                     Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources) {
+        this(hostname, aliases, flavor, membership, version, networkPorts, requestedResources, Optional.empty());
+    }
+
+    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
+                    Optional<ClusterMembership> membership, Optional<Version> version,
+                    Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources,
+                    Optional<String> dockerImageRepo) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         this.hostname = hostname;
         this.aliases = List.copyOf(aliases);
@@ -77,6 +88,7 @@ public class HostSpec implements Comparable<HostSpec> {
         this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");;
         this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");;
         this.requestedResources = Objects.requireNonNull(requestedResources, "RequestedResources cannot be null");
+        this.dockerImageRepo = Objects.requireNonNull(dockerImageRepo, "Version cannot be null but can be empty");;
     }
 
     /** Returns the name identifying this host */
@@ -99,8 +111,10 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Returns the requested resources leading to this host being provisioned, or empty if not known */
     public Optional<NodeResources> requestedResources() { return requestedResources; }
 
+    public Optional<String> dockerImageRepo() { return dockerImageRepo; }
+
     public HostSpec withPorts(Optional<NetworkPorts> ports) {
-        return new HostSpec(hostname, aliases, flavor, membership, version, ports, requestedResources);
+        return new HostSpec(hostname, aliases, flavor, membership, version, ports, requestedResources, dockerImageRepo);
     }
 
     @Override

@@ -254,7 +254,8 @@ public class CapacityCheckerTester {
         if (nodeModel.membership != null && nodeModel.owner != null) {
             membership = ClusterMembership.from(
                     nodeModel.membership.toString(),
-                    Version.fromString(nodeModel.wantedVespaVersion));
+                    Version.fromString(nodeModel.wantedVespaVersion),
+                    Optional.empty());
             owner = ApplicationId.from(nodeModel.owner.tenant, nodeModel.owner.application, nodeModel.owner.instance);
         }
 
