@@ -189,7 +189,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
 
-        addHttp(deployState, spec, cluster, context.getApplicationType(), deployState.getProperties().applicationId().instance().isTester());
+        addHttp(deployState, spec, cluster, context);
 
         addAccessLogs(deployState, cluster, spec);
         addRoutingAliases(cluster, spec, deployState.zone().environment());
@@ -311,12 +311,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
 
-    private void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ApplicationType applicationType, boolean isTesterApplication) {
+    private void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
-        if (deployState.isHosted() && applicationType == ApplicationType.DEFAULT && !isTesterApplication) {
+        if (isHostedTenantApplication(context)) {
             addAdditionalHostedConnector(deployState, cluster);
         }
     }
@@ -341,6 +341,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(proxyProtocol, serverName));
         }
+    }
+
+    private static boolean isHostedTenantApplication(ConfigModelContext context) {
+        var deployState = context.getDeployState();
+        boolean isTesterApplication = deployState.getProperties().applicationId().instance().isTester();
+        return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
     }
 
     private static void addImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
