@@ -101,6 +101,11 @@ protected:
     LevelArrayRef get_level_array(uint32_t docid) const;
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const;
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links);
+    void add_link_to(uint32_t docid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
+        LinkArray new_links(old_links.begin(), old_links.end());
+        new_links.push_back(new_link);
+        set_link_array(docid, level, new_links);
+    }
 
     /**
      * Returns true if the distance between the candidate and a node in the current result

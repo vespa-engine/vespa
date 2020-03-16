@@ -201,9 +201,7 @@ HnswIndex::connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint3
     set_link_array(docid, level, neighbors);
     for (uint32_t neighbor_docid : neighbors) {
         auto old_links = get_link_array(neighbor_docid, level);
-        LinkArray new_links(old_links.begin(), old_links.end());
-        new_links.push_back(docid);
-        set_link_array(neighbor_docid, level, new_links);
+        add_link_to(neighbor_docid, level, old_links, docid);
     }
     for (uint32_t neighbor_docid : neighbors) {
         shrink_if_needed(neighbor_docid, level);
@@ -367,13 +365,8 @@ HnswIndex::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
         LinkArrayRef old_links_2 = get_link_array(pair.id_second, level);
         if (old_links_2.size() >= _cfg.max_links_on_inserts()) continue;
 
-        LinkArray new_links_1(old_links_1.begin(), old_links_1.end());
-        new_links_1.push_back(pair.id_second);
-        set_link_array(pair.id_first, level, new_links_1);
-
-        LinkArray new_links_2(old_links_2.begin(), old_links_2.end());
-        new_links_2.push_back(pair.id_first);
-        set_link_array(pair.id_second, level, new_links_2);
+        add_link_to(pair.id_first, level, old_links_1, pair.id_second);
+        add_link_to(pair.id_second, level, old_links_2, pair.id_first);
     }
 }
 
