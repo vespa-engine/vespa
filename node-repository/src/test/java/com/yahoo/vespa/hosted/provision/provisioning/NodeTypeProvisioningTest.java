@@ -39,7 +39,7 @@ public class NodeTypeProvisioningTest {
     private final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                                 ClusterSpec.Id.from("test"),
                                                                 Version.fromString("6.42"),
-                                                                false, Optional.empty());
+                                                                false, Optional.empty(), Optional.empty());
 
     @Before
     public void setup() {

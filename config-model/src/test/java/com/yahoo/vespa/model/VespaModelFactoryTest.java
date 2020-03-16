@@ -111,6 +111,7 @@ public class VespaModelFactoryTest {
                                                                             ClusterSpec.Group.from(0),
                                                                             Version.fromString("6.42"),
                                                                             false,
+                                                                            Optional.empty(),
                                                                             Optional.empty()),
                                                            0));
             }
@@ -124,6 +125,7 @@ public class VespaModelFactoryTest {
                                                                                                       ClusterSpec.Group.from(0),
                                                                                                       Version.fromString("6.42"),
                                                                                                       false,
+                                                                                                      Optional.empty(),
                                                                                                       Optional.empty()),
                                                                                      0)));
             }

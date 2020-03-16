@@ -129,7 +129,7 @@ public class RebalancerTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Optional.empty());
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
     }
 
     private ApplicationId makeApplicationId(String tenant, String appName) {

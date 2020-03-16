@@ -93,7 +93,7 @@ public class AllocationSimulator {
     private Optional<Allocation> allocation(Optional<String> tenant, Flavor flavor) {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
-                                                   ClusterMembership.from("container/id1/3", new Version()),
+                                                   ClusterMembership.from("container/id1/3", new Version(), Optional.empty()),
                                                    flavor.resources(),
                                                    Generation.initial(),
                                                    false);
@@ -111,7 +111,7 @@ public class AllocationSimulator {
 
     private ClusterSpec cluster() {
         return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1),
-                                Version.fromString("6.41"), false, Optional.empty());
+                                Version.fromString("6.41"), false, Optional.empty(), Optional.empty());
     }
 
     /* ------------ Methods to add events to the system ----------------*/

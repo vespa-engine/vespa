@@ -108,7 +108,8 @@ public class InMemoryProvisioner implements HostProvisioner {
         List<Host> defaultHosts = freeNodes.get(defaultResources);
         if (defaultHosts.isEmpty()) throw new IllegalArgumentException("No more hosts with default resources available");
         Host newHost = freeNodes.removeValue(defaultResources, 0);
-        return new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.empty(), newHost.version());
+        // Note: Always returns HostSpec with empty dockerImageRepo, which is OK since this method is never used when docker image repo is set
+        return new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.empty(), newHost.version(), Optional.empty());
     }
 
     @Override
@@ -155,7 +156,10 @@ public class InMemoryProvisioner implements HostProvisioner {
                             host.aliases(),
                             host.flavor(),
                             Optional.of(host.membership().get().retire()),
-                            host.version());
+                            host.version(),
+                            Optional.empty(),
+                            Optional.empty(),
+                            host.dockerImageRepo());
     }
 
     private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, Optional<NodeResources> requestedResources,

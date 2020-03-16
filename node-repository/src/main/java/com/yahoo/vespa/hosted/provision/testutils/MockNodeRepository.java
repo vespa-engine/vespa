@@ -141,28 +141,28 @@ public class MockNodeRepository extends NodeRepository {
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container,
                                                       ClusterSpec.Id.from("node-admin"),
                                                       Version.fromString("6.42"),
-                                                      false, Optional.empty());
+                                                      false, Optional.empty(), Optional.empty());
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), 1, null), zoneApp, provisioner);
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container,
                                                    ClusterSpec.Id.from("id1"),
                                                    Version.fromString("6.42"),
-                                                   false, Optional.empty());
+                                                   false, Optional.empty(), Optional.empty());
         provisioner.prepare(app1, cluster1, Capacity.fromCount(2, new NodeResources(2, 8, 50, 1)), 1, null);
 
         ApplicationId app2 = ApplicationId.from(TenantName.from("tenant2"), ApplicationName.from("application2"), InstanceName.from("instance2"));
         ClusterSpec cluster2 = ClusterSpec.request(ClusterSpec.Type.content,
                                                    ClusterSpec.Id.from("id2"),
                                                    Version.fromString("6.42"),
-                                                   false, Optional.empty());
+                                                   false, Optional.empty(), Optional.empty());
         activate(provisioner.prepare(app2, cluster2, Capacity.fromCount(2, new NodeResources(2, 8, 50, 1)), 1, null), app2, provisioner);
 
         ApplicationId app3 = ApplicationId.from(TenantName.from("tenant3"), ApplicationName.from("application3"), InstanceName.from("instance3"));
         ClusterSpec cluster3 = ClusterSpec.request(ClusterSpec.Type.content,
                                                    ClusterSpec.Id.from("id3"),
                                                    Version.fromString("6.42"),
-                                                   false, Optional.empty());
+                                                   false, Optional.empty(), Optional.empty());
         activate(provisioner.prepare(app3, cluster3, Capacity.fromCount(2, new NodeResources(1, 4, 100, 1), false, true), 1, null), app3, provisioner);
 
         List<Node> largeNodes = new ArrayList<>();
@@ -176,7 +176,7 @@ public class MockNodeRepository extends NodeRepository {
         ClusterSpec cluster4 = ClusterSpec.request(ClusterSpec.Type.container,
                                                    ClusterSpec.Id.from("id4"),
                                                    Version.fromString("6.42"),
-                                                   false, Optional.empty());
+                                                   false, Optional.empty(), Optional.empty());
         activate(provisioner.prepare(app4, cluster4, Capacity.fromCount(2, new NodeResources(10, 48, 500, 1), false, true), 1, null), app4, provisioner);
     }
 

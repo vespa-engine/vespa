@@ -37,7 +37,8 @@ public class AllocatedHostsSerializerTest {
         hosts.add(new HostSpec("with-aliases",
                                List.of("alias1", "alias2")));
         hosts.add(new HostSpec("allocated",
-                               Optional.of(ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1")))));
+                               Optional.of(ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                                  Optional.of("docker.foo.com:4443/vespa/bar")))));
         hosts.add(new HostSpec("flavor-from-resources-1",
                                Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4, 1))));
         hosts.add(new HostSpec("flavor-from-resources-2",
@@ -72,6 +73,7 @@ public class AllocatedHostsSerializerTest {
             assertEquals(expectedHost.networkPorts(), deserializedHost.networkPorts());
             assertEquals(expectedHost.aliases(), deserializedHost.aliases());
             assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
+            assertEquals(expectedHost.dockerImageRepo(), deserializedHost.dockerImageRepo());
         }
     }
 

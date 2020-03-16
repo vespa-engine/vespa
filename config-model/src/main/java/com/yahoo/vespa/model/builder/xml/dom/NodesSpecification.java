@@ -195,7 +195,8 @@ public class NodesSpecification {
                                                           DeployLogger logger) {
         if (combinedId.isPresent())
             clusterType = ClusterSpec.Type.combined;
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive, combinedId.map(ClusterSpec.Id::from));
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive,
+                                                  combinedId.map(ClusterSpec.Id::from), dockerImageRepo);
         return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
     }
 

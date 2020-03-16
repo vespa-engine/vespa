@@ -473,7 +473,7 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("music"),
                                                   new com.yahoo.component.Version(4, 5, 6),
-                                                  false, Optional.empty());
+                                                  false, Optional.empty(), Optional.empty());
         tester.prepare(application, cluster, Capacity.fromCount(5, Optional.empty(), false, false), 1);
         // No exception; Success
     }
@@ -510,7 +510,7 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("music"),
                                                   new com.yahoo.component.Version(4, 5, 6),
-                                                  false, Optional.empty());
+                                                  false, Optional.empty(), Optional.empty());
         tester.activate(application, tester.prepare(application, cluster, capacity, 1));
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
@@ -683,6 +683,7 @@ public class ProvisioningTest {
                                                   ClusterSpec.Id.from("music"),
                                                   Version.fromString("1.2.3"),
                                                   false,
+                                                  Optional.empty(),
                                                   Optional.empty());
         var initialNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                        Capacity.fromCount(2, defaultResources, false, false),
@@ -693,6 +694,7 @@ public class ProvisioningTest {
                                       ClusterSpec.Id.from("music"),
                                       Version.fromString("1.2.3"),
                                       false,
+                                      Optional.empty(),
                                       Optional.empty());
         var newNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                    Capacity.fromCount(2, defaultResources, false, false),
@@ -708,6 +710,7 @@ public class ProvisioningTest {
                                       ClusterSpec.Id.from("music"),
                                       Version.fromString("1.2.3"),
                                       false,
+                                      Optional.empty(),
                                       Optional.empty());
         newNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                Capacity.fromCount(2, defaultResources, false, false),
@@ -734,10 +737,10 @@ public class ProvisioningTest {
                                 int content1Size, boolean required, NodeResources nodeResources, Version wantedVersion,
                                 ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false, Optional.empty());
-        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false, Optional.empty());
-        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false, Optional.empty());
-        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false, Optional.empty());
+        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false, Optional.empty(), Optional.empty());
+        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false, Optional.empty(), Optional.empty());
+        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false, Optional.empty(), Optional.empty());
+        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false, Optional.empty(), Optional.empty());
 
         Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, nodeResources, tester);
         Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, nodeResources, tester);

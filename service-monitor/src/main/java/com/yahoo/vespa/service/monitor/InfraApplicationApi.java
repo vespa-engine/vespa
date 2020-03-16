@@ -6,6 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 
+import java.util.Optional;
+
 /**
  * API of infrastructure application that is accessible via DuperModelInfraApi.
  *

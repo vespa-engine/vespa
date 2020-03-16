@@ -103,6 +103,7 @@ public class NodeSerializer {
     private static final String removableKey = "removable";
     // Saved as part of allocation instead of serviceId, since serviceId serialized form is not easily extendable.
     private static final String wantedVespaVersionKey = "wantedVespaVersion";
+    private static final String wantedDockerImageRepoKey = "wantedDockerImageRepo";
 
     // History event fields
     private static final String historyEventTypeKey = "type";
@@ -186,6 +187,8 @@ public class NodeSerializer {
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
         object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
+        // TODO serialize dockerImageRepo
+        //object.setString(wantedDockerImageRepoKey, allocation.membership().cluster().dockerImageRepo().orElse(""));
         allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
     }
 
@@ -306,12 +309,18 @@ public class NodeSerializer {
 
     private ClusterMembership clusterMembershipFromSlime(Inspector object) {
         return ClusterMembership.from(object.field(serviceIdKey).asString(), 
-                                      versionFromSlime(object.field(wantedVespaVersionKey)).get());
+                                      versionFromSlime(object.field(wantedVespaVersionKey)).get(),
+                                      dockerImageRepoFromSlime(object.field(wantedDockerImageRepoKey)));
     }
 
     private Optional<Version> versionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(Version.fromString(object.asString()));
+    }
+
+    private Optional<String> dockerImageRepoFromSlime(Inspector object) {
+        if ( ! object.valid() || object.asString().isEmpty()) return Optional.empty();
+        return Optional.of(object.asString());
     }
 
     private Optional<DockerImage> dockerImageFromSlime(Inspector object) {

@@ -343,7 +343,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false, Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false, Optional.empty(), Optional.empty());
         NodeResources resources = new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.any);
 
         List<HostSpec> hosts = tester.prepare(application, cluster, 2, 1, resources);
@@ -360,7 +360,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false, Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false, Optional.empty(), Optional.empty());
         NodeResources resources = new NodeResources(1, 4, 10, 1, requestDiskSpeed);
 
         try {
@@ -382,7 +382,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false, Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false, Optional.empty(), Optional.empty());
         NodeResources resources = new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.fast);
 
         List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
@@ -400,7 +400,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false, Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false, Optional.empty(), Optional.empty());
 
         List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromCount(2, Optional.of(NodeResources.fromLegacyName("d-2-8-50")), false, true), 1);
         tester.activate(application, hosts1);
@@ -465,7 +465,7 @@ public class DynamicDockerAllocationTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Optional.empty());
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
     }
 
 }

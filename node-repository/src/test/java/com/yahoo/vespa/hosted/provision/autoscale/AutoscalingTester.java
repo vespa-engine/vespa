@@ -79,6 +79,7 @@ class AutoscalingTester {
                                    ClusterSpec.Id.from(clusterId),
                                    Version.fromString("7"),
                                    false,
+                                   Optional.empty(),
                                    Optional.empty());
     }
 

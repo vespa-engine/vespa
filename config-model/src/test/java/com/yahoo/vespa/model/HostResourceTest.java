@@ -50,7 +50,7 @@ public class HostResourceTest {
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
         return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0),
-                                Version.fromString("6.42"), false, Optional.empty());
+                                Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership membership) {

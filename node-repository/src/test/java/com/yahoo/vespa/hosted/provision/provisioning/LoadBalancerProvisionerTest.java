@@ -272,7 +272,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id, Optional<ClusterSpec.Id> combinedId) {
-        return ClusterSpec.request(type, id, Version.fromString("6.42"), false, combinedId);
+        return ClusterSpec.request(type, id, Version.fromString("6.42"), false, combinedId, Optional.empty());
     }
 
     private static <T> T get(Set<T> set, int position) {
