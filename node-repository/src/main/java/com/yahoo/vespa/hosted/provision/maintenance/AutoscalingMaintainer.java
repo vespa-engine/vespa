@@ -53,20 +53,23 @@ public class AutoscalingMaintainer extends Maintainer {
     private void autoscale(ApplicationId application, List<Node> applicationNodes) {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
             if ( ! deployment.isValid()) return; // Another config server will consider this application
-            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> {
-                Optional<AllocatableClusterResources> target = autoscaler.autoscale(clusterNodes);
-
-                Instant lastLogTime = lastLogged.get(new Pair<>(application, clusterId));
-                if (lastLogTime == null || lastLogTime.isBefore(nodeRepository().clock().instant().minus(Duration.ofHours(1)))) {
-                    int currentGroups = (int) clusterNodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
-                    ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-                    target.ifPresent(t -> log.info("Autoscale: " + application + clusterType + " " + clusterId +
-                                                   " from " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
-                                                   " to " + toString(t.nodes(), t.groups(), t.advertisedResources())));
-                    lastLogged.put(new Pair<>(application, clusterId), nodeRepository().clock().instant());
-                }
-            });
+            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, clusterNodes));
         }
+    }
+
+    private void autoscale(ApplicationId application, ClusterSpec.Id clusterId, List<Node> clusterNodes) {
+        Optional<AllocatableClusterResources> target = autoscaler.autoscale(clusterNodes);
+        if (target.isEmpty()) return;
+
+        Instant lastLogTime = lastLogged.get(new Pair<>(application, clusterId));
+        if (lastLogTime != null && lastLogTime.isAfter(nodeRepository().clock().instant().minus(Duration.ofHours(1)))) return;
+
+        int currentGroups = (int) clusterNodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
+        log.info("Autoscale: " + application + clusterType + " " + clusterId +
+                 " from " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
+                 " to " + toString(target.get().nodes(), target.get().groups(), target.get().advertisedResources()));
+        lastLogged.put(new Pair<>(application, clusterId), nodeRepository().clock().instant());
     }
 
     private String toString(int nodes, int groups, NodeResources resources) {
