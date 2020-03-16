@@ -23,6 +23,7 @@ import java.util.stream.Stream;
  * Helper class for http access control.
  *
  * @author gjoranv
+ * @author bjorncs
  */
 public final class AccessControl {
 
@@ -130,7 +131,7 @@ public final class AccessControl {
                 && handler.getServerBindings().stream().noneMatch(excludedBindings::contains);
     }
 
-    public static boolean isBuiltinGetOnly(Handler<?> handler) {
+    private static boolean isBuiltinGetOnly(Handler<?> handler) {
         return UNPROTECTED_HANDLERS.contains(handler.getClassId().getName());
     }
 
