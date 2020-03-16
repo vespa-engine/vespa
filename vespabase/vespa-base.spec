@@ -6,7 +6,7 @@
 Name:           vespa-base
 Version:        %version
 Release:        1%{?dist}
-BuildArch:      x86_64
+BuildArch:      noarch
 Summary:        Vespa common files
 Group:          Applications/Databases
 License:        Commercial
