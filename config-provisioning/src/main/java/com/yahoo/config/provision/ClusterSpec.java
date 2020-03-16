@@ -102,7 +102,7 @@ public final class ClusterSpec {
 
     @Override
     public String toString() {
-        return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion + " " + dockerImageRepo.orElse("");
+        return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion + (dockerImageRepo.map(repo -> " " + repo).orElse(""));
     }
 
     @Override
