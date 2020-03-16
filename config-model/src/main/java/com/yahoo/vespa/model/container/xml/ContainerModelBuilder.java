@@ -317,12 +317,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
         if (isHostedTenantApplication(context)) {
+            addHostedImplicitHttpIfNotPresent(cluster);
             addAdditionalHostedConnector(deployState, cluster);
         }
     }
 
     private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
-        addImplicitHttpIfNotPresent(cluster);
         JettyHttpServer server = cluster.getHttp().getHttpServer();
         String serverName = server.getComponentId().getName();
 
@@ -349,7 +349,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
     }
 
-    private static void addImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
+    private static void addHostedImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
         if(cluster.getHttp() == null) {
             Http http = new Http(Collections.emptyList());
             http.setFilterChains(new FilterChains(cluster));
