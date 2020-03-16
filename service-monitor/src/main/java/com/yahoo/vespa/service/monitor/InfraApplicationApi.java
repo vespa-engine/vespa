@@ -16,5 +16,5 @@ import java.util.Optional;
 public interface InfraApplicationApi {
     ApplicationId getApplicationId();
     Capacity getCapacity();
-    ClusterSpec getClusterSpecWithVersion(Version version, Optional<String> dockerImageRepo);
+    ClusterSpec getClusterSpecWithVersion(Version version);
 }

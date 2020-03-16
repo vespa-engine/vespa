@@ -336,7 +336,7 @@ public class ProvisioningTester {
         ConfigServerApplication application = new ConfigServerApplication();
         List<HostSpec> hosts = prepare(
                 application.getApplicationId(),
-                application.getClusterSpecWithVersion(configServersVersion, Optional.empty()),
+                application.getClusterSpecWithVersion(configServersVersion),
                 application.getCapacity(),
                 1);
         activate(application.getApplicationId(), new HashSet<>(hosts));
