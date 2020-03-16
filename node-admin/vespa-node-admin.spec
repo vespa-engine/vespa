@@ -9,7 +9,7 @@
 Name:           vespa-node-admin
 Version:        %version
 Release:        1%{?dist}
-BuildArch:      x86_64
+BuildArch:      noarch
 Summary:        Vespa Node Admin
 Group:          Applications/Databases
 License:        Commercial
