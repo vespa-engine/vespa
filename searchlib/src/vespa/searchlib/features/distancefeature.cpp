@@ -20,7 +20,7 @@ using namespace search::index::schema;
 namespace search::features {
 
 /** Implements the executor for converting NNS rawscore to a distance feature. */
-class ConvertRawscoreExecutor : public fef::FeatureExecutor {
+class ConvertRawscoreToDistance : public fef::FeatureExecutor {
 private:
     std::vector<fef::TermFieldHandle> _handles;
     const fef::MatchData             *_md;
@@ -28,12 +28,12 @@ private:
         _md = &md;
     }
 public:
-    ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId);
-    ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, const vespalib::string &label);
+    ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, uint32_t fieldId);
+    ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const vespalib::string &label);
     void execute(uint32_t docId) override;
 };
 
-ConvertRawscoreExecutor::ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId)
+ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, uint32_t fieldId)
   : _handles(),
     _md(nullptr)
 {
@@ -46,7 +46,7 @@ ConvertRawscoreExecutor::ConvertRawscoreExecutor(const fef::IQueryEnvironment &e
     }
 }
 
-ConvertRawscoreExecutor::ConvertRawscoreExecutor(const fef::IQueryEnvironment &env, const vespalib::string &label)
+ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const vespalib::string &label)
   : _handles(),
     _md(nullptr)
 {
@@ -63,19 +63,19 @@ ConvertRawscoreExecutor::ConvertRawscoreExecutor(const fef::IQueryEnvironment &e
 }
 
 void
-ConvertRawscoreExecutor::execute(uint32_t docId)
+ConvertRawscoreToDistance::execute(uint32_t docId)
 {
-    feature_t output = std::numeric_limits<feature_t>::max();
+    feature_t min_distance = std::numeric_limits<feature_t>::max();
     assert(_md);
     for (auto handle : _handles) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(handle);
         if (tfmd->getDocId() == docId) {
             // add conversion from "closeness" RawScore later:
             feature_t converted =  tfmd->getRawScore();
-            output = std::min(output, converted);
+            min_distance = std::min(min_distance, converted);
         }
     }
-    outputs().set_number(0, output);
+    outputs().set_number(0, min_distance);
 }
 
 
@@ -193,7 +193,26 @@ bool
 DistanceBlueprint::setup(const IIndexEnvironment & env,
                          const ParameterList & params)
 {
+    // params[0] = attribute name
     vespalib::string arg = params[0].getValue();
+    bool allow_bad_field = true;
+    if (params.size() == 2) {
+        // params[0] = field / label
+        // params[0] = attribute name / label value
+        if (arg == "label") {
+            _arg_string = params[1].getValue();
+            _use_item_label = true;
+            describeOutput("out", "The euclidean distance from the labeled query item.");
+            return true;
+        } else if (arg == "field") {
+            arg = params[1].getValue();
+            allow_bad_field = false;
+        } else {
+            LOG(error, "first argument must be 'field' or 'label', but was '%s'",
+                arg.c_str());
+            return false;
+        }
+    }
     const FieldInfo *fi = env.getFieldByName(arg);
     if (fi != nullptr && fi->hasAttribute()) {
         auto dt = fi->get_data_type();
@@ -211,20 +230,26 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
     if (fi != nullptr && fi->hasAttribute()) {
         return setup_geopos(env, z);
     }
-    _arg_string = arg;
-    _use_item_label = true;
-    describeOutput("out", "The euclidean distance from the labeled query item.");
-    return true;
+    if (allow_bad_field) {
+        // backwards compatibility fallback:
+        return setup_geopos(env, arg);
+    }
+    if (env.getFieldByName(arg) == nullptr && fi == nullptr) {
+        LOG(error, "unknown field '%s' for rank feature %s\n", arg.c_str(), getName().c_str());
+    } else {
+        LOG(error, "field '%s' must be an attribute for rank feature %s\n", arg.c_str(), getName().c_str());
+    }
+    return false;
 }
 
 FeatureExecutor &
 DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     if (_use_nns_tensor) {
-        return stash.create<ConvertRawscoreExecutor>(env, _attr_id);
+        return stash.create<ConvertRawscoreToDistance>(env, _attr_id);
     }
     if (_use_item_label) {
-        return stash.create<ConvertRawscoreExecutor>(env, _arg_string);
+        return stash.create<ConvertRawscoreToDistance>(env, _arg_string);
     }
     const search::attribute::IAttributeVector * pos = nullptr;
     const Location & location = env.getLocation();
