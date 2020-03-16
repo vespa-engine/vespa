@@ -197,8 +197,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 // config models (which is always true for manually deployed zones)
                 if (allApplicationVersions.size() > 0 && allApplicationVersions.get(0).getModel().skipOldConfigModels(now))
                     log.log(LogLevel.INFO, applicationId + ": Skipping old version (due to validation override)");
-                else
+                else {
+                    log.log(LogLevel.ERROR, applicationId + ": Failed to build version " + version);
                     throw e;
+                }
             }
         }
         return allApplicationVersions;
