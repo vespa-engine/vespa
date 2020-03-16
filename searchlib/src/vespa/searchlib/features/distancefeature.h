@@ -12,7 +12,7 @@ namespace search::features {
  */
 class DistanceExecutor : public fef::FeatureExecutor {
 private:
-    const fef::Location         & _location;
+    const fef::Location               & _location;
     const attribute::IAttributeVector * _pos;
     attribute::IntegerContent           _intBuf;
 
@@ -37,7 +37,14 @@ public:
  */
 class DistanceBlueprint : public fef::Blueprint {
 private:
-    vespalib::string _posAttr;
+    vespalib::string _arg_string;
+    uint32_t _attr_id;
+    bool _use_geo_pos;
+    bool _use_nns_tensor;
+    bool _use_item_label;
+
+    bool setup_geopos(const fef::IIndexEnvironment & env, const vespalib::string &attr);
+    bool setup_nns(const fef::IIndexEnvironment & env, const vespalib::string &attr);
 
 public:
     DistanceBlueprint();
