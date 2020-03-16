@@ -58,6 +58,8 @@ public:
 
     using GroupingLevelList = std::vector<GroupingLevel>;
 
+private:
+
     class Value {
     public:
         Value();
@@ -152,7 +154,7 @@ public:
         uint8_t          _packedLength;    // Length of aggr and expr vectors.
         uint8_t          _orderBy[2];           // How this group is ranked, negative means reverse rank.
     };
-private:
+
     ResultNode::CP   _id;                   // the label of this group, separating it from other groups
     RawRank          _rank;                 // The default rank taken from the highest hit relevance.
     Value            _aggr;
