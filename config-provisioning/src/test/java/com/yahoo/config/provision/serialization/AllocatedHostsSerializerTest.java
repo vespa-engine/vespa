@@ -73,7 +73,7 @@ public class AllocatedHostsSerializerTest {
             assertEquals(expectedHost.networkPorts(), deserializedHost.networkPorts());
             assertEquals(expectedHost.aliases(), deserializedHost.aliases());
             assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
-            assertEquals(expectedHost.dockerImageRepo().orElse(""), deserializedHost.dockerImageRepo().orElse(""));
+            assertEquals(expectedHost.dockerImageRepo(), deserializedHost.dockerImageRepo());
         }
     }
 
