@@ -58,8 +58,6 @@ public:
 
     using GroupingLevelList = std::vector<GroupingLevel>;
 
-private:
-
     class Value {
     public:
         Value();
@@ -101,7 +99,7 @@ private:
         void addChild(Group * child);
         uint32_t getAggrSize()    const { return _packedLength & 0x0f; }
         uint32_t getOrderBySize() const { return (_packedLength >> 6) & 0x03; }
-        uint32_t getChildrenSize()   const { return (_packedLength >> 8); }
+        uint32_t getChildrenSize()   const { return _childrenLength; }
         uint32_t getExpr(uint32_t i) const { return getAggrSize() + i; }
         int32_t getOrderBy(uint32_t i) const {
             int32_t v((_orderBy[i/2] >> (4*(i%2))) & 0x0f);
@@ -122,7 +120,7 @@ private:
         void setAggrSize(uint32_t v)    { _packedLength = (_packedLength & ~0x0f) | v; }
         void setExprSize(uint32_t v)    { _packedLength = (_packedLength & ~0x30) | (v << 4); }
         void setOrderBySize(uint32_t v) { _packedLength = (_packedLength & ~0xc0) | (v << 6); }
-        void setChildrenSize(uint32_t v) { _packedLength = (_packedLength & ~0xffffff00) | (v << 8); }
+        void setChildrenSize(uint32_t v) { _childrenLength = v; }
         AggregationResult * getAggr(size_t i) { return static_cast<AggregationResult *>(_aggregationResults[i].get()); }
         const AggregationResult & getAggr(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
         const ExpressionNode::CP & getAggrCP(size_t i) const { return _aggregationResults[i]; }
@@ -139,9 +137,6 @@ private:
         }
         bool needFullRank() const { return getOrderBySize() != 0; }
 
-        uint32_t         _packedLength;    // Length of the 3 vectors below
-        uint32_t         _tag;             // Opaque tag used to identify the group by the client.
-
         // The collectors and expressions stored by this group. Currently, both aggregation results and expressions used by orderby() are stored in this
         // array to save 8 bytes in the Group size. This makes it important to use the getAggr() and expr() methods for accessing elements,
         // as they will correctly offset the index to the correct place in the array.
@@ -152,9 +147,12 @@ private:
             GroupHash *_childMap;               // child map used during aggregation
             size_t     _allChildren;            // Keep real number of children.
         }                _childInfo;
+        uint32_t         _childrenLength;
+        uint32_t         _tag;             // Opaque tag used to identify the group by the client.
+        uint8_t          _packedLength;    // Length of aggr and expr vectors.
         uint8_t          _orderBy[2];           // How this group is ranked, negative means reverse rank.
     };
-
+private:
     ResultNode::CP   _id;                   // the label of this group, separating it from other groups
     RawRank          _rank;                 // The default rank taken from the highest hit relevance.
     Value            _aggr;

@@ -307,6 +307,7 @@ void
 Test::testAggregationSimple()
 {
     EXPECT_EQUAL(64u, sizeof(Group));
+    EXPECT_EQUAL(40u, sizeof(Group::Value));
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
     ctx.add(IntAttrBuilder("int").add(3).add(7).add(15).sp());
