@@ -142,7 +142,6 @@ HnswIndex::SelectResult
 HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
     SelectResult result;
-    bool need_filtering = neighbors.size() > max_links;
     NearestPriQ nearest;
     for (const auto& entry : neighbors) {
         nearest.push(entry);
@@ -150,7 +149,7 @@ HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint
     while (!nearest.empty()) {
         auto candidate = nearest.top();
         nearest.pop();
-        if (need_filtering && have_closer_distance(candidate, result.used)) {
+        if (have_closer_distance(candidate, result.used)) {
             result.unused.push_back(candidate.docid);
             continue;
         }
