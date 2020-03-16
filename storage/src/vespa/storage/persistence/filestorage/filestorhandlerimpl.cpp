@@ -311,6 +311,12 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
                 entry.second->addTotalValueWithCount(m.getTotal(), m.getCount());
             }
         }
+        for (auto & entry : disk.metrics->inhibited.getMetricMap()) {
+            metrics::LoadType loadType(entry.first, "ignored");
+            for (const auto & stripe : disk.metrics->stripes) {
+                (*entry.second) += stripe->inhibited[loadType];
+            }
+        }
     }
 }
 
@@ -945,6 +951,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(uint32_t timeout, Disk & disk)
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
 
         while (iter != end && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
+            _metrics->inhibited[iter->_command->getLoadType()].inc();
             iter++;
         }
         if (iter != end) {

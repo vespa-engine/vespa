@@ -119,6 +119,7 @@ class FileStorStripeMetrics : public metrics::MetricSet
 public:
     using SP = std::shared_ptr<FileStorStripeMetrics>;
     metrics::LoadMetric<metrics::DoubleAverageMetric> averageQueueWaitingTime;
+    metrics::LoadMetric<metrics::LongCountMetric> inhibited;
     FileStorStripeMetrics(const std::string& name, const std::string& description,
                           const metrics::LoadTypeSet& loadTypes);
     ~FileStorStripeMetrics() override;
@@ -134,6 +135,7 @@ public:
     metrics::SumMetric<MetricSet> sumThreads;
     metrics::SumMetric<MetricSet> sumStripes;
     metrics::LoadMetric<metrics::DoubleAverageMetric> averageQueueWaitingTime;
+    metrics::LoadMetric<metrics::LongCountMetric> inhibited;
     metrics::LongAverageMetric queueSize;
     metrics::LongAverageMetric pendingMerges;
     metrics::DoubleAverageMetric waitingForLockHitRate;

@@ -181,7 +181,11 @@ FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std:
       averageQueueWaitingTime(loadTypes,
                               metrics::DoubleAverageMetric("averagequeuewait", {},
                                                            "Average time an operation spends in input queue."),
-                              this)
+                              this),
+      inhibited(loadTypes,
+                metrics::LongCountMetric("inhibited", {},
+                                         "Number of times a message was blocked due to progressing write."),
+                this)
 {
 }
 
@@ -196,6 +200,10 @@ FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::str
                               metrics::DoubleAverageMetric("averagequeuewait", {},
                                                            "Average time an operation spends in input queue."),
                               this),
+      inhibited(loadTypes,
+                metrics::LongCountMetric("inhibited", {},
+                                         "Number of times a message was blocked due to progressing write."),
+                this),
       queueSize("queuesize", {}, "Size of input message queue.", this),
       pendingMerges("pendingmerge", {}, "Number of buckets currently being merged.", this),
       waitingForLockHitRate("waitingforlockrate", {},
