@@ -49,7 +49,6 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     /** Free hosts of each resource size */
     private final ListMap<NodeResources, Host> freeNodes = new ListMap<>();
-    private final Map<String, HostSpec> legacyMapping = new LinkedHashMap<>();
     private final Map<ClusterSpec, List<HostSpec>> allocations = new LinkedHashMap<>();
 
     /** Indexes must be unique across all groups in a cluster */
@@ -106,13 +105,10 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     @Override
     public HostSpec allocateHost(String alias) {
-        if (legacyMapping.containsKey(alias)) return legacyMapping.get(alias);
         List<Host> defaultHosts = freeNodes.get(defaultResources);
         if (defaultHosts.isEmpty()) throw new IllegalArgumentException("No more hosts with default resources available");
         Host newHost = freeNodes.removeValue(defaultResources, 0);
-        HostSpec hostSpec = new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.empty(), newHost.version());
-        legacyMapping.put(alias, hostSpec);
-        return hostSpec;
+        return new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.empty(), newHost.version());
     }
 
     @Override
