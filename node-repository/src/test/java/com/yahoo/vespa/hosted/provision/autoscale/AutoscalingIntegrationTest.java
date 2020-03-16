@@ -47,7 +47,7 @@ public class AutoscalingIntegrationTest {
             tester.nodeMetricsDb().gc(tester.clock());
         }
 
-        var scaledResources = autoscaler.autoscale(application1, cluster1, tester.nodeRepository().getNodes(application1));
+        var scaledResources = autoscaler.autoscale(tester.nodeRepository().getNodes(application1));
         assertTrue(scaledResources.isPresent());
     }
 

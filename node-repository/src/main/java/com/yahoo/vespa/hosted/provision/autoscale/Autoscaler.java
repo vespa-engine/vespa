@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -25,8 +23,6 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class Autoscaler {
-
-    private Logger log = Logger.getLogger(Autoscaler.class.getName());
 
     /*
      TODO:
@@ -63,47 +59,49 @@ public class Autoscaler {
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository.zone());
     }
 
-    public Optional<AllocatableClusterResources> autoscale(ApplicationId applicationId, ClusterSpec cluster, List<Node> clusterNodes) {
+    /**
+     * Autoscale a cluster
+     *
+     * @param clusterNodes the list of all the active nodes in a cluster
+     * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
+     */
+    public Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes) {
         if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                                    node.allocation().get().membership().retired() ||
                                                    node.allocation().get().isRemovable())) {
             return Optional.empty(); // Don't autoscale clusters that are in flux
         }
+
+        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, resourcesCalculator);
-        Optional<Double> cpuLoad    = averageLoad(Resource.cpu, cluster, clusterNodes);
-        Optional<Double> memoryLoad = averageLoad(Resource.memory, cluster, clusterNodes);
-        Optional<Double> diskLoad   = averageLoad(Resource.disk, cluster, clusterNodes);
-        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) {
-            log.fine("Autoscaling " + applicationId + " " + cluster + ": Insufficient metrics to decide");
-            return Optional.empty();
-        }
+        Optional<Double> cpuLoad    = averageLoad(Resource.cpu, clusterNodes, clusterType);
+        Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes, clusterType);
+        Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes, clusterType);
+        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
 
         Optional<AllocatableClusterResources> bestAllocation = findBestAllocation(cpuLoad.get(),
                                                                                   memoryLoad.get(),
                                                                                   diskLoad.get(),
                                                                                   currentAllocation,
-                                                                                  cluster);
-        if (bestAllocation.isEmpty()) {
-            log.fine("Autoscaling " + applicationId + " " + cluster + ": Could not find a better allocation");
-            return Optional.empty();
-        }
+                                                                                  clusterType);
+        if (bestAllocation.isEmpty()) return Optional.empty();
 
         if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
             closeToIdeal(Resource.memory, memoryLoad.get()) &&
             closeToIdeal(Resource.disk, diskLoad.get()) &&
             similarCost(bestAllocation.get().cost(), currentAllocation.cost())) {
-            log.fine("Autoscaling " + applicationId + " " + cluster + ": Resources are almost ideal and price difference is small");
             return Optional.empty(); // Avoid small, unnecessary changes
         }
         return bestAllocation;
     }
 
     private Optional<AllocatableClusterResources> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
-                                                                     AllocatableClusterResources currentAllocation, ClusterSpec cluster) {
+                                                                     AllocatableClusterResources currentAllocation,
+                                                                     ClusterSpec.Type clusterType) {
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
-            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(allocation, cluster);
+            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(allocation, clusterType);
             if (allocatableResources.isEmpty()) continue;
             if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
                 bestAllocation = allocatableResources;
@@ -127,8 +125,9 @@ public class Autoscaler {
      * Returns the smallest allocatable node resources larger than the given node resources,
      * or empty if none available.
      */
-    private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources, ClusterSpec cluster) {
-        NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), cluster.type());
+    private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources,
+                                                                         ClusterSpec.Type clusterType) {
+        NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), clusterType);
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
@@ -161,19 +160,13 @@ public class Autoscaler {
      * Returns the average load of this resource in the measurement window,
      * or empty if we are not in a position to make decisions from these measurements at this time.
      */
-    private Optional<Double> averageLoad(Resource resource, ClusterSpec cluster, List<Node> clusterNodes) {
-        NodeMetricsDb.Window window = metricsDb.getWindow(nodeRepository.clock().instant().minus(scalingWindow(cluster.type())),
+    private Optional<Double> averageLoad(Resource resource, List<Node> clusterNodes, ClusterSpec.Type clusterType) {
+        NodeMetricsDb.Window window = metricsDb.getWindow(nodeRepository.clock().instant().minus(scalingWindow(clusterType)),
                                                           resource,
                                                           clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
 
-        if (window.measurementCount() < minimumMeasurements) {
-            log.fine("Autoscaling " + cluster + " resource " + resource + ": Not enough measurements, has " + window.measurementCount());
-            return Optional.empty();
-        }
-        if (window.hostnames() != clusterNodes.size()) {
-            log.fine("Autoscaling " + cluster + " resource " + resource + ": Measurements are not stable. Hosts in cluster: " + clusterNodes.size() + ", window: " + window.hostnames());
-            return Optional.empty(); // Regulate only when all nodes are measured
-        }
+        if (window.measurementCount() < minimumMeasurements) return Optional.empty();
+        if (window.hostnames() != clusterNodes.size()) return Optional.empty(); // Regulate only when all nodes are measured
 
         return Optional.of(window.average());
     }

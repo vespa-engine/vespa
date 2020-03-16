@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class AutoscalingMaintainer extends Maintainer {
 
     private final Autoscaler autoscaler;
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final Deployer deployer;
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
@@ -35,6 +36,7 @@ public class AutoscalingMaintainer extends Maintainer {
                                  Duration interval) {
         super(nodeRepository, interval);
         this.autoscaler = new Autoscaler(hostResourcesCalculator, metricsDb, nodeRepository);
+        this.hostResourcesCalculator = hostResourcesCalculator;
         this.deployer = deployer;
     }
 
@@ -48,17 +50,19 @@ public class AutoscalingMaintainer extends Maintainer {
     private void autoscale(ApplicationId application, List<Node> applicationNodes) {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
             if ( ! deployment.isValid()) return; // Another config server will consider this application
-            nodesByCluster(applicationNodes).forEach((clusterSpec, clusterNodes) -> {
-                Optional<AllocatableClusterResources> target = autoscaler.autoscale(application, clusterSpec, clusterNodes);
-                target.ifPresent(t -> log.info("Autoscale: Application " + application + " cluster " + clusterSpec +
-                                               " from " + applicationNodes.size() + " * " + applicationNodes.get(0).flavor().resources() +
+            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> {
+                var currentResources = new AllocatableClusterResources(clusterNodes, hostResourcesCalculator);
+                Optional<AllocatableClusterResources> target = autoscaler.autoscale(clusterNodes);
+                ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
+                target.ifPresent(t -> log.info("Autoscale: " + application + clusterType + " " + clusterId +
+                                               " from " + clusterNodes.size() + " * " + clusterNodes.get(0).flavor().resources() +
                                                " to " + t.nodes() + " * " + t.advertisedResources()));
             });
         }
     }
 
-    private Map<ClusterSpec, List<Node>> nodesByCluster(List<Node> applicationNodes) {
-        return applicationNodes.stream().collect(Collectors.groupingBy(n -> n.allocation().get().membership().cluster()));
+    private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {
+        return applicationNodes.stream().collect(Collectors.groupingBy(n -> n.allocation().get().membership().cluster().id()));
     }
 
 }
