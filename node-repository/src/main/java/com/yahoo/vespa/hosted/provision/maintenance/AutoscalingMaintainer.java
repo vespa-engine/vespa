@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
@@ -51,14 +52,22 @@ public class AutoscalingMaintainer extends Maintainer {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
             if ( ! deployment.isValid()) return; // Another config server will consider this application
             nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> {
-                var currentResources = new AllocatableClusterResources(clusterNodes, hostResourcesCalculator);
                 Optional<AllocatableClusterResources> target = autoscaler.autoscale(clusterNodes);
+
+                int currentGroups = (int)clusterNodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
                 ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
                 target.ifPresent(t -> log.info("Autoscale: " + application + clusterType + " " + clusterId +
-                                               " from " + clusterNodes.size() + " * " + clusterNodes.get(0).flavor().resources() +
-                                               " to " + t.nodes() + " * " + t.advertisedResources()));
+                                               " from " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
+                                               " to " + toString(t.nodes(), t.groups(), t.advertisedResources())));
             });
         }
+    }
+
+    private String toString(int nodes, int groups, NodeResources resources) {
+        return nodes +
+               (groups > 1 ? " in " + groups + " groups " : " ") +
+               " * " + resources +
+               " (total: " + "[vcpu: " + nodes * resources.vcpu() + ", memory: " + nodes * resources.memoryGb() + " Gb, disk " + nodes * resources.diskGb() + " Gb])";
     }
 
     private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {

@@ -127,11 +127,6 @@ public class NodeResources {
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
-    // TODO: Remove after November 2019
-    public NodeResources withDiskSpeed(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
-    }
-
     public NodeResources with(DiskSpeed speed) {
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
     }
