@@ -21,6 +21,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportCons
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
@@ -40,6 +42,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
+    private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock();
     private final MockMailer mockMailer = new MockMailer();
     private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
@@ -86,6 +89,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public GlobalRoutingService globalRoutingService() {
         return memoryGlobalRoutingService;
+    }
+
+    @Override
+    public RoutingGenerator routingGenerator() {
+        return routingGeneratorMock;
     }
 
     @Override
@@ -187,6 +195,10 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public MemoryGlobalRoutingService globalRoutingServiceMock() {
         return memoryGlobalRoutingService;
+    }
+
+    public RoutingGeneratorMock routingGeneratorMock() {
+        return routingGeneratorMock;
     }
 
     public MockContactRetriever contactRetrieverMock() {
