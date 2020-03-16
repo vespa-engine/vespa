@@ -19,6 +19,8 @@ import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.yolean.Exceptions;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -44,8 +46,8 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     private final Metric metric;
     private final Object monitor = new Object();
     private int remainingThreadsForFeedingAllowance;
-    private final long msBetweenBumpingMaxThreads;
-    private long nextTimeToAllocateAnotherThread;
+    private final Duration timeBetweenBumpingMaxThreads;
+    private Instant nextTimeToAllocateAnotherThread;
     private final AtomicInteger threadsAvailableForFeeding;
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
@@ -66,17 +68,17 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
             remainingThreadsForFeedingAllowance = Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1);
             if (threadpoolConfig.softStartSeconds() > 0.0) {
                 threadsAvailableForFeeding = new AtomicInteger(0);
-                msBetweenBumpingMaxThreads = (long)threadpoolConfig.softStartSeconds() * 1000 / remainingThreadsForFeedingAllowance;
+                timeBetweenBumpingMaxThreads = Duration.ofMillis((long)(threadpoolConfig.softStartSeconds() * 1000) / remainingThreadsForFeedingAllowance);
             } else {
                 threadsAvailableForFeeding = new AtomicInteger(remainingThreadsForFeedingAllowance);
                 remainingThreadsForFeedingAllowance = 0;
-                msBetweenBumpingMaxThreads = 0;
+                timeBetweenBumpingMaxThreads = null;
             }
         } else {
             log.warning("No config for threadpool, using 200 for max blocking threads for feeding.");
             threadsAvailableForFeeding = new AtomicInteger(200);
             remainingThreadsForFeedingAllowance = 0;
-            msBetweenBumpingMaxThreads = 0;
+            timeBetweenBumpingMaxThreads = null;
         }
     }
 
@@ -91,10 +93,11 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
         String clientId = clientId(request);
         ClientFeederV3 clientFeederV3;
         synchronized (monitor) {
-            if ((remainingThreadsForFeedingAllowance > 0) && (System.currentTimeMillis() > nextTimeToAllocateAnotherThread)) {
+            Instant now = Instant.now();
+            if ((remainingThreadsForFeedingAllowance > 0) && (now.isAfter(nextTimeToAllocateAnotherThread))) {
                 threadsAvailableForFeeding.incrementAndGet();
                 remainingThreadsForFeedingAllowance --;
-                nextTimeToAllocateAnotherThread = System.currentTimeMillis() + msBetweenBumpingMaxThreads;
+                nextTimeToAllocateAnotherThread = now.plus(timeBetweenBumpingMaxThreads);
             }
             if (! clientFeederByClientId.containsKey(clientId)) {
                 SourceSessionParams sourceSessionParams = sourceSessionParams(request);
