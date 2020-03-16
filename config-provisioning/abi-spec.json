@@ -654,7 +654,6 @@
       "public com.yahoo.config.provision.NodeResources withMemoryGb(double)",
       "public com.yahoo.config.provision.NodeResources withDiskGb(double)",
       "public com.yahoo.config.provision.NodeResources withBandwidthGbps(double)",
-      "public com.yahoo.config.provision.NodeResources withDiskSpeed(com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public com.yahoo.config.provision.NodeResources with(com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public com.yahoo.config.provision.NodeResources with(com.yahoo.config.provision.NodeResources$StorageType)",
       "public com.yahoo.config.provision.NodeResources justNumbers()",

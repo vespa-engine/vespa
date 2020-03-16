@@ -145,8 +145,8 @@ class AutoscalingTester {
         }
     }
 
-    public Optional<AllocatableClusterResources> autoscale(ApplicationId application, ClusterSpec cluster) {
-        return autoscaler.autoscale(application, cluster, nodeRepository().getNodes(application, Node.State.active));
+    public Optional<AllocatableClusterResources> autoscale(ApplicationId application) {
+        return autoscaler.autoscale(nodeRepository().getNodes(application, Node.State.active));
     }
 
     public AllocatableClusterResources assertResources(String message,
