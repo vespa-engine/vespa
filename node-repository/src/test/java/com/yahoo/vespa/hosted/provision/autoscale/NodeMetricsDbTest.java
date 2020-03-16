@@ -18,15 +18,15 @@ public class NodeMetricsDbTest {
         NodeMetricsDb db = new NodeMetricsDb();
         List<NodeMetrics.MetricValue> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new NodeMetrics.MetricValue("host0", "cpu.util", clock.instant().toEpochMilli(), 0.9f));
+            values.add(new NodeMetrics.MetricValue("host0", "cpu.util", clock.instant().getEpochSecond(), 0.9f));
             clock.advance(Duration.ofHours(1));
         }
         db.add(values);
 
-        assertEquals(30, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
+        assertEquals(29, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
         assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.memory, List.of("host0")).measurementCount());
         db.gc(clock);
-        assertEquals(24, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
+        assertEquals(23, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.cpu,    List.of("host0")).measurementCount());
         assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(30)), Resource.memory, List.of("host0")).measurementCount());
     }
 

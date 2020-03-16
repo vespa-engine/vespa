@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.google.common.collect.Sets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
@@ -10,11 +11,14 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.io.IOUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -139,6 +143,35 @@ public class AutoscalingTest {
         tester.assertResources("Scaling down since resource usage has gone down",
                                5, 1, 3, 83, 36,
                                tester.autoscale(application1, cluster1));
+    }
+
+    @Test
+    public void testReadLog() throws Exception {
+        int prefixLength = "[2020-03-13 16:03:39.346] DEBUG   : configserver     Container.com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb\t".length();
+
+        Set<String> addingHosts = new HashSet<>();
+        Set<String> countingHosts = new HashSet<>();
+        for (String line : IOUtils.getLines("/Users/bratseth/Documents/log.txt")) {
+            if (line.length() < prefixLength) continue;
+
+            line = line.substring(prefixLength);
+            if (line.startsWith("Adding")) {
+                int i = line.indexOf(" for ");
+                String addedHost = line.substring(i + 5);
+                addingHosts.add(addedHost);
+            }
+            else if (line.startsWith("Counting")) {
+                int i = line.indexOf("Non-matches:");
+                line = line.substring(i + "Non-matches: [".length(), line.length() - 1);
+                for (String m : line.split(",")) {
+                    i = m.indexOf(" for ");
+                    String countingHost = m.substring(i + 5);
+                    countingHosts.add(countingHost);
+                }
+            }
+        }
+        Set<String> overlap = Sets.intersection(addingHosts, countingHosts);
+        System.out.println("Overlap: " + overlap);
     }
 
 }

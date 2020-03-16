@@ -44,17 +44,17 @@ public class MetricsResponse {
     }
 
     private void consumeNodeMetrics(String hostname, Inspector node) {
-        long timestamp = node.field("timestamp").asLong();
+        long timestampSecond = node.field("timestamp").asLong();
         Map<String, Double> values = consumeMetrics(node.field("metrics"));
         for (Resource resource : Resource.values())
-            addMetricIfPresent(hostname, resource, timestamp, values);
+            addMetricIfPresent(hostname, resource, timestampSecond, values);
     }
 
-    private void addMetricIfPresent(String hostname, Resource resource, long timestamp, Map<String, Double> values) {
+    private void addMetricIfPresent(String hostname, Resource resource, long timestampSecond, Map<String, Double> values) {
         if (values.containsKey(resource.metricName()))
             metricValues.add(new NodeMetrics.MetricValue(hostname,
                                                          resource.metricName(),
-                                                         timestamp,
+                                                         timestampSecond,
                                                          values.get(resource.metricName())));
     }
 
