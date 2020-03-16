@@ -66,6 +66,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.test.LinePatternMatcher.containsLineWithPattern;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.model.container.ContainerCluster.ROOT_HANDLER_BINDING;
+import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -252,6 +253,23 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         // .. but it has no bindings
         var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
         assertThat(discBindingsConfig.handlers(BindingsOverviewHandler.class.getName()), is(nullValue()));
+    }
+
+    @Test
+    public void reserved_binding_cannot_be_stolen_by_user_configured_handler() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>" +
+                        "  <handler id='userHandler'>" +
+                        "    <binding>" + STATE_HANDLER_BINDING_1 + "</binding>" +
+                        "  </handler>" +
+                        "</container>");
+        try {
+            createModel(root, clusterElem);
+            fail("Expected exception when stealing a reserved binding.");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), is("Binding 'http://*/state/v1' is a reserved Vespa binding " +
+                                                  "and cannot be used by handler: userHandler"));
+        }
     }
 
     @Test
