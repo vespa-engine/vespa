@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.collections;
 
+import java.util.Objects;
+
 /**
  * An immutable pair of objects. This implements equals and hashCode by delegating to the
  * pair objects.
@@ -33,19 +35,13 @@ public class Pair<F, S> {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (o == this) return true;
         if (!(o instanceof Pair)) return false;
 
         @SuppressWarnings("rawtypes")
-        final Pair other = (Pair) o;
-        return equals(this.first, other.first)
-                && equals(this.second, other.second);
-    }
-
-    private static boolean equals(final Object a, final Object b) {
-        if (a == null) return b == null;
-        return a.equals(b);
+        Pair other = (Pair) o;
+        return Objects.equals(this.first, other.first) && Objects.equals(this.second, other.second);
     }
 
     @Override
