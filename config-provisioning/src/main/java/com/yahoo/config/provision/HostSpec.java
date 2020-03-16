@@ -88,7 +88,7 @@ public class HostSpec implements Comparable<HostSpec> {
         this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");;
         this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");;
         this.requestedResources = Objects.requireNonNull(requestedResources, "RequestedResources cannot be null");
-        this.dockerImageRepo = Objects.requireNonNull(dockerImageRepo, "Version cannot be null but can be empty");;
+        this.dockerImageRepo = Objects.requireNonNull(dockerImageRepo, "Docker image repo cannot be null but can be empty");
     }
 
     /** Returns the name identifying this host */
