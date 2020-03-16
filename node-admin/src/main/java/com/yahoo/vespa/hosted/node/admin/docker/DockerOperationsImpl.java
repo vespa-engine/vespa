@@ -2,15 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -54,13 +50,11 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final Terminal terminal;
     private final IPAddresses ipAddresses;
-    private final BooleanFlag noNewPrivilegesFlag;
 
     public DockerOperationsImpl(Docker docker, Terminal terminal, IPAddresses ipAddresses, FlagSource flagSource) {
         this.docker = docker;
         this.terminal = terminal;
         this.ipAddresses = ipAddresses;
-        this.noNewPrivilegesFlag = Flags.RESTRICT_ACQUIRING_NEW_PRIVILEGES.bindTo(flagSource);
     }
 
     @Override
@@ -90,12 +84,8 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_ADMIN")  // Needed for perf
                 .withAddCapability("SYS_NICE");  // Needed for set_mempolicy to work
 
-        boolean noNewPrivileges = noNewPrivilegesFlag
-                .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
-                .with(FetchVector.Dimension.APPLICATION_ID, context.node().owner().map(ApplicationId::serializedForm).orElse(null))
-                .with(FetchVector.Dimension.NODE_TYPE, context.nodeType().name())
-                .value();
-        if (noNewPrivileges)
+        // Proxy and controller require new privileges to bind port 443
+        if (context.nodeType() != NodeType.proxy && context.nodeType() != NodeType.controller)
             command.withSecurityOpt("no-new-privileges");
 
         if (context.node().membership().map(NodeMembership::clusterType).map("content"::equalsIgnoreCase).orElse(false))
