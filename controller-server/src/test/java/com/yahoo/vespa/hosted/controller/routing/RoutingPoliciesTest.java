@@ -24,8 +24,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
@@ -659,8 +659,12 @@ public class RoutingPoliciesTest {
         }
 
         private void assertTargets(ApplicationId application, EndpointId endpointId, int loadBalancerId, ZoneId ...zone) {
-            var endpoint = EndpointList.global(RoutingId.of(application, endpointId), tester.controller().system(), RoutingMethod.exclusive)
-                                       .primary().get().dnsName();
+            var endpoint = tester.controller().routing().endpointsOf(application)
+                                 .named(endpointId)
+                                 .targets(List.of(zone))
+                                 .primary()
+                                 .map(Endpoint::dnsName)
+                                 .orElse("<none>");
             var zoneTargets = Arrays.stream(zone)
                                     .map(z -> "lb-" + loadBalancerId + "--" + application.serializedForm() + "--" +
                                               z.value() + "/dns-zone-1/" + z.value())

@@ -1070,11 +1070,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
         }
         // Add global endpoints
-        if (deploymentId.zoneId().environment().isProduction()) { // Global endpoints can only point to production deployments
-            for (var endpoint : controller.routing().endpointsOf(application, deploymentId.applicationId().instance()).not().legacy()) {
-                // TODO(mpolden): Pass cluster name. Cluster that a global endpoint points to is not available at this level.
-                toSlime(endpoint, "", endpointArray.addObject());
-            }
+        var globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
+                                        .not().legacy()
+                                        .targets(deploymentId.zoneId());
+        for (var endpoint : globalEndpoints) {
+            // TODO(mpolden): Pass cluster name. Cluster that a global endpoint points to is not available at this level.
+            toSlime(endpoint, "", endpointArray.addObject());
         }
         // TODO(mpolden): Remove this once all clients stop reading it
         Cursor serviceUrlArray = response.setArray("serviceUrls");
