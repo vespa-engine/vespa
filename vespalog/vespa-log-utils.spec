@@ -6,7 +6,7 @@
 Name:           vespa-log-utils
 Version:        %version
 Release:        1%{?dist}
-BuildArch:      noarch
+BuildArch:      x86_64
 Summary:        Vespa log utilities
 Group:          Applications/Databases
 License:        Commercial
