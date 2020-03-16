@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
 
+import java.time.Instant;
 import java.util.Collection;
 
 /**
@@ -23,24 +24,24 @@ public interface NodeMetrics {
 
         private final String hostname;
         private final String name;
-        private long timestamp;
+        private long timestampSecond;
         private final double value;
 
-        public MetricValue(String hostname, String name, long timestamp, double value) {
+        public MetricValue(String hostname, String name, long timestampSecond, double value) {
             this.hostname = hostname;
             this.name = name;
-            this.timestamp = timestamp;
+            this.timestampSecond = timestampSecond;
             this.value = value;
         }
 
         public String hostname() { return hostname; }
         public String name() { return name; }
-        public long timestamp() { return timestamp; }
+        public long timestampSecond() { return timestampSecond; }
         public double value() { return value; }
 
         @Override
         public String toString() {
-            return "metric value " + name + ": " + value + " at " + timestamp + " for " + hostname;
+            return "metric value " + name + ": " + value + " at " + Instant.ofEpochSecond(timestampSecond) + " for " + hostname;
         }
 
     }

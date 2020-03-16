@@ -67,7 +67,6 @@ public class Autoscaler {
         if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                                    node.allocation().get().membership().retired() ||
                                                    node.allocation().get().isRemovable())) {
-            log.fine("Autoscaling " + applicationId + " " + cluster + ": Cluster is in flux");
             return Optional.empty(); // Don't autoscale clusters that are in flux
         }
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, resourcesCalculator);
