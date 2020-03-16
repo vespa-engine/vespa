@@ -291,7 +291,6 @@ public class SessionPreparer {
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
                                        AllocatedHosts allocatedHosts) {
-        System.out.println("DEBUG DEBUG");
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
