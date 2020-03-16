@@ -261,6 +261,12 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DISABLE_ROUTING_GENERATOR = defineFeatureFlag(
+            "disable-routing-generator", false,
+            "Whether the controller should stop asking the routing layer for endpoints",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
