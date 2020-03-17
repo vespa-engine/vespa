@@ -882,7 +882,8 @@
       "public abstract boolean useBucketSpaceMetric()",
       "public boolean useNewAthenzFilter()",
       "public boolean usePhraseSegmenting()",
-      "public java.lang.String proxyProtocol()"
+      "public java.lang.String proxyProtocol()",
+      "public java.util.Optional athenzDomain()"
     ],
     "fields": []
   },

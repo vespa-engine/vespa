@@ -5,23 +5,24 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.transaction.Transaction;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
-import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.text.Utf8;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +43,7 @@ public class SessionZooKeeperClient {
     private static final String VERSION_PATH = "version";
     private static final String CREATE_TIME_PATH = "createTime";
     private static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
+    private static final String ATHENZ_DOMAIN = "athenzDomain";
     private final Curator curator;
     private final ConfigCurator configCurator;
     private final Path sessionPath;
@@ -170,6 +172,10 @@ public class SessionZooKeeperClient {
         return sessionPath.append(DOCKER_IMAGE_REPOSITORY_PATH).getAbsolute();
     }
 
+    private String athenzDomainPath() {
+        return sessionPath.append(ATHENZ_DOMAIN).getAbsolute();
+    }
+
     public void writeVespaVersion(Version version) {
         configCurator.putData(versionPath(), version.toString());
     }
@@ -219,6 +225,17 @@ public class SessionZooKeeperClient {
             transaction.add(CuratorOperations.create(sessionStatusPath.getAbsolute(), Utf8.toBytes(status.name())));
         }
         return transaction;
+    }
+
+    public void writeAthenzDomain(Optional<AthenzDomain> athenzDomain) {
+        athenzDomain.ifPresent(domain -> configCurator.putData(athenzDomainPath(), domain.toString()));
+    }
+
+    public Optional<AthenzDomain> readAthenzDomain() {
+        if ( ! configCurator.exists(athenzDomainPath())) return Optional.empty();
+        return Optional.ofNullable(configCurator.getData(athenzDomainPath()))
+                .filter(domain -> ! domain.isBlank())
+                .map(AthenzDomain::from);
     }
 
     /**
