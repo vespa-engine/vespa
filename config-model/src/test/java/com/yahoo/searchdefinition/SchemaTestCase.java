@@ -10,7 +10,7 @@ import java.io.IOException;
 import static helpers.CompareConfigTestHelper.assertSerializedConfigEquals;
 import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
 
-public abstract class SearchDefinitionTestCase {
+public abstract class SchemaTestCase {
 
     protected static void assertConfigFile(String filename, String cfg) throws IOException {
         assertSerializedConfigFileEquals(filename, cfg);

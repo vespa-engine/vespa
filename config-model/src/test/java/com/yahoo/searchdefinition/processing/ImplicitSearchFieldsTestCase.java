@@ -6,7 +6,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -18,7 +18,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class ImplicitSearchFieldsTestCase extends SearchDefinitionTestCase {
+public class ImplicitSearchFieldsTestCase extends SchemaTestCase {
 
     @Test
     public void testRequireThatExtraFieldsAreIncluded() throws IOException, ParseException {

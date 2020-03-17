@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
 /**
  * @author bratseth
  */
-public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase {
+public class RankingExpressionConstantsTestCase extends SchemaTestCase {
 
     @Test
     public void testConstants() throws ParseException {

@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -21,7 +21,7 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
-public class NGramTestCase extends SearchDefinitionTestCase {
+public class NGramTestCase extends SchemaTestCase {
 
     @Test
     public void testNGram() throws IOException, ParseException {

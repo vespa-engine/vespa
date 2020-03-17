@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author lesters
  */
-public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase {
+public class RankingExpressionShadowingTestCase extends SchemaTestCase {
 
     @Test
     public void testBasicFunctionShadowing() throws ParseException {

@@ -31,8 +31,8 @@ public class VespaModelCreatorWithMockPkg {
         this(new MockApplicationPackage.Builder().withHosts(hosts).withServices(services).build());
     }
 
-    public VespaModelCreatorWithMockPkg(String hosts, String services, List<String> searchDefinitions) {
-        this(new MockApplicationPackage.Builder().withHosts(hosts).withServices(services).withSearchDefinitions(searchDefinitions).build());
+    public VespaModelCreatorWithMockPkg(String hosts, String services, List<String> schemas) {
+        this(new MockApplicationPackage.Builder().withHosts(hosts).withServices(services).withSchemas(schemas).build());
     }
 
     public VespaModelCreatorWithMockPkg(ApplicationPackage appPkg) {

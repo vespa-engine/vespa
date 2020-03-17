@@ -12,20 +12,20 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
  *
  * @author geirst
  */
-public class SearchDefinitionBuilder {
+public class SchemaBuilder {
 
     private String name = "test";
     private String content = "";
 
-    public SearchDefinitionBuilder() {
+    public SchemaBuilder() {
     }
 
-    public SearchDefinitionBuilder name(String name) {
+    public SchemaBuilder name(String name) {
         this.name = name;
         return this;
     }
 
-    public SearchDefinitionBuilder content(String content) {
+    public SchemaBuilder content(String content) {
         this.content = content;
         return this;
     }
@@ -38,10 +38,10 @@ public class SearchDefinitionBuilder {
                 "}");
     }
 
-    public static List<String> createSearchDefinitions(String ... docTypes) {
+    public static List<String> createSchemas(String ... docTypes) {
         return Arrays.asList(docTypes)
                 .stream()
-                .map(type -> new SearchDefinitionBuilder().name(type).build())
+                .map(type -> new SchemaBuilder().name(type).build())
                 .collect(Collectors.toList());
     }
 

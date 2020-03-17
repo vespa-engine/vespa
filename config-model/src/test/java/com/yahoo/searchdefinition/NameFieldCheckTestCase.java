@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
  *
  * @author Lars Christian Jensen
  */
-public class NameFieldCheckTestCase extends SearchDefinitionTestCase {
+public class NameFieldCheckTestCase extends SchemaTestCase {
 
     @Test
     public void testNameField() {
