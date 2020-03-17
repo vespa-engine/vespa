@@ -170,16 +170,16 @@ public class ZooKeeperClientTest {
 
     @Test
     public void search_definitions_written_to_ZK() {
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("music.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("base.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("video.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("book.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("pc.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("laptop.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("product.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("sock.sd").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("foo.expression").getAbsolute()));
-        assertTrue(zk.exists(appPath().append(ApplicationPackage.SCHEMAS_DIR).append("bar.expression").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("music.sd").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("base.sd").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("video.sd").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("book.sd").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("pc.sd").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("laptop.sd").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("product.sd").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("sock.sd").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("foo.expression").getAbsolute()));
+        assertTrue(zk.exists(appPath().append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).append("bar.expression").getAbsolute()));
     }
 
     private Path appPath() {
