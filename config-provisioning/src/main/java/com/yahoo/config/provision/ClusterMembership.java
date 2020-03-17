@@ -39,9 +39,13 @@ public class ClusterMembership {
             }
         }
 
-        this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
-                                        ClusterSpec.Group.from(Integer.parseInt(components[2])), vespaVersion,
-                                        exclusive, combinedId.map(ClusterSpec.Id::from), dockerImageRepo);
+        this.cluster = ClusterSpec.specification(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]))
+                .group(ClusterSpec.Group.from(Integer.parseInt(components[2])))
+                .vespaVersion(vespaVersion)
+                .exclusive(exclusive)
+                .combinedId(combinedId.map(ClusterSpec.Id::from))
+                .dockerImageRepo(dockerImageRepo)
+                .build();
         this.index = Integer.parseInt(components[3]);
         this.stringValue = toStringValue();
     }

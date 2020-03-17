@@ -100,14 +100,21 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, combinedId, dockerImageRepo);
     }
 
-    public static Builder builder(Type type, Id id) {
-        return new Builder(type, id);
+    /** Creates a ClusterSpec when requesting a cluster */
+    public static Builder request(Type type, Id id) {
+        return new Builder(type, id, false);
+    }
+
+    /** Creates a ClusterSpec for an existing cluster, group id and vespa version needs to be set */
+    public static Builder specification(Type type, Id id) {
+        return new Builder(type, id, true);
     }
 
     public static class Builder {
 
         private final Type type;
         private final Id id;
+        private final boolean specification;
 
         private Optional<Group> groupId = Optional.empty();
         private Optional<String> dockerImageRepo = Optional.empty();
@@ -115,13 +122,17 @@ public final class ClusterSpec {
         private boolean exclusive = false;
         private Optional<Id> combinedId = Optional.empty();
 
-
-        Builder(Type type, Id id) {
+        Builder(Type type, Id id, boolean specification) {
             this.type = type;
             this.id = id;
+            this.specification = specification;
         }
 
         public ClusterSpec build() {
+            if (specification) {
+                if (groupId.isEmpty()) throw new IllegalArgumentException("Creating a ClusterSpec with specification() requires groupId to be set");
+                if (vespaVersion == null) throw new IllegalArgumentException("Creating a ClusterSpec with specification() requires vespaVersion to be set");
+            }
             return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo);
         }
 

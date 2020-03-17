@@ -470,7 +470,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyNodes(4, defaultResources);
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
         tester.prepare(application, cluster, Capacity.fromCount(5, Optional.empty(), false, false), 1);
         // No exception; Success
     }
@@ -504,7 +504,7 @@ public class ProvisioningTest {
         // Create 10 nodes
         tester.makeReadyNodes(10, defaultResources);
         // Allocate 5 nodes
-        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
         tester.activate(application, tester.prepare(application, cluster, capacity, 1));
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
@@ -673,13 +673,13 @@ public class ProvisioningTest {
         tester.makeReadyNodes(4, defaultResources);
 
         // Application allocates two content nodes initially, with cluster type content
-        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         var initialNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                        Capacity.fromCount(2, defaultResources, false, false),
                                                                        1));
 
         // Application is redeployed with cluster type combined
-        cluster = ClusterSpec.builder(ClusterSpec.Type.combined, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
+        cluster = ClusterSpec.request(ClusterSpec.Type.combined, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         var newNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                    Capacity.fromCount(2, defaultResources, false, false),
                                                                    1));
@@ -690,7 +690,7 @@ public class ProvisioningTest {
                      newNodes.stream().map(n -> n.membership().get().cluster().type()).collect(Collectors.toSet()));
 
         // Application is redeployed with cluster type content again
-        cluster = ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
+        cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         newNodes = tester.activate(application, tester.prepare(application, cluster,
                                                                Capacity.fromCount(2, defaultResources, false, false),
                                                                1));
@@ -716,10 +716,10 @@ public class ProvisioningTest {
                                 int content1Size, boolean required, NodeResources nodeResources, Version wantedVersion,
                                 ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("container0")).vespaVersion(wantedVersion).build();
-        ClusterSpec containerCluster1 = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("container1")).vespaVersion(wantedVersion).build();
-        ClusterSpec contentCluster0 = ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from("content0")).vespaVersion(wantedVersion).build();
-        ClusterSpec contentCluster1 = ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion(wantedVersion).build();
+        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0")).vespaVersion(wantedVersion).build();
+        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1")).vespaVersion(wantedVersion).build();
+        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0")).vespaVersion(wantedVersion).build();
+        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion(wantedVersion).build();
 
         Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, nodeResources, tester);
         Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, nodeResources, tester);

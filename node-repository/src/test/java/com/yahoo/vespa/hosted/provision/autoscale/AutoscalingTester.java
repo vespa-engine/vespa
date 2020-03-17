@@ -74,7 +74,7 @@ class AutoscalingTester {
     }
 
     public ClusterSpec clusterSpec(ClusterSpec.Type type, String clusterId) {
-        return ClusterSpec.builder(type, ClusterSpec.Id.from(clusterId)).vespaVersion("7").build();
+        return ClusterSpec.request(type, ClusterSpec.Id.from(clusterId)).vespaVersion("7").build();
     }
 
     public void deploy(ApplicationId application, ClusterSpec cluster, AllocatableClusterResources resources) {

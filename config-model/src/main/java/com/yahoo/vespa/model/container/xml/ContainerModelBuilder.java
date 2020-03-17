@@ -622,8 +622,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         DeployState deployState = context.getDeployState();
         HostSystem hostSystem = cluster.hostSystem();
         if (deployState.isHosted()) { // request 1 node
-            ClusterSpec clusterSpec = ClusterSpec.builder(ClusterSpec.Type.container,
-                                                          ClusterSpec.Id.from(cluster.getName()))
+            ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
                     .vespaVersion(deployState.getWantedNodeVespaVersion())
                     .dockerImageRepo(deployState.getWantedDockerImageRepo())
                     .build();
@@ -648,8 +647,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<ApplicationContainer> createNodesFromNodeType(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
-        ClusterSpec clusterSpec = ClusterSpec.builder(ClusterSpec.Type.container,
-                                                      ClusterSpec.Id.from(cluster.getName()))
+        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
                 .vespaVersion(context.getDeployState().getWantedNodeVespaVersion())
                 .dockerImageRepo(context.getDeployState().getWantedDockerImageRepo())
                 .build();

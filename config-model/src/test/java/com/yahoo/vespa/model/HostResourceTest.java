@@ -48,7 +48,7 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.builder(type, ClusterSpec.Id.from(id)).vespaVersion("6.42").build();
+        return ClusterSpec.specification(type, ClusterSpec.Id.from(id)).group(ClusterSpec.Group.from(0)).vespaVersion("6.42").build();
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership membership) {

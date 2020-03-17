@@ -158,7 +158,7 @@ public class ProvisioningTester {
     }
 
     public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
-        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString())).vespaVersion(version).build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString())).vespaVersion(version).build();
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
         List<HostSpec> hostSpecs = prepare(application, cluster, capacity, 1, true);
         activate(application, hostSpecs);
@@ -409,14 +409,14 @@ public class ProvisioningTester {
     public void deployZoneApp() {
         ApplicationId applicationId = makeApplicationId();
         List<HostSpec> list = prepare(applicationId,
-                                             ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build(),
+                                             ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build(),
                                              Capacity.fromRequiredNodeType(NodeType.host),
                                              1);
         activate(applicationId, Set.copyOf(list));
     }
 
     public ClusterSpec clusterSpec() {
-        return ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        return ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
     }
 
     public List<Node> deploy(ApplicationId application, Capacity capacity) {

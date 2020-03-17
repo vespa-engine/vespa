@@ -128,7 +128,7 @@ public class RebalancerTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
     }
 
     private ApplicationId makeApplicationId(String tenant, String appName) {

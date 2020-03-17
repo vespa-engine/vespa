@@ -195,7 +195,7 @@ public class NodesSpecification {
                                                           DeployLogger logger) {
         if (combinedId.isPresent())
             clusterType = ClusterSpec.Type.combined;
-        ClusterSpec cluster = ClusterSpec.builder(clusterType, clusterId)
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId)
                 .vespaVersion(version)
                 .exclusive(exclusive)
                 .combinedId(combinedId.map(ClusterSpec.Id::from))

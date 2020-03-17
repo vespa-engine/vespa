@@ -104,7 +104,7 @@ public class VespaModelFactoryTest {
             public HostSpec allocateHost(String alias) {
                 return new HostSpec(hostName,
                                     List.of(),
-                                    ClusterMembership.from(ClusterSpec.builder(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(),
+                                    ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(),
                                                            0));
             }
 
@@ -112,7 +112,7 @@ public class VespaModelFactoryTest {
             public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
                 return List.of(new HostSpec(hostName,
                                             List.of(),
-                                            ClusterMembership.from(ClusterSpec.builder(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(),
+                                            ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(),
                                                                    0)));
             }
         };

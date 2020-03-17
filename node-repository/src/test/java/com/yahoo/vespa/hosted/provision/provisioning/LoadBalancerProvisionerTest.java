@@ -271,7 +271,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id, Optional<ClusterSpec.Id> combinedId) {
-        return ClusterSpec.builder(type, id).vespaVersion("6.42").combinedId(combinedId).build();
+        return ClusterSpec.request(type, id).vespaVersion("6.42").combinedId(combinedId).build();
     }
 
     private static <T> T get(Set<T> set, int position) {

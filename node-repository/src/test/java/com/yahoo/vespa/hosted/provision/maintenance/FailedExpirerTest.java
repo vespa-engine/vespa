@@ -53,7 +53,7 @@ public class FailedExpirerTest {
     private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
 
     private static final ClusterSpec tenantHostApplicationClusterSpec =
-            ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
+            ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
 
     private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
 
@@ -140,7 +140,7 @@ public class FailedExpirerTest {
                 .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy3")
                 .setReady("proxy1", "proxy2", "proxy3")
                 .allocate(ApplicationId.from("vespa", "zone-app", "default"),
-                          ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("routing")).vespaVersion("6.42").build(),
+                          ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("routing")).vespaVersion("6.42").build(),
                           Capacity.fromRequiredNodeType(NodeType.proxy))
                 .failNode(1, "proxy1");
 
@@ -321,7 +321,7 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario allocate(ClusterSpec.Type clusterType, NodeResources flavor, String... hostname) {
-            ClusterSpec clusterSpec = ClusterSpec.builder(clusterType, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+            ClusterSpec clusterSpec = ClusterSpec.request(clusterType, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
             Capacity capacity = Capacity.fromCount(hostname.length, Optional.of(flavor), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }

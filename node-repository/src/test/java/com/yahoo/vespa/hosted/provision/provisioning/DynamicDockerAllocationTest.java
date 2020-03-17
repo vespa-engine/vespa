@@ -342,7 +342,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
         NodeResources resources = new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.any);
 
         List<HostSpec> hosts = tester.prepare(application, cluster, 2, 1, resources);
@@ -359,7 +359,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
         NodeResources resources = new NodeResources(1, 4, 10, 1, requestDiskSpeed);
 
         try {
@@ -381,7 +381,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
         NodeResources resources = new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.fast);
 
         List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
@@ -399,7 +399,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
 
         List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromCount(2, Optional.of(NodeResources.fromLegacyName("d-2-8-50")), false, true), 1);
         tester.activate(application, hosts1);
@@ -464,7 +464,7 @@ public class DynamicDockerAllocationTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
     }
 
 }

@@ -143,7 +143,7 @@ public class DynamicDockerProvisionTest {
     }
 
     private static ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
     }
 
     @SuppressWarnings("unchecked")
