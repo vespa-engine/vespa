@@ -532,6 +532,15 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.count"));
         metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatareadlatency.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatareadlatency.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatareadlatency.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.count"));
 
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.max"));
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.sum"));
