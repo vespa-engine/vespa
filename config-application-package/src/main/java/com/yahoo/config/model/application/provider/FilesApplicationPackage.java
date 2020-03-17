@@ -637,8 +637,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
         File sdDir = new File(appDir, ApplicationPackage.SCHEMAS_DIR.getRelative());
         File expressionFile = new File(sdDir, name);
-        if ( !expressionFile.exists())
-            expressionFile = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
+        if ( ! expressionFile.exists()) {
+            sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
+            expressionFile = new File(sdDir, name);
+        }
         return expressionFile;
     }
 

@@ -435,9 +435,9 @@ public class DeployState implements ConfigDefinitionStore {
                                                            "') are not equal for file '" + readerName + "'");
                     }
                 } catch (ParseException e) {
-                    throw new IllegalArgumentException("Could not parse sd file '" + reader.getName(), e);
+                    throw new IllegalArgumentException("Could not parse sd file '" + reader.getName() + "'", e);
                 } catch (IOException e) {
-                    throw new IllegalArgumentException("Could not read sd file '" + reader.getName(), e);
+                    throw new IllegalArgumentException("Could not read sd file '" + reader.getName() + "'", e);
                 } finally {
                     closeIgnoreException(reader.getReader());
                 }
