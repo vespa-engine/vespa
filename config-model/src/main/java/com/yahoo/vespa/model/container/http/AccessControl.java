@@ -67,13 +67,9 @@ public final class AccessControl {
             return this;
         }
 
-        public Builder setHandlers(Collection<Handler<?>> handlers) {
-            this.handlers = handlers;
-            return this;
-        }
-
-        public Builder setServlets(Collection<Servlet> servlets) {
-            this.servlets = servlets;
+        public Builder setHandlers(ApplicationContainerCluster cluster) {
+            this.handlers = cluster.getHandlers();
+            this.servlets = cluster.getAllServlets();
             return this;
         }
 

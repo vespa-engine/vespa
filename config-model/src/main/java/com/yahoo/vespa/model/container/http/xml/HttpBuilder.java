@@ -63,10 +63,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer ancestor, Element accessControlElem) {
         AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), deployState.getDeployLogger());
 
-        getContainerCluster(ancestor).ifPresent(cluster -> {
-            builder.setHandlers(cluster.getHandlers());
-            builder.setServlets(cluster.getAllServlets());
-        });
+        getContainerCluster(ancestor).ifPresent(builder::setHandlers);
 
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
                 readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
