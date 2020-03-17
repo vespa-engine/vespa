@@ -135,28 +135,18 @@ public class ApplicationController {
         Once.after(Duration.ofMinutes(1), () -> {
             Instant start = clock.instant();
             int count = 0;
-            for (TenantAndApplicationId id: curator.readApplicationIds()) {
+            for (TenantAndApplicationId id : curator.readApplicationIds()) {
                 lockApplicationIfPresent(id, application -> {
-                    if (id.tenant().value().startsWith("by-")) { // TODO jonmv: Remove after run once.
-                        for (Instance instance : application.get().instances().values())
-                            for (ZoneId zone : instance.deployments().keySet())
-                                deactivate(instance.id(), zone);
-                            curator.removeApplication(id);
-                    }
-                    else {
-                        for (InstanceName instance : application.get().deploymentSpec().instanceNames())
-                            if (!application.get().instances().containsKey(instance))
-                                application = withNewInstance(application, id.instance(instance));
-                        store(application);
-                    }
+                    for (InstanceName instance : application.get().deploymentSpec().instanceNames())
+                        if (!application.get().instances().containsKey(instance))
+                            application = withNewInstance(application, id.instance(instance));
+                    store(application);
                 });
                 count++;
             }
             log.log(Level.INFO, String.format("Wrote %d applications in %s", count,
                                               Duration.between(start, clock.instant())));
         });
-
-        // TODO jonmv: Do the above for applications as well when they split writes.
     }
 
     /** Returns the application with the given id, or null if it is not present */
