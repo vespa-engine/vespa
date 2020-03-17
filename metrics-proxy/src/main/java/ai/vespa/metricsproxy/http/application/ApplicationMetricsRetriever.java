@@ -82,8 +82,6 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
 
         } catch (Exception e) {
             // Since the task is a ForkJoinTask, we don't need special handling of InterruptedException
-            forkJoinPool.shutdownNow();
-            forkJoinPool = new ForkJoinPool(PARALLELISM);
             throw new ApplicationMetricsException("Failed retrieving metrics.", e);
         }
     }
