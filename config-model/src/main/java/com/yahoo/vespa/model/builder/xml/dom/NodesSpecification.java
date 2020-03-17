@@ -195,8 +195,12 @@ public class NodesSpecification {
                                                           DeployLogger logger) {
         if (combinedId.isPresent())
             clusterType = ClusterSpec.Type.combined;
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive,
-                                                  combinedId.map(ClusterSpec.Id::from), dockerImageRepo);
+        ClusterSpec cluster = ClusterSpec.builder(clusterType, clusterId)
+                .vespaVersion(version)
+                .exclusive(exclusive)
+                .combinedId(combinedId.map(ClusterSpec.Id::from))
+                .dockerImageRepo(dockerImageRepo)
+                .build();
         return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
     }
 

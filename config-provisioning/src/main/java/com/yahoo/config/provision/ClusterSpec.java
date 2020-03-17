@@ -100,6 +100,63 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, combinedId, dockerImageRepo);
     }
 
+    public static Builder builder(Type type, Id id) {
+        return new Builder(type, id);
+    }
+
+    public static class Builder {
+
+        private final Type type;
+        private final Id id;
+
+        private Optional<Group> groupId = Optional.empty();
+        private Optional<String> dockerImageRepo = Optional.empty();
+        private Version vespaVersion;
+        private boolean exclusive = false;
+        private Optional<Id> combinedId = Optional.empty();
+
+
+        Builder(Type type, Id id) {
+            this.type = type;
+            this.id = id;
+        }
+
+        public ClusterSpec build() {
+            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo);
+        }
+
+        public Builder group(Group groupId) {
+            this.groupId = Optional.ofNullable(groupId);
+            return this;
+        }
+
+        public Builder vespaVersion(Version vespaVersion) {
+            this.vespaVersion = vespaVersion;
+            return this;
+        }
+
+        public Builder vespaVersion(String vespaVersion) {
+            this.vespaVersion = Version.fromString(vespaVersion);
+            return this;
+        }
+
+        public Builder exclusive(boolean exclusive) {
+            this.exclusive = exclusive;
+            return this;
+        }
+
+        public Builder combinedId(Optional<Id> combinedId) {
+            this.combinedId = combinedId;
+            return this;
+        }
+
+        public Builder dockerImageRepo(Optional<String> dockerImageRepo) {
+            this.dockerImageRepo = dockerImageRepo;
+            return this;
+        }
+
+    }
+
     @Override
     public String toString() {
         return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion + (dockerImageRepo.map(repo -> " " + repo).orElse(""));

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -18,7 +17,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -36,10 +34,7 @@ public class NodeTypeProvisioningTest {
 
     private final ApplicationId application = tester.makeApplicationId(); // application using proxy nodes
     private final Capacity capacity = Capacity.fromRequiredNodeType(NodeType.proxy);
-    private final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
-                                                                ClusterSpec.Id.from("test"),
-                                                                Version.fromString("6.42"),
-                                                                false, Optional.empty(), Optional.empty());
+    private final ClusterSpec clusterSpec = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
 
     @Before
     public void setup() {

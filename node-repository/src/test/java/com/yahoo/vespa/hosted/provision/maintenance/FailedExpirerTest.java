@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -54,10 +53,7 @@ public class FailedExpirerTest {
     private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
 
     private static final ClusterSpec tenantHostApplicationClusterSpec =
-            ClusterSpec.request(ClusterSpec.Type.container,
-                                ClusterSpec.Id.from("node-admin"),
-                                Version.fromString("6.42"),
-                                false, Optional.empty(), Optional.empty());
+            ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
 
     private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
 
@@ -143,9 +139,9 @@ public class FailedExpirerTest {
                 .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy2")
                 .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy3")
                 .setReady("proxy1", "proxy2", "proxy3")
-                .allocate( ApplicationId.from("vespa", "zone-app", "default"),
-                        ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("routing"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty()),
-                        Capacity.fromRequiredNodeType(NodeType.proxy))
+                .allocate(ApplicationId.from("vespa", "zone-app", "default"),
+                          ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("routing")).vespaVersion("6.42").build(),
+                          Capacity.fromRequiredNodeType(NodeType.proxy))
                 .failNode(1, "proxy1");
 
         for (int i = 0; i < 10; i++) {
@@ -325,12 +321,7 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario allocate(ClusterSpec.Type clusterType, NodeResources flavor, String... hostname) {
-            ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
-                                                          ClusterSpec.Id.from("test"),
-                                                          Version.fromString("6.42"),
-                                                          false,
-                                                          Optional.empty(),
-                                                          Optional.empty());
+            ClusterSpec clusterSpec = ClusterSpec.builder(clusterType, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
             Capacity capacity = Capacity.fromCount(hostname.length, Optional.of(flavor), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }

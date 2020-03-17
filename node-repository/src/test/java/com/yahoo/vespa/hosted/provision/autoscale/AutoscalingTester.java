@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -75,12 +74,7 @@ class AutoscalingTester {
     }
 
     public ClusterSpec clusterSpec(ClusterSpec.Type type, String clusterId) {
-        return ClusterSpec.request(type,
-                                   ClusterSpec.Id.from(clusterId),
-                                   Version.fromString("7"),
-                                   false,
-                                   Optional.empty(),
-                                   Optional.empty());
+        return ClusterSpec.builder(type, ClusterSpec.Id.from(clusterId)).vespaVersion("7").build();
     }
 
     public void deploy(ApplicationId application, ClusterSpec cluster, AllocatableClusterResources resources) {

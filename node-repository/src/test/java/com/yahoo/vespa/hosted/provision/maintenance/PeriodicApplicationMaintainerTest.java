@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -244,8 +243,8 @@ public class PeriodicApplicationMaintainerTest {
         final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
-        final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
+        final ClusterSpec clusterApp1 = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        final ClusterSpec clusterApp2 = ClusterSpec.builder(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
 
