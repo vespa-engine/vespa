@@ -92,7 +92,7 @@ public class Rebalancer extends Maintainer {
         for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
             if (node.allocation().get().owner().instance().isTester()) continue;
-            if (bestMove.node.allocation().get().owner().application().value().equals("lsbe-dictionaries")) continue; // TODO: Remove
+            if (node.allocation().get().owner().application().value().equals("lsbe-dictionaries")) continue; // TODO: Remove
             for (Node toHost : allNodes.nodeType(NodeType.host).state(NodePrioritizer.ALLOCATABLE_HOST_STATES)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;
