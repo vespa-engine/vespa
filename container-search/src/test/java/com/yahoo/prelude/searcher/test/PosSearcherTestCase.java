@@ -118,6 +118,12 @@ public class PosSearcherTestCase {
         q.properties().set("pos.units", "udeg");
         doSearch(searcher, q, 0, 10);
         assertEquals("(2,0,0,18026,0,1,0,4294967295)", q.getRanking().getLocation().toString());
+
+        q = new Query();
+        q.properties().set("pos.ll", "N0;E0");
+        q.properties().set("pos.radius", "-1");
+        doSearch(searcher, q, 0, 10);
+        assertEquals("(2,0,0,536870912,0,1,0,4294967295)", q.getRanking().getLocation().toString());
     }
 
     /**
@@ -128,13 +134,13 @@ public class PosSearcherTestCase {
         Query q = new Query();
         q.properties().set("pos.xy", "22500;22500");
         doSearch(searcher, q, 0, 10);
-        assertEquals("(2,22500,22500,5000,0,1,0)", q.getRanking().getLocation().toString());
+        assertEquals("(2,22500,22500,450668,0,1,0)", q.getRanking().getLocation().toString());
 
         q = new Query();
         q.properties().set("pos.xy", "22500;22500");
         q.properties().set("pos.units", "unknown");
         doSearch(searcher, q, 0, 10);
-        assertEquals("(2,22500,22500,5000,0,1,0)", q.getRanking().getLocation().toString());
+        assertEquals("(2,22500,22500,450668,0,1,0)", q.getRanking().getLocation().toString());
     }
 
     @Test

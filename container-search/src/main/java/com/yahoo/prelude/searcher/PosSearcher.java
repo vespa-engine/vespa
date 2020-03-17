@@ -147,7 +147,9 @@ public class PosSearcher extends Searcher {
         String radius = query.properties().getString(posRadius);
         int radiusUnits;
         if (radius == null) {
-            radiusUnits = 5000;
+            double radiuskm = 50.0;
+            double radiusdegrees = radiuskm * km2deg;
+            radiusUnits = (int)(radiusdegrees * 1000000);
         } else if (radius.endsWith("km")) {
             double radiuskm = Double.valueOf(radius.substring(0, radius.length()-2));
             double radiusdegrees = radiuskm * km2deg;
