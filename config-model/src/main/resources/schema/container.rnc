@@ -27,7 +27,6 @@ AccessControl = element access-control {
     attribute read { string "true" | string "false" }? &
     attribute write { string "true" | string "false" }? &
     element vespa-domain { xsd:NCName }? & # TODO Remove after end of March 2020
-    element application { xsd:NCName }? &
     element exclude {
         Binding+
     }?
