@@ -64,8 +64,7 @@ ConvertRawScoreToCloseness::execute(uint32_t docId)
     for (auto handle : _handles) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(handle);
         if (tfmd->getDocId() == docId) {
-            // remove conversion to "closeness" RawScore later:
-            feature_t converted =  1.0 / (1.0 + tfmd->getRawScore());
+            feature_t converted = tfmd->getRawScore();
             max_closeness = std::max(max_closeness, converted);
         }
     }

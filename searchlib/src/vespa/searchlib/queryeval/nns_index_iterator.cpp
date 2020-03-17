@@ -51,7 +51,9 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        _tfmd.setRawScore(docId, sqrt(_last_sq_dist));
+        double d = sqrt(_last_sq_dist);
+        double score = 1.0 / (1.0 + d);
+        _tfmd.setRawScore(docId, score);
     }
 
     Trinary is_strict() const override { return Trinary::True; }

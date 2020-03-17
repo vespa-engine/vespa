@@ -17,6 +17,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("nearest_neighbor_test");
 
+#define EPS 1.0e-6
+
 using search::feature_t;
 using search::tensor::DenseTensorAttribute;
 using search::AttributeVector;
@@ -179,9 +181,15 @@ verify_iterator_sets_expected_rawscore(const vespalib::string& attribute_tensor_
     auto nullTensor = createTensor(query_tensor_type_spec, 0.0, 0.0);
     std::vector<feature_t> got = get_rawscores<true>(fixture, *nullTensor);
     std::vector<feature_t> expected{5.0, 13.0, 10.0, 10.0, 5.0};
-    EXPECT_EQUAL(got, expected);
+    EXPECT_EQUAL(got.size(), expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        EXPECT_APPROX(1.0/(1.0+expected[i]), got[i], EPS);
+    }
     got = get_rawscores<false>(fixture, *nullTensor);
-    EXPECT_EQUAL(got, expected);
+    EXPECT_EQUAL(got.size(), expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        EXPECT_APPROX(1.0/(1.0+expected[i]), got[i], EPS);
+    }
 }
 
 TEST("require that NearestNeighborIterator sets expected rawscore") {
@@ -208,7 +216,7 @@ TEST("require that NnsIndexIterator works as expected") {
     EXPECT_FALSE(search->isAtEnd());
     EXPECT_EQUAL(docid, search->getDocId());
     search->unpack(docid);
-    EXPECT_EQUAL(2.0, tfmd.getRawScore());
+    EXPECT_APPROX(1.0/(1.0+2.0), tfmd.getRawScore(), EPS);
 
     docid = 3;
     match = search->seek(docid);
@@ -216,7 +224,7 @@ TEST("require that NnsIndexIterator works as expected") {
     EXPECT_FALSE(search->isAtEnd());
     EXPECT_EQUAL(docid, search->getDocId());
     search->unpack(docid);
-    EXPECT_EQUAL(3.0, tfmd.getRawScore());
+    EXPECT_APPROX(1.0/(1.0+3.0), tfmd.getRawScore(), EPS);
 
     docid = 4;
     match = search->seek(docid);
@@ -231,7 +239,7 @@ TEST("require that NnsIndexIterator works as expected") {
     EXPECT_EQUAL(8u, search->getDocId());
     docid = 8;
     search->unpack(docid);
-    EXPECT_EQUAL(4.0, tfmd.getRawScore());
+    EXPECT_APPROX(1.0/(1.0+4.0), tfmd.getRawScore(), EPS);
     docid = 9;
     match = search->seek(docid);
     EXPECT_TRUE(match);
@@ -249,7 +257,7 @@ TEST("require that NnsIndexIterator works as expected") {
     EXPECT_EQUAL(5u, search->getDocId());
     docid = 5;
     search->unpack(docid);
-    EXPECT_EQUAL(1.0, tfmd.getRawScore());
+    EXPECT_APPROX(1.0/(1.0+1.0), tfmd.getRawScore(), EPS);
     EXPECT_FALSE(search->isAtEnd());
     docid = 6;
     match = search->seek(docid);

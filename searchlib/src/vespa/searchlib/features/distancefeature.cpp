@@ -70,8 +70,8 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
     for (auto handle : _handles) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(handle);
         if (tfmd->getDocId() == docId) {
-            // add conversion from "closeness" RawScore later:
-            feature_t converted =  tfmd->getRawScore();
+            feature_t invdist = tfmd->getRawScore();
+            feature_t converted = (1.0 / invdist) - 1.0;
             min_distance = std::min(min_distance, converted);
         }
     }
