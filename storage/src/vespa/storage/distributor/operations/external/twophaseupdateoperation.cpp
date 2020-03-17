@@ -465,7 +465,9 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sen
         sendReplyWithResult(sender, reply.getResult());
         return;
     }
-    if (may_restart_with_fast_path(reply)) {
+    // Single Get could technically be considered consistent with itself, so make
+    // sure we never treat that as sufficient for restarting in the fast path.
+    if ((_sendState != SendState::SINGLE_GET_SENT) && may_restart_with_fast_path(reply)) {
         restart_with_fast_path_due_to_consistent_get_timestamps(sender);
         return;
     }

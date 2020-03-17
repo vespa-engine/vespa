@@ -142,7 +142,7 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorTestUtil {
     std::shared_ptr<TwoPhaseUpdateOperation> set_up_2_inconsistent_replicas_and_start_update(bool enable_3phase = true) {
         setupDistributor(2, 2, "storage:2 distributor:1");
         getConfig().set_enable_metadata_only_fetch_phase_for_inconsistent_updates(enable_3phase);
-        std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=2/3/4")); // Inconsistent replicas.
+        auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
         cb->start(_sender, framework::MilliSecTime(0));
         return cb;
     }
@@ -1192,6 +1192,21 @@ TEST_F(ThreePhaseUpdateTest, update_failed_with_transient_error_code_if_replica_
               "timestamp 0, timestamp of updated doc: 0) "
               "ReturnCode(BUCKET_NOT_FOUND, Replica sets changed between update phases, client must retry)",
               _sender.getLastReply(true));
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_cannot_restart_in_fast_path) {
+    setupDistributor(2, 2, "storage:2 distributor:1");
+    getConfig().set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
+    getConfig().set_update_fast_path_restart_enabled(true);
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
+    cb->start(_sender, framework::MilliSecTime(0));
+
+    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
+    reply_to_metadata_get(*cb, _sender, 0, 1000U);
+    reply_to_metadata_get(*cb, _sender, 1, 2000U);
+    ASSERT_EQ("Get => 1", _sender.getCommands(true, false, 2));
+    replyToGet(*cb, _sender, 2, 2000U);
+    ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 3));
 }
 
 /*
