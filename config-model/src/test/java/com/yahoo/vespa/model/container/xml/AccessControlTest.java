@@ -64,9 +64,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "  <http>",
                 "    <filtering>",
-                "      <access-control domain='my-domain'>",
-                "        <application>my-app</application>",
-                "      </access-control>",
+                "      <access-control domain='my-domain'/>",
                 "    </filtering>",
                 "  </http>");
 
@@ -75,7 +73,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         AccessControl accessControl = http.getAccessControl().get();
 
         assertEquals("Wrong domain.", "my-domain", accessControl.domain);
-        assertEquals("Wrong application.", "my-app", accessControl.applicationId);
     }
 
     @Test

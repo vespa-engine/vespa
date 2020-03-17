@@ -6,8 +6,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -63,10 +61,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     }
 
     private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer ancestor, Element accessControlElem) {
-        String application = XmlHelper.getOptionalChildValue(accessControlElem, "application")
-                .orElse(getDeployedApplicationId(deployState, ancestor).value());
-
-        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), application, deployState.getDeployLogger());
+        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), deployState.getDeployLogger());
 
         getContainerCluster(ancestor).ifPresent(cluster -> {
             builder.setHandlers(cluster.getHandlers());
@@ -85,15 +80,6 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                     .forEach(builder::excludeBinding);
         }
         return builder.build();
-    }
-
-    /**
-     * Returns the id of the deployed application, or the default value if not explicitly set (self-hosted).
-     */
-    private static ApplicationName getDeployedApplicationId(DeployState deployState, AbstractConfigProducer ancestor) {
-        return getContainerCluster(ancestor)
-                .map(cluster -> deployState.getProperties().applicationId().application())
-                .orElse(ApplicationId.defaultId().application());
     }
 
     private static Optional<ApplicationContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
