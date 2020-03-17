@@ -25,8 +25,8 @@ public class DocumentReferenceResolver {
 
     private final Map<String, Search> searchMapping;
 
-    public DocumentReferenceResolver(List<Search> searchDefinitions) {
-        this.searchMapping = createDocumentNameToSearchMapping(searchDefinitions);
+    public DocumentReferenceResolver(List<Search> schemas) {
+        this.searchMapping = createDocumentNameToSearchMapping(schemas);
     }
 
     public void resolveReferences(SDDocumentType documentType) {

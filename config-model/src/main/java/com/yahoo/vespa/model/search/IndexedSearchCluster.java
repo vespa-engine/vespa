@@ -195,9 +195,10 @@ public class IndexedSearchCluster extends SearchCluster
             routingSelector = sb.toString();
         }
     }
+
     @Override
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState) {
-        for (SearchDefinitionSpec spec : localSearches) {
+    protected void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState) {
+        for (SchemaSpec spec : localSearches) {
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
             if ( ! (search instanceof DocumentOnlySearch)) {
                 DocumentDatabase db = new DocumentDatabase(this, search.getName(),

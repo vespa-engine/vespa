@@ -8,7 +8,6 @@ import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
@@ -132,7 +131,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	    AbstractSearchCluster sys = findClusterWithId(searchClusters, i);
     		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
     				name(sys.getClusterName());
-    		for (AbstractSearchCluster.SearchDefinitionSpec spec : sys.getLocalSDS()) {
+    		for (AbstractSearchCluster.SchemaSpec spec : sys.getLocalSDS()) {
     			scB.searchdef(spec.getSearchDefinition().getName());
     		}
     		scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));

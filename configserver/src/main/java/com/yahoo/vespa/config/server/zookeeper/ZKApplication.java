@@ -9,13 +9,11 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Responsible for providing data from an application subtree in zookeeper.
  * (i.e. /config/v2/tenants/x/session/&lt;session id for an application&gt;/).
- *
- * Takes care of
- *
  *
  * @author Tony Vaagenes
  */
@@ -82,6 +80,10 @@ public class ZKApplication {
             throw new IllegalArgumentException("No node for " + getFullPath(path) + "/" + node + " exists");
         }
         return reader(data);
+    }
+
+    Optional<Reader> getOptionalDataReader(String path, String node) {
+        return Optional.ofNullable(getData(path, node)).map(data -> reader(data));
     }
 
     public String getData(String path, String node) {
@@ -181,10 +183,9 @@ public class ZKApplication {
     }
 
     Reader getDataReader(String path) {
-        final String data = getData(path);
-        if (data == null) {
+        String data = getData(path);
+        if (data == null)
             throw new IllegalArgumentException("No node for " + getFullPath(path) + " exists");
-        }
         return reader(data);
     }
 
