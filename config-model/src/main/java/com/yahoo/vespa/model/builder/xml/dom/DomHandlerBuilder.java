@@ -14,22 +14,24 @@ import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuild
 import org.w3c.dom.Element;
 
 import java.util.Set;
-import static java.util.logging.Level.INFO;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_1;
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_2;
 import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
 import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_2;
+import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
+import static java.util.logging.Level.INFO;
 
 /**
  * @author gjoranv
  */
 public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
 
-    private static final Set<String> reservedBindings = Set.of(STATE_HANDLER_BINDING_1,
+    private static final Set<String> reservedBindings = Set.of(METRICS_V2_HANDLER_BINDING_1,
+                                                               METRICS_V2_HANDLER_BINDING_2,
+                                                               STATE_HANDLER_BINDING_1,
                                                                STATE_HANDLER_BINDING_2,
-                                                               METRICS_V2_HANDLER_BINDING_1,
-                                                               METRICS_V2_HANDLER_BINDING_2);
+                                                               VIP_HANDLER_BINDING);
     private final ApplicationContainerCluster cluster;
 
     public DomHandlerBuilder(ApplicationContainerCluster cluster) {

@@ -123,6 +123,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final String ROOT_HANDLER_PATH = "/";
     public static final String ROOT_HANDLER_BINDING = "http://*" + ROOT_HANDLER_PATH;
 
+    public static final String VIP_HANDLER_BINDING = "http://*/status.html";
+
     private final String name;
 
     protected List<CONTAINER> containers = new ArrayList<>();
@@ -234,7 +236,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void addVipHandler() {
         Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
-        vipHandler.addServerBindings("http://*/status.html");
+        vipHandler.addServerBindings(VIP_HANDLER_BINDING);
         addComponent(vipHandler);
     }
 
