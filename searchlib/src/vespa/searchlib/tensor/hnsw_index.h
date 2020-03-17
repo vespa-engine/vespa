@@ -101,6 +101,11 @@ protected:
     LevelArrayRef get_level_array(uint32_t docid) const;
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const;
     void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links);
+    void add_link_to(uint32_t docid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
+        LinkArray new_links(old_links.begin(), old_links.end());
+        new_links.push_back(new_link);
+        set_link_array(docid, level, new_links);
+    }
 
     /**
      * Returns true if the distance between the candidate and a node in the current result
@@ -109,7 +114,7 @@ protected:
      * where the candidate is located.
      * Used by select_neighbors_heuristic().
      */
-    bool have_closer_distance(HnswCandidate candidate, const LinkArray& curr_result) const;
+    bool have_closer_distance(HnswCandidate candidate, const LinkArrayRef& curr_result) const;
     struct SelectResult {
         LinkArray used;
         LinkArray unused;
@@ -119,6 +124,7 @@ protected:
     SelectResult select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     void shrink_if_needed(uint32_t docid, uint32_t level);
     void connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level);
+    void mutual_reconnect(const LinkArrayRef &cluster, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
     inline TypedCells get_vector(uint32_t docid) const {

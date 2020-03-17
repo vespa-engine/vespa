@@ -243,9 +243,11 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     // Doc 3 is also added to level 1
     add_document(3, 1);
     expect_entry_point(3, 1);
+    // Doc 3 is closest to 1 and they are linked.
+    // Doc 3 is NOT linked to 2, since that is closer to 1 also.
     expect_level_0(1, {2, 3});
-    expect_level_0(2, {1, 3});
-    expect_levels(3, {{1, 2}, {}});
+    expect_level_0(2, {1});
+    expect_levels(3, {{1}, {}});
 
     // Doc 4 is closest to 1 and they are linked.
     // Doc 4 is NOT linked to 3 as the distance between 4 and 3 is greater than the distance between 3 and 1.
@@ -253,8 +255,8 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     add_document(4);
     expect_entry_point(3, 1);
     expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 3});
-    expect_levels(3, {{1, 2}, {}});
+    expect_level_0(2, {1});
+    expect_levels(3, {{1}, {}});
     expect_level_0(4, {1});
 
     // Doc 5 is closest to 2 and they are linked.
@@ -262,8 +264,8 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     add_document(5);
     expect_entry_point(3, 1);
     expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 3, 5});
-    expect_levels(3, {{1, 2}, {}});
+    expect_level_0(2, {1, 5});
+    expect_levels(3, {{1}, {}});
     expect_level_0(4, {1});
     expect_level_0(5, {2});
 
@@ -273,8 +275,8 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     add_document(6, 2);
     expect_entry_point(6, 2);
     expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 3, 5, 6});
-    expect_levels(3, {{1, 2}, {6}});
+    expect_level_0(2, {1, 5, 6});
+    expect_levels(3, {{1}, {6}});
     expect_level_0(4, {1});
     expect_level_0(5, {2, 6});
     expect_levels(6, {{2, 5}, {3}, {}});
@@ -285,9 +287,21 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     add_document(7);
     expect_entry_point(6, 2);
     expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 3, 5, 6});
-    expect_levels(3, {{1, 2, 7}, {6}});
+    expect_level_0(2, {1, 5, 6});
+    expect_levels(3, {{1, 7}, {6}});
     expect_level_0(4, {1});
+    expect_level_0(5, {2, 6});
+    expect_levels(6, {{2, 5, 7}, {3}, {}});
+    expect_level_0(7, {3, 6});
+
+    // removing 1, its neighbors {2,3,4} will try to
+    // link together, but since 2 already has enough links
+    // only 3 and 4 will become neighbors:
+    remove_document(1);
+    expect_entry_point(6, 2);
+    expect_level_0(2, {5, 6});
+    expect_levels(3, {{4, 7}, {6}});
+    expect_level_0(4, {3});
     expect_level_0(5, {2, 6});
     expect_levels(6, {{2, 5, 7}, {3}, {}});
     expect_level_0(7, {3, 6});
@@ -328,7 +342,7 @@ TEST_F(HnswIndexTest, manual_insert)
 
 TEST_F(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
 {
-    init(true);
+    init(false);
 
     add_document(1);
     add_document(3);
