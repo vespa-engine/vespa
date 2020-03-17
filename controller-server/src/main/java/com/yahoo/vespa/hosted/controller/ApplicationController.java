@@ -181,7 +181,18 @@ public class ApplicationController {
 
     /** Returns a snapshot of all applications */
     public List<Application> asList() {
-        return curator.readApplications();
+        return curator.readApplications(false);
+    }
+
+    /**
+     * Returns a snapshot of all readable applications. Unlike {@link ApplicationController#asList()} this ignores
+     * applications that cannot currently be read (e.g. due to serialization issues) and may return an incomplete
+     * snapshot.
+     *
+     * This should only be used in cases where acting on a subset of applications is better than none.
+     */
+    public List<Application> readable() {
+        return curator.readApplications(true);
     }
 
     /** Returns the ID of all known applications. */

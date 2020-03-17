@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -18,13 +19,13 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -352,26 +354,37 @@ public class CuratorDb {
         return read(applicationPath(application), applicationSerializer::fromSlime);
     }
 
-    public List<Application> readApplications() {
-        return readApplications(ignored -> true);
+    public List<Application> readApplications(boolean canFail) {
+        return readApplications(ignored -> true, canFail);
     }
 
     public List<Application> readApplications(TenantName name) {
-        return readApplications(application -> application.tenant().equals(name));
+        return readApplications(application -> application.tenant().equals(name), false);
     }
 
-    private List<Application> readApplications(Predicate<TenantAndApplicationId> applicationFilter) {
-        return readApplicationIds().stream()
-                                   .filter(applicationFilter)
-                                   .sorted()
-                                   .map(this::readApplication)
-                                   .flatMap(Optional::stream)
-                                   .collect(Collectors.toUnmodifiableList());
+    private List<Application> readApplications(Predicate<TenantAndApplicationId> applicationFilter, boolean canFail) {
+        var applicationIds = readApplicationIds();
+        var applications = new ArrayList<Application>(applicationIds.size());
+        for (var id : applicationIds) {
+            if (!applicationFilter.test(id)) continue;
+            try {
+                readApplication(id).ifPresent(applications::add);
+            } catch (Exception e) {
+                if (canFail) {
+                    log.log(LogLevel.ERROR, "Failed to read application '" + id + "', this must be fixed through " +
+                                            "manual intervention", e);
+                } else {
+                    throw e;
+                }
+            }
+        }
+        return Collections.unmodifiableList(applications);
     }
 
     public List<TenantAndApplicationId> readApplicationIds() {
         return curator.getChildren(applicationRoot).stream()
                       .map(TenantAndApplicationId::fromSerialized)
+                      .sorted()
                       .collect(toUnmodifiableList());
     }
 

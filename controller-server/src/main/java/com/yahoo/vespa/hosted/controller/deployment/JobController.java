@@ -194,16 +194,9 @@ public class JobController {
         locked(id, run -> run.with(testerCertificate));
     }
 
-    /** Returns a list of all applications which have registered. */
-    public List<TenantAndApplicationId> applications() {
-        return copyOf(controller.applications().asList().stream()
-                                .map(Application::id)
-                                .iterator());
-    }
-
     /** Returns a list of all instances of applications which have registered. */
     public List<ApplicationId> instances() {
-        return copyOf(controller.applications().asList().stream()
+        return copyOf(controller.applications().readable().stream()
                                 .flatMap(application -> application.instances().values().stream())
                                 .map(Instance::id)
                                 .iterator());

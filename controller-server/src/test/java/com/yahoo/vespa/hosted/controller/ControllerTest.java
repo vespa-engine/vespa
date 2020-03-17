@@ -16,6 +16,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.path.Path;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -36,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import org.junit.Test;
@@ -937,6 +939,27 @@ public class ControllerTest {
         context.submit(applicationPackage).deploy();
         assertEquals(ClusterSpec.Id.from("bar"), tester.applications().requireInstance(context.instanceId())
                                                        .rotations().get(0).clusterId());
+    }
+
+    @Test
+    public void testReadableApplications() {
+        var db = new MockCuratorDb();
+        var tester = new DeploymentTester(new ControllerTester(db));
+
+        // Create two applications
+        tester.newDeploymentContext("t1", "a1", "default");
+        tester.newDeploymentContext("t2", "a2", "default");
+        assertEquals(2, tester.applications().readable().size());
+
+        // Write invalid data to one application
+        db.curator().set(Path.fromString("/controller/v1/applications/t2:a2"), new byte[]{(byte) 0xDE, (byte) 0xAD});
+        assertEquals(1, tester.applications().readable().size());
+
+        try {
+            tester.applications().asList();
+            fail("Expected exception");
+        } catch (Exception ignored) {
+        }
     }
 
 }

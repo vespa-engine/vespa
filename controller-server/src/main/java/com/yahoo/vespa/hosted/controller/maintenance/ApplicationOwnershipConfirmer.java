@@ -3,9 +3,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -46,7 +46,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     /** File an ownership issue with the owners of all applications we know about. */
     private void confirmApplicationOwnerships() {
-        ApplicationList.from(controller().applications().asList())
+        applications()
                        .withProjectId()
                        .withProductionDeployment()
                        .asList()
@@ -86,7 +86,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
     private void ensureConfirmationResponses() {
-        for (Application application : controller().applications().asList())
+        for (Application application : applications())
             application.ownershipIssueId().ifPresent(issueId -> {
                 try {
                     Tenant tenant = tenantOf(application.id());
@@ -99,7 +99,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     }
 
     private void updateConfirmedApplicationOwners() {
-        ApplicationList.from(controller().applications().asList())
+        applications()
                        .withProjectId()
                        .withProductionDeployment()
                        .asList()
@@ -112,6 +112,10 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                                        controller().applications().store(lockedApplication.withOwner(owner)));
                            });
                        });
+    }
+
+    private ApplicationList applications() {
+        return ApplicationList.from(controller().applications().readable());
     }
 
     private User determineAssignee(Application application) {
