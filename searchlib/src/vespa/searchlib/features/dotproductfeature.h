@@ -49,7 +49,7 @@ class VectorBase : public fef::Anything {
 public:
     typedef std::pair<DimensionVType, ComponentType> Element; // <dimension, component>
     typedef std::vector<Element>                    Vector;
-    typedef vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>, HashMapComparator> HashMap;
+    typedef vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>, HashMapComparator, vespalib::hashtable_base::and_modulator> HashMap;
 protected:
     VectorBase();
     Vector _vector;
