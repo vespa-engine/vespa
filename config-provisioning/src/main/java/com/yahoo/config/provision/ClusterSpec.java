@@ -130,9 +130,10 @@ public final class ClusterSpec {
 
         public ClusterSpec build() {
             if (specification) {
-                if (groupId.isEmpty()) throw new IllegalArgumentException("Creating a ClusterSpec with specification() requires groupId to be set");
-                if (vespaVersion == null) throw new IllegalArgumentException("Creating a ClusterSpec with specification() requires vespaVersion to be set");
-            }
+                if (groupId.isEmpty()) throw new IllegalArgumentException("groupIs is required to be set when creating a ClusterSpec with specification()");
+                if (vespaVersion == null) throw new IllegalArgumentException("vespaVersion is required to be set when creating a ClusterSpec with specification()");
+            } else
+                if (groupId.isPresent()) throw new IllegalArgumentException("groupId is not allowed to be set when creating a ClusterSpec with request()");
             return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo);
         }
 

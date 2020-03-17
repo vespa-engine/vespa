@@ -81,7 +81,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstanceWithGroupAndRetire() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
+        ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
                 .group(ClusterSpec.Group.from(4))
                 .vespaVersion("6.42")
                 .build();
