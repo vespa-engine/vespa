@@ -112,6 +112,10 @@ public final class AccessControl {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    public static boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
+        return cluster.getHandlers().stream().anyMatch(AccessControl::handlerNeedsProtection);
+    }
+
     private Stream<Binding> getHandlerBindings() {
         return handlers.stream()
                         .filter(this::shouldHandlerBeProtected)
@@ -145,10 +149,6 @@ public final class AccessControl {
 
     private static Stream<String> servletBindings(Servlet servlet) {
         return Stream.of("http://*/").map(protocol -> protocol + servlet.bindingPath);
-    }
-
-    public static boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
-        return cluster.getHandlers().stream().anyMatch(AccessControl::handlerNeedsProtection);
     }
 
     private static boolean handlerNeedsProtection(Handler<?> handler) {
