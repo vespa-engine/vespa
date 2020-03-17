@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
@@ -65,6 +66,7 @@ public interface ModelContext {
         default boolean useNewAthenzFilter() { return false; }
         default boolean usePhraseSegmenting() { return false; }
         default String proxyProtocol() { return "https-only"; }
+        default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
     }
 
 }

@@ -498,9 +498,14 @@ public class ApplicationController {
                             .value())
                     .filter(s -> !s.isBlank())
                     .map(DockerImage::fromString);
+
+            Optional<AthenzDomain> domain = controller.tenants().get(application.tenant())
+                    .filter(tenant-> tenant instanceof AthenzTenant)
+                    .map(tenant -> ((AthenzTenant)tenant).domain());
+
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
-                                                           endpoints, endpointCertificateMetadata, dockerImageRepo));
+                                                           endpoints, endpointCertificateMetadata, dockerImageRepo, domain));
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {

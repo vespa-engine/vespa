@@ -17,6 +17,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -152,6 +153,7 @@ public class SessionPreparer {
         private final EndpointCertificateRetriever endpointCertificateRetriever;
         private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
+        private final Optional<AthenzDomain> athenzDomain;
 
         private ApplicationPackage applicationPackage;
         private List<PreparedModelsBuilder.PreparedModelResult> modelResultList;
@@ -182,6 +184,7 @@ public class SessionPreparer {
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
 
             this.endpointsSet = getEndpoints(params.containerEndpoints());
+            this.athenzDomain = params.athenzDomain();
 
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
@@ -195,7 +198,8 @@ public class SessionPreparer {
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
                                                               context.getFlagSource(),
-                                                              endpointCertificateSecrets);
+                                                              endpointCertificateSecrets,
+                                                              athenzDomain);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
@@ -247,7 +251,8 @@ public class SessionPreparer {
                                   vespaVersion,
                                   logger,
                                   prepareResult.getFileRegistries(), 
-                                  prepareResult.allocatedHosts());
+                                  prepareResult.allocatedHosts(),
+                                  athenzDomain);
             checkTimeout("write state to zookeeper");
         }
 
@@ -290,13 +295,15 @@ public class SessionPreparer {
                                        Version vespaVersion,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
-                                       AllocatedHosts allocatedHosts) {
+                                       AllocatedHosts allocatedHosts,
+                                       Optional<AthenzDomain> athenzDomain) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             zooKeeperClient.writeApplicationId(applicationId);
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
+            zooKeeperClient.writeAthenzDomain(athenzDomain);
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);
