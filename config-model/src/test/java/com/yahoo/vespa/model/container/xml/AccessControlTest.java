@@ -66,7 +66,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "    <filtering>",
                 "      <access-control domain='my-domain'>",
                 "        <application>my-app</application>",
-                "        <vespa-domain>custom-vespa-domain</vespa-domain>",
                 "      </access-control>",
                 "    </filtering>",
                 "  </http>");
@@ -77,7 +76,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
         assertEquals("Wrong domain.", "my-domain", accessControl.domain);
         assertEquals("Wrong application.", "my-app", accessControl.applicationId);
-        assertEquals("Wrong vespa-domain.", "custom-vespa-domain", accessControl.vespaDomain.get());
     }
 
     @Test

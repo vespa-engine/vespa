@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
@@ -16,7 +15,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,7 +40,6 @@ public final class AccessControl {
     public static final class Builder {
         private String domain;
         private String applicationId;
-        private Optional<String> vespaDomain = Optional.empty();
         private boolean readEnabled = false;
         private boolean writeEnabled = true;
         private final Set<String> excludeBindings = new LinkedHashSet<>();
@@ -71,11 +68,6 @@ public final class AccessControl {
             return this;
         }
 
-        public Builder vespaDomain(String vespaDomain) {
-            this.vespaDomain = Optional.ofNullable(vespaDomain);
-            return this;
-        }
-
         public Builder setHandlers(Collection<Handler<?>> handlers) {
             this.handlers = handlers;
             return this;
@@ -88,7 +80,7 @@ public final class AccessControl {
 
         public AccessControl build() {
             return new AccessControl(domain, applicationId, writeEnabled, readEnabled,
-                                     excludeBindings, vespaDomain, servlets, handlers, logger);
+                                     excludeBindings, servlets, handlers, logger);
         }
     }
 
@@ -96,7 +88,6 @@ public final class AccessControl {
     public final String applicationId;
     public final boolean readEnabled;
     public final boolean writeEnabled;
-    public final Optional<String> vespaDomain;
     private final Set<String> excludedBindings;
     private final Collection<Handler<?>> handlers;
     private final Collection<Servlet> servlets;
@@ -107,7 +98,6 @@ public final class AccessControl {
                           boolean writeEnabled,
                           boolean readEnabled,
                           Set<String> excludedBindings,
-                          Optional<String> vespaDomain,
                           Collection<Servlet> servlets,
                           Collection<Handler<?>> handlers,
                           DeployLogger logger) {
@@ -116,7 +106,6 @@ public final class AccessControl {
         this.readEnabled = readEnabled;
         this.writeEnabled = writeEnabled;
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
-        this.vespaDomain = vespaDomain;
         this.handlers = handlers;
         this.servlets = servlets;
         this.logger = logger;
