@@ -81,7 +81,7 @@ FeatureExecutor &
 MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     if (_field == 0) {
-        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
+        return stash.create<SingleZeroValueExecutor>();
     }
     if (_termIdx != std::numeric_limits<uint32_t>::max()) {
         return stash.create<MatchesExecutor>(_field->id(), queryEnv, _termIdx, _termIdx + 1);

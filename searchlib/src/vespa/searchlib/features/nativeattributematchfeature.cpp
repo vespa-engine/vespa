@@ -51,7 +51,7 @@ NativeAttributeMatchExecutor::createExecutor(const IQueryEnvironment & env,
 {
     Precomputed setup = preComputeSetup(env, params);
     if (setup.first.size() == 0) {
-        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
+        return stash.create<SingleZeroValueExecutor>();
     } else if (setup.first.size() == 1) {
         return stash.create<NativeAttributeMatchExecutorSingle>(setup);
     } else {

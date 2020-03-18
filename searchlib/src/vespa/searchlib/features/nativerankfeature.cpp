@@ -157,7 +157,7 @@ NativeRankBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &
     if (_params.proximityWeight + _params.fieldMatchWeight + _params.attributeMatchWeight > 0) {
         return stash.create<NativeRankExecutor>(_params);
     } else {
-        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
+        return stash.create<SingleZeroValueExecutor>();
     }
 }
 
