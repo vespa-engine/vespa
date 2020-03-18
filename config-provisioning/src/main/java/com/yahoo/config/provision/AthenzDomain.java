@@ -13,7 +13,8 @@ public class AthenzDomain {
     private final String name;
 
     private AthenzDomain(String name) {
-        validateName(name);
+        // TODO bjorncs: Temporarily disable name validation
+        // validateName(name);
         this.name = name;
     }
 
