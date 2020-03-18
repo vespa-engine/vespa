@@ -711,6 +711,7 @@ public class InternalStepRunner implements StepRunner {
             return;
 
         try {
+            logger.log(INFO, "Sending failure notification to " + String.join(", ", recipients));
             mailOf(run, recipients).ifPresent(controller.serviceRegistry().mailer()::send);
         }
         catch (RuntimeException e) {
