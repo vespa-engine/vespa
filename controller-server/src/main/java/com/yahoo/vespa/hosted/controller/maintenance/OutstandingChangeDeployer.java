@@ -20,7 +20,7 @@ public class OutstandingChangeDeployer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Application application : ApplicationList.from(controller().applications().asList())
+        for (Application application : ApplicationList.from(controller().applications().readable())
                                                       .withProductionDeployment()
                                                       .withDeploymentSpec()
                                                       .asList())

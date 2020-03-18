@@ -263,7 +263,7 @@ public class DeploymentTrigger {
 
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
-        return jobs.deploymentStatuses(ApplicationList.from(applications().asList())
+        return jobs.deploymentStatuses(ApplicationList.from(applications().readable())
                                                       .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated.
                                                       .withDeploymentSpec())
                    .withChanges()

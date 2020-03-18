@@ -71,8 +71,8 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void reportDeploymentMetrics() {
-        ApplicationList applications = ApplicationList.from(controller().applications().asList())
-                                                  .withProductionDeployment();
+        ApplicationList applications = ApplicationList.from(controller().applications().readable())
+                                                      .withProductionDeployment();
         DeploymentStatusList deployments = controller().jobController().deploymentStatuses(applications);
 
         metric.set(DEPLOYMENT_FAIL_METRIC, deploymentFailRatio(deployments) * 100, metric.createContext(Map.of()));

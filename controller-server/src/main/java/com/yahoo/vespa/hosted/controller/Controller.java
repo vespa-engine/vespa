@@ -13,8 +13,6 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -55,7 +53,7 @@ import java.util.stream.Collectors;
  * 
  * @author bratseth
  */
-public class Controller extends AbstractComponent implements ApplicationIdSource {
+public class Controller extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(Controller.class.getName());
 
@@ -272,15 +270,4 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("unknown");
     }
 
-    @Override
-    public ApplicationIdSnapshot applicationIdSnapshot() {
-        ApplicationIdSnapshot.Builder snapshotBuilder = new ApplicationIdSnapshot.Builder();
-        tenants().asList().forEach(tenant -> snapshotBuilder.add(tenant.name()));
-        applications().asList().forEach(application -> {
-            snapshotBuilder.add(application.id().tenant(), application.id().application());
-            application.instances().values().stream().map(Instance::id).forEach(snapshotBuilder::add);
-        });
-
-        return snapshotBuilder.build();
-    }
 }

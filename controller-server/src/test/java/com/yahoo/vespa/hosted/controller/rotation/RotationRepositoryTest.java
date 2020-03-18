@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.rotation;
 
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -11,13 +12,13 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -50,16 +51,9 @@ public class RotationRepositoryTest {
             .region("us-west-1")
             .build();
 
-    private DeploymentTester tester;
-    private RotationRepository repository;
-    private DeploymentContext application;
-
-    @Before
-    public void before() {
-        tester = new DeploymentTester(new ControllerTester(rotationsConfig));
-        repository = tester.controller().routing().rotations();
-        application = tester.newDeploymentContext("tenant1", "app1", "default");
-    }
+    private final DeploymentTester tester = new DeploymentTester(new ControllerTester(rotationsConfig));
+    private final RotationRepository repository = tester.controller().routing().rotations();
+    private final DeploymentContext application = tester.newDeploymentContext("tenant1", "app1", "default");
 
     @Test
     public void assigns_and_reuses_rotation() {
@@ -75,16 +69,30 @@ public class RotationRepositoryTest {
                                                                                application.instance(),
                                                                               lock);
             assertSingleRotation(expected, rotations, repository);
+            assertEquals(Set.of(RegionName.from("us-west-1"), RegionName.from("us-east-3")),
+                         application.instance().rotations().get(0).regions());
         }
 
         // Submitting once more assigns same rotation
-        application.submit(applicationPackage);
+        application.submit(applicationPackage).deploy();
         assertEquals(List.of(expected.id()), rotationIds(application.instance().rotations()));
+
+        // Adding region updates rotation
+        var applicationPackage = new ApplicationPackageBuilder()
+                .globalServiceId("foo")
+                .region("us-east-3")
+                .region("us-west-1")
+                .region("us-central-1")
+                .build();
+        application.submit(applicationPackage).deploy();
+        assertEquals(Set.of(RegionName.from("us-west-1"), RegionName.from("us-east-3"),
+                     RegionName.from("us-central-1")),
+                     application.instance().rotations().get(0).regions());
     }
     
     @Test
     public void strips_whitespace_in_rotation_fqdn() {
-        tester = new DeploymentTester(new ControllerTester(rotationsConfigWhitespaces));
+        var tester = new DeploymentTester(new ControllerTester(rotationsConfigWhitespaces));
         RotationRepository repository = tester.controller().routing().rotations();
         var application2 = tester.newDeploymentContext("tenant1", "app2", "default");
 

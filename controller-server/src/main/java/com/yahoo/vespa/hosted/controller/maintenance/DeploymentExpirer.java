@@ -24,7 +24,7 @@ public class DeploymentExpirer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Application application : controller().applications().asList())
+        for (Application application : controller().applications().readable())
             for (Instance instance : application.instances().values())
                 for (Deployment deployment : instance.deployments().values()) {
                     if ( ! isExpired(deployment)) continue;

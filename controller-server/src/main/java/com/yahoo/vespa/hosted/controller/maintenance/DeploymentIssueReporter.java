@@ -51,7 +51,7 @@ public class DeploymentIssueReporter extends Maintainer {
 
     /** Returns the applications to maintain issue status for. */
     private List<Application> applications() {
-        return ApplicationList.from(controller().applications().asList())
+        return ApplicationList.from(controller().applications().readable())
                               .withProjectId()
                               .asList();
     }

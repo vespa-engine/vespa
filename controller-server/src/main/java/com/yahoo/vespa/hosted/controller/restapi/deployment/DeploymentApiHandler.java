@@ -89,7 +89,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         Cursor platformArray = root.setArray("versions");
         var versionStatus = controller.versionStatus();
         var systemVersion = versionStatus.systemVersion().map(VespaVersion::versionNumber).orElse(Vtag.currentVersion);
-        Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()), systemVersion)
+        Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().readable()), systemVersion)
                                                      .asList().stream()
                                                      .flatMap(status -> status.instanceJobs().entrySet().stream())
                                                      .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));

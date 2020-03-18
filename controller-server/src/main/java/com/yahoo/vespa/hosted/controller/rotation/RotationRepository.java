@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.rotation;
 
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -65,27 +66,30 @@ public class RotationRepository {
      * If a rotation is already assigned to the application, that rotation will be returned.
      * If no rotation is assigned, return an available rotation. The caller is responsible for assigning the rotation.
      *
-     * @param deploymentSpec the deployment spec for the application
+     * @param instanceSpec the instance deployment spec
      * @param instance the instance requesting a rotation
      * @param lock lock which must be acquired by the caller
      */
-    private Rotation getOrAssignRotation(DeploymentSpec deploymentSpec, Instance instance, RotationLock lock) {
-        if ( ! instance.rotations().isEmpty()) {
-            return allRotations.get(instance.rotations().get(0).rotationId());
+    private AssignedRotation assignRotationTo(String globalServiceId, DeploymentInstanceSpec instanceSpec,
+                                              Instance instance, RotationLock lock) {
+        RotationId rotation;
+        if (instance.rotations().isEmpty()) {
+            rotation = findAvailableRotation(instance.id(), lock).id();
+        } else {
+            rotation = instance.rotations().get(0).rotationId();
         }
-
-        if (deploymentSpec.requireInstance(instance.name()).globalServiceId().isEmpty()) {
-            throw new IllegalArgumentException("global-service-id is not set in deployment spec for instance '" +
-                                               instance.name() + "'");
-        }
-        long productionZones = deploymentSpec.requireInstance(instance.name()).zones().stream()
-                                                     .filter(zone -> zone.concerns(Environment.prod))
-                                                     .count();
-        if (productionZones < 2) {
+        var productionRegions = instanceSpec.zones().stream()
+                                            .filter(zone -> zone.environment().isProduction())
+                                            .flatMap(zone -> zone.region().stream())
+                                            .collect(Collectors.toSet());
+        if (productionRegions.size() < 2) {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined " +
                                                "in instance '" + instance.name() + "'");
         }
-        return findAvailableRotation(instance.id(), lock);
+        return new AssignedRotation(new ClusterSpec.Id(globalServiceId),
+                                    EndpointId.defaultId(),
+                                    rotation,
+                                    productionRegions);
     }
 
     /**
@@ -107,40 +111,28 @@ public class RotationRepository {
         }
 
         // Only allow one kind of configuration syntax
-        if (     deploymentSpec.requireInstance(instance.name()).globalServiceId().isPresent()
-            && ! deploymentSpec.requireInstance(instance.name()).endpoints().isEmpty()) {
+        var instanceSpec = deploymentSpec.requireInstance(instance.name());
+        if (     instanceSpec.globalServiceId().isPresent()
+            && ! instanceSpec.endpoints().isEmpty()) {
             throw new IllegalArgumentException("Cannot provision rotations with both global-service-id and 'endpoints'");
         }
 
-        // Support the older case of setting global-service-id
-        if (deploymentSpec.requireInstance(instance.name()).globalServiceId().isPresent()) {
-            var regions = deploymentSpec.requireInstance(instance.name()).zones().stream()
-                                                .filter(zone -> zone.environment().isProduction())
-                                                .flatMap(zone -> zone.region().stream())
-                                                .collect(Collectors.toSet());
-
-            var rotation = getOrAssignRotation(deploymentSpec, instance, lock);
-
-            return List.of(
-                    new AssignedRotation(
-                            new ClusterSpec.Id(deploymentSpec.requireInstance(instance.name()).globalServiceId().get()),
-                            EndpointId.defaultId(),
-                            rotation.id(),
-                            regions
-                    )
-            );
+        // Support legacy global-service-id
+        if (instanceSpec.globalServiceId().isPresent()) {
+            return List.of(assignRotationTo(instanceSpec.globalServiceId().get(), instanceSpec, instance, lock));
         }
 
-        return assignRotations(deploymentSpec, instance, lock);
+        return assignRotationsTo(instanceSpec.endpoints(), instance, lock);
     }
 
-    private List<AssignedRotation> assignRotations(DeploymentSpec deploymentSpec, Instance instance, RotationLock lock) {
+    private List<AssignedRotation> assignRotationsTo(List<Endpoint> endpoints, Instance instance, RotationLock lock) {
+        if (endpoints.isEmpty()) return List.of(); // No endpoints declared, nothing to assign.
         var availableRotations = new ArrayList<>(availableRotations(lock).values());
         var assignedRotationsByEndpointId = instance.rotations().stream()
                                                     .collect(Collectors.toMap(AssignedRotation::endpointId,
                                                                               Function.identity()));
         var assignments = new ArrayList<AssignedRotation>();
-        for (var endpoint : deploymentSpec.requireInstance(instance.name()).endpoints()) {
+        for (var endpoint : endpoints) {
             var endpointId = EndpointId.of(endpoint.endpointId());
             var assignedRotation = assignedRotationsByEndpointId.get(endpointId);
             RotationId rotationId;
