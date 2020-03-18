@@ -619,14 +619,22 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     public void singlenode_servicespec_is_used_with_hosted_vespa() throws IOException, SAXException {
         String servicesXml = "<container id='default' version='1.0' />";
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com", "host2.yahoo.com"))
-                .applicationPackage(applicationPackage)
-                .properties(new TestProperties()
-                        .setMultitenant(true)
-                        .setHostedVespa(true))
-                .build());
-        assertEquals(1, model.hostSystem().getHosts().size());
+
+        var tests = Map.of(Environment.test, 1,
+                           Environment.prod, 2);
+        for (var test : tests.entrySet()) {
+            VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                    .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com", "host2.yahoo.com"))
+                    .applicationPackage(applicationPackage)
+                    .zone(new Zone(test.getKey(), RegionName.defaultName()))
+                    .properties(new TestProperties()
+                                        .setMultitenant(true)
+                                        .setHostedVespa(true))
+                    .build());
+            assertEquals("Allocates " + test.getValue() + " node(s) in " + test.getKey(),
+                         (int) test.getValue(),
+                         model.hostSystem().getHosts().size());
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
