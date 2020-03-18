@@ -222,6 +222,20 @@ RankProgram::setup(const MatchData &md,
     assert(_executors.size() == specs.size());
     LOG(debug, "Num executors = %ld, hot stash = %ld, cold stash = %ld, match data fields = %d",
                _executors.size(), _hot_stash.count_used(), _cold_stash.count_used(), md.getNumTermFields());
+    if (LOG_WOULD_LOG(debug)) {
+        vespalib::hash_map<vespalib::string, size_t> executorStats;
+        for (const FeatureExecutor * executor : _executors) {
+            vespalib::string name = executor->getClassName();
+            if (executorStats.find(name) == executorStats.end()) {
+                executorStats[name] = 1;
+            } else {
+                executorStats[name]++;
+            }
+        }
+        for (const auto & stat : executorStats) {
+            LOG(debug, "There are %ld executors of type %s", stat.second, stat.first.c_str());
+        }
+    }
 }
 
 FeatureResolver
