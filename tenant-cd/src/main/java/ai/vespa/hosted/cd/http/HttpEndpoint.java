@@ -56,9 +56,9 @@ public class HttpEndpoint implements Endpoint {
     @Override
     public HttpRequest.Builder request(String path, Map<String, String> properties) {
         return HttpRequest.newBuilder(endpoint.resolve(path +
-                                                       properties.entrySet().stream()
-                                                                 .map(entry -> encode(entry.getKey(), UTF_8) + "=" + encode(entry.getValue(), UTF_8))
-                                                                 .collect(Collectors.joining("&", "?", ""))));
+                                                       (properties.isEmpty() ? "" : properties.entrySet().stream()
+                                                                                              .map(entry -> encode(entry.getKey(), UTF_8) + "=" + encode(entry.getValue(), UTF_8))
+                                                                                              .collect(Collectors.joining("&", "?", "")))));
     }
 
 }
