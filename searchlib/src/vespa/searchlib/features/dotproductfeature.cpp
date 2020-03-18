@@ -146,7 +146,7 @@ DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 
 namespace {
 
-class DotProductExecutorByEnum : public fef::FeatureExecutor {
+class DotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
     using V  = VectorBase<EnumHandle, EnumHandle, feature_t>;
 private:
@@ -182,7 +182,8 @@ DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * 
 
 DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
 
-void DotProductExecutorByEnum::execute(uint32_t docId) {
+void
+DotProductExecutorByEnum::execute(uint32_t docId) {
     feature_t val = 0;
     const IWeightedIndexVector::WeightedIndex *values(nullptr);
     uint32_t sz = _attribute->getEnumHandles(docId, values);
@@ -194,6 +195,32 @@ void DotProductExecutorByEnum::execute(uint32_t docId) {
     }
     outputs().set_number(0, val);
 }
+
+class SingleDotProductByEnum final : public fef::FeatureExecutor {
+public:
+    using V  = VectorBase<EnumHandle, EnumHandle, feature_t>;
+    SingleDotProductByEnum(const IWeightedIndexVector * attribute, EnumHandle key, feature_t value)
+        : _attribute(attribute),
+          _key(key),
+          _value(value)
+    {}
+
+    void execute(uint32_t docId) override {
+        const IWeightedIndexVector::WeightedIndex *values(nullptr);
+        uint32_t sz = _attribute->getEnumHandles(docId, values);
+        for (size_t i = 0; i < sz; ++i) {
+            if (values[i].value().ref() == _key) {
+                outputs().set_number(0, values[i].weight()*_value);
+                return;
+            }
+        }
+        outputs().set_number(0, 0);
+    }
+private:
+    const IWeightedIndexVector * _attribute;
+    EnumHandle                   _key;
+    feature_t                    _value;
+};
 
 }
 
@@ -642,6 +669,10 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
             }
             const auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
             if (supportsGetEnumHandles(getEnumHandles)) {
+                if (vector.getVector().size() == 1) {
+                    const auto & elem = vector.getVector()[0];
+                    return stash.create<SingleDotProductByEnum>(getEnumHandles, elem.first, elem.second);
+                }
                 return stash.create<DotProductExecutorByEnum>(getEnumHandles, vector);
             }
             return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, vector);
@@ -732,6 +763,10 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
         vector->syncMap();
         auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
         if (supportsGetEnumHandles(getEnumHandles)) {
+            if (vector->getVector().size() == 1) {
+                const auto & elem = vector->getVector()[0];
+                return stash.create<SingleDotProductByEnum>(getEnumHandles, elem.first, elem.second);
+            }
             return stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
         }
         return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, std::move(vector));
