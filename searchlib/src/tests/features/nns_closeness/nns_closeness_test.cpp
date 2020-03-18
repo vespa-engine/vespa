@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/searchlib/fef/test/labels.h>
 #include <vespa/searchlib/features/closenessfeature.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
@@ -44,26 +45,6 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
-};
-
-struct Labels {
-    virtual void inject(Properties &p) const = 0;
-    virtual ~Labels() {}
-};
-struct NoLabel : public Labels {
-    virtual void inject(Properties &) const override {}    
-};
-struct SingleLabel : public Labels {
-    vespalib::string label;
-    uint32_t uid;
-    SingleLabel(const vespalib::string &l, uint32_t x) : label(l), uid(x) {}
-    virtual void inject(Properties &p) const override {
-        vespalib::asciistream key;
-        key << "vespa.label." << label << ".id";
-        vespalib::asciistream value;
-        value << uid;
-        p.add(key.str(), value.str());
-    }
 };
 
 struct RankFixture : BlueprintFactoryFixture, IndexFixture {

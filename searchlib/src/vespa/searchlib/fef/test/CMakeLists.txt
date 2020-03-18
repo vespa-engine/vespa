@@ -7,6 +7,7 @@ vespa_add_library(searchlib_fef_test OBJECT
     ftlib.cpp
     indexenvironment.cpp
     indexenvironmentbuilder.cpp
+    labels.cpp
     matchdatabuilder.cpp
     mock_attribute_context.cpp
     queryenvironment.cpp
