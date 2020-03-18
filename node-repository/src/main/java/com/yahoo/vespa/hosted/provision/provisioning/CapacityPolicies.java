@@ -31,12 +31,12 @@ public class CapacityPolicies {
         this.isUsingAdvertisedResources = zone.cloud().value().equals("aws");
     }
 
-    public int decideSize(Capacity capacity, ClusterSpec.Type clusterType, ApplicationId application) {
+    public int decideSize(Capacity capacity, ClusterSpec cluster, ApplicationId application) {
         int requestedNodes = capacity.nodeCount();
 
         if (application.instance().isTester()) return 1;
 
-        ensureRedundancy(requestedNodes, clusterType, capacity.canFail());
+        ensureRedundancy(requestedNodes, cluster, capacity.canFail());
 
         if (capacity.isRequired()) return requestedNodes;
 
@@ -105,12 +105,12 @@ public class CapacityPolicies {
      *
      * @throws IllegalArgumentException if only one node is requested and we can fail
      */
-    private void ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType, boolean canFail) {
+    private void ensureRedundancy(int nodeCount, ClusterSpec cluster, boolean canFail) {
         if (canFail &&
             nodeCount == 1 &&
-            requiresRedundancy(clusterType) &&
+            requiresRedundancy(cluster.type()) &&
             zone.environment().isProduction())
-            throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
+            throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy. Not fulfilled for " + cluster);
     }
 
     private static boolean requiresRedundancy(ClusterSpec.Type clusterType) {
