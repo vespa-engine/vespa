@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author bratseth
  */
-public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase {
+public class RankingExpressionInliningTestCase extends SchemaTestCase {
 
     @Test
     public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {

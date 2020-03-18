@@ -4,6 +4,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 
@@ -26,11 +27,13 @@ public class DeploymentData {
     private final Set<ContainerEndpoint> containerEndpoints;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
     private final Optional<DockerImage> dockerImageRepo;
+    private final Optional<AthenzDomain> athenzDomain;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                          Optional<DockerImage> dockerImageRepo) {
+                          Optional<DockerImage> dockerImageRepo,
+                          Optional<AthenzDomain> athenzDomain) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
@@ -38,6 +41,7 @@ public class DeploymentData {
         this.containerEndpoints = requireNonNull(containerEndpoints);
         this.endpointCertificateMetadata = requireNonNull(endpointCertificateMetadata);
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
+        this.athenzDomain = athenzDomain;
     }
 
     public ApplicationId instance() {
@@ -66,5 +70,9 @@ public class DeploymentData {
 
     public Optional<DockerImage> dockerImageRepo() {
         return dockerImageRepo;
+    }
+
+    public Optional<AthenzDomain> athenzDomain() {
+        return athenzDomain;
     }
 }

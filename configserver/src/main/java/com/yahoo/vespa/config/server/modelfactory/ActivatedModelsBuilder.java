@@ -140,7 +140,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                flagSource,
                                                new EndpointCertificateMetadataStore(curator, TenantRepository.getTenantPath(tenant))
                                                        .readEndpointCertificateMetadata(applicationId)
-                                                       .flatMap(new EndpointCertificateRetriever(secretStore)::readEndpointCertificateSecrets));
+                                                       .flatMap(new EndpointCertificateRetriever(secretStore)::readEndpointCertificateSecrets),
+                                               zkClient.readAthenzDomain());
 
     }
 

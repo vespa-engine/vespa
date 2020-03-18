@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.slime.Slime;
@@ -36,6 +37,7 @@ public final class PrepareParams {
     static final String TLS_SECRETS_KEY_NAME_PARAM_NAME = "tlsSecretsKeyName";
     static final String ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME = "endpointCertificateMetadata";
     static final String DOCKER_IMAGE_REPOSITORY = "dockerImageRepository";
+    static final String ATHENZ_DOMAIN = "athenzDomain";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -48,12 +50,13 @@ public final class PrepareParams {
     private final Optional<String> tlsSecretsKeyName;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
     private final Optional<String> dockerImageRepository;
+    private final Optional<AthenzDomain> athenzDomain;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
                           List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                          Optional<String> dockerImageRepository) {
+                          Optional<String> dockerImageRepository, Optional<AthenzDomain> athenzDomain) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -65,6 +68,7 @@ public final class PrepareParams {
         this.tlsSecretsKeyName = tlsSecretsKeyName;
         this.endpointCertificateMetadata = endpointCertificateMetadata;
         this.dockerImageRepository = dockerImageRepository;
+        this.athenzDomain = athenzDomain;
     }
 
     public static class Builder {
@@ -80,6 +84,7 @@ public final class PrepareParams {
         private Optional<String> tlsSecretsKeyName = Optional.empty();
         private Optional<EndpointCertificateMetadata> endpointCertificateMetadata = Optional.empty();
         private Optional<String> dockerImageRepository = Optional.empty();
+        private Optional<AthenzDomain> athenzDomain = Optional.empty();
 
         public Builder() { }
 
@@ -153,10 +158,15 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder athenzDomain(String athenzDomain) {
+            this.athenzDomain = Optional.ofNullable(athenzDomain).map(AthenzDomain::from);
+            return this;
+        }
+
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
                                      verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName,
-                                     endpointCertificateMetadata, dockerImageRepository);
+                                     endpointCertificateMetadata, dockerImageRepository, athenzDomain);
         }
 
     }
@@ -172,6 +182,7 @@ public final class PrepareParams {
                             .tlsSecretsKeyName(request.getProperty(TLS_SECRETS_KEY_NAME_PARAM_NAME))
                             .endpointCertificateMetadata(request.getProperty(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME))
                             .dockerImageRepository(request.getProperty(DOCKER_IMAGE_REPOSITORY))
+                            .athenzDomain(request.getProperty(ATHENZ_DOMAIN))
                             .build();
     }
 
@@ -236,5 +247,7 @@ public final class PrepareParams {
     public Optional<String> dockerImageRepository() {
         return dockerImageRepository;
     }
+
+    public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
 }

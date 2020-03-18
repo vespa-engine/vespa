@@ -39,7 +39,6 @@ public final class AccessControl {
 
     public static final class Builder {
         private String domain;
-        private String applicationId;
         private boolean readEnabled = false;
         private boolean writeEnabled = true;
         private final Set<String> excludeBindings = new LinkedHashSet<>();
@@ -47,9 +46,8 @@ public final class AccessControl {
         private Collection<Servlet> servlets = Collections.emptyList();
         private final DeployLogger logger;
 
-        public Builder(String domain, String applicationId, DeployLogger logger) {
+        public Builder(String domain, DeployLogger logger) {
             this.domain = domain;
-            this.applicationId = applicationId;
             this.logger = logger;
         }
 
@@ -79,13 +77,12 @@ public final class AccessControl {
         }
 
         public AccessControl build() {
-            return new AccessControl(domain, applicationId, writeEnabled, readEnabled,
+            return new AccessControl(domain, writeEnabled, readEnabled,
                                      excludeBindings, servlets, handlers, logger);
         }
     }
 
     public final String domain;
-    public final String applicationId;
     public final boolean readEnabled;
     public final boolean writeEnabled;
     private final Set<String> excludedBindings;
@@ -94,7 +91,6 @@ public final class AccessControl {
     private final DeployLogger logger;
 
     private AccessControl(String domain,
-                          String applicationId,
                           boolean writeEnabled,
                           boolean readEnabled,
                           Set<String> excludedBindings,
@@ -102,7 +98,6 @@ public final class AccessControl {
                           Collection<Handler<?>> handlers,
                           DeployLogger logger) {
         this.domain = domain;
-        this.applicationId = applicationId;
         this.readEnabled = readEnabled;
         this.writeEnabled = writeEnabled;
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);

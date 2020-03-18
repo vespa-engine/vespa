@@ -14,6 +14,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
@@ -144,6 +145,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useNewAthenzFilter;
         private final boolean usePhraseSegmenting;
         private final String proxyProtocol;
+        private final Optional<AthenzDomain> athenzDomain;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -157,7 +159,8 @@ public class ModelContextImpl implements ModelContext {
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
                           FlagSource flagSource,
-                          Optional<EndpointCertificateSecrets> endpointCertificateSecrets) {
+                          Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
+                          Optional<AthenzDomain> athenzDomain) {
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -182,6 +185,7 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.athenzDomain = athenzDomain;
         }
 
         @Override
@@ -244,6 +248,9 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public String proxyProtocol() { return proxyProtocol; }
+
+        @Override
+        public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
     }
 
 }

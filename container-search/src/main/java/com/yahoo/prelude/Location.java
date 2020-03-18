@@ -126,8 +126,8 @@ public class Location {
         if (ns < -90.1 || ns > +90.1) {
             throw new IllegalArgumentException("n/s location must be in range [-90,+90]");
         }
-        if (radius_in_degrees < 0 || radius_in_degrees > 180.0) {
-            throw new IllegalArgumentException("radius must be in range [0,180] degrees, approximately upto 20000km");
+        if (radius_in_degrees < 0) {
+            pr = 512 * 1024 * 1024;
         }
         x = px;
         y = py;

@@ -90,7 +90,6 @@
           <exclude>
             <binding>http//*/foo/*</binding>
           </exclude>
-          <application>my-app</application>
           <vespa-domain>vespa.vespa.cd</vespa-domain>
         </access-control>
 

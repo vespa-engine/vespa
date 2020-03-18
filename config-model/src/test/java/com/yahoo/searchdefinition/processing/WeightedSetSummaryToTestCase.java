@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -12,7 +12,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertNotNull;
 
 /** @author bratseth */
-public class WeightedSetSummaryToTestCase extends SearchDefinitionTestCase {
+public class WeightedSetSummaryToTestCase extends SchemaTestCase {
 
     @Test
     public void testRequireThatImplicitFieldsAreCreated() throws IOException, ParseException {

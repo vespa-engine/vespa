@@ -16,8 +16,8 @@ import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SearchCluster;
-import com.yahoo.vespa.model.search.SearchDefinition;
-import com.yahoo.vespa.model.search.SearchDefinitionXMLHandler;
+import com.yahoo.vespa.model.search.NamedSchema;
+import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 import com.yahoo.vespa.model.search.TransactionLogServer;
@@ -136,7 +136,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
         private void buildIndexedSearchCluster(DeployState deployState, ModelElement clusterElem,
                                                String clusterName, ContentSearchCluster search) {
-            List<ModelElement> indexedDefs = getIndexedSearchDefinitions(clusterElem);
+            List<ModelElement> indexedDefs = getIndexedSchemas(clusterElem);
             if (!indexedDefs.isEmpty()) {
                 IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, deployState);
                 isc.setRoutingSelector(clusterElem.childAsString("documents.selection"));
@@ -150,7 +150,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             }
         }
 
-        private List<ModelElement> getIndexedSearchDefinitions(ModelElement clusterElem) {
+        private List<ModelElement> getIndexedSchemas(ModelElement clusterElem) {
             List<ModelElement> indexedDefs = new ArrayList<>();
             ModelElement docElem = clusterElem.child("documents");
             if (docElem == null) {
@@ -188,28 +188,28 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     }
 
     private void addSearchCluster(DeployState deployState, SearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
-        addSearchDefinitions(deployState, documentDefs, cluster);
+        addSchemas(deployState, documentDefs, cluster);
 
         if (queryTimeout != null) {
             cluster.setQueryTimeout(queryTimeout);
         }
         cluster.defaultDocumentsConfig();
-        cluster.deriveSearchDefinitions(deployState);
+        cluster.deriveSchemas(deployState);
         addCluster(cluster);
     }
 
-    private void addSearchDefinitions(DeployState deployState, List<ModelElement> searchDefs, AbstractSearchCluster sc) {
+    private void addSchemas(DeployState deployState, List<ModelElement> searchDefs, AbstractSearchCluster sc) {
         for (ModelElement e : searchDefs) {
-            SearchDefinitionXMLHandler searchDefinitionXMLHandler = new SearchDefinitionXMLHandler(e);
-            SearchDefinition searchDefinition =
-                    searchDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSearchDefinitions());
+            SchemaDefinitionXMLHandler schemaDefinitionXMLHandler = new SchemaDefinitionXMLHandler(e);
+            NamedSchema searchDefinition =
+                    schemaDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSchemas());
             if (searchDefinition == null)
                 throw new RuntimeException("Search definition parsing error or file does not exist: '" +
-                        searchDefinitionXMLHandler.getName() + "'");
+                                           schemaDefinitionXMLHandler.getName() + "'");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
-            sc.getLocalSDS().add(new AbstractSearchCluster.SearchDefinitionSpec(searchDefinition,
-                    UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
+            sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(searchDefinition,
+                                                                      UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
             //need to get the document names from this sdfile
             sc.addDocumentNames(searchDefinition);
         }

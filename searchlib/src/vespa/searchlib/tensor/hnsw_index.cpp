@@ -28,6 +28,18 @@ bool has_link_to(vespalib::ConstArrayRef<uint32_t> links, uint32_t id) {
     return false;
 }
 
+struct PairDist {
+    uint32_t id_first;
+    uint32_t id_second;
+    double distance;
+    PairDist(uint32_t i1, uint32_t i2, double d)
+      : id_first(i1), id_second(i2), distance(d)
+    {}
+};
+bool operator< (const PairDist &a, const PairDist &b) {
+    return (a.distance < b.distance);
+}
+
 }
 
 search::datastore::ArrayStoreConfig
@@ -99,7 +111,7 @@ HnswIndex::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& li
 }
 
 bool
-HnswIndex::have_closer_distance(HnswCandidate candidate, const LinkArray& result) const
+HnswIndex::have_closer_distance(HnswCandidate candidate, const LinkArrayRef& result) const
 {
     for (uint32_t result_docid : result) {
         double dist = calc_distance(candidate.docid, result_docid);
@@ -130,7 +142,6 @@ HnswIndex::SelectResult
 HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
     SelectResult result;
-    bool need_filtering = neighbors.size() > max_links;
     NearestPriQ nearest;
     for (const auto& entry : neighbors) {
         nearest.push(entry);
@@ -138,7 +149,7 @@ HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint
     while (!nearest.empty()) {
         auto candidate = nearest.top();
         nearest.pop();
-        if (need_filtering && have_closer_distance(candidate, result.used)) {
+        if (have_closer_distance(candidate, result.used)) {
             result.unused.push_back(candidate.docid);
             continue;
         }
@@ -189,9 +200,7 @@ HnswIndex::connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint3
     set_link_array(docid, level, neighbors);
     for (uint32_t neighbor_docid : neighbors) {
         auto old_links = get_link_array(neighbor_docid, level);
-        LinkArray new_links(old_links.begin(), old_links.end());
-        new_links.push_back(docid);
-        set_link_array(neighbor_docid, level, new_links);
+        add_link_to(neighbor_docid, level, old_links, docid);
     }
     for (uint32_t neighbor_docid : neighbors) {
         shrink_if_needed(neighbor_docid, level);
@@ -335,6 +344,32 @@ HnswIndex::add_document(uint32_t docid)
 }
 
 void
+HnswIndex::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
+{
+    std::vector<PairDist> pairs;
+    for (uint32_t i = 0; i + 1 < cluster.size(); ++i) {
+        uint32_t n_id_1 = cluster[i];
+        LinkArrayRef n_list_1 = get_link_array(n_id_1, level);
+        for (uint32_t j = i + 1; j < cluster.size(); ++j) {
+            uint32_t n_id_2 = cluster[j];
+            if (has_link_to(n_list_1, n_id_2)) continue;
+            pairs.emplace_back(n_id_1, n_id_2, calc_distance(n_id_1, n_id_2));
+        }
+    }
+    std::sort(pairs.begin(), pairs.end());
+    for (const PairDist & pair : pairs) {
+        LinkArrayRef old_links_1 = get_link_array(pair.id_first, level);
+        if (old_links_1.size() >= _cfg.max_links_on_inserts()) continue;
+
+        LinkArrayRef old_links_2 = get_link_array(pair.id_second, level);
+        if (old_links_2.size() >= _cfg.max_links_on_inserts()) continue;
+
+        add_link_to(pair.id_first, level, old_links_1, pair.id_second);
+        add_link_to(pair.id_second, level, old_links_2, pair.id_first);
+    }
+}
+
+void
 HnswIndex::remove_document(uint32_t docid)
 {
     bool need_new_entrypoint = (docid == _entry_docid);
@@ -350,6 +385,7 @@ HnswIndex::remove_document(uint32_t docid)
             }
             remove_link_to(neighbor_id, docid, level);
         }
+        mutual_reconnect(my_links, level);
         set_link_array(docid, level, empty);
     }
     if (need_new_entrypoint) {

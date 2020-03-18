@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.logging.Level;
@@ -41,7 +42,8 @@ public class NodeMetricsDbMaintainer extends Maintainer {
             catch (Exception e) {
                 // TODO: Don't warn if this only happens occasionally
                 if (warnings++ < maxWarningsPerInvocation)
-                    log.log(Level.WARNING, "Could not update metrics for " + application, e);
+                    log.log(Level.WARNING, "Could not update metrics for " + application,
+                            Exceptions.toMessageString(e));
             }
         }
         nodeMetricsDb.gc(nodeRepository().clock());

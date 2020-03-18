@@ -201,7 +201,7 @@ public class ConfigValueChangeValidatorTest {
                         "       </engine>\n" +
                         "   </content>\n" +
                         "</services>",
-                createSearchDefinitions(docTypes)
+                createSchemas(docTypes)
         ).create();
     }
 
@@ -213,7 +213,7 @@ public class ConfigValueChangeValidatorTest {
                 "</documents>";
     }
 
-    private static List<String> createSearchDefinitions(List<String> docTypes) {
+    private static List<String> createSchemas(List<String> docTypes) {
         return docTypes.stream()
                 .map(type -> "search " + type + " { document " + type + " { } }")
                 .collect(Collectors.toList());
