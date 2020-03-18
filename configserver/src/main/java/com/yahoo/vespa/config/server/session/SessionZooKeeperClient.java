@@ -228,7 +228,7 @@ public class SessionZooKeeperClient {
     }
 
     public void writeAthenzDomain(Optional<AthenzDomain> athenzDomain) {
-        athenzDomain.ifPresent(domain -> configCurator.putData(athenzDomainPath(), domain.toString()));
+        athenzDomain.ifPresent(domain -> configCurator.putData(athenzDomainPath(), domain.value()));
     }
 
     public Optional<AthenzDomain> readAthenzDomain() {
