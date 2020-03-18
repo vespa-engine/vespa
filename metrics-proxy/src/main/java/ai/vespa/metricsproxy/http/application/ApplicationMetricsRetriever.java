@@ -46,11 +46,11 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
 
     private final HttpClient httpClient = createHttpClient();
     private final List<NodeMetricsClient> clients;
+    private final ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM);
 
     // Non-final for testing
     private Duration taskTimeout;
 
-    private ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM);
 
     @Inject
     public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
@@ -82,8 +82,6 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
 
         } catch (Exception e) {
             // Since the task is a ForkJoinTask, we don't need special handling of InterruptedException
-            forkJoinPool.shutdownNow();
-            forkJoinPool = new ForkJoinPool(PARALLELISM);
             throw new ApplicationMetricsException("Failed retrieving metrics.", e);
         }
     }
