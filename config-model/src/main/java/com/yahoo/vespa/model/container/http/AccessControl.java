@@ -23,7 +23,6 @@ import java.util.stream.Stream;
  * Helper class for http access control.
  *
  * @author gjoranv
- * @author bjorncs
  */
 public final class AccessControl {
 
@@ -67,9 +66,13 @@ public final class AccessControl {
             return this;
         }
 
-        public Builder setHandlers(ApplicationContainerCluster cluster) {
-            this.handlers = cluster.getHandlers();
-            this.servlets = cluster.getAllServlets();
+        public Builder setHandlers(Collection<Handler<?>> handlers) {
+            this.handlers = handlers;
+            return this;
+        }
+
+        public Builder setServlets(Collection<Servlet> servlets) {
+            this.servlets = servlets;
             return this;
         }
 
@@ -108,10 +111,6 @@ public final class AccessControl {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public static boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
-        return cluster.getHandlers().stream().anyMatch(AccessControl::handlerNeedsProtection);
-    }
-
     private Stream<Binding> getHandlerBindings() {
         return handlers.stream()
                         .filter(this::shouldHandlerBeProtected)
@@ -131,7 +130,7 @@ public final class AccessControl {
                 && handler.getServerBindings().stream().noneMatch(excludedBindings::contains);
     }
 
-    private static boolean isBuiltinGetOnly(Handler<?> handler) {
+    public static boolean isBuiltinGetOnly(Handler<?> handler) {
         return UNPROTECTED_HANDLERS.contains(handler.getClassId().getName());
     }
 
@@ -145,6 +144,10 @@ public final class AccessControl {
 
     private static Stream<String> servletBindings(Servlet servlet) {
         return Stream.of("http://*/").map(protocol -> protocol + servlet.bindingPath);
+    }
+
+    public static boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
+        return cluster.getHandlers().stream().anyMatch(AccessControl::handlerNeedsProtection);
     }
 
     private static boolean handlerNeedsProtection(Handler<?> handler) {

@@ -19,7 +19,6 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
@@ -58,11 +57,9 @@ import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
-import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
@@ -91,7 +88,6 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -196,7 +192,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addStatusHandlers(cluster, context.getDeployState().isHosted());
         addUserHandlers(deployState, cluster, spec);
 
-        addHttp(deployState, spec, cluster, context);
+        addHttp(deployState, spec, cluster, context.getApplicationType(), deployState.getProperties().applicationId().instance().isTester());
 
         addAccessLogs(deployState, cluster, spec);
         addRoutingAliases(cluster, spec, deployState.zone().environment());
@@ -318,18 +314,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
 
-    private void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
+    private void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ApplicationType applicationType, boolean isTesterApplication) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
-        if (isHostedTenantApplication(context)) {
-            addHostedImplicitHttpIfNotPresent(deployState, cluster);
+        if (deployState.isHosted() && applicationType == ApplicationType.DEFAULT && !isTesterApplication) {
             addAdditionalHostedConnector(deployState, cluster);
         }
     }
 
     private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
+        addImplicitHttpIfNotPresent(cluster);
         JettyHttpServer server = cluster.getHttp().getHttpServer();
         String serverName = server.getComponentId().getName();
 
@@ -350,17 +346,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private static boolean isHostedTenantApplication(ConfigModelContext context) {
-        var deployState = context.getDeployState();
-        boolean isTesterApplication = deployState.getProperties().applicationId().instance().isTester();
-        return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
-    }
-
-    private static void addHostedImplicitHttpIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
+    private static void addImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
         if(cluster.getHttp() == null) {
-            Http http = deployState.getProperties().athenzDomain()
-                    .map(tenantDomain -> createHostedImplicitHttpWithAccessControl(deployState, tenantDomain, cluster))
-                    .orElseGet(() -> createHostedImplicitHttpWithoutAccessControl(cluster));
+            Http http = new Http(Collections.emptyList());
+            http.setFilterChains(new FilterChains(cluster));
             cluster.setHttp(http);
         }
         if(cluster.getHttp().getHttpServer() == null) {
@@ -368,27 +357,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.getHttp().setHttpServer(defaultHttpServer);
             defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
         }
-    }
-
-    private static Http createHostedImplicitHttpWithAccessControl(
-            DeployState deployState, AthenzDomain tenantDomain, ApplicationContainerCluster cluster) {
-        AccessControl accessControl =
-                new AccessControl.Builder(tenantDomain.value(), deployState.getDeployLogger())
-                        .setHandlers(cluster)
-                        .readEnabled(false)
-                        .writeEnabled(false)
-                        .build();
-        Http http = new Http(accessControl.getBindings(), accessControl);
-        FilterChains filterChains = new FilterChains(cluster);
-        filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
-        http.setFilterChains(filterChains);
-        return http;
-    }
-
-    private static Http createHostedImplicitHttpWithoutAccessControl(ApplicationContainerCluster cluster) {
-        Http http = new Http(Collections.emptyList());
-        http.setFilterChains(new FilterChains(cluster));
-        return http;
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
