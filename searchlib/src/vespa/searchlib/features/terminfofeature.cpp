@@ -39,9 +39,7 @@ TermInfoBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::S
     if (queryEnv.getNumTerms() > _termIdx) {
         queryIdx = _termIdx;
     }
-    std::vector<feature_t> values;
-    values.push_back(queryIdx);
-    return stash.create<ValueExecutor>(values);
+    return stash.create<SingleValueExecutor>(queryIdx);
 }
 
 }
