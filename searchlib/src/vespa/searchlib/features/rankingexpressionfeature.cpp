@@ -292,6 +292,9 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     }
     ValueType root_type = node_types.get_type(rank_function->root());
     if (root_type.is_error()) {
+        for (const auto &type_error: node_types.errors()) {
+            LOG(warning, "type error: %s", type_error.c_str());
+        }
         return fail("rank expression contains type errors: %s\n", script.c_str());
     }
     auto compile_issues = CompiledFunction::detect_issues(*rank_function);
