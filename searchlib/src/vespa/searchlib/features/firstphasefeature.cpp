@@ -42,10 +42,14 @@ bool
 FirstPhaseBlueprint::setup(const IIndexEnvironment & env,
                            const ParameterList &)
 {
-    describeOutput("score", "The ranking score for first phase.",
-                   defineInput(indexproperties::rank::FirstPhase::lookup(env.getProperties()),
-                               AcceptInput::ANY));
-    return true;
+    if (auto maybe_input = defineInput(indexproperties::rank::FirstPhase::lookup(env.getProperties()),
+                                       AcceptInput::ANY))
+    {
+        describeOutput("score", "The ranking score for first phase.", maybe_input.value());
+        return true;
+    } else {
+        return false;
+    }
 }
 
 FeatureExecutor &

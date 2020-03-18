@@ -62,9 +62,9 @@ ConstantBlueprint::setup(const IIndexEnvironment &env,
     _key = params[0].getValue();
     _value = env.getConstantValue(_key);
     if (!_value) {
-        LOG(error, "Constant '%s' not found", _key.c_str());
+        fail("Constant '%s' not found", _key.c_str());
     } else if (_value->type().is_error()) {
-        LOG(error, "Constant '%s' has invalid type", _key.c_str());
+        fail("Constant '%s' has invalid type", _key.c_str());
     }
     FeatureType output_type = _value ?
                               FeatureType::object(_value->type()) :

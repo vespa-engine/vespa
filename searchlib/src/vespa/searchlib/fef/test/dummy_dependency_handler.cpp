@@ -13,7 +13,8 @@ DummyDependencyHandler::DummyDependencyHandler(Blueprint &blueprint_in)
       input(),
       accept_input(),
       output(),
-      output_type()
+      output_type(),
+      fail_msg()
 {
     blueprint.attach_dependency_handler(*this);
 }
@@ -29,7 +30,7 @@ DummyDependencyHandler::define_object_input(const vespalib::string &name, const 
     object_type_map.emplace(name, FeatureType::object(type));
 }
 
-const FeatureType &
+std::optional<FeatureType>
 DummyDependencyHandler::resolve_input(const vespalib::string &feature_name, Blueprint::AcceptInput accept_type)
 {
     input.push_back(feature_name);
@@ -38,19 +39,28 @@ DummyDependencyHandler::resolve_input(const vespalib::string &feature_name, Blue
     if (pos == object_type_map.end()) {
         if (accept_type == Blueprint::AcceptInput::OBJECT) {
             accept_type_mismatch = true;
+            return std::nullopt;
         }
         return FeatureType::number();
     }
     if (accept_type == Blueprint::AcceptInput::NUMBER) {
         accept_type_mismatch = true;
+        return std::nullopt;
     }
     return pos->second;
 }
 
-void DummyDependencyHandler::define_output(const vespalib::string &output_name, const FeatureType &type)
+void
+DummyDependencyHandler::define_output(const vespalib::string &output_name, FeatureType type)
 {
     output.push_back(output_name);
-    output_type.push_back(type);
+    output_type.push_back(std::move(type));
+}
+
+void
+DummyDependencyHandler::fail(const vespalib::string &msg)
+{
+    fail_msg = msg;
 }
 
 } // namespace search::fef::test
