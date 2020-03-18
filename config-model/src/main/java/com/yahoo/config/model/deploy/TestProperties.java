@@ -8,7 +8,6 @@ import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
@@ -44,7 +43,6 @@ public class TestProperties implements ModelContext.Properties {
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private boolean useNewAthenzFilter = false;
     private boolean usePhraseSegmenting = false;
-    private AthenzDomain athenzDomain;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -66,7 +64,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useBucketSpaceMetric() { return true; }
     @Override public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
     @Override public boolean usePhraseSegmenting() { return usePhraseSegmenting; }
-    @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
@@ -120,11 +117,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUsePhraseSegmenting(boolean phraseSegmenting) {
         this.usePhraseSegmenting = phraseSegmenting;
-        return this;
-    }
-
-    public TestProperties setAthenzDomain(AthenzDomain domain) {
-        this.athenzDomain = domain;
         return this;
     }
 
