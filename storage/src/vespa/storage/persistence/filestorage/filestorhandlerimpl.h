@@ -207,8 +207,12 @@ public:
             // and the stripe an operation ends up on.
             return bucket.getBucketId().getId() * 1099511628211ULL;
         }
+        // We make a fairly reasonable assumption that there will be less than 64k stripes.
+        uint16_t stripe_index(const document::Bucket& bucket) const noexcept {
+            return static_cast<uint16_t>(dispersed_bucket_bits(bucket) % _stripes.size());
+        }
         Stripe & stripe(const document::Bucket & bucket) {
-            return _stripes[dispersed_bucket_bits(bucket) % _stripes.size()];
+            return _stripes[stripe_index(bucket)];
         }
         std::vector<Stripe> & getStripes() { return _stripes; }
     private:
