@@ -946,20 +946,31 @@ public class ControllerTest {
         var db = new MockCuratorDb();
         var tester = new DeploymentTester(new ControllerTester(db));
 
-        // Create two applications
-        tester.newDeploymentContext("t1", "a1", "default");
-        tester.newDeploymentContext("t2", "a2", "default");
+        // Create and deploy two applications
+        var app1 = tester.newDeploymentContext("t1", "a1", "default")
+                         .submit()
+                         .deploy();
+        var app2 = tester.newDeploymentContext("t2", "a2", "default")
+                         .submit()
+                         .deploy();
         assertEquals(2, tester.applications().readable().size());
 
         // Write invalid data to one application
-        db.curator().set(Path.fromString("/controller/v1/applications/t2:a2"), new byte[]{(byte) 0xDE, (byte) 0xAD});
+        db.curator().set(Path.fromString("/controller/v1/applications/" + app2.application().id().serialized()),
+                         new byte[]{(byte) 0xDE, (byte) 0xAD});
+
+        // Can read the remaining readable
         assertEquals(1, tester.applications().readable().size());
 
+        // Unconditionally reading all applications fails
         try {
             tester.applications().asList();
             fail("Expected exception");
         } catch (Exception ignored) {
         }
+
+        // Deployment for readable application still succeeds
+        app1.submit().deploy();
     }
 
 }

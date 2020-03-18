@@ -126,6 +126,7 @@ public class RotationRepository {
     }
 
     private List<AssignedRotation> assignRotationsTo(List<Endpoint> endpoints, Instance instance, RotationLock lock) {
+        if (endpoints.isEmpty()) return List.of(); // No endpoints declared, nothing to assign.
         var availableRotations = new ArrayList<>(availableRotations(lock).values());
         var assignedRotationsByEndpointId = instance.rotations().stream()
                                                     .collect(Collectors.toMap(AssignedRotation::endpointId,
