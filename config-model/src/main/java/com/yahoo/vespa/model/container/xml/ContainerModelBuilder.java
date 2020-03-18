@@ -538,12 +538,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addNodesFromXml(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
-        if (nodesElement == null) { // default single node on localhost
-            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
-            HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
-            node.setHostResource(host);
-            node.initService(context.getDeployLogger());
-            cluster.addContainers(Collections.singleton(node));
+        if (nodesElement == null) {
+            cluster.addContainers(allocateWithoutNodesTag(cluster, log, context));
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, nodesElement, context);
 
@@ -620,29 +616,30 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    /** Creates a single host when there is no nodes tag */
-    private HostResource allocateSingleNodeHost(ApplicationContainerCluster cluster, DeployLogger logger, Element containerElement, ConfigModelContext context) {
+    /** Allocate a container cluster without a nodes tag */
+    private List<ApplicationContainer> allocateWithoutNodesTag(ApplicationContainerCluster cluster, DeployLogger logger, ConfigModelContext context) {
         DeployState deployState = context.getDeployState();
         HostSystem hostSystem = cluster.hostSystem();
-        if (deployState.isHosted()) {
-            Optional<HostResource> singleContentHost = getHostResourceFromContentClusters(cluster, containerElement, context);
-            if (singleContentHost.isPresent()) { // there is a content cluster; put the container on its first node 
-                return singleContentHost.get();
-            }
-            else { // request 1 node
-                ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
-                        .vespaVersion(deployState.getWantedNodeVespaVersion())
-                        .dockerImageRepo(deployState.getWantedDockerImageRepo())
-                        .build();
-                Capacity capacity = Capacity.fromCount(1,
-                                                       Optional.empty(),
-                                                       false,
-                                                       ! deployState.getProperties().isBootstrap());
-                return hostSystem.allocateHosts(clusterSpec, capacity, 1, logger).keySet().iterator().next();
-            }
-        } else {
-            return hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
+        if (deployState.isHosted()) { // request just enough nodes to satisfy environment capacity requirement
+            ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
+                                                          ClusterSpec.Id.from(cluster.getName()),
+                                                          deployState.getWantedNodeVespaVersion(),
+                                                          false,
+                                                          Optional.empty(),
+                                                          deployState.getWantedDockerImageRepo());
+            int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
+            Capacity capacity = Capacity.fromCount(nodeCount,
+                                                   Optional.empty(),
+                                                   false,
+                                                   !deployState.getProperties().isBootstrap());
+            var hosts = hostSystem.allocateHosts(clusterSpec, capacity, 1, logger);
+            return createNodesFromHosts(logger, hosts, cluster);
         }
+        ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
+        HostResource host = hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
+        node.setHostResource(host);
+        node.initService(context.getDeployLogger());
+        return List.of(node);
     }
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -684,43 +681,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
-    /**
-     * This is used in case we are on hosted Vespa and no nodes tag is supplied:
-     * If there are content clusters this will pick the first host in the first cluster as the container node.
-     * If there are no content clusters this will return empty (such that the node can be created by the container here).
-     */
-    private Optional<HostResource> getHostResourceFromContentClusters(ApplicationContainerCluster cluster, Element containersElement, ConfigModelContext context) {
-        Optional<Element> services = servicesRootOf(containersElement);
-        if ( ! services.isPresent())
-            return Optional.empty();
-        List<Element> contentServices = XML.getChildren(services.get(), "content");
-        if ( contentServices.isEmpty() ) return Optional.empty();
-        Element contentNodesElementOrNull = XML.getChild(contentServices.get(0), "nodes");
-        
-        NodesSpecification nodesSpec;
-        if (contentNodesElementOrNull == null)
-            nodesSpec = NodesSpecification.nonDedicated(1, context);
-        else
-            nodesSpec = NodesSpecification.from(new ModelElement(contentNodesElementOrNull), context);
-
-        Map<HostResource, ClusterMembership> hosts =
-                StorageGroup.provisionHosts(nodesSpec,
-                                            contentServices.get(0).getAttribute("id"),
-                                            cluster.getRoot().hostSystem(),
-                                            context.getDeployLogger());
-        return Optional.of(hosts.keySet().iterator().next());
-    }
-
-    /** Returns the services element above the given Element, or empty if there is no services element */
-    private Optional<Element> servicesRootOf(Element element) {
-        Node parent = element.getParentNode();
-        if (parent == null) return Optional.empty();
-        if ( ! (parent instanceof Element)) return Optional.empty();
-        Element parentElement = (Element)parent;
-        if (parentElement.getTagName().equals("services")) return Optional.of(parentElement);
-        return servicesRootOf(parentElement);
-    }
-    
     private List<ApplicationContainer> createNodesFromHosts(DeployLogger deployLogger, Map<HostResource, ClusterMembership> hosts, ApplicationContainerCluster cluster) {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {

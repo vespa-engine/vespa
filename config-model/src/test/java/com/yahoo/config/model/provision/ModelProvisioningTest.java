@@ -1308,9 +1308,9 @@ public class ModelProvisioningTest {
                 "  </http>" +
                 "</container>";
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(1);
+        tester.addHosts(2);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getHosts().size());
+        assertEquals(2, model.getHosts().size());
         assertEquals(1, model.getContainerClusters().size());
     }
 
@@ -1374,7 +1374,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testNoNodeTagMeans1Node() {
+    public void testNoNodeTagMeansTwoNodesInContainerCluster() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
@@ -1389,16 +1389,16 @@ public class ModelProvisioningTest {
                 "  </content>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(1);
+        tester.addHosts(3);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
-        assertEquals(1, model.getAdmin().getSlobroks().size());
-        assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
+        assertEquals(3, model.getRoot().hostSystem().getHosts().size());
+        assertEquals(2, model.getAdmin().getSlobroks().size());
+        assertEquals(2, model.getContainerClusters().get("foo").getContainers().size());
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
     }
 
     @Test
-    public void testNoNodeTagMeans1NodeNoContent() {
+    public void testNoNodeTagMeansTwoContainersNoContent() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
@@ -1408,11 +1408,11 @@ public class ModelProvisioningTest {
                 "  </container>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(1);
+        tester.addHosts(3);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
-        assertEquals(1, model.getAdmin().getSlobroks().size());
-        assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
+        assertEquals(2, model.getRoot().hostSystem().getHosts().size());
+        assertEquals(2, model.getAdmin().getSlobroks().size());
+        assertEquals(2, model.getContainerClusters().get("foo").getContainers().size());
     }
 
     @Test
