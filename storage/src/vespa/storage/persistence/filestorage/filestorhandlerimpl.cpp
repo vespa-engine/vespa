@@ -399,13 +399,30 @@ FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket, api::LockingRe
 
 namespace {
     struct MultiLockGuard {
-        std::map<uint16_t, vespalib::Monitor*> monitors;
+        struct DiskAndStripe {
+            uint16_t disk;
+            uint16_t stripe;
+
+            DiskAndStripe(uint16_t disk_, uint16_t stripe_) noexcept : disk(disk_), stripe(stripe_) {}
+
+            bool operator==(const DiskAndStripe& rhs) const noexcept {
+                return (disk == rhs.disk) && (stripe == rhs.stripe);
+            }
+            bool operator<(const DiskAndStripe& rhs) const noexcept {
+                if (disk != rhs.disk) {
+                    return disk < rhs.disk;
+                }
+                return stripe < rhs.stripe;
+            }
+        };
+
+        std::map<DiskAndStripe, vespalib::Monitor*> monitors;
         std::vector<std::shared_ptr<vespalib::MonitorGuard>> guards;
 
         MultiLockGuard() = default;
 
-        void addLock(vespalib::Monitor& monitor, uint16_t index) {
-            monitors[index] = &monitor;
+        void addLock(vespalib::Monitor& monitor, uint16_t disk_index, uint16_t stripe_index) {
+            monitors[DiskAndStripe(disk_index, stripe_index)] = &monitor;
         }
         void lock() {
             for (auto & entry : monitors) {
@@ -758,6 +775,9 @@ FileStorHandlerImpl::remapQueueNoLock(Disk& from, const RemapInfo& source,
         } else {
             entry._bucket = bucket;
             // Move to correct disk queue if needed
+            assert(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e){
+                return e->bucket == bucket;
+            }) != targets.end());
             _diskInfo[targetDisk].stripe(bucket).exposeQueue().emplace_back(std::move(entry));
         }
     }
@@ -772,11 +792,11 @@ FileStorHandlerImpl::remapQueue(const RemapInfo& source, RemapInfo& target, Oper
     MultiLockGuard guard;
 
     Disk& from(_diskInfo[source.diskIndex]);
-    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex);
+    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex, from.stripe_index(source.bucket));
 
     Disk& to1(_diskInfo[target.diskIndex]);
     if (target.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to1.stripe(target.bucket).exposeLock(), target.diskIndex);
+        guard.addLock(to1.stripe(target.bucket).exposeLock(), target.diskIndex, to1.stripe_index(target.bucket));
     }
 
     std::vector<RemapInfo*> targets;
@@ -795,16 +815,16 @@ FileStorHandlerImpl::remapQueue(const RemapInfo& source, RemapInfo& target1, Rem
     MultiLockGuard guard;
 
     Disk& from(_diskInfo[source.diskIndex]);
-    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex);
+    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex, from.stripe_index(source.bucket));
 
     Disk& to1(_diskInfo[target1.diskIndex]);
     if (target1.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to1.stripe(target1.bucket).exposeLock(), target1.diskIndex);
+        guard.addLock(to1.stripe(target1.bucket).exposeLock(), target1.diskIndex, to1.stripe_index(target1.bucket));
     }
 
     Disk& to2(_diskInfo[target2.diskIndex]);
     if (target2.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to2.stripe(target2.bucket).exposeLock(), target2.diskIndex);
+        guard.addLock(to2.stripe(target2.bucket).exposeLock(), target2.diskIndex, to2.stripe_index(target2.bucket));
     }
 
     guard.lock();
