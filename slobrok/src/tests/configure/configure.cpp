@@ -6,6 +6,7 @@
 #include <vespa/slobrok/server/slobrokserver.h>
 #include <vespa/config/config.h>
 #include <vespa/config-slobroks.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <sstream>
@@ -214,4 +215,9 @@ Test::Main()
     serverTwo.stop();
 
     TEST_DONE();
+
+    orb4.supervisor().GetTransport()->ShutDown(true);
+    orb3.supervisor().GetTransport()->ShutDown(true);
+    orb2.supervisor().GetTransport()->ShutDown(true);
+    orb1.supervisor().GetTransport()->ShutDown(true);
 }
