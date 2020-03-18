@@ -53,8 +53,10 @@ public class ClusterSpecTest {
     }
 
     private static ClusterSpec spec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(1), Version.emptyVersion,
-                                false, Optional.empty(), Optional.empty());
+        return ClusterSpec.specification(type, ClusterSpec.Id.from(id))
+                .group(ClusterSpec.Group.from(1))
+                .vespaVersion(Version.emptyVersion)
+                .build();
     }
 
 }

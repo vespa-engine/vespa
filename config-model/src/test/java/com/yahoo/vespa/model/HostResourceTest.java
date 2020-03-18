@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.ClusterMembership;
@@ -49,8 +48,7 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0),
-                                Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
+        return ClusterSpec.specification(type, ClusterSpec.Id.from(id)).group(ClusterSpec.Group.from(0)).vespaVersion("6.42").build();
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership membership) {

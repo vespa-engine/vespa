@@ -616,7 +616,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                " must be an integer percentage ending by the '%' sign");
         }
     }
-    
+
     /** Creates a single host when there is no nodes tag */
     private HostResource allocateSingleNodeHost(ApplicationContainerCluster cluster, DeployLogger logger, Element containerElement, ConfigModelContext context) {
         DeployState deployState = context.getDeployState();
@@ -627,12 +627,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 return singleContentHost.get();
             }
             else { // request 1 node
-                ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
-                                                              ClusterSpec.Id.from(cluster.getName()),
-                                                              deployState.getWantedNodeVespaVersion(),
-                                                              false,
-                                                              Optional.empty(),
-                                                              deployState.getWantedDockerImageRepo());
+                ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
+                        .vespaVersion(deployState.getWantedNodeVespaVersion())
+                        .dockerImageRepo(deployState.getWantedDockerImageRepo())
+                        .build();
                 Capacity capacity = Capacity.fromCount(1,
                                                        Optional.empty(),
                                                        false,
@@ -655,12 +653,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<ApplicationContainer> createNodesFromNodeType(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
-        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, 
-                                                      ClusterSpec.Id.from(cluster.getName()), 
-                                                      context.getDeployState().getWantedNodeVespaVersion(),
-                                                      false,
-                                                      Optional.empty(),
-                                                      context.getDeployState().getWantedDockerImageRepo());
+        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
+                .vespaVersion(context.getDeployState().getWantedNodeVespaVersion())
+                .dockerImageRepo(context.getDeployState().getWantedDockerImageRepo())
+                .build();
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
                                                              Capacity.fromRequiredNodeType(type), 1, log);

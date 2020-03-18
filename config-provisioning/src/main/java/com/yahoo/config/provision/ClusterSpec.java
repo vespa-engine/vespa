@@ -100,6 +100,75 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, combinedId, dockerImageRepo);
     }
 
+    /** Creates a ClusterSpec when requesting a cluster */
+    public static Builder request(Type type, Id id) {
+        return new Builder(type, id, false);
+    }
+
+    /** Creates a ClusterSpec for an existing cluster, group id and vespa version needs to be set */
+    public static Builder specification(Type type, Id id) {
+        return new Builder(type, id, true);
+    }
+
+    public static class Builder {
+
+        private final Type type;
+        private final Id id;
+        private final boolean specification;
+
+        private Optional<Group> groupId = Optional.empty();
+        private Optional<String> dockerImageRepo = Optional.empty();
+        private Version vespaVersion;
+        private boolean exclusive = false;
+        private Optional<Id> combinedId = Optional.empty();
+
+        Builder(Type type, Id id, boolean specification) {
+            this.type = type;
+            this.id = id;
+            this.specification = specification;
+        }
+
+        public ClusterSpec build() {
+            if (specification) {
+                if (groupId.isEmpty()) throw new IllegalArgumentException("groupIs is required to be set when creating a ClusterSpec with specification()");
+                if (vespaVersion == null) throw new IllegalArgumentException("vespaVersion is required to be set when creating a ClusterSpec with specification()");
+            } else
+                if (groupId.isPresent()) throw new IllegalArgumentException("groupId is not allowed to be set when creating a ClusterSpec with request()");
+            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo);
+        }
+
+        public Builder group(Group groupId) {
+            this.groupId = Optional.ofNullable(groupId);
+            return this;
+        }
+
+        public Builder vespaVersion(Version vespaVersion) {
+            this.vespaVersion = vespaVersion;
+            return this;
+        }
+
+        public Builder vespaVersion(String vespaVersion) {
+            this.vespaVersion = Version.fromString(vespaVersion);
+            return this;
+        }
+
+        public Builder exclusive(boolean exclusive) {
+            this.exclusive = exclusive;
+            return this;
+        }
+
+        public Builder combinedId(Optional<Id> combinedId) {
+            this.combinedId = combinedId;
+            return this;
+        }
+
+        public Builder dockerImageRepo(Optional<String> dockerImageRepo) {
+            this.dockerImageRepo = dockerImageRepo;
+            return this;
+        }
+
+    }
+
     @Override
     public String toString() {
         return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion + (dockerImageRepo.map(repo -> " " + repo).orElse(""));

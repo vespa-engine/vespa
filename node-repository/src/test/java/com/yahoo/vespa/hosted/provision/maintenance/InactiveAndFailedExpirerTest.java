@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -28,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -55,7 +53,7 @@ public class InactiveAndFailedExpirerTest {
         List<Node> nodes = tester.makeReadyNodes(2, nodeResources);
 
         // Allocate then deallocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
@@ -93,10 +91,7 @@ public class InactiveAndFailedExpirerTest {
         List<Node> nodes = tester.makeReadyNodes(2, nodeResources);
 
         // Allocate and deallocate a single node
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
-                                                  ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"),
-                                                  false, Optional.empty(), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
@@ -122,8 +117,7 @@ public class InactiveAndFailedExpirerTest {
     @Test
     public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         tester.makeReadyNodes(5, nodeResources);
 
         // Allocate two nodes
@@ -179,7 +173,7 @@ public class InactiveAndFailedExpirerTest {
         // Allocate then deallocate a node
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyNodes(1, nodeResources);
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Optional.empty(), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         List<HostSpec> preparedNodes = tester.prepare(testerId, cluster, Capacity.fromCount(2, nodeResources), 1);
         tester.activate(testerId, new HashSet<>(preparedNodes));
         assertEquals(1, tester.getNodes(testerId, Node.State.active).size());

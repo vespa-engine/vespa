@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.MockModelContext;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -23,7 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -105,29 +103,17 @@ public class VespaModelFactoryTest {
             @Override
             public HostSpec allocateHost(String alias) {
                 return new HostSpec(hostName,
-                                    Collections.emptyList(),
-                                    ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.admin,
-                                                                            new ClusterSpec.Id(routingClusterName),
-                                                                            ClusterSpec.Group.from(0),
-                                                                            Version.fromString("6.42"),
-                                                                            false,
-                                                                            Optional.empty(),
-                                                                            Optional.empty()),
+                                    List.of(),
+                                    ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(),
                                                            0));
             }
 
             @Override
             public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-                return Collections.singletonList(new HostSpec(hostName,
-                                                              Collections.emptyList(),
-                                                              ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.container,
-                                                                                                      new ClusterSpec.Id(routingClusterName),
-                                                                                                      ClusterSpec.Group.from(0),
-                                                                                                      Version.fromString("6.42"),
-                                                                                                      false,
-                                                                                                      Optional.empty(),
-                                                                                                      Optional.empty()),
-                                                                                     0)));
+                return List.of(new HostSpec(hostName,
+                                            List.of(),
+                                            ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(),
+                                                                   0)));
             }
         };
 

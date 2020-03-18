@@ -205,6 +205,23 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.ClusterSpec$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.config.provision.ClusterSpec build()",
+      "public com.yahoo.config.provision.ClusterSpec$Builder group(com.yahoo.config.provision.ClusterSpec$Group)",
+      "public com.yahoo.config.provision.ClusterSpec$Builder vespaVersion(com.yahoo.component.Version)",
+      "public com.yahoo.config.provision.ClusterSpec$Builder vespaVersion(java.lang.String)",
+      "public com.yahoo.config.provision.ClusterSpec$Builder exclusive(boolean)",
+      "public com.yahoo.config.provision.ClusterSpec$Builder combinedId(java.util.Optional)",
+      "public com.yahoo.config.provision.ClusterSpec$Builder dockerImageRepo(java.util.Optional)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.ClusterSpec$Group": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -281,6 +298,8 @@
       "public static com.yahoo.config.provision.ClusterSpec request(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.component.Version, boolean, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.provision.ClusterSpec from(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ClusterSpec$Group, com.yahoo.component.Version, boolean, java.util.Optional)",
       "public static com.yahoo.config.provision.ClusterSpec from(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ClusterSpec$Group, com.yahoo.component.Version, boolean, java.util.Optional, java.util.Optional)",
+      "public static com.yahoo.config.provision.ClusterSpec$Builder request(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id)",
+      "public static com.yahoo.config.provision.ClusterSpec$Builder specification(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",

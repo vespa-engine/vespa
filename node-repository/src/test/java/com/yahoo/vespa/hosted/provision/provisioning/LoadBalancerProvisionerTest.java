@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.common.collect.Iterators;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -272,7 +271,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id, Optional<ClusterSpec.Id> combinedId) {
-        return ClusterSpec.request(type, id, Version.fromString("6.42"), false, combinedId, Optional.empty());
+        return ClusterSpec.request(type, id).vespaVersion("6.42").combinedId(combinedId).build();
     }
 
     private static <T> T get(Set<T> set, int position) {
