@@ -6,13 +6,14 @@
 Name:           vespa-base
 Version:        %version
 Release:        1%{?dist}
-BuildArch:      noarch
+BuildArch:      x86_64
 Summary:        Vespa common files
 Group:          Applications/Databases
 License:        Commercial
 URL:            http://vespa.ai
 
 Requires: bash
+Obsoletes: vespa-base < %version
 
 Conflicts: vespa
 

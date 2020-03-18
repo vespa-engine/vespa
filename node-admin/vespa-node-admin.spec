@@ -9,7 +9,7 @@
 Name:           vespa-node-admin
 Version:        %version
 Release:        1%{?dist}
-BuildArch:      noarch
+BuildArch:      x86_64
 Summary:        Vespa Node Admin
 Group:          Applications/Databases
 License:        Commercial
@@ -19,6 +19,7 @@ Requires: bash
 Requires: vespa-base = %{version}
 Requires: vespa-standalone-container = %{version}
 Requires: vespa-log-utils = %{version}
+Obsoletes: vespa-node-admin < %{version}
 
 Conflicts: vespa
 
