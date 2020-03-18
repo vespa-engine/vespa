@@ -95,7 +95,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             deployState.getDeployLogger().log(Level.WARNING, "Athenz tenant is not provided by deploy call. This will soon be handled as failure.");
         }
         if (explicitDomain != null) {
-            if (explicitDomain.equals(tenantDomain)) {
+            if (tenantDomain != null && !explicitDomain.equals(tenantDomain)) {
                 throw new IllegalArgumentException(
                         String.format("Domain in access-control ('%s') does not match tenant domain ('%s')", tenantDomain, explicitDomain));
             }
