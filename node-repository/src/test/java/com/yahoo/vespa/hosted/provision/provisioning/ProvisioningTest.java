@@ -754,10 +754,10 @@ public class ProvisioningTest {
         allHosts.addAll(content1);
 
         Function<Integer, Capacity> capacity = count -> Capacity.fromCount(count, Optional.empty(), required, true);
-        int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size), containerCluster0.type(), application);
-        int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size), containerCluster1.type(), application);
-        int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size), contentCluster0.type(), application);
-        int expectedContent1Size = tester.capacityPolicies().decideSize(capacity.apply(content1Size), contentCluster1.type(), application);
+        int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size), containerCluster0, application);
+        int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size), containerCluster1, application);
+        int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size), contentCluster0, application);
+        int expectedContent1Size = tester.capacityPolicies().decideSize(capacity.apply(content1Size), contentCluster1, application);
 
         assertEquals("Hosts in each group cluster is disjunct and the total number of unretired nodes is correct",
                      expectedContainer0Size + expectedContainer1Size + expectedContent0Size + expectedContent1Size,
