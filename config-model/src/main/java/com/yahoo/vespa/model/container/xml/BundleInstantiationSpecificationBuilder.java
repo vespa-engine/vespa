@@ -9,6 +9,8 @@ import org.w3c.dom.Element;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_CLASS;
+
 /**
  * This object builds a bundle instantiation spec from an XML element.
  *
@@ -36,7 +38,7 @@ public class BundleInstantiationSpecificationBuilder {
 
     private static void validate(BundleInstantiationSpecification instSpec) {
         List<String> forbiddenClasses = Arrays.asList(
-                "com.yahoo.search.handler.SearchHandler",
+                SEARCH_HANDLER_CLASS,
                 "com.yahoo.processing.handler.ProcessingHandler");
 
         for (String forbiddenClass: forbiddenClasses) {

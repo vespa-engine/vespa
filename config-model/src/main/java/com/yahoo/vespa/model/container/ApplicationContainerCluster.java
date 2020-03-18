@@ -54,6 +54,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         MetricsProxyApiConfig.Producer {
 
     public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
+    public static final String METRICS_V2_HANDLER_BINDING_1 = "http://*" + MetricsV2Handler.V2_PATH;
+    public static final String METRICS_V2_HANDLER_BINDING_2 = METRICS_V2_HANDLER_BINDING_1 + "/*";
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
@@ -111,8 +113,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public void addMetricsV2Handler() {
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                 new ComponentModel(METRICS_V2_HANDLER_CLASS, null, null, null));
-        handler.addServerBindings("http://*" + MetricsV2Handler.V2_PATH,
-                                  "http://*" + MetricsV2Handler.V2_PATH + "/*");
+        handler.addServerBindings(METRICS_V2_HANDLER_BINDING_1, METRICS_V2_HANDLER_BINDING_2);
         addComponent(handler);
     }
 

@@ -106,6 +106,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String DEPRECATED_CONTAINER_TAG = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
+    static final String SEARCH_HANDLER_CLASS = com.yahoo.search.handler.SearchHandler.class.getName();
+    static final String SEARCH_HANDLER_BINDING = "http://*/search/*";
+
     public enum Networking { disable, enable }
 
     private ApplicationPackage app;
@@ -175,7 +178,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec);
-        addHandlers(deployState, cluster, spec);
 
         addRestApis(deployState, spec, cluster);
         addServlets(deployState, spec, cluster);
@@ -188,6 +190,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
+        addUserHandlers(deployState, cluster, spec);
 
         addHttp(deployState, spec, cluster, context.getApplicationType(), deployState.getProperties().applicationId().instance().isTester());
 
@@ -287,7 +290,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addClientProviders(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
         for (Element clientSpec: XML.getChildren(spec, "client")) {
-            cluster.addComponent(new DomClientProviderBuilder().build(deployState, cluster, clientSpec));
+            cluster.addComponent(new DomClientProviderBuilder(cluster).build(deployState, cluster, clientSpec));
         }
     }
 
@@ -442,10 +445,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         containerSearch.setPageTemplates(PageTemplates.create(applicationPackage));
     }
 
-    private void addHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
+    private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
-                    new DomHandlerBuilder().build(deployState, cluster, component));
+                    new DomHandlerBuilder(cluster).build(deployState, cluster, component));
         }
     }
 
@@ -767,7 +770,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(cluster.getSearch().getChains(),
                                                                                 "com.yahoo.search.handler.SearchHandler");
-        String[] defaultBindings = {"http://*/search/*"};
+        String[] defaultBindings = {SEARCH_HANDLER_BINDING};
         for (String binding: serverBindings(searchElement, defaultBindings)) {
             searchHandler.addServerBindings(binding);
         }
