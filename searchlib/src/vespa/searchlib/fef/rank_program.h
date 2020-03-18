@@ -10,7 +10,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/stash.h>
-#include <set>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace search::fef {
 
@@ -31,7 +31,8 @@ private:
     RankProgram &operator=(const RankProgram &) = delete;
 
     using MappedValues = std::map<const NumberOrObject *, LazyValue>;
-    using ValueSet = std::set<const NumberOrObject *>;
+    using ValueSet = vespalib::hash_set<const NumberOrObject *, vespalib::hash<const NumberOrObject *>,
+                                        std::equal_to<>, vespalib::hashtable_base::and_modulator>;
 
     BlueprintResolver::SP            _resolver;
     vespalib::Stash                  _hot_stash;
