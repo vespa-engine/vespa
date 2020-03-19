@@ -153,10 +153,10 @@ public class ApplicationPackageValidator {
         return instance.globalServiceId().map(globalServiceId -> {
             var regions = instance.zones().stream()
                                   .filter(zone -> zone.environment().isProduction())
-                                  .map(zone -> zone.region().get())
+                                  .flatMap(zone -> zone.region().stream())
                                   .map(RegionName::value)
                                   .collect(Collectors.toSet());
-            return new Endpoint(Optional.of(EndpointId.defaultId().id()), instance.globalServiceId().get(), regions);
+            return new Endpoint(Optional.of(EndpointId.defaultId().id()), globalServiceId, regions);
         });
     }
 

@@ -256,7 +256,7 @@ public class MetricsReporterTest {
                          tester.configServer().nodeRepository().list(zone1.getId(), SystemApplication.configServer.id()).stream()
                                .map(Node::wantedVersion).min(Comparator.naturalOrder()).get());
             tester.configServer().setVersion(SystemApplication.configServer.id(), zone1.getId(), version, 1);
-            tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            tester.clock().advance(Duration.ofMinutes(60).plus(Duration.ofSeconds(1)));
             tester.computeVersionStatus();
             reporter.maintain();
             assertEquals(2, getNodesFailingUpgrade());
