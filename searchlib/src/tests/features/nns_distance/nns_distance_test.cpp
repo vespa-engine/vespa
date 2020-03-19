@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/searchlib/fef/test/labels.h>
 #include <vespa/searchlib/features/distancefeature.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
@@ -18,7 +19,7 @@ using namespace search::features;
 using CollectionType = FieldInfo::CollectionType;
 using DataType = FieldInfo::DataType;
 
-const vespalib::string labelFeatureName("distance(label)");
+const vespalib::string labelFeatureName("distance(label,label)");
 const vespalib::string fieldFeatureName("distance(bar)");
 
 struct BlueprintFactoryFixture {
@@ -44,26 +45,6 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
-};
-
-struct Labels {
-    virtual void inject(Properties &p) const = 0;
-    virtual ~Labels() {}
-};
-struct NoLabel : public Labels {
-    virtual void inject(Properties &) const override {}    
-};
-struct SingleLabel : public Labels {
-    vespalib::string label;
-    uint32_t uid;
-    SingleLabel(const vespalib::string &l, uint32_t x) : label(l), uid(x) {}
-    virtual void inject(Properties &p) const override {
-        vespalib::asciistream key;
-        key << "vespa.label." << label << ".id";
-        vespalib::asciistream value;
-        value << uid;
-        p.add(key.str(), value.str());
-    }
 };
 
 struct RankFixture : BlueprintFactoryFixture, IndexFixture {
@@ -130,8 +111,14 @@ TEST_FFF("require that no features are dumped", DistanceBlueprint, IndexFixture,
 
 TEST_FF("require that setup can be done on random label", DistanceBlueprint, IndexFixture) {
     DummyDependencyHandler deps(f1);
-    f1.setName(vespalib::make_string("%s(random_label)", f1.getBaseName().c_str()));
-    EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>(1, "random_label")));
+    f1.setName(vespalib::make_string("%s(label,random_label)", f1.getBaseName().c_str()));
+    EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>{"label", "random_label"}));
+}
+
+TEST_FF("require that setup with unknown field fails", DistanceBlueprint, IndexFixture) {
+    DummyDependencyHandler deps(f1);
+    f1.setName(vespalib::make_string("%s(field,random_fieldname)", f1.getBaseName().c_str()));
+    EXPECT_FALSE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>{"field", "random_fieldname"}));
 }
 
 TEST_FF("require that no label gives max-double distance", NoLabel(), RankFixture(2, 2, f1, labelFeatureName)) {

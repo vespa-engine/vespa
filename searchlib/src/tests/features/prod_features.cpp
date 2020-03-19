@@ -479,6 +479,8 @@ Test::testCloseness()
         assertCloseness(0,   "pos", 9013306);
         // use non-existing attribute -> default distance
         TEST_DO(assertCloseness(0, "no", 0));
+        // two-argument version
+        TEST_DO(assertCloseness(0.8, "field,pos", 1802661));
 
         // use non-default maxDistance
         assertCloseness(1,   "pos", 0,   100);
@@ -857,11 +859,11 @@ Test::testDistance()
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
             }
-            { // non-existing field
-                FtFeatureTest ft(_factory, "distance(pos)");
+            { // label
+                FtFeatureTest ft(_factory, "distance(label,foo)");
                 ft.getQueryEnv().getLocation().setValid(true);
                 ASSERT_TRUE(ft.setup());
-                ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", std::numeric_limits<feature_t>::max())));
+                ASSERT_TRUE(ft.execute(RankResult().addScore("distance(label,foo)", std::numeric_limits<feature_t>::max())));
             }
             { // wrong attribute type (float)
                 FtFeatureTest ft(_factory, "distance(pos)");
