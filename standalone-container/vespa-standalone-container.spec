@@ -8,7 +8,7 @@
 
 Name:           vespa-standalone-container
 Version:        %version
-BuildArch:      noarch
+BuildArch:      x86_64
 Release:        1%{?dist}
 Summary:        Vespa standalone JDisc container
 Group:          Applications/Databases
