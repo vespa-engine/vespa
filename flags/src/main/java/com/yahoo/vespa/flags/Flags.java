@@ -56,7 +56,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_FLEET_SSHD_CONFIG = defineFeatureFlag(
-            "enable-fleet-sshd-config", false,
+            "enable-fleet-sshd-config", true,
             "Whether fleet should manage the /etc/ssh/sshd_config file.",
             "Takes effect on next host admin tick.",
             HOSTNAME);
