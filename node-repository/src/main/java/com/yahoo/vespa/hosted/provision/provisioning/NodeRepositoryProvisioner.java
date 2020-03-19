@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -148,7 +149,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    Optional.of(nodeAllocation.membership()),
                                    node.status().vespaVersion(),
                                    nodeAllocation.networkPorts(),
-                                   requestedResources));
+                                   requestedResources,
+                                   node.status().dockerImage().map(DockerImage::repository)));
             if (nodeAllocation.networkPorts().isPresent()) {
                 log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " has port allocations");
             }

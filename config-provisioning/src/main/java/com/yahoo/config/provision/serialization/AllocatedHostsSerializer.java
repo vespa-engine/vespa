@@ -82,10 +82,12 @@ public class AllocatedHostsSerializer {
     private static void toSlime(HostSpec host, Cursor object) {
         object.setString(hostSpecHostNameKey, host.hostname());
         aliasesToSlime(host, object);
-        // TODO serialize dockerImageRepo
         host.membership().ifPresent(membership -> {
             object.setString(hostSpecMembershipKey, membership.stringValue());
             object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
+            membership.cluster().dockerImageRepo().ifPresent(repo -> {
+                object.setString(hostSpecDockerImageRepoKey, repo);
+            });
         });
         host.flavor().ifPresent(flavor -> toSlime(flavor, object));
         host.requestedResources().ifPresent(resources -> toSlime(resources, object.setObject(requestedResourcesKey)));
@@ -123,7 +125,9 @@ public class AllocatedHostsSerializer {
     public static AllocatedHosts fromSlime(Inspector inspector, Optional<NodeFlavors> nodeFlavors) {
         Inspector array = inspector.field(mappingKey);
         Set<HostSpec> hosts = new LinkedHashSet<>();
-        array.traverse((ArrayTraverser)(i, host) -> hosts.add(hostFromSlime(host.field(hostSpecKey), nodeFlavors)));
+        array.traverse((ArrayTraverser)(i, host) -> {
+            hosts.add(hostFromSlime(host.field(hostSpecKey), nodeFlavors));
+        });
         return AllocatedHosts.withHosts(hosts);
     }
 
@@ -134,7 +138,8 @@ public class AllocatedHostsSerializer {
                             object.field(hostSpecMembershipKey).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty(),
                             optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
                             NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
-                            nodeResourcesFromSlime(object.field(requestedResourcesKey)));
+                            nodeResourcesFromSlime(object.field(requestedResourcesKey)),
+                            optionalString(object.field(hostSpecDockerImageRepoKey)));
     }
 
     private static List<String> aliasesFromSlime(Inspector object) {

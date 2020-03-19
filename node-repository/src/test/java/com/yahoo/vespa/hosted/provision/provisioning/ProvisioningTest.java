@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -154,6 +155,33 @@ public class ProvisioningTest {
 
         host1 = state2.container0.iterator().next();
         assertEquals(Version.fromString("1.2.3"), host1.version().get());
+    }
+
+    @Test
+    public void dockerImageRepoIsReturnedIfSet() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+
+        tester.makeReadyNodes(4, defaultResources, NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
+        // deploy
+        ApplicationId application1 = tester.makeApplicationId();
+        SystemState state1 = prepare(application1, tester, 1, 1, 1, 1, defaultResources, "1.2.3");
+        String dockerImageRepo = "docker.domain.tld/my/image";
+        prepare(application1, tester, 1, 1, 1 , 1 , false, defaultResources, "1.2.3", Optional.of(dockerImageRepo));
+        tester.activate(application1, state1.allHosts);
+
+        HostSpec host1 = state1.container0.iterator().next();
+        assertFalse(host1.version().isPresent());
+        Node node1 = tester.nodeRepository().getNode(host1.hostname()).get();
+        tester.nodeRepository().write(node1.with(node1.status().withDockerImage(DockerImage.fromString(dockerImageRepo))), () -> {});
+
+        // redeploy
+        SystemState state2 = prepare(application1, tester, 1, 1, 1 ,1 , false, defaultResources, "1.2.3", Optional.of(dockerImageRepo));
+        tester.activate(application1, state2.allHosts);
+
+        host1 = state2.container0.iterator().next();
+        assertEquals(dockerImageRepo, host1.dockerImageRepo().get());
     }
 
     @Test
@@ -334,7 +362,21 @@ public class ProvisioningTest {
         tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
         ApplicationId application = tester.makeApplicationId();
-        SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, Version.fromString("6.91"), tester);
+        SystemState state = prepare(application, tester, 2, 2, 3, 3, defaultResources, "6.91");
+        assertEquals(4, state.allHosts.size());
+        tester.activate(application, state.allHosts);
+    }
+
+    @Test
+    public void deploy_specific_vespa_version_and_docker_image() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+
+        tester.makeReadyNodes(4, defaultResources, NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
+        ApplicationId application = tester.makeApplicationId();
+        String dockerImageRepo = "docker.domain.tld/my/image";
+        SystemState state = prepare(application, tester, 2, 2, 3, 3, false, defaultResources, "6.91", Optional.of(dockerImageRepo));
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
@@ -630,7 +672,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         ApplicationId application = tester.makeApplicationId();
         try {
-            prepare(application, 1, 0, 1, 0, true, defaultResources, Version.fromString("6.42"), tester);
+            prepare(application, tester, 1, 0, 1, 0, true, defaultResources, "6.42", Optional.empty());
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
     }
@@ -652,17 +694,17 @@ public class ProvisioningTest {
     public void cluster_spec_update_for_already_reserved_nodes() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
         ApplicationId application = tester.makeApplicationId();
-        Version version1 = Version.fromString("6.42");
-        Version version2 = Version.fromString("6.43");
+        String version1 = "6.42";
+        String version2 = "6.43";
         tester.makeReadyNodes(2, defaultResources);
 
-        prepare(application, 1, 0, 1, 0, true, defaultResources, version1, tester);
+        prepare(application, tester, 1, 0, 1, 0, true, defaultResources, version1, Optional.empty());
         tester.getNodes(application, Node.State.reserved).forEach(node ->
-                assertEquals(version1, node.allocation().get().membership().cluster().vespaVersion()));
+                assertEquals(Version.fromString(version1), node.allocation().get().membership().cluster().vespaVersion()));
 
-        prepare(application, 1, 0, 1, 0, true, defaultResources, version2, tester);
+        prepare(application, tester, 1, 0, 1, 0, true, defaultResources, version2, Optional.empty());
         tester.getNodes(application, Node.State.reserved).forEach(node ->
-                assertEquals(version2, node.allocation().get().membership().cluster().vespaVersion()));
+                assertEquals(Version.fromString(version2), node.allocation().get().membership().cluster().vespaVersion()));
     }
 
     @Test
@@ -702,29 +744,27 @@ public class ProvisioningTest {
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
                                 int content1Size, NodeResources flavor, ProvisioningTester tester) {
-        return prepare(application, container0Size, container1Size, content0Size, content1Size, flavor,
-                       Version.fromString("6.42"), tester);
+        return prepare(application, tester, container0Size, container1Size, content0Size, content1Size, flavor, "6.42");
     }
 
-    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
-                                int content1Size, NodeResources nodeResources, Version wantedVersion, ProvisioningTester tester) {
-        return prepare(application, container0Size, container1Size, content0Size, content1Size, false, nodeResources,
-                       wantedVersion, tester);
+    private SystemState prepare(ApplicationId application, ProvisioningTester tester, int container0Size, int container1Size, int content0Size,
+                                int content1Size, NodeResources nodeResources, String wantedVersion) {
+        return prepare(application, tester, container0Size, container1Size, content0Size, content1Size, false, nodeResources,
+                       wantedVersion, Optional.empty());
     }
 
-    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
-                                int content1Size, boolean required, NodeResources nodeResources, Version wantedVersion,
-                                ProvisioningTester tester) {
+    private SystemState prepare(ApplicationId application, ProvisioningTester tester, int container0Size, int container1Size, int content0Size,
+                                int content1Size, boolean required, NodeResources nodeResources, String wantedVersion, Optional<String> dockerImageRepo) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
         ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0")).vespaVersion(wantedVersion).build();
         ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1")).vespaVersion(wantedVersion).build();
         ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0")).vespaVersion(wantedVersion).build();
         ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion(wantedVersion).build();
 
-        Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, nodeResources, tester);
-        Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, nodeResources, tester);
-        Set<HostSpec> content0 = prepare(application, contentCluster0, content0Size, 1, required, nodeResources, tester);
-        Set<HostSpec> content1 = prepare(application, contentCluster1, content1Size, 1, required, nodeResources, tester);
+        Set<HostSpec> container0 = prepare(application, tester, containerCluster0, container0Size, 1, required, nodeResources);
+        Set<HostSpec> container1 = prepare(application, tester, containerCluster1, container1Size, 1, required, nodeResources);
+        Set<HostSpec> content0 = prepare(application, tester, contentCluster0, content0Size, 1, required, nodeResources);
+        Set<HostSpec> content1 = prepare(application, tester, contentCluster1, content1Size, 1, required, nodeResources);
 
         Set<HostSpec> allHosts = new HashSet<>();
         allHosts.addAll(container0);
@@ -755,8 +795,8 @@ public class ProvisioningTest {
         return new SystemState(allHosts, container0, container1, content0, content1);
     }
 
-    private Set<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups,
-                                  boolean required, NodeResources nodeResources, ProvisioningTester tester) {
+    private Set<HostSpec> prepare(ApplicationId application, ProvisioningTester tester, ClusterSpec cluster, int nodeCount, int groups,
+                                  boolean required, NodeResources nodeResources) {
         if (nodeCount == 0) return Collections.emptySet(); // this is a shady practice
         return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, required, nodeResources));
     }

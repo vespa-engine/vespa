@@ -157,8 +157,11 @@ class NodesResponse extends HttpResponse {
             toSlime(allocation.membership(), object.setObject("membership"));
             object.setLong("restartGeneration", allocation.restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
-            object.setString("wantedDockerImage", nodeRepository.dockerImage(node).withTag(allocation.membership().cluster().vespaVersion()).asString());
-            object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
+            String wantedVespaVersion = allocation.membership().cluster().vespaVersion().toFullString();
+            Optional<String> dockerImageRepo = allocation.membership().cluster().dockerImageRepo();
+            object.setString("wantedDockerImage", dockerImageRepo.map(s -> s + ":" + wantedVespaVersion)
+                    .orElseGet(() -> nodeRepository.dockerImage(node).withTag(allocation.membership().cluster().vespaVersion()).asString()));
+            object.setString("wantedVespaVersion", wantedVespaVersion);
             toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
