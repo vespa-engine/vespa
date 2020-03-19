@@ -64,7 +64,9 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        params().tfmd.setRawScore(docId, sqrt(_lastScore));
+        double d = sqrt(_lastScore);
+        double score = 1.0 / (1.0 + d);
+        params().tfmd.setRawScore(docId, score);
         params().distanceHeap.used(_lastScore);
     }
 

@@ -89,13 +89,13 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
     void setScore(TermFieldHandle handle, uint32_t docId, feature_t score) {
         match_data->resolveTermField(handle)->setRawScore(docId, score);
     }
-    void setFooScore(uint32_t i, uint32_t docId, feature_t score) {
+    void setFooScore(uint32_t i, uint32_t docId, feature_t distance) {
         ASSERT_LESS(i, fooHandles.size());
-        setScore(fooHandles[i], docId, score);
+        setScore(fooHandles[i], docId, 1.0/(1.0+distance));
     }
-    void setBarScore(uint32_t i, uint32_t docId, feature_t score) {
+    void setBarScore(uint32_t i, uint32_t docId, feature_t distance) {
         ASSERT_LESS(i, barHandles.size());
-        setScore(barHandles[i], docId, score);
+        setScore(barHandles[i], docId, 1.0/(1.0+distance));
     }
 };
 
