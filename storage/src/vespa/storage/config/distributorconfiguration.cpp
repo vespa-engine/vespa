@@ -42,6 +42,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _update_fast_path_restart_enabled(false),
       _merge_operations_disabled(false),
       _use_weak_internal_read_consistency_for_client_gets(false),
+      _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 { }
 
@@ -155,6 +156,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _update_fast_path_restart_enabled = config.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent;
     _merge_operations_disabled = config.mergeOperationsDisabled;
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
+    _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 

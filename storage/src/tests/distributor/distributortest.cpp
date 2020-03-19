@@ -193,6 +193,12 @@ struct DistributorTest : Test, DistributorTestUtil {
         configureDistributor(builder);
     }
 
+    void configure_metadata_update_phase_enabled(bool enabled) {
+        ConfigBuilder builder;
+        builder.enableMetadataOnlyFetchPhaseForInconsistentUpdates = enabled;
+        configureDistributor(builder);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
@@ -1042,6 +1048,17 @@ TEST_F(DistributorTest, merge_disabling_config_is_propagated_to_internal_config)
 
     configure_merge_operations_disabled(false);
     EXPECT_FALSE(getConfig().merge_operations_disabled());
+}
+
+TEST_F(DistributorTest, metadata_update_phase_config_is_propagated_to_internal_config) {
+    createLinks(true);
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_metadata_update_phase_enabled(true);
+    EXPECT_TRUE(getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates());
+
+    configure_metadata_update_phase_enabled(false);
+    EXPECT_FALSE(getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates());
 }
 
 TEST_F(DistributorTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs) {

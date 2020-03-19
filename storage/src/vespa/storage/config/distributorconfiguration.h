@@ -235,6 +235,13 @@ public:
         return _use_weak_internal_read_consistency_for_client_gets;
     }
 
+    void set_enable_metadata_only_fetch_phase_for_inconsistent_updates(bool enable) noexcept {
+        _enable_metadata_only_fetch_phase_for_inconsistent_updates = enable;
+    }
+    bool enable_metadata_only_fetch_phase_for_inconsistent_updates() const noexcept {
+        return _enable_metadata_only_fetch_phase_for_inconsistent_updates;
+    }
+
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
@@ -281,6 +288,7 @@ private:
     bool _update_fast_path_restart_enabled;
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
+    bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     
