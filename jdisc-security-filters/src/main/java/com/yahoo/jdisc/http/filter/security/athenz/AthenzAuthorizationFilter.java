@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.filter.security.athenz;
 
 import com.google.inject.Inject;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.athenz.RequestResourceMapper.ResourceNameAndAction;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.athenz.zpe.Zpe;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -42,6 +44,8 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     public static final String MATCHED_ROLE_ATTRIBUTE = ATTRIBUTE_PREFIX + ".matched-role";
     public static final String IDENTITY_NAME_ATTRIBUTE = ATTRIBUTE_PREFIX + ".identity-name";
     public static final String MATCHED_CREDENTIAL_TYPE_ATTRIBUTE = ATTRIBUTE_PREFIX + ".credentials-type";
+    private static final String ACCEPTED_METRIC_NAME = "jdisc.http.filter.athenz.accepted_requests";
+    private static final String REJECTED_METRIC_NAME = "jdisc.http.filter.athenz.rejected_requests";
 
     private static final Logger log = Logger.getLogger(AthenzAuthorizationFilter.class.getName());
 
@@ -49,15 +53,17 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     private final EnumSet<EnabledCredentials.Enum> enabledCredentials;
     private final Zpe zpe;
     private final RequestResourceMapper requestResourceMapper;
+    private final Metric metric;
 
     @Inject
-    public AthenzAuthorizationFilter(AthenzAuthorizationFilterConfig config, RequestResourceMapper resourceMapper) {
-        this(config, resourceMapper, new DefaultZpe());
+    public AthenzAuthorizationFilter(AthenzAuthorizationFilterConfig config, RequestResourceMapper resourceMapper, Metric metric) {
+        this(config, resourceMapper, new DefaultZpe(), metric);
     }
 
     public AthenzAuthorizationFilter(AthenzAuthorizationFilterConfig config,
                                      RequestResourceMapper resourceMapper,
-                                     Zpe zpe) {
+                                     Zpe zpe,
+                                     Metric metric) {
         this.roleTokenHeaderName = config.roleTokenHeaderName();
         List<EnabledCredentials.Enum> enabledCredentials = config.enabledCredentials();
         this.enabledCredentials = enabledCredentials.isEmpty()
@@ -65,6 +71,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
                 : EnumSet.copyOf(enabledCredentials);
         this.requestResourceMapper = resourceMapper;
         this.zpe = zpe;
+        this.metric = metric;
     }
 
     @Override
@@ -74,6 +81,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
                     requestResourceMapper.getResourceNameAndAction(request.getMethod(), request.getRequestURI(), request.getQueryString());
             log.log(LogLevel.DEBUG, () -> String.format("Resource mapping for '%s': %s", request, resourceMapping));
             if (resourceMapping.isEmpty()) {
+                incrementAcceptedMetrics(request, false);
                 return Optional.empty();
             }
             Result result = checkAccessAllowed(request, resourceMapping.get());
@@ -81,12 +89,15 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
             setAttribute(request, RESULT_ATTRIBUTE, resultType.name());
             if (resultType == AuthorizationResult.Type.ALLOW) {
                 populateRequestWithResult(request, result);
+                incrementAcceptedMetrics(request, true);
                 return Optional.empty();
             }
             log.log(LogLevel.DEBUG, () -> String.format("Forbidden (403) for '%s': %s", request, resultType.name()));
+            incrementRejectedMetrics(request, FORBIDDEN, resultType.name());
             return Optional.of(new ErrorResponse(FORBIDDEN, "Access forbidden: " + resultType.getDescription()));
         } catch (IllegalArgumentException e) {
             log.log(LogLevel.DEBUG, () -> String.format("Unauthorized (401) for '%s': %s", request, e.getMessage()));
+            incrementRejectedMetrics(request, UNAUTHORIZED, "Unauthorized");
             return Optional.of(new ErrorResponse(UNAUTHORIZED, e.getMessage()));
         }
     }
@@ -187,6 +198,23 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     private static void setAttribute(DiscFilterRequest request, String name, String value) {
         log.log(LogLevel.DEBUG, () -> String.format("Setting attribute on '%s': '%s' = '%s'", request, name, value));
         request.setAttribute(name, value);
+    }
+
+    private void incrementAcceptedMetrics(DiscFilterRequest request, boolean authzRequired) {
+        String hostHeader = request.getHeader("Host");
+        Metric.Context context = metric.createContext(Map.of(
+                "endpoint", hostHeader != null ? hostHeader : "",
+                "authz-required", Boolean.toString(authzRequired)));
+        metric.add(ACCEPTED_METRIC_NAME, 1L, context);
+    }
+
+    private void incrementRejectedMetrics(DiscFilterRequest request, int statusCode, String zpeCode) {
+        String hostHeader = request.getHeader("Host");
+        Metric.Context context = metric.createContext(Map.of(
+                "endpoint", hostHeader != null ? hostHeader : "",
+                "status-code", Integer.toString(statusCode),
+                "zpe-status", zpeCode));
+        metric.add(REJECTED_METRIC_NAME, 1L, context);
     }
 
     private static class Result {
