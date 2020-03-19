@@ -1132,6 +1132,23 @@ FileStorHandlerImpl::Stripe::flush()
     }
 }
 
+namespace {
+
+bool message_type_is_merge_related(api::MessageType::Id msg_type_id) {
+    switch (msg_type_id) {
+    case api::MessageType::MERGEBUCKET_ID:
+    case api::MessageType::MERGEBUCKET_REPLY_ID:
+    case api::MessageType::GETBUCKETDIFF_ID:
+    case api::MessageType::GETBUCKETDIFF_REPLY_ID:
+    case api::MessageType::APPLYBUCKETDIFF_ID:
+    case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
+        return true;
+    default: return false;
+    }
+}
+
+}
+
 void FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
                                           api::LockingRequirements reqOfReleasedLock,
                                           api::StorageMessage::Id lockMsgId) {
@@ -1143,7 +1160,7 @@ void FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (reqOfReleasedLock == api::LockingRequirements::Exclusive) {
         assert(entry._exclusiveLock);
         assert(entry._exclusiveLock->msgId == lockMsgId);
-        if (entry._exclusiveLock->msgType == api::MessageType::MERGEBUCKET_ID) {
+        if (message_type_is_merge_related(entry._exclusiveLock->msgType)) {
             assert(_active_merges > 0);
             --_active_merges;
         }
@@ -1167,7 +1184,7 @@ void FileStorHandlerImpl::Stripe::lock(const vespalib::MonitorGuard &, const doc
     assert(!entry._exclusiveLock);
     if (lockReq == api::LockingRequirements::Exclusive) {
         assert(entry._sharedLocks.empty());
-        if (lockEntry.msgType == api::MessageType::MERGEBUCKET_ID) {
+        if (message_type_is_merge_related(lockEntry.msgType)) {
             ++_active_merges;
         }
         entry._exclusiveLock = lockEntry;
@@ -1203,7 +1220,7 @@ bool
 FileStorHandlerImpl::Stripe::operationIsInhibited(const vespalib::MonitorGuard& guard, const document::Bucket& bucket,
                                                   const api::StorageMessage& msg) const noexcept
 {
-    if ((msg.getType() == api::MessageType::MERGEBUCKET)
+    if (message_type_is_merge_related(msg.getType().getId())
         && (_active_merges >= _owner._max_active_merges_per_stripe))
     {
         return true;
