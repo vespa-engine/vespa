@@ -43,7 +43,12 @@ public class MetricsReporter extends Maintainer {
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
 
-    private static final Duration NODE_UPGRADE_TIMEOUT = Duration.ofHours(1);
+    // The time a node belonging to a system application can spend from being told to upgrade until the upgrade is
+    // completed. Nodes exceeding this time are counted as failures.
+    private static final Duration NODE_UPGRADE_TIMEOUT = Duration.ofMinutes(90);
+
+    // The time a single node can spend performing an OS upgrade after being told to upgrade. Nodes exceeding this time
+    // multiplied by the number of nodes upgrading are counted as failures.
     private static final Duration OS_UPGRADE_TIME_ALLOWANCE_PER_NODE = Duration.ofMinutes(30);
 
     private final Metric metric;
