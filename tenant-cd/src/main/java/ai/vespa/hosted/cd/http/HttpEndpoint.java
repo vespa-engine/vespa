@@ -4,6 +4,7 @@ package ai.vespa.hosted.cd.http;
 import ai.vespa.hosted.api.EndpointAuthenticator;
 import ai.vespa.hosted.cd.Endpoint;
 
+import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -31,10 +32,13 @@ public class HttpEndpoint implements Endpoint {
     public HttpEndpoint(URI endpoint, EndpointAuthenticator authenticator) {
         this.endpoint = requireNonNull(endpoint);
         this.authenticator = requireNonNull(authenticator);
+        SSLParameters sslParameters = new SSLParameters();
+        sslParameters.setProtocols(new String[] {"TLSv1.2" });
         this.client = HttpClient.newBuilder()
                                 .sslContext(authenticator.sslContext())
                                 .connectTimeout(Duration.ofSeconds(5))
                                 .version(HttpClient.Version.HTTP_1_1)
+                                .sslParameters(sslParameters)
                                 .build();
     }
 
