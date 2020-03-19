@@ -23,8 +23,8 @@ public class DefaultEnvWriterTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static final Path EXAMPLE_FILE = Paths.get(DefaultEnvWriterTest.class.getResource("/default-env-example.txt").getFile());
-    private static final Path EXPECTED_RESULT_FILE = Paths.get(DefaultEnvWriterTest.class.getResource("/default-env-rewritten.txt").getFile());
+    private static final Path EXAMPLE_FILE = Paths.get("src/test/resources/default-env-example.txt");
+    private static final Path EXPECTED_RESULT_FILE = Paths.get("src/test/resources/default-env-rewritten.txt");
 
     @Test
     public void default_env_is_correctly_rewritten() throws IOException {
