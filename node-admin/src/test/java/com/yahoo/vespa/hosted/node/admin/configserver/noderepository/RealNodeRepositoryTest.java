@@ -164,7 +164,6 @@ public class RealNodeRepositoryTest {
         AddNode host = AddNode.forHost("host123.domain.tld",
                                        "default",
                                        Optional.of(FlavorOverrides.ofDisk(123)),
-                                       Optional.empty(),
                                        NodeType.confighost,
                                        Set.of("::1"), Set.of("::2", "::3"));
 
