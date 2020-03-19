@@ -1262,10 +1262,12 @@ Test::testDotProduct()
         assertDotProduct(17, "(0:1,3:4,50:97)", 1, "sint", "arrfloat"); // attribute override
         assertDotProduct(0, "(0:1,3:4,50:97)", 1, "sint", "arrfloat_non_existing"); // incorrect attribute override
     }
-    verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1}", "search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum");
-    verifyCorrectDotProductExecutor(_factory, "wsstr", "{unknown:1}", "search::features::SingleZeroValueExecutor");
-    verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1}", "search::features::dotproduct::wset::DotProductExecutor<search::MultiValueNumericAttribute<search::IntegerAttributeTemplate<int>, search::multivalue::WeightedValue<int> > >");
-    verifyCorrectDotProductExecutor(_factory, "wsint", "{}", "search::features::SingleZeroValueExecutor");
+    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1,b:2}", "search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum"));
+    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductExecutorByEnum"));
+    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{unknown:1}", "search::features::SingleZeroValueExecutor"));
+    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1, 2:3}", "search::features::dotproduct::wset::DotProductExecutor<search::MultiValueNumericAttribute<search::IntegerAttributeTemplate<int>, search::multivalue::WeightedValue<int> > >"));
+    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductExecutorByValue<search::MultiValueNumericAttribute<search::IntegerAttributeTemplate<int>, search::multivalue::WeightedValue<int> > >"));
+    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{}", "search::features::SingleZeroValueExecutor"));
 
 }
 
