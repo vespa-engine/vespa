@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -682,5 +683,34 @@ public class NodeSpec {
                     reports, parentHostname);
         }
 
+
+        public static Builder testSpec(String hostname) {
+            return testSpec(hostname, NodeState.active);
+        }
+
+        /**
+         * Creates a NodeSpec.Builder that has the given hostname, in a given state, and some
+         * reasonable values for the remaining required NodeSpec fields.
+         */
+        public static Builder testSpec(String hostname, NodeState state) {
+            Builder builder = new Builder()
+                    .hostname(hostname)
+                    .state(state)
+                    .type(NodeType.tenant)
+                    .flavor("d-2-8-50")
+                    .resources(new NodeResources(2, 8, 50, 10));
+
+            // Set the required allocated fields
+            if (EnumSet.of(NodeState.active, NodeState.inactive, NodeState.reserved).contains(state)) {
+                builder .owner(ApplicationId.defaultId())
+                        .membership(new NodeMembership("container", "my-id", "group", 0, false))
+                        .wantedVespaVersion(Version.fromString("7.1.1"))
+                        .wantedDockerImage(DockerImage.fromString("docker.domain.tld/repo/image:7.1.1"))
+                        .currentRestartGeneration(0)
+                        .wantedRestartGeneration(0);
+            }
+
+            return builder;
+        }
     }
 }

@@ -7,7 +7,6 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
@@ -76,14 +75,7 @@ public class DockerTester implements AutoCloseable {
 
         TerminalImpl terminal = new TerminalImpl(command -> new TestChildProcess2(0, ""));
 
-        NodeSpec hostSpec = new NodeSpec.Builder()
-                .hostname(HOST_HOSTNAME.value())
-                .state(NodeState.active)
-                .type(NodeType.host)
-                .flavor("default")
-                .wantedRestartGeneration(1L)
-                .currentRestartGeneration(1L)
-                .build();
+        NodeSpec hostSpec = NodeSpec.Builder.testSpec(HOST_HOSTNAME.value()).type(NodeType.host).build();
         nodeRepository.updateNodeRepositoryNode(hostSpec);
 
         Clock clock = Clock.systemUTC();

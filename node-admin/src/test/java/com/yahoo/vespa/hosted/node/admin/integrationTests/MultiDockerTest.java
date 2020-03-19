@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -25,13 +24,7 @@ public class MultiDockerTest {
             NodeSpec nodeSpec2 = addAndWaitForNode(
                     tester, "host2.test.yahoo.com", DockerImage.fromString("image2"));
 
-            tester.addChildNodeRepositoryNode(
-                    new NodeSpec.Builder(nodeSpec2)
-                            .state(NodeState.dirty)
-                            .vcpu(1)
-                            .memoryGb(1)
-                            .diskGb(1)
-                            .build());
+            tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(nodeSpec2.hostname(), NodeState.dirty).build());
 
             tester.inOrder(tester.docker).deleteContainer(eq(new ContainerName("host2")));
             tester.inOrder(tester.storageMaintainer).archiveNodeStorage(
@@ -43,19 +36,7 @@ public class MultiDockerTest {
     }
 
     private NodeSpec addAndWaitForNode(DockerTester tester, String hostName, DockerImage dockerImage) {
-        NodeSpec nodeSpec = new NodeSpec.Builder()
-                .hostname(hostName)
-                .wantedDockerImage(dockerImage)
-                .state(NodeState.active)
-                .type(NodeType.tenant)
-                .flavor("docker")
-                .wantedRestartGeneration(1L)
-                .currentRestartGeneration(1L)
-                .vcpu(2)
-                .memoryGb(4)
-                .diskGb(1)
-                .build();
-
+        NodeSpec nodeSpec = NodeSpec.Builder.testSpec(hostName).wantedDockerImage(dockerImage).build();
         tester.addChildNodeRepositoryNode(nodeSpec);
 
         ContainerName containerName = ContainerName.fromHostname(hostName);

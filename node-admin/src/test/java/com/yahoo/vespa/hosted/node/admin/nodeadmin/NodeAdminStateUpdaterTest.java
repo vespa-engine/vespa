@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -258,28 +257,12 @@ public class NodeAdminStateUpdaterTest {
 
     private void mockNodeRepo(NodeState hostState, int numberOfNodes) {
         List<NodeSpec> containersToRun = IntStream.range(1, numberOfNodes + 1)
-                .mapToObj(i -> new NodeSpec.Builder()
-                        .hostname("host" + i + ".yahoo.com")
-                        .state(NodeState.active)
-                        .type(NodeType.tenant)
-                        .flavor("docker")
-                        .vcpu(1)
-                        .memoryGb(1)
-                        .diskGb(1)
-                        .build())
+                .mapToObj(i -> NodeSpec.Builder.testSpec("host" + i + ".yahoo.com").build())
                 .collect(Collectors.toList());
 
         when(nodeRepository.getNodes(eq(hostHostname.value()))).thenReturn(containersToRun);
-
-        when(nodeRepository.getNode(eq(hostHostname.value()))).thenReturn(new NodeSpec.Builder()
-                .hostname(hostHostname.value())
-                .state(hostState)
-                .type(NodeType.tenant)
-                .flavor("default")
-                .vcpu(1)
-                .memoryGb(1)
-                .diskGb(1)
-                .build());
+        when(nodeRepository.getNode(eq(hostHostname.value()))).thenReturn(
+                NodeSpec.Builder.testSpec(hostHostname.value(), hostState).build());
     }
 
     private void mockAcl(Acl acl, int... nodeIds) {

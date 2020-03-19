@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -11,7 +10,6 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 
 import java.nio.file.FileSystem;
@@ -187,7 +185,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
     /** For testing only! */
     public static class Builder {
-        private NodeSpec.Builder nodeSpecBuilder = new NodeSpec.Builder();
+        private NodeSpec.Builder nodeSpecBuilder;
         private Acl acl;
         private AthenzIdentity identity;
         private DockerNetworking dockerNetworking;
@@ -209,11 +207,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
          * if you want to control the entire NodeSpec.
          */
         public Builder(String hostname) {
-            this.nodeSpecBuilder
-                    .hostname(hostname)
-                    .state(NodeState.active)
-                    .type(NodeType.tenant)
-                    .flavor("d-2-8-50");
+            this.nodeSpecBuilder = NodeSpec.Builder.testSpec(hostname);
         }
 
         public Builder nodeSpecBuilder(Function<NodeSpec.Builder, NodeSpec.Builder> nodeSpecBuilderModifier) {
