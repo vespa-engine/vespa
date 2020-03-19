@@ -58,8 +58,7 @@ import java.util.stream.Collectors;
 public class RoutingController {
 
     /** The minimum Vespa version that supports directly routed endpoints */
-    public static final Version DIRECT_ROUTING_MIN_VERSION = new Version(Integer.MAX_VALUE, Integer.MAX_VALUE,
-                                                                         Integer.MAX_VALUE);
+    public static final Version DIRECT_ROUTING_MIN_VERSION = new Version(7, 196, 4);
 
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
