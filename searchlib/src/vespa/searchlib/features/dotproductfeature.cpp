@@ -656,8 +656,7 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V && vector, vespali
         auto * exactA = dynamic_cast<const ExactA *>(iattr);
         if (exactA != nullptr) {
             if (extractSize(vector) == 1) {
-                const auto & elem = extractElem(vector, 0ul);
-                return stash.create<SingleDotProductExecutorByValue<ExactA>>(exactA, elem);
+                return stash.create<SingleDotProductExecutorByValue<ExactA>>(exactA, extractElem(vector, 0ul));
             }
             return stash.create<DotProductExecutor<ExactA>>(exactA, std::forward<V>(vector));
         }
