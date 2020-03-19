@@ -29,6 +29,11 @@ void verify(const vespalib::string &type_expr, const vespalib::string &type_spec
         input_types.push_back(ValueType::from_spec(function->param_name(i)));
     }
     NodeTypes types(*function, input_types);
+    if (!types.errors().empty()) {
+        for (const auto &msg: types.errors()) {
+            fprintf(stderr, "type error: %s\n", msg.c_str());
+        }
+    }
     ValueType expected_type = ValueType::from_spec(type_spec);
     ValueType actual_type = types.get_type(function->root());
     EXPECT_EQUAL(expected_type, actual_type);
@@ -82,6 +87,7 @@ TEST("require that reduce resolves correct type") {
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,x,z)", "tensor(y{})"));
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,y,z,x)", "double"));
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,w)", "error"));
+    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,a,b,c)", "error"));
     TEST_DO(verify("reduce(tensor(x{}),sum,x)", "double"));
     TEST_DO(verify("reduce(tensor<float>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
     TEST_DO(verify("reduce(tensor<float>(x{}),sum,x)", "double"));
@@ -234,6 +240,13 @@ TEST("require that tensor create resolves correct type") {
     TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:reduce(tensor(x[2]),sum),{x:2}:double}", "tensor(x[3])"));
     TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:tensor(x[2]),{x:2}:double}", "error"));
     TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:error,{x:2}:double}", "error"));
+}
+
+TEST("require that tensor lambda resolves correct type") {
+    TEST_DO(verify("tensor(x[3])(error)", "error"));
+    TEST_DO(verify("tensor(x[3])(double)", "tensor(x[3])"));
+    TEST_DO(verify("tensor<float>(x[3])(double)", "tensor<float>(x[3])"));
+    TEST_DO(verify("tensor(x[3])(tensor(x[2]))", "error"));
 }
 
 TEST("require that tensor peek resolves correct type") {

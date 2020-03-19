@@ -4,6 +4,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 
 TEST("test that make_string formats as one can expect.")
 {
@@ -37,6 +38,10 @@ TEST("test that make_string formats as one can expect.")
               "bloated fat long string";
     tst = p;
     EXPECT_TRUE(tst == make_string("%s", p));
+}
+
+TEST("require that short form make string can be used") {
+    EXPECT_EQUAL(fmt("format: %d", 123), vespalib::string("format: 123"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

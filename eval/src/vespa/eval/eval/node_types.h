@@ -23,9 +23,12 @@ class NodeTypes
 private:
     ValueType _not_found;
     std::map<const nodes::Node*,ValueType> _type_map;
+    std::vector<vespalib::string> _errors;
 public:
     NodeTypes();
     NodeTypes(const Function &function, const std::vector<ValueType> &input_types);
+    ~NodeTypes();
+    const std::vector<vespalib::string> &errors() const { return _errors; }
     const ValueType &get_type(const nodes::Node &node) const;
     template <typename F>
     void each(F &&f) const {
