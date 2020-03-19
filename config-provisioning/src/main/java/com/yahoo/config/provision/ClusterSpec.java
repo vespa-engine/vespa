@@ -48,6 +48,9 @@ public final class ClusterSpec {
     /** Returns the docker image repository part of a docker image we want this cluster to run */
     public Optional<String> dockerImageRepo() { return dockerImageRepo; }
 
+    /** Returns the docker image (repository + vespa version) we want this cluster to run */
+    public Optional<String> dockerImage() { return dockerImageRepo.map(repo -> repo + ":" + vespaVersion.toFullString()); }
+
     /** Returns the version of Vespa that we want this cluster to run */
     public Version vespaVersion() { return vespaVersion; }
 

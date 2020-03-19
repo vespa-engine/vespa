@@ -187,7 +187,7 @@ public class NodeSerializer {
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
         object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
-        object.setString(wantedDockerImageRepoKey, allocation.membership().cluster().dockerImageRepo().orElse(""));
+        allocation.membership().cluster().dockerImageRepo().ifPresent(repo -> object.setString(wantedDockerImageRepoKey, repo));
         allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
     }
 
