@@ -90,10 +90,12 @@ public class NodeSpec {
             NodeReports reports,
             Optional<String> parentHostname) {
         if (state == NodeState.active) {
-            Objects.requireNonNull(wantedVespaVersion, "Unknown vespa version for active node");
-            Objects.requireNonNull(wantedDockerImage, "Unknown docker image for active node");
-            Objects.requireNonNull(wantedRestartGeneration, "Unknown restartGeneration for active node");
-            Objects.requireNonNull(currentRestartGeneration, "Unknown currentRestartGeneration for active node");
+            requireOptional(owner, "owner");
+            requireOptional(membership, "membership");
+            requireOptional(wantedVespaVersion, "wantedVespaVersion");
+            requireOptional(wantedDockerImage, "wantedDockerImage");
+            requireOptional(wantedRestartGeneration, "restartGeneration");
+            requireOptional(currentRestartGeneration, "currentRestartGeneration");
         }
 
         this.hostname = Objects.requireNonNull(hostname);
@@ -712,5 +714,10 @@ public class NodeSpec {
 
             return builder;
         }
+    }
+
+    private static void requireOptional(Optional<?> optional, String name) {
+        if (optional == null || optional.isEmpty())
+            throw new IllegalArgumentException(name + " must be set, was " + optional);
     }
 }
