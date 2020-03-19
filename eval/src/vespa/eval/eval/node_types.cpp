@@ -143,8 +143,11 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         if (my_type.is_error()) {
             auto str = fmt("aggr: %s, dimensions: [",
                            AggrNames::name_of(node.aggr())->c_str());
+            size_t i = 0;
             for (const auto &dimension: node.dimensions()) {
-                str += ",";
+                if (i++ > 0) {
+                    str += ",";
+                }
                 str += dimension;
             }
             str += "]";

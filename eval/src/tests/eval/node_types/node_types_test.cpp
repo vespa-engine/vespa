@@ -87,6 +87,7 @@ TEST("require that reduce resolves correct type") {
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,x,z)", "tensor(y{})"));
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,y,z,x)", "double"));
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,w)", "error"));
+    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,a,b,c)", "error"));
     TEST_DO(verify("reduce(tensor(x{}),sum,x)", "double"));
     TEST_DO(verify("reduce(tensor<float>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
     TEST_DO(verify("reduce(tensor<float>(x{}),sum,x)", "double"));
