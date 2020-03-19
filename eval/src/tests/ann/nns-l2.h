@@ -36,7 +36,7 @@ template <typename FltType = float>
 struct L2DistCalc {
     vespalib::hwaccelrated::IAccelrated::UP _hw;
 
-    L2DistCalc() : _hw(vespalib::hwaccelrated::IAccelrated::getAccelrator()) {}
+    L2DistCalc() : _hw(vespalib::hwaccelrated::IAccelrated::createAccelrator()) {}
 
     using Arr = vespalib::ArrayRef<FltType>;
     using ConstArr = vespalib::ConstArrayRef<FltType>;

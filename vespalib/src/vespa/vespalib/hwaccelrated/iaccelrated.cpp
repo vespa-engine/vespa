@@ -122,7 +122,7 @@ RuntimeVerificator::RuntimeVerificator()
     GenericAccelrator generic;
     verify(generic);
 
-    IAccelrated::UP thisCpu(IAccelrated::getAccelrator());
+    IAccelrated::UP thisCpu(IAccelrated::createAccelrator());
     verify(*thisCpu);
 }
 
@@ -156,9 +156,16 @@ RuntimeVerificator _G_verifyAccelrator;
 
 
 IAccelrated::UP
-IAccelrated::getAccelrator()
+IAccelrated::createAccelrator()
 {
     return _G_selector.create();
+}
+
+const IAccelrated &
+IAccelrated::getAccelrator()
+{
+    static IAccelrated::UP accelrator = _G_selector.create();
+    return *accelrator;
 }
 
 }

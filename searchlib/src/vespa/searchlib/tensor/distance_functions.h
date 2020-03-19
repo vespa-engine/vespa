@@ -16,7 +16,7 @@ template <typename FloatType>
 class SquaredEuclideanDistance : public DistanceFunction {
 public:
     SquaredEuclideanDistance()
-        : _computer(vespalib::hwaccelrated::IAccelrated::getAccelrator())
+        : _computer(vespalib::hwaccelrated::IAccelrated::createAccelrator())
     {}
     double calc(const vespalib::tensor::TypedCells& lhs, const vespalib::tensor::TypedCells& rhs) const override {
         auto lhs_vector = lhs.typify<FloatType>();

@@ -30,7 +30,8 @@ public:
     virtual double squaredEuclideanDistance(const float * a, const float * b, size_t sz) const = 0;
     virtual double squaredEuclideanDistance(const double * a, const double * b, size_t sz) const = 0;
 
-    static IAccelrated::UP getAccelrator() __attribute__((noinline));
+    static IAccelrated::UP createAccelrator() __attribute__((noinline));
+    static const IAccelrated & getAccelrator() __attribute__((noinline));
 };
 
 }

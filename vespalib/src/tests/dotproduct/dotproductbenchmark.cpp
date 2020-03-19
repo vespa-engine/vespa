@@ -60,7 +60,7 @@ template <typename T>
 FullBenchmark<T>::FullBenchmark(size_t numDocs, size_t numValues)
     : _values(numDocs*numValues),
       _query(numValues),
-      _dp(IAccelrated::getAccelrator())
+      _dp(IAccelrated::createAccelrator())
 {
     for (size_t i(0); i < numDocs; i++) {
         for (size_t j(0); j < numValues; j++) {
