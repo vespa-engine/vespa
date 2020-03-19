@@ -49,7 +49,6 @@ public class NodeSpec {
     private final Optional<String> modelName;
 
     private final Optional<Boolean> allowedToBeDown;
-    private final Optional<Boolean> wantToDeprovision;
     private final Optional<ApplicationId> owner;
     private final Optional<NodeMembership> membership;
 
@@ -74,7 +73,6 @@ public class NodeSpec {
             Optional<Version> wantedOsVersion,
             Optional<Version> currentOsVersion,
             Optional<Boolean> allowedToBeDown,
-            Optional<Boolean> wantToDeprovision,
             Optional<ApplicationId> owner,
             Optional<NodeMembership> membership,
             Optional<Long> wantedRestartGeneration,
@@ -111,7 +109,6 @@ public class NodeSpec {
         this.wantedOsVersion = Objects.requireNonNull(wantedOsVersion);
         this.currentOsVersion = Objects.requireNonNull(currentOsVersion);
         this.allowedToBeDown = Objects.requireNonNull(allowedToBeDown);
-        this.wantToDeprovision = Objects.requireNonNull(wantToDeprovision);
         this.owner = Objects.requireNonNull(owner);
         this.membership = Objects.requireNonNull(membership);
         this.wantedRestartGeneration = wantedRestartGeneration;
@@ -203,10 +200,6 @@ public class NodeSpec {
         return allowedToBeDown;
     }
 
-    public Optional<Boolean> wantToDeprovision() {
-        return wantToDeprovision;
-    }
-
     public Optional<ApplicationId> owner() {
         return owner;
     }
@@ -272,7 +265,6 @@ public class NodeSpec {
                 Objects.equals(wantedOsVersion, that.wantedOsVersion) &&
                 Objects.equals(currentOsVersion, that.currentOsVersion) &&
                 Objects.equals(allowedToBeDown, that.allowedToBeDown) &&
-                Objects.equals(wantToDeprovision, that.wantToDeprovision) &&
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(membership, that.membership) &&
                 Objects.equals(wantedRestartGeneration, that.wantedRestartGeneration) &&
@@ -303,7 +295,6 @@ public class NodeSpec {
                 wantedOsVersion,
                 currentOsVersion,
                 allowedToBeDown,
-                wantToDeprovision,
                 owner,
                 membership,
                 wantedRestartGeneration,
@@ -334,7 +325,6 @@ public class NodeSpec {
                 + " wantedOsVersion=" + wantedOsVersion
                 + " currentOsVersion=" + currentOsVersion
                 + " allowedToBeDown=" + allowedToBeDown
-                + " wantToDeprovision=" + wantToDeprovision
                 + " owner=" + owner
                 + " membership=" + membership
                 + " wantedRestartGeneration=" + wantedRestartGeneration
@@ -364,7 +354,6 @@ public class NodeSpec {
         private Optional<Version> wantedOsVersion = Optional.empty();
         private Optional<Version> currentOsVersion = Optional.empty();
         private Optional<Boolean> allowedToBeDown = Optional.empty();
-        private Optional<Boolean> wantToDeprovision = Optional.empty();
         private Optional<ApplicationId> owner = Optional.empty();
         private Optional<NodeMembership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
@@ -401,7 +390,6 @@ public class NodeSpec {
             node.wantedOsVersion.ifPresent(this::wantedOsVersion);
             node.currentOsVersion.ifPresent(this::currentOsVersion);
             node.allowedToBeDown.ifPresent(this::allowedToBeDown);
-            node.wantToDeprovision.ifPresent(this::wantToDeprovision);
             node.owner.ifPresent(this::owner);
             node.membership.ifPresent(this::membership);
             node.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
@@ -468,11 +456,6 @@ public class NodeSpec {
 
         public Builder allowedToBeDown(boolean allowedToBeDown) {
             this.allowedToBeDown = Optional.of(allowedToBeDown);
-            return this;
-        }
-
-        public Builder wantToDeprovision(boolean wantToDeprovision) {
-            this.wantToDeprovision = Optional.of(wantToDeprovision);
             return this;
         }
 
@@ -576,7 +559,6 @@ public class NodeSpec {
             attributes.getCurrentOsVersion().ifPresent(this::currentOsVersion);
             attributes.getRebootGeneration().ifPresent(this::currentRebootGeneration);
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
-            attributes.getWantToDeprovision().ifPresent(this::wantToDeprovision);
             NodeReports.fromMap(attributes.getReports());
 
             return this;
@@ -626,10 +608,6 @@ public class NodeSpec {
             return allowedToBeDown;
         }
 
-        public Optional<Boolean> wantToDeprovision() {
-            return wantToDeprovision;
-        }
-
         public Optional<ApplicationId> owner() {
             return owner;
         }
@@ -676,7 +654,7 @@ public class NodeSpec {
 
         public NodeSpec build() {
             return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type, flavor, cpuCores,
-                    wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, allowedToBeDown, wantToDeprovision,
+                    wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, allowedToBeDown,
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,

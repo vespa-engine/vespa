@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.TenantName;
 
 import java.time.Instant;
 import java.util.Map;
@@ -29,8 +28,6 @@ public class NodeAttributes {
     private Optional<Version> vespaVersion = Optional.empty();
     private Optional<Version> currentOsVersion = Optional.empty();
     private Optional<Instant> currentFirmwareCheck = Optional.empty();
-    private Optional<Boolean> wantToDeprovision = Optional.empty();
-    private Optional<TenantName> reservedTo = Optional.empty();
     /** The list of reports to patch. A null value is used to remove the report. */
     private Map<String, JsonNode> reports = new TreeMap<>();
 
@@ -67,12 +64,6 @@ public class NodeAttributes {
 
     public NodeAttributes withCurrentFirmwareCheck(Instant currentFirmwareCheck) {
         this.currentFirmwareCheck = Optional.of(currentFirmwareCheck);
-        return this;
-    }
-
-
-    public NodeAttributes withWantToDeprovision(boolean wantToDeprovision) {
-        this.wantToDeprovision = Optional.of(wantToDeprovision);
         return this;
     }
 
@@ -115,22 +106,14 @@ public class NodeAttributes {
         return currentFirmwareCheck;
     }
 
-    public Optional<Boolean> getWantToDeprovision() {
-        return wantToDeprovision;
-    }
-
     public Map<String, JsonNode> getReports() {
         return reports;
-    }
-
-    public Optional<TenantName> getReservedTo() {
-        return reservedTo;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
-                            currentFirmwareCheck, wantToDeprovision, reports, reservedTo);
+                            currentFirmwareCheck, reports);
     }
 
     public boolean isEmpty() {
@@ -150,9 +133,7 @@ public class NodeAttributes {
                 && Objects.equals(vespaVersion, other.vespaVersion)
                 && Objects.equals(currentOsVersion, other.currentOsVersion)
                 && Objects.equals(currentFirmwareCheck, other.currentFirmwareCheck)
-                && Objects.equals(reports, other.reports)
-                && Objects.equals(reservedTo, other.reservedTo)
-                && Objects.equals(wantToDeprovision, other.wantToDeprovision);
+                && Objects.equals(reports, other.reports);
     }
 
     @Override
@@ -164,9 +145,7 @@ public class NodeAttributes {
                         vespaVersion.map(ver -> "vespaVersion=" + ver.toFullString()),
                         currentOsVersion.map(ver -> "currentOsVersion=" + ver.toFullString()),
                         currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
-                        Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports),
-                        Optional.ofNullable(reservedTo.isEmpty() ? null : "reservedTo=" + reservedTo),
-                        wantToDeprovision.map(depr -> "wantToDeprovision=" + depr))
+                        Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.joining(", ", "{", "}"));
