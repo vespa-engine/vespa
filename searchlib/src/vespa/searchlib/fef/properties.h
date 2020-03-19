@@ -129,9 +129,10 @@ public:
 class Properties
 {
 private:
-    typedef vespalib::string      Key;
-    typedef Property::Values      Value;
-    typedef vespalib::hash_map<Key, Value>  Map;
+    using Key = vespalib::string;
+    using Value =  Property::Values;
+    using Map = vespalib::hash_map<Key, Value, vespalib::hash<Key>,
+                                   std::equal_to<>, vespalib::hashtable_base::and_modulator>;
 
     uint32_t _numValues;
     Map      _data;

@@ -22,6 +22,12 @@ ValueExecutor::execute(uint32_t)
 }
 
 void
+SingleValueExecutor::execute(uint32_t)
+{
+    outputs().set_number(0, _value);
+}
+
+void
 SingleZeroValueExecutor::execute(uint32_t)
 {
     outputs().set_number(0, 0.0);
@@ -56,10 +62,13 @@ ValueBlueprint::setup(const IIndexEnvironment &, const ParameterList & params)
 }
 
 FeatureExecutor &
-ValueBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+ValueBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    (void) queryEnv;
-    return stash.create<ValueExecutor>(_values);
+    if (_values.size() == 1) {
+        return stash.create<SingleValueExecutor>(_values[0]);
+    } else {
+        return stash.create<ValueExecutor>(_values);
+    }
 }
 
 

@@ -3,6 +3,7 @@
 #include "rank_program.h"
 #include "featureoverrider.h"
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 #include <algorithm>
 #include <cassert>
 
@@ -14,7 +15,6 @@ using vespalib::Stash;
 namespace search::fef {
 
 using MappedValues = std::map<const NumberOrObject *, LazyValue>;
-using ValueSet = std::set<const NumberOrObject *>;
 
 namespace {
 
@@ -179,6 +179,7 @@ RankProgram::setup(const MatchData &md,
 
     const auto &specs = _resolver->getExecutorSpecs();
     _executors.reserve(specs.size());
+    _is_const.resize(specs.size()*2); // Reserve space in hashmap for executors to be const
     for (uint32_t i = 0; i < specs.size(); ++i) {
         vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(specs[i].output_types.size());
         StashSelector stash(_hot_stash, _cold_stash);

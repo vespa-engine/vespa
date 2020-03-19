@@ -173,7 +173,7 @@ NativeFieldMatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib
 {
     NativeFieldMatchExecutor &native = stash.create<NativeFieldMatchExecutor>(env, _params);
     if (native.empty()) {
-        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
+        return stash.create<SingleZeroValueExecutor>();
     } else {
         return native;
     }

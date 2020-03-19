@@ -356,6 +356,9 @@ TEST("test hash set find")
     EXPECT_TRUE(*set.find(S(1)) == S(1));
     auto cit = set.find<uint32_t>(7);
     EXPECT_TRUE(*cit == S(7));
+
+    EXPECT_EQUAL(1u, set.count(S(7)));
+    EXPECT_EQUAL(0u, set.count(S(10007)));
 }
 
 TEST("test hash set range constructor")

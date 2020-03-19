@@ -70,7 +70,7 @@ FeatureExecutor &
 MatchCountBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     if (_field == nullptr) {
-        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
+        return stash.create<SingleZeroValueExecutor>();
     }
     return stash.create<MatchCountExecutor>(_field->id(), queryEnv);
 }

@@ -42,6 +42,7 @@ public:
     template<typename InputIt>
     void insert(InputIt first, InputIt last);
     void erase(const K & key);
+    size_t count(const K & key) const        { return _ht.find(key) != end() ? 1 : 0; }
     iterator find(const K & key)             { return _ht.find(key); }
     const_iterator find(const K & key) const { return _ht.find(key); }
 
