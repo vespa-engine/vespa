@@ -27,6 +27,8 @@ protected:
     void doCompactWorst();
     void checkTensorType(const Tensor &tensor);
     void setTensorRef(DocId docId, EntryRef ref);
+    virtual vespalib::MemoryUsage memory_usage() const;
+
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
     using RefCopyVector = vespalib::Array<EntryRef>;

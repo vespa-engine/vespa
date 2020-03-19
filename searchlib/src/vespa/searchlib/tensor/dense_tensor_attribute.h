@@ -24,6 +24,7 @@ private:
     std::unique_ptr<NearestNeighborIndex> _index;
 
     void consider_remove_from_index(DocId docid);
+    vespalib::MemoryUsage memory_usage() const override;
 
 public:
     DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,

@@ -111,10 +111,7 @@ TensorAttribute::onCommit()
 void
 TensorAttribute::onUpdateStat()
 {
-    // update statistics
-    vespalib::MemoryUsage total = _refVector.getMemoryUsage();
-    total.merge(_tensorStore.getMemoryUsage());
-    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    vespalib::MemoryUsage total = memory_usage();
     this->updateStatistics(_refVector.size(),
                            _refVector.size(),
                            total.allocatedBytes(),
@@ -176,6 +173,15 @@ TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
     }
+}
+
+vespalib::MemoryUsage
+TensorAttribute::memory_usage() const
+{
+    vespalib::MemoryUsage result = _refVector.getMemoryUsage();
+    result.merge(_tensorStore.getMemoryUsage());
+    result.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    return result;
 }
 
 Tensor::UP

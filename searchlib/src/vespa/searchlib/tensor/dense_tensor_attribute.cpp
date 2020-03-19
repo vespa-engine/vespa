@@ -64,6 +64,16 @@ DenseTensorAttribute::consider_remove_from_index(DocId docid)
     }
 }
 
+vespalib::MemoryUsage
+DenseTensorAttribute::memory_usage() const
+{
+    vespalib::MemoryUsage result = TensorAttribute::memory_usage();
+    if (_index) {
+        result.merge(_index->memory_usage());
+    }
+    return result;
+}
+
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),

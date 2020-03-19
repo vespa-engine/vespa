@@ -84,6 +84,7 @@ private:
     EntryVector _removes;
     generation_t _transfer_gen;
     generation_t _trim_gen;
+    mutable size_t _memory_usage_cnt;
 
 public:
     MockNearestNeighborIndex(const DocVectorAccess& vectors)
@@ -91,7 +92,8 @@ public:
           _adds(),
           _removes(),
           _transfer_gen(std::numeric_limits<generation_t>::max()),
-          _trim_gen(std::numeric_limits<generation_t>::max())
+          _trim_gen(std::numeric_limits<generation_t>::max()),
+          _memory_usage_cnt(0)
     {
     }
     void clear() {
@@ -119,6 +121,7 @@ public:
     }
     generation_t get_transfer_gen() const { return _transfer_gen; }
     generation_t get_trim_gen() const { return _trim_gen; }
+    size_t memory_usage_cnt() const { return _memory_usage_cnt; }
 
     void add_document(uint32_t docid) override {
         auto vector = _vectors.get_vector(docid).typify<double>();
@@ -135,6 +138,7 @@ public:
         _trim_gen = first_used_gen;
     }
     vespalib::MemoryUsage memory_usage() const override {
+        ++_memory_usage_cnt;
         return vespalib::MemoryUsage();
     }
     std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
@@ -580,6 +584,14 @@ TEST_F("commit() ensures transfer and trim hold lists on nearest neighbor index"
     EXPECT_GREATER(gen_3, gen_2);
     EXPECT_EQUAL(gen_3 - 1, index.get_transfer_gen());
     EXPECT_EQUAL(gen_3, index.get_trim_gen());
+}
+
+TEST_F("Memory usage is extracted from index when updating stats on attribute", DenseTensorAttributeMockIndex)
+{
+    size_t before = f.mock_index().memory_usage_cnt();
+    f.getStatus();
+    size_t after = f.mock_index().memory_usage_cnt();
+    EXPECT_EQUAL(before + 1, after);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); vespalib::unlink("test.dat"); }

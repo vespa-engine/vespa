@@ -420,6 +420,7 @@ HnswIndex::memory_usage() const
     result.merge(_node_refs.getMemoryUsage());
     result.merge(_nodes.getMemoryUsage());
     result.merge(_links.getMemoryUsage());
+    result.merge(_visited_set_pool.memory_usage());
     return result;
 }
 
