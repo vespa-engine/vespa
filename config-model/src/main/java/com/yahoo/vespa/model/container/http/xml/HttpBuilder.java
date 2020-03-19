@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -22,6 +23,7 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 
@@ -61,12 +63,10 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     }
 
     private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer ancestor, Element accessControlElem) {
-        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), deployState.getDeployLogger());
+        AthenzDomain domain = getAccessControlDomain(deployState, accessControlElem);
+        AccessControl.Builder builder = new AccessControl.Builder(domain.value(), deployState.getDeployLogger());
 
-        getContainerCluster(ancestor).ifPresent(cluster -> {
-            builder.setHandlers(cluster.getHandlers());
-            builder.setServlets(cluster.getAllServlets());
-        });
+        getContainerCluster(ancestor).ifPresent(builder::setHandlers);
 
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
                 readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
@@ -80,6 +80,28 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                     .forEach(builder::excludeBinding);
         }
         return builder.build();
+    }
+
+    // TODO Fail if domain is not provided through deploy properties
+    private static AthenzDomain getAccessControlDomain(DeployState deployState, Element accessControlElem) {
+        AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
+        AthenzDomain explicitDomain = XmlHelper.getOptionalAttribute(accessControlElem, "domain")
+                .map(AthenzDomain::from)
+                .orElse(null);
+        if (tenantDomain == null) {
+            if (explicitDomain == null) {
+                throw new IllegalStateException("No Athenz domain provided for 'access-control'");
+            }
+            deployState.getDeployLogger().log(Level.WARNING, "Athenz tenant is not provided by deploy call. This will soon be handled as failure.");
+        }
+        if (explicitDomain != null) {
+            if (tenantDomain != null && !explicitDomain.equals(tenantDomain)) {
+                throw new IllegalArgumentException(
+                        String.format("Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
+            }
+            deployState.getDeployLogger().log(Level.WARNING, "Domain in 'access-control' is deprecated and will be removed soon");
+        }
+        return tenantDomain != null ? tenantDomain : explicitDomain;
     }
 
     private static Optional<ApplicationContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
