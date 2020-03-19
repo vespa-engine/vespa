@@ -4,6 +4,8 @@ package com.yahoo.jdisc.http.filter.security.athenz;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver.MockResponseHandler;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilterConfig.EnabledCredentials;
@@ -29,6 +31,8 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter.MATCHED_CREDENTIAL_TYPE_ATTRIBUTE;
 import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter.MATCHED_ROLE_ATTRIBUTE;
@@ -38,8 +42,11 @@ import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
 import static com.yahoo.vespa.athenz.zpe.AuthorizationResult.Type;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,6 +65,8 @@ public class AthenzAuthorizationFilterTest {
     private static final X509Certificate ROLE_CERTIFICATE = createDummyRoleCertificate(ROLE, IDENTITY);
     private static final String ACTION = "update";
     private static final String HEADER_NAME = "Athenz-Role-Token";
+    private static final String ACCEPTED_METRIC_NAME = "jdisc.http.filter.athenz.accepted_requests";
+    private static final String REJECTED_METRIC_NAME = "jdisc.http.filter.athenz.rejected_requests";
 
     @Test
     public void accepts_request_with_access_token() {
@@ -127,6 +136,40 @@ public class AthenzAuthorizationFilterTest {
         assertAuthorizationResult(request, Type.DENY);
     }
 
+    @Test
+    public void reports_metrics_for_rejected_requests() {
+        MetricMock metric = new MetricMock();
+        AthenzAuthorizationFilter filter = createFilter(new DenyingZpe(), List.of(), metric);
+        MockResponseHandler responseHandler = new MockResponseHandler();
+        DiscFilterRequest request = createRequest(null, ACCESS_TOKEN, IDENTITY_CERTIFICATE);
+        filter.filter(request, responseHandler);
+
+        assertMetrics(metric, REJECTED_METRIC_NAME, Map.of("zpe-status", "DENY", "status-code", "403"));
+    }
+
+    @Test
+    public void reports_metrics_for_accepted_requests() {
+        MetricMock metric = new MetricMock();
+        AthenzAuthorizationFilter filter = createFilter(new AllowingZpe(), List.of(EnabledCredentials.ACCESS_TOKEN), metric);
+        MockResponseHandler responseHandler = new MockResponseHandler();
+        DiscFilterRequest request = createRequest(null, ACCESS_TOKEN, IDENTITY_CERTIFICATE);
+        filter.filter(request, responseHandler);
+
+        assertMetrics(metric, ACCEPTED_METRIC_NAME, Map.of("authz-required", "true"));
+    }
+
+    private void assertMetrics(MetricMock metric, String metricName, Map<String, String> dimensions) {
+        assertThat(metric.addInvocations.keySet(), hasItem(metricName));
+        SimpleMetricContext metricContext = metric.addInvocations.get(metricName);
+        assertNotNull("Metric not found " + metricName, metricName);
+        for (Map.Entry<String, String> entry : dimensions.entrySet()) {
+            String dimensionName = entry.getKey();
+            String expected = entry.getValue();
+            assertThat(metricContext.dimensions.keySet(), hasItem(dimensionName));
+            assertEquals(expected, metricContext.dimensions.get(dimensionName));
+        }
+    }
+
     private static X509Certificate createDummyIdentityCertificate(AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal x500Name = new X500Principal("CN="+ identity.getFullName());
@@ -158,13 +201,18 @@ public class AthenzAuthorizationFilterTest {
     }
 
     private static AthenzAuthorizationFilter createFilter(Zpe zpe, List<EnabledCredentials.Enum> enabledCredentials) {
+        return createFilter(zpe, enabledCredentials, new NullMetric());
+    }
+
+    private static AthenzAuthorizationFilter createFilter(Zpe zpe, List<EnabledCredentials.Enum> enabledCredentials, Metric metric) {
         return new AthenzAuthorizationFilter(
                 new AthenzAuthorizationFilterConfig(
                         new AthenzAuthorizationFilterConfig.Builder()
                                 .roleTokenHeaderName(HEADER_NAME)
                                 .enabledCredentials(enabledCredentials)),
                 new StaticRequestResourceMapper(RESOURCE_NAME, ACTION),
-                zpe);
+                zpe,
+                metric);
     }
 
     private static void assertAuthorizationResult(DiscFilterRequest request, Type expectedResult) {
@@ -229,6 +277,23 @@ public class AthenzAuthorizationFilterTest {
         public AuthorizationResult checkAccessAllowed(AthenzAccessToken accessToken, X509Certificate identityCertificate, AthenzResourceName resourceName, String action) {
             return new AuthorizationResult(Type.DENY);
         }
+    }
+
+    private static class MetricMock implements Metric {
+        final ConcurrentHashMap<String, SimpleMetricContext> addInvocations = new ConcurrentHashMap<>();
+
+        @Override public void add(String key, Number val, Context ctx) {
+            addInvocations.put(key, (SimpleMetricContext)ctx);
+        }
+        @Override public void set(String key, Number val, Context ctx) {}
+        @Override public Context createContext(Map<String, ?> properties) { return new SimpleMetricContext(properties); }
+    }
+
+    private static class SimpleMetricContext implements Metric.Context {
+        final Map<String, String> dimensions;
+
+        @SuppressWarnings("unchecked")
+        SimpleMetricContext(Map<String, ?> dimensions) { this.dimensions = (Map<String, String>)dimensions; }
     }
 
 }
