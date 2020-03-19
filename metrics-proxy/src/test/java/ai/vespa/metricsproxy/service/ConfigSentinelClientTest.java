@@ -98,4 +98,5 @@ public class ConfigSentinelClientTest {
         assertThat(containerClusterController.getPid(),is(25020));
         assertThat(containerClusterController.getState(),is("RUNNING"));
     }
+
 }

@@ -22,27 +22,7 @@ public class MockConfigSentinelClient extends ConfigSentinelClient {
     }
 
     @Override
-    protected synchronized void setStatus(List<VespaService> services) throws Exception {
-        List<VespaService> updatedServices = new ArrayList<>();
-        String[] lines = configSentinel.getServiceList().split("\n");
-        for (String line : lines) {
-            if (line.equals("")) {
-                break;
-            }
-
-            VespaService s = parseServiceString(line, services);
-            if (s != null) {
-                updatedServices.add(s);
-            }
-        }
-
-        //Check if there are services that were not found in
-        //from the sentinel
-        for (VespaService s : services) {
-            if (!updatedServices.contains(s)) {
-                log.log(LogLevel.DEBUG, "Service " + s + " is no longer found with sentinel - setting alive = false");
-                s.setAlive(false);
-            }
-        }
+    String sentinelLs() {
+        return configSentinel.getServiceList();
     }
 }
