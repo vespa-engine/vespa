@@ -223,7 +223,7 @@ TEST("require that merge resolves to the appropriate type") {
     TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "error"));
 }
 
-TEST("require that lambda tensor resolves correct type") {
+TEST("require that static tensor lambda resolves correct type") {
     TEST_DO(verify("tensor(x[5])(1.0)", "tensor(x[5])"));
     TEST_DO(verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])"));
     TEST_DO(verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])"));
@@ -242,11 +242,12 @@ TEST("require that tensor create resolves correct type") {
     TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:error,{x:2}:double}", "error"));
 }
 
-TEST("require that tensor lambda resolves correct type") {
+TEST("require that dynamic tensor lambda resolves correct type") {
     TEST_DO(verify("tensor(x[3])(error)", "error"));
     TEST_DO(verify("tensor(x[3])(double)", "tensor(x[3])"));
     TEST_DO(verify("tensor<float>(x[3])(double)", "tensor<float>(x[3])"));
     TEST_DO(verify("tensor(x[3])(tensor(x[2]))", "error"));
+    TEST_DO(verify("tensor(x[3])(reduce(tensor(x[2])+tensor(x[4]),sum))", "error"));
 }
 
 TEST("require that tensor peek resolves correct type") {
