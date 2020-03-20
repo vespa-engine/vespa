@@ -13,6 +13,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
@@ -91,6 +92,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.joining;
@@ -117,22 +119,16 @@ public class InternalStepRunner implements StepRunner {
     static final NodeResources DEFAULT_TESTER_RESOURCES_AWS =
             new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
 
-    static final Duration capacityTimeout = Duration.ofMinutes(5);
-    static final Duration endpointTimeout = Duration.ofMinutes(15);
-    static final Duration endpointCertificateTimeout = Duration.ofMinutes(15);
-    static final Duration testerTimeout = Duration.ofMinutes(30);
-    static final Duration nodesDownTimeout = Duration.ofMinutes(60);
-    static final Duration noNodesDownTimeout = Duration.ofMinutes(120);
-    static final Duration certificateTimeout = Duration.ofMinutes(300);
-
     private final Controller controller;
     private final TestConfigSerializer testConfigSerializer;
     private final DeploymentFailureMails mails;
+    private final Timeouts timeouts;
 
     public InternalStepRunner(Controller controller) {
         this.controller = controller;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
         this.mails = new DeploymentFailureMails(controller.zoneRegistry());
+        this.timeouts = Timeouts.of(controller.system());
     }
 
     @Override
@@ -263,8 +259,8 @@ public class InternalStepRunner implements StepRunner {
                                          ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.getErrorCode()) {
                 case CERTIFICATE_NOT_READY:
-                    if (startTime.plus(endpointCertificateTimeout).isBefore(controller.clock().instant())) {
-                        logger.log("Deployment failed to find provisioned endpoint certificate after " + endpointCertificateTimeout);
+                    if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
+                        logger.log("Deployment failed to find provisioned endpoint certificate after " + timeouts.endpointCertificate());
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return result;
@@ -279,7 +275,7 @@ public class InternalStepRunner implements StepRunner {
                     return result;
                 case OUT_OF_CAPACITY:
                     logger.log(e.getServerMessage());
-                    return controller.system().isCd() && startTime.plus(capacityTimeout).isAfter(controller.clock().instant())
+                    return controller.system().isCd() && startTime.plus(timeouts.capacity()).isAfter(controller.clock().instant())
                            ? Optional.empty()
                            : Optional.of(outOfCapacity);
                 case INVALID_APPLICATION_PACKAGE:
@@ -294,8 +290,8 @@ public class InternalStepRunner implements StepRunner {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
-                    if (startTime.plus(endpointCertificateTimeout).isBefore(controller.clock().instant())) {
-                        logger.log("Deployment failed to find provisioned endpoint certificate after " + endpointCertificateTimeout);
+                    if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
+                        logger.log("Deployment failed to find provisioned endpoint certificate after " + timeouts.endpointCertificate());
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return Optional.empty();
@@ -352,25 +348,25 @@ public class InternalStepRunner implements StepRunner {
                     return Optional.of(running);
                 }
             }
-            else if (timedOut(id, deployment.get(), endpointTimeout)) {
-                logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
+            else if (timedOut(id, deployment.get(), timeouts.endpoint())) {
+                logger.log(WARNING, "Endpoints failed to show up within " + timeouts.endpoint().toMinutes() + " minutes!");
                 return Optional.of(error);
             }
         }
 
         String failureReason = null;
 
-        NodeList suspendedTooLong = nodeList.suspendedSince(controller.clock().instant().minus(nodesDownTimeout));
+        NodeList suspendedTooLong = nodeList.suspendedSince(controller.clock().instant().minus(timeouts.nodesDown()));
         if ( ! suspendedTooLong.isEmpty()) {
-            failureReason = "Some nodes have been suspended for more than " + nodesDownTimeout.toMinutes() + " minutes:\n" +
+            failureReason = "Some nodes have been suspended for more than " + timeouts.nodesDown().toMinutes() + " minutes:\n" +
                             suspendedTooLong.asList().stream().map(node -> node.node().hostname().value()).collect(joining("\n"));
         }
 
         if (run.noNodesDownSince()
-               .map(since -> since.isBefore(controller.clock().instant().minus(noNodesDownTimeout)))
+               .map(since -> since.isBefore(controller.clock().instant().minus(timeouts.noNodesDown())))
                .orElse(false)) {
             if (summary.needPlatformUpgrade() > 0 || summary.needReboot() > 0 || summary.needRestart() > 0)
-                failureReason = "No nodes allowed to suspend to progress installation for " + noNodesDownTimeout.toMinutes() + " minutes.";
+                failureReason = "No nodes allowed to suspend to progress installation for " + timeouts.noNodesDown().toMinutes() + " minutes.";
             else
                 failureReason = "Nodes not able to start with new application package.";
         }
@@ -442,8 +438,8 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(running);
         }
 
-        if (run.stepInfo(installTester).get().startTime().get().plus(testerTimeout).isBefore(controller.clock().instant())) {
-            logger.log(WARNING, "Installation of tester failed to complete within " + testerTimeout.toMinutes() + " minutes!");
+        if (run.stepInfo(installTester).get().startTime().get().plus(timeouts.tester()).isBefore(controller.clock().instant())) {
+            logger.log(WARNING, "Installation of tester failed to complete within " + timeouts.tester().toMinutes() + " minutes!");
             return Optional.of(error);
         }
 
@@ -807,7 +803,7 @@ public class InternalStepRunner implements StepRunner {
         X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair,
                                                                          subject,
                                                                          controller.clock().instant(),
-                                                                         controller.clock().instant().plus(certificateTimeout),
+                                                                         controller.clock().instant().plus(timeouts.testerCertificate()),
                                                                          SignatureAlgorithm.SHA512_WITH_RSA,
                                                                          BigInteger.valueOf(1))
                                                             .build();
@@ -925,6 +921,29 @@ public class InternalStepRunner implements StepRunner {
             }
             controller.jobController().log(id, step, level, message);
         }
+
+    }
+
+
+    static class Timeouts {
+
+        private final SystemName system;
+
+        private Timeouts(SystemName system) {
+            this.system = requireNonNull(system);
+        }
+
+        public static Timeouts of(SystemName system) {
+            return new Timeouts(system);
+        }
+
+        Duration capacity() { return Duration.ofMinutes(system.isCd() ? 5 : 0); }
+        Duration endpoint() { return Duration.ofMinutes(15); }
+        Duration endpointCertificate() { return Duration.ofMinutes(15); }
+        Duration tester() { return Duration.ofMinutes(30); }
+        Duration nodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 60); }
+        Duration noNodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 120); }
+        Duration testerCertificate() { return Duration.ofMinutes(300); }
 
     }
 
