@@ -14,7 +14,7 @@ public class NodeResourcesTest {
     public void testToString() {
         assertEquals("[vcpu: 1.0, memory: 10.0 Gb, disk 100.0 Gb]",
                      new NodeResources(1., 10., 100., 0).toString());
-        assertEquals("[vcpu: 0.3, memory: 3.3 Gb, disk 33.3 Gb, bandwidth: 0.30 Gbps]",
+        assertEquals("[vcpu: 0.3, memory: 3.3 Gb, disk 33.3 Gb, bandwidth: 0.3 Gbps]",
                      new NodeResources(1/3., 10/3., 100/3., 0.3).toString());
     }
 
