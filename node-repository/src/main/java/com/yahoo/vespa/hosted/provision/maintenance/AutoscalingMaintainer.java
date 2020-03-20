@@ -75,7 +75,7 @@ public class AutoscalingMaintainer extends Maintainer {
     private String toString(int nodes, int groups, NodeResources resources) {
         return String.format(nodes + (groups > 1 ? " (in " + groups + " groups)" : "") +
                              " * [vcpu: %1$.1f, memory: %2$.1f Gb, disk %3$.1f Gb]" +
-                             " (total: [vcpu: %4$.1f, memory: %5$.1f Gb, disk %6$.1f Gb])," +
+                             " (total: [vcpu: %4$.1f, memory: %5$.1f Gb, disk: %6$.1f Gb])," +
                              resources.vcpu(), resources.memoryGb(), resources.diskGb(),
                              nodes * resources.vcpu(), nodes * resources.memoryGb(), nodes * resources.diskGb());
     }
