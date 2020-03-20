@@ -67,17 +67,16 @@ public class AutoscalingMaintainer extends Maintainer {
         int currentGroups = (int) clusterNodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         log.info("Autoscale: " + application + " " + clusterType + " " + clusterId +
-                 "\nfrom " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
-                 "\nto   " + toString(target.get().nodes(), target.get().groups(), target.get().advertisedResources()));
+                 " from " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
+                 " to " + toString(target.get().nodes(), target.get().groups(), target.get().advertisedResources()));
         lastLogged.put(new Pair<>(application, clusterId), nodeRepository().clock().instant());
     }
 
     private String toString(int nodes, int groups, NodeResources resources) {
-        return String.format(nodes + (groups > 1 ? " (in " + groups + " groups)" : "") +
-                             " * [vcpu: %1$.1f, memory: %2$.1f Gb, disk %3$.1f Gb]" +
-                             " (total: [vcpu: %4$.1f, memory: %5$.1f Gb, disk %6$.1f Gb])," +
-                             resources.vcpu(), resources.memoryGb(), resources.diskGb(),
-                             nodes * resources.vcpu(), nodes * resources.memoryGb(), nodes * resources.diskGb());
+        return nodes +
+               (groups > 1 ? " in " + groups + " groups " : " ") +
+               " * " + resources +
+               " (total: " + "[vcpu: " + nodes * resources.vcpu() + ", memory: " + nodes * resources.memoryGb() + " Gb, disk " + nodes * resources.diskGb() + " Gb])";
     }
 
     private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {

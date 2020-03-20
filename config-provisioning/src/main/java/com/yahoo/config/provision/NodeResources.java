@@ -191,11 +191,10 @@ public class NodeResources {
 
     @Override
     public String toString() {
-        return String.format("[vcpu: %1$.1f, memory: %2$.1f Gb, disk %3$.1f Gb" +
-                            (bandwidthGbps > 0 ? ", bandwidth: %4$.1f Gbps" : "") +
-                            ( ! diskSpeed.isDefault() ? ", disk speed: " + diskSpeed : "") +
-                            ( ! storageType.isDefault() ? ", storage type: " + storageType : "") + "]",
-                            vcpu, memoryGb, diskGb, bandwidthGbps);
+        return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
+               (bandwidthGbps > 0 ? ", bandwidth: " + bandwidthGbps + " Gbps" : "") +
+               ( ! diskSpeed.isDefault() ? ", disk speed: " + diskSpeed : "") +
+               ( ! storageType.isDefault() ? ", storage type: " + storageType : "") + "]";
     }
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
