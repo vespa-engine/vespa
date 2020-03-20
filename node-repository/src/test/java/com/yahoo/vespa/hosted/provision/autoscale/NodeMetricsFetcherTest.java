@@ -41,7 +41,7 @@ public class NodeMetricsFetcherTest {
                          httpClient.requestsReceived.get(0));
             assertEquals(5, values.size());
             assertEquals("metric value cpu.util: 16.2 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(0).toString());
-            assertEquals("metric value mem.util: 23.1 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(1).toString());
+            assertEquals("metric value mem_total.util: 23.1 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(1).toString());
             assertEquals("metric value disk.util: 82.0 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(2).toString());
             assertEquals("metric value cpu.util: 20.0 at 1970-01-01T00:20:00Z for host-2.yahoo.com", values.get(3).toString());
             assertEquals("metric value disk.util: 40.0 at 1970-01-01T00:20:00Z for host-2.yahoo.com", values.get(4).toString());
@@ -54,7 +54,7 @@ public class NodeMetricsFetcherTest {
                          httpClient.requestsReceived.get(1));
             assertEquals(3, values.size());
             assertEquals("metric value cpu.util: 10.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(0).toString());
-            assertEquals("metric value mem.util: 15.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(1).toString());
+            assertEquals("metric value mem_total.util: 15.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(1).toString());
             assertEquals("metric value disk.util: 20.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(2).toString());
         }
     }
@@ -87,7 +87,7 @@ public class NodeMetricsFetcherTest {
             "          {\n" +
             "            \"values\": {\n" +
             "              \"cpu.util\": 16.2,\n" +
-            "              \"mem.util\": 23.1,\n" +
+            "              \"mem_total.util\": 23.1,\n" +
             "              \"disk.util\": 82\n" +
             "            },\n" +
             "            \"dimensions\": {\n" +
@@ -130,7 +130,7 @@ public class NodeMetricsFetcherTest {
             "          {\n" +
             "            \"values\": {\n" +
             "              \"cpu.util\": 10,\n" +
-            "              \"mem.util\": 15,\n" +
+            "              \"mem_total.util\": 15,\n" +
             "              \"disk.util\": 20\n" +
             "            },\n" +
             "            \"dimensions\": {\n" +

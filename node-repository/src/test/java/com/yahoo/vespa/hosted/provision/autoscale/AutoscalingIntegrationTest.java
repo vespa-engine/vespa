@@ -71,7 +71,7 @@ public class AutoscalingIntegrationTest {
                 "          {\n" +
                 "            \"values\": {\n" +
                 "              \"cpu.util\": 16.2,\n" +
-                "              \"mem.util\": 23.1,\n" +
+                "              \"mem_total.util\": 23.1,\n" +
                 "              \"disk.util\": 82\n" +
                 "            },\n" +
                 "            \"dimensions\": {\n" +
@@ -90,7 +90,7 @@ public class AutoscalingIntegrationTest {
                 "          {\n" +
                 "            \"values\": {\n" +
                 "              \"cpu.util\": 20,\n" +
-                "              \"mem.util\": 23.1,\n" +
+                "              \"mem_total.util\": 23.1,\n" +
                 "              \"disk.util\": 40\n" +
                 "            },\n" +
                 "            \"dimensions\": {\n" +
