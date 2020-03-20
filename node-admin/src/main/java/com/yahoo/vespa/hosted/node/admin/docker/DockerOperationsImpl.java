@@ -295,7 +295,9 @@ public class DockerOperationsImpl implements DockerOperations {
         } else if (context.nodeType() == NodeType.tenant)
             paths.add(varLibSia);
 
-        paths.forEach(path -> command.withVolume(context.pathOnHostFromPathInNode(path), path));
+        paths.forEach(path -> command.withVolume(
+                context.pathOnHostFromPathInNode(path),
+                context.rewritePathInNodeForWantedDockerImage(path)));
 
 
         // Shared paths

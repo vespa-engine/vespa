@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public interface NodeAgentContext extends TaskContext {
 
@@ -82,4 +83,19 @@ public interface NodeAgentContext extends TaskContext {
 
     /** @see #pathInNodeUnderVespaHome(Path) */
     Path pathInNodeUnderVespaHome(String relativePath);
+
+    /**
+     * Rewrite the given path in node to a path required by the image.
+     * WARNING: This method should only be used when starting the docker container, e.g. writing container data or
+     * configuring mounts.
+     * TODO: Remove when everyone has migrated of vespa/ci image
+     */
+    default Path rewritePathInNodeForWantedDockerImage(Path path) {
+        if (!node().wantedDockerImage().get().repository().endsWith("/vespa/ci")) return path;
+
+        Path originalVespaHome = pathInNodeUnderVespaHome("");
+        if (!path.startsWith(originalVespaHome)) return path;
+
+        return Paths.get("/home/y").resolve(originalVespaHome.relativize(path));
+    }
 }
