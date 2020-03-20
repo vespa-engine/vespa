@@ -44,7 +44,7 @@ public class AllocatableClusterResources {
     }
 
     /**
-     * Returns the resources which will actually be available in this cluster with this allocation.
+     * Returns the resources which will actually be available per node in this cluster with this allocation.
      * These should be used for reasoning about allocation to meet measured demand.
      */
     public NodeResources realResources() { return realResources; }
