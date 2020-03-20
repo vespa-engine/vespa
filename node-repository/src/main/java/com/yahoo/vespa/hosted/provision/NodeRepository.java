@@ -608,7 +608,7 @@ public class NodeRepository extends AbstractComponent {
         try (Mutex lock = lockUnallocated()) {
             requireRemovable(node, false, force);
 
-            if (node.type().isDockerHost()) {
+            if (node.type() == NodeType.host) {
                 List<Node> children = list().childrenOf(node).asList();
                 children.forEach(child -> requireRemovable(child, true, force));
                 db.removeNodes(children);
