@@ -5,6 +5,7 @@ search test {
       index {
         hnsw {
           max-links-per-node: 32
+          distance-metric: angular
           neighbors-to-explore-at-insert: 300
         }
       }

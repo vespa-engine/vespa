@@ -1,7 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
-import java.util.OptionalInt;
+import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Configuration parameters for a hnsw index used together with a 1-dimensional indexed tensor for approximate nearest neighbor search.
@@ -12,33 +13,47 @@ public class HnswIndexParams {
 
     public static final int DEFAULT_MAX_LINKS_PER_NODE = 16;
     public static final int DEFAULT_NEIGHBORS_TO_EXPLORE_AT_INSERT = 200;
+    public static final DistanceMetric DEFAULT_DISTANCE_METRIC = DistanceMetric.EUCLIDEAN;
 
-    private final OptionalInt maxLinksPerNode;
-    private final OptionalInt neighborsToExploreAtInsert;
+    private final Optional<Integer> maxLinksPerNode;
+    private final Optional<Integer> neighborsToExploreAtInsert;
+    private final Optional<DistanceMetric> distanceMetric;
+
+    public static enum DistanceMetric { EUCLIDEAN, ANGULAR, GEODEGREES }
 
     public static class Builder {
-        private OptionalInt maxLinksPerNode = OptionalInt.empty();
-        private OptionalInt neighborsToExploreAtInsert = OptionalInt.empty();
+        private Optional<Integer> maxLinksPerNode = Optional.empty();
+        private Optional<Integer> neighborsToExploreAtInsert = Optional.empty();
+        private Optional<DistanceMetric> distanceMetric = Optional.empty();
 
         public void setMaxLinksPerNode(int value) {
-            maxLinksPerNode = OptionalInt.of(value);
+            maxLinksPerNode = Optional.of(value);
         }
         public void setNeighborsToExploreAtInsert(int value) {
-            neighborsToExploreAtInsert = OptionalInt.of(value);
+            neighborsToExploreAtInsert = Optional.of(value);
+        }
+        public void setDistanceMetric(String value) {
+            String upper = value.toUpperCase(Locale.ENGLISH);
+            DistanceMetric dm = DistanceMetric.valueOf(upper);
+            distanceMetric = Optional.of(dm);
         }
         public HnswIndexParams build() {
-            return new HnswIndexParams(maxLinksPerNode, neighborsToExploreAtInsert);
+            return new HnswIndexParams(maxLinksPerNode, neighborsToExploreAtInsert, distanceMetric);
         }
     }
 
     public HnswIndexParams() {
-        this.maxLinksPerNode = OptionalInt.empty();
-        this.neighborsToExploreAtInsert = OptionalInt.empty();
+        this.maxLinksPerNode = Optional.empty();
+        this.neighborsToExploreAtInsert = Optional.empty();
+        this.distanceMetric = Optional.empty();
     }
 
-    public HnswIndexParams(OptionalInt maxLinksPerNode, OptionalInt neighborsToExploreAtInsert) {
+    public HnswIndexParams(Optional<Integer> maxLinksPerNode,
+                           Optional<Integer> neighborsToExploreAtInsert,
+                           Optional<DistanceMetric> distanceMetric) {
         this.maxLinksPerNode = maxLinksPerNode;
         this.neighborsToExploreAtInsert = neighborsToExploreAtInsert;
+        this.distanceMetric = distanceMetric;
     }
 
     /**
@@ -46,8 +61,9 @@ public class HnswIndexParams {
      * otherwise we use values from this.
      */
     public HnswIndexParams overrideFrom(HnswIndexParams rhs) {
-        return new HnswIndexParams(rhs.maxLinksPerNode.isPresent() ? rhs.maxLinksPerNode : maxLinksPerNode,
-                rhs.neighborsToExploreAtInsert.isPresent() ? rhs.neighborsToExploreAtInsert : neighborsToExploreAtInsert);
+        return new HnswIndexParams(rhs.maxLinksPerNode.or(() ->  maxLinksPerNode),
+                rhs.neighborsToExploreAtInsert.or(() ->  neighborsToExploreAtInsert),
+                rhs.distanceMetric.or(() -> distanceMetric));
     }
 
     public int maxLinksPerNode() {
@@ -56,5 +72,9 @@ public class HnswIndexParams {
 
     public int neighborsToExploreAtInsert() {
         return neighborsToExploreAtInsert.orElse(DEFAULT_NEIGHBORS_TO_EXPLORE_AT_INSERT);
+    }
+
+    public DistanceMetric distanceMetric() {
+        return distanceMetric.orElse(DEFAULT_DISTANCE_METRIC);
     }
 }
