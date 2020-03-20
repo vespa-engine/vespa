@@ -268,7 +268,7 @@ void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     size_t count = getAttributeValues(docId, values);
     size_t commonRange = std::min(count, _queryVector.size());
     static_assert(std::is_same<typename AT::ValueType, BaseType>::value);
-    outputs().set_number(0, _multiplier->dotProduct(
+    outputs().set_number(0, _multiplier.dotProduct(
             &_queryVector[0], reinterpret_cast<const typename AT::ValueType *>(values), commonRange));
 }
 

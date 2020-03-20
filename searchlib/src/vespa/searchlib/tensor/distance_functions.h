@@ -23,9 +23,9 @@ public:
         auto rhs_vector = rhs.typify<FloatType>();
         size_t sz = lhs_vector.size();
         assert(sz == rhs_vector.size());
-        return _computer->squaredEuclideanDistance(&lhs_vector[0], &rhs_vector[0], sz);
+        return _computer.squaredEuclideanDistance(&lhs_vector[0], &rhs_vector[0], sz);
     }
-    vespalib::hwaccelrated::IAccelrated::UP _computer;
+    const vespalib::hwaccelrated::IAccelrated & _computer;
 };
 
 template class SquaredEuclideanDistance<float>;

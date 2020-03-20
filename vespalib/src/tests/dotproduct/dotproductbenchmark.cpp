@@ -48,12 +48,12 @@ public:
     FullBenchmark(size_t numDocs, size_t numValue);
     ~FullBenchmark();
     void compute(size_t docId) const override {
-        _dp->dotProduct(&_query[0], &_values[docId * _query.size()], _query.size());
+        _dp.dotProduct(&_query[0], &_values[docId * _query.size()], _query.size());
     }
 private:
     std::vector<T> _values;
     std::vector<T> _query;
-    IAccelrated::UP _dp;
+    const IAccelrated & _dp;
 };
 
 template <typename T>

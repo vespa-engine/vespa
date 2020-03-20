@@ -181,8 +181,8 @@ public:
     using AT = multivalue::Value<BaseType>;
     using V  = std::vector<BaseType>;
 private:
-    vespalib::hwaccelrated::IAccelrated::UP _multiplier;
-    V                                       _queryVector;
+    const vespalib::hwaccelrated::IAccelrated   & _multiplier;
+    V                                             _queryVector;
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count) = 0;
 public:
     DotProductExecutorBase(const V & queryVector);

@@ -106,7 +106,7 @@ class RuntimeVerificator
 public:
     RuntimeVerificator();
 private:
-    void verify(IAccelrated & accelrated) {
+    void verify(const IAccelrated & accelrated) {
         verifyDotproduct<float>(accelrated);
         verifyDotproduct<double>(accelrated);
         verifyDotproduct<int32_t>(accelrated);
@@ -122,8 +122,8 @@ RuntimeVerificator::RuntimeVerificator()
     GenericAccelrator generic;
     verify(generic);
 
-    IAccelrated::UP thisCpu(IAccelrated::getAccelrator());
-    verify(*thisCpu);
+    const IAccelrated & thisCpu(IAccelrated::getAccelrator());
+    verify(thisCpu);
 }
 
 class Selector
@@ -154,11 +154,11 @@ static Selector _G_selector;
 
 RuntimeVerificator _G_verifyAccelrator;
 
-
-IAccelrated::UP
+const IAccelrated &
 IAccelrated::getAccelrator()
 {
-    return _G_selector.create();
+    static IAccelrated::UP accelrator = _G_selector.create();
+    return *accelrator;
 }
 
 }
