@@ -29,7 +29,7 @@ public enum Resource {
     /** Disk utilization ratio */
     disk {
         String metricName() { return "disk.util"; }
-        double idealAverageLoad() { return 0.7; }
+        double idealAverageLoad() { return 0.6; }
         double valueFrom(NodeResources resources) { return resources.diskGb(); }
         double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
     };
