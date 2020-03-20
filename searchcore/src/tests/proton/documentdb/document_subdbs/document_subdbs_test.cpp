@@ -447,8 +447,8 @@ void
 assertAttributes2(const AttributeGuardList &attributes)
 {
     EXPECT_EQUAL(2u, attributes.size());
-    EXPECT_EQUAL("attr1", attributes[0]->getName());
-    EXPECT_EQUAL("attr2", attributes[1]->getName());
+    EXPECT_EQUAL("attr2", attributes[0]->getName());
+    EXPECT_EQUAL("attr1", attributes[1]->getName());
 }
 
 void
@@ -544,7 +544,7 @@ requireThatAttributeManagerCanBeReconfigured(Fixture &f)
     f.basicReconfig(10);
     std::vector<AttributeGuard> attributes;
     f.getAttributeManager()->getAttributeList(attributes);
-    assertAttributes2(attributes);
+    TEST_DO(assertAttributes2(attributes));
 }
 
 TEST_F("require that attribute manager can be reconfigured", FastAccessFixture)
@@ -791,13 +791,13 @@ assertAttribute(const AttributeGuard &attr, const vespalib::string &name, uint32
 void
 assertAttribute1(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum)
 {
-    assertAttribute(attr, "attr1", 3, 22, 44, createSerialNum, lastSerialNum);
+    TEST_DO(assertAttribute(attr, "attr1", 3, 22, 44, createSerialNum, lastSerialNum));
 }
 
 void
 assertAttribute2(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum)
 {
-    assertAttribute(attr, "attr2", 3, 33, 55, createSerialNum, lastSerialNum);
+    TEST_DO(assertAttribute(attr, "attr2", 3, 33, 55, createSerialNum, lastSerialNum));
 }
 
 TEST_F("require that fast-access attributes are populated during feed", FastAccessOnlyFixture)
@@ -833,8 +833,8 @@ requireThatAttributesArePopulatedDuringReprocessing(FixtureType &f)
         std::vector<AttributeGuard> attrs;
         f.getAttributeManager()->getAttributeList(attrs);
         EXPECT_EQUAL(2u, attrs.size());
-        assertAttribute1(attrs[0], CFG_SERIAL, 40);
-        assertAttribute2(attrs[1], 40, 40);
+        TEST_DO(assertAttribute1(attrs[1], CFG_SERIAL, 40));
+        TEST_DO(assertAttribute2(attrs[0], 40, 40));
     }
 }
 
