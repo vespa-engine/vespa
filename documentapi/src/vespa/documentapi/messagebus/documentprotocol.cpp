@@ -23,9 +23,9 @@ const mbus::string DocumentProtocol::NAME = "document";
 DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
                                    std::shared_ptr<const DocumentTypeRepo> repo,
                                    const string &configId) :
-    _routingPolicyRepository(new RoutingPolicyRepository()),
-    _routableRepository(new RoutableRepository(loadTypes)),
-    _repo(repo)
+    _routingPolicyRepository(std::make_unique<RoutingPolicyRepository>()),
+    _routableRepository(std::make_unique<RoutableRepository>(loadTypes)),
+    _repo(std::move(repo))
 {
     // Prepare config string for routing policy factories.
     string cfg = (configId.empty() ? "client" : configId);
@@ -148,10 +148,8 @@ DocumentProtocol &
 DocumentProtocol::putRoutableFactory(uint32_t type, IRoutableFactory::SP factory,
                                      const std::vector<vespalib::VersionSpecification> &versions)
 {
-    for (std::vector<vespalib::VersionSpecification>::const_iterator it = versions.begin();
-         it != versions.end(); ++it)
-    {
-        putRoutableFactory(type, factory, *it);
+    for (const auto & version : versions) {
+        putRoutableFactory(type, factory, version);
     }
     return *this;
 }

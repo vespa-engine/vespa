@@ -99,7 +99,7 @@ MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
     MessageBusParams params;
     while (!protocols.empty()) {
         IProtocol::SP protocol = protocols.extract();
-        if (protocol.get() != nullptr) {
+        if (protocol) {
             params.addProtocol(protocol);
         }
     }
@@ -132,8 +132,7 @@ MessageBus::~MessageBus()
     bool done = false;
     while (!done) {
         vespalib::Gate gate;
-        Messenger::ITask::UP task(new ShutdownTask(_network, *_msn, done, gate));
-        _msn->enqueue(std::move(task));
+        _msn->enqueue(std::make_unique<ShutdownTask>(_network, *_msn, done, gate));
         gate.await();
     }
 }
@@ -157,11 +156,10 @@ MessageBus::setup(const MessageBusParams &params)
 
     // Start messenger.
     IRetryPolicy::SP retryPolicy = params.getRetryPolicy();
-    if (retryPolicy.get() != nullptr) {
-        _resender.reset(new Resender(retryPolicy));
+    if (retryPolicy) {
+        _resender = std::make_unique<Resender>(retryPolicy);
 
-        Messenger::ITask::UP task(new ResenderTask(*_resender));
-        _msn->addRecurrentTask(std::move(task));
+        _msn->addRecurrentTask(std::make_unique<ResenderTask>(*_resender));
     }
     if (!_msn->start()) {
         throw vespalib::NetworkSetupFailureException("Failed to start messenger.");
@@ -273,7 +271,7 @@ MessageBus::sync()
 void
 MessageBus::handleMessage(Message::UP msg)
 {
-    if (_resender.get() != nullptr && msg->hasBucketSequence()) {
+    if (_resender && msg->hasBucketSequence()) {
         deliverError(std::move(msg), ErrorCode::SEQUENCE_ERROR,
                      "Bucket sequences not supported when resender is enabled.");
         return;
@@ -292,8 +290,7 @@ MessageBus::setupRouting(const RoutingSpec &spec)
             LOG(info, "Protocol '%s' is not supported, ignoring routing table.", cfg.getProtocol().c_str());
             continue;
         }
-        RoutingTable::SP rt(new RoutingTable(cfg));
-        rtm[cfg.getProtocol()] = rt;
+        rtm[cfg.getProtocol()] = std::make_shared<RoutingTable>(cfg);
     }
     {
         LockGuard guard(_lock);
@@ -383,7 +380,7 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
 void
 MessageBus::deliverError(Message::UP msg, uint32_t errCode, const string &errMsg)
 {
-    Reply::UP reply(new EmptyReply());
+    auto reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(errCode, errMsg));
 
