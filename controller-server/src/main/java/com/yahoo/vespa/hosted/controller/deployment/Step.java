@@ -65,7 +65,7 @@ public enum Step {
     deactivateTester(true, deployTester, endTests),
 
     /** Report completion to the deployment orchestration machinery. */
-    report(true, deactivateReal, deactivateTester);
+    report(true, installReal, deactivateReal, deactivateTester);
 
 
     private final boolean alwaysRun;
