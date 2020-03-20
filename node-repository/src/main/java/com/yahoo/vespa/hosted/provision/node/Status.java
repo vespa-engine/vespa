@@ -64,7 +64,7 @@ public class Status {
 
     public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, dockerImage, failCount - 1, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
-    public Status setFailCount(Integer value) { return new Status(reboot, vespaVersion, dockerImage, value, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
+    public Status withFailCount(int value) { return new Status(reboot, vespaVersion, dockerImage, value, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
     /** Returns how many times this node has been moved to the failed state. */
     public int failCount() { return failCount; }

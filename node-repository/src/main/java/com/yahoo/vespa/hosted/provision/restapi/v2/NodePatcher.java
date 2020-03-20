@@ -124,7 +124,7 @@ public class NodePatcher {
             case "currentFirmwareCheck":
                 return node.withFirmwareVerifiedAt(Instant.ofEpochMilli(asLong(value)));
             case "failCount" :
-                return node.with(node.status().setFailCount(asLong(value).intValue()));
+                return node.with(node.status().withFailCount(asLong(value).intValue()));
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
             case "parentHostname" :

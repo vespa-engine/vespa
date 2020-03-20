@@ -148,19 +148,22 @@ public class NodeRepositoryTest {
     }
 
     @Test
-    public void deprovisioned_hosts_are_resurrected_on_add() {
+    public void relevant_information_from_deprovisioned_hosts_are_merged_into_readded_host() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         Instant testStart = tester.nodeRepository().clock().instant();
 
-        ((ManualClock)tester.nodeRepository().clock()).advance(Duration.ofSeconds(1));
+        tester.clock().advance(Duration.ofSeconds(1));
         tester.addNode("id1", "host1", "default", NodeType.host);
         tester.addNode("id2", "host2", "default", NodeType.host);
         assertFalse(tester.nodeRepository().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
-        // Set host 1 properties and remove it
+        // Set host 1 properties and deprovision it
         Node host1 = tester.nodeRepository().getNode("host1").get();
         host1 = host1.withWantToRetire(true, Agent.system, tester.nodeRepository().clock().instant());
         host1 = host1.with(host1.status().withWantToDeprovision(true));
+        host1 = host1.withFirmwareVerifiedAt(tester.clock().instant());
+        host1 = host1.with(host1.status().withIncreasedFailCount());
+        host1 = host1.with(host1.reports().withReport(Report.basicReport("id", Report.Type.HARD_FAIL, tester.clock().instant(), "Test report")));
         tester.nodeRepository().write(host1, tester.nodeRepository().lock(host1));
         tester.nodeRepository().removeRecursively("host1");
 
@@ -168,12 +171,19 @@ public class NodeRepositoryTest {
         host1 = tester.nodeRepository().getNode("host1").get();
         assertEquals(Node.State.deprovisioned, host1.state());
         assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
-        assertFalse(host1.status().wantToRetire());
-        assertFalse(host1.status().wantToDeprovision());
 
-        // Adding it again moves it from deprovisioned
-        host1 = tester.addNode("id1", "host1", "default", NodeType.host);
-        assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+        // Adding it again preserves some information from the deprovisioned host and removes is
+        tester.addNode("id2", "host1", "default", NodeType.host);
+        host1 = tester.nodeRepository().getNode("host1").get();
+        assertEquals("This is the newly added node", "id2", host1.id());
+        assertFalse("The old 'host1' is removed",
+                    tester.nodeRepository().getNode("host1", Node.State.deprovisioned).isPresent());
+        assertFalse("Not transferred from deprovisioned host", host1.status().wantToRetire());
+        assertFalse("Not transferred from deprovisioned host", host1.status().wantToDeprovision());
+        assertTrue("Transferred from deprovisioned host", host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+        assertTrue("Transferred from deprovisioned host", host1.status().firmwareVerifiedAt().isPresent());
+        assertEquals("Transferred from deprovisioned host", 1, host1.status().failCount());
+        assertEquals("Transferred from deprovisioned host", 1, host1.reports().getReports().size());
     }
 
     @Test

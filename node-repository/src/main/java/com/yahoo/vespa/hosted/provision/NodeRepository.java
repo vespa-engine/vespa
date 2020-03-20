@@ -349,13 +349,13 @@ public class NodeRepository extends AbstractComponent {
 
     /**
      * Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes.
-     * If any of the nodes already exists in the deprovisioned state, they will be moved back to provisioned instead
-     * and the returned list will contain the existing (moved) node.
+     * If any of the nodes already exists in the deprovisioned state, the new node will be merged
+     * with the history of that node.
      */
     public List<Node> addNodes(List<Node> nodes, Agent agent) {
         try (Mutex lock = lockUnallocated()) {
             List<Node> nodesToAdd =  new ArrayList<>();
-            List<Node> nodesToMove = new ArrayList<>();
+            List<Node> nodesToRemove = new ArrayList<>();
             for (int i = 0; i < nodes.size(); i++) {
                 var node = nodes.get(i);
 
@@ -369,15 +369,19 @@ public class NodeRepository extends AbstractComponent {
                 if (existing.isPresent()) {
                     if (existing.get().state() != State.deprovisioned)
                         illegal("Cannot add " + node + ": A node with this name already exists");
-                    nodesToMove.add(existing.get());
+                    node = node.with(existing.get().history());
+                    node = node.with(existing.get().reports());
+                    node = node.with(node.status().withFailCount(existing.get().status().failCount()));
+                    if (existing.get().status().firmwareVerifiedAt().isPresent())
+                        node = node.with(node.status().withFirmwareVerifiedAt(existing.get().status().firmwareVerifiedAt().get()));
+                    nodesToRemove.add(existing.get());
                 }
-                else {
-                    nodesToAdd.add(node);
-                }
+
+                nodesToAdd.add(node);
             }
             List<Node> resultingNodes = new ArrayList<>();
             resultingNodes.addAll(db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), State.provisioned));
-            nodesToMove.forEach(node -> resultingNodes.add(move(node, State.provisioned, agent, Optional.empty())));
+            db.removeNodes(nodesToRemove);
             return resultingNodes;
         }
     }
@@ -609,14 +613,10 @@ public class NodeRepository extends AbstractComponent {
                 children.forEach(child -> requireRemovable(child, true, force));
                 db.removeNodes(children);
                 List<Node> removed = new ArrayList<>(children);
-                if (zone.cloud().value().equals("aws")) {
+                if (zone.cloud().value().equals("aws"))
                     db.removeNodes(List.of(node));
-                }
-                else {
-                    node = node.withWantToRetire(false, Agent.system, clock.instant());
-                    node = node.with(node.status().withWantToDeprovision(false));
+                else
                     move(node, State.deprovisioned, Agent.system, Optional.empty());
-                }
                 removed.add(node);
                 return removed;
             }

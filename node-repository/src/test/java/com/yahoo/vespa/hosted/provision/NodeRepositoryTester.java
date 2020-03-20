@@ -26,7 +26,7 @@ public class NodeRepositoryTester {
 
     private final NodeFlavors nodeFlavors;
     private final NodeRepository nodeRepository;
-    private final Clock clock;
+    private final ManualClock clock;
     private final MockCurator curator;
 
     public NodeRepositoryTester() {
@@ -80,5 +80,7 @@ public class NodeRepositoryTester {
         b.addFlavor("docker", 1., 2., 50, 1, Flavor.Type.DOCKER_CONTAINER).cost(1);
         return b.build();
     }
+
+    public ManualClock clock() { return clock; }
 
 }
