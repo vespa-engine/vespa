@@ -220,7 +220,7 @@ public class SerializationTest {
                              node.flavor().resources(),
                              clock.instant());
 
-        node = node.with(node.status().setFailCount(0));
+        node = node.with(node.status().withFailCount(0));
         Node copy2 = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
         assertEquals(0, copy2.status().failCount());

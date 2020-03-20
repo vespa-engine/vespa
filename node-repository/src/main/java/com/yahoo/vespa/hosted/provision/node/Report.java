@@ -17,10 +17,13 @@ import java.util.Arrays;
  * @author hakonhall
  */
 public class Report {
+
     /** The time the report was created, in milliseconds since Epoch. */
     public static final String CREATED_FIELD = "createdMillis";
+
     /** The type of the report. */
     public static final String TYPE_FIELD = "type";
+
     /** The description of the report. */
     public static final String DESCRIPTION_FIELD = "description";
 

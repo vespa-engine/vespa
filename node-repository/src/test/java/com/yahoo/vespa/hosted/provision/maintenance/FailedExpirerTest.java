@@ -291,7 +291,7 @@ public class FailedExpirerTest {
         public FailureScenario failNode(int times, String... hostname) {
             Stream.of(hostname).forEach(h -> {
                 Node node = get(h);
-                nodeRepository.write(node.with(node.status().setFailCount(times)), () -> {});
+                nodeRepository.write(node.with(node.status().withFailCount(times)), () -> {});
                 nodeRepository.fail(h, Agent.system, "Failed by unit test");
             });
             return this;

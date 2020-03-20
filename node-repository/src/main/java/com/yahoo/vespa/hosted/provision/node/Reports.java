@@ -17,6 +17,7 @@ import java.util.TreeMap;
  */
 // @Immutable
 public class Reports {
+
     private final Map<String, Report> reports;
 
     public Reports() { this(Collections.emptyMap()); }
