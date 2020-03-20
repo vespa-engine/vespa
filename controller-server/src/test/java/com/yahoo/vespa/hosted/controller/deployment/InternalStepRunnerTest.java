@@ -162,7 +162,7 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.installReal));
 
-        tester.clock().advance(InternalStepRunner.noNodesDownTimeout.plus(Duration.ofSeconds(1)));
+        tester.clock().advance(InternalStepRunner.Timeouts.of(system()).noNodesDown().plus(Duration.ofSeconds(1)));
         tester.runner().run();
         assertEquals(installationFailed, tester.jobs().run(id).get().status());
     }
@@ -190,7 +190,7 @@ public class InternalStepRunnerTest {
         tester.configServer().convergeServices(app.testerId().id(), JobType.stagingTest.zone(system()));
         tester.runner().run();
 
-        tester.clock().advance(InternalStepRunner.endpointTimeout.plus(Duration.ofSeconds(1)));
+        tester.clock().advance(InternalStepRunner.Timeouts.of(system()).endpoint().plus(Duration.ofSeconds(1)));
         tester.runner().run();
         assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
     }
@@ -214,7 +214,7 @@ public class InternalStepRunnerTest {
 
         Node systemTestNode = tester.configServer().nodeRepository().list(JobType.systemTest.zone(system()),
                                                                           app.instanceId()).iterator().next();
-        tester.clock().advance(InternalStepRunner.noNodesDownTimeout.minus(Duration.ofSeconds(1)));
+        tester.clock().advance(InternalStepRunner.Timeouts.of(system()).noNodesDown().minus(Duration.ofSeconds(1)));
         tester.configServer().nodeRepository().putByHostname(JobType.systemTest.zone(system()),
                                                              new Node.Builder(systemTestNode)
                                                                      .serviceState(Node.ServiceState.allowedDown)
@@ -229,7 +229,7 @@ public class InternalStepRunnerTest {
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installInitialReal));
 
-        tester.clock().advance(InternalStepRunner.nodesDownTimeout.minus(Duration.ofSeconds(3)));
+        tester.clock().advance(InternalStepRunner.Timeouts.of(system()).nodesDown().minus(Duration.ofSeconds(3)));
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
 
@@ -439,7 +439,7 @@ public class InternalStepRunnerTest {
         trusted.add(tester.jobs().run(id).get().testerCertificate().get());
         assertEquals(trusted, tester.configServer().application(app.instanceId(), id.type().zone(system())).get().applicationPackage().trustedCertificates());
 
-        tester.clock().advance(InternalStepRunner.certificateTimeout.plus(Duration.ofSeconds(1)));
+        tester.clock().advance(InternalStepRunner.Timeouts.of(system()).testerCertificate().plus(Duration.ofSeconds(1)));
         tester.runner().run();
         assertEquals(RunStatus.aborted, tester.jobs().run(id).get().status());
     }
