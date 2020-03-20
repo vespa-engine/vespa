@@ -11,11 +11,14 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.blueprintresolver");
 
+using vespalib::make_string_short::fmt;
+
 namespace search::fef {
 
 namespace {
 
-static const size_t MAX_TRACE_SIZE = 16;
+constexpr int MAX_TRACE_SIZE = BlueprintResolver::MAX_TRACE_SIZE;
+constexpr int TRACE_SKIP_POS = 10;
 
 using Accept = Blueprint::AcceptInput;
 
@@ -84,22 +87,37 @@ struct Compiler : public Blueprint::DependencyHandler {
     Frame &self() { return resolve_stack.back(); }
     bool failed() const { return !failed_set.empty(); }
 
+    vespalib::string make_trace(bool skip_self) {
+        vespalib::string trace;
+        auto pos = resolve_stack.rbegin();
+        auto end = resolve_stack.rend();
+        if ((pos != end) && skip_self) {
+            ++pos;
+        }
+        size_t i = 0;
+        size_t n = (end - pos);
+        for (; (pos != end); ++pos, ++i) {
+            failed_set.insert(pos->parser.featureName());
+            bool should_trace = (n <= MAX_TRACE_SIZE);
+            should_trace |= (i < TRACE_SKIP_POS);
+            should_trace |= ((end - pos) < (MAX_TRACE_SIZE - TRACE_SKIP_POS));
+            if (should_trace) {
+                trace += fmt("  ... needed by rank feature '%s'\n", pos->parser.featureName().c_str());
+            } else if (i == TRACE_SKIP_POS) {
+                trace += fmt("  (skipped %zu entries)\n", (n - MAX_TRACE_SIZE) + 1);
+            }
+        }
+        return trace;
+    }
+
     FeatureRef fail(const vespalib::string &feature_name, const vespalib::string &reason, bool skip_self = false) {
         if (failed_set.count(feature_name) == 0) {
             failed_set.insert(feature_name);
-            LOG(warning, "invalid rank feature '%s': %s", feature_name.c_str(), reason.c_str());
-            size_t trace_size = 0;
-            for (size_t i = resolve_stack.size(); i > 0; --i) {
-                const auto &frame = resolve_stack[i - 1];
-                failed_set.insert(frame.parser.featureName());
-                if (!skip_self || (&frame != &self())) {
-                    if (++trace_size <= MAX_TRACE_SIZE) {
-                        LOG(warning, "  ... needed by rank feature '%s'", frame.parser.featureName().c_str());
-                    }
-                }
-            }
-            if (trace_size > MAX_TRACE_SIZE) {
-                LOG(warning, "  ... (%zu more)", (trace_size - MAX_TRACE_SIZE));
+            auto trace = make_trace(skip_self);
+            if (trace.empty()) {
+                LOG(warning, "invalid rank feature '%s': %s", feature_name.c_str(), reason.c_str());
+            } else {
+                LOG(warning, "invalid rank feature '%s': %s\n%s", feature_name.c_str(), reason.c_str(), trace.c_str());
             }
         }
         return FeatureRef();
@@ -114,8 +132,8 @@ struct Compiler : public Blueprint::DependencyHandler {
         bool is_object = spec.output_types[ref.output].is_object();
         if (!is_compatible(is_object, accept_type)) {
             return fail(parser.featureName(),
-                        vespalib::make_string("output '%s' has wrong type: was %s, expected %s",
-                                parser.output().c_str(), type_str(is_object), accept_type_str(accept_type)));
+                        fmt("output '%s' has wrong type: was %s, expected %s",
+                            parser.output().c_str(), type_str(is_object), accept_type_str(accept_type)));
         }
         return ref;
     }
@@ -136,8 +154,7 @@ struct Compiler : public Blueprint::DependencyHandler {
                 }
                 spec_list.push_back(self().spec); // keep all feature_map refs valid
             } else {
-                fail(parser.featureName(),
-                     vespalib::make_string("unknown basename: '%s'", parser.baseName().c_str()));
+                fail(parser.featureName(), fmt("unknown basename: '%s'", parser.baseName().c_str()));
             }
         }
     }
@@ -167,8 +184,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         if (new_feature != feature_map.end()) {
             return verify_type(parser, new_feature->second, accept_type);
         }
-        return fail(parser.featureName(),
-                    vespalib::make_string("unknown output: '%s'", parser.output().c_str()));
+        return fail(parser.featureName(), fmt("unknown output: '%s'", parser.output().c_str()));
     }
 
     std::optional<FeatureType> resolve_input(const vespalib::string &feature_name, Accept accept_type) override {

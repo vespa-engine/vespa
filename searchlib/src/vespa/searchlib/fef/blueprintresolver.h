@@ -68,7 +68,14 @@ public:
      * problems for 'sane' developers and low enough to avoid stack
      * overflow.
      **/
-    static const uint32_t MAX_DEP_DEPTH = 256;
+    static constexpr uint32_t MAX_DEP_DEPTH = 256;
+
+    /**
+     * The maximum size of back-traces. Longer back-traces will be
+     * logged with skipped entries somewhere in the middle. Exposed
+     * for testing purposes.
+     **/
+    static constexpr int MAX_TRACE_SIZE = 16;
 
 private:
     const BlueprintFactory       &_factory;
