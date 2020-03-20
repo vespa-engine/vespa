@@ -157,12 +157,23 @@ public class NodeRepositoryTest {
         tester.addNode("id2", "host2", "default", NodeType.host);
         assertFalse(tester.nodeRepository().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
+        // Set host 1 properties and remove it
+        Node host1 = tester.nodeRepository().getNode("host1").get();
+        host1 = host1.withWantToRetire(true, Agent.system, tester.nodeRepository().clock().instant());
+        host1 = host1.with(host1.status().withWantToDeprovision(true));
+        tester.nodeRepository().write(host1, tester.nodeRepository().lock(host1));
         tester.nodeRepository().removeRecursively("host1");
-        assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host1").get().state());
-        assertTrue(tester.nodeRepository().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
-        Node existing = tester.addNode("id1", "host1", "default", NodeType.host);
-        assertTrue(existing.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+        // Host 1 is deprovisioned and unwanted properties are cleared
+        host1 = tester.nodeRepository().getNode("host1").get();
+        assertEquals(Node.State.deprovisioned, host1.state());
+        assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+        assertFalse(host1.status().wantToRetire());
+        assertFalse(host1.status().wantToDeprovision());
+
+        // Adding it again moves it from deprovisioned
+        host1 = tester.addNode("id1", "host1", "default", NodeType.host);
+        assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
     }
 
     @Test
