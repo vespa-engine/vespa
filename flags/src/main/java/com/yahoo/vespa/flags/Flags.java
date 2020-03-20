@@ -273,6 +273,12 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DEDICATED_NODES_WHEN_UNSPECIFIED = defineFeatureFlag(
+            "dedicated-nodes-when-unspecified", false,
+            "Whether config-server should allocate dedicated container nodes when <nodes/> is not specified in services.xml",
+            "Takes effect on redeploy",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

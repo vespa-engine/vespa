@@ -67,6 +67,7 @@ public interface ModelContext {
         default boolean usePhraseSegmenting() { return false; }
         default String proxyProtocol() { return "https-only"; }
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
+        default boolean useDedicatedNodesWhenUnspecified() { return false; }
     }
 
 }

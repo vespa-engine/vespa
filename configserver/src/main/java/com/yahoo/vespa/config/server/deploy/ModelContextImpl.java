@@ -146,6 +146,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean usePhraseSegmenting;
         private final String proxyProtocol;
         private final Optional<AthenzDomain> athenzDomain;
+        private final boolean useDedicatedNodesWhenUnspecified;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -186,6 +187,8 @@ public class ModelContextImpl implements ModelContext {
             this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
+            this.useDedicatedNodesWhenUnspecified = Flags.DEDICATED_NODES_WHEN_UNSPECIFIED.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override
@@ -251,6 +254,12 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
+
+        @Override
+        public boolean useDedicatedNodesWhenUnspecified() {
+            return useDedicatedNodesWhenUnspecified;
+        }
+
     }
 
 }

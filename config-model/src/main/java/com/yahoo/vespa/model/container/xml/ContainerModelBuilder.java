@@ -570,12 +570,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addNodesFromXml(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
-        if (nodesElement == null) { // default single node on localhost
-            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
-            HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
-            node.setHostResource(host);
-            node.initService(context.getDeployLogger());
-            cluster.addContainers(Collections.singleton(node));
+        if (nodesElement == null) {
+            cluster.addContainers(allocateWithoutNodesTag(cluster, containerElement, context));
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, nodesElement, context);
 
@@ -652,29 +648,53 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    /** Creates a single host when there is no nodes tag */
-    private HostResource allocateSingleNodeHost(ApplicationContainerCluster cluster, DeployLogger logger, Element containerElement, ConfigModelContext context) {
+    /** Allocate a container cluster without a nodes tag */
+    private List<ApplicationContainer> allocateWithoutNodesTag(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         DeployState deployState = context.getDeployState();
         HostSystem hostSystem = cluster.hostSystem();
         if (deployState.isHosted()) {
-            Optional<HostResource> singleContentHost = getHostResourceFromContentClusters(cluster, containerElement, context);
-            if (singleContentHost.isPresent()) { // there is a content cluster; put the container on its first node 
-                return singleContentHost.get();
+            // TODO(mpolden): The old way of allocating. Remove when 7.198 is the oldest model in production
+            if (!context.properties().useDedicatedNodesWhenUnspecified()) {
+                Optional<HostResource> singleContentHost = getHostResourceFromContentClusters(cluster, containerElement, context);
+                if (singleContentHost.isPresent()) { // there is a content cluster; put the container on its first node
+                    return singleHostContainerCluster(cluster, singleContentHost.get(), context);
+                }
+                else { // request 1 node
+                    ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
+                                                         .vespaVersion(deployState.getWantedNodeVespaVersion())
+                                                         .dockerImageRepo(deployState.getWantedDockerImageRepo())
+                                                         .build();
+                    Capacity capacity = Capacity.fromCount(1,
+                                                           Optional.empty(),
+                                                           false,
+                                                           ! deployState.getProperties().isBootstrap());
+                    HostResource host = hostSystem.allocateHosts(clusterSpec, capacity, 1, log).keySet().iterator().next();
+                    return singleHostContainerCluster(cluster, host, context);
+                }
             }
-            else { // request 1 node
-                ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
-                        .vespaVersion(deployState.getWantedNodeVespaVersion())
-                        .dockerImageRepo(deployState.getWantedDockerImageRepo())
-                        .build();
-                Capacity capacity = Capacity.fromCount(1,
-                                                       Optional.empty(),
-                                                       false,
-                                                       ! deployState.getProperties().isBootstrap());
-                return hostSystem.allocateHosts(clusterSpec, capacity, 1, logger).keySet().iterator().next();
-            }
-        } else {
-            return hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
+            // request just enough nodes to satisfy environment capacity requirement
+            ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
+                                                          ClusterSpec.Id.from(cluster.getName()),
+                                                          deployState.getWantedNodeVespaVersion(),
+                                                          false,
+                                                          Optional.empty(),
+                                                          deployState.getWantedDockerImageRepo());
+            int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
+            Capacity capacity = Capacity.fromCount(nodeCount,
+                                                   Optional.empty(),
+                                                   false,
+                                                   !deployState.getProperties().isBootstrap());
+            var hosts = hostSystem.allocateHosts(clusterSpec, capacity, 1, log);
+            return createNodesFromHosts(log, hosts, cluster);
         }
+        return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
+    }
+
+    private List<ApplicationContainer> singleHostContainerCluster(ApplicationContainerCluster cluster, HostResource host, ConfigModelContext context) {
+        ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
+        node.setHostResource(host);
+        node.initService(context.getDeployLogger());
+        return List.of(node);
     }
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
