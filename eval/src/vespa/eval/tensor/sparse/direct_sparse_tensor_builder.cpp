@@ -43,18 +43,6 @@ DirectSparseTensorBuilder::build() {
     return std::make_unique<SparseTensor>(std::move(_type), std::move(_cells), std::move(_stash));
 }
 
-void
-DirectSparseTensorBuilder::insertCell(SparseTensorAddressRef address, double value) {
-    // This address should not already exist and a new cell should be inserted.
-    insertCell(address, value, [](double, double) -> double { HDR_ABORT("should not be reached"); });
-}
-
-void
-DirectSparseTensorBuilder::insertCell(SparseTensorAddressBuilder &address, double value) {
-    // This address should not already exist and a new cell should be inserted.
-    insertCell(address.getAddressRef(), value, [](double, double) -> double { HDR_ABORT("should not be reached"); });
-}
-
 void DirectSparseTensorBuilder::reserve(uint32_t estimatedCells) {
     _cells.resize(estimatedCells*2);
 }

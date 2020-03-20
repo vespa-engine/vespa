@@ -45,15 +45,20 @@ public:
         }
     }
 
-    void insertCell(SparseTensorAddressRef address, double value);
+    void insertCell(SparseTensorAddressRef address, double value) {
+        // This address should not already exist and a new cell should be inserted.
+        insertCell(address, value, [](double, double) -> double { HDR_ABORT("should not be reached"); });
+    }
 
     template <class Function>
-    void insertCell(SparseTensorAddressBuilder &address, double value, Function &&func)
-    {
+    void insertCell(SparseTensorAddressBuilder &address, double value, Function &&func) {
         insertCell(address.getAddressRef(), value, func);
     }
 
-    void insertCell(SparseTensorAddressBuilder &address, double value);
+    void insertCell(SparseTensorAddressBuilder &address, double value) {
+        // This address should not already exist and a new cell should be inserted.
+        insertCell(address.getAddressRef(), value, [](double, double) -> double { HDR_ABORT("should not be reached"); });
+    }
 
     eval::ValueType &fast_type() { return _type; }
     Cells &cells() { return _cells; }
