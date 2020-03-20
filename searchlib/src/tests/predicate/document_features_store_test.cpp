@@ -208,9 +208,9 @@ TEST("require that serialization cleans up wordstore") {
     EXPECT_EQUAL(460u, features_store.getMemoryUsage().usedBytes());
     annotations.range_features.push_back({"bar", 100, 199});
     features_store.insert(annotations, doc_id + 1);
-    EXPECT_EQUAL(848u, features_store.getMemoryUsage().usedBytes());
-    features_store.remove(doc_id + 1);
     EXPECT_EQUAL(800u, features_store.getMemoryUsage().usedBytes());
+    features_store.remove(doc_id + 1);
+    EXPECT_EQUAL(752u, features_store.getMemoryUsage().usedBytes());
 
     vespalib::DataBuffer buffer;
     features_store.serialize(buffer);
