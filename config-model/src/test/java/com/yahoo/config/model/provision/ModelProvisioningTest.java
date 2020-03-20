@@ -1398,6 +1398,31 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testNoNodeTagMeansTwoNodesInContainerClusterWithFeatureFlag() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <container id='foo' version='1.0'>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "  </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setUseDedicatedNodesWhenUnspecified(true);
+        tester.addHosts(3);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(3, model.getRoot().hostSystem().getHosts().size());
+        assertEquals(2, model.getAdmin().getSlobroks().size());
+        assertEquals(2, model.getContainerClusters().get("foo").getContainers().size());
+        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
+    }
+
+    @Test
     public void testNoNodeTagMeans1NodeNoContent() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +

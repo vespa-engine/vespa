@@ -44,6 +44,7 @@ public class TestProperties implements ModelContext.Properties {
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private boolean useNewAthenzFilter = false;
     private boolean usePhraseSegmenting = false;
+    private boolean useDedicatedNodesWhenUnspecified = false;
     private AthenzDomain athenzDomain;
 
     @Override public boolean multitenant() { return multitenant; }
@@ -66,6 +67,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useBucketSpaceMetric() { return true; }
     @Override public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
     @Override public boolean usePhraseSegmenting() { return usePhraseSegmenting; }
+    @Override public boolean useDedicatedNodesWhenUnspecified() { return useDedicatedNodesWhenUnspecified; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
@@ -120,6 +122,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUsePhraseSegmenting(boolean phraseSegmenting) {
         this.usePhraseSegmenting = phraseSegmenting;
+        return this;
+    }
+
+    public TestProperties setUseDedicatedNodesWhenUnspecified(boolean useDedicatedNodesWhenUnspecified) {
+        this.useDedicatedNodesWhenUnspecified = useDedicatedNodesWhenUnspecified;
         return this;
     }
 
