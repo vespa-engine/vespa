@@ -653,7 +653,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         DeployState deployState = context.getDeployState();
         HostSystem hostSystem = cluster.hostSystem();
         if (deployState.isHosted()) {
-            // TODO(mpolden): The old way of allocating. Remove when 7.198 is the oldest model in production
+            // TODO(mpolden): The old way of allocating. Remove when 7.198 is the oldest model in production and the
+            //                feature flag is set to true in all zones.
             if (!context.properties().useDedicatedNodesWhenUnspecified()) {
                 Optional<HostResource> singleContentHost = getHostResourceFromContentClusters(cluster, containerElement, context);
                 if (singleContentHost.isPresent()) { // there is a content cluster; put the container on its first node
@@ -674,11 +675,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
             // request just enough nodes to satisfy environment capacity requirement
             ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
-                                                          ClusterSpec.Id.from(cluster.getName()),
-                                                          deployState.getWantedNodeVespaVersion(),
-                                                          false,
-                                                          Optional.empty(),
-                                                          deployState.getWantedDockerImageRepo());
+                                                          ClusterSpec.Id.from(cluster.getName()))
+                                                 .vespaVersion(deployState.getWantedNodeVespaVersion())
+                                                 .dockerImageRepo(deployState.getWantedDockerImageRepo())
+                                                 .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
             Capacity capacity = Capacity.fromCount(nodeCount,
                                                    Optional.empty(),
