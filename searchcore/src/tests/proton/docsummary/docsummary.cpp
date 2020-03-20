@@ -774,8 +774,8 @@ Test::requireThatAttributesAreUsed()
                             "bd:[20,30],"
                             "be:[20.2,30.3],"
                             "bf:['bar','baz'],"
-                            "bg:[{item:50,weight:3},{item:40,weight:2}],"
-                            "bh:[{item:40.4,weight:4},{item:50.5,weight:5}],"
+                            "bg:[{item:40,weight:2},{item:50,weight:3}],"
+                            "bh:[{item:50.5,weight:5},{item:40.4,weight:4}],"
                             "bi:[{item:'quux',weight:7},{item:'qux',weight:6}],"
                             "bj:'0x01020178017901016601674008000000000000'}", *rep, 0, true));
     TEST_DO(assertTensor(make_tensor(TensorSpec("tensor(x{},y{})")
