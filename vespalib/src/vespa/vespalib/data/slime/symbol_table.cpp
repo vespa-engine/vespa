@@ -3,15 +3,14 @@
 #include "symbol_table.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 SymbolTable::SymbolTable(size_t expectedNumSymbols) :
     _symbols(3*expectedNumSymbols),
-    _names()
+    _names(expectedNumSymbols, expectedNumSymbols*16)
 { }
 
-SymbolTable::~SymbolTable() { }
+SymbolTable::~SymbolTable() = default;
 
 void
 SymbolTable::clear() {
@@ -39,5 +38,4 @@ SymbolTable::lookup(const Memory &name) const {
     return pos->second;
 }
 
-} // namespace vespalib::slime
-} // namespace vespalib
+}
