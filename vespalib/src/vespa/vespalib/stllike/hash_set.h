@@ -8,7 +8,7 @@
 
 namespace vespalib {
 
-template< typename K, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>, typename M=hashtable_base::prime_modulator>
+template< typename K, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>, typename M=hashtable_base::and_modulator>
 class hash_set
 {
 private:
