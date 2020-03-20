@@ -172,7 +172,7 @@ public class NodeRepositoryTest {
         assertEquals(Node.State.deprovisioned, host1.state());
         assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
-        // Adding it again preserves some information from the deprovisioned host and removes is
+        // Adding it again preserves some information from the deprovisioned host and removes it
         tester.addNode("id2", "host1", "default", NodeType.host);
         host1 = tester.nodeRepository().getNode("host1").get();
         assertEquals("This is the newly added node", "id2", host1.id());
