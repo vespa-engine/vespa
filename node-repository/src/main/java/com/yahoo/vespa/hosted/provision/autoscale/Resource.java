@@ -20,7 +20,7 @@ public enum Resource {
 
     /** Memory utilization ratio */
     memory {
-        String metricName() { return "mem.util"; }
+        String metricName() { return "mem_total.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.memoryGb(); }
         double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
@@ -29,7 +29,7 @@ public enum Resource {
     /** Disk utilization ratio */
     disk {
         String metricName() { return "disk.util"; }
-        double idealAverageLoad() { return 0.7; }
+        double idealAverageLoad() { return 0.6; }
         double valueFrom(NodeResources resources) { return resources.diskGb(); }
         double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
     };
