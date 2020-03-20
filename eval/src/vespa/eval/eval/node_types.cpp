@@ -83,7 +83,13 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         return state.type(node);
     }
 
-    void import(const NodeTypes &types) {
+    void import_errors(const NodeTypes &types) {
+        for (const auto &err: types.errors()) {
+            state.add_error(fmt("[lambda]: %s", err.c_str()));
+        }
+    }
+
+    void import_types(const NodeTypes &types) {
         types.each([&](const Node &node, const ValueType &type)
                    {
                        state.bind(type, node);
@@ -189,10 +195,13 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
             arg_types.push_back(param_type(binding));
         }
         NodeTypes lambda_types(node.lambda(), arg_types);
-        if (!lambda_types.get_type(node.lambda().root()).is_double()) {
-            return fail(node, "lambda function produces non-double result", false);
+        const ValueType &lambda_type = lambda_types.get_type(node.lambda().root());
+        if (!lambda_type.is_double()) {
+            import_errors(lambda_types);
+            return fail(node, fmt("lambda function has non-double result type: %s",
+                                  lambda_type.to_spec().c_str()), false);
         }
-        import(lambda_types);
+        import_types(lambda_types);
         bind(node.type(), node);
     }
     void visit(const TensorPeek &node) override {

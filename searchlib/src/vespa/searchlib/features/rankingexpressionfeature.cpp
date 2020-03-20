@@ -295,7 +295,7 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
         for (const auto &type_error: node_types.errors()) {
             LOG(warning, "type error: %s", type_error.c_str());
         }
-        return fail("rank expression contains type errors: %s\n", script.c_str());
+        return fail("rank expression contains type errors: %s", script.c_str());
     }
     auto compile_issues = CompiledFunction::detect_issues(*rank_function);
     auto interpret_issues = InterpretedFunction::detect_issues(*rank_function);
