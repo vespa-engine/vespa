@@ -320,6 +320,10 @@ protected:
         return _genHolder;
     }
 
+    const GenerationHolder& getGenerationHolder() const {
+        return _genHolder;
+    }
+
     template<typename T>
     bool clearDoc(ChangeVectorT< ChangeTemplate<T> > &changes, DocId doc);
 
