@@ -36,7 +36,7 @@ public class MaintenanceTester {
     public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                                     new MockNameResolver().mockAnyLookup(),
                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                                    true, new InMemoryFlagSource());
+                                                                    true);
 
     public MaintenanceTester() {
         curator.setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");

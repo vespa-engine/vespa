@@ -104,8 +104,8 @@ public class NodeRepository extends AbstractComponent {
      * This will use the system time to make time-sensitive decisions
      */
     @Inject
-    public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone, FlagSource flagSource) {
-        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache(), flagSource);
+    public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone) {
+        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache());
     }
 
     /**
@@ -113,7 +113,7 @@ public class NodeRepository extends AbstractComponent {
      * which will be used for time-sensitive decisions.
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
-                          DockerImage dockerImage, boolean useCuratorClientCache, FlagSource flagSource) {
+                          DockerImage dockerImage, boolean useCuratorClientCache) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
@@ -122,7 +122,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.dockerImages = new DockerImages(db, dockerImage, Flags.DOCKER_IMAGE_OVERRIDE.bindTo(flagSource));
+        this.dockerImages = new DockerImages(db, dockerImage);
         this.jobControl = new JobControl(db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
@@ -134,7 +134,7 @@ public class NodeRepository extends AbstractComponent {
     public CuratorDatabaseClient database() { return db; }
 
     /** Returns the Docker image to use for given node */
-    public DockerImage dockerImage(Node node) { return dockerImages.dockerImageFor(node); }
+    public DockerImage dockerImage(Node node) { return dockerImages.dockerImageFor(node.type()); }
 
     /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }

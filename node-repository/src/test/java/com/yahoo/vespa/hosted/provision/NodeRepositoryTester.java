@@ -9,7 +9,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -30,10 +29,6 @@ public class NodeRepositoryTester {
     private final MockCurator curator;
 
     public NodeRepositoryTester() {
-        this(new InMemoryFlagSource());
-    }
-
-    public NodeRepositoryTester(InMemoryFlagSource flagSource) {
         nodeFlavors = new NodeFlavors(createConfig());
         clock = new ManualClock();
         curator = new MockCurator();
@@ -41,7 +36,7 @@ public class NodeRepositoryTester {
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                            true, flagSource);
+                                            true);
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }
