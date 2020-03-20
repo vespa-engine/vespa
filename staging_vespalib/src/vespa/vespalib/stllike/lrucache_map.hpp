@@ -74,7 +74,7 @@ lrucache_map<P>::lrucache_map(size_t maxElems) :
 { }
 
 template< typename P >
-lrucache_map<P>::~lrucache_map() = default;
+lrucache_map<P>::~lrucache_map() { }
 
 template< typename P >
 void

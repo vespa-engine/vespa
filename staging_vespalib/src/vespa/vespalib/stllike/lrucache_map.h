@@ -28,32 +28,32 @@ struct LinkedValue : public LinkedValueBase
 template<typename K, typename V, typename H = vespalib::hash<K>, typename EQ = std::equal_to<K> >
 struct LruParam
 {
-    using LV = LinkedValue<V>;
-    using value_type = std::pair< K, LV >;
-    using select_key = vespalib::Select1st< value_type >;
-    using Key = K;
-    using Value = V;
-    using Hash = H;
-    using Equal = EQ;
-    using HashTable = hashtable< Key, value_type, Hash, Equal, select_key >;
+    typedef LinkedValue<V> LV;
+    typedef std::pair< K, LV > value_type;
+    typedef vespalib::Select1st< value_type > select_key;
+    typedef K Key;
+    typedef V Value;
+    typedef H Hash;
+    typedef EQ Equal;
+    typedef hashtable< Key, value_type, Hash, Equal, select_key > HashTable;
 };
 
 template< typename P >
 class lrucache_map : private P::HashTable
 {
 private:
-    using HashTable = typename P::HashTable;
-    using V = typename P::Value;
-    using K = typename P::Key;
-    using value_type = typename P::value_type;
-    using LV = typename P::LV;
-    using internal_iterator = typename HashTable::iterator;
-    using next_t = typename HashTable::next_t;
-    using NodeStore = typename HashTable::NodeStore;
+    typedef typename P::HashTable   HashTable;
+    typedef typename P::Value       V;
+    typedef typename P::Key         K;
+    typedef typename P::value_type  value_type;
+    typedef typename P::LV  LV;
+    typedef typename HashTable::iterator internal_iterator;
+    typedef typename HashTable::next_t next_t;
+    typedef typename HashTable::NodeStore NodeStore;
 protected:
     static constexpr size_t UNLIMITED = std::numeric_limits<size_t>::max();
 public:
-    using insert_result = typename HashTable::insert_result;
+    typedef typename HashTable::insert_result insert_result;
 
     class iterator {
     public:
@@ -177,8 +177,8 @@ public:
     void swap(lrucache_map & rhs);
 
 private:
-    using MoveRecord = std::pair<uint32_t, uint32_t>;
-    using MoveRecords = std::vector<MoveRecord>;
+    typedef std::pair<uint32_t, uint32_t> MoveRecord;
+    typedef std::vector<MoveRecord> MoveRecords;
     /**
      * Implements the resize of the hashtable
      */
