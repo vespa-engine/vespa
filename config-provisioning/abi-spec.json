@@ -288,6 +288,7 @@
       "public com.yahoo.config.provision.ClusterSpec$Type type()",
       "public com.yahoo.config.provision.ClusterSpec$Id id()",
       "public java.util.Optional dockerImageRepo()",
+      "public java.util.Optional dockerImage()",
       "public com.yahoo.component.Version vespaVersion()",
       "public java.util.Optional group()",
       "public java.util.Optional combinedId()",
