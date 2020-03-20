@@ -538,7 +538,7 @@
           "steps": {
             "deployReal": "succeeded",
             "installReal": "unfinished",
-            "report": "succeeded"
+            "report": "unfinished"
           },
           "tasks": {
             "deploy": "succeeded",
