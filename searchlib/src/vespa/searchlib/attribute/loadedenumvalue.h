@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include <cassert>
+#include <limits>
 
 namespace search
 {
