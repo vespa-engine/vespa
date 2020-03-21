@@ -15,7 +15,7 @@ std::shared_ptr<Function const> verify_function(std::shared_ptr<Function const> 
         fprintf(stderr, "eval_fixture: function parse failed: %s\n", fun->get_error().c_str());
     }
     ASSERT_TRUE(!fun->has_error());
-    return std::move(fun);
+    return fun;
 }
 
 NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
