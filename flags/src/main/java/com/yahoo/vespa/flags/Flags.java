@@ -250,7 +250,7 @@ public class Flags {
             "Takes effect on next deployment of the application", APPLICATION_ID);
 
     public static final UnboundBooleanFlag PHRASE_SEGMENTING = defineFeatureFlag(
-            "phrase-segmenting", true,
+            "phrase-segmenting", false,
             "Should 'implicit phrases' in queries we parsed to a phrase or and?",
             "Takes effect on redeploy",
             ZONE_ID, APPLICATION_ID);
