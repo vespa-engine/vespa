@@ -47,7 +47,6 @@ public class ZkStatusService implements StatusService {
     private final HostInfosCache hostInfosCache;
     private final Metric metric;
     private final Timer timer;
-    private final boolean doCleanup;
     private final AntiServiceMonitor antiServiceMonitor;
 
     /**
@@ -61,24 +60,21 @@ public class ZkStatusService implements StatusService {
             @Component Curator curator,
             @Component Metric metric,
             @Component Timer timer,
-            @Component FlagSource flagSource,
             @Component AntiServiceMonitor antiServiceMonitor) {
         this(curator,
                 metric,
                 timer,
                 new HostInfosCache(curator, new HostInfosServiceImpl(curator, timer)),
-                Flags.CLEANUP_STATUS_SERVICE.bindTo(flagSource).value(),
                 antiServiceMonitor);
     }
 
     /** Non-private for testing only. */
     ZkStatusService(Curator curator, Metric metric, Timer timer, HostInfosCache hostInfosCache,
-                    boolean doCleanup, AntiServiceMonitor antiServiceMonitor) {
+                    AntiServiceMonitor antiServiceMonitor) {
         this.curator = curator;
         this.metric = metric;
         this.timer = timer;
         this.hostInfosCache = hostInfosCache;
-        this.doCleanup = doCleanup;
         this.antiServiceMonitor = antiServiceMonitor;
     }
 
@@ -241,19 +237,15 @@ public class ZkStatusService implements StatusService {
      */
     @Override
     public void onApplicationActivate(ApplicationInstanceReference reference, Set<HostName> hostnames) {
-        if (doCleanup) {
-            withLockForAdminOp(reference, " was activated", () -> {
-                HostInfos hostInfos = hostInfosCache.getCachedHostInfos(reference);
-                Set<HostName> toRemove = new HashSet<>(hostInfos.getZkHostnames());
-                toRemove.removeAll(hostnames);
-                if (toRemove.size() > 0) {
-                    log.log(LogLevel.INFO, "Removing " + toRemove + " of " + reference + " from status service");
-                    hostInfosCache.removeHosts(reference, toRemove);
-                }
-            });
-        } else {
-            log.log(LogLevel.INFO, "Would have removed orphaned hosts of " + reference + " from status service");
-        }
+        withLockForAdminOp(reference, " was activated", () -> {
+            HostInfos hostInfos = hostInfosCache.getCachedHostInfos(reference);
+            Set<HostName> toRemove = new HashSet<>(hostInfos.getZkHostnames());
+            toRemove.removeAll(hostnames);
+            if (toRemove.size() > 0) {
+                log.log(LogLevel.INFO, "Removing " + toRemove + " of " + reference + " from status service");
+                hostInfosCache.removeHosts(reference, toRemove);
+            }
+        });
     }
 
     /**
@@ -267,22 +259,18 @@ public class ZkStatusService implements StatusService {
      */
     @Override
     public void onApplicationRemove(ApplicationInstanceReference reference) {
-        if (doCleanup) {
-            withLockForAdminOp(reference, " was removed", () -> {
-                log.log(LogLevel.INFO, "Removing application " + reference + " from status service");
+        withLockForAdminOp(reference, " was removed", () -> {
+            log.log(LogLevel.INFO, "Removing application " + reference + " from status service");
 
-                // /vespa/application-status-service/REFERENCE
-                curator.delete(Path.fromString(applicationInstanceSuspendedPath(reference)));
+            // /vespa/application-status-service/REFERENCE
+            curator.delete(Path.fromString(applicationInstanceSuspendedPath(reference)));
 
-                // /vespa/host-status-service/REFERENCE/hosts-allowed-down
-                curator.delete(Path.fromString(hostsAllowedDownPath(reference)));
+            // /vespa/host-status-service/REFERENCE/hosts-allowed-down
+            curator.delete(Path.fromString(hostsAllowedDownPath(reference)));
 
-                // /vespa/host-status/APPLICATION_ID
-                hostInfosCache.removeApplication(reference);
-            });
-        } else {
-            log.log(LogLevel.INFO, "Would have removed application " + reference + " from status service");
-        }
+            // /vespa/host-status/APPLICATION_ID
+            hostInfosCache.removeApplication(reference);
+        });
     }
 
     private void withLockForAdminOp(ApplicationInstanceReference reference,

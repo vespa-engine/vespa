@@ -28,6 +28,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -73,19 +74,19 @@ public class ZkStatusServiceTest {
     private final Metric metric = mock(Metric.class);
     private final OrchestratorContext context = mock(OrchestratorContext.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
-    private final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private final CriticalRegion criticalRegion = mock(CriticalRegion.class);
     private final AntiServiceMonitor antiServiceMonitor = mock(AntiServiceMonitor.class);
 
     @Captor
     private ArgumentCaptor<Map<String, String>> captor;
 
+    @Before
     public void setUp() throws Exception {
         Logger.getLogger("").setLevel(LogLevel.WARNING);
 
         testingServer = new TestingServer();
         curator = createConnectedCurator(testingServer);
-        statusService = new ZkStatusService(curator, metric, timer, flagSource, antiServiceMonitor);
+        statusService = new ZkStatusService(curator, metric, timer, antiServiceMonitor);
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(10));
         when(context.isProbe()).thenReturn(false);
         when(timer.currentTime()).thenReturn(Instant.ofEpochMilli(1));
@@ -112,7 +113,6 @@ public class ZkStatusServiceTest {
 
     @Test
     public void host_state_for_unknown_hosts_is_no_remarks() throws Exception {
-        setUp();
         assertThat(
                 statusService.getHostInfo(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1).status(),
                 is(HostStatus.NO_REMARKS));
@@ -120,7 +120,6 @@ public class ZkStatusServiceTest {
 
     @Test
     public void setting_host_state_is_idempotent() throws Exception {
-        setUp();
         when(timer.currentTime()).thenReturn(
                 Instant.ofEpochMilli((1)),
                 Instant.ofEpochMilli((3)),
@@ -157,9 +156,8 @@ public class ZkStatusServiceTest {
 
     @Test
     public void locks_are_exclusive() throws Exception {
-        setUp();
         ZkStatusService zkStatusService2 =
-                new ZkStatusService(curator, mock(Metric.class), new TestTimer(), flagSource, antiServiceMonitor);
+                new ZkStatusService(curator, mock(Metric.class), new TestTimer(), antiServiceMonitor);
 
         final CompletableFuture<Void> lockedSuccessfullyFuture;
         try (ApplicationLock lock = statusService
@@ -184,9 +182,8 @@ public class ZkStatusServiceTest {
 
     @Test
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
-        setUp();
         ZkStatusService zkStatusService2 =
-                new ZkStatusService(curator, mock(Metric.class), new TestTimer(), flagSource, antiServiceMonitor);
+                new ZkStatusService(curator, mock(Metric.class), new TestTimer(), antiServiceMonitor);
 
         try (ApplicationLock lock = statusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
@@ -257,8 +254,6 @@ public class ZkStatusServiceTest {
     @Test
     public void suspend_and_resume_application_works_and_is_symmetric() throws Exception {
 
-        setUp();
-
         // Initial state is NO_REMARK
         assertThat(
                 statusService
@@ -290,7 +285,6 @@ public class ZkStatusServiceTest {
 
     @Test
     public void suspending_two_applications_returns_two_applications() throws Exception {
-        setUp();
         Set<ApplicationInstanceReference> suspendedApps = statusService.getAllSuspendedApplications();
         assertThat(suspendedApps.size(), is(0));
 
@@ -312,9 +306,6 @@ public class ZkStatusServiceTest {
 
     @Test
     public void zookeeper_cleanup() throws Exception {
-        flagSource.withBooleanFlag(Flags.CLEANUP_STATUS_SERVICE.id(), true);
-        setUp();
-
         HostName strayHostname = new HostName("stray1.com");
 
         verify(antiServiceMonitor, times(0)).disallowDuperModelLockAcquisition(any());

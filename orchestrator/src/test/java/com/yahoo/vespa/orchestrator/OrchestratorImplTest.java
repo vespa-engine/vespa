@@ -80,7 +80,6 @@ public class OrchestratorImplTest {
             curator,
             mock(Metric.class),
             new TestTimer(),
-            flagSource,
             new DummyAntiServiceMonitor());
 
     private ApplicationId app1;
@@ -403,7 +402,6 @@ public class OrchestratorImplTest {
                 new MockCurator(),
                 mock(Metric.class),
                 new TestTimer(),
-                flagSource,
                 new DummyAntiServiceMonitor());
 
         HostName hostName = new HostName("host.yahoo.com");
