@@ -19,39 +19,52 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, bool val
     self.visitBool(name, value);
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, int8_t value)
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, char value)
 {
     self.visitInt(name, value);
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, uint8_t value)
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, signed char value)
 {
     self.visitInt(name, value);
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, int16_t value)
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, unsigned char value)
 {
     self.visitInt(name, value);
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, uint16_t value)
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, short value)
 {
     self.visitInt(name, value);
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, int32_t value) {
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, unsigned short value)
+{
     self.visitInt(name, value);
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, uint32_t value) {
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, int value) {
     self.visitInt(name, value);
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, int64_t value) {
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, unsigned int value) {
     self.visitInt(name, value);
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, uint64_t value) {
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, long value) {
+    self.visitInt(name, value);
+}
+
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, unsigned long value) {
+    self.visitInt(name, value);
+}
+
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, long long value) {
+    self.visitInt(name, value);
+}
+
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, unsigned long long value) {
     self.visitInt(name, value);
 }
 
