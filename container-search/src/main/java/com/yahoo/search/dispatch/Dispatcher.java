@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.compress.Compressor;
@@ -88,10 +87,9 @@ public class Dispatcher extends AbstractComponent {
     public Dispatcher(RpcResourcePool resourcePool,
                       ComponentId clusterId,
                       DispatchConfig dispatchConfig,
-                      ClusterInfoConfig clusterInfoConfig,
                       VipStatus vipStatus,
                       Metric metric) {
-        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,clusterInfoConfig.nodeCount(),
+        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,
                                              vipStatus, new RpcPingFactory(resourcePool)),
              dispatchConfig, metric);
 

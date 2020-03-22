@@ -58,7 +58,7 @@ public class SearchClusterTest {
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
-            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPerGroup,
+            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes),
                                               vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
             clusterMonitor = new ClusterMonitor(searchCluster, false);
             searchCluster.addMonitoring(clusterMonitor);
