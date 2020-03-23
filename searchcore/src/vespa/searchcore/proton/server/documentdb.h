@@ -85,7 +85,7 @@ private:
         DocumentStoreCacheStats() : total(), readySubDb(), notReadySubDb(), removedSubDb() {}
     };
 
-    using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
+    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using StatusReportUP = std::unique_ptr<StatusReport>;
     using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;

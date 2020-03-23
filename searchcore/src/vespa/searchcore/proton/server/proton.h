@@ -57,7 +57,7 @@ private:
     typedef search::engine::MonitorClient                 MonitorClient;
     typedef std::map<DocTypeName, DocumentDB::SP>         DocumentDBMap;
     typedef BootstrapConfig::ProtonConfigSP               ProtonConfigSP;
-    using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
+    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
     using BucketSpace = document::BucketSpace;
 
     struct MetricsUpdateHook : metrics::UpdateHook

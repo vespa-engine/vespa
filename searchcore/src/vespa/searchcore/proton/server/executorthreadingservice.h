@@ -3,7 +3,6 @@
 
 #include "executor_thread_service.h"
 #include <vespa/searchcorespi/index/ithreadingservice.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 namespace proton {
@@ -17,16 +16,16 @@ class ExecutorThreadingServiceStats;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
-    vespalib::ThreadStackExecutorBase             & _sharedExecutor;
-    vespalib::ThreadStackExecutor                   _masterExecutor;
-    vespalib::BlockingThreadStackExecutor           _indexExecutor;
-    vespalib::BlockingThreadStackExecutor           _summaryExecutor;
-    ExecutorThreadService                           _masterService;
-    ExecutorThreadService                           _indexService;
-    ExecutorThreadService                           _summaryService;
-    std::unique_ptr<search::ISequencedTaskExecutor> _indexFieldInverter;
-    std::unique_ptr<search::ISequencedTaskExecutor> _indexFieldWriter;
-    std::unique_ptr<search::ISequencedTaskExecutor> _attributeFieldWriter;
+    vespalib::SyncableThreadExecutor                 & _sharedExecutor;
+    vespalib::ThreadStackExecutor                      _masterExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _indexExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _summaryExecutor;
+    ExecutorThreadService                              _masterService;
+    ExecutorThreadService                              _indexService;
+    ExecutorThreadService                              _summaryService;
+    std::unique_ptr<search::ISequencedTaskExecutor>    _indexFieldInverter;
+    std::unique_ptr<search::ISequencedTaskExecutor>    _indexFieldWriter;
+    std::unique_ptr<search::ISequencedTaskExecutor>    _attributeFieldWriter;
 
 public:
     using OptimizeFor = vespalib::Executor::OptimizeFor;
@@ -36,7 +35,7 @@ public:
      * @stackSize The size of the stack of the underlying executors.
      * @taskLimit The task limit for the index executor.
      */
-    ExecutorThreadingService(vespalib::ThreadStackExecutorBase &sharedExecutor,
+    ExecutorThreadingService(vespalib::SyncableThreadExecutor &sharedExecutor,
                              uint32_t threads = 1,
                              uint32_t stackSize = 128 * 1024,
                              uint32_t taskLimit = 1000,
@@ -56,11 +55,11 @@ public:
     vespalib::ThreadStackExecutorBase &getMasterExecutor() {
         return _masterExecutor;
     }
-    vespalib::ThreadStackExecutorBase &getIndexExecutor() {
-        return _indexExecutor;
+    vespalib::SyncableThreadExecutor &getIndexExecutor() {
+        return *_indexExecutor;
     }
-    vespalib::ThreadStackExecutorBase &getSummaryExecutor() {
-        return _summaryExecutor;
+    vespalib::SyncableThreadExecutor &getSummaryExecutor() {
+        return *_summaryExecutor;
     }
 
     /**
@@ -76,7 +75,7 @@ public:
     searchcorespi::index::IThreadService &summary() override {
         return _summaryService;
     }
-    vespalib::ThreadExecutor &shared() override {
+    vespalib::SyncableThreadExecutor &shared() override {
         return _sharedExecutor;
     }
 

@@ -48,7 +48,6 @@ using search::memoryindex::FieldIndexCollection;
 using search::queryeval::Source;
 using std::set;
 using std::string;
-using vespalib::BlockingThreadStackExecutor;
 using vespalib::ThreadStackExecutor;
 using vespalib::makeLambdaTask;
 using std::chrono::duration_cast;
