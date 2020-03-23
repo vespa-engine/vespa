@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 
@@ -13,11 +14,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -86,7 +89,7 @@ public class SystemFlagsDataArchive {
         files.forEach((flagId, fileMap) -> {
             fileMap.forEach((filename, flagData) -> {
                 uncheck(() -> {
-                    zipOut.putNextEntry(new ZipEntry("flags/" + flagId.toString() + "/" + filename));
+                    zipOut.putNextEntry(new ZipEntry(toFilePath(flagId, filename)));
                     zipOut.write(flagData.serializeToUtf8Json());
                     zipOut.closeEntry();
                 });
@@ -112,6 +115,25 @@ public class SystemFlagsDataArchive {
         return targetData;
     }
 
+    public void validateAllFilesAreForTargets(SystemName currentSystem, Set<FlagsTarget> targets) throws IllegalArgumentException {
+        Set<String> validFiles = targets.stream()
+                .flatMap(target -> target.flagDataFilesPrioritized().stream())
+                .collect(Collectors.toSet());
+        Set<SystemName> otherSystems = Arrays.stream(SystemName.values())
+                .filter(systemName -> systemName != currentSystem)
+                .collect(Collectors.toSet());
+        files.forEach((flagId, fileMap) -> {
+            for (String filename : fileMap.keySet()) {
+                boolean isFileForOtherSystem = otherSystems.stream()
+                        .anyMatch(system -> filename.startsWith(system.value() + "."));
+                boolean isFileForCurrentSystem = validFiles.contains(filename);
+                if (!isFileForOtherSystem && !isFileForCurrentSystem) {
+                    throw new IllegalArgumentException("Unknown flag file: " + toFilePath(flagId, filename));
+                }
+            }
+        });
+    }
+
     private static void addFile(Builder builder, String rawData, Path filePath) {
         String filename = filePath.getFileName().toString();
         if (filename.startsWith(".")) {
@@ -133,6 +155,10 @@ public class SystemFlagsDataArchive {
             }
         }
         builder.addFile(filename, flagData);
+    }
+
+    private static String toFilePath(FlagId flagId, String filename) {
+        return "flags/" + flagId.toString() + "/" + filename;
     }
 
     public static class Builder {

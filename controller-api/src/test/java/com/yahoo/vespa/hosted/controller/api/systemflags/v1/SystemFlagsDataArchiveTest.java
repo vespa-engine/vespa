@@ -28,6 +28,7 @@ import java.net.URI;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,6 +94,14 @@ public class SystemFlagsDataArchiveTest {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Only JSON files are allowed in 'flags/' directory (found 'flags/my-test-flag/file-name-without-dot-json')");
         SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-invalid-file-name/"));
+    }
+
+    @Test
+    public void throws_exception_on_unknown_file() {
+        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-file-name/"));
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json");
+        archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget));
     }
 
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {

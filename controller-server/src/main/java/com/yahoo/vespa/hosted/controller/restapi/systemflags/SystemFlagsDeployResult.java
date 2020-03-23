@@ -218,6 +218,10 @@ class SystemFlagsDeployResult {
             return new OperationError(message, Set.of(target), OperationType.DELETE, id, null);
         }
 
+        static OperationError archiveValidationFailed(String message) {
+            return new OperationError(message, Set.of(), OperationType.VALIDATE_ARCHIVE, null, null);
+        }
+
         String message() { return message; }
         Set<FlagsTarget> targets() { return targets; }
         OperationType operation() { return operation; }
@@ -251,7 +255,7 @@ class SystemFlagsDeployResult {
     }
 
     enum OperationType {
-        CREATE("create"), DELETE("delete"), UPDATE("update"), LIST("list");
+        CREATE("create"), DELETE("delete"), UPDATE("update"), LIST("list"), VALIDATE_ARCHIVE("validate-archive");
 
         private final String stringValue;
 
