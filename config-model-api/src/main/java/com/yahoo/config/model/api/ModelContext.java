@@ -56,7 +56,7 @@ public interface ModelContext {
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
 
-        // TODO: Remove after April 2020
+        // TODO: Only needed for LbServicesProducerTest
         default boolean useDedicatedNodeForLogserver() { return true; }
 
         boolean useAdaptiveDispatch();
