@@ -47,7 +47,7 @@ public class SystemFlagsDataArchive {
             ZipEntry entry;
             while ((entry = zipIn.getNextEntry()) != null) {
                 String name = entry.getName();
-                if (!entry.isDirectory() && name.startsWith("flags/") && name.endsWith(".json")) {
+                if (!entry.isDirectory() && name.startsWith("flags/")) {
                     Path filePath = Paths.get(name);
                     String rawData = new String(zipIn.readAllBytes(), StandardCharsets.UTF_8);
                     addFile(builder, rawData, filePath);
@@ -70,7 +70,7 @@ public class SystemFlagsDataArchive {
             directoryStream.forEach(absolutePath -> {
                 Path relativePath = root.relativize(absolutePath);
                 if (!Files.isDirectory(absolutePath) &&
-                        relativePath.startsWith("flags") && relativePath.toString().endsWith(".json")) {
+                        relativePath.startsWith("flags")) {
                     String rawData = uncheck(() -> Files.readString(absolutePath, StandardCharsets.UTF_8));
                     addFile(builder, rawData, relativePath);
                 }
@@ -114,6 +114,12 @@ public class SystemFlagsDataArchive {
 
     private static void addFile(Builder builder, String rawData, Path filePath) {
         String filename = filePath.getFileName().toString();
+        if (filename.startsWith(".")) {
+            return; // Ignore files starting with '.'
+        }
+        if (!filename.endsWith(".json")) {
+            throw new IllegalArgumentException(String.format("Only JSON files are allowed in 'flags/' directory (found '%s')", filePath.toString()));
+        }
         FlagId directoryDeducedFlagId = new FlagId(filePath.getName(1).toString());
         FlagData flagData;
         if (rawData.isBlank()) {
