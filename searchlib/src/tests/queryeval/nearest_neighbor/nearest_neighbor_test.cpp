@@ -11,6 +11,7 @@
 #include <vespa/searchlib/queryeval/nearest_neighbor_iterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
+#include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/queryeval/nns_index_iterator.h>
 
@@ -23,16 +24,22 @@ using search::feature_t;
 using search::tensor::DenseTensorAttribute;
 using search::AttributeVector;
 using vespalib::eval::ValueType;
+using CellType = vespalib::eval::ValueType::CellType;
 using vespalib::eval::TensorSpec;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::DefaultTensorEngine;
+using search::tensor::DistanceFunction;
+using search::attribute::DistanceMetric;
 
 using namespace search::fef;
 using namespace search::queryeval;
 
 vespalib::string denseSpecDouble("tensor(x[2])");
 vespalib::string denseSpecFloat("tensor<float>(x[2])");
+
+DistanceFunction::UP euclid_d = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::DOUBLE);
+DistanceFunction::UP euclid_f = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::FLOAT);
 
 std::unique_ptr<DenseTensorView> createTensor(const TensorSpec &spec) {
     auto value = DefaultTensorEngine::ref().from_spec(spec);
@@ -96,6 +103,14 @@ struct Fixture
         auto t = createTensor(_typeSpec, v1, v2);
         setTensor(docId, *t);
     }
+
+    DistanceFunction *dist_fun() const {
+        if (_cfg.tensorType().cell_type() == CellType::FLOAT) {
+            return euclid_f.get();
+        } else {
+            return euclid_d.get();
+        }
+    }
 };
 
 template <bool strict>
@@ -104,7 +119,7 @@ SimpleResult find_matches(Fixture &env, const DenseTensorView &qtv) {
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._tensorAttr);
     NearestNeighborDistanceHeap dh(2);
-    auto search = NearestNeighborIterator::create(strict, tfmd, qtv, attr, dh);
+    auto search = NearestNeighborIterator::create(strict, tfmd, qtv, attr, dh, env.dist_fun());
     if (strict) {
         return SimpleResult().searchStrict(*search, attr.getNumDocs());
     } else {
@@ -141,8 +156,6 @@ verify_iterator_returns_expected_results(const vespalib::string& attribute_tenso
 TEST("require that NearestNeighborIterator returns expected results") {
     TEST_DO(verify_iterator_returns_expected_results(denseSpecDouble, denseSpecDouble));
     TEST_DO(verify_iterator_returns_expected_results(denseSpecFloat, denseSpecFloat));
-    TEST_DO(verify_iterator_returns_expected_results(denseSpecDouble, denseSpecFloat));
-    TEST_DO(verify_iterator_returns_expected_results(denseSpecFloat, denseSpecDouble));
 }
 
 template <bool strict>
@@ -151,7 +164,7 @@ std::vector<feature_t> get_rawscores(Fixture &env, const DenseTensorView &qtv) {
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._tensorAttr);
     NearestNeighborDistanceHeap dh(2);
-    auto search = NearestNeighborIterator::create(strict, tfmd, qtv, attr, dh);
+    auto search = NearestNeighborIterator::create(strict, tfmd, qtv, attr, dh, env.dist_fun());
     uint32_t limit = attr.getNumDocs();
     uint32_t docid = 1;
     search->initRange(docid, limit);
@@ -195,15 +208,13 @@ verify_iterator_sets_expected_rawscore(const vespalib::string& attribute_tensor_
 TEST("require that NearestNeighborIterator sets expected rawscore") {
     TEST_DO(verify_iterator_sets_expected_rawscore(denseSpecDouble, denseSpecDouble));
     TEST_DO(verify_iterator_sets_expected_rawscore(denseSpecFloat, denseSpecFloat));
-    TEST_DO(verify_iterator_sets_expected_rawscore(denseSpecDouble, denseSpecFloat));
-    TEST_DO(verify_iterator_sets_expected_rawscore(denseSpecFloat, denseSpecDouble));
 }
 
 TEST("require that NnsIndexIterator works as expected") {
     std::vector<NnsIndexIterator::Hit> hits{{2,4.0}, {3,9.0}, {5,1.0}, {8,16.0}, {9,36.0}};
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
-    auto search = NnsIndexIterator::create(tfmd, hits);
+    auto search = NnsIndexIterator::create(tfmd, hits, euclid_d.get());
     uint32_t docid = 1;
     search->initFullRange();
     bool match = search->seek(docid);
