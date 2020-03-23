@@ -7,6 +7,7 @@
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/document/update/documentupdate.h>
 #include <set>
+#include <optional>
 
 namespace document {
 class Document;
@@ -116,6 +117,7 @@ private:
                                                 api::GetReply&,
                                                 const std::optional<NewestReplica>&,
                                                 bool any_replicas_failed);
+    void handle_safe_path_received_single_full_get(DistributorMessageSender&, api::GetReply&);
     void handleSafePathReceivedGet(DistributorMessageSender&, api::GetReply&);
     void handleSafePathReceivedPut(DistributorMessageSender&, const api::PutReply&);
     bool shouldCreateIfNonExistent() const;
@@ -136,6 +138,7 @@ private:
     UpdateMetricSet& _updateMetric;
     PersistenceOperationMetricSet& _putMetric;
     PersistenceOperationMetricSet& _getMetric;
+    PersistenceOperationMetricSet& _metadata_get_metrics;
     std::shared_ptr<api::UpdateCommand> _updateCmd;
     std::shared_ptr<api::StorageReply> _updateReply;
     DistributorComponent& _manager;
@@ -146,6 +149,7 @@ private:
     mbus::TraceNode _trace;
     document::BucketId _updateDocBucketId;
     std::vector<std::pair<document::BucketId, uint16_t>> _replicas_at_get_send_time;
+    std::optional<framework::MilliSecTimer> _single_get_latency_timer;
     uint16_t _fast_path_repair_source_node;
     bool _use_initial_cheap_metadata_fetch_phase;
     bool _replySent;

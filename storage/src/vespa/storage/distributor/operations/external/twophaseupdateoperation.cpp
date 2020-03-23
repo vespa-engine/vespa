@@ -29,12 +29,14 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
     _updateMetric(metrics.updates[msg->getLoadType()]),
     _putMetric(metrics.update_puts[msg->getLoadType()]),
     _getMetric(metrics.update_gets[msg->getLoadType()]),
+    _metadata_get_metrics(metrics.update_metadata_gets[msg->getLoadType()]),
     _updateCmd(std::move(msg)),
     _updateReply(),
     _manager(manager),
     _bucketSpace(bucketSpace),
     _sendState(SendState::NONE_SENT),
     _mode(Mode::FAST_PATH),
+    _single_get_latency_timer(),
     _fast_path_repair_source_node(0xffff),
     _use_initial_cheap_metadata_fetch_phase(
             _manager.getDistributor().getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates()),
@@ -217,9 +219,10 @@ TwoPhaseUpdateOperation::create_initial_safe_path_get_operation() {
     LOG(debug, "Update(%s) safe path: sending Get commands with field set '%s' "
                "and internal read consistency %s",
                update_doc_id().c_str(), field_set, api::to_string(read_consistency));
+    auto& get_metric = (_use_initial_cheap_metadata_fetch_phase ? _metadata_get_metrics : _getMetric);
     return std::make_shared<GetOperation>(
             _manager, _bucketSpace, _bucketSpace.getBucketDatabase().acquire_read_guard(),
-            get, _getMetric, read_consistency);
+            get, get_metric, read_consistency);
 }
 
 void
@@ -368,9 +371,7 @@ TwoPhaseUpdateOperation::handleSafePathReceive(DistributorMessageSender& sender,
     // so we handle its reply separately.
     if (_sendState == SendState::SINGLE_GET_SENT) {
         assert(msg->getType() == api::MessageType::GET_REPLY);
-        LOG(spam, "Received single full Get reply for '%s'", update_doc_id().c_str());
-        addTraceFromReply(*msg);
-        handleSafePathReceivedGet(sender, dynamic_cast<api::GetReply&>(*msg));
+        handle_safe_path_received_single_full_get(sender, dynamic_cast<api::GetReply&>(*msg));
         return;
     }
     std::shared_ptr<Operation> callback = _sentMessageMap.pop(msg->getMsgId());
@@ -398,6 +399,25 @@ TwoPhaseUpdateOperation::handleSafePathReceive(DistributorMessageSender& sender,
     } else {
         assert(!"Unknown state");
     }
+}
+
+void TwoPhaseUpdateOperation::handle_safe_path_received_single_full_get(
+        DistributorMessageSender& sender,
+        api::GetReply& reply)
+{
+    LOG(spam, "Received single full Get reply for '%s'", update_doc_id().c_str());
+    if (_replySent) {
+        return; // Bail out; the operation has been concurrently closed.
+    }
+    addTraceFromReply(reply);
+    if (reply.getResult().success()) {
+        _getMetric.ok.inc();
+    } else {
+        _getMetric.failures.storagefailure.inc();
+    }
+    assert(_single_get_latency_timer.has_value());
+    _getMetric.latency.addValue(_single_get_latency_timer->getElapsedTimeAsDouble());
+    handleSafePathReceivedGet(sender, reply);
 }
 
 void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
@@ -443,6 +463,7 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
     // Timestamps were not in sync, so we have to fetch the document from the highest
     // timestamped replica, apply the update to it and then explicitly Put the result
     // to all replicas.
+    _single_get_latency_timer.emplace(_manager.getClock());
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), newest_replica->bucket_id);
     LOG(debug, "Update(%s): sending single payload Get to %s on node %u (had timestamp %" PRIu64 ")",
         update_doc_id().c_str(), bucket.toString().c_str(),
