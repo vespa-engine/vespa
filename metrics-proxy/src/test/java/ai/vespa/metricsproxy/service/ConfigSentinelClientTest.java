@@ -26,38 +26,39 @@ public class ConfigSentinelClientTest {
         services.add(qrserver);
         services.add(docproc);
 
-        MockConfigSentinelClient client = new MockConfigSentinelClient(configsentinel);
-        client.updateServiceStatuses(services);
+        try (MockConfigSentinelClient client = new MockConfigSentinelClient(configsentinel)) {
+            client.updateServiceStatuses(services);
 
-        assertThat(qrserver.getPid(), is(6520));
-        assertThat(qrserver.getState(), is("RUNNING"));
-        assertThat(qrserver.isAlive(), is(true));
-        assertThat(searchnode4.getPid(), is(6534));
-        assertThat(searchnode4.getState(), is("RUNNING"));
-        assertThat(searchnode4.isAlive(), is(true));
+            assertThat(qrserver.getPid(), is(6520));
+            assertThat(qrserver.getState(), is("RUNNING"));
+            assertThat(qrserver.isAlive(), is(true));
+            assertThat(searchnode4.getPid(), is(6534));
+            assertThat(searchnode4.getState(), is("RUNNING"));
+            assertThat(searchnode4.isAlive(), is(true));
 
-        assertThat(docproc.getPid(), is(-1));
-        assertThat(docproc.getState(), is("FINISHED"));
-        assertThat(docproc.isAlive(), is(false));
+            assertThat(docproc.getPid(), is(-1));
+            assertThat(docproc.getState(), is("FINISHED"));
+            assertThat(docproc.isAlive(), is(false));
 
 
-        configsentinel.reConfigure();
+            configsentinel.reConfigure();
 
-        client.ping(docproc);
-        assertThat(docproc.getPid(), is(100));
-        assertThat(docproc.getState(), is("RUNNING"));
-        assertThat(docproc.isAlive(), is(true));
+            client.ping(docproc);
+            assertThat(docproc.getPid(), is(100));
+            assertThat(docproc.getState(), is("RUNNING"));
+            assertThat(docproc.isAlive(), is(true));
 
-        //qrserver has yet not been checked
-        assertThat(qrserver.isAlive(), is(true));
+            //qrserver has yet not been checked
+            assertThat(qrserver.isAlive(), is(true));
 
-        client.updateServiceStatuses(services);
+            client.updateServiceStatuses(services);
 
-        assertThat(docproc.getPid(), is(100));
-        assertThat(docproc.getState(), is("RUNNING"));
-        assertThat(docproc.isAlive(), is(true));
-        //qrserver is no longer running on this node - so should be false
-        assertThat(qrserver.isAlive(), is(false));
+            assertThat(docproc.getPid(), is(100));
+            assertThat(docproc.getState(), is("RUNNING"));
+            assertThat(docproc.isAlive(), is(true));
+            //qrserver is no longer running on this node - so should be false
+            assertThat(qrserver.isAlive(), is(false));
+        }
     }
 
     @Test
@@ -88,15 +89,16 @@ public class ConfigSentinelClientTest {
         services.add(containerClusterController);
         services.add(notPresent);
 
-        MockConfigSentinelClient client = new MockConfigSentinelClient(configsentinel);
-        client.updateServiceStatuses(services);
-        assertThat(container.isAlive(),is(true));
-        assertThat(container.getPid(),is(14338));
-        assertThat(container.getState(),is("RUNNING"));
+        try (MockConfigSentinelClient client = new MockConfigSentinelClient(configsentinel)) {
+            client.updateServiceStatuses(services);
+            assertThat(container.isAlive(),is(true));
+            assertThat(container.getPid(),is(14338));
+            assertThat(container.getState(),is("RUNNING"));
 
-        assertThat(containerClusterController.isAlive(),is(true));
-        assertThat(containerClusterController.getPid(),is(25020));
-        assertThat(containerClusterController.getState(),is("RUNNING"));
+            assertThat(containerClusterController.isAlive(),is(true));
+            assertThat(containerClusterController.getPid(),is(25020));
+            assertThat(containerClusterController.getState(),is("RUNNING"));
+        }
     }
 
 }
