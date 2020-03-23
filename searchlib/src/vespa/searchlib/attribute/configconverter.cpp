@@ -74,8 +74,22 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
     retval.setPredicateParams(predicateParams);
     if (cfg.index.hnsw.enabled) {
+        using CfgDm = AttributesConfig::Attribute::Index::Hnsw::Distancemetric;
+        DistanceMetric dm;
+        switch (cfg.index.hnsw.distancemetric) {
+        case CfgDm::EUCLIDEAN:
+            dm = DistanceMetric::Euclidean;
+            break;
+        case CfgDm::ANGULAR:
+            dm = DistanceMetric::Angular;
+            break;
+        case CfgDm::GEODEGREES:
+            dm = DistanceMetric::GeoDegrees;
+            break;
+        }
         retval.set_hnsw_index_params(HnswIndexParams(cfg.index.hnsw.maxlinkspernode,
-                                                     cfg.index.hnsw.neighborstoexploreatinsert));
+                                                     cfg.index.hnsw.neighborstoexploreatinsert,
+                                                     dm));
     }
     if (retval.basicType().type() == BasicType::Type::TENSOR) {
         if (!cfg.tensortype.empty()) {
