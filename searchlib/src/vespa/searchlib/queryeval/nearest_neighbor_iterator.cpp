@@ -29,7 +29,7 @@ is_compatible(const vespalib::eval::ValueType& lhs,
  * Keeps a heap of the K best hit distances.
  * Currently always does brute-force scanning, which is very expensive.
  **/
-template <bool strict, typename LCT, typename RCT>
+template <bool strict>
 class NearestNeighborImpl : public NearestNeighborIterator
 {
 public:
@@ -83,42 +83,23 @@ private:
     double                 _lastScore;
 };
 
-template <bool strict, typename LCT, typename RCT>
-NearestNeighborImpl<strict, LCT, RCT>::~NearestNeighborImpl() = default;
+template <bool strict>
+NearestNeighborImpl<strict>::~NearestNeighborImpl() = default;
 
 namespace {
-
-template<bool strict, typename LCT, typename RCT>
-std::unique_ptr<NearestNeighborIterator>
-create_impl(const NearestNeighborIterator::Params &params)
-{
-    using NNI = NearestNeighborImpl<strict, LCT, RCT>;
-    return std::make_unique<NNI>(params);
-}
-
-using Creator = std::unique_ptr<NearestNeighborIterator>(*)(const NearestNeighborIterator::Params &params);
-
-template <bool strict>
-struct CellTypeResolver
-{
-    template <typename LCT, typename RCT>
-    static Creator
-    get_fun() { return create_impl<strict, LCT, RCT>; }
-};
 
 std::unique_ptr<NearestNeighborIterator>
 resolve_strict_LCT_RCT(bool strict, const NearestNeighborIterator::Params &params)
 {
     CellType lct = params.queryTensor.fast_type().cell_type();
     CellType rct = params.tensorAttribute.getTensorType().cell_type();
+    if (lct != rct) abort();
     if (strict) {
-        using Resolver = CellTypeResolver<true>;
-        auto fun = vespalib::tensor::select_2<Resolver>(lct, rct);
-        return fun(params);
+        using NNI = NearestNeighborImpl<true>;
+        return std::make_unique<NNI>(params);
     } else {
-        using Resolver = CellTypeResolver<false>;
-        auto fun = vespalib::tensor::select_2<Resolver>(lct, rct);
-        return fun(params);
+        using NNI = NearestNeighborImpl<false>;
+        return std::make_unique<NNI>(params);
     }
 }
 
