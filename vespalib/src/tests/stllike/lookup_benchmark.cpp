@@ -2,11 +2,11 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstdio>
-#include <map>
 #include <set>
 #include <unordered_set>
 #include <vector>
-#include <algorithm>
+//#define XXH_INLINE_ALL
+#include <xxhash.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -95,6 +95,41 @@ size_t benchHashMapVespaLib2(size_t sz, size_t numLookups)
     return benchM(set, sz, numLookups);
 }
 
+std::unique_ptr<char []> createData(size_t sz) {
+    auto data = std::make_unique<char []>(sz);
+    for (size_t i(0); i < sz; i++) {
+        data.get()[i] = i + '0';
+    }
+    return data;
+}
+
+size_t benchXXHash32(size_t sz, size_t numLookups) {
+    auto data = createData(sz);
+    size_t sum(0);
+    for (size_t i(0); i < numLookups; i++) {
+        sum += XXH32(data.get(), sz, 0);
+    }
+    return sum;
+}
+
+size_t benchXXHash64(size_t sz, size_t numLookups) {
+    auto data = createData(sz);
+    size_t sum(0);
+    for (size_t i(0); i < numLookups; i++) {
+        sum += XXH64(data.get(), sz, 0);
+    }
+    return sum;
+}
+
+size_t benchLegacyHash(size_t sz, size_t numLookups) {
+    auto data = createData(sz);
+    size_t sum(0);
+    for (size_t i(0); i < numLookups; i++) {
+        sum += vespalib::hashValue(data.get(), sz);
+    }
+    return sum;
+}
+
 int main(int argc, char *argv[])
 {
     size_t count(1000);
@@ -116,23 +151,27 @@ int main(int argc, char *argv[])
     description['G'] = "vespalib::hash_set with simple and modulator.";
     description['k'] = "vespalib::hash_map";
     description['K'] = "vespalib::hash_map with simple and modulator.";
+    description['x'] = "xxhash32";
+    description['X'] = "xxhash64";
+    description['l'] = "legacy";
     size_t found(0);
     switch (type) {
-    case 'm': found = benchMap(count, rep); break;
-    case 'h': found = benchHashStl(count, rep); break;
-    case 'g': found = benchHashVespaLib(count, rep); break;
-    case 'G': found = benchHashVespaLib2(count, rep); break;
-    case 'k': found = benchHashMapVespaLib(count, rep); break;
-    case 'K': found = benchHashMapVespaLib2(count, rep); break;
-    default:
-        printf("'m' = %s\n", description[type]);
-        printf("'h' = %s\n", description[type]);
-        printf("'g' = %s\n", description[type]);
-        printf("'G' = %s\n", description[type]);
-        printf("Unspecified type %c. Running map lookup benchmark\n", type);
-        exit(1);
-        break;
+        case 'm': found = benchMap(count, rep); break;
+        case 'h': found = benchHashStl(count, rep); break;
+        case 'g': found = benchHashVespaLib(count, rep); break;
+        case 'G': found = benchHashVespaLib2(count, rep); break;
+        case 'k': found = benchHashMapVespaLib(count, rep); break;
+        case 'K': found = benchHashMapVespaLib2(count, rep); break;
+        case 'x': found = benchXXHash32(count, rep); break;
+        case 'X': found = benchXXHash64(count, rep); break;
+        case 'l': found = benchLegacyHash(count, rep); break;
+        default:
+            for (char c : "mhgGkKxXl") {
+                printf("'%c' = %s\n", c, description[c]);
+            }
+            return 1;
     }
     printf("Running test '%c' = %s, result = %ld found values\n", type, description[type], found);
+    return 0;
 }
 
