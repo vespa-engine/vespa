@@ -3,6 +3,7 @@
 
 #include "blueprint.h"
 #include "nearest_neighbor_distance_heap.h"
+#include <vespa/searchlib/tensor/distance_function.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 
 namespace vespalib::tensor { class DenseTensorView; }
@@ -23,6 +24,8 @@ private:
     uint32_t _target_num_hits;
     bool _approximate;
     uint32_t _explore_additional_hits;
+    search::tensor::DistanceFunction::UP _fallback_dist_fun;
+    search::tensor::DistanceFunction *_dist_fun;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
 

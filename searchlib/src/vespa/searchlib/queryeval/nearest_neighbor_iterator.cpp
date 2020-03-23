@@ -18,7 +18,7 @@ bool
 is_compatible(const vespalib::eval::ValueType& lhs,
               const vespalib::eval::ValueType& rhs)
 {
-    return (lhs.dimensions() == rhs.dimensions());
+    return (lhs == rhs);
 }
 
 }
@@ -36,7 +36,7 @@ public:
 
     NearestNeighborImpl(Params params_in)
         : NearestNeighborIterator(params_in),
-          _lhs(params().queryTensor.cellsRef().template typify<LCT>()),
+          _lhs(params().queryTensor.cellsRef()),
           _fieldTensor(params().tensorAttribute.getTensorType()),
           _lastScore(0.0)
     {
@@ -64,8 +64,7 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        double d = sqrt(_lastScore);
-        double score = 1.0 / (1.0 + d);
+        double score = params().distanceFunction->to_rawscore(_lastScore);
         params().tfmd.setRawScore(docId, score);
         params().distanceHeap.used(_lastScore);
     }
@@ -73,23 +72,13 @@ public:
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False ; }
 
 private:
-    static double computeSum(ConstArrayRef<LCT> lhs, ConstArrayRef<RCT> rhs, double limit) {
-        double sum = 0.0;
-        size_t sz = lhs.size();
-        assert(sz == rhs.size());
-        for (size_t i = 0; i < sz && sum <= limit; ++i) {
-            double diff = lhs[i] - rhs[i];
-            sum += diff*diff;
-        }
-        return sum;
-    }
-
     double computeDistance(uint32_t docId, double limit) {
         params().tensorAttribute.getTensor(docId, _fieldTensor);
-        return computeSum(_lhs, _fieldTensor.cellsRef().template typify<RCT>(), limit);
+        auto rhs = _fieldTensor.cellsRef();
+        return params().distanceFunction->calc_with_limit(_lhs, rhs, limit);
     }
 
-    ConstArrayRef<LCT>     _lhs;
+    TypedCells             _lhs;
     MutableDenseTensorView _fieldTensor;
     double                 _lastScore;
 };
@@ -141,9 +130,11 @@ NearestNeighborIterator::create(
         fef::TermFieldMatchData &tfmd,
         const vespalib::tensor::DenseTensorView &queryTensor,
         const search::tensor::DenseTensorAttribute &tensorAttribute,
-        NearestNeighborDistanceHeap &distanceHeap)
+        NearestNeighborDistanceHeap &distanceHeap,
+        search::tensor::DistanceFunction *dist_fun)
+
 {
-    Params params(tfmd, queryTensor, tensorAttribute, distanceHeap);
+    Params params(tfmd, queryTensor, tensorAttribute, distanceHeap, dist_fun);
     return resolve_strict_LCT_RCT(strict, params);
 }
 
