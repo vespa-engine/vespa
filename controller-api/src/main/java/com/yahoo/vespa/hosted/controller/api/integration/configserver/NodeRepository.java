@@ -124,8 +124,8 @@ public interface NodeRepository {
                         node.getWantToRetire(),
                         node.getWantToDeprovision(),
                         Optional.ofNullable(node.getReservedTo()).map(TenantName::from),
-                        DockerImage.fromString(node.getWantedDockerImage()),
-                        DockerImage.fromString(node.getCurrentDockerImage()));
+                        dockerImageFrom(node.getWantedDockerImage()),
+                        dockerImageFrom(node.getCurrentDockerImage()));
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {
@@ -206,6 +206,10 @@ public interface NodeRepository {
 
     private static Version versionFrom(String s) {
         return s == null ? Version.emptyVersion : Version.fromString(s);
+    }
+
+    private static DockerImage dockerImageFrom(String s) {
+        return s == null ? DockerImage.EMPTY : DockerImage.fromString(s);
     }
 
 }
