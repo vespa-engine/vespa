@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -30,6 +31,8 @@ public class Node {
     private final Version wantedVersion;
     private final Version currentOsVersion;
     private final Version wantedOsVersion;
+    private final DockerImage currentDockerImage;
+    private final DockerImage wantedDockerImage;
     private final ServiceState serviceState;
     private final Optional<Instant> suspendedSince;
     private final Optional<Instant> currentFirmwareCheck;
@@ -51,7 +54,7 @@ public class Node {
                 Optional<Instant> currentFirmwareCheck, Optional<Instant> wantedFirmwareCheck, ServiceState serviceState,
                 Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
                 int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
-                Optional<TenantName> reservedTo) {
+                Optional<TenantName> reservedTo, DockerImage wantedDockerImage, DockerImage currentDockerImage) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -77,6 +80,8 @@ public class Node {
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
         this.reservedTo = reservedTo;
+        this.wantedDockerImage = wantedDockerImage;
+        this.currentDockerImage = currentDockerImage;
     }
 
     public HostName hostname() {
@@ -115,6 +120,14 @@ public class Node {
 
     public Version wantedOsVersion() {
         return wantedOsVersion;
+    }
+
+    public DockerImage currentDockerImage() {
+        return currentDockerImage;
+    }
+
+    public DockerImage wantedDockerImage() {
+        return wantedDockerImage;
     }
 
     public Optional<Instant> currentFirmwareCheck() {
@@ -228,6 +241,8 @@ public class Node {
         private Version wantedVersion;
         private Version currentOsVersion;
         private Version wantedOsVersion;
+        private DockerImage currentDockerImage;
+        private DockerImage wantedDockerImage;
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
         private Optional<Instant> wantedFirmwareCheck = Optional.empty();
         private ServiceState serviceState;
@@ -257,6 +272,8 @@ public class Node {
             this.wantedVersion = node.wantedVersion;
             this.currentOsVersion = node.currentOsVersion;
             this.wantedOsVersion = node.wantedOsVersion;
+            this.currentDockerImage = node.currentDockerImage;
+            this.wantedDockerImage = node.wantedDockerImage;
             this.currentFirmwareCheck = node.currentFirmwareCheck;
             this.wantedFirmwareCheck = node.wantedFirmwareCheck;
             this.serviceState = node.serviceState;
@@ -321,6 +338,16 @@ public class Node {
 
         public Builder wantedOsVersion(Version wantedOsVersion) {
             this.wantedOsVersion = wantedOsVersion;
+            return this;
+        }
+
+        public Builder currentOsVersion(DockerImage currentDockerImage) {
+            this.currentDockerImage = currentDockerImage;
+            return this;
+        }
+
+        public Builder wantedDockerImage(DockerImage wantedDockerImage) {
+            this.wantedDockerImage = wantedDockerImage;
             return this;
         }
 
@@ -403,7 +430,8 @@ public class Node {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                            cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo);
+                            cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo,
+                            wantedDockerImage, currentDockerImage);
         }
 
     }
