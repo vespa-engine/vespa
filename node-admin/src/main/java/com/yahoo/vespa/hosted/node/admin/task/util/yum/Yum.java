@@ -69,7 +69,7 @@ public class Yum {
      *
      * @return false only if the package was already locked and installed at the given version (no-op)
      */
-    public boolean installFixedVersion(TaskContext context, YumPackageName yumPackage) {
+    public boolean installFixedVersion(TaskContext context, YumPackageName yumPackage, String... repos) {
         String targetVersionLockName = yumPackage.toVersionLockName();
 
         boolean alreadyLocked = terminal
@@ -118,9 +118,9 @@ public class Yum {
         //       - "Nothing to do"
         //     And in case we need to downgrade and return true from converge()
 
-        CommandLine commandLine = terminal
-                .newCommandLine(context)
-                .add("yum", "install", "--assumeyes", yumPackage.toName());
+        CommandLine commandLine = terminal.newCommandLine(context).add("yum", "install");
+        for (String repo : repos) commandLine.add("--enablerepo=", repo);
+        commandLine.add("--assumeyes", yumPackage.toName());
 
         String output = commandLine.executeSilently().getUntrimmedOutput();
 
