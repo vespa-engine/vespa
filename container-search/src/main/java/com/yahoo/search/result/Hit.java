@@ -473,7 +473,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private Map<String, Object> getFieldMap(int minSize) {
         if (fields == null) {
             // Compensate for loadfactor and then some, rounded up....
-            fields = new LinkedHashMap<>(2*minSize);
+            fields = new LinkedHashMap<>(2 * minSize);
         }
         return fields;
     }
@@ -505,7 +505,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /** Returns the types of this as a modifiable set. Modifications to this set are directly reflected in this hit */
-    //TODO This shoudld not be exposed as a modifiable set
+    // TODO: This should not be exposed as a modifiable set
     public Set<String> types() {
         if (types == null)
             types = new ArraySet<>(1);

@@ -29,8 +29,11 @@ public class Runner {
      * @param verbose if true will print some information to stderr
      * @return send time in ms, not including validating
      */
-    public static long send(
-            FeedClient feedClient, InputStream inputStream, boolean isJson, AtomicInteger numSent, boolean verbose) {
+    public static long send(FeedClient feedClient,
+                            InputStream inputStream,
+                            boolean isJson,
+                            AtomicInteger numSent,
+                            boolean verbose) {
 
         if (verbose) {
             System.err.println("Now sending data.");
