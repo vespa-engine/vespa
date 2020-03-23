@@ -13,6 +13,7 @@ import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.FlagData;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedInputStream;
@@ -27,6 +28,7 @@ import java.net.URI;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +44,9 @@ public class SystemFlagsDataArchiveTest {
 
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Rule
+    public final ExpectedException expectedException = ExpectedException.none();
 
     private static FlagsTarget mainControllerTarget = FlagsTarget.forController(SYSTEM);
     private static FlagsTarget prodUsWestCfgTarget = createConfigserverTarget(Environment.prod, "us-west-1");
@@ -82,6 +87,21 @@ public class SystemFlagsDataArchiveTest {
         assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, prodUsWestCfgTarget, "main.prod.us-west-1");
         assertNoFlagData(archive, FLAG_WITH_EMPTY_DATA, prodUsEast3CfgTarget);
         assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, devUsEast1CfgTarget, "main");
+    }
+
+    @Test
+    public void throws_exception_on_non_json_file() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Only JSON files are allowed in 'flags/' directory (found 'flags/my-test-flag/file-name-without-dot-json')");
+        SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-invalid-file-name/"));
+    }
+
+    @Test
+    public void throws_exception_on_unknown_file() {
+        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-file-name/"));
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json");
+        archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget));
     }
 
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {

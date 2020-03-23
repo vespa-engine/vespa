@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 
@@ -13,11 +14,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -47,7 +50,7 @@ public class SystemFlagsDataArchive {
             ZipEntry entry;
             while ((entry = zipIn.getNextEntry()) != null) {
                 String name = entry.getName();
-                if (!entry.isDirectory() && name.startsWith("flags/") && name.endsWith(".json")) {
+                if (!entry.isDirectory() && name.startsWith("flags/")) {
                     Path filePath = Paths.get(name);
                     String rawData = new String(zipIn.readAllBytes(), StandardCharsets.UTF_8);
                     addFile(builder, rawData, filePath);
@@ -70,7 +73,7 @@ public class SystemFlagsDataArchive {
             directoryStream.forEach(absolutePath -> {
                 Path relativePath = root.relativize(absolutePath);
                 if (!Files.isDirectory(absolutePath) &&
-                        relativePath.startsWith("flags") && relativePath.toString().endsWith(".json")) {
+                        relativePath.startsWith("flags")) {
                     String rawData = uncheck(() -> Files.readString(absolutePath, StandardCharsets.UTF_8));
                     addFile(builder, rawData, relativePath);
                 }
@@ -86,7 +89,7 @@ public class SystemFlagsDataArchive {
         files.forEach((flagId, fileMap) -> {
             fileMap.forEach((filename, flagData) -> {
                 uncheck(() -> {
-                    zipOut.putNextEntry(new ZipEntry("flags/" + flagId.toString() + "/" + filename));
+                    zipOut.putNextEntry(new ZipEntry(toFilePath(flagId, filename)));
                     zipOut.write(flagData.serializeToUtf8Json());
                     zipOut.closeEntry();
                 });
@@ -112,8 +115,33 @@ public class SystemFlagsDataArchive {
         return targetData;
     }
 
+    public void validateAllFilesAreForTargets(SystemName currentSystem, Set<FlagsTarget> targets) throws IllegalArgumentException {
+        Set<String> validFiles = targets.stream()
+                .flatMap(target -> target.flagDataFilesPrioritized().stream())
+                .collect(Collectors.toSet());
+        Set<SystemName> otherSystems = Arrays.stream(SystemName.values())
+                .filter(systemName -> systemName != currentSystem)
+                .collect(Collectors.toSet());
+        files.forEach((flagId, fileMap) -> {
+            for (String filename : fileMap.keySet()) {
+                boolean isFileForOtherSystem = otherSystems.stream()
+                        .anyMatch(system -> filename.startsWith(system.value() + "."));
+                boolean isFileForCurrentSystem = validFiles.contains(filename);
+                if (!isFileForOtherSystem && !isFileForCurrentSystem) {
+                    throw new IllegalArgumentException("Unknown flag file: " + toFilePath(flagId, filename));
+                }
+            }
+        });
+    }
+
     private static void addFile(Builder builder, String rawData, Path filePath) {
         String filename = filePath.getFileName().toString();
+        if (filename.startsWith(".")) {
+            return; // Ignore files starting with '.'
+        }
+        if (!filename.endsWith(".json")) {
+            throw new IllegalArgumentException(String.format("Only JSON files are allowed in 'flags/' directory (found '%s')", filePath.toString()));
+        }
         FlagId directoryDeducedFlagId = new FlagId(filePath.getName(1).toString());
         FlagData flagData;
         if (rawData.isBlank()) {
@@ -127,6 +155,10 @@ public class SystemFlagsDataArchive {
             }
         }
         builder.addFile(filename, flagData);
+    }
+
+    private static String toFilePath(FlagId flagId, String filename) {
+        return "flags/" + flagId.toString() + "/" + filename;
     }
 
     public static class Builder {

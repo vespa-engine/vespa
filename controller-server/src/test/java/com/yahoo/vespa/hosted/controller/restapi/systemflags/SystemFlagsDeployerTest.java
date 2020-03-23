@@ -58,7 +58,7 @@ public class SystemFlagsDeployerTest {
                 .build();
 
         SystemFlagsDeployer deployer =
-                new SystemFlagsDeployer(flagsClient, Set.of(controllerTarget, prodUsWest1Target, prodUsEast3Target));
+                new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(controllerTarget, prodUsWest1Target, prodUsEast3Target));
 
 
         SystemFlagsDeployResult result = deployer.deployFlags(archive, false);
@@ -83,7 +83,7 @@ public class SystemFlagsDeployerTest {
                 .addFile("main.json", defaultData)
                 .build();
 
-        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, Set.of(controllerTarget));
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(controllerTarget));
         SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
 
         verify(flagsClient, times(1)).listFlagData(controllerTarget);
@@ -107,7 +107,7 @@ public class SystemFlagsDeployerTest {
                 .addFile("main.json", defaultData)
                 .build();
 
-        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, Set.of(prodUsWest1Target, prodUsEast3Target));
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(prodUsWest1Target, prodUsEast3Target));
 
         SystemFlagsDeployResult result = deployer.deployFlags(archive, false);
 
@@ -115,6 +115,21 @@ public class SystemFlagsDeployerTest {
                 OperationError.listFailed(exception.getMessage(), prodUsWest1Target));
         assertThat(result.flagChanges()).containsOnly(
                 FlagDataChange.created(FLAG_ID, prodUsEast3Target, defaultData));
+    }
+
+    @Test
+    public void creates_error_entry_for_invalid_flag_archive() throws IOException {
+        FlagsClient flagsClient = mock(FlagsClient.class);
+        FlagData defaultData = flagData("flags/my-flag/main.json");
+        SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
+                .addFile("main.prod.unknown-region.json", defaultData)
+                .build();
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(controllerTarget));
+        SystemFlagsDeployResult result = deployer.deployFlags(archive, false);
+        assertThat(result.flagChanges())
+                .isEmpty();
+        assertThat(result.errors())
+                .containsOnly(OperationError.archiveValidationFailed("Unknown flag file: flags/my-flag/main.prod.unknown-region.json"));
     }
 
     private static FlagData flagData(String filename) throws IOException {

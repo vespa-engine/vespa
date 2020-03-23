@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.flags.FlagId;
@@ -38,16 +39,18 @@ class SystemFlagsDeployer  {
     private static final Logger log = Logger.getLogger(SystemFlagsDeployer.class.getName());
 
     private final FlagsClient client;
+    private final SystemName system;
     private final Set<FlagsTarget> targets;
     private final ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory("system-flags-deployer-"));
 
 
-    SystemFlagsDeployer(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
-        this(new FlagsClient(identityProvider, targets), targets);
+    SystemFlagsDeployer(ServiceIdentityProvider identityProvider, SystemName system, Set<FlagsTarget> targets) {
+        this(new FlagsClient(identityProvider, targets), system, targets);
     }
 
-    SystemFlagsDeployer(FlagsClient client, Set<FlagsTarget> targets) {
+    SystemFlagsDeployer(FlagsClient client, SystemName system, Set<FlagsTarget> targets) {
         this.client = client;
+        this.system = system;
         this.targets = targets;
     }
 
@@ -65,6 +68,11 @@ class SystemFlagsDeployer  {
                 throw new RuntimeException(e);
             }
         });
+        try {
+            archive.validateAllFilesAreForTargets(system, targets);
+        } catch (IllegalArgumentException e) {
+            results.add(new SystemFlagsDeployResult(List.of(OperationError.archiveValidationFailed(e.getMessage()))));
+        }
         return SystemFlagsDeployResult.merge(results);
     }
 
