@@ -56,7 +56,7 @@ class TwoPhaseUpdateOperation : public SequencedOperation
 public:
     TwoPhaseUpdateOperation(DistributorComponent& manager,
                             DistributorBucketSpace &bucketSpace,
-                            const std::shared_ptr<api::UpdateCommand> & msg,
+                            std::shared_ptr<api::UpdateCommand> msg,
                             DistributorMetricSet& metrics,
                             SequencingHandle sequencingHandle = SequencingHandle());
     ~TwoPhaseUpdateOperation() override;

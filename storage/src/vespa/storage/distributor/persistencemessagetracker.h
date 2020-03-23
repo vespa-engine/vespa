@@ -90,7 +90,7 @@ private:
     void handlePersistenceReply(api::BucketInfoReply& reply, uint16_t node);
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) override {
-        MessageTracker::queueCommand(msg, target);
+        MessageTracker::queueCommand(std::move(msg), target);
     }
     void flushQueue(MessageSender& s) override { MessageTracker::flushQueue(s); }
     uint16_t handleReply(api::BucketReply& r) override { return MessageTracker::handleReply(r); }

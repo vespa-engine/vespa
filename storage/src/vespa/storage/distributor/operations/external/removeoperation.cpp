@@ -13,21 +13,21 @@ using document::BucketSpace;
 
 RemoveOperation::RemoveOperation(DistributorComponent& manager,
                                  DistributorBucketSpace &bucketSpace,
-                                 const std::shared_ptr<api::RemoveCommand> & msg,
+                                 std::shared_ptr<api::RemoveCommand> msg,
                                  PersistenceOperationMetricSet& metric,
                                  SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
       _trackerInstance(metric,
-               std::shared_ptr<api::BucketInfoReply>(new api::RemoveReply(*msg)),
+               std::make_shared<api::RemoveReply>(*msg),
                manager, msg->getTimestamp()),
       _tracker(_trackerInstance),
-      _msg(msg),
+      _msg(std::move(msg)),
       _manager(manager),
       _bucketSpace(bucketSpace)
 {
 }
 
-RemoveOperation::~RemoveOperation() {}
+RemoveOperation::~RemoveOperation() = default;
 
 void
 RemoveOperation::onStart(DistributorMessageSender& sender)
@@ -43,22 +43,19 @@ RemoveOperation::onStart(DistributorMessageSender& sender)
 
     bool sent = false;
 
-    for (uint32_t j = 0; j < entries.size(); j++) {
-        const BucketDatabase::Entry& e = entries[j];
+    for (const BucketDatabase::Entry& e : entries) {
         std::vector<MessageTracker::ToSend> messages;
-
+        messages.reserve(e->getNodeCount());
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
-            std::shared_ptr<api::RemoveCommand> command(new api::RemoveCommand(
-                                                                  document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()),
-                                                                  _msg->getDocumentId(),
-                                                                  _msg->getTimestamp()));
+            auto command = std::make_shared<api::RemoveCommand>(document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()),
+                                                                _msg->getDocumentId(),
+                                                                _msg->getTimestamp());
 
             copyMessageSettings(*_msg, *command);
             command->getTrace().setLevel(_msg->getTrace().getLevel());
             command->setCondition(_msg->getCondition());
 
-            messages.push_back(
-                    MessageTracker::ToSend(command, e->getNodeRef(i).getNode()));
+            messages.emplace_back(std::move(command), e->getNodeRef(i).getNode());
             sent = true;
         }
 

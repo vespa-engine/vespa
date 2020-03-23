@@ -22,14 +22,14 @@ namespace storage::distributor {
 TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
         DistributorComponent& manager,
         DistributorBucketSpace &bucketSpace,
-        const std::shared_ptr<api::UpdateCommand>& msg,
+        std::shared_ptr<api::UpdateCommand> msg,
         DistributorMetricSet& metrics,
         SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
     _updateMetric(metrics.updates[msg->getLoadType()]),
     _putMetric(metrics.update_puts[msg->getLoadType()]),
     _getMetric(metrics.update_gets[msg->getLoadType()]),
-    _updateCmd(msg),
+    _updateCmd(std::move(msg)),
     _updateReply(),
     _manager(manager),
     _bucketSpace(bucketSpace),

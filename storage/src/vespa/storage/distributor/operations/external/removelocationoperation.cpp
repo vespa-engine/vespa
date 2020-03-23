@@ -18,30 +18,28 @@ using document::BucketSpace;
 RemoveLocationOperation::RemoveLocationOperation(
         DistributorComponent& manager,
         DistributorBucketSpace &bucketSpace,
-        const std::shared_ptr<api::RemoveLocationCommand> & msg,
+        std::shared_ptr<api::RemoveLocationCommand> msg,
         PersistenceOperationMetricSet& metric)
     : Operation(),
       _trackerInstance(metric,
-               std::shared_ptr<api::BucketInfoReply>(new api::RemoveLocationReply(*msg)),
+               std::make_shared<api::RemoveLocationReply>(*msg),
                manager,
                0),
       _tracker(_trackerInstance),
-      _msg(msg),
+      _msg(std::move(msg)),
       _manager(manager),
       _bucketSpace(bucketSpace)
 {}
 
-RemoveLocationOperation::~RemoveLocationOperation() {}
+RemoveLocationOperation::~RemoveLocationOperation() = default;
 
 int
 RemoveLocationOperation::getBucketId(
         DistributorComponent& manager,
         const api::RemoveLocationCommand& cmd, document::BucketId& bid)
 {
-        std::shared_ptr<const document::DocumentTypeRepo> repo =
-            manager.getTypeRepo();
-        document::select::Parser parser(
-                *repo, manager.getBucketIdFactory());
+        std::shared_ptr<const document::DocumentTypeRepo> repo = manager.getTypeRepo();
+        document::select::Parser parser(*repo, manager.getBucketIdFactory());
 
     document::BucketSelector bucketSel(manager.getBucketIdFactory());
     std::unique_ptr<document::BucketSelector::BucketVector> exprResult
