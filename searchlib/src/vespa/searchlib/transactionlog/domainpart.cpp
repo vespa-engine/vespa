@@ -315,6 +315,8 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
     handleSync(*_transLog);
     _writtenSerial = _range.to();
     _syncedSerial = _writtenSerial;
+    assert(int64_t(byteSize()) == _transLog->GetSize());
+    assert(int64_t(byteSize()) == _transLog->GetPosition());
 }
 
 DomainPart::~DomainPart()
@@ -402,7 +404,7 @@ DomainPart::erase(SerialNum to)
 void
 DomainPart::commit(SerialNum firstSerial, const Packet &packet)
 {
-    int64_t firstPos(_transLog->GetPosition());
+    int64_t firstPos(byteSize());
     nbostream_longlivedbuf h(packet.getHandle().data(), packet.getHandle().size());
     if (_range.from() == 0) {
         _range.from(firstSerial);
@@ -576,7 +578,7 @@ DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)
 void
 DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
 {
-    int64_t lastKnownGoodPos(file.GetPosition());
+    int64_t lastKnownGoodPos(byteSize());
     int32_t crc(0);
     uint32_t len(entry.serializedSize() + sizeof(crc));
     nbostream os;
