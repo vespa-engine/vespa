@@ -42,7 +42,7 @@ public class DuperModel {
 
     void setComplete() {
         if (!isComplete) {
-            logger.log(LogLevel.INFO, "All applications have been activated: duper model is complete");
+            logger.log(LogLevel.DEBUG, "All applications have been activated: duper model is complete");
             isComplete = true;
 
             listeners.forEach(DuperModelListener::bootstrapComplete);
@@ -95,7 +95,7 @@ public class DuperModel {
         } else {
             logPrefix = isComplete ? "Reactivated application " : "Rebootstrapped application ";
         }
-        logger.log(LogLevel.INFO, logPrefix + id.toFullString());
+        logger.log(LogLevel.DEBUG, logPrefix + id.toFullString());
 
         updateHostnameVsIdMaps(applicationInfo, id);
 
@@ -110,7 +110,7 @@ public class DuperModel {
 
         ApplicationInfo application = applicationsById.remove(applicationId);
         if (application != null) {
-            logger.log(LogLevel.INFO, "Removed application " + applicationId.toFullString());
+            logger.log(LogLevel.DEBUG, "Removed application " + applicationId.toFullString());
             listeners.forEach(listener -> listener.applicationRemoved(applicationId));
         }
     }

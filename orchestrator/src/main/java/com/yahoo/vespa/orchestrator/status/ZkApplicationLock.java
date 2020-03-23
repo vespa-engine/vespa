@@ -58,15 +58,12 @@ class ZkApplicationLock implements ApplicationLock {
     @Override
     public void setHostState(final HostName hostName, final HostStatus status) {
         if (probe) return;
-        log.log(LogLevel.INFO, "Setting host " + hostName + " to status " + status);
         hostInfosCache.setHostStatus(reference, hostName, status);
     }
 
     @Override
     public void setApplicationInstanceStatus(ApplicationInstanceStatus applicationInstanceStatus) {
         if (probe) return;
-
-        log.log(LogLevel.INFO, "Setting app " + reference.asString() + " to status " + applicationInstanceStatus);
 
         String path = statusService.applicationInstanceSuspendedPath(reference);
         switch (applicationInstanceStatus) {
