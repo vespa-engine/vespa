@@ -55,16 +55,23 @@ public interface ModelContext {
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
-        // TODO: Remove when Vespa 7.112 is the oldest config model in use
+
+        // TODO: Remove after April 2020
         default boolean useDedicatedNodeForLogserver() { return true; }
+
         boolean useAdaptiveDispatch();
-        // TODO: Remove temporary default implementations
+
+        // TODO: Remove after April 2020
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
+
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
         double defaultTermwiseLimit();
         boolean useBucketSpaceMetric();
         default boolean useNewAthenzFilter() { return false; }
+
+        // TODO: Remove after April 2020
         default boolean usePhraseSegmenting() { return false; }
+
         default String proxyProtocol() { return "https-only"; }
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
         default boolean useDedicatedNodesWhenUnspecified() { return false; }

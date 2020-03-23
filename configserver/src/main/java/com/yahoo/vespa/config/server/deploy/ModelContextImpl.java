@@ -143,7 +143,6 @@ public class ModelContextImpl implements ModelContext {
         private final double defaultTermwiseLimit;
         private final boolean useBucketSpaceMetric;
         private final boolean useNewAthenzFilter;
-        private final boolean usePhraseSegmenting;
         private final String proxyProtocol;
         private final Optional<AthenzDomain> athenzDomain;
         private final boolean useDedicatedNodesWhenUnspecified;
@@ -181,8 +180,6 @@ public class ModelContextImpl implements ModelContext {
             this.useBucketSpaceMetric = Flags.USE_BUCKET_SPACE_METRIC.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useNewAthenzFilter = Flags.USE_NEW_ATHENZ_FILTER.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.usePhraseSegmenting = Flags.PHRASE_SEGMENTING.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -245,9 +242,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
-
-        @Override
-        public boolean usePhraseSegmenting() { return usePhraseSegmenting; }
 
         @Override
         public String proxyProtocol() { return proxyProtocol; }
