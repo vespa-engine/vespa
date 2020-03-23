@@ -341,7 +341,7 @@ public class Node {
             return this;
         }
 
-        public Builder currentOsVersion(DockerImage currentDockerImage) {
+        public Builder currentDockerImage(DockerImage currentDockerImage) {
             this.currentDockerImage = currentDockerImage;
             return this;
         }
