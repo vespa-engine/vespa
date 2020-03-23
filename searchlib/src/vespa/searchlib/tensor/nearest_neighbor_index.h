@@ -7,6 +7,7 @@
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include "distance_function.h"
 
 namespace search::tensor {
 
@@ -35,6 +36,7 @@ public:
                                              vespalib::tensor::TypedCells vector,
                                              uint32_t explore_k) const = 0;
 
+    virtual DistanceFunction *distance_function() const = 0;
 };
 
 }
