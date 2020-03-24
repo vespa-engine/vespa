@@ -255,7 +255,9 @@ PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
 {
     updateMetrics();
     _trace.setStrict(false);
-    _reply->getTrace().getRoot().addChild(_trace);
+    if ( ! _trace.isEmpty()) {
+        _reply->getTrace().getRoot().addChild(_trace);
+    }
     
     sender.sendReply(_reply);
     _reply = std::shared_ptr<api::BucketInfoReply>();
@@ -319,7 +321,9 @@ PersistenceMessageTrackerImpl::updateFromReply(
         api::BucketInfoReply& reply,
         uint16_t node)
 {
-    _trace.addChild(reply.getTrace().getRoot());
+    if ( ! reply.getTrace().getRoot().isEmpty()) {
+        _trace.addChild(reply.getTrace().getRoot());
+    }
 
     if (reply.getType() == api::MessageType::CREATEBUCKET_REPLY) {
         handleCreateBucketReply(reply, node);
