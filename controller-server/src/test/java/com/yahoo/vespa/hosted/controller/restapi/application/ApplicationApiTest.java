@@ -765,11 +765,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Aborting run 2 of staging-test for tenant1.application1.instance1\"}");
 
-        // GET user lists only tenants for the authenticated user
-        tester.assertResponse(request("/application/v4/user", GET)
-                                      .userIdentity(new UserId("other_user")),
-                              "{\"user\":\"other_user\",\"tenants\":[],\"tenantExists\":true}");
-
         // OPTIONS return 200 OK
         tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS)
                                       .userIdentity(USER_ID),
