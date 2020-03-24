@@ -52,7 +52,7 @@ public class Properties {
         return getNonBlankProperty("apiCertificateFile").map(Paths::get);
     }
 
-    /** Returns the actual private key as a string. */
+    /** Returns the actual private key as a string */
     public static Optional<String> apiKey() {
         return getNonBlankProperty("apiKey");
     }
