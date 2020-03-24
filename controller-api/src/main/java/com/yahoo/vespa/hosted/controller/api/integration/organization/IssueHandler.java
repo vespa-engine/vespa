@@ -76,15 +76,6 @@ public interface IssueHandler {
     boolean reassign(IssueId issueId, User assignee);
 
     /**
-     * Reassign the issue with the given ID to the given user, and returns the outcome of this.
-     *
-     * @param issueId ID of the issue to be watched.
-     * @param watcher watcher to add to the issue.
-     * @return Whether adding the watcher was successful.
-     */
-    boolean addWatcher(IssueId issueId, String watcher);
-
-    /**
      * Escalate an issue filed with the given property.
      *
      * @param issueId ID of the issue to escalate.
