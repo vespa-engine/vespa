@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireFlagDataChange;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireOperationFailure;
+import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireWarning;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,14 +28,16 @@ class SystemFlagsDeployResult {
 
     private final List<FlagDataChange> flagChanges;
     private final List<OperationError> errors;
+    private final List<Warning> warnings;
 
-    SystemFlagsDeployResult(List<FlagDataChange> flagChanges, List<OperationError> errors) {
+    SystemFlagsDeployResult(List<FlagDataChange> flagChanges, List<OperationError> errors, List<Warning> warnings) {
         this.flagChanges = flagChanges;
         this.errors = errors;
+        this.warnings = warnings;
     }
 
     SystemFlagsDeployResult(List<OperationError> errors) {
-        this(List.of(), errors);
+        this(List.of(), errors, List.of());
     }
 
     List<FlagDataChange> flagChanges() {
@@ -45,10 +48,13 @@ class SystemFlagsDeployResult {
         return errors;
     }
 
+    List<Warning> warnings() { return warnings; }
+
     static SystemFlagsDeployResult merge(List<SystemFlagsDeployResult> results) {
         List<FlagDataChange> mergedChanges = mergeChanges(results);
         List<OperationError> mergedErrors = mergeErrors(results);
-        return new SystemFlagsDeployResult(mergedChanges, mergedErrors);
+        List<Warning> mergedWarnings = mergeWarnings(results);
+        return new SystemFlagsDeployResult(mergedChanges, mergedErrors, mergedWarnings);
     }
 
     private static List<OperationError> mergeErrors(List<SystemFlagsDeployResult> results) {
@@ -81,6 +87,20 @@ class SystemFlagsDeployResult {
         return mergedChanges;
     }
 
+    private static List<Warning> mergeWarnings(List<SystemFlagsDeployResult> results) {
+        Map<WarningWithoutTarget, Set<FlagsTarget>> targetsForWarning = new HashMap<>();
+        for (SystemFlagsDeployResult result : results) {
+            for (Warning warning : result.warnings()) {
+                var warningWithoutTarget = new WarningWithoutTarget(warning);
+                targetsForWarning.computeIfAbsent(warningWithoutTarget, k -> new HashSet<>())
+                        .addAll(warning.targets());
+            }
+        }
+        List<Warning> mergedWarnings = new ArrayList<>();
+        targetsForWarning.forEach(
+                (warning, targets) -> mergedWarnings.add(warning.toWarning(targets)));
+        return mergedWarnings;
+    }
 
     WireSystemFlagsDeployResult toWire() {
         var wireResult = new WireSystemFlagsDeployResult();
@@ -103,6 +123,14 @@ class SystemFlagsDeployResult {
             wireError.flagId = error.flagId().map(FlagId::toString).orElse(null);
             wireError.data = error.flagData().map(FlagData::toWire).orElse(null);
             wireResult.errors.add(wireError);
+        }
+        wireResult.warnings = new ArrayList<>();
+        for (Warning warning : warnings) {
+            var wireWarning = new WireWarning();
+            wireWarning.message = warning.message();
+            wireWarning.flagId = warning.flagId().toString();
+            wireWarning.targets = warning.targets().stream().map(FlagsTarget::asString).collect(toList());
+            wireResult.warnings.add(wireWarning);
         }
         return wireResult;
     }
@@ -264,6 +292,38 @@ class SystemFlagsDeployResult {
         String asString() { return stringValue; }
     }
 
+    static class Warning {
+        final String message;
+        final Set<FlagsTarget> targets;
+        final FlagId flagId;
+
+        private Warning(String message, Set<FlagsTarget> targets, FlagId flagId) {
+            this.message = message;
+            this.targets = targets;
+            this.flagId = flagId;
+        }
+
+        static Warning dataForUndefinedFlag(FlagsTarget target, FlagId flagId) {
+            return new Warning("Flag data present for undefined flag", Set.of(target), flagId);
+        }
+
+        String message() { return message; }
+        Set<FlagsTarget> targets() { return targets; }
+        FlagId flagId() { return flagId; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Warning warning = (Warning) o;
+            return Objects.equals(message, warning.message) &&
+                    Objects.equals(targets, warning.targets) &&
+                    Objects.equals(flagId, warning.flagId);
+        }
+
+        @Override public int hashCode() { return Objects.hash(message, targets, flagId); }
+    }
+
     private static class FlagDataChangeWithoutTarget {
         final FlagId flagId;
         final OperationType operationType;
@@ -332,5 +392,17 @@ class SystemFlagsDeployResult {
         }
 
         @Override public int hashCode() { return Objects.hash(message, operation, flagId, flagData); }
+    }
+
+    private static class WarningWithoutTarget {
+        final String message;
+        final FlagId flagId;
+
+        WarningWithoutTarget(Warning warning) {
+            this.message = warning.message();
+            this.flagId = warning.flagId();
+        }
+
+        Warning toWarning(Set<FlagsTarget> targets) { return new Warning(message, targets, flagId); }
     }
 }
