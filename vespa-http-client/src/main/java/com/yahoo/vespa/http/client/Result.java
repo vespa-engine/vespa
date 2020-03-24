@@ -165,12 +165,7 @@ public class Result {
 
     @Override
     public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("Result for '").append(document.getDocumentId());
-        if (localTrace != null) {
-            b.append(localTrace);
-        }
-        return b.toString();
+        return "Result for " + document + " " + (localTrace != null ? localTrace : "");
     }
 
 }

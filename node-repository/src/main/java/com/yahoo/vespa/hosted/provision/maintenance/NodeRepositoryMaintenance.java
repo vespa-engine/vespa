@@ -176,7 +176,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
-            reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
+            reservationExpiry = Duration.ofMinutes(15); // Need to be long enough for deployment to be finished for all config model versions
             dynamicProvisionerInterval = Duration.ofMinutes(5);
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
             rebalancerInterval = Duration.ofMinutes(40);
