@@ -176,24 +176,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               new File("tenant-without-applications.json"));
-        // GET the authenticated user (with associated tenants)
-        tester.assertResponse(request("/application/v4/user", GET).userIdentity(USER_ID),
-                              new File("user.json"));
-        // TODO jonmv: Remove when dashboard is gone.
-        // PUT a user tenant — does nothing
-        tester.assertResponse(request("/application/v4/user", PUT).userIdentity(USER_ID),
-                              "");
-
-        // GET the authenticated user which now exists (with associated tenants)
-        tester.assertResponse(request("/application/v4/user", GET).userIdentity(USER_ID),
-                              new File("user.json"));
-
-        // DELETE the user — it doesn't exist, so access control fails
-        tester.assertResponse(request("/application/v4/tenant/by-myuser", DELETE).userIdentity(USER_ID),
-                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}", 403);
-        // GET all tenants
-        tester.assertResponse(request("/application/v4/tenant/", GET).userIdentity(USER_ID),
-                              new File("tenant-list.json"));
 
         // GET list of months for a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1/cost", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
@@ -1108,14 +1090,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"New tenant or application names must start with a letter, may contain no more than 20 characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.\"}",
                               400);
 
-        // POST (add) an Athenz tenant with by- prefix
-        tester.assertResponse(request("/application/v4/tenant/by-tenant2", POST)
-                                      .userIdentity(USER_ID)
-                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz tenant name cannot have prefix 'by-'\"}",
-                              400);
-
         // POST (add) an Athenz tenant with a reserved name
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa", POST)
                                       .userIdentity(USER_ID)
@@ -1395,25 +1369,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, tenantAdmin);
         allowLaunchOfService(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"));
 
-        // Create tenant
-        // PUT (create) the authenticated user
-        tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
-                                      .userIdentity(userId), // Normalized to by-new-user by API
-                              "");
-
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
                 .build();
 
-        // POST (deploy) an application to a dev zone fails because user tenant is used — these do not exist.
-        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
-        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
-                                      .data(entity)
-                                      .userIdentity(userId),
-                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
-                              403);
-
         createTenantAndApplication();
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         // POST (deploy) an application to dev through a deployment job, with user instance and a proper tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/new-user/deploy/dev-us-east-1", POST)
                                       .data(entity)
@@ -1425,13 +1386,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.athenzClientFactory().getSetup()
                 .domains.get(ATHENZ_TENANT_DOMAIN)
                         .admin(HostedAthenzIdentities.from(userId));
-
-        // POST (deploy) an application to a dev zone fails because user tenant is used — these do not exist.
-        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
-                                      .data(entity)
-                                      .userIdentity(userId),
-                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
-                              403);
 
         // POST (deploy) an application to dev through a deployment job
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/new-user/deploy/dev-us-east-1", POST)

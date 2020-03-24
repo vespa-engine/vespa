@@ -10,10 +10,6 @@ public class TenantId extends NonDefaultIdentifier {
         super(id);
     }
 
-    public boolean isUser() {
-        return id().startsWith("by-");
-    }
-
     @Override
     public void validate() {
         super.validate();
