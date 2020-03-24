@@ -67,7 +67,7 @@ RoutingNode::~RoutingNode()
 void
 RoutingNode::clearChildren()
 {
-    for (auto child : _children) {
+    for (auto * child : _children) {
         delete child;
     }
     _children.clear();
@@ -103,7 +103,7 @@ RoutingNode::prepareForRetry()
         clearChildren();
     } else if (!_children.empty()) {
         bool retryingSome = false;
-        for (auto child : _children) {
+        for (auto * child : _children) {
             if (child->_shouldRetry || ! child->_reply) {
                 child->prepareForRetry();
                 retryingSome = true;
@@ -214,7 +214,7 @@ RoutingNode::notifyAbort(const string &msg)
             node->setError(ErrorCode::SEND_ABORTED, msg);
             node->notifyParent();
         } else {
-            for (auto child : node->_children) {
+            for (auto * child : node->_children) {
                 mystack.push(child);
             }
         }
@@ -239,7 +239,7 @@ RoutingNode::notifyTransmit()
                     sendTo.push_back(node);
                 }
             } else {
-                for (auto child : node->_children) {
+                for (auto * child : node->_children) {
                     mystack.push(child);
                 }
             }
@@ -268,7 +268,7 @@ RoutingNode::notifyMerge()
     // manipulating the trace in case tracing is disabled.
     if (_trace.getLevel() > 0) {
         TraceNode tail;
-        for (auto child : _children) {
+        for (auto * child : _children) {
             TraceNode &root = child->_trace.getRoot();
             tail.addChild(root);
             root.clear();
@@ -328,7 +328,7 @@ RoutingNode::hasUnconsumedErrors()
                 }
             }
         } else {
-            for (auto child : node->_children) {
+            for (auto * child : node->_children) {
                 mystack.push(child);
             }
         }
@@ -486,7 +486,7 @@ RoutingNode::executePolicySelect()
         }
         return false;
     }
-    for (auto child : _children) {
+    for (auto * child : _children) {
         Hop &hop = child->_route.getHop(0);
         child->_trace.trace(TraceLevel::SPLIT_MERGE,
                             make_string("Component '%s' selected by policy '%s'.",
@@ -500,7 +500,7 @@ RoutingNode::resolveChildren(uint32_t childDepth)
 {
     int numActiveChildren = 0;
     bool ret = true;
-    for (auto child : _children) {
+    for (auto * child : _children) {
         child->_trace.trace(TraceLevel::SPLIT_MERGE,
                             make_string("Resolving '%s'.", child->_route.toString().c_str()));
         child->_isActive = ! child->_reply;
