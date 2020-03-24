@@ -37,7 +37,7 @@ public class NodeMetricsFetcherTest {
         {
             httpClient.cannedResponse = cannedResponseForApplication1;
             List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application1));
-            assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=Vespa",
+            assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=default",
                          httpClient.requestsReceived.get(0));
             assertEquals(5, values.size());
             assertEquals("metric value cpu.util: 16.2 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(0).toString());
@@ -50,7 +50,7 @@ public class NodeMetricsFetcherTest {
         {
             httpClient.cannedResponse = cannedResponseForApplication2;
             List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application2));
-            assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=Vespa",
+            assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=default",
                          httpClient.requestsReceived.get(1));
             assertEquals(3, values.size());
             assertEquals("metric value cpu.util: 10.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(0).toString());

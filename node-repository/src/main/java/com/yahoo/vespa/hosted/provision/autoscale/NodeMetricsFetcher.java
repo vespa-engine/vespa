@@ -59,7 +59,7 @@ public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics
                                                           .stream()
                                                           .findFirst();
         if (metricsV2Container.isEmpty()) return Collections.emptyList();
-        String url = "http://" + metricsV2Container.get().hostname() + ":" + 4080 + apiPath + "?consumer=Vespa";
+        String url = "http://" + metricsV2Container.get().hostname() + ":" + 4080 + apiPath + "?consumer=default";
         String response = httpClient.get(url);
         return new MetricsResponse(response).metrics();
     }
