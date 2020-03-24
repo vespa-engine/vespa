@@ -26,6 +26,7 @@ LOG_SETUP("tensorattribute_test");
 using document::WrongTensorTypeException;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
 using search::tensor::DefaultNearestNeighborIndexFactory;
 using search::tensor::DenseTensorAttribute;
@@ -147,6 +148,8 @@ public:
         (void) explore_k;
         return std::vector<Neighbor>();
     }
+    
+    const search::tensor::DistanceFunction *distance_function() const override { return nullptr; }
 };
 
 class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
@@ -195,7 +198,7 @@ struct Fixture
             _denseTensors = true;
         }
         if (enable_hnsw_index) {
-            _cfg.set_hnsw_index_params(HnswIndexParams(4, 20));
+            _cfg.set_hnsw_index_params(HnswIndexParams(4, 20, DistanceMetric::Euclidean));
             if (use_mock_index) {
                 _index_factory = std::make_unique<MockNearestNeighborIndexFactory>();
             }

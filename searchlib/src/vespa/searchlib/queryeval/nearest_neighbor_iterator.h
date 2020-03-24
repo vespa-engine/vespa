@@ -8,6 +8,7 @@
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
+#include <vespa/searchlib/tensor/distance_function.h>
 #include <vespa/vespalib/util/priority_queue.h>
 #include <cmath>
 
@@ -24,15 +25,18 @@ public:
         const DenseTensorView &queryTensor;
         const DenseTensorAttribute &tensorAttribute;
         NearestNeighborDistanceHeap &distanceHeap;
+        const search::tensor::DistanceFunction *distanceFunction;
         
         Params(fef::TermFieldMatchData &tfmd_in,
                const DenseTensorView &queryTensor_in,
                const DenseTensorAttribute &tensorAttribute_in,
-               NearestNeighborDistanceHeap &distanceHeap_in)
+               NearestNeighborDistanceHeap &distanceHeap_in,
+               const search::tensor::DistanceFunction *distanceFunction_in)
           : tfmd(tfmd_in),
             queryTensor(queryTensor_in),
             tensorAttribute(tensorAttribute_in),
-            distanceHeap(distanceHeap_in)
+            distanceHeap(distanceHeap_in),
+            distanceFunction(distanceFunction_in)
         {}
     };
 
@@ -45,7 +49,8 @@ public:
             fef::TermFieldMatchData &tfmd,
             const vespalib::tensor::DenseTensorView &queryTensor,
             const search::tensor::DenseTensorAttribute &tensorAttribute,
-            NearestNeighborDistanceHeap &distanceHeap);
+            NearestNeighborDistanceHeap &distanceHeap,
+            const search::tensor::DistanceFunction *dist_fun);
 
     const Params& params() const { return _params; }
 private:

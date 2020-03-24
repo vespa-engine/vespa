@@ -335,6 +335,7 @@ TOKEN :
 | < ENABLE_BM25: "enable-bm25" >
 | < HNSW: "hnsw" >
 | < MAXLINKSPERNODE: "max-links-per-node" >
+| < DISTANCEMETRIC: "distance-metric" >
 | < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
@@ -1836,9 +1837,11 @@ void hnswIndex(IndexOperation index) :
 void hnswIndexBody(HnswIndexParams.Builder params) :
 {
     int num;
+    String str;
 }
 {
     ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
+      | <DISTANCEMETRIC> <COLON> str = identifierWithDash()  { params.setDistanceMetric(str); }
       | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); } )
 }
 
