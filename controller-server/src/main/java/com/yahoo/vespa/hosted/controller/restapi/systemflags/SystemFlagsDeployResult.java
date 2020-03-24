@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
 
@@ -58,48 +60,38 @@ class SystemFlagsDeployResult {
     }
 
     private static List<OperationError> mergeErrors(List<SystemFlagsDeployResult> results) {
-        Map<OperationErrorWithoutTarget, Set<FlagsTarget>> targetsForError = new HashMap<>();
-        for (SystemFlagsDeployResult result : results) {
-            for (OperationError error : result.errors()) {
-                var errorWithoutTarget = new OperationErrorWithoutTarget(error);
-                targetsForError.computeIfAbsent(errorWithoutTarget, k -> new HashSet<>())
-                        .addAll(error.targets());
-            }
-        }
-        List<OperationError> mergedErrors = new ArrayList<>();
-        targetsForError.forEach(
-                (error, targets) -> mergedErrors.add(error.toOperationError(targets)));
-        return mergedErrors;
+        return merge(results, SystemFlagsDeployResult::errors, OperationError::targets,
+                OperationErrorWithoutTarget::new, OperationErrorWithoutTarget::toOperationError);
     }
 
     private static List<FlagDataChange> mergeChanges(List<SystemFlagsDeployResult> results) {
-        Map<FlagDataChangeWithoutTarget, Set<FlagsTarget>> targetsForChange = new HashMap<>();
-        for (SystemFlagsDeployResult result : results) {
-            for (FlagDataChange change : result.flagChanges()) {
-                var changeWithoutTarget = new FlagDataChangeWithoutTarget(change);
-                targetsForChange.computeIfAbsent(changeWithoutTarget, k -> new HashSet<>())
-                        .addAll(change.targets());
-            }
-        }
-        List<FlagDataChange> mergedChanges = new ArrayList<>();
-        targetsForChange.forEach(
-                (change, targets) -> mergedChanges.add(change.toFlagDataChange(targets)));
-        return mergedChanges;
+        return merge(results, SystemFlagsDeployResult::flagChanges, FlagDataChange::targets,
+                FlagDataChangeWithoutTarget::new, FlagDataChangeWithoutTarget::toFlagDataChange);
     }
 
     private static List<Warning> mergeWarnings(List<SystemFlagsDeployResult> results) {
-        Map<WarningWithoutTarget, Set<FlagsTarget>> targetsForWarning = new HashMap<>();
+        return merge(results, SystemFlagsDeployResult::warnings, Warning::targets,
+                WarningWithoutTarget::new, WarningWithoutTarget::toWarning);
+    }
+
+    private static <VALUE, VALUE_WITHOUT_TARGET> List<VALUE> merge(
+            List<SystemFlagsDeployResult> results,
+            Function<SystemFlagsDeployResult, List<VALUE>> valuesGetter,
+            Function<VALUE, Set<FlagsTarget>> targetsGetter,
+            Function<VALUE, VALUE_WITHOUT_TARGET> transformer,
+            BiFunction<VALUE_WITHOUT_TARGET, Set<FlagsTarget>, VALUE> reverseTransformer) {
+        Map<VALUE_WITHOUT_TARGET, Set<FlagsTarget>> targetsForValue = new HashMap<>();
         for (SystemFlagsDeployResult result : results) {
-            for (Warning warning : result.warnings()) {
-                var warningWithoutTarget = new WarningWithoutTarget(warning);
-                targetsForWarning.computeIfAbsent(warningWithoutTarget, k -> new HashSet<>())
-                        .addAll(warning.targets());
+            for (VALUE value : valuesGetter.apply(result)) {
+                VALUE_WITHOUT_TARGET valueWithoutTarget = transformer.apply(value);
+                targetsForValue.computeIfAbsent(valueWithoutTarget, k -> new HashSet<>())
+                        .addAll(targetsGetter.apply(value));
             }
         }
-        List<Warning> mergedWarnings = new ArrayList<>();
-        targetsForWarning.forEach(
-                (warning, targets) -> mergedWarnings.add(warning.toWarning(targets)));
-        return mergedWarnings;
+        List<VALUE> mergedValues = new ArrayList<>();
+        targetsForValue.forEach(
+                (value, targets) -> mergedValues.add(reverseTransformer.apply(value, targets)));
+        return mergedValues;
     }
 
     WireSystemFlagsDeployResult toWire() {
