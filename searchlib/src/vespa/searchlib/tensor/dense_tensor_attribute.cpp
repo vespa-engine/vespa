@@ -4,15 +4,17 @@
 #include "dense_tensor_attribute_saver.h"
 #include "nearest_neighbor_index.h"
 #include "tensor_attribute.hpp"
-#include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
 
 using vespalib::eval::ValueType;
+using vespalib::slime::ObjectInserter;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::tensor::Tensor;
 
@@ -214,6 +216,17 @@ DenseTensorAttribute::removeOldGenerations(generation_t first_used_gen)
     TensorAttribute::removeOldGenerations(first_used_gen);
     if (_index) {
         _index->trim_hold_lists(first_used_gen);
+    }
+}
+
+void
+DenseTensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
+{
+    auto& object = inserter.insertObject();
+    populate_state(object);
+    if (_index) {
+        ObjectInserter index_inserter(object, "nearest_neighbor_index");
+        _index->get_state(index_inserter);
     }
 }
 

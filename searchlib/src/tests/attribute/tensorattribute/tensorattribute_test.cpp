@@ -142,6 +142,7 @@ public:
         ++_memory_usage_cnt;
         return vespalib::MemoryUsage();
     }
+    void get_state(const vespalib::slime::Inserter&) const override {}
     std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
         (void) k;
         (void) vector;

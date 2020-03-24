@@ -41,6 +41,7 @@ public:
     uint32_t getVersion() const override;
     void onGenerationChange(generation_t next_gen) override;
     void removeOldGenerations(generation_t first_used_gen) override;
+    void get_state(const vespalib::slime::Inserter& inserter) const override;
 
     // Implements DocVectorAccess
     vespalib::tensor::TypedCells get_vector(uint32_t docid) const override;

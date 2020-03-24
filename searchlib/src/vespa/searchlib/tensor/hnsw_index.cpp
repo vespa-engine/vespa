@@ -3,12 +3,16 @@
 #include "distance_function.h"
 #include "hnsw_index.h"
 #include "random_level_generator.h"
+#include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/eval/tensor/dense/typed_cells.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::tensor {
 
+using search::StateExplorerUtils;
 using search::datastore::EntryRef;
 
 namespace {
@@ -422,6 +426,13 @@ HnswIndex::memory_usage() const
     result.merge(_links.getMemoryUsage());
     result.merge(_visited_set_pool.memory_usage());
     return result;
+}
+
+void
+HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
+{
+    auto& object = inserter.insertObject();
+    StateExplorerUtils::memory_usage_to_slime(memory_usage(), object.setObject("memory_usage"));
 }
 
 struct NeighborsByDocId {

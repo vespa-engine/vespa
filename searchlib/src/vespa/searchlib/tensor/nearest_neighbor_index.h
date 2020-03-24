@@ -9,6 +9,8 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include "distance_function.h"
 
+namespace vespalib::slime { struct Inserter; }
+
 namespace search::tensor {
 
 /**
@@ -31,6 +33,7 @@ public:
     virtual void transfer_hold_lists(generation_t current_gen) = 0;
     virtual void trim_hold_lists(generation_t first_used_gen) = 0;
     virtual vespalib::MemoryUsage memory_usage() const = 0;
+    virtual void get_state(const vespalib::slime::Inserter& inserter) const = 0;
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              vespalib::tensor::TypedCells vector,
