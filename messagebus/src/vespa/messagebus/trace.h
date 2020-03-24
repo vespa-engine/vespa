@@ -3,11 +3,11 @@
 #pragma once
 
 #include <vespa/vespalib/trace/trace.h>
-#include <vespa/messagebus/tracenode.h>
 
 namespace mbus {
 
-    typedef vespalib::Trace Trace;
+    using Trace = vespalib::Trace;
+    using TraceNode = vespalib::TraceNode;
 
 #define MBUS_TRACE2(ttrace, level, note, addTime) \
     VESPALIB_TRACE2(ttrace, level, note, addTime)

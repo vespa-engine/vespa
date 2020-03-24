@@ -29,11 +29,11 @@ public:
 private:
     bool testError(const Route &route, const string &msg);
     bool testError(const Hop &hop, const string &msg);
-    bool testErrorDirective(IHopDirective::SP dir, const string &msg);
-    bool testPolicyDirective(IHopDirective::SP dir, const string &name, const string &param);
-    bool testRouteDirective(IHopDirective::SP dir, const string &name);
-    bool testTcpDirective(IHopDirective::SP dir, const string &host, uint32_t port, const string &session);
-    bool testVerbatimDirective(IHopDirective::SP dir, const string &image);
+    bool testErrorDirective(const IHopDirective & dir, const string &msg);
+    bool testPolicyDirective(const IHopDirective & dir, const string &name, const string &param);
+    bool testRouteDirective(const IHopDirective & dir, const string &name);
+    bool testTcpDirective(const IHopDirective & dir, const string &host, uint32_t port, const string &session);
+    bool testVerbatimDirective(const IHopDirective & dir, const string &image);
 };
 
 TEST_APPHOOK(Test);
@@ -77,84 +77,69 @@ Test::testError(const Hop &hop, const string &msg)
 }
 
 bool
-Test::testErrorDirective(IHopDirective::SP dir, const string &msg)
+Test::testErrorDirective(const IHopDirective & dir, const string &msg)
 {
-    if (!EXPECT_TRUE(dir.get() != NULL)) {
+    if (!EXPECT_EQUAL(IHopDirective::TYPE_ERROR, dir.getType())) {
         return false;
     }
-    if (!EXPECT_EQUAL(IHopDirective::TYPE_ERROR, dir->getType())) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(msg, static_cast<const ErrorDirective&>(*dir).getMessage())) {
+    if (!EXPECT_EQUAL(msg, static_cast<const ErrorDirective&>(dir).getMessage())) {
         return false;
     }
     return true;
 }
 
 bool
-Test::testPolicyDirective(IHopDirective::SP dir, const string &name, const string &param)
+Test::testPolicyDirective(const IHopDirective & dir, const string &name, const string &param)
 {
-    if (!EXPECT_TRUE(dir.get() != NULL)) {
+    if (!EXPECT_EQUAL(IHopDirective::TYPE_POLICY, dir.getType())) {
         return false;
     }
-    if (!EXPECT_EQUAL(IHopDirective::TYPE_POLICY, dir->getType())) {
+    if (!EXPECT_EQUAL(name, static_cast<const PolicyDirective&>(dir).getName())) {
         return false;
     }
-    if (!EXPECT_EQUAL(name, static_cast<const PolicyDirective&>(*dir).getName())) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(param, static_cast<const PolicyDirective&>(*dir).getParam())) {
+    if (!EXPECT_EQUAL(param, static_cast<const PolicyDirective&>(dir).getParam())) {
         return false;
     }
     return true;
 }
 
 bool
-Test::testRouteDirective(IHopDirective::SP dir, const string &name)
+Test::testRouteDirective(const IHopDirective & dir, const string &name)
 {
-    if (!EXPECT_TRUE(dir.get() != NULL)) {
+    if (!EXPECT_EQUAL(IHopDirective::TYPE_ROUTE, dir.getType())) {
         return false;
     }
-    if (!EXPECT_EQUAL(IHopDirective::TYPE_ROUTE, dir->getType())) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(name, static_cast<const RouteDirective&>(*dir).getName())) {
+    if (!EXPECT_EQUAL(name, static_cast<const RouteDirective&>(dir).getName())) {
         return false;
     }
     return true;
 }
 
 bool
-Test::testTcpDirective(IHopDirective::SP dir, const string &host, uint32_t port, const string &session)
+Test::testTcpDirective(const IHopDirective & dir, const string &host, uint32_t port, const string &session)
 {
-    if (!EXPECT_TRUE(dir.get() != NULL)) {
+    if (!EXPECT_EQUAL(IHopDirective::TYPE_TCP, dir.getType())) {
         return false;
     }
-    if (!EXPECT_EQUAL(IHopDirective::TYPE_TCP, dir->getType())) {
+    if (!EXPECT_EQUAL(host, static_cast<const TcpDirective&>(dir).getHost())) {
         return false;
     }
-    if (!EXPECT_EQUAL(host, static_cast<const TcpDirective&>(*dir).getHost())) {
+    if (!EXPECT_EQUAL(port, static_cast<const TcpDirective&>(dir).getPort())) {
         return false;
     }
-    if (!EXPECT_EQUAL(port, static_cast<const TcpDirective&>(*dir).getPort())) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(session, static_cast<const TcpDirective&>(*dir).getSession())) {
+    if (!EXPECT_EQUAL(session, static_cast<const TcpDirective&>(dir).getSession())) {
         return false;
     }
     return true;
 }
 
 bool
-Test::testVerbatimDirective(IHopDirective::SP dir, const string &image)
+Test::testVerbatimDirective(const IHopDirective & dir, const string &image)
 {
-    if (!EXPECT_TRUE(dir.get() != NULL)) {
+    if (!EXPECT_EQUAL(IHopDirective::TYPE_VERBATIM, dir.getType())) {
         return false;
     }
-    if (!EXPECT_EQUAL(IHopDirective::TYPE_VERBATIM, dir->getType())) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(image, static_cast<const VerbatimDirective&>(*dir).getImage())) {
+    if (!EXPECT_EQUAL(image, static_cast<const VerbatimDirective&>(dir).getImage())) {
         return false;
     }
     return true;

@@ -11,7 +11,7 @@ Routable::Routable() :
     _trace()
 { }
 
-Routable::~Routable() { }
+Routable::~Routable() = default;
 
 void
 Routable::discard()
