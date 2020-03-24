@@ -67,12 +67,6 @@ public class Flags {
             "Takes effect on next host admin tick.",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag CLEANUP_STATUS_SERVICE = defineFeatureFlag(
-            "cleanup-status-service", false,
-            "Whether to remove orphaned hosts and applications in the ZooKeeper status service.",
-            "Takes effect on restart of config server.",
-            HOSTNAME);
-
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
