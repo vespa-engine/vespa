@@ -62,4 +62,10 @@ ImportedTensorAttributeVectorReadGuard::getTensorType() const
     return _target_tensor_attribute.getTensorType();
 }
 
+void
+ImportedTensorAttributeVectorReadGuard::get_state(const vespalib::slime::Inserter& inserter) const
+{
+    _target_tensor_attribute.get_state(inserter);
+}
+
 }

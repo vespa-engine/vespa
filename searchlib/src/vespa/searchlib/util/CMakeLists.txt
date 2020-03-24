@@ -16,6 +16,7 @@ vespa_add_library(searchlib_util OBJECT
     rawbuf.cpp
     sigbushandler.cpp
     slime_output_raw_buf_adapter.cpp
+    state_explorer_utils.cpp
     statebuf.cpp
     statefile.cpp
     stringenum.cpp

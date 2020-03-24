@@ -7,21 +7,23 @@
 #include <vespa/eval/tensor/dense/typed_dense_tensor_builder.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/wrapped_simple_tensor.h>
+#include <vespa/searchlib/util/state_explorer_utils.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 
-using vespalib::eval::SimpleTensor;
-using vespalib::eval::ValueType;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::TypedDenseTensorBuilder;
-using vespalib::tensor::dispatch_0;
-using vespalib::tensor::SparseTensor;
-using vespalib::tensor::WrappedSimpleTensor;
 using document::TensorDataType;
 using document::WrongTensorTypeException;
+using vespalib::eval::SimpleTensor;
+using vespalib::eval::ValueType;
+using vespalib::tensor::SparseTensor;
+using vespalib::tensor::Tensor;
+using vespalib::tensor::TypedDenseTensorBuilder;
+using vespalib::tensor::WrappedSimpleTensor;
+using vespalib::tensor::dispatch_0;
+using search::StateExplorerUtils;
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 namespace {
 
@@ -184,6 +186,16 @@ TensorAttribute::memory_usage() const
     return result;
 }
 
+void
+TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
+{
+    object.setLong("compact_generation", _compactGeneration);
+    StateExplorerUtils::memory_usage_to_slime(_refVector.getMemoryUsage(),
+                                              object.setObject("ref_vector").setObject("memory_usage"));
+    StateExplorerUtils::memory_usage_to_slime(_tensorStore.getMemoryUsage(),
+                                              object.setObject("tensor_store").setObject("memory_usage"));
+}
+
 Tensor::UP
 TensorAttribute::getEmptyTensor() const
 {
@@ -194,6 +206,13 @@ vespalib::eval::ValueType
 TensorAttribute::getTensorType() const
 {
     return getConfig().tensorType();
+}
+
+void
+TensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
+{
+    auto& object = inserter.insertObject();
+    populate_state(object);
 }
 
 void
@@ -236,6 +255,4 @@ TensorAttribute::getRefCopy() const
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorAttribute, AttributeVector);
 
-}  // namespace search::tensor
-
-}  // namespace search
+}

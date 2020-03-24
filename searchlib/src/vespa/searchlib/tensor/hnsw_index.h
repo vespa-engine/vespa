@@ -153,6 +153,8 @@ public:
     void transfer_hold_lists(generation_t current_gen) override;
     void trim_hold_lists(generation_t first_used_gen) override;
     vespalib::MemoryUsage memory_usage() const override;
+    void get_state(const vespalib::slime::Inserter& inserter) const override;
+
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
 
     FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
