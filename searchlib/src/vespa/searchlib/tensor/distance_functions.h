@@ -89,12 +89,19 @@ template class AngularDistance<double>;
 
 /**
  * Calculates great-circle distance between Latitude/Longitude pairs,
- * measured in degrees
+ * measured in degrees.  Output distance is measured in meters.
+ * Uses the haversine formula directly from:
+ * https://en.wikipedia.org/wiki/Haversine_formula
  **/
 template <typename FloatType>
 class GeoDegreesDistance : public DistanceFunction {
 public:
     GeoDegreesDistance() {}
+    // haversine function:
+    static double hav(double angle) {
+        double s = sin(0.5*angle);
+        return s*s;
+    }
     double calc(const vespalib::tensor::TypedCells& lhs, const vespalib::tensor::TypedCells& rhs) const override {
         auto lhs_vector = lhs.typify<FloatType>();
         auto rhs_vector = rhs.typify<FloatType>();
@@ -109,13 +116,9 @@ public:
         double lat_diff = lat_A - lat_B;
         double lon_diff = lon_A - lon_B;
 
-        // sines of half of differences:
-        double sin_half_lat = sin(0.5 * lat_diff);
-        double sin_half_lon = sin(0.5 * lon_diff);
-
         // haversines of differences:
-        double hav_lat = sin_half_lat*sin_half_lat;
-        double hav_lon = sin_half_lon*sin_half_lon;
+        double hav_lat = hav(lat_diff);
+        double hav_lon = hav(lon_diff);
 
         // haversine of central angle between the two points:
         double hav_central_angle = hav_lat + cos(lat_A)*cos(lat_B)*hav_lon;
