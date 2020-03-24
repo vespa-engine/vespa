@@ -5,7 +5,6 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -398,8 +397,6 @@ public class OrchestratorImpl implements Orchestrator {
                 .collect(Collectors.toSet());
 
         // For all content clusters set in maintenance
-        log.log(LogLevel.INFO, String.format("Setting content clusters %s for application %s to %s",
-                contentClusterIds,application.applicationInstanceId(),state));
         for (ClusterId clusterId : contentClusterIds) {
             List<HostName> clusterControllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, clusterId);
             ClusterControllerClient client = clusterControllerClientFactory.createClient(

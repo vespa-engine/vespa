@@ -12,8 +12,6 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.service.monitor.AntiServiceMonitor;
@@ -242,7 +240,6 @@ public class ZkStatusService implements StatusService {
             Set<HostName> toRemove = new HashSet<>(hostInfos.getZkHostnames());
             toRemove.removeAll(hostnames);
             if (toRemove.size() > 0) {
-                log.log(LogLevel.INFO, "Removing " + toRemove + " of " + reference + " from status service");
                 hostInfosCache.removeHosts(reference, toRemove);
             }
         });
@@ -260,8 +257,6 @@ public class ZkStatusService implements StatusService {
     @Override
     public void onApplicationRemove(ApplicationInstanceReference reference) {
         withLockForAdminOp(reference, " was removed", () -> {
-            log.log(LogLevel.INFO, "Removing application " + reference + " from status service");
-
             // /vespa/application-status-service/REFERENCE
             curator.delete(Path.fromString(applicationInstanceSuspendedPath(reference)));
 
