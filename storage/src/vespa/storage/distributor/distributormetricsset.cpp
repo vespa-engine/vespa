@@ -13,6 +13,7 @@ DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
       updates(lt, UpdateMetricSet(), this),
       update_puts(lt, PersistenceOperationMetricSet("update_puts"), this),
       update_gets(lt, PersistenceOperationMetricSet("update_gets"), this),
+      update_metadata_gets(lt, PersistenceOperationMetricSet("update_metadata_gets"), this),
       removes(lt, PersistenceOperationMetricSet("removes"), this),
       removelocations(lt, PersistenceOperationMetricSet("removelocations"), this),
       gets(lt, PersistenceOperationMetricSet("gets"), this),

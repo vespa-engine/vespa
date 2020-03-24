@@ -1099,6 +1099,10 @@ TEST_F(ThreePhaseUpdateTest, full_document_get_sent_to_replica_with_highest_time
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     reply_to_metadata_get(*cb, _sender, 0, 1000U);
     reply_to_metadata_get(*cb, _sender, 1, 2000U);
+
+    auto& metrics = getDistributor().getMetrics().update_metadata_gets[documentapi::LoadType::DEFAULT];
+    EXPECT_EQ(1, metrics.ok.getValue()); // Technically tracks an entire operation covering multiple Gets.
+
     // Node 1 has newest document version at ts=2000
     ASSERT_EQ("Get => 1", _sender.getCommands(true, false, 2));
     {
@@ -1116,6 +1120,9 @@ TEST_F(ThreePhaseUpdateTest, puts_are_sent_after_receiving_full_document_get) {
     ASSERT_EQ("Get => 0", _sender.getCommands(true, false, 2));
     replyToGet(*cb, _sender, 2, 2000U);
     ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 3));
+
+    auto& metrics = getDistributor().getMetrics().update_gets[documentapi::LoadType::DEFAULT];
+    EXPECT_EQ(1, metrics.ok.getValue());
 }
 
 TEST_F(ThreePhaseUpdateTest, consistent_meta_get_timestamps_can_restart_in_fast_path) {
@@ -1292,6 +1299,22 @@ TEST_F(ThreePhaseUpdateTest, single_get_mbus_trace_is_propagated_to_reply) {
 
     std::string trace(_sender.replies().back()->getTrace().toString());
     ASSERT_THAT(trace, HasSubstr("it is me, Leclerc! *lifts glasses*"));
+}
+
+TEST_F(ThreePhaseUpdateTest, single_full_get_reply_received_after_close_is_no_op) {
+    auto cb = set_up_2_inconsistent_replicas_and_start_update();
+    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
+    reply_to_metadata_get(*cb, _sender, 0, 0U);
+    reply_to_metadata_get(*cb, _sender, 1, 1000U);
+    ASSERT_EQ("Get => 1", _sender.getCommands(true, false, 2));
+    cb->onClose(_sender);
+    ASSERT_EQ("Update Reply", _sender.getLastReply(false));
+    // Operation closed prior to receiving Get. Note that we should not really get
+    // into this situation since the owner of the operation itself should clear
+    // any mappings associating the reply with the operation, but ensure we handle
+    // it gracefully anyway.
+    replyToGet(*cb, _sender, 2, 2000U);
+    ASSERT_EQ("", _sender.getCommands(true, false, 3)); // Nothing new sent.
 }
 
 // XXX currently differs in behavior from content nodes in that updates for

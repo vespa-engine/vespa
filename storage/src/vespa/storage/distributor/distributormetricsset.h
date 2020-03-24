@@ -16,6 +16,7 @@ public:
     metrics::LoadMetric<UpdateMetricSet> updates;
     metrics::LoadMetric<PersistenceOperationMetricSet> update_puts;
     metrics::LoadMetric<PersistenceOperationMetricSet> update_gets;
+    metrics::LoadMetric<PersistenceOperationMetricSet> update_metadata_gets;
     metrics::LoadMetric<PersistenceOperationMetricSet> removes;
     metrics::LoadMetric<PersistenceOperationMetricSet> removelocations;
     metrics::LoadMetric<PersistenceOperationMetricSet> gets;
