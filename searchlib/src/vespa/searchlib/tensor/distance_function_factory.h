@@ -8,6 +8,10 @@
 
 namespace search::tensor {
 
+/**
+ * Create a distance function object customized for the given metric
+ * variant and cell type.
+ **/
 DistanceFunction::UP
 make_distance_function(search::attribute::DistanceMetric variant,
                        vespalib::eval::ValueType::CellType cell_type);
