@@ -67,7 +67,8 @@ public:
         auto rhs_vector = rhs.typify<FloatType>();
         size_t sz = lhs_vector.size();
         assert(sz == rhs_vector.size());
-        return 1.0 - _computer.dotProduct(&lhs_vector[0], &rhs_vector[0], sz);
+        double score = 1.0 - _computer.dotProduct(&lhs_vector[0], &rhs_vector[0], sz);
+        return std::max(0.0, score);
     }
     double to_rawscore(double distance) const override {
         double score = 1.0 / (1.0 + distance);
