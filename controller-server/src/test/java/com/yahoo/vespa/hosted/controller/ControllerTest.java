@@ -858,11 +858,15 @@ public class ControllerTest {
     @Test
     public void testDirectRoutingSupport() {
         var context = tester.newDeploymentContext();
-        var zone = ZoneId.from("prod", "us-west-1");
+        var zone1 = ZoneId.from("prod", "us-west-1");
+        var zone2 = ZoneId.from("prod", "us-east-3");
         var applicationPackageBuilder = new ApplicationPackageBuilder()
-                .region(zone.region());
-        tester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.shared, RoutingMethod.sharedLayer4);
-        Supplier<Set<RoutingMethod>> routingMethods = () -> tester.controller().routing().endpointsOf(context.deploymentIdIn(zone))
+                .region(zone1.region())
+                .region(zone2.region());
+        tester.controllerTester().zoneRegistry()
+              .setRoutingMethod(ZoneApiMock.from(zone1), RoutingMethod.shared, RoutingMethod.sharedLayer4)
+              .setRoutingMethod(ZoneApiMock.from(zone2), RoutingMethod.shared, RoutingMethod.sharedLayer4);
+        Supplier<Set<RoutingMethod>> routingMethods = () -> tester.controller().routing().endpointsOf(context.deploymentIdIn(zone1))
                                                                   .asList()
                                                                   .stream()
                                                                   .map(Endpoint::routingMethod)
@@ -879,16 +883,25 @@ public class ControllerTest {
         assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
 
         // Without feature flag
-        var applicationPackage = applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
-                                                          .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                                                          .build();
-        context.submit(applicationPackage).deploy();
+        applicationPackageBuilder = applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                                                             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"));
+        context.submit(applicationPackageBuilder.build()).deploy();
         assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
 
         // With everything required
         ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.ALLOW_DIRECT_ROUTING.id(), true);
-        context.submit(applicationPackage).deploy();
+        context.submit(applicationPackageBuilder.build()).deploy();
         assertEquals(Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4), routingMethods.get());
+
+        // Global endpoint is configured and includes directly routed endpoint name
+        applicationPackageBuilder = applicationPackageBuilder.endpoint("default", "default");
+        context.submit(applicationPackageBuilder.build()).deploy();
+        for (var zone : List.of(zone1, zone2)) {
+            assertEquals(Set.of("rotation-id-01",
+                                "application.tenant.global.vespa.oath.cloud",
+                                "application--tenant.global.vespa.oath.cloud"),
+                         tester.configServer().rotationNames().get(context.deploymentIdIn(zone)));
+        }
     }
 
     @Test
