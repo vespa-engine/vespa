@@ -53,8 +53,7 @@ LocalServicePolicy::getRecipient(mbus::RoutingContext &ctx)
     CacheEntry &entry = update(ctx);
     if (entry._recipients.empty()) {
         mbus::Hop hop = ctx.getRoute().getHop(0);
-        hop.setDirective(ctx.getDirectiveIndex(),
-                         mbus::IHopDirective::SP(new mbus::VerbatimDirective("*")));
+        hop.setDirective(ctx.getDirectiveIndex(), std::make_shared<mbus::VerbatimDirective>("*"));
         return hop;
     }
     if (++entry._offset >= entry._recipients.size()) {

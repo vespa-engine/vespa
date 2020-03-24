@@ -207,7 +207,7 @@ RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
         reply = decode(root[PROTOCOL_F].asString().make_stringref(), version, BlobRef(payload.data, payload.size), error);
     }
     if ( ! reply ) {
-        reply.reset(new EmptyReply());
+        reply = std::make_unique<EmptyReply>();
     }
     reply->setRetryDelay(root[RETRYDELAY_F].asDouble());
     Inspector & errors = root[ERRORS_F];
@@ -217,7 +217,10 @@ RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
         reply->addError(Error(e[CODE_F].asLong(), e[MSG_F].asString().make_string(),
                               (service.size > 0) ? service.make_string() : serviceName));
     }
-    rootTrace.addChild(TraceNode::decode(root[TRACE_F].asString().make_string()));
+    Inspector & trace = root[TRACE_F];
+    if (trace.valid() && (trace.asString().size > 0)) {
+        rootTrace.addChild(TraceNode::decode(trace.asString().make_string()));
+    }
     return reply;
 }
 

@@ -85,8 +85,8 @@ RouteParser::createHop(stringref str)
     }
     if (len > 4 && str.substr(0, 4) == "tcp/") {
         IHopDirective::SP tcp = createTcpDirective(str.substr(4));
-        if (tcp.get() != nullptr) {
-            return Hop().addDirective(tcp);
+        if (tcp) {
+            return Hop().addDirective(std::move(tcp));
         }
     }
     if (len > 6 && str.substr(0, 6) == "route:") {
@@ -128,7 +128,7 @@ RouteParser::createRoute(stringref str)
             if (from < at - 1) {
                 Hop hop = createHop(str.substr(from, at - from));
                 if (hop.hasDirectives() &&
-                    hop.getDirective(0)->getType() == IHopDirective::TYPE_ERROR)
+                    hop.getDirective(0).getType() == IHopDirective::TYPE_ERROR)
                 {
                     return std::move(Route().addHop(std::move(hop)));
                 }

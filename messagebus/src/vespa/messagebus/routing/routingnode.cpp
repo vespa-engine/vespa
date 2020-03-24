@@ -67,10 +67,8 @@ RoutingNode::~RoutingNode()
 void
 RoutingNode::clearChildren()
 {
-    for (std::vector<RoutingNode*>::iterator it = _children.begin();
-         it != _children.end(); ++it)
-    {
-        delete *it;
+    for (auto child : _children) {
+        delete child;
     }
     _children.clear();
 }
@@ -101,15 +99,12 @@ RoutingNode::prepareForRetry()
 {
     _shouldRetry = false;
     _reply.reset();
-    if (_routingContext.get() != nullptr && _routingContext->getSelectOnRetry()) {
+    if (_routingContext && _routingContext->getSelectOnRetry()) {
         clearChildren();
     } else if (!_children.empty()) {
         bool retryingSome = false;
-        for (std::vector<RoutingNode*>::iterator it = _children.begin();
-             it != _children.end(); ++it)
-        {
-            RoutingNode *child= *it;
-            if (child->_shouldRetry || child->_reply.get() == nullptr) {
+        for (auto child : _children) {
+            if (child->_shouldRetry || ! child->_reply) {
                 child->prepareForRetry();
                 retryingSome = true;
             }
@@ -159,7 +154,7 @@ RoutingNode::setError(uint32_t code, const string &msg)
 void
 RoutingNode::setError(const Error &err)
 {
-    Reply::UP reply(new EmptyReply());
+    auto reply = std::make_unique<EmptyReply>();
     reply->getTrace().setLevel(_trace.getLevel());
     reply->addError(err);
     setReply(std::move(reply));
@@ -188,8 +183,10 @@ RoutingNode::setReply(Reply::UP reply)
 {
     if (reply) {
         _shouldRetry = _resender != nullptr && _resender->shouldRetry(*reply);
-        _trace.getRoot().addChild(std::move(reply->getTrace().getRoot()));
-        reply->getTrace().clear();
+        if ( ! reply->getTrace().getRoot().isEmpty()) {
+            _trace.getRoot().addChild(std::move(reply->getTrace().getRoot()));
+            reply->getTrace().clear();
+        }
     }
     _reply = std::move(reply);
 }
@@ -211,16 +208,14 @@ RoutingNode::notifyAbort(const string &msg)
         mystack.pop();
         if (!node->_isActive) {
             // reply not pending
-        } else if (node->_reply.get() != nullptr) {
+        } else if (node->_reply) {
             node->notifyParent();
         } else if (node->_children.empty()) {
             node->setError(ErrorCode::SEND_ABORTED, msg);
             node->notifyParent();
         } else {
-            for (std::vector<RoutingNode*>::iterator it = node->_children.begin();
-                 it != node->_children.end(); ++it)
-            {
-                mystack.push(*it);
+            for (auto child : node->_children) {
+                mystack.push(child);
             }
         }
     }
@@ -240,14 +235,12 @@ RoutingNode::notifyTransmit()
                 if (node->hasReply()) {
                     node->notifyParent();
                 } else {
-                    assert(node->_serviceAddress.get() != nullptr);
+                    assert(node->_serviceAddress);
                     sendTo.push_back(node);
                 }
             } else {
-                for (std::vector<RoutingNode*>::iterator it = node->_children.begin();
-                     it != node->_children.end(); ++it)
-                {
-                    mystack.push(*it);
+                for (auto child : node->_children) {
+                    mystack.push(child);
                 }
             }
         }
@@ -275,10 +268,8 @@ RoutingNode::notifyMerge()
     // manipulating the trace in case tracing is disabled.
     if (_trace.getLevel() > 0) {
         TraceNode tail;
-        for (std::vector<RoutingNode*>::iterator it = _children.begin();
-             it != _children.end(); ++it)
-        {
-            TraceNode &root = (*it)->_trace.getRoot();
+        for (auto child : _children) {
+            TraceNode &root = child->_trace.getRoot();
             tail.addChild(root);
             root.clear();
         }
@@ -296,7 +287,7 @@ RoutingNode::notifyMerge()
         setError(ErrorCode::POLICY_ERROR, make_string("Policy '%s' threw an exception; %s",
                                                       dir.getName().c_str(), e.what()));
     }
-    if (_reply.get() == nullptr) {
+    if ( ! _reply) {
         setError(ErrorCode::APP_FATAL_ERROR, make_string("Routing policy '%s' failed to merge replies.",
                                                          dir.getName().c_str()));
     }
@@ -315,12 +306,12 @@ RoutingNode::hasUnconsumedErrors()
     while (!mystack.empty()) {
         RoutingNode *node = mystack.top();
         mystack.pop();
-        if (node->_reply.get() != nullptr) {
+        if (node->_reply) {
             for (uint32_t i = 0; i < node->_reply->getNumErrors(); ++i) {
                 int errorCode = node->_reply->getError(i).getCode();
                 RoutingNode *it = node;
                 while (it != nullptr) {
-                    if (it->_routingContext.get() != nullptr &&
+                    if (it->_routingContext &&
                         it->_routingContext->isConsumableError(errorCode))
                     {
                         errorCode = ErrorCode::NONE;
@@ -337,10 +328,8 @@ RoutingNode::hasUnconsumedErrors()
                 }
             }
         } else {
-            for (std::vector<RoutingNode*>::iterator it = node->_children.begin();
-                 it != node->_children.end(); ++it)
-            {
-                mystack.push(*it);
+            for (auto child : node->_children) {
+                mystack.push(child);
             }
         }
     }
@@ -374,17 +363,17 @@ RoutingNode::resolve(uint32_t depth)
         if (executePolicySelect()) {
             return resolveChildren(depth + 1);
         }
-        return _reply.get() != nullptr;
+        return bool(_reply);
     }
     _net.allocServiceAddress(*this);
-    return _serviceAddress.get() != nullptr || _reply.get() != nullptr;
+    return _serviceAddress || _reply;
 }
 
 bool
 RoutingNode::lookupHop()
 {
     RoutingTable::SP table = _mbus.getRoutingTable(_msg.getProtocol());
-    if (table.get() != nullptr) {
+    if (table) {
         string name = _route.getHop(0).getServiceName();
         if (table->hasHop(name)) {
             const HopBlueprint *hop = table->getHop(name);
@@ -402,8 +391,9 @@ RoutingNode::lookupRoute()
 {
     RoutingTable::SP table = _mbus.getRoutingTable(_msg.getProtocol());
     Hop &hop = _route.getHop(0);
-    if (hop.getDirective(0)->getType() == IHopDirective::TYPE_ROUTE) {
-        RouteDirective &dir = static_cast<RouteDirective&>(*hop.getDirective(0));
+    const RouteDirective &dir = static_cast<const RouteDirective&>(hop.getDirective(0));
+    if (dir.getType() == IHopDirective::TYPE_ROUTE) {
+
         if (!table || !table->hasRoute(dir.getName())) {
             setError(ErrorCode::ILLEGAL_ROUTE, make_string("Route '%s' does not exist.", dir.getName().c_str()));
             return false;
@@ -443,10 +433,10 @@ RoutingNode::findErrorDirective()
 {
     Hop &hop = _route.getHop(0);
     for (uint32_t i = 0; i < hop.getNumDirectives(); ++i) {
-        IHopDirective::SP dir = hop.getDirective(i);
-        if (dir->getType() == IHopDirective::TYPE_ERROR) {
+        const IHopDirective & dir = hop.getDirective(i);
+        if (dir.getType() == IHopDirective::TYPE_ERROR) {
             setError(ErrorCode::ILLEGAL_ROUTE,
-                     static_cast<ErrorDirective&>(*dir).getMessage());
+                     static_cast<const ErrorDirective&>(dir).getMessage());
             return true;
         }
     }
@@ -458,9 +448,8 @@ RoutingNode::findPolicyDirective()
 {
     Hop &hop = _route.getHop(0);
     for (uint32_t i = 0; i < hop.getNumDirectives(); ++i) {
-        IHopDirective::SP dir = hop.getDirective(i);
-        if (dir->getType() == IHopDirective::TYPE_POLICY) {
-            _routingContext.reset(new RoutingContext(*this, i));
+        if (hop.getDirective(i).getType() == IHopDirective::TYPE_POLICY) {
+            _routingContext = std::make_unique<RoutingContext>(*this, i);
             return true;
         }
     }
@@ -472,7 +461,7 @@ RoutingNode::executePolicySelect()
 {
     const PolicyDirective &dir = _routingContext->getDirective();
     _policy = _mbus.getRoutingPolicy(_msg.getProtocol(), dir.getName(), dir.getParam());
-    if (_policy.get() == nullptr) {
+    if ( ! _policy) {
         setError(ErrorCode::UNKNOWN_POLICY, make_string(
                 "Protocol '%s' could not create routing policy '%s' with parameter '%s'.",
                 _msg.getProtocol().c_str(), dir.getName().c_str(), dir.getParam().c_str()));
@@ -487,7 +476,7 @@ RoutingNode::executePolicySelect()
         return false;
     }
     if (_children.empty()) {
-        if (_reply.get() == nullptr) {
+        if ( ! _reply) {
             setError(ErrorCode::NO_SERVICES_FOR_ROUTE,
                      make_string("Policy '%s' selected no recipients for route '%s'.",
                                  dir.getName().c_str(), _route.toString().c_str()));
@@ -497,10 +486,7 @@ RoutingNode::executePolicySelect()
         }
         return false;
     }
-    for (std::vector<RoutingNode*>::iterator it = _children.begin();
-         it != _children.end(); ++it)
-    {
-        RoutingNode *child = *it;
+    for (auto child : _children) {
         Hop &hop = child->_route.getHop(0);
         child->_trace.trace(TraceLevel::SPLIT_MERGE,
                             make_string("Component '%s' selected by policy '%s'.",
@@ -514,13 +500,10 @@ RoutingNode::resolveChildren(uint32_t childDepth)
 {
     int numActiveChildren = 0;
     bool ret = true;
-    for (std::vector<RoutingNode*>::iterator it = _children.begin();
-         it != _children.end(); ++it)
-    {
-        RoutingNode *child = *it;
+    for (auto child : _children) {
         child->_trace.trace(TraceLevel::SPLIT_MERGE,
                             make_string("Resolving '%s'.", child->_route.toString().c_str()));
-        child->_isActive = (child->_reply.get() == nullptr);
+        child->_isActive = ! child->_reply;
         if (child->_isActive) {
             ++numActiveChildren;
             if (!child->resolve(childDepth)) {
@@ -560,10 +543,10 @@ RoutingNode::tryIgnoreResult()
     if (!shouldIgnoreResult()) {
         return false;
     }
-    if (_reply.get() == nullptr || !_reply->hasErrors()) {
+    if ( ! _reply || !_reply->hasErrors()) {
         return false;
     }
-    setReply(Reply::UP(new EmptyReply()));
+    setReply(std::make_unique<EmptyReply>());
     _trace.trace(TraceLevel::SPLIT_MERGE, "Ignoring errors in reply.");
     return true;
 }

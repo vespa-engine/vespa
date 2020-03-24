@@ -25,41 +25,19 @@ Hop::Hop(std::vector<IHopDirective::SP> selector, bool ignoreResult) :
 
 Hop::Hop(const Hop &) = default;
 Hop & Hop::operator = (const Hop &) = default;
-Hop::~Hop() { }
+Hop::~Hop() = default;
 
 Hop &
 Hop::addDirective(IHopDirective::SP dir)
 {
-    _selector.push_back(dir);
+    _selector.emplace_back(std::move(dir));
     return *this;
 }
 
 Hop &
 Hop::setDirective(uint32_t i, IHopDirective::SP dir)
 {
-    _selector[i] = dir;
-    return *this;
-}
-
-IHopDirective::SP
-Hop::removeDirective(uint32_t i)
-{
-    IHopDirective::SP ret = _selector[i];
-    _selector.erase(_selector.begin() + i);
-    return ret;
-}
-
-Hop &
-Hop::clearDirectives()
-{
-    _selector.clear();
-    return *this;
-}
-
-Hop &
-Hop::setIgnoreResult(bool ignoreResult)
-{
-    _ignoreResult = ignoreResult;
+    _selector[i] = std::move(dir);
     return *this;
 }
 
@@ -76,7 +54,7 @@ Hop::matches(const Hop &hop) const
         return false;
     }
     for (uint32_t i = 0; i < hop.getNumDirectives(); ++i) {
-        if (!_selector[i]->matches(*hop.getDirective(i))) {
+        if (!_selector[i]->matches(hop.getDirective(i))) {
             return false;
         }
     }
