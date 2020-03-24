@@ -183,9 +183,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // PUT a user tenant — does nothing
         tester.assertResponse(request("/application/v4/user", PUT).userIdentity(USER_ID),
                               "");
+
         // GET the authenticated user which now exists (with associated tenants)
         tester.assertResponse(request("/application/v4/user", GET).userIdentity(USER_ID),
                               new File("user.json"));
+
         // DELETE the user — it doesn't exist, so access control fails
         tester.assertResponse(request("/application/v4/tenant/by-myuser", DELETE).userIdentity(USER_ID),
                               "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}", 403);

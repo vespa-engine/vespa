@@ -100,22 +100,20 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         }));
 
         futures.add(executor.submit(() -> {
-                    // Add all tenants that are accessible for this request
-                    athenz.accessibleTenants(tenants.asList(), new Credentials(principal))
-                          .forEach(accessibleTenant -> roleMemberships.add(Role.athenzTenantAdmin(accessibleTenant.name())));
+            // Add all tenants that are accessible for this request
+            athenz.accessibleTenants(tenants.asList(), new Credentials(principal))
+                  .forEach(accessibleTenant -> roleMemberships.add(Role.athenzTenantAdmin(accessibleTenant.name())));
         }));
 
         if (identity.getDomain().equals(SCREWDRIVER_DOMAIN) && application.isPresent() && tenant.isPresent())
-            // NOTE: Only fine-grained deploy authorization for Athenz tenants
             futures.add(executor.submit(() -> {
-                        if (   tenant.get().type() != Tenant.Type.athenz
-                            || hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
-                            roleMemberships.add(Role.buildService(tenant.get().name(), application.get()));
+                if (hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
+                    roleMemberships.add(Role.buildService(tenant.get().name(), application.get()));
             }));
 
         futures.add(executor.submit(() -> {
-                    if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/false))
-                        roleMemberships.add(Role.systemFlagsDeployer());
+            if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/false))
+                roleMemberships.add(Role.systemFlagsDeployer());
         }));
 
         // Run last request in handler thread to avoid creating extra thread.
