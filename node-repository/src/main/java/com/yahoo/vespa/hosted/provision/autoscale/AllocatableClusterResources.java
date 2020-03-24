@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -22,11 +23,14 @@ public class AllocatableClusterResources {
     private final NodeResources realResources;
     private final NodeResources advertisedResources;
 
+    private final ClusterSpec.Type clusterType;
+
     public AllocatableClusterResources(List<Node> nodes, HostResourcesCalculator calculator) {
         this.advertisedResources = nodes.get(0).flavor().resources();
         this.realResources = calculator.realResourcesOf(nodes.get(0));
         this.nodes = nodes.size();
         this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        this.clusterType = nodes.get(0).allocation().get().membership().cluster().type();
     }
 
     public AllocatableClusterResources(ClusterResources realResources, NodeResources advertisedResources) {
@@ -34,6 +38,7 @@ public class AllocatableClusterResources {
         this.advertisedResources = advertisedResources;
         this.nodes = realResources.nodes();
         this.groups = realResources.groups();
+        this.clusterType = realResources.clusterType();
     }
 
     public AllocatableClusterResources(ClusterResources realResources, Flavor flavor, HostResourcesCalculator calculator) {
@@ -41,6 +46,7 @@ public class AllocatableClusterResources {
         this.advertisedResources = calculator.advertisedResourcesOf(flavor);
         this.nodes = realResources.nodes();
         this.groups = realResources.groups();
+        this.clusterType = realResources.clusterType();
     }
 
     /**
@@ -59,6 +65,7 @@ public class AllocatableClusterResources {
 
     public int nodes() { return nodes; }
     public int groups() { return groups; }
+    public ClusterSpec.Type clusterType() { return clusterType; }
 
     @Override
     public String toString() {
