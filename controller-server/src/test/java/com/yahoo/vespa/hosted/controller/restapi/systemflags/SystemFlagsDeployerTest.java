@@ -132,6 +132,23 @@ public class SystemFlagsDeployerTest {
                 .containsOnly(OperationError.archiveValidationFailed("Unknown flag file: flags/my-flag/main.prod.unknown-region.json"));
     }
 
+    @Test
+    public void creates_warning_entry_for_existing_flag_data_for_undefined_flag() throws IOException {
+        FlagData prodUsEast3Data = flagData("flags/my-flag/main.prod.us-east-3.json");
+        FlagsClient flagsClient = mock(FlagsClient.class);
+        when(flagsClient.listFlagData(prodUsEast3Target))
+                .thenReturn(List.of(prodUsEast3Data));
+        when(flagsClient.listDefinedFlags(prodUsEast3Target))
+                .thenReturn(List.of());
+        SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
+                .addFile("main.prod.us-east-3.json", prodUsEast3Data)
+                .build();
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(prodUsEast3Target));
+        SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
+        assertThat(result.warnings())
+                .containsOnly(SystemFlagsDeployResult.Warning.dataForUndefinedFlag(prodUsEast3Target, new FlagId("my-flag")));
+    }
+
     private static FlagData flagData(String filename) throws IOException {
         return FlagData.deserializeUtf8Json(Files.readAllBytes(Paths.get("src/test/resources/system-flags/" + filename)));
     }
