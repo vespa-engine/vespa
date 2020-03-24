@@ -80,26 +80,42 @@ public class ResourceIterator {
         if (singleGroupMode) {
             // The fixed cost portion of cpu does not scale with changes to the node count
             // TODO: Only for the portion of cpu consumed by queries
-            double totalCpu = totalUsage(Resource.cpu, cpuLoad);
+            double totalCpu = clusterUsage(Resource.cpu, cpuLoad);
             cpu = fixedCpuCostFraction       * totalCpu / groupSize / Resource.cpu.idealAverageLoad() +
                   (1 - fixedCpuCostFraction) * totalCpu / nodeCount / Resource.cpu.idealAverageLoad();
-            memory = totalGroupUsage(Resource.memory, memoryLoad) / nodeCount / Resource.memory.idealAverageLoad();
-            disk = totalGroupUsage(Resource.disk, diskLoad) / nodeCount / Resource.disk.idealAverageLoad();
+            if (allocation.clusterType().isContent()) { // load scales with node share of content
+                memory = groupUsage(Resource.memory, memoryLoad) / nodeCount / Resource.memory.idealAverageLoad();
+                disk = groupUsage(Resource.disk, diskLoad) / nodeCount / Resource.disk.idealAverageLoad();
+            }
+            else {
+                memory = nodeUsage(Resource.memory, memoryLoad) / Resource.memory.idealAverageLoad();
+                disk = nodeUsage(Resource.disk, diskLoad) / Resource.disk.idealAverageLoad();
+            }
         }
         else {
-            cpu = totalUsage(Resource.cpu, cpuLoad) / nodeCount / Resource.cpu.idealAverageLoad();
-            memory = totalGroupUsage(Resource.memory, memoryLoad) / groupSize / Resource.memory.idealAverageLoad();
-            disk = totalGroupUsage(Resource.disk, diskLoad) / groupSize / Resource.disk.idealAverageLoad();
+            cpu = clusterUsage(Resource.cpu, cpuLoad) / nodeCount / Resource.cpu.idealAverageLoad();
+            if (allocation.clusterType().isContent()) { // load scales with node share of content
+                memory = groupUsage(Resource.memory, memoryLoad) / groupSize / Resource.memory.idealAverageLoad();
+                disk = groupUsage(Resource.disk, diskLoad) / groupSize / Resource.disk.idealAverageLoad();
+            }
+            else {
+                memory = nodeUsage(Resource.memory, memoryLoad) / Resource.memory.idealAverageLoad();
+                disk = nodeUsage(Resource.disk, diskLoad) / Resource.disk.idealAverageLoad();
+            }
         }
         return allocation.realResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }
 
-    private double totalUsage(Resource resource, double load) {
-        return load * resource.valueFrom(allocation.realResources()) * allocation.nodes();
+    private double clusterUsage(Resource resource, double load) {
+        return nodeUsage(resource, load) * allocation.nodes();
     }
 
-    private double totalGroupUsage(Resource resource, double load) {
-        return load * resource.valueFrom(allocation.realResources()) * groupSize;
+    private double groupUsage(Resource resource, double load) {
+        return nodeUsage(resource, load) * groupSize;
+    }
+
+    private double nodeUsage(Resource resource, double load) {
+        return load * resource.valueFrom(allocation.realResources());
     }
 
 }
