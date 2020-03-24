@@ -193,12 +193,6 @@ public class Flags {
             "Takes effect on next node agent tick (but does not clear existing failure reports)",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
-            "generate-l4-routing-config", false,
-            "Whether routing nodes should generate L4 routing config",
-            "Takes effect immediately",
-            ZONE_ID, HOSTNAME);
-
     public static final UnboundBooleanFlag USE_REFRESHED_ENDPOINT_CERTIFICATE = defineFeatureFlag(
             "use-refreshed-endpoint-certificate", false,
             "Whether an application should start using a newer certificate/key pair if available",
