@@ -121,13 +121,6 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void testFieldSet2() throws IOException, ParseException {
-        TestProperties properties = new TestProperties();
-        properties.setUsePhraseSegmenting(true);
-        assertCorrectDeriving("fieldset2", null, properties);
-    }
-
-    @Test
     public void testIndexinfoFieldsets() throws IOException, ParseException {
         assertCorrectDeriving("indexinfo_fieldsets");
     }

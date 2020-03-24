@@ -31,14 +31,14 @@ public class FormatInputStream {
      * IllegalArgumentException if unable to determine data format.
      *
      * @param stream              InputStream of the data if present
-     * @param inputFile           Path to file to use as input
-     * @param addRootElementToXml To add vespafeed root element around the input data stream
-     * @throws IOException        on errors.
+     * @param inputFile           path to file to use as input
+     * @param addRootElementToXml to add vespafeed root element around the input data stream
+     * @throws IOException        on errors
      */
     public FormatInputStream(InputStream stream, Optional<String> inputFile, boolean addRootElementToXml)
             throws IOException {
-        final DataFormatDetector dataFormatDetector = new DataFormatDetector(new JsonFactory(), new XmlFactory());
-        final DataFormatMatcher formatMatcher;
+        DataFormatDetector dataFormatDetector = new DataFormatDetector(new JsonFactory(), new XmlFactory());
+        DataFormatMatcher formatMatcher;
 
         if (inputFile.isPresent()) {
             try (FileInputStream fileInputStream = new FileInputStream(inputFile.get())) {
@@ -47,9 +47,8 @@ public class FormatInputStream {
             inputStream = new FileInputStream(inputFile.get());
 
         } else {
-            if (stream.available() == 0) {
+            if (stream.available() == 0)
                 System.out.println("No data in stream yet and no file specified, waiting for data.");
-            }
 
             inputStream = stream.markSupported() ? stream : new BufferedInputStream(stream);
             inputStream.mark(DataFormatDetector.DEFAULT_MAX_INPUT_LOOKAHEAD);
@@ -63,8 +62,8 @@ public class FormatInputStream {
             return;
         }
 
-        if (formatMatcher.getMatchStrength() == MatchStrength.INCONCLUSIVE ||
-                formatMatcher.getMatchStrength() == MatchStrength.NO_MATCH) {
+        if (formatMatcher.getMatchStrength() == MatchStrength.INCONCLUSIVE
+            || formatMatcher.getMatchStrength() == MatchStrength.NO_MATCH) {
             throw new IllegalArgumentException("Could not detect input format");
         }
 
@@ -72,11 +71,9 @@ public class FormatInputStream {
             case "json":
                 format = Format.JSON;
                 break;
-
             case "xml":
                 format = Format.XML;
                 break;
-
             default:
                 throw new IllegalArgumentException("Unknown data format");
         }
@@ -84,8 +81,7 @@ public class FormatInputStream {
 
     private static InputStream addVespafeedTag(InputStream inputStream) {
         return new SequenceInputStream(Collections.enumeration(Arrays.asList(
-                new ByteArrayInputStream("<vespafeed>".getBytes()),
-                inputStream,
+                new ByteArrayInputStream("<vespafeed>".getBytes()), inputStream,
                 new ByteArrayInputStream("</vespafeed>".getBytes())))
         );
     }
