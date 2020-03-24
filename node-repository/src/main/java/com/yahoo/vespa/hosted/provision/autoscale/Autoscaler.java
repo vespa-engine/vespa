@@ -82,8 +82,7 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation = findBestAllocation(cpuLoad.get(),
                                                                                   memoryLoad.get(),
                                                                                   diskLoad.get(),
-                                                                                  currentAllocation,
-                                                                                  clusterType);
+                                                                                  currentAllocation);
         if (bestAllocation.isEmpty()) return Optional.empty();
 
         if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
@@ -96,12 +95,11 @@ public class Autoscaler {
     }
 
     private Optional<AllocatableClusterResources> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
-                                                                     AllocatableClusterResources currentAllocation,
-                                                                     ClusterSpec.Type clusterType) {
+                                                                     AllocatableClusterResources currentAllocation) {
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation); i.hasNext(); ) {
             ClusterResources allocation = i.next();
-            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(allocation, clusterType);
+            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(allocation);
             if (allocatableResources.isEmpty()) continue;
             if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
                 bestAllocation = allocatableResources;
@@ -125,9 +123,9 @@ public class Autoscaler {
      * Returns the smallest allocatable node resources larger than the given node resources,
      * or empty if none available.
      */
-    private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources,
-                                                                         ClusterSpec.Type clusterType) {
-        NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), clusterType);
+    private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources) {
+        NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(),
+                                                                        resources.clusterType());
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {

@@ -29,12 +29,12 @@ import static org.junit.Assert.assertTrue;
 public class AutoscalingTest {
 
     @Test
-    public void testAutoscalingSingleGroup() {
+    public void testAutoscalingSingleContentGroup() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         AutoscalingTester tester = new AutoscalingTester(resources);
 
         ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 5, 1, resources);
@@ -44,7 +44,7 @@ public class AutoscalingTest {
         tester.addMeasurements(Resource.cpu, 0.25f, 1f, 60, application1);
         assertTrue("Too few measurements -> No change", tester.autoscale(application1).isEmpty());
 
-        tester.addMeasurements(Resource.cpu,  0.25f, 1f, 60, application1);
+        tester.addMeasurements(Resource.cpu, 0.25f, 1f, 60, application1);
         AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
                                                                              15, 1, 1.3,  28.6, 28.6,
                                                                              tester.autoscale(application1));
@@ -63,6 +63,32 @@ public class AutoscalingTest {
         tester.addMeasurements(Resource.cpu,  0.1f, 1f, 120, application1);
         tester.assertResources("Scaling down since resource usage has gone down significantly",
                                26, 1, 0.6, 16.0, 16.0,
+                               tester.autoscale(application1));
+    }
+
+    /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
+    @Test
+    public void testAutoscalingSingleContainerGroup() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 5, 1, resources);
+
+        tester.addMeasurements(Resource.cpu, 0.25f, 1f, 120, application1);
+        AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since cpu usage is too high",
+                                                                             7, 1, 2.6,  80.0, 80.0,
+                                                                             tester.autoscale(application1));
+
+        tester.deploy(application1, cluster1, scaledResources);
+        tester.deactivateRetired(application1, cluster1, scaledResources);
+
+        tester.addMeasurements(Resource.cpu,  0.1f, 1f, 120, application1);
+        tester.assertResources("Scaling down since cpu usage has gone down",
+                               4, 1, 2.4, 68.6, 68.6,
                                tester.autoscale(application1));
     }
 
@@ -104,7 +130,7 @@ public class AutoscalingTest {
         AutoscalingTester tester = new AutoscalingTester(resources);
 
         ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 6, 1, resources);
@@ -126,7 +152,7 @@ public class AutoscalingTest {
                                                          flavors);
 
         ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy (Why 83 Gb memory? See AutoscalingTester.MockHostResourcesCalculator
         tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 103, 100, 1));
