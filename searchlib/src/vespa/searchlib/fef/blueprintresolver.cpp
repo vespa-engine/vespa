@@ -7,6 +7,7 @@
 #include <stack>
 #include <cassert>
 #include <set>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.blueprintresolver");
@@ -70,6 +71,8 @@ struct Compiler : public Blueprint::DependencyHandler {
     FeatureMap              &feature_map;
     std::set<vespalib::string> setup_set;
     std::set<vespalib::string> failed_set;
+    const char *min_stack;
+    const char *max_stack;
 
     Compiler(const BlueprintFactory &factory_in,
              const IIndexEnvironment &index_env_in,
@@ -81,8 +84,20 @@ struct Compiler : public Blueprint::DependencyHandler {
           spec_list(spec_list_out),
           feature_map(feature_map_out),
           setup_set(),
-          failed_set() {}
+          failed_set(),
+          min_stack(nullptr),
+          max_stack(nullptr) {}
     ~Compiler();
+
+    void probe_stack() {
+        const char c = 'X';
+        min_stack = (min_stack == nullptr) ? &c : std::min(min_stack, &c);
+        max_stack = (max_stack == nullptr) ? &c : std::max(max_stack, &c);
+    }
+
+    int stack_usage() const {
+        return (max_stack - min_stack);
+    }
 
     Frame &self() { return resolve_stack.back(); }
     bool failed() const { return !failed_set.empty(); }
@@ -120,6 +135,7 @@ struct Compiler : public Blueprint::DependencyHandler {
                 LOG(warning, "invalid rank feature '%s': %s\n%s", feature_name.c_str(), reason.c_str(), trace.c_str());
             }
         }
+        probe_stack();
         return FeatureRef();
     }
 
@@ -135,6 +151,7 @@ struct Compiler : public Blueprint::DependencyHandler {
                         fmt("output '%s' has wrong type: was %s, expected %s",
                             parser.output().c_str(), type_str(is_object), accept_type_str(accept_type)));
         }
+        probe_stack();
         return ref;
     }
 
@@ -165,7 +182,7 @@ struct Compiler : public Blueprint::DependencyHandler {
             return fail(feature_name, "malformed name");
         }
         if (failed_set.count(parser.featureName()) > 0) {
-            return FeatureRef();
+            return fail(parser.featureName(), "already failed");
         }
         auto old_feature = feature_map.find(parser.featureName());
         if (old_feature != feature_map.end()) {
@@ -253,14 +270,23 @@ BlueprintResolver::compile()
 {
     assert(_executorSpecs.empty()); // only one compilation allowed
     Compiler compiler(_factory, _indexEnv, _executorSpecs, _featureMap);
-    for (const auto &seed: _seeds) {
-        auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
-        if (compiler.failed()) {
-            return false;
-        }
-        _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
+    std::thread compile_thread([&]()
+                               {
+                                   compiler.probe_stack();
+                                   for (const auto &seed: _seeds) {
+                                       auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
+                                       if (compiler.failed()) {
+                                           return;
+                                       }
+                                       _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
+                                   }
+                               });
+    compile_thread.join();
+    int stack_usage = compiler.stack_usage();
+    if (stack_usage > (128 * 1024)) {
+        LOG(warning, "high stack usage: %d bytes", stack_usage);
     }
-    return true;
+    return !compiler.failed();
 }
 
 const BlueprintResolver::ExecutorSpecList &
