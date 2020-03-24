@@ -36,7 +36,7 @@ public:
                                              vespalib::tensor::TypedCells vector,
                                              uint32_t explore_k) const = 0;
 
-    virtual DistanceFunction *distance_function() const = 0;
+    virtual const DistanceFunction *distance_function() const = 0;
 };
 
 }

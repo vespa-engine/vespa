@@ -25,13 +25,13 @@ public:
         const DenseTensorView &queryTensor;
         const DenseTensorAttribute &tensorAttribute;
         NearestNeighborDistanceHeap &distanceHeap;
-        search::tensor::DistanceFunction *distanceFunction;
+        const search::tensor::DistanceFunction *distanceFunction;
         
         Params(fef::TermFieldMatchData &tfmd_in,
                const DenseTensorView &queryTensor_in,
                const DenseTensorAttribute &tensorAttribute_in,
                NearestNeighborDistanceHeap &distanceHeap_in,
-               search::tensor::DistanceFunction *distanceFunction_in)
+               const search::tensor::DistanceFunction *distanceFunction_in)
           : tfmd(tfmd_in),
             queryTensor(queryTensor_in),
             tensorAttribute(tensorAttribute_in),
@@ -50,7 +50,7 @@ public:
             const vespalib::tensor::DenseTensorView &queryTensor,
             const search::tensor::DenseTensorAttribute &tensorAttribute,
             NearestNeighborDistanceHeap &distanceHeap,
-            search::tensor::DistanceFunction *dist_fun);
+            const search::tensor::DistanceFunction *dist_fun);
 
     const Params& params() const { return _params; }
 private:

@@ -154,7 +154,7 @@ public:
     void trim_hold_lists(generation_t first_used_gen) override;
     vespalib::MemoryUsage memory_usage() const override;
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
-    DistanceFunction *distance_function() const override { return _distance_func.get(); }
+    const DistanceFunction *distance_function() const override { return _distance_func.get(); }
 
     FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
 

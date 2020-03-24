@@ -112,7 +112,7 @@ NearestNeighborIterator::create(
         const vespalib::tensor::DenseTensorView &queryTensor,
         const search::tensor::DenseTensorAttribute &tensorAttribute,
         NearestNeighborDistanceHeap &distanceHeap,
-        search::tensor::DistanceFunction *dist_fun)
+        const search::tensor::DistanceFunction *dist_fun)
 
 {
     Params params(tfmd, queryTensor, tensorAttribute, distanceHeap, dist_fun);

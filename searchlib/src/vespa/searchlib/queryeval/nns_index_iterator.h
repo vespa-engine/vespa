@@ -16,7 +16,7 @@ public:
     static std::unique_ptr<NnsIndexIterator> create(
             fef::TermFieldMatchData &tfmd,
             const std::vector<Hit> &hits,
-            search::tensor::DistanceFunction *dist_fun);
+            const search::tensor::DistanceFunction *dist_fun);
 };
 
 } // namespace

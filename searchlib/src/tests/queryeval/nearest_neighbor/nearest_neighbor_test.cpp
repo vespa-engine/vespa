@@ -104,7 +104,7 @@ struct Fixture
         setTensor(docId, *t);
     }
 
-    DistanceFunction *dist_fun() const {
+    const DistanceFunction *dist_fun() const {
         if (_cfg.tensorType().cell_type() == CellType::FLOAT) {
             return euclid_f.get();
         } else {

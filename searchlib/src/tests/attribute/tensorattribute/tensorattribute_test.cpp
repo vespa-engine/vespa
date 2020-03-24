@@ -149,7 +149,7 @@ public:
         return std::vector<Neighbor>();
     }
     
-    search::tensor::DistanceFunction *distance_function() const override { return nullptr; }
+    const search::tensor::DistanceFunction *distance_function() const override { return nullptr; }
 };
 
 class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {

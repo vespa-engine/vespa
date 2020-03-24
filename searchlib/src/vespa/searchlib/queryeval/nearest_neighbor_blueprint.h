@@ -25,7 +25,7 @@ private:
     bool _approximate;
     uint32_t _explore_additional_hits;
     search::tensor::DistanceFunction::UP _fallback_dist_fun;
-    search::tensor::DistanceFunction *_dist_fun;
+    const search::tensor::DistanceFunction *_dist_fun;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
 
