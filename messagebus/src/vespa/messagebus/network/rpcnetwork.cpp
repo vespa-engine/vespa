@@ -130,6 +130,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
 {
     _transport->SetMaxInputBufferSize(params.getMaxInputBufferSize());
     _transport->SetMaxOutputBufferSize(params.getMaxOutputBufferSize());
+    _transport->SetTCPNoDelay(false);
 }
 
 RPCNetwork::~RPCNetwork()
@@ -306,8 +307,8 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
                      make_string("Failed to connect to service '%s' from host '%s'.",
                                  serviceName.c_str(), getIdentity().getHostname().c_str()));
     }
-    ret->setTarget(target); // free by freeServiceAddress()
-    recipient.setServiceAddress(IServiceAddress::UP(ret.release()));
+    ret->setTarget(std::move(target)); // free by freeServiceAddress()
+    recipient.setServiceAddress(std::move(ret));
     return Error();
 }
 

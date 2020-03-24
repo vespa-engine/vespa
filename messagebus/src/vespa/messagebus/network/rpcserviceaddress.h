@@ -84,7 +84,7 @@ public:
      *
      * @return True if target is set.
      */
-    bool hasTarget() const { return _target.get() != nullptr; }
+    bool hasTarget() const { return bool(_target); }
 };
 
 } // namespace mbus
