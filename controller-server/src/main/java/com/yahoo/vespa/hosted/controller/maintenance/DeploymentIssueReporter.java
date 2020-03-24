@@ -33,7 +33,7 @@ public class DeploymentIssueReporter extends Maintainer {
 
     static final Duration maxFailureAge = Duration.ofDays(2);
     static final Duration maxInactivity = Duration.ofDays(4);
-    static final Duration upgradeGracePeriod = Duration.ofHours(4);
+    static final Duration upgradeGracePeriod = Duration.ofHours(2);
 
     private final DeploymentIssues deploymentIssues;
 
