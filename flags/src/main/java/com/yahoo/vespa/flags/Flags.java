@@ -176,7 +176,7 @@ public class Flags {
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
     public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION = defineStringFlag(
-            "tls-for-zookeeper-quorum-communication", "TLS_WITH_PORT_UNIFICATION",
+            "tls-for-zookeeper-quorum-communication", "OFF",
             "How to setup TLS for ZooKeeper quorum communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
             "Takes effect on restart of config server",
             NODE_TYPE, HOSTNAME);
