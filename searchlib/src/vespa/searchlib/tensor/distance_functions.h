@@ -99,6 +99,7 @@ public:
         auto rhs_vector = rhs.typify<FloatType>();
         assert(2 == lhs_vector.size());
         assert(2 == rhs_vector.size());
+        // convert to radians:
         double lat_A = lhs_vector[0] * M_PI / 180.0;
         double lat_B = rhs_vector[0] * M_PI / 180.0;
         double lon_A = lhs_vector[1] * M_PI / 180.0;
@@ -107,18 +108,22 @@ public:
         double lat_diff = lat_A - lat_B;
         double lon_diff = lon_A - lon_B;
 
-        double sin_half_lat_diff = sin(0.5 * lat_diff);
-        double sin_half_lon_diff = sin(0.5 * lon_diff);
+        // sines of half of differences:
+        double sin_half_lat = sin(0.5 * lat_diff);
+        double sin_half_lon = sin(0.5 * lon_diff);
 
-        double sq_lat_sin = sin_half_lat_diff*sin_half_lat_diff;
-        double sq_lon_sin = sin_half_lon_diff*sin_half_lon_diff;
+        // haversines of differences:
+        double hav_lat = sin_half_lat*sin_half_lat;
+        double hav_lon = sin_half_lon*sin_half_lon;
 
-        double sq_hav_diff = sq_lat_sin + cos(lat_A)*cos(lat_B)*sq_lon_sin;
-        return sq_hav_diff;
+        // haversine of central angle between the two points:
+        double hav_central_angle = hav_lat + cos(lat_A)*cos(lat_B)*hav_lon;
+        return hav_central_angle;
     }
     double to_rawscore(double distance) const override {
         double hav_diff = sqrt(distance);
-        double d = 2 * asin(hav_diff) * 180.0 / M_PI;
+        // distance in meters:
+        double d = 2 * asin(hav_diff) * 6371008.8; // Earth mean radius
         return 1.0 / (1.0 + d);
     }
     double calc_with_limit(const vespalib::tensor::TypedCells& lhs,
