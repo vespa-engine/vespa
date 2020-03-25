@@ -245,7 +245,7 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DCMAKE_PREFIX_PATH=%{_vespa_deps_prefix} \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
        -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
-       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/jre-11-openjdk/lib" \
+       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}}" \
        %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
        -DVESPA_USER=%{_vespa_user} \
        -DVESPA_UNPRIVILEGED=no \
@@ -268,6 +268,8 @@ mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/system
 %endif
+
+ln -s /usr/lib/jvm/jre-11-openjdk %{buildroot}/%{_prefix}/jdk
 
 %clean
 rm -rf $RPM_BUILD_ROOT
