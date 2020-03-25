@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.pig;
 
+import com.google.gson.JsonArray;
 import org.apache.pig.data.*;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
@@ -10,6 +11,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -18,7 +20,6 @@ import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("serial")
 public class VespaDocumentOperationTest {
-
     @Test
     public void requireThatUDFReturnsCorrectJson() throws Exception {
         String json = getDocumentOperationJson("docid=id:<application>:metrics::<name>-<date>");
@@ -83,6 +84,170 @@ public class VespaDocumentOperationTest {
         assertNull(json);
     }
 
+
+    @Test
+    public void requireThatUDFCorrectlyGeneratesRemoveBagAsMapOperation() throws Exception {
+
+        DataBag bag = BagFactory.getInstance().newDefaultBag();
+
+        Schema innerObjectSchema = new Schema();
+        Tuple innerObjectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("year", DataType.CHARARRAY, "2020", innerObjectSchema, innerObjectTuple);
+        addToTuple("month", DataType.INTEGER, 3, innerObjectSchema, innerObjectTuple);
+
+        Schema objectSchema = new Schema();
+        Tuple objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "234566", objectSchema, objectTuple);
+        addToTuple("value", DataType.TUPLE, innerObjectTuple,innerObjectSchema,objectSchema, objectTuple);
+
+        Schema bagSchema = new Schema();
+        addToBagWithSchema("firstLayerTuple",DataType.TUPLE,objectTuple,objectSchema,bagSchema,bag);
+
+        innerObjectSchema = new Schema();
+        innerObjectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("year", DataType.CHARARRAY, "2020", innerObjectSchema, innerObjectTuple);
+        addToTuple("month", DataType.INTEGER, 3, innerObjectSchema, innerObjectTuple);
+
+        objectSchema = new Schema();
+        objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "123456", objectSchema, objectTuple);
+        addToTuple("value", DataType.TUPLE, innerObjectTuple,innerObjectSchema,objectSchema, objectTuple);
+
+        addToBagWithSchema("firstLayerTuple",DataType.TUPLE,objectTuple,objectSchema,bagSchema,bag);
+
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+        addToTuple("bag", DataType.BAG, bag, bagSchema, schema, tuple);
+        addToTuple("id", DataType.CHARARRAY, "123", schema, tuple);
+
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=id", "remove-bag-as-map-fields=bag","operation=update");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        ObjectMapper m = new ObjectMapper();
+        JsonNode root = m.readTree(json);
+        JsonNode fields = root.get("fields");
+        assertEquals("{\"remove\":0}", fields.get("bag{123456}").toString());
+        assertEquals("{\"remove\":0}", fields.get("bag{234566}").toString());
+
+    }
+
+    @Test
+    public void requireThatUDFCorrectlyGeneratesAddBagAsMapOperation() throws Exception {
+
+        DataBag bag = BagFactory.getInstance().newDefaultBag();
+
+        Schema innerObjectSchema = new Schema();
+        Tuple innerObjectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("year", DataType.CHARARRAY, "2020", innerObjectSchema, innerObjectTuple);
+        addToTuple("month", DataType.INTEGER, 3, innerObjectSchema, innerObjectTuple);
+
+        Schema objectSchema = new Schema();
+        Tuple objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "123456", objectSchema, objectTuple);
+        addToTuple("value", DataType.TUPLE, innerObjectTuple,innerObjectSchema,objectSchema, objectTuple);
+
+        Schema bagSchema = new Schema();
+        addToBagWithSchema("firstLayerTuple",DataType.TUPLE,objectTuple,objectSchema,bagSchema,bag);
+
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+        addToTuple("bag", DataType.BAG, bag, bagSchema, schema, tuple);
+        addToTuple("id", DataType.CHARARRAY, "123", schema, tuple);
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=id", "add-bag-as-map-fields=bag","operation=update");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        ObjectMapper m = new ObjectMapper();
+        JsonNode root = m.readTree(json);
+
+        JsonNode fields = root.get("fields");
+        JsonNode value = fields.get("bag{123456}");
+        JsonNode assign = value.get("assign");
+        assertEquals("2020", assign.get("year").getTextValue());
+        assertEquals(3, assign.get("month").getIntValue());
+    }
+
+    @Test
+    public void requireThatUDFCorrectlyGeneratesAddTensorOperation() throws Exception {
+
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+
+        // Please refer to the tensor format documentation
+
+        Map<String, Double> tensor = new HashMap<String, Double>() {{
+            put("x:label1,y:label2,z:label4", 2.0);
+            put("x:label3", 3.0);
+        }};
+
+        addToTuple("id", DataType.CHARARRAY, "123", schema, tuple);
+        addToTuple("tensor", DataType.MAP, tensor, schema, tuple);
+
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=empty", "add-tensor-fields=tensor","operation=update");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        ObjectMapper m = new ObjectMapper();
+        JsonNode root = m.readTree(json);
+        JsonNode fields = root.get("fields");
+        JsonNode tensorValue = fields.get("tensor");
+        JsonNode add = tensorValue.get("add");
+        JsonNode cells = add.get("cells");
+        Iterator<JsonNode> cellsIterator = cells.getElements();
+
+        JsonNode element = cellsIterator.next();
+        assertEquals("label1", element.get("address").get("x").getTextValue());
+        assertEquals("label2", element.get("address").get("y").getTextValue());
+        assertEquals("label4", element.get("address").get("z").getTextValue());
+        assertEquals("2.0", element.get("value").toString());
+
+        element = cellsIterator.next();
+        assertEquals("label3", element.get("address").get("x").getTextValue());
+        assertEquals("3.0", element.get("value").toString());
+    }
+
+    @Test
+    public void requireThatUDFCorrectlyGeneratesRemoveTensorOperation() throws Exception {
+
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+
+        // Please refer to the tensor format documentation
+
+        Map<String, Double> tensor = new HashMap<String, Double>() {{
+            put("x:label1,y:label2,z:label4", 2.0);
+            put("x:label3", 3.0);
+        }};
+
+        addToTuple("id", DataType.CHARARRAY, "123", schema, tuple);
+        addToTuple("tensor", DataType.MAP, tensor, schema, tuple);
+
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=empty", "remove-tensor-fields=tensor","operation=update");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        ObjectMapper m = new ObjectMapper();
+        JsonNode root = m.readTree(json);
+        JsonNode fields = root.get("fields");
+        JsonNode tensorValue = fields.get("tensor");
+        JsonNode remove = tensorValue.get("remove");
+        JsonNode address = remove.get("address");
+
+        Iterator<JsonNode> addressIterator = address.getElements();
+
+        JsonNode element = addressIterator.next();
+        assertEquals("label1", element.get("x").getTextValue());
+
+        element = addressIterator.next();
+        assertEquals("label2", element.get("y").getTextValue());
+
+        element = addressIterator.next();
+        assertEquals("label4", element.get("z").getTextValue());
+
+        element = addressIterator.next();
+        assertEquals("label3", element.get("x").getTextValue());
+    }
 
     @Test
     public void requireThatUDFCorrectlyGeneratesRemoveOperation() throws Exception {
@@ -367,5 +532,11 @@ public class VespaDocumentOperationTest {
             throws FrontendException {
         schema.add(new Schema.FieldSchema(alias, schemaInField, type));
         tuple.append(value);
+    }
+
+    private void addToBagWithSchema(String alias, byte type, Tuple value, Schema schemaInField, Schema schema,DataBag bag)
+            throws FrontendException {
+        schema.add(new Schema.FieldSchema(alias, schemaInField, type));
+        bag.add(value);
     }
 }

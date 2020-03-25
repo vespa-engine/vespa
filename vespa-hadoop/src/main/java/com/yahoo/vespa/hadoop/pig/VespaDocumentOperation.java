@@ -68,10 +68,18 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     private static final String SIMPLE_ARRAY_FIELDS = "simple-array-fields";
     private static final String SIMPLE_OBJECT_FIELDS = "simple-object-fields";
     private static final String CREATE_TENSOR_FIELDS = "create-tensor-fields";
+    private static final String REMOVE_TENSOR_FIELDS = "remove-tensor-fields";
+    private static final String ADD_TENSOR_FIELDS = "add-tensor-fields";
+    private static final String REMOVE_BAG_AS_MAP_FIELDS = "remove-bag-as-map-fields";
+    private static final String ADD_BAG_AS_MAP_FIELDS = "add-bag-as-map-fields";
     private static final String EXCLUDE_FIELDS = "exclude-fields";
     private static final String TESTSET_CONDITION = "condition";
 
+
     private static final String PARTIAL_UPDATE_ASSIGN = "assign";
+    private static final String PARTIAL_UPDATE_ADD = "add";
+    private static final String PARTIAL_UPDATE_REMOVE = "remove";
+
 
     private final String template;
     private final Operation operation;
@@ -107,7 +115,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             Schema inputSchema = getInputSchema();
             Map<String, Object> fields = TupleTools.tupleMap(inputSchema, tuple);
             String docId = TupleTools.toString(fields, template);
-
+            System.out.println(docId);
             // create json
             json = create(operation, docId, fields, properties, inputSchema);
             if (json == null || json.length() == 0) {
@@ -182,12 +190,47 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     @SuppressWarnings("unchecked")
     private static void writeField(String name, Object value, Byte type, JsonGenerator g, Properties properties, Schema schema, Operation op, int depth) throws IOException {
         if (shouldWriteField(name, properties, depth)) {
-            g.writeFieldName(name);
-            if (shouldWritePartialUpdate(op, depth)) {
-                writePartialUpdate(value, type, g, name, properties, schema, op, depth);
-            } else {
-                writeValue(value, type, g, name, properties, schema, op, depth);
+            if (isPartialOperation(REMOVE_BAG_AS_MAP_FIELDS, name, properties, g, PARTIAL_UPDATE_REMOVE, false) ||
+                    isPartialOperation(ADD_BAG_AS_MAP_FIELDS, name, properties, g, PARTIAL_UPDATE_ASSIGN, false)){
+                schema = (schema != null) ? schema.getField(0).schema : null;
+                // extract the key of map and keys in map for writing json when partial updating maps
+                Schema valueSchema = (schema != null) ? schema.getField(1).schema : null;
+                // data format  { ( key; id, value: (abc,123,(123234,bbaa))) }
+                // the first element of each tuple in the bag will be the map to update
+                // the second element of each tuple in the bag will be the new value of the map
+                DataBag bag = (DataBag) value;
+                for (Tuple element : bag) {
+                    if (element.size() != 2) {
+                        continue;
+                    }
+                    String k = (String) element.get(0);
+                    Object v = element.get(1);
+                    Byte t = DataType.findType(v);
+                    if (t == DataType.TUPLE) {
+                        g.writeFieldName(name + "{" + k + "}");
+                        if (isPartialOperation(REMOVE_BAG_AS_MAP_FIELDS, name, properties, g, PARTIAL_UPDATE_REMOVE, false)) {
+                            g.writeStartObject();
+                            g.writeFieldName(PARTIAL_UPDATE_REMOVE);
+                            g.writeNumber(0);
+                            g.writeEndObject();
+                        }else{
+                            if (shouldWritePartialUpdate(op, depth)) {
+                                writePartialUpdate(v, t, g, name, properties, valueSchema, op, depth+1);
+                            } else {
+                                writeValue(v, t, g, name, properties, valueSchema, op, depth+1);
+                            }
+                        }
+                    }
+                }
+            }else{
+                g.writeFieldName(name);
+                if (shouldWritePartialUpdate(op, depth)) {
+                    writePartialUpdate(value, type, g, name, properties, schema, op, depth);
+                } else {
+                    writeValue(value, type, g, name, properties, schema, op, depth);
+                }
             }
+
         }
     }
 
@@ -235,7 +278,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
                 g.writeStartObject();
                 Map<Object, Object> map = (Map<Object, Object>) value;
                 if (shouldCreateTensor(map, name, properties)) {
-                    writeTensor(map, g);
+                    writeTensor(map, g, isRemoveTensor(name, properties));
                 } else {
                     for (Map.Entry<Object, Object> entry : map.entrySet()) {
                         String k = entry.getKey().toString();
@@ -269,7 +312,6 @@ public class VespaDocumentOperation extends EvalFunc<String> {
                 DataBag bag = (DataBag) value;
                 // get the schema of the tuple in bag
                 schema = (schema != null) ? schema.getField(0).schema : null;
-
                 if (shouldWriteBagAsMap(name, properties)) {
                     // when treating bag as map, the schema of bag should be {(key, val)....}
                     // the size of tuple in bag should be 2. 1st one is key. 2nd one is val.
@@ -285,9 +327,9 @@ public class VespaDocumentOperation extends EvalFunc<String> {
                         Byte t = DataType.findType(v);
                         if (t == DataType.TUPLE) {
                             Map<String, Object> fields = TupleTools.tupleMap(valueSchema, (Tuple) v);
-                            writeField(k, fields, DataType.MAP, g, properties, valueSchema, op, depth);
+                            writeField(k, fields, DataType.MAP, g, properties, valueSchema, op, depth+1);
                         } else {
-                            writeField(k, v, t, g, properties, valueSchema, op, depth);
+                            writeField(k, v, t, g, properties, valueSchema, op, depth+1);
                         }
                     }
                     g.writeEndObject();
@@ -309,9 +351,32 @@ public class VespaDocumentOperation extends EvalFunc<String> {
 
     private static void writePartialUpdate(Object value, Byte type, JsonGenerator g, String name, Properties properties, Schema schema, Operation op, int depth) throws IOException {
         g.writeStartObject();
-        g.writeFieldName(PARTIAL_UPDATE_ASSIGN); // TODO: lookup field name in a property to determine correct operation
+        // look up which operation to do by checking names and their respected properties
+        if (!isPartialOperation(REMOVE_TENSOR_FIELDS, name, properties, g, PARTIAL_UPDATE_REMOVE, true)
+        && !isPartialOperation(REMOVE_BAG_AS_MAP_FIELDS, name, properties, g, PARTIAL_UPDATE_REMOVE, true)
+                && !isPartialOperation(ADD_TENSOR_FIELDS, name, properties, g, PARTIAL_UPDATE_ADD, true)) {
+            g.writeFieldName(PARTIAL_UPDATE_ASSIGN);
+        }
         writeValue(value, type, g, name, properties, schema, op, depth);
         g.writeEndObject();
+
+
+    }
+
+    private static boolean isPartialOperation(String label, String name, Properties properties, JsonGenerator g, String targetOperation, boolean writeFieldName) throws IOException{
+        // when dealing with partial update operations, write the desired operation
+        // writeFieldName decides if a field name should be written when checking
+        boolean isPartialOperation = false;
+        if (properties.getProperty(label) != null) {
+            String[] p = properties.getProperty(label).split(",");
+            if (Arrays.asList(p).contains(name)) {
+                if (writeFieldName) {
+                    g.writeFieldName(targetOperation);
+                }
+                isPartialOperation = true;
+            }
+        }
+        return isPartialOperation;
     }
 
     private static boolean shouldWriteTupleStart(Tuple tuple, String name, Properties properties) {
@@ -335,20 +400,37 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     }
 
     private static boolean shouldWriteTupleAsMap(String name, Properties properties) {
+        // include ADD_BAG_AS_MAP_FIELDS here because when updating the map
+        // the second element in each tuple should be written as a map
         if (properties == null) {
             return false;
         }
+        String addBagAsMapFields = properties.getProperty(ADD_BAG_AS_MAP_FIELDS);
         String simpleObjectFields = properties.getProperty(SIMPLE_OBJECT_FIELDS);
-        if (simpleObjectFields == null) {
+        if (simpleObjectFields == null && addBagAsMapFields == null) {
             return false;
         }
-        if (simpleObjectFields.equals("*")) {
-            return true;
-        }
-        String[] fields = simpleObjectFields.split(",");
-        for (String field : fields) {
-            if (field.trim().equalsIgnoreCase(name)) {
+        if (addBagAsMapFields != null){
+            if (addBagAsMapFields.equals("*")) {
                 return true;
+            }
+            String[] fields = addBagAsMapFields.split(",");
+            for (String field : fields) {
+                if (field.trim().equalsIgnoreCase(name)) {
+                    return true;
+                }
+            }
+
+        }
+        if(simpleObjectFields != null){
+                if (simpleObjectFields.equals("*")) {
+                return true;
+            }
+            String[] fields = simpleObjectFields.split(",");
+            for (String field : fields) {
+                if (field.trim().equalsIgnoreCase(name)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -378,11 +460,50 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         if (properties == null) {
             return false;
         }
-        String tensorFields = properties.getProperty(CREATE_TENSOR_FIELDS);
-        if (tensorFields == null) {
+        String createTensorFields = properties.getProperty(CREATE_TENSOR_FIELDS);
+        String addTensorFields = properties.getProperty(ADD_TENSOR_FIELDS);
+        String removeTensorFields = properties.getProperty(REMOVE_TENSOR_FIELDS);
+
+        if (createTensorFields == null && addTensorFields == null && removeTensorFields == null) {
             return false;
         }
-        String[] fields = tensorFields.split(",");
+        String[] fields;
+        if (createTensorFields != null) {
+            fields = createTensorFields.split(",");
+            for (String field : fields) {
+                if (field.trim().equalsIgnoreCase(name)) {
+                    return true;
+                }
+            }
+        }
+        if (addTensorFields != null) {
+            fields = addTensorFields.split(",");
+            for (String field : fields) {
+                if (field.trim().equalsIgnoreCase(name)) {
+                    return true;
+                }
+            }
+        }
+        if (removeTensorFields != null) {
+            fields = removeTensorFields.split(",");
+            for (String field : fields) {
+                if (field.trim().equalsIgnoreCase(name)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isRemoveTensor(String name, Properties properties){
+        if (properties == null) {
+            return false;
+        }
+        String removeTensorFields = properties.getProperty(REMOVE_TENSOR_FIELDS);
+        if (removeTensorFields == null) {
+            return false;
+        }
+        String[] fields = removeTensorFields.split(",");
         for (String field : fields) {
             if (field.trim().equalsIgnoreCase(name)) {
                 return true;
@@ -408,45 +529,72 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         return true;
     }
 
-    private static void writeTensor(Map<Object, Object> map, JsonGenerator g) throws IOException {
-        g.writeFieldName("cells");
+    private static void writeTensor(Map<Object, Object> map, JsonGenerator g, Boolean isRemoveTensor) throws IOException {
+        if (!isRemoveTensor){
+            g.writeFieldName("cells");
+        }else{
+            g.writeFieldName("address");
+        }
         g.writeStartArray();
         for (Map.Entry<Object, Object> entry : map.entrySet()) {
             String k = entry.getKey().toString();
             Double v = Double.parseDouble(entry.getValue().toString());
 
-            g.writeStartObject();
-
             // Write address
-            g.writeFieldName("address");
-            g.writeStartObject();
+            if (!isRemoveTensor){
 
-            String[] dimensions = k.split(",");
-            for (String dimension : dimensions) {
-                if (dimension == null || dimension.isEmpty()) {
-                    continue;
+                g.writeStartObject();
+
+                g.writeFieldName("address");
+                g.writeStartObject();
+
+                String[] dimensions = k.split(",");
+                for (String dimension : dimensions) {
+                    if (dimension == null || dimension.isEmpty()) {
+                        continue;
+                    }
+                    String[] address = dimension.split(":");
+                    if (address.length != 2) {
+                        throw new IllegalArgumentException("Malformed cell address: " + dimension);
+                    }
+                    String dim = address[0];
+                    String label = address[1];
+                    if (dim == null || label == null || dim.isEmpty() || label.isEmpty()) {
+                        throw new IllegalArgumentException("Malformed cell address: " + dimension);
+                    }
+                    g.writeFieldName(dim.trim());
+                    g.writeString(label.trim());
                 }
-                String[] address = dimension.split(":");
-                if (address.length != 2) {
-                    throw new IllegalArgumentException("Malformed cell address: " + dimension);
+                g.writeEndObject();
+
+                // Write value
+                g.writeFieldName("value");
+                g.writeNumber(v);
+
+                g.writeEndObject();
+
+            }else{
+                String[] dimensions = k.split(",");
+                for (String dimension : dimensions) {
+                    g.writeStartObject();
+                    if (dimension == null || dimension.isEmpty()) {
+                        continue;
+                    }
+                    String[] address = dimension.split(":");
+                    if (address.length != 2) {
+                        throw new IllegalArgumentException("Malformed cell address: " + dimension);
+                    }
+                    String dim = address[0];
+                    String label = address[1];
+                    if (dim == null || label == null || dim.isEmpty() || label.isEmpty()) {
+                        throw new IllegalArgumentException("Malformed cell address: " + dimension);
+                    }
+                    g.writeFieldName(dim.trim());
+                    g.writeString(label.trim());
+                    g.writeEndObject();
                 }
-                String dim = address[0];
-                String label = address[1];
-                if (dim == null || label == null || dim.isEmpty() || label.isEmpty()) {
-                    throw new IllegalArgumentException("Malformed cell address: " + dimension);
-                }
-                g.writeFieldName(dim.trim());
-                g.writeString(label.trim());
             }
-            g.writeEndObject();
-
-            // Write value
-            g.writeFieldName("value");
-            g.writeNumber(v);
-
-            g.writeEndObject();
         }
         g.writeEndArray();
     }
-
 }
