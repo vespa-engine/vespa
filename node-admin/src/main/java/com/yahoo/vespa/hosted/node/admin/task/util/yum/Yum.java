@@ -118,25 +118,25 @@ public class Yum {
         //       - "Nothing to do"
         //     And in case we need to downgrade and return true from converge()
 
-        CommandLine commandLine = terminal.newCommandLine(context).add("yum", "install");
-        for (String repo : repos) commandLine.add("--enablerepo=", repo);
-        commandLine.add("--assumeyes", yumPackage.toName());
+        var installCommand = terminal.newCommandLine(context).add("yum", "install");
+        for (String repo : repos) installCommand.add("--enablerepo=" + repo);
+        installCommand.add("--assumeyes", yumPackage.toName());
 
-        String output = commandLine.executeSilently().getUntrimmedOutput();
+        String output = installCommand.executeSilently().getUntrimmedOutput();
 
         if (NOTHING_TO_DO_PATTERN.matcher(output).find()) {
             if (CHECKING_FOR_UPDATE_PATTERN.matcher(output).find()) {
                 // case 3.
-                terminal.newCommandLine(context)
-                        .add("yum", "downgrade", "--assumeyes", yumPackage.toName())
-                        .execute();
+                var upgradeCommand = terminal.newCommandLine(context).add("yum", "downgrade", "--assumeyes");
+                for (String repo : repos) upgradeCommand.add("--enablerepo=" + repo);
+                upgradeCommand.add(yumPackage.toName()).execute();
                 modified = true;
             } else {
                 // case 2.
             }
         } else {
             // case 1.
-            commandLine.recordSilentExecutionAsSystemModification();
+            installCommand.recordSilentExecutionAsSystemModification();
             modified = true;
         }
 
