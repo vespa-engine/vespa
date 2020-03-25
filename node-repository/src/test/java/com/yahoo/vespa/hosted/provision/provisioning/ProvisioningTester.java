@@ -127,19 +127,19 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, boolean required, NodeResources resources) {
-        return prepare(application, cluster, Capacity.fromCount(nodeCount, Optional.ofNullable(resources), required, true), groups);
+        return prepare(application, cluster, Capacity.fromCount(nodeCount, groups, Optional.ofNullable(resources), required, true));
     }
 
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {
-        return prepare(application, cluster, capacity, groups, true);
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
+        return prepare(application, cluster, capacity, true);
     }
 
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups, boolean idempotentPrepare) {
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, boolean idempotentPrepare) {
         Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));
-        List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, groups, provisionLogger);
+        List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, provisionLogger);
         if (idempotentPrepare) { // prepare twice to ensure idempotence
-            List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, groups, provisionLogger);
+            List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, provisionLogger);
             assertEquals(hosts1, hosts2);
         }
         Set<String> newlyActivated = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
@@ -160,7 +160,7 @@ public class ProvisioningTester {
     public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString())).vespaVersion(version).build();
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
-        List<HostSpec> hostSpecs = prepare(application, cluster, capacity, 1, true);
+        List<HostSpec> hostSpecs = prepare(application, cluster, capacity, true);
         activate(application, hostSpecs);
     }
 
@@ -333,11 +333,9 @@ public class ProvisioningTester {
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
 
         ConfigServerApplication application = new ConfigServerApplication();
-        List<HostSpec> hosts = prepare(
-                application.getApplicationId(),
-                application.getClusterSpecWithVersion(configServersVersion),
-                application.getCapacity(),
-                1);
+        List<HostSpec> hosts = prepare(application.getApplicationId(),
+                                       application.getClusterSpecWithVersion(configServersVersion),
+                                       application.getCapacity());
         activate(application.getApplicationId(), new HashSet<>(hosts));
         return nodeRepository.getNodes(application.getApplicationId(), Node.State.active);
     }
@@ -409,9 +407,8 @@ public class ProvisioningTester {
     public void deployZoneApp() {
         ApplicationId applicationId = makeApplicationId();
         List<HostSpec> list = prepare(applicationId,
-                                             ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build(),
-                                             Capacity.fromRequiredNodeType(NodeType.host),
-                                             1);
+                                      ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build(),
+                                      Capacity.fromRequiredNodeType(NodeType.host));
         activate(applicationId, Set.copyOf(list));
     }
 
@@ -420,7 +417,7 @@ public class ProvisioningTester {
     }
 
     public List<Node> deploy(ApplicationId application, Capacity capacity) {
-        List<HostSpec> prepared = prepare(application, clusterSpec(), capacity, 1);
+        List<HostSpec> prepared = prepare(application, clusterSpec(), capacity);
         activate(application, Set.copyOf(prepared));
         return getNodes(application, Node.State.active).asList();
     }

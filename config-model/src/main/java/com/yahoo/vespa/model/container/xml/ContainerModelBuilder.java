@@ -673,10 +673,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                          .dockerImageRepo(deployState.getWantedDockerImageRepo())
                                                          .build();
                     Capacity capacity = Capacity.fromCount(1,
+                                                           1,
                                                            Optional.empty(),
                                                            false,
                                                            ! deployState.getProperties().isBootstrap());
-                    HostResource host = hostSystem.allocateHosts(clusterSpec, capacity, 1, log).keySet().iterator().next();
+                    HostResource host = hostSystem.allocateHosts(clusterSpec, capacity, log).keySet().iterator().next();
                     return singleHostContainerCluster(cluster, host, context);
                 }
             }
@@ -688,10 +689,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                  .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
             Capacity capacity = Capacity.fromCount(nodeCount,
+                                                   1,
                                                    Optional.empty(),
                                                    false,
                                                    !deployState.getProperties().isBootstrap());
-            var hosts = hostSystem.allocateHosts(clusterSpec, capacity, 1, log);
+            var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
             return createNodesFromHosts(log, hosts, cluster);
         }
         return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
@@ -721,7 +723,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .build();
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
-                                                             Capacity.fromRequiredNodeType(type), 1, log);
+                                                             Capacity.fromRequiredNodeType(type), log);
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
     

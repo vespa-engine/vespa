@@ -89,17 +89,17 @@ public class NodeFailTester {
         // Create applications
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-        Capacity capacity1 = Capacity.fromCount(5, nodeResources, false, true);
-        Capacity capacity2 = Capacity.fromCount(7, nodeResources, false, true);
+        Capacity capacity1 = Capacity.fromCount(5, 1, nodeResources, false, true);
+        Capacity capacity2 = Capacity.fromCount(7, 1, nodeResources, false, true);
 
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
-        assertEquals(capacity1.nodeCount(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
-        assertEquals(capacity2.nodeCount(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
+        assertEquals(capacity1.nodes(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
+        assertEquals(capacity2.nodes(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
-                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1, 1),
-                app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2, 1));
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
+                app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
@@ -122,20 +122,20 @@ public class NodeFailTester {
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.75.0").build();
         ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.75.0").build();
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
-        Capacity capacity1 = Capacity.fromCount(3, new NodeResources(1, 4, 10, 0.3), false, true);
-        Capacity capacity2 = Capacity.fromCount(5, new NodeResources(1, 4, 10, 0.3), false, true);
+        Capacity capacity1 = Capacity.fromCount(3, 1, new NodeResources(1, 4, 10, 0.3), false, true);
+        Capacity capacity2 = Capacity.fromCount(5, 1, new NodeResources(1, 4, 10, 0.3), false, true);
         tester.activate(tenantHostApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
         assertEquals(Set.of(tester.nodeRepository.getNodes(NodeType.host)),
                 Set.of(tester.nodeRepository.getNodes(tenantHostApp, Node.State.active)));
-        assertEquals(capacity1.nodeCount(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
-        assertEquals(capacity2.nodeCount(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
+        assertEquals(capacity1.nodes(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
+        assertEquals(capacity2.nodes(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
-                tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts, 1),
-                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1, 1),
-                app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2, 1));
+                tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts),
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
+                app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
@@ -154,7 +154,7 @@ public class NodeFailTester {
         assertEquals(count, tester.nodeRepository.getNodes(nodeType, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
-                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allNodes, 1));
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allNodes));
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
@@ -252,7 +252,7 @@ public class NodeFailTester {
     }
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
-        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, 1, null);
+        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, hosts);
         transaction.commit();

@@ -201,7 +201,7 @@ public class NodesSpecification {
                 .combinedId(combinedId.map(ClusterSpec.Id::from))
                 .dockerImageRepo(dockerImageRepo)
                 .build();
-        return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
+        return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, groups, resources, required, canFail), logger);
     }
 
     private static Optional<NodeResources> getResources(ModelElement nodesElement) {

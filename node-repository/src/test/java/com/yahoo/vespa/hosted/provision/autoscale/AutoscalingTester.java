@@ -82,7 +82,7 @@ class AutoscalingTester {
     }
 
     public List<HostSpec> deploy(ApplicationId application, ClusterSpec cluster, int nodes, int groups, NodeResources resources) {
-        List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.fromCount(nodes, resources), groups);
+        List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.fromCount(nodes, groups, resources));
         for (HostSpec host : hosts)
             makeReady(host.hostname());
         provisioningTester.deployZoneApp();

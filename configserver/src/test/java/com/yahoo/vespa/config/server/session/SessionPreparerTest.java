@@ -342,7 +342,13 @@ public class SessionPreparerTest {
     private static class FailWithTransientExceptionProvisioner implements Provisioner {
 
         @Override
+        @Deprecated // TODO: Remove after April 2020
         public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
+            throw new LoadBalancerServiceException("Unable to create load balancer", new Exception("some internal exception"));
+        }
+
+        @Override
+        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
             throw new LoadBalancerServiceException("Unable to create load balancer", new Exception("some internal exception"));
         }
 

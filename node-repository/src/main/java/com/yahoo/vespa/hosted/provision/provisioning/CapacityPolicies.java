@@ -32,7 +32,7 @@ public class CapacityPolicies {
     }
 
     public int decideSize(Capacity capacity, ClusterSpec cluster, ApplicationId application) {
-        int requestedNodes = capacity.nodeCount();
+        int requestedNodes = capacity.nodes();
 
         if (application.instance().isTester()) return 1;
 
@@ -42,7 +42,7 @@ public class CapacityPolicies {
 
         switch(zone.environment()) {
             case dev : case test : return 1;
-            case perf : return Math.min(capacity.nodeCount(), 3);
+            case perf : return Math.min(capacity.nodes(), 3);
             case staging: return requestedNodes <= 1 ? requestedNodes : Math.max(2, requestedNodes / 10);
             case prod : return requestedNodes;
             default : throw new IllegalArgumentException("Unsupported environment " + zone.environment());

@@ -95,7 +95,7 @@ public class DockerProvisioningTest {
         // Activate the zone-app, thereby allocating the parents
         List<HostSpec> hosts = tester.prepare(zoneApplication,
                 ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("zone-app")).vespaVersion(wantedVespaVersion).build(),
-                Capacity.fromRequiredNodeType(NodeType.host), 1);
+                Capacity.fromRequiredNodeType(NodeType.host));
         tester.activate(zoneApplication, hosts);
 
         // Try allocating tenants again
@@ -298,8 +298,7 @@ public class DockerProvisioningTest {
     private void prepareAndActivate(ApplicationId application, int nodeCount, boolean exclusive, ProvisioningTester tester) {
         Set<HostSpec> hosts = new HashSet<>(tester.prepare(application,
                                             ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer")).vespaVersion("6.39").exclusive(exclusive).build(),
-                                            Capacity.fromCount(nodeCount, Optional.of(dockerFlavor), false, true),
-                                            1));
+                                            Capacity.fromCount(nodeCount, 1, Optional.of(dockerFlavor), false, true)));
         tester.activate(application, hosts);
     }
 

@@ -42,7 +42,14 @@ public class SingleNodeProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) { // TODO: This should fail if capacity requested is more than 1
+    @Deprecated // TODO: Remove after April 2020
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
+        return prepare(cluster, capacity.withGroups(groups), logger);
+    }
+
+    @Override
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+        // TODO: This should fail if capacity requested is more than 1
         List<HostSpec> hosts = new ArrayList<>();
         hosts.add(new HostSpec(host.hostname(), host.aliases(), ClusterMembership.from(cluster, counter++)));
         return hosts;

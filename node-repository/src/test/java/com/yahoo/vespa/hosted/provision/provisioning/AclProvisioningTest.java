@@ -45,7 +45,7 @@ public class AclProvisioningTest {
 
         // Allocate 2 nodes
         ApplicationId application = tester.makeApplicationId();
-        List<Node> activeNodes = tester.deploy(application, Capacity.fromCount(2, new NodeResources(1, 4, 10, 1), false, true));
+        List<Node> activeNodes = tester.deploy(application, Capacity.fromCount(2, 1, new NodeResources(1, 4, 10, 1), false, true));
         assertEquals(2, activeNodes.size());
 
         // Get trusted nodes for the first active node
@@ -210,7 +210,7 @@ public class AclProvisioningTest {
     }
 
     private List<Node> deploy(ApplicationId application, int nodeCount) {
-        return tester.deploy(application, Capacity.fromCount(nodeCount, nodeResources));
+        return tester.deploy(application, Capacity.fromCount(nodeCount, 1, nodeResources));
     }
 
     private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {

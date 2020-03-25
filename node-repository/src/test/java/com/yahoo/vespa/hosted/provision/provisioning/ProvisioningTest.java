@@ -514,7 +514,7 @@ public class ProvisioningTest {
         tester.makeReadyNodes(4, defaultResources);
         ApplicationId application = tester.makeApplicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
-        tester.prepare(application, cluster, Capacity.fromCount(5, Optional.empty(), false, false), 1);
+        tester.prepare(application, cluster, Capacity.fromCount(5, 1, Optional.empty(), false, false));
         // No exception; Success
     }
 
@@ -537,8 +537,8 @@ public class ProvisioningTest {
 
     @Test
     public void want_to_retire_but_cannot_fail() {
-        Capacity capacity =       Capacity.fromCount(5, Optional.of(defaultResources), false, true);
-        Capacity capacityFORCED = Capacity.fromCount(5, Optional.of(defaultResources), false, false);
+        Capacity capacity =       Capacity.fromCount(5, 1, Optional.of(defaultResources), false, true);
+        Capacity capacityFORCED = Capacity.fromCount(5, 1, Optional.of(defaultResources), false, false);
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
@@ -548,14 +548,14 @@ public class ProvisioningTest {
         tester.makeReadyNodes(10, defaultResources);
         // Allocate 5 nodes
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
-        tester.activate(application, tester.prepare(application, cluster, capacity, 1));
+        tester.activate(application, tester.prepare(application, cluster, capacity));
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
 
         // Mark the nodes as want to retire
         tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
         // redeploy without allow failing
-        tester.activate(application, tester.prepare(application, cluster, capacityFORCED, 1));
+        tester.activate(application, tester.prepare(application, cluster, capacityFORCED));
 
         // Nodes are not retired since that is unsafe when we cannot fail
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
@@ -564,7 +564,7 @@ public class ProvisioningTest {
         tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> assertTrue(node.status().wantToRetire()));
 
         // redeploy with allowing failing
-        tester.activate(application, tester.prepare(application, cluster, capacity, 1));
+        tester.activate(application, tester.prepare(application, cluster, capacity));
         // ... old nodes are now retired
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
@@ -718,14 +718,12 @@ public class ProvisioningTest {
         // Application allocates two content nodes initially, with cluster type content
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         var initialNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                                       Capacity.fromCount(2, defaultResources, false, false),
-                                                                       1));
+                                                                       Capacity.fromCount(2, 1, defaultResources, false, false)));
 
         // Application is redeployed with cluster type combined
         cluster = ClusterSpec.request(ClusterSpec.Type.combined, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         var newNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                                   Capacity.fromCount(2, defaultResources, false, false),
-                                                                   1));
+                                                                   Capacity.fromCount(2, 1, defaultResources, false, false)));
 
         assertEquals("Node allocation remains the same", initialNodes, newNodes);
         assertEquals("Cluster type is updated",
@@ -735,8 +733,7 @@ public class ProvisioningTest {
         // Application is redeployed with cluster type content again
         cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         newNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                               Capacity.fromCount(2, defaultResources, false, false),
-                                                               1));
+                                                               Capacity.fromCount(2, 1, defaultResources, false, false)));
         assertEquals("Node allocation remains the same", initialNodes, newNodes);
         assertEquals("Cluster type is updated",
                      Set.of(ClusterSpec.Type.content),
@@ -773,7 +770,7 @@ public class ProvisioningTest {
         allHosts.addAll(content0);
         allHosts.addAll(content1);
 
-        Function<Integer, Capacity> capacity = count -> Capacity.fromCount(count, Optional.empty(), required, true);
+        Function<Integer, Capacity> capacity = count -> Capacity.fromCount(count, 1, Optional.empty(), required, true);
         int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size), containerCluster0, application);
         int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size), containerCluster1, application);
         int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size), contentCluster0, application);

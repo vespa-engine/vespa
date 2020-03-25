@@ -113,18 +113,20 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     @Override
+    @Deprecated // TODO: Remove after April 2020
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requestedCapacity, int groups, ProvisionLogger logger) {
-        if (cluster.group().isPresent() && groups > 1)
+        return prepare(cluster, requestedCapacity.withGroups(groups), logger);
+    }
+
+    @Override
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity requestedCapacity, ProvisionLogger logger) {
+        if (cluster.group().isPresent() && requestedCapacity.groups() > 1)
             throw new IllegalArgumentException("Cannot both be specifying a group and ask for groups to be created");
-        if (requestedCapacity.nodeCount() % groups != 0)
-            throw new IllegalArgumentException("Requested " + requestedCapacity.nodeCount() + " nodes in " +
-                                               groups + " groups, but the node count is not divisible into this number of groups");
 
         int capacity = failOnOutOfCapacity || requestedCapacity.isRequired() 
-                       ? requestedCapacity.nodeCount() 
-                       : Math.min(requestedCapacity.nodeCount(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
-        if (groups > capacity)
-            groups = capacity;
+                       ? requestedCapacity.nodes()
+                       : Math.min(requestedCapacity.nodes(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
+        int groups = requestedCapacity.groups() > capacity ? capacity : requestedCapacity.groups();
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {

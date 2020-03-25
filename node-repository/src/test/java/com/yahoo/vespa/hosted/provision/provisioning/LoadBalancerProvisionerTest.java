@@ -154,7 +154,7 @@ public class LoadBalancerProvisionerTest {
 
     @Test
     public void provision_load_balancers_with_dynamic_node_provisioning() {
-        var nodes = prepare(app1, Capacity.fromCount(2, new NodeResources(1, 4, 10, 0.3), false, true),
+        var nodes = prepare(app1, Capacity.fromCount(2, 1, new NodeResources(1, 4, 10, 0.3), false, true),
                                            true,
                                            clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")));
         Supplier<LoadBalancer> lb = () -> tester.nodeRepository().loadBalancers(app1).asList().get(0);
@@ -172,7 +172,7 @@ public class LoadBalancerProvisionerTest {
         assertSame("Load balancer is deactivated", LoadBalancer.State.inactive, lb.get().state());
 
         // Application is redeployed
-        nodes = prepare(app1, Capacity.fromCount(2, new NodeResources(1, 4, 10, 0.3), false, true),
+        nodes = prepare(app1, Capacity.fromCount(2, 1, new NodeResources(1, 4, 10, 0.3), false, true),
                         true,
                         clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")));
         assertTrue("Load balancer is reconfigured with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
@@ -229,7 +229,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {
-        return prepare(application, Capacity.fromCount(2, new NodeResources(1, 4, 10, 0.3), false, true), false, specs);
+        return prepare(application, Capacity.fromCount(2, 1, new NodeResources(1, 4, 10, 0.3), false, true), false, specs);
     }
 
     private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, boolean dynamicDockerNodes, ClusterSpec... specs) {
@@ -240,7 +240,7 @@ public class LoadBalancerProvisionerTest {
         }
         Set<HostSpec> allNodes = new LinkedHashSet<>();
         for (ClusterSpec spec : specs) {
-            allNodes.addAll(tester.prepare(application, spec, capacity, 1, false));
+            allNodes.addAll(tester.prepare(application, spec, capacity, false));
         }
         return allNodes;
     }

@@ -401,11 +401,11 @@ public class DynamicDockerAllocationTest {
         ApplicationId application = tester.makeApplicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
 
-        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromCount(2, Optional.of(NodeResources.fromLegacyName("d-2-8-50")), false, true), 1);
+        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromCount(2, 1, Optional.of(NodeResources.fromLegacyName("d-2-8-50")), false, true));
         tester.activate(application, hosts1);
 
         NodeResources resources = new NodeResources(1.5, 8, 50, 0.3);
-        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.fromCount(2, resources), 1);
+        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.fromCount(2, 1, resources));
         tester.activate(application, hosts2);
 
         assertEquals(hosts1, hosts2);

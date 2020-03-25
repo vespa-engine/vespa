@@ -29,8 +29,8 @@ public class NodeMetricsFetcherTest {
 
         ApplicationId application1 = tester.makeApplicationId();
         ApplicationId application2 = tester.makeApplicationId();
-        tester.deploy(application1, Capacity.fromCount(2, resources)); // host-1.yahoo.com, host-2.yahoo.com
-        tester.deploy(application2, Capacity.fromCount(2, resources)); // host-4.yahoo.com, host-3.yahoo.com
+        tester.deploy(application1, Capacity.fromCount(2, 1, resources)); // host-1.yahoo.com, host-2.yahoo.com
+        tester.deploy(application2, Capacity.fromCount(2, 1, resources)); // host-4.yahoo.com, host-3.yahoo.com
 
         orchestrator.suspend(new HostName("host-4.yahoo.com"));
 

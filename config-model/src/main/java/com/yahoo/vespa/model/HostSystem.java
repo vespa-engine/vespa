@@ -111,8 +111,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         }
     }
 
-    public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, Capacity capacity, int groups, DeployLogger logger) {
-        List<HostSpec> allocatedHosts = provisioner.prepare(cluster, capacity, groups, new ProvisionDeployLogger(logger));
+    public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, Capacity capacity, DeployLogger logger) {
+        List<HostSpec> allocatedHosts = provisioner.prepare(cluster, capacity, new ProvisionDeployLogger(logger));
         // TODO: Even if HostResource owns a set of memberships, we need to return a map because the caller needs the current membership.
         Map<HostResource, ClusterMembership> retAllocatedHosts = new LinkedHashMap<>();
         for (HostSpec spec : allocatedHosts) {

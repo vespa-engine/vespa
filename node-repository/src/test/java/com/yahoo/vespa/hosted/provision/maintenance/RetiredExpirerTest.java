@@ -98,7 +98,7 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, nodeResources), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, 1, nodeResources))));
         createRetiredExpirer(deployer).run();
         assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -127,7 +127,7 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(2, 1, nodeResources))));
         createRetiredExpirer(deployer).run();
         assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(6, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -161,7 +161,7 @@ public class RetiredExpirerTest {
                                  clock,
                                  Collections.singletonMap(
                                      applicationId,
-                                     new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, nodeResources), 1)));
+                                     new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, 1, nodeResources))));
 
         // Allow the 1st and 3rd retired nodes permission to inactivate
         doNothing()
@@ -197,7 +197,7 @@ public class RetiredExpirerTest {
     }
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodes, int groups, NodeRepositoryProvisioner provisioner) {
-        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromCount(nodes, nodeResources), groups, null);
+        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromCount(nodes, groups, nodeResources), null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, hosts);
         transaction.commit();

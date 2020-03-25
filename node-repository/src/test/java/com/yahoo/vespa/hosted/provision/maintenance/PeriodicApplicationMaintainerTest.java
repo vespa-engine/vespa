@@ -258,8 +258,8 @@ public class PeriodicApplicationMaintainerTest {
                                                                                   new InMemoryFlagSource());
 
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
-                    app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromCount(wantedNodesApp1, nodeResources), 1),
-                    app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromCount(wantedNodesApp2, nodeResources), 1));
+                    app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromCount(wantedNodesApp1, 1, nodeResources)),
+                    app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromCount(wantedNodesApp2, 1, nodeResources)));
             this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
             this.maintainer = new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofDays(1), // Long duration to prevent scheduled runs during test
                                                                         Duration.ofMinutes(30));
