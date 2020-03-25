@@ -62,15 +62,16 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
     private void tailLogs(ApplicationId id, ZoneId zone, long run) throws MojoFailureException, MojoExecutionException {
         DeploymentLog log = controller.followDeploymentUntilDone(id, zone, run, this::print);
         switch (log.status()) {
-            case success:            return;
-            case error:              throw new MojoExecutionException("Unexpected error during deployment; see log for details");
-            case aborted:            throw new MojoFailureException("Deployment was aborted, probably by a newer deployment");
-            case outOfCapacity:      throw new MojoFailureException("No capacity left in zone; please contact the Vespa team");
-            case deploymentFailed:   throw new MojoFailureException("Deployment failed; see log for details");
-            case installationFailed: throw new MojoFailureException("Installation failed; see Vespa log for details");
-            case running:            throw new MojoFailureException("Deployment not completed");
-            case testFailure:        throw new IllegalStateException("Unexpected status; tests are not run for manual deployments");
-            default:                 throw new IllegalArgumentException("Unexpected status '" + log.status() + "'");
+            case success:                    return;
+            case error:                      throw new MojoExecutionException("Unexpected error during deployment; see log for details");
+            case aborted:                    throw new MojoFailureException("Deployment was aborted, probably by a newer deployment");
+            case outOfCapacity:              throw new MojoFailureException("No capacity left in zone; please contact the Vespa team");
+            case deploymentFailed:           throw new MojoFailureException("Deployment failed; see log for details");
+            case installationFailed:         throw new MojoFailureException("Installation failed; see Vespa log for details");
+            case running:                    throw new MojoFailureException("Deployment not completed");
+            case endpointCertificateTimeout: throw new MojoFailureException("Endpoint certificate not ready in time; please contact Vespa team");
+            case testFailure:                throw new IllegalStateException("Unexpected status; tests are not run for manual deployments");
+            default:                         throw new IllegalArgumentException("Unexpected status '" + log.status() + "'");
         }
     }
 
