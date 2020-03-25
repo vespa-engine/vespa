@@ -10,7 +10,7 @@ ExecutorMetrics::update(const vespalib::ThreadStackExecutorBase::Stats &stats)
     maxPending.set(stats.queueSize.max());
     accepted.inc(stats.acceptedTasks);
     rejected.inc(stats.rejectedTasks);
-    const vespalib::ThreadStackExecutorBase::Stats::QueueSizeT & qSize = stats.queueSize;
+    const auto & qSize = stats.queueSize;
     queueSize.addValueBatch(qSize.average(), qSize.count(), qSize.min(), qSize.max());
 }
 
@@ -19,7 +19,7 @@ ExecutorMetrics::ExecutorMetrics(const std::string &name, metrics::MetricSet *pa
       maxPending("maxpending", {}, "Maximum number of pending (active + queued) tasks", this),
       accepted("accepted", {}, "Number of accepted tasks", this),
       rejected("rejected", {}, "Number of rejected tasks", this),
-      queueSize("queuesize", {}, "size of task queue", this)
+      queueSize("queuesize", {}, "Size of task queue", this)
 {
 }
 
