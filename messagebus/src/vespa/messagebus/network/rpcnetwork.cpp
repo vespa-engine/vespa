@@ -306,8 +306,8 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
                      make_string("Failed to connect to service '%s' from host '%s'.",
                                  serviceName.c_str(), getIdentity().getHostname().c_str()));
     }
-    ret->setTarget(target); // free by freeServiceAddress()
-    recipient.setServiceAddress(IServiceAddress::UP(ret.release()));
+    ret->setTarget(std::move(target)); // free by freeServiceAddress()
+    recipient.setServiceAddress(std::move(ret));
     return Error();
 }
 

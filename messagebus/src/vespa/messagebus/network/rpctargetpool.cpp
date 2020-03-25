@@ -74,7 +74,7 @@ RPCTargetPool::getTarget(FRT_Supervisor &orb, const RPCServiceAddress &address)
         }
         _targets.erase(it);
     }
-    RPCTarget::SP ret(new RPCTarget(spec, orb));
+    auto ret = std::make_shared<RPCTarget>(spec, orb);
     _targets.insert(TargetMap::value_type(spec, Entry(ret, _timer->getMilliTime())));
     return ret;
 }
