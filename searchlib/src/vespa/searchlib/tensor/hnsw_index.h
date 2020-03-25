@@ -155,6 +155,9 @@ public:
     vespalib::MemoryUsage memory_usage() const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
 
+    std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override;
+    void load(const fileutil::LoadedBuffer& buf) override;
+
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
     const DistanceFunction *distance_function() const override { return _distance_func.get(); }
 

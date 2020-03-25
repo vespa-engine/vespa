@@ -2,6 +2,7 @@
 
 #include "distance_function.h"
 #include "hnsw_index.h"
+#include "nearest_neighbor_index_saver.h"
 #include "random_level_generator.h"
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/eval/tensor/dense/typed_cells.h>
@@ -433,6 +434,18 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
 {
     auto& object = inserter.insertObject();
     StateExplorerUtils::memory_usage_to_slime(memory_usage(), object.setObject("memory_usage"));
+}
+
+std::unique_ptr<NearestNeighborIndexSaver>
+HnswIndex::make_saver() const
+{
+    return std::unique_ptr<NearestNeighborIndexSaver>();
+}
+
+void
+HnswIndex::load(const fileutil::LoadedBuffer& buf)
+{
+    (void) buf;
 }
 
 struct NeighborsByDocId {
