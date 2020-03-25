@@ -332,6 +332,7 @@ fi
 %{_prefix}/etc/systemd
 %{_prefix}/etc/vespa
 %{_prefix}/include
+%{_prefix}/jdk
 %{_prefix}/lib
 %{_prefix}/lib64
 %{_prefix}/libexec
