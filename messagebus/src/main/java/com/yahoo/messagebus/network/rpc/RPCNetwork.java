@@ -67,8 +67,13 @@ public class RPCNetwork implements Network, MethodHandler {
             new ThreadPoolExecutor(getNumThreads(), getNumThreads(), 0L, TimeUnit.SECONDS,
                                    new SynchronousQueue<>(false),
                                    ThreadFactoryFactory.getDaemonThreadFactory("mbus.net"), new ThreadPoolExecutor.CallerRunsPolicy());
+
     private static int getNumThreads() {
         return Math.max(2, Runtime.getRuntime().availableProcessors()/2);
+    }
+
+    private static boolean shouldEnableTcpNodelay(RPCNetworkParams.Optimization optimization) {
+        return optimization == RPCNetworkParams.Optimization.LATENCY;
     }
 
     /**
@@ -82,7 +87,7 @@ public class RPCNetwork implements Network, MethodHandler {
     public RPCNetwork(RPCNetworkParams params, SlobrokConfigSubscriber slobrokConfig) {
         this.slobroksConfig = slobrokConfig;
         identity = params.getIdentity();
-        orb = new Supervisor(new Transport(params.getNumNetworkThreads(), params.getOptimization() == RPCNetworkParams.Optimization.LATENCY));
+        orb = new Supervisor(new Transport(params.getNumNetworkThreads(), shouldEnableTcpNodelay(params.getOptimization())));
         orb.setMaxInputBufferSize(params.getMaxInputBufferSize());
         orb.setMaxOutputBufferSize(params.getMaxOutputBufferSize());
         targetPool = new RPCTargetPool(params.getConnectionExpireSecs(), params.getNumTargetsPerSpec());
