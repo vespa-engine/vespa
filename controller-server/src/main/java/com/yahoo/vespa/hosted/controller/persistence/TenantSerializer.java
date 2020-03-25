@@ -108,6 +108,7 @@ public class TenantSerializer {
 
         switch (type) {
             case athenz: return athenzTenantFrom(tenantObject);
+            case user:   return null; // TODO jonmv: Remove when run once.
             case cloud:  return cloudTenantFrom(tenantObject);
             default:     throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
@@ -189,6 +190,7 @@ public class TenantSerializer {
     private static Tenant.Type typeOf(String value) {
         switch (value) {
             case "athenz": return Tenant.Type.athenz;
+            case "user":   return Tenant.Type.user;
             case "cloud":  return Tenant.Type.cloud;
             default: throw new IllegalArgumentException("Unknown tenant type '" + value + "'.");
         }
@@ -197,6 +199,7 @@ public class TenantSerializer {
     private static String valueOf(Tenant.Type type) {
         switch (type) {
             case athenz: return "athenz";
+            case user:   return "user";
             case cloud:  return "cloud";
             default: throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }

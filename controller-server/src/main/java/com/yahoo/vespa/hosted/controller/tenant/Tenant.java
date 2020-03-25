@@ -64,6 +64,9 @@ public abstract class Tenant {
         /** Tenant authenticated through Athenz. */
         athenz,
 
+        /** Tenant authenticated through Okta, as a user. */
+        user, // TODO jonmv: Remove.
+
         /** Tenant authenticated through some cloud identity provider. */
         cloud
 
