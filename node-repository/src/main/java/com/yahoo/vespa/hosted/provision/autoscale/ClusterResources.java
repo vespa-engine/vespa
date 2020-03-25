@@ -20,24 +20,19 @@ public class ClusterResources {
     /** The resources of each node in the cluster */
     private final NodeResources nodeResources;
 
-    /** The kind of cluster these resources are for */
-    private final ClusterSpec.Type clusterType;
-
-    public ClusterResources(int nodes, int groups, NodeResources nodeResources, ClusterSpec.Type clusterType) {
+    public ClusterResources(int nodes, int groups, NodeResources nodeResources) {
         this.nodes = nodes;
         this.groups = groups;
         this.nodeResources = nodeResources;
-        this.clusterType = clusterType;
     }
 
     /** Returns the total number of allocated nodes (over all groups) */
     public int nodes() { return nodes; }
     public int groups() { return groups; }
     public NodeResources nodeResources() { return nodeResources; }
-    public ClusterSpec.Type clusterType() { return clusterType; }
 
     public ClusterResources with(NodeResources resources) {
-        return new ClusterResources(nodes, groups, resources, clusterType);
+        return new ClusterResources(nodes, groups, resources);
     }
 
     @Override
@@ -49,18 +44,17 @@ public class ClusterResources {
         if (other.nodes != this.nodes) return false;
         if (other.groups != this.groups) return false;
         if (other.nodeResources != this.nodeResources) return false;
-        if (other.clusterType != this.clusterType) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodes, groups, nodeResources, clusterType);
+        return Objects.hash(nodes, groups, nodeResources);
     }
 
     @Override
     public String toString() {
-        return clusterType + " cluster resources: " + nodes + " * " + nodeResources + (groups > 1 ? " in " + groups + " groups" : "");
+        return "cluster resources: " + nodes + " * " + nodeResources + (groups > 1 ? " in " + groups + " groups" : "");
     }
 
 }

@@ -303,7 +303,7 @@ public abstract class Container extends AbstractService implements
                         .slobrokId(serviceSlobrokId())).
                 filedistributor(filedistributorConfig());
         if (clusterName != null) {
-            builder.discriminator(clusterName+"."+name);
+            builder.discriminator(clusterName + "." + name);
         } else {
             builder.discriminator(name);
         }

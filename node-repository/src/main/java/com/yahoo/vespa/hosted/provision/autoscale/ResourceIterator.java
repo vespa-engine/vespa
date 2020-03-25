@@ -58,8 +58,7 @@ public class ResourceIterator {
         int nodesWithRedundancy = currentNodes - (singleGroupMode ? 1 : groupSize);
         ClusterResources next = new ClusterResources(currentNodes,
                                                      singleGroupMode ? 1 : currentNodes / groupSize,
-                                                     resourcesFor(nodesWithRedundancy),
-                                                     allocation.clusterType());
+                                                     resourcesFor(nodesWithRedundancy));
         currentNodes += nodeIncrement;
         return next;
     }

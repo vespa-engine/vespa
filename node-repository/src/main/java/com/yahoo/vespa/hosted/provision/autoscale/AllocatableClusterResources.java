@@ -33,20 +33,25 @@ public class AllocatableClusterResources {
         this.clusterType = nodes.get(0).allocation().get().membership().cluster().type();
     }
 
-    public AllocatableClusterResources(ClusterResources realResources, NodeResources advertisedResources) {
+    public AllocatableClusterResources(ClusterResources realResources,
+                                       NodeResources advertisedResources,
+                                       ClusterSpec.Type clusterType) {
         this.realResources = realResources.nodeResources();
         this.advertisedResources = advertisedResources;
         this.nodes = realResources.nodes();
         this.groups = realResources.groups();
-        this.clusterType = realResources.clusterType();
+        this.clusterType = clusterType;
     }
 
-    public AllocatableClusterResources(ClusterResources realResources, Flavor flavor, HostResourcesCalculator calculator) {
+    public AllocatableClusterResources(ClusterResources realResources,
+                                       Flavor flavor,
+                                       ClusterSpec.Type clusterType,
+                                       HostResourcesCalculator calculator) {
         this.realResources = realResources.nodeResources();
         this.advertisedResources = calculator.advertisedResourcesOf(flavor);
         this.nodes = realResources.nodes();
         this.groups = realResources.groups();
-        this.clusterType = realResources.clusterType();
+        this.clusterType = clusterType;
     }
 
     /**
