@@ -69,7 +69,7 @@ public class Yum {
      *
      * @return false only if the package was already locked and installed at the given version (no-op)
      */
-    public boolean installFixedVersion(TaskContext context, YumPackageName yumPackage, String... repos) {
+    public boolean installFixedVersion(TaskContext context, YumPackageName yumPackage) {
         String targetVersionLockName = yumPackage.toVersionLockName();
 
         boolean alreadyLocked = terminal
@@ -118,25 +118,25 @@ public class Yum {
         //       - "Nothing to do"
         //     And in case we need to downgrade and return true from converge()
 
-        var installCommand = terminal.newCommandLine(context).add("yum", "install");
-        for (String repo : repos) installCommand.add("--enablerepo=" + repo);
-        installCommand.add("--assumeyes", yumPackage.toName());
+        CommandLine commandLine = terminal
+                .newCommandLine(context)
+                .add("yum", "install", "--assumeyes", yumPackage.toName());
 
-        String output = installCommand.executeSilently().getUntrimmedOutput();
+        String output = commandLine.executeSilently().getUntrimmedOutput();
 
         if (NOTHING_TO_DO_PATTERN.matcher(output).find()) {
             if (CHECKING_FOR_UPDATE_PATTERN.matcher(output).find()) {
                 // case 3.
-                var upgradeCommand = terminal.newCommandLine(context).add("yum", "downgrade", "--assumeyes");
-                for (String repo : repos) upgradeCommand.add("--enablerepo=" + repo);
-                upgradeCommand.add(yumPackage.toName()).execute();
+                terminal.newCommandLine(context)
+                        .add("yum", "downgrade", "--assumeyes", yumPackage.toName())
+                        .execute();
                 modified = true;
             } else {
                 // case 2.
             }
         } else {
             // case 1.
-            installCommand.recordSilentExecutionAsSystemModification();
+            commandLine.recordSilentExecutionAsSystemModification();
             modified = true;
         }
 
