@@ -7,7 +7,7 @@ import java.util.concurrent.Executor;
  * Must be implemented by a node collection which wants
  * it's node state monitored by a ClusterMonitor
  *
- * @author  bratseth
+ * @author bratseth
  */
 public interface NodeManager<T> {
 
@@ -20,9 +20,10 @@ public interface NodeManager<T> {
     /** 
      * Called when a node should be pinged. 
      * This *must* lead to either a call to NodeMonitor.failed or NodeMonitor.responded
+     *
      * @deprecated Use ping(ClusterMonitor clusterMonitor, T node, Executor executor) instead.
      */
-    @Deprecated
+    @Deprecated // TODO: Remove on Vespa 8
     default void ping(T node, Executor executor) {
         throw new IllegalStateException("If you have not overrriden ping(ClusterMonitor<T> clusterMonitor, T node, Executor executor), you should at least have overriden this method.");
     }

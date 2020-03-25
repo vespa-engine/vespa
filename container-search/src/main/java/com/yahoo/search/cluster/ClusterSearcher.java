@@ -220,14 +220,6 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         if (result == null)
             result = new Result(query, ErrorMessage.createBackendCommunicationError("No result returned in " + this +
                                                                                     " from " + connection + " for " + query));
-
-        if (result.hits().getError() != null) {
-            log(LogLevel.FINE, "FAILED: ", query);
-        } else if ( ! result.isCached()) {
-            log(LogLevel.FINE, "WORKING: ", query);
-        } else {
-            log(LogLevel.FINE, "CACHE HIT: ", query);
-        }
         return result;
     }
 
@@ -262,13 +254,6 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         } catch (RuntimeException e) {
             result.hits().addError(ErrorMessage.createBackendCommunicationError("Error filling " + result + " from " + connection + ": " +
                                                                                 Exceptions.toMessageString(e)));
-        }
-        if (result.hits().getError() != null) {
-            log(LogLevel.FINE, "FAILED: ", result.getQuery());
-        } else if ( ! result.isCached()) {
-            log(LogLevel.FINE, "WORKING: ", result.getQuery());
-        } else {
-            log(LogLevel.FINE, "CACHE HIT: " + result.getQuery());
         }
     }
 
