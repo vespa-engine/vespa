@@ -78,10 +78,10 @@ public class SearchCluster implements NodeManager<Node> {
         this.nodesByHost = nodesByHostBuilder.build();
 
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(),
-                                                                       size,
-                                                                       containerClusterSize,
-                                                                       nodesByHost,
-                                                                       groups);
+                size,
+                containerClusterSize,
+                nodesByHost,
+                groups);
     }
 
     /* Testing only */
@@ -217,10 +217,7 @@ public class SearchCluster implements NodeManager<Node> {
                 setInRotationOnlyIf(hasWorkingNodes());
         }
         else if (usesLocalCorpusIn(node)) { // follow the status of this node
-            // Do not take this out of rotation if we're a combined cluster of size 1,
-            // as that can't be helpful, and leads to a deadlock where this node is never taken back in servic e
-            if (nodeIsWorking || size() > 1)
-                setInRotationOnlyIf(nodeIsWorking);
+            setInRotationOnlyIf(nodeIsWorking);
         }
     }
 
