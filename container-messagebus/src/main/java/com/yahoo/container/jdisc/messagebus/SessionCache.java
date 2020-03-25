@@ -123,7 +123,7 @@ public final class SessionCache extends AbstractComponent {
                 .setListenPort(mbusConfig.port())
                 .setNumTargetsPerSpec(mbusConfig.numconnectionspertarget())
                 .setNumNetworkThreads(mbusConfig.numthreads())
-                .setOptimization(RPCNetworkParams.Optimization.valueOf(mbusConfig.optimization().name()));
+                .setOptimization(RPCNetworkParams.Optimization.valueOf(mbusConfig.optimize_for().name()));
         return SharedMessageBus.newInstance(mbusParams, netParams);
     }
 

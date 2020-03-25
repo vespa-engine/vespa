@@ -13,7 +13,7 @@ numconnectionspertarget int default=1
 numthreads int default=2
 
 # Optimize for latency, or throughput.
-optimization enum {LATENCY, THROUGHPUT} default=LATENCY
+optimize_for enum {LATENCY, THROUGHPUT} default=LATENCY
 
 # Everying below is deprecated and will go away very soon.
 # Dynamic throttling is used, and works better than anything else.
