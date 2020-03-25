@@ -15,7 +15,7 @@ SingleExecutor::SingleExecutor(uint32_t taskLimit)
       _producerCondition(),
       _thread(*this),
       _lastAccepted(0),
-      _maxPending(0),
+      _queueSize(),
       _wakeupConsumerAt(0),
       _producerNeedWakeupAt(0),
       _wp(0)
@@ -112,10 +112,6 @@ SingleExecutor::drain_tasks() {
 void
 SingleExecutor::run_tasks_till(uint64_t available) {
     uint64_t consumed = _rp.load(std::memory_order_relaxed);
-    uint64_t left = available - consumed;
-    if (_maxPending.load(std::memory_order_relaxed) < left) {
-        _maxPending.store(left, std::memory_order_relaxed);
-    }
     uint64_t wakeupLimit = _producerNeedWakeupAt.load(std::memory_order_relaxed);
     while (consumed  < available) {
         Task::UP task = std::move(_tasks[index(consumed)]);
@@ -137,6 +133,7 @@ SingleExecutor::wait_for_room(Lock & lock) {
         _taskLimit = _wantedTaskLimit.load();
         taskLimit = _taskLimit;
     }
+    _queueSize.add(numTasks());
     while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
         sleepProducer(lock, 10ms, wp - taskLimit/4);
     }
@@ -144,10 +141,11 @@ SingleExecutor::wait_for_room(Lock & lock) {
 
 ThreadExecutor::Stats
 SingleExecutor::getStats() {
+    Lock lock(_mutex);
     uint64_t accepted = _wp.load(std::memory_order_relaxed);
-    Stats stats(_maxPending, (accepted - _lastAccepted), 0);
+    Stats stats(_queueSize, (accepted - _lastAccepted), 0);
     _lastAccepted = accepted;
-    _maxPending = 0;
+    _queueSize = Stats::QueueSizeT() ;
     return stats;
 }
 

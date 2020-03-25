@@ -52,7 +52,7 @@ private:
     std::condition_variable     _producerCondition;
     vespalib::Thread            _thread;
     uint64_t                    _lastAccepted;
-    std::atomic<uint64_t>       _maxPending;
+    Stats::QueueSizeT           _queueSize;
     std::atomic<uint64_t>       _wakeupConsumerAt;
     std::atomic<uint64_t>       _producerNeedWakeupAt;
     std::atomic<uint64_t>       _wp;
