@@ -36,8 +36,8 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
 {
     std::ostringstream threadName;
     threadName << "Disk " << _env._partition << " thread " << _stripeId;
-    _component.reset(new ServiceLayerComponent(compReg, threadName.str()));
-    _bucketOwnershipNotifier.reset(new BucketOwnershipNotifier(*_component, filestorHandler));
+    _component = std::make_unique<ServiceLayerComponent>(compReg, threadName.str());
+    _bucketOwnershipNotifier = std::make_unique<BucketOwnershipNotifier>(*_component, filestorHandler);
     framework::MilliSecTime maxProcessingTime(60 * 1000);
     framework::MilliSecTime waitTime(1000);
     _thread = _component->startThread(*this, maxProcessingTime, waitTime);
@@ -473,11 +473,10 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
         const document::Bucket &target(i == 0 ? target1 : target2);
         uint16_t disk(i == 0 ? lock1.disk : lock2.disk);
         assert(target.getBucketId().getRawId() != 0);
-        targets.push_back(TargetInfo(
-                _env.getBucketDatabase(target.getBucketSpace()).get(
+        targets.emplace_back(_env.getBucketDatabase(target.getBucketSpace()).get(
                     target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
                     StorBucketDatabase::CREATE_IF_NONEXISTING),
-                FileStorHandler::RemapInfo(target, disk)));
+                FileStorHandler::RemapInfo(target, disk));
         targets.back().first->setBucketInfo(_env.getBucketInfo(target, disk));
         targets.back().first->disk = disk;
     }
@@ -795,7 +794,7 @@ PersistenceThread::handleCommand(api::StorageCommand& msg)
 {
     _context = spi::Context(msg.getLoadType(), msg.getPriority(), msg.getTrace().getLevel());
     MessageTracker::UP mtracker(handleCommandSplitByType(msg));
-    if (mtracker) {
+    if (mtracker && ! _context.getTrace().getRoot().isEmpty()) {
         if (mtracker->getReply()) {
             mtracker->getReply()->getTrace().getRoot().addChild(_context.getTrace().getRoot());
         } else {
@@ -844,11 +843,11 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
             LOG(debug, "Handling command: %s", msg.toString().c_str());
             LOG(spam, "Message content: %s", msg.toString(true).c_str());
             auto tracker(handleCommand(initiatingCommand));
-            if (!tracker.get()) {
+            if (!tracker) {
                 LOG(debug, "Received unsupported command %s", msg.getType().getName().c_str());
             } else {
                 tracker->generateReply(initiatingCommand);
-                if ((tracker->getReply().get()
+                if ((tracker->getReply()
                      && tracker->getReply()->getResult().failed())
                     || tracker->getResult().failed())
                 {
