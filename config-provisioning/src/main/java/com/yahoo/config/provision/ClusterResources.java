@@ -1,14 +1,13 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.autoscale;
+package com.yahoo.config.provision;
 
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeResources;
-import com.yahoo.vespa.hosted.provision.Node;
-
-import java.util.List;
 import java.util.Objects;
 
-/** A description of the resources of a cluster */
+/**
+ * The resources of a cluster
+ *
+ * @author bratseth
+ */
 public class ClusterResources {
 
     /** The node count in the cluster */
