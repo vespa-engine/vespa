@@ -107,7 +107,8 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
 
         if (identity.getDomain().equals(SCREWDRIVER_DOMAIN) && application.isPresent() && tenant.isPresent())
             futures.add(executor.submit(() -> {
-                if (hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
+                if (   tenant.get().type() == Tenant.Type.athenz
+                    && hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
                     roleMemberships.add(Role.buildService(tenant.get().name(), application.get()));
             }));
 
