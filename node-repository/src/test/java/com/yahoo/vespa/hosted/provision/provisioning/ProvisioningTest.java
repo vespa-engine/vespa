@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -492,7 +493,7 @@ public class ProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("6 nodes [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42 exceeds your quota. Resolve this at https://cloud.vespa.ai/quota",
+            assertEquals("6 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42 exceeds your quota. Resolve this at https://cloud.vespa.ai/quota",
                          e.getMessage());
         }
     }
@@ -514,7 +515,7 @@ public class ProvisioningTest {
         tester.makeReadyNodes(4, defaultResources);
         ApplicationId application = tester.makeApplicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
-        tester.prepare(application, cluster, Capacity.fromCount(5, 1, Optional.empty(), false, false));
+        tester.prepare(application, cluster, Capacity.from(new ClusterResources(5, 1, NodeResources.unspecified), false, false));
         // No exception; Success
     }
 
@@ -537,8 +538,8 @@ public class ProvisioningTest {
 
     @Test
     public void want_to_retire_but_cannot_fail() {
-        Capacity capacity =       Capacity.fromCount(5, 1, Optional.of(defaultResources), false, true);
-        Capacity capacityFORCED = Capacity.fromCount(5, 1, Optional.of(defaultResources), false, false);
+        Capacity capacity =       Capacity.from(new ClusterResources(5, 1, defaultResources), false, true);
+        Capacity capacityFORCED = Capacity.from(new ClusterResources(5, 1, defaultResources), false, false);
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
@@ -718,12 +719,12 @@ public class ProvisioningTest {
         // Application allocates two content nodes initially, with cluster type content
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         var initialNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                                       Capacity.fromCount(2, 1, defaultResources, false, false)));
+                                                                       Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
 
         // Application is redeployed with cluster type combined
         cluster = ClusterSpec.request(ClusterSpec.Type.combined, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         var newNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                                   Capacity.fromCount(2, 1, defaultResources, false, false)));
+                                                                   Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
 
         assertEquals("Node allocation remains the same", initialNodes, newNodes);
         assertEquals("Cluster type is updated",
@@ -733,7 +734,7 @@ public class ProvisioningTest {
         // Application is redeployed with cluster type content again
         cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         newNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                               Capacity.fromCount(2, 1, defaultResources, false, false)));
+                                                               Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
         assertEquals("Node allocation remains the same", initialNodes, newNodes);
         assertEquals("Cluster type is updated",
                      Set.of(ClusterSpec.Type.content),
@@ -770,7 +771,7 @@ public class ProvisioningTest {
         allHosts.addAll(content0);
         allHosts.addAll(content1);
 
-        Function<Integer, Capacity> capacity = count -> Capacity.fromCount(count, 1, Optional.empty(), required, true);
+        Function<Integer, Capacity> capacity = count -> Capacity.from(new ClusterResources(count, 1, NodeResources.unspecified), required, true);
         int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size), containerCluster0, application);
         int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size), containerCluster1, application);
         int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size), contentCluster0, application);

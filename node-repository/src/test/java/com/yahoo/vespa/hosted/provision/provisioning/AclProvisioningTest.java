@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -45,7 +46,7 @@ public class AclProvisioningTest {
 
         // Allocate 2 nodes
         ApplicationId application = tester.makeApplicationId();
-        List<Node> activeNodes = tester.deploy(application, Capacity.fromCount(2, 1, new NodeResources(1, 4, 10, 1), false, true));
+        List<Node> activeNodes = tester.deploy(application, Capacity.from(new ClusterResources(2, 1, new NodeResources(1, 4, 10, 1)), false, true));
         assertEquals(2, activeNodes.size());
 
         // Get trusted nodes for the first active node
@@ -210,7 +211,7 @@ public class AclProvisioningTest {
     }
 
     private List<Node> deploy(ApplicationId application, int nodeCount) {
-        return tester.deploy(application, Capacity.fromCount(nodeCount, 1, nodeResources));
+        return tester.deploy(application, Capacity.from(new ClusterResources(nodeCount, 1, nodeResources)));
     }
 
     private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {

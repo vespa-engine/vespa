@@ -20,9 +20,12 @@ public class ClusterResources {
     private final NodeResources nodeResources;
 
     public ClusterResources(int nodes, int groups, NodeResources nodeResources) {
+        if (nodes > 0 && groups > 0 && nodes % groups != 0)
+            throw new IllegalArgumentException("The number of nodes (" + nodes +
+                                               ") must be divisible by the number of groups (" + groups + ")");
         this.nodes = nodes;
         this.groups = groups;
-        this.nodeResources = nodeResources;
+        this.nodeResources = Objects.requireNonNull(nodeResources);
     }
 
     /** Returns the total number of allocated nodes (over all groups) */
@@ -30,9 +33,8 @@ public class ClusterResources {
     public int groups() { return groups; }
     public NodeResources nodeResources() { return nodeResources; }
 
-    public ClusterResources with(NodeResources resources) {
-        return new ClusterResources(nodes, groups, resources);
-    }
+    public ClusterResources with(NodeResources resources) { return new ClusterResources(nodes, groups, resources); }
+    public ClusterResources withGroups(int groups) { return new ClusterResources(nodes, groups, nodeResources); }
 
     @Override
     public boolean equals(Object o) {
@@ -53,7 +55,9 @@ public class ClusterResources {
 
     @Override
     public String toString() {
-        return "cluster resources: " + nodes + " * " + nodeResources + (groups > 1 ? " in " + groups + " groups" : "");
+        return nodes + " nodes" +
+               (groups > 1 ? " (in " + groups + " groups)" : "") +
+               " with " + nodeResources;
     }
 
 }

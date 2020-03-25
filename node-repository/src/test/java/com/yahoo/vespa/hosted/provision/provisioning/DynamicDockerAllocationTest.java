@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -401,11 +402,11 @@ public class DynamicDockerAllocationTest {
         ApplicationId application = tester.makeApplicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
 
-        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromCount(2, 1, Optional.of(NodeResources.fromLegacyName("d-2-8-50")), false, true));
+        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(2, 1, NodeResources.fromLegacyName("d-2-8-50")), false, true));
         tester.activate(application, hosts1);
 
         NodeResources resources = new NodeResources(1.5, 8, 50, 0.3);
-        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.fromCount(2, 1, resources));
+        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(2, 1, resources)));
         tester.activate(application, hosts2);
 
         assertEquals(hosts1, hosts2);

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.DockerImage;
@@ -98,7 +99,9 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, 1, nodeResources))));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId,
+                                                                                                         cluster,
+                                                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
         createRetiredExpirer(deployer).run();
         assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -127,7 +130,9 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(2, 1, nodeResources))));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId,
+                                                                                                         cluster,
+                                                                                                         Capacity.from(new ClusterResources(2, 1, nodeResources)))));
         createRetiredExpirer(deployer).run();
         assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(6, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -161,7 +166,9 @@ public class RetiredExpirerTest {
                                  clock,
                                  Collections.singletonMap(
                                      applicationId,
-                                     new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, 1, nodeResources))));
+                                     new MockDeployer.ApplicationContext(applicationId,
+                                                                         cluster,
+                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
 
         // Allow the 1st and 3rd retired nodes permission to inactivate
         doNothing()
@@ -197,7 +204,7 @@ public class RetiredExpirerTest {
     }
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodes, int groups, NodeRepositoryProvisioner provisioner) {
-        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromCount(nodes, groups, nodeResources), null);
+        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.from(new ClusterResources(nodes, groups, nodeResources)), null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, hosts);
         transaction.commit();

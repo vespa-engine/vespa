@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
@@ -61,7 +62,7 @@ public class ReservationExpirerTest {
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-        provisioner.prepare(applicationId, cluster, Capacity.fromCount(2, 1, new NodeResources(2, 8, 50, 1)), null);
+        provisioner.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1))), null);
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
 
         // Reservation times out

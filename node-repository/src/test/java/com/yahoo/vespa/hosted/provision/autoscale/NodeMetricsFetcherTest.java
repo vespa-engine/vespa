@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
@@ -29,8 +30,8 @@ public class NodeMetricsFetcherTest {
 
         ApplicationId application1 = tester.makeApplicationId();
         ApplicationId application2 = tester.makeApplicationId();
-        tester.deploy(application1, Capacity.fromCount(2, 1, resources)); // host-1.yahoo.com, host-2.yahoo.com
-        tester.deploy(application2, Capacity.fromCount(2, 1, resources)); // host-4.yahoo.com, host-3.yahoo.com
+        tester.deploy(application1, Capacity.from(new ClusterResources(2, 1, resources))); // host-1.yahoo.com, host-2.yahoo.com
+        tester.deploy(application2, Capacity.from(new ClusterResources(2, 1, resources))); // host-4.yahoo.com, host-3.yahoo.com
 
         orchestrator.suspend(new HostName("host-4.yahoo.com"));
 

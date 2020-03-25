@@ -23,9 +23,11 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -672,11 +674,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                          .vespaVersion(deployState.getWantedNodeVespaVersion())
                                                          .dockerImageRepo(deployState.getWantedDockerImageRepo())
                                                          .build();
-                    Capacity capacity = Capacity.fromCount(1,
-                                                           1,
-                                                           Optional.empty(),
-                                                           false,
-                                                           ! deployState.getProperties().isBootstrap());
+                    Capacity capacity = Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified),
+                                                      false,
+                                                      ! deployState.getProperties().isBootstrap());
                     HostResource host = hostSystem.allocateHosts(clusterSpec, capacity, log).keySet().iterator().next();
                     return singleHostContainerCluster(cluster, host, context);
                 }
@@ -688,11 +688,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                  .dockerImageRepo(deployState.getWantedDockerImageRepo())
                                                  .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
-            Capacity capacity = Capacity.fromCount(nodeCount,
-                                                   1,
-                                                   Optional.empty(),
-                                                   false,
-                                                   !deployState.getProperties().isBootstrap());
+            Capacity capacity = Capacity.from(new ClusterResources(nodeCount, 1, NodeResources.unspecified),
+                                              false,
+                                              !deployState.getProperties().isBootstrap());
             var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
             return createNodesFromHosts(log, hosts, cluster);
         }
