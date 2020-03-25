@@ -54,11 +54,10 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             filterChains = new FilterChainsBuilder().newChainsInstance(ancestor);
         }
 
-        Http http = new Http(bindings, accessControl);
-        http.setFilterChains(filterChains);
-
-        buildHttpServers(deployState, ancestor, http, spec);
-
+        Http http = new Http(filterChains);
+        http.getBindings().addAll(bindings);
+        http.setAccessControl(accessControl);
+        http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
         return http;
     }
 
@@ -129,10 +128,6 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             }
         }
         return result;
-    }
-
-    private void buildHttpServers(DeployState deployState, AbstractConfigProducer ancestor, Http http, Element spec) {
-        http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
     }
 
     static int readPort(ModelElement spec, boolean isHosted, DeployLogger logger) {

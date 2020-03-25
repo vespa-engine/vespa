@@ -116,8 +116,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         }
 
         builder.serverId(HostName.getLocalhost());
-        if (!containerCluster.getHttp().getHttpServer().getConnectorFactories().isEmpty()) {
-            builder.httpport(containerCluster.getHttp().getHttpServer().getConnectorFactories().get(0).getListenPort());
+        if (!containerCluster.getHttp().getHttpServer().get().getConnectorFactories().isEmpty()) {
+            builder.httpport(containerCluster.getHttp().getHttpServer().get().getConnectorFactories().get(0).getListenPort());
         }
         if (options.useVespaVersionInRequest().isPresent()) {
             builder.useVespaVersionInRequest(options.useVespaVersionInRequest().get());

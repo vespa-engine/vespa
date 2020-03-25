@@ -811,7 +811,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
 
         // Verify that there are two connectors
-        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().getConnectorFactories();
+        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
         assertEquals(2, connectorFactories.size());
         List<Integer> ports = connectorFactories.stream()
                 .map(ConnectorFactory::getListenPort)

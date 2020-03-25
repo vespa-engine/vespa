@@ -330,7 +330,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
-        JettyHttpServer server = cluster.getHttp().getHttpServer();
+        JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
         String proxyProtocol = deployState.getProperties().proxyProtocol();
@@ -363,7 +363,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .orElseGet(() -> createHostedImplicitHttpWithoutAccessControl(cluster));
             cluster.setHttp(http);
         }
-        if(cluster.getHttp().getHttpServer() == null) {
+        if(cluster.getHttp().getHttpServer().isEmpty()) {
             JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
             cluster.getHttp().setHttpServer(defaultHttpServer);
             defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
@@ -378,17 +378,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         .readEnabled(false)
                         .writeEnabled(false)
                         .build();
-        Http http = new Http(accessControl.getBindings(), accessControl);
         FilterChains filterChains = new FilterChains(cluster);
         filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
-        http.setFilterChains(filterChains);
+        Http http = new Http(filterChains);
+        http.setAccessControl(accessControl);
+        http.getBindings().addAll(accessControl.getBindings());
         return http;
     }
 
     private static Http createHostedImplicitHttpWithoutAccessControl(ApplicationContainerCluster cluster) {
-        Http http = new Http(Collections.emptyList());
-        http.setFilterChains(new FilterChains(cluster));
-        return http;
+        return new Http(new FilterChains(cluster));
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
