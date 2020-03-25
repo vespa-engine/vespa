@@ -20,6 +20,7 @@ private:
     uint32_t          _maxInputBufferSize;
     uint32_t          _maxOutputBufferSize;
     uint32_t          _numThreads;
+    bool              _tcpNoDelay;
     bool              _dispatchOnEncode;
     bool              _dispatchOnDecode;
     double            _connectionExpireSecs;
@@ -105,6 +106,13 @@ public:
     }
 
     uint32_t getNumThreads() const { return _numThreads; }
+
+    RPCNetworkParams &setTcpNoDelay(bool tcpNoDelay) {
+        _tcpNoDelay = tcpNoDelay;
+        return *this;
+    }
+
+    bool getTcpNoDelay() const { return _tcpNoDelay; }
 
     /**
      * Returns the number of seconds before an idle network connection expires.

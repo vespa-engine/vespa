@@ -130,6 +130,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
 {
     _transport->SetMaxInputBufferSize(params.getMaxInputBufferSize());
     _transport->SetMaxOutputBufferSize(params.getMaxOutputBufferSize());
+    _transport->SetTCPNoDelay(params.getTcpNoDelay());
 }
 
 RPCNetwork::~RPCNetwork()

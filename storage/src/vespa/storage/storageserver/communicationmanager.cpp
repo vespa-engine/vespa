@@ -415,6 +415,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         params.setNumThreads(std::max(1, config->mbus.numThreads));
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
         params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
+        params.setTcpNoDelay(config->mbus.optimization == CommunicationManagerConfig::Mbus::Optimization::LATENCY);
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
         if (config->mbusport != -1) {
