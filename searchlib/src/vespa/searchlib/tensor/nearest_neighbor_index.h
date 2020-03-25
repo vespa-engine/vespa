@@ -2,16 +2,21 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vector>
+#include "distance_function.h"
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include "distance_function.h"
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 namespace vespalib::slime { struct Inserter; }
 
+namespace search::fileutil { class LoadedBuffer; }
+
 namespace search::tensor {
+
+class NearestNeighborIndexSaver;
 
 /**
  * Interface for an index that is used for (approximate) nearest neighbor search.
@@ -34,6 +39,15 @@ public:
     virtual void trim_hold_lists(generation_t first_used_gen) = 0;
     virtual vespalib::MemoryUsage memory_usage() const = 0;
     virtual void get_state(const vespalib::slime::Inserter& inserter) const = 0;
+
+    /**
+     * Creates a saver that is used to save the index to binary form.
+     *
+     * This function is always called by the attribute write thread,
+     * and the caller ensures that an attribute read guard is held during the lifetime of the saver.
+     */
+    virtual std::unique_ptr<NearestNeighborIndexSaver> make_saver() const = 0;
+    virtual void load(const fileutil::LoadedBuffer& buf) = 0;
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              vespalib::tensor::TypedCells vector,

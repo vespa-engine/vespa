@@ -5,8 +5,8 @@
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastos/file.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/tensor/default_nearest_neighbor_index_factory.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
@@ -14,6 +14,7 @@
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index_factory.h>
+#include <vespa/searchlib/tensor/nearest_neighbor_index_saver.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -35,6 +36,7 @@ using search::tensor::GenericTensorAttribute;
 using search::tensor::HnswIndex;
 using search::tensor::NearestNeighborIndex;
 using search::tensor::NearestNeighborIndexFactory;
+using search::tensor::NearestNeighborIndexSaver;
 using search::tensor::TensorAttribute;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
@@ -143,6 +145,10 @@ public:
         return vespalib::MemoryUsage();
     }
     void get_state(const vespalib::slime::Inserter&) const override {}
+    std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override {
+        return std::unique_ptr<NearestNeighborIndexSaver>();
+    }
+    void load(const search::fileutil::LoadedBuffer&) override {}
     std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
         (void) k;
         (void) vector;
