@@ -140,7 +140,7 @@ public abstract class Container extends AbstractService implements
         if (http == null) {
             return defaultHttpServer;
         } else {
-            return http.getHttpServer();
+            return http.getHttpServer().orElse(null);
         }
     }
 
@@ -228,10 +228,10 @@ public abstract class Container extends AbstractService implements
             // XXX unused - remove:
             from.allocatePort("http/1");
             portsMeta.on(offset++).tag("http").tag("external");
-        } else if (getHttp().getHttpServer() == null) {
+        } else if (getHttp().getHttpServer().isEmpty()) {
             // no http server ports
         } else {
-            for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
+            for (ConnectorFactory connectorFactory : getHttp().getHttpServer().get().getConnectorFactories()) {
                 int port = getPort(connectorFactory);
                 String name = "http/" + connectorFactory.getName();
                 from.requirePort(port, name);
@@ -280,7 +280,7 @@ public abstract class Container extends AbstractService implements
         final Http http = getHttp();
         if (http != null) {
             // TODO: allow the user to specify health port manually
-            if (http.getHttpServer() == null) {
+            if (http.getHttpServer().isEmpty()) {
                 return -1;
             } else {
                 return getRelativePort(0);

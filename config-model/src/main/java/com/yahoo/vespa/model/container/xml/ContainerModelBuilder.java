@@ -324,13 +324,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
         if (isHostedTenantApplication(context)) {
-            addHostedImplicitHttpIfNotPresent(deployState, cluster);
+            addHostedImplicitHttpIfNotPresent(cluster);
+            addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addAdditionalHostedConnector(deployState, cluster);
         }
     }
 
     private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
-        JettyHttpServer server = cluster.getHttp().getHttpServer();
+        JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
         String proxyProtocol = deployState.getProperties().proxyProtocol();
@@ -356,39 +357,31 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
     }
 
-    private static void addHostedImplicitHttpIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
+    private static void addHostedImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
         if(cluster.getHttp() == null) {
-            Http http = deployState.getProperties().athenzDomain()
-                    .map(tenantDomain -> createHostedImplicitHttpWithAccessControl(deployState, tenantDomain, cluster))
-                    .orElseGet(() -> createHostedImplicitHttpWithoutAccessControl(cluster));
-            cluster.setHttp(http);
+            cluster.setHttp(new Http(new FilterChains(cluster)));
         }
-        if(cluster.getHttp().getHttpServer() == null) {
+        if(cluster.getHttp().getHttpServer().isEmpty()) {
             JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
             cluster.getHttp().setHttpServer(defaultHttpServer);
             defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
         }
     }
 
-    private static Http createHostedImplicitHttpWithAccessControl(
-            DeployState deployState, AthenzDomain tenantDomain, ApplicationContainerCluster cluster) {
+    private void addHostedImplicitAccessControlIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
+        Http http = cluster.getHttp();
+        if (http.getAccessControl().isPresent()) return; // access control added explicitly
+        AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
+        if (tenantDomain == null) return; // tenant domain not present, cannot add access control. this should eventually be a failure.
         AccessControl accessControl =
                 new AccessControl.Builder(tenantDomain.value(), deployState.getDeployLogger())
                         .setHandlers(cluster)
                         .readEnabled(false)
                         .writeEnabled(false)
                         .build();
-        Http http = new Http(accessControl.getBindings(), accessControl);
-        FilterChains filterChains = new FilterChains(cluster);
-        filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
-        http.setFilterChains(filterChains);
-        return http;
-    }
-
-    private static Http createHostedImplicitHttpWithoutAccessControl(ApplicationContainerCluster cluster) {
-        Http http = new Http(Collections.emptyList());
-        http.setFilterChains(new FilterChains(cluster));
-        return http;
+        http.getFilterChains().add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
+        http.setAccessControl(accessControl);
+        http.getBindings().addAll(accessControl.getBindings());
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
