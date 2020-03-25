@@ -97,20 +97,20 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         int effectiveGroups;
         NodeSpec requestedNodes;
-        NodeResources resources = requestedCapacity.resources().nodeResources();
+        NodeResources resources = requestedCapacity.minResources().nodeResources();
         if ( requestedCapacity.type() == NodeType.tenant) {
             int nodeCount = capacityPolicies.decideSize(requestedCapacity, cluster, application);
-            if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.resources().nodes())
-                logger.log(Level.INFO, "Requested " + requestedCapacity.resources().nodes() + " nodes for " + cluster +
+            if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.minResources().nodes())
+                logger.log(Level.INFO, "Requested " + requestedCapacity.minResources().nodes() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
             resources = capacityPolicies.decideNodeResources(requestedCapacity, cluster);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
-            effectiveGroups = Math.min(requestedCapacity.resources().groups(), nodeCount); // cannot have more groups than nodes
+            effectiveGroups = Math.min(requestedCapacity.minResources().groups(), nodeCount); // cannot have more groups than nodes
             requestedNodes = NodeSpec.from(nodeCount, resources, exclusive, requestedCapacity.canFail());
 
             if ( ! hasQuota(application, nodeCount))
                 throw new IllegalArgumentException(requestedCapacity + " requested for " + cluster +
-                                                   (requestedCapacity.resources().nodes() != nodeCount ? " resolved to " + nodeCount + " nodes" : "") +
+                                                   (requestedCapacity.minResources().nodes() != nodeCount ? " resolved to " + nodeCount + " nodes" : "") +
                                                    " exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
         }
         else {

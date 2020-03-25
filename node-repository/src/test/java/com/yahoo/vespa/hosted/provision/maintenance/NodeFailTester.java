@@ -95,8 +95,8 @@ public class NodeFailTester {
 
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
-        assertEquals(capacity1.resources().nodes(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
-        assertEquals(capacity2.resources().nodes(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
+        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
+        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
@@ -130,8 +130,8 @@ public class NodeFailTester {
         tester.activate(app2, clusterApp2, capacity2);
         assertEquals(Set.of(tester.nodeRepository.getNodes(NodeType.host)),
                 Set.of(tester.nodeRepository.getNodes(tenantHostApp, Node.State.active)));
-        assertEquals(capacity1.resources().nodes(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
-        assertEquals(capacity2.resources().nodes(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
+        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
+        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts),

@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -156,14 +155,14 @@ public class MultigroupProvisioningTest {
     }
 
     private void deploy(ApplicationId application, Capacity capacity, ProvisioningTester tester) {
-        int nodeCount = capacity.resources().nodes();
-        NodeResources nodeResources = capacity.resources().nodeResources();
+        int nodeCount = capacity.minResources().nodes();
+        NodeResources nodeResources = capacity.minResources().nodeResources();
 
         int previousActiveNodeCount = tester.getNodes(application, Node.State.active).resources(nodeResources).size();
 
         tester.activate(application, prepare(application, capacity, tester));
         assertEquals("Superfluous nodes are retired, but no others - went from " + previousActiveNodeCount + " to " + nodeCount + " nodes",
-                     Math.max(0, previousActiveNodeCount - capacity.resources().nodes()),
+                     Math.max(0, previousActiveNodeCount - capacity.minResources().nodes()),
                      tester.getNodes(application, Node.State.active).retired().resources(nodeResources).size());
         assertEquals("Other flavors are retired",
                      0, tester.getNodes(application, Node.State.active).not().retired().not().resources(nodeResources).size());
@@ -188,21 +187,21 @@ public class MultigroupProvisioningTest {
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
             nonretiredGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
 
-            if (capacity.resources().groups() > 1)
+            if (capacity.minResources().groups() > 1)
                 assertTrue("Group indexes are always in [0, wantedGroups>",
-                           group.index() < capacity.resources().groups());
+                           group.index() < capacity.minResources().groups());
         }
         assertEquals("Total nonretired nodes", nodeCount, indexes.size());
-        assertEquals("Total nonretired groups", capacity.resources().groups(), nonretiredGroups.size());
+        assertEquals("Total nonretired groups", capacity.minResources().groups(), nonretiredGroups.size());
         for (Integer groupSize : nonretiredGroups.values())
-            assertEquals("Group size", (long)nodeCount / capacity.resources().groups(), (long)groupSize);
+            assertEquals("Group size", (long)nodeCount / capacity.minResources().groups(), (long)groupSize);
 
         Map<ClusterSpec.Group, Integer> allGroups = new HashMap<>();
         for (Node node : tester.getNodes(application, Node.State.active).resources(nodeResources)) {
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
             allGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
         }
-        assertEquals("No additional groups are retained containing retired nodes", capacity.resources().groups(), allGroups.size());
+        assertEquals("No additional groups are retained containing retired nodes", capacity.minResources().groups(), allGroups.size());
     }
 
     private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build(); }

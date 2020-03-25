@@ -120,18 +120,18 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requestedCapacity, ProvisionLogger logger) {
-        if (cluster.group().isPresent() && requestedCapacity.resources().groups() > 1)
+        if (cluster.group().isPresent() && requestedCapacity.minResources().groups() > 1)
             throw new IllegalArgumentException("Cannot both be specifying a group and ask for groups to be created");
 
         int capacity = failOnOutOfCapacity || requestedCapacity.isRequired() 
-                       ? requestedCapacity.resources().nodes()
-                       : Math.min(requestedCapacity.resources().nodes(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
-        int groups = requestedCapacity.resources().groups() > capacity ? capacity : requestedCapacity.resources().groups();
+                       ? requestedCapacity.minResources().nodes()
+                       : Math.min(requestedCapacity.minResources().nodes(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
+        int groups = requestedCapacity.minResources().groups() > capacity ? capacity : requestedCapacity.minResources().groups();
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {
             allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(0))),
-                                                requestedCapacity.resources().nodeResources(),
+                                                requestedCapacity.minResources().nodeResources(),
                                                 capacity,
                                                 startIndexForClusters,
                                                 requestedCapacity.canFail()));
@@ -139,7 +139,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         else {
             for (int i = 0; i < groups; i++) {
                 allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(i))),
-                                                    requestedCapacity.resources().nodeResources(),
+                                                    requestedCapacity.minResources().nodeResources(),
                                                     capacity / groups,
                                                     allocation.size(),
                                                     requestedCapacity.canFail()));
