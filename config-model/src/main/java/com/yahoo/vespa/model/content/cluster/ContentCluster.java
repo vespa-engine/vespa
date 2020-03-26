@@ -286,7 +286,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                       .orElse(NodesSpecification.nonDedicated(3, context));
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
-                                                 drawControllerHosts(nodesSpecification.count(), rootGroup, containers);
+                                                 drawControllerHosts(nodesSpecification.resources().nodes(), rootGroup, containers);
                 clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
                                                               hosts,
                                                               clusterName,

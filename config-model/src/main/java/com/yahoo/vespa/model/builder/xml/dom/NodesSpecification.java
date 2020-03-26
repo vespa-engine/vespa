@@ -28,11 +28,9 @@ import java.util.Optional;
  */
 public class NodesSpecification {
 
+    private final ClusterResources resources;
+
     private final boolean dedicated;
-
-    private final int count;
-
-    private final int groups;
 
     /** The Vespa version we want the nodes to run */
     private Version version;
@@ -47,43 +45,43 @@ public class NodesSpecification {
 
     private final boolean exclusive;
 
-    /** The resources each node should have, or empty to use the default */
-    private final Optional<NodeResources> resources;
-
     /** The repo part of a docker image (without tag), optional */
     private final Optional<String> dockerImageRepo;
 
     /** The ID of the cluster referencing this node specification, if any */
     private final Optional<String> combinedId;
 
-    private NodesSpecification(boolean dedicated, int count, int groups, Version version,
+    private NodesSpecification(ClusterResources resources,
+                               boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
-                               Optional<NodeResources> resources, Optional<String> dockerImageRepo,
+                               Optional<String> dockerImageRepo,
                                Optional<String> combinedId) {
+        this.resources = resources;
         this.dedicated = dedicated;
-        this.count = count;
-        this.groups = groups;
         this.version = version;
         this.required = required;
         this.canFail = canFail;
         this.exclusive = exclusive;
-        this.resources = resources;
         this.dockerImageRepo = dockerImageRepo;
         this.combinedId = combinedId;
     }
 
     private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement,
                                Optional<String> combinedId, Optional<String> dockerImageRepo) {
-        this(dedicated,
-             nodesElement.integerAttribute("count", 1),
-             nodesElement.integerAttribute("groups", 1),
+        this(toMinResources(nodesElement),
+             dedicated,
              version,
              nodesElement.booleanAttribute("required", false),
              canFail,
              nodesElement.booleanAttribute("exclusive", false),
-             getResources(nodesElement),
              dockerImageToUse(nodesElement, dockerImageRepo),
              combinedId);
+    }
+
+    private static ClusterResources toMinResources(ModelElement nodesElement) {
+        return new ClusterResources(nodesElement.integerAttribute("count", 1),
+                                    nodesElement.integerAttribute("groups", 1),
+                                    getResources(nodesElement));
     }
 
     /** Returns the ID of the cluster referencing this node specification, if any */
@@ -145,31 +143,29 @@ public class NodesSpecification {
      * Returns a requirement from <code>count</code> non-dedicated nodes in one group
      */
     public static NodesSpecification nonDedicated(int count, ConfigModelContext context) {
-        return new NodesSpecification(false,
-                                      count,
-                                      1,
+        return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified),
+                                      false,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
-                                      Optional.empty(),
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       Optional.empty());
     }
 
     /** Returns a requirement from <code>count</code> dedicated nodes in one group */
     public static NodesSpecification dedicated(int count, ConfigModelContext context) {
-        return new NodesSpecification(true,
-                                      count,
-                                      1,
+        return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified),
+                                      true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
-                                      Optional.empty(),
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       Optional.empty());
     }
+
+    public ClusterResources resources() { return resources; }
 
     /**
      * Returns whether this requires dedicated nodes.
@@ -184,12 +180,6 @@ public class NodesSpecification {
      */
     public boolean isExclusive() { return exclusive; }
 
-    /** Returns the number of nodes required */
-    public int count() { return count; }
-
-    /** Returns the number of host groups this specifies. Default is 1 */
-    public int groups() { return groups; }
-
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
@@ -202,28 +192,26 @@ public class NodesSpecification {
                 .combinedId(combinedId.map(ClusterSpec.Id::from))
                 .dockerImageRepo(dockerImageRepo)
                 .build();
-        return hostSystem.allocateHosts(cluster, Capacity.from(new ClusterResources(count, groups, resources.orElse(NodeResources.unspecified)),
-                                                               required, canFail),
-                                        logger);
+        return hostSystem.allocateHosts(cluster, Capacity.from(resources, required, canFail), logger);
     }
 
-    private static Optional<NodeResources> getResources(ModelElement nodesElement) {
+    private static NodeResources getResources(ModelElement nodesElement) {
         ModelElement resources = nodesElement.child("resources");
         if (resources != null) {
-            return Optional.of(new NodeResources(resources.requiredDoubleAttribute("vcpu"),
-                                                 parseGbAmount(resources.requiredStringAttribute("memory"), "B"),
-                                                 parseGbAmount(resources.requiredStringAttribute("disk"), "B"),
-                                                 Optional.ofNullable(resources.stringAttribute("bandwidth"))
-                                                         .map(b -> parseGbAmount(b, "BPS"))
-                                                         .orElse(0.3),
-                                                 parseOptionalDiskSpeed(resources.stringAttribute("disk-speed")),
-                                                 parseOptionalStorageType(resources.stringAttribute("storage-type"))));
+            return new NodeResources(resources.requiredDoubleAttribute("vcpu"),
+                                     parseGbAmount(resources.requiredStringAttribute("memory"), "B"),
+                                     parseGbAmount(resources.requiredStringAttribute("disk"), "B"),
+                                     Optional.ofNullable(resources.stringAttribute("bandwidth"))
+                                                                  .map(b -> parseGbAmount(b, "BPS"))
+                                                                  .orElse(0.3),
+                                     parseOptionalDiskSpeed(resources.stringAttribute("disk-speed")),
+                                     parseOptionalStorageType(resources.stringAttribute("storage-type")));
         }
         else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
-            return Optional.of(NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor")));
+            return NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor"));
         }
-        else { // Get the default
-            return Optional.empty();
+        else {
+            return NodeResources.unspecified;
         }
     }
 
@@ -363,9 +351,7 @@ public class NodesSpecification {
 
     @Override
     public String toString() {
-        return "specification of " + count + (dedicated ? " dedicated " : " ") + "nodes" +
-               (resources.map(nodeResources -> " with resources " + nodeResources).orElse("")) +
-               (groups > 1 ? " in " + groups + " groups" : "");
+        return "specification of " + (dedicated ? "dedicated " : "") + resources;
     }
 
 }
