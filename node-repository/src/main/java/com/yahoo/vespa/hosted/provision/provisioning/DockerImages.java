@@ -60,26 +60,7 @@ public class DockerImages {
     /** Returns the current docker image for given node type, or the type for corresponding child nodes
      * if it is a Docker host, or default */
     public DockerImage dockerImageFor(NodeType type) {
-        NodeType typeToUseForLookup = type;
-        if (type.isDockerHost()) {
-            switch (type) {
-                case confighost:
-                    typeToUseForLookup = NodeType.config;
-                    break;
-                case controllerhost:
-                    typeToUseForLookup = NodeType.controller;
-                    break;
-                case host:
-                    typeToUseForLookup = NodeType.tenant;
-                    break;
-                case proxyhost:
-                    typeToUseForLookup = NodeType.proxy;
-                    break;
-                default:
-                    break; // do not change
-            }
-        }
-
+        NodeType typeToUseForLookup = type.isDockerHost() ? type.childNodeType() : type;
         return getDockerImages().getOrDefault(typeToUseForLookup, defaultImage);
     }
 
