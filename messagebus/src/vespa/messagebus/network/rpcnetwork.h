@@ -73,7 +73,8 @@ private:
     std::unique_ptr<slobrok::api::RegisterAPI>         _regAPI;
     int                                                _requestedPort;
     std::unique_ptr<vespalib::SyncableThreadExecutor>  _executor;
-    std::unique_ptr<vespalib::SyncableThreadExecutor>  _singleExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _singleEncodeExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _singleDecodeExecutor;
     std::unique_ptr<RPCSendAdapter>                    _sendV1;
     std::unique_ptr<RPCSendAdapter>                    _sendV2;
     SendAdapterMap                                     _sendAdapters;
@@ -232,7 +233,7 @@ public:
     const slobrok::api::IMirrorAPI &getMirror() const override;
     CompressionConfig getCompressionConfig() { return _compressionConfig; }
     void invoke(FRT_RPCRequest *req);
-    vespalib::Executor & getExecutor(bool requireSequencing) const { return requireSequencing ? *_singleExecutor : *_executor; }
+    vespalib::Executor & getExecutor(bool requireSequencing, bool encode) const { return requireSequencing ? (encode ? *_singleEncodeExecutor : singleDecodeExecutor) : *_executor; }
     bool allowDispatchForEncode() const { return _allowDispatchForEncode; }
     bool allowDispatchForDecode() const { return _allowDispatchForDecode; }
 

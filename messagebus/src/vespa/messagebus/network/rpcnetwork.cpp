@@ -131,7 +131,8 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 65536)),
-    _singleExecutor(std::make_unique<vespalib::SingleExecutor>(1000)),
+    _singleEncodeExecutor(std::make_unique<vespalib::SingleExecutor>(100)),
+    _singleDecodeExecutor(std::make_unique<vespalib::SingleExecutor>(100)),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
@@ -412,7 +413,8 @@ RPCNetwork::sync()
 {
     SyncTask task(_scheduler);
     _executor->sync();
-    _singleExecutor->sync();
+    _singleEncodeExecutor->sync();
+    _singleDecodeExecutor->sync();
     task.await();
 }
 
@@ -422,9 +424,11 @@ RPCNetwork::shutdown()
     _transport->ShutDown(true);
     _threadPool->Close();
     _executor->shutdown();
-    _singleExecutor->shutdown();
+    _singleEncodeExecutor->shutdown();
+    _singleDecodeExecutor->shutdown();
     _executor->sync();
-    _singleExecutor->sync();
+    _singleEncodeExecutor->sync();
+    _singleDecodeExecutor->sync();
 }
 
 void
