@@ -113,23 +113,25 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     @Override
+    @Deprecated // TODO: Remove after April 2020
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requestedCapacity, int groups, ProvisionLogger logger) {
-        if (cluster.group().isPresent() && groups > 1)
+        return prepare(cluster, requestedCapacity.withGroups(groups), logger);
+    }
+
+    @Override
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity requestedCapacity, ProvisionLogger logger) {
+        if (cluster.group().isPresent() && requestedCapacity.minResources().groups() > 1)
             throw new IllegalArgumentException("Cannot both be specifying a group and ask for groups to be created");
-        if (requestedCapacity.nodeCount() % groups != 0)
-            throw new IllegalArgumentException("Requested " + requestedCapacity.nodeCount() + " nodes in " +
-                                               groups + " groups, but the node count is not divisible into this number of groups");
 
         int capacity = failOnOutOfCapacity || requestedCapacity.isRequired() 
-                       ? requestedCapacity.nodeCount() 
-                       : Math.min(requestedCapacity.nodeCount(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
-        if (groups > capacity)
-            groups = capacity;
+                       ? requestedCapacity.minResources().nodes()
+                       : Math.min(requestedCapacity.minResources().nodes(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
+        int groups = requestedCapacity.minResources().groups() > capacity ? capacity : requestedCapacity.minResources().groups();
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {
             allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(0))),
-                                                requestedCapacity.nodeResources(),
+                                                requestedCapacity.minResources().nodeResources(),
                                                 capacity,
                                                 startIndexForClusters,
                                                 requestedCapacity.canFail()));
@@ -137,7 +139,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         else {
             for (int i = 0; i < groups; i++) {
                 allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(i))),
-                                                    requestedCapacity.nodeResources(),
+                                                    requestedCapacity.minResources().nodeResources(),
                                                     capacity / groups,
                                                     allocation.size(),
                                                     requestedCapacity.canFail()));
@@ -162,7 +164,7 @@ public class InMemoryProvisioner implements HostProvisioner {
                             host.dockerImageRepo());
     }
 
-    private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, Optional<NodeResources> requestedResources,
+    private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, NodeResources requestedResources,
                                              int nodesInGroup, int startIndex, boolean canFail) {
         List<HostSpec> allocation = allocations.getOrDefault(clusterGroup, new ArrayList<>());
         allocations.put(clusterGroup, allocation);
@@ -170,8 +172,8 @@ public class InMemoryProvisioner implements HostProvisioner {
         // Check if the current allocations are compatible with the new request
         for (int i = allocation.size() - 1; i >= 0; i--) {
             Optional<NodeResources> currentResources = allocation.get(0).flavor().map(Flavor::resources);
-            if (currentResources.isEmpty() || requestedResources.isEmpty()) continue;
-            if (!currentResources.get().compatibleWith(requestedResources.get())) {
+            if (currentResources.isEmpty() || requestedResources == NodeResources.unspecified) continue;
+            if (!currentResources.get().compatibleWith(requestedResources)) {
                 HostSpec removed = allocation.remove(i);
                 freeNodes.put(currentResources.get(), new Host(removed.hostname())); // Return the node back to free pool
             }
@@ -182,7 +184,7 @@ public class InMemoryProvisioner implements HostProvisioner {
             // Find the smallest host that can fit the requested requested
             Optional<NodeResources> hostResources = freeNodes.keySet().stream()
                     .sorted(new MemoryDiskCpu())
-                    .filter(resources -> requestedResources.isEmpty() || resources.satisfies(requestedResources.get()))
+                    .filter(resources -> requestedResources == NodeResources.unspecified || resources.satisfies(requestedResources))
                     .findFirst();
             if (hostResources.isEmpty()) {
                 if (canFail)
@@ -195,8 +197,9 @@ public class InMemoryProvisioner implements HostProvisioner {
             if (freeNodes.get(hostResources.get()).isEmpty()) freeNodes.removeAll(hostResources.get());
             ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
             allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(),
-                    hostResources.map(Flavor::new), Optional.of(membership),
-                    newHost.version(), Optional.empty(), requestedResources));
+                                        hostResources.map(Flavor::new), Optional.of(membership),
+                                        newHost.version(), Optional.empty(),
+                                        requestedResources == NodeResources.unspecified ? Optional.empty() : Optional.of(requestedResources)));
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 

@@ -45,7 +45,13 @@ public class HostsXmlProvisioner implements HostProvisioner {
     }
 
     @Override
+    @Deprecated // TODO: Remove after April 2020
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity quantity, int groups, ProvisionLogger logger) {
+        throw new UnsupportedOperationException("Prepare on an XML host provisioner is not supported");
+    }
+
+    @Override
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity quantity, ProvisionLogger logger) {
         throw new UnsupportedOperationException("Prepare on an XML host provisioner is not supported");
     }
 

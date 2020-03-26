@@ -70,38 +70,47 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
 
+
+    /**
+     * Returns a list of nodes in the prepared or active state, matching the given constraints.
+     * The nodes are ordered by increasing index number.
+     */
+    @Deprecated // TODO: Remove after April 2020
+    @Override
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requestedCapacity,
+                                  int wantedGroups, ProvisionLogger logger) {
+        return prepare(application, cluster, requestedCapacity.withGroups(wantedGroups), logger);
+    }
+
     /**
      * Returns a list of nodes in the prepared or active state, matching the given constraints.
      * The nodes are ordered by increasing index number.
      */
     @Override
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requestedCapacity, 
-                                  int wantedGroups, ProvisionLogger logger) {
+                                  ProvisionLogger logger) {
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
-        if (requestedCapacity.nodeCount() > 0 && requestedCapacity.nodeCount() % wantedGroups != 0)
-            throw new IllegalArgumentException("Requested " + requestedCapacity.nodeCount() + " nodes in " + wantedGroups + " groups, " +
-                                               "which doesn't allow the nodes to be divided evenly into groups");
 
         log.log(zone.system().isCd() ? Level.INFO : LogLevel.DEBUG,
-                () -> "Received deploy prepare request for " + requestedCapacity + " in " +
-                      wantedGroups + " groups for application " + application + ", cluster " + cluster);
+                () -> "Received deploy prepare request for " + requestedCapacity +
+                      " for application " + application + ", cluster " + cluster);
 
         int effectiveGroups;
         NodeSpec requestedNodes;
-        Optional<NodeResources> resources = requestedCapacity.nodeResources();
+        NodeResources resources = requestedCapacity.minResources().nodeResources();
         if ( requestedCapacity.type() == NodeType.tenant) {
             int nodeCount = capacityPolicies.decideSize(requestedCapacity, cluster, application);
-            if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
-                logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
+            if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.minResources().nodes())
+                logger.log(Level.INFO, "Requested " + requestedCapacity.minResources().nodes() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            resources = Optional.of(capacityPolicies.decideNodeResources(requestedCapacity, cluster));
+            resources = capacityPolicies.decideNodeResources(requestedCapacity, cluster);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
-            effectiveGroups = Math.min(wantedGroups, nodeCount); // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, resources.get(), exclusive, requestedCapacity.canFail());
+            effectiveGroups = Math.min(requestedCapacity.minResources().groups(), nodeCount); // cannot have more groups than nodes
+            requestedNodes = NodeSpec.from(nodeCount, resources, exclusive, requestedCapacity.canFail());
 
             if ( ! hasQuota(application, nodeCount))
                 throw new IllegalArgumentException(requestedCapacity + " requested for " + cluster +
-                                                   (requestedCapacity.nodeCount() != nodeCount ? " resolved to " + nodeCount + " nodes" : "") +
+                                                   (requestedCapacity.minResources().nodes() != nodeCount ? " resolved to " + nodeCount + " nodes" : "") +
                                                    " exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
         }
         else {
@@ -137,7 +146,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         return requestedNodes <= 5;
     }
 
-    private List<HostSpec> asSortedHosts(List<Node> nodes, Optional<NodeResources> requestedResources) {
+    private List<HostSpec> asSortedHosts(List<Node> nodes, NodeResources requestedResources) {
         nodes.sort(Comparator.comparingInt(node -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
@@ -149,7 +158,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    Optional.of(nodeAllocation.membership()),
                                    node.status().vespaVersion(),
                                    nodeAllocation.networkPorts(),
-                                   requestedResources,
+                                   requestedResources == NodeResources.unspecified ? Optional.empty() : Optional.of(requestedResources),
                                    node.status().dockerImage().map(DockerImage::repository)));
             if (nodeAllocation.networkPorts().isPresent()) {
                 log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " has port allocations");

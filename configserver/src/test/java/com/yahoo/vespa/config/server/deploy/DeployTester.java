@@ -299,8 +299,14 @@ public class DeployTester {
         }
 
         @Override
+        @Deprecated // TODO: Remove after April 2020
         public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-            return hostProvisioner.prepare(cluster, capacity, groups, logger);
+            return hostProvisioner.prepare(cluster, capacity.withGroups(groups), logger);
+        }
+
+        @Override
+        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+            return hostProvisioner.prepare(cluster, capacity, logger);
         }
 
         @Override

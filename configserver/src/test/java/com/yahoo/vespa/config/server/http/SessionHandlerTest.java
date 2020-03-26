@@ -237,7 +237,13 @@ public class SessionHandlerTest {
         public Collection<HostSpec> lastHosts;
 
         @Override
+        @Deprecated // TODO: Remove after April 2020
         public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
             throw new UnsupportedOperationException();
         }
 

@@ -146,8 +146,8 @@ public class MockDeployer implements Deployer {
             this.clusterContexts = clusterContexts;
         }
 
-        public ApplicationContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
-            this(id, List.of(new ClusterContext(id, cluster, capacity, groups)));
+        public ApplicationContext(ApplicationId id, ClusterSpec cluster, Capacity capacity) {
+            this(id, List.of(new ClusterContext(id, cluster, capacity)));
         }
 
         public ApplicationId id() { return id; }
@@ -169,13 +169,11 @@ public class MockDeployer implements Deployer {
         private final ApplicationId id;
         private final ClusterSpec cluster;
         private final Capacity capacity;
-        private final int groups;
 
-        public ClusterContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
+        public ClusterContext(ApplicationId id, ClusterSpec cluster, Capacity capacity) {
             this.id = id;
             this.cluster = cluster;
             this.capacity = capacity;
-            this.groups = groups;
         }
 
         public ApplicationId id() { return id; }
@@ -183,7 +181,7 @@ public class MockDeployer implements Deployer {
         public ClusterSpec cluster() { return cluster; }
 
         private List<HostSpec> prepare(NodeRepositoryProvisioner provisioner) {
-            return provisioner.prepare(id, cluster, capacity, groups, null);
+            return provisioner.prepare(id, cluster, capacity, null);
         }
 
     }

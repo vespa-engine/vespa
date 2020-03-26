@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -48,8 +49,8 @@ public class RebalancerTest {
         MetricsReporterTest.TestMetric metric = new MetricsReporterTest.TestMetric();
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
-                cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.fromCount(1, cpuResources), 1),
-                memApp, new MockDeployer.ApplicationContext(memApp, clusterSpec("c"), Capacity.fromCount(1, memResources), 1));
+                cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),
+                memApp, new MockDeployer.ApplicationContext(memApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, memResources))));
         MockDeployer deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
 
         Rebalancer rebalancer = new Rebalancer(deployer,

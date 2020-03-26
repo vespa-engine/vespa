@@ -14,7 +14,9 @@ import java.util.Optional;
  * @author hakonhall
  */
 public interface InfraApplicationApi {
+
     ApplicationId getApplicationId();
     Capacity getCapacity();
     ClusterSpec getClusterSpecWithVersion(Version version);
+
 }

@@ -10,6 +10,8 @@ import java.util.Objects;
  */
 public class NodeResources {
 
+    public static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
+
     public enum DiskSpeed {
 
         fast, // Has/requires SSD disk or similar speed

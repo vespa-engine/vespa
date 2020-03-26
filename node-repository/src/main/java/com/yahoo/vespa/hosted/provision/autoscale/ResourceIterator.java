@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
 
 /**
@@ -58,8 +59,7 @@ public class ResourceIterator {
         int nodesWithRedundancy = currentNodes - (singleGroupMode ? 1 : groupSize);
         ClusterResources next = new ClusterResources(currentNodes,
                                                      singleGroupMode ? 1 : currentNodes / groupSize,
-                                                     resourcesFor(nodesWithRedundancy),
-                                                     allocation.clusterType());
+                                                     resourcesFor(nodesWithRedundancy));
         currentNodes += nodeIncrement;
         return next;
     }

@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.text.XML;
@@ -201,7 +202,9 @@ public class NodesSpecification {
                 .combinedId(combinedId.map(ClusterSpec.Id::from))
                 .dockerImageRepo(dockerImageRepo)
                 .build();
-        return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
+        return hostSystem.allocateHosts(cluster, Capacity.from(new ClusterResources(count, groups, resources.orElse(NodeResources.unspecified)),
+                                                               required, canFail),
+                                        logger);
     }
 
     private static Optional<NodeResources> getResources(ModelElement nodesElement) {

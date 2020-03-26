@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -322,12 +323,12 @@ public class FailedExpirerTest {
 
         public FailureScenario allocate(ClusterSpec.Type clusterType, NodeResources flavor, String... hostname) {
             ClusterSpec clusterSpec = ClusterSpec.request(clusterType, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-            Capacity capacity = Capacity.fromCount(hostname.length, Optional.of(flavor), false, true);
+            Capacity capacity = Capacity.from(new ClusterResources(hostname.length, 1, flavor), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }
 
         public FailureScenario allocate(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity capacity) {
-            List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity, 1, null);
+            List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
             provisioner.activate(transaction, applicationId, Set.copyOf(preparedNodes));
             transaction.commit();

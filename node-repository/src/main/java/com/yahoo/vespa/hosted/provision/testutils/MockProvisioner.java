@@ -20,7 +20,13 @@ import java.util.List;
 public class MockProvisioner implements Provisioner {
 
     @Override
+    @Deprecated // TODO: Remove after April 2020
     public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
         return Collections.emptyList();
     }
 
