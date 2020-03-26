@@ -27,9 +27,9 @@ public:
     size_t getNumThreads() const override;
     uint32_t getTaskLimit() const { return _taskLimit.load(std::memory_order_relaxed); }
     Stats getStats() override;
+    SingleExecutor & shutdown() override;
 private:
     using Lock = std::unique_lock<std::mutex>;
-    uint64_t addTask(Task::UP task);
     void drain(Lock & lock);
     void run() override;
     void drain_tasks();
@@ -56,6 +56,7 @@ private:
     std::atomic<uint64_t>       _wakeupConsumerAt;
     std::atomic<uint64_t>       _producerNeedWakeupAt;
     std::atomic<uint64_t>       _wp;
+    bool                        _closed;
 };
 
 }

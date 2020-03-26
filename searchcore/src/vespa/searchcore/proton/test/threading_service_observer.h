@@ -69,6 +69,7 @@ public:
     search::ISequencedTaskExecutor &attributeFieldWriter() override {
         return _attributeFieldWriter;
     }
+
 };
 
 }

@@ -40,6 +40,7 @@ public:
 class SyncableThreadExecutor : public ThreadExecutor, public Syncable
 {
 public:
+    virtual SyncableThreadExecutor & shutdown() = 0;
 };
 
 } // namespace vespalib

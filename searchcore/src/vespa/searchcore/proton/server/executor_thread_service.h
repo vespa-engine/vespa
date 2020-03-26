@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/vespalib/util/threadstackexecutorbase.h>
+#include <vespa/vespalib/util/threadexecutor.h>
 
 namespace proton {
 
@@ -14,11 +14,11 @@ namespace internal { struct ThreadId; }
 class ExecutorThreadService : public searchcorespi::index::IThreadService
 {
 private:
-    vespalib::ThreadStackExecutorBase &_executor;
+    vespalib::SyncableThreadExecutor &_executor;
     std::unique_ptr<internal::ThreadId>   _threadId;
 
 public:
-    ExecutorThreadService(vespalib::ThreadStackExecutorBase &executor);
+    ExecutorThreadService(vespalib::SyncableThreadExecutor &executor);
     ~ExecutorThreadService();
 
     Stats getStats() override;
@@ -29,6 +29,10 @@ public:
     void run(vespalib::Runnable &runnable) override;
     vespalib::Syncable &sync() override {
         _executor.sync();
+        return *this;
+    }
+    ExecutorThreadService & shutdown() override {
+        _executor.shutdown();
         return *this;
     }
     bool isCurrentThread() const override;

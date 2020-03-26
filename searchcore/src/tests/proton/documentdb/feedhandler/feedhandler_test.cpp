@@ -55,7 +55,6 @@ using storage::spi::RemoveResult;
 using storage::spi::Result;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
-using vespalib::BlockingThreadStackExecutor;
 using vespalib::ThreadStackExecutor;
 using vespalib::ThreadStackExecutorBase;
 using vespalib::makeClosure;
