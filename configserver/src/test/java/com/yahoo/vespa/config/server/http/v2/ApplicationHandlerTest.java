@@ -28,12 +28,12 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.client.Client;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -58,11 +59,16 @@ public class ApplicationHandlerTest {
 
     private static File testApp = new File("src/test/apps/app");
 
-    private ListApplicationsHandler listApplicationsHandler;
     private final static TenantName mytenantName = TenantName.from("mytenant");
     private final static TenantName foobar = TenantName.from("foobar");
-    private final static ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
+    private final static ApplicationId myTenantApplicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
+    private final static ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(TenantName.defaultName()).build();
+    private final static MockTesterClient testerClient = new MockTesterClient();
+    private final static NullMetric metric = new NullMetric();
+    private final static ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
+    private static final MockLogRetriever logRetriever = new MockLogRetriever();
 
+    private TestComponentRegistry componentRegistry;
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionHandlerTest.MockProvisioner provisioner;
@@ -71,27 +77,30 @@ public class ApplicationHandlerTest {
 
     @Before
     public void setup() {
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+        componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, mytenantName));
-        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
         provisioner = new SessionHandlerTest.MockProvisioner();
         orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           provisioner,
                                                           orchestrator,
-                                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                                          new MockLogRetriever(),
+                                                          configserverConfig,
+                                                          logRetriever,
                                                           Clock.systemUTC(),
-                                                          new MockTesterClient(),
-                                                          new NullMetric());
-        listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
-                                                              tenantRepository,
-                                                              Zone.defaultZone());
+                                                          testerClient,
+                                                          metric);
+    }
+
+    @After
+    public void shutdown() {
+        tenantRepository.close();
     }
 
     @Test
     public void testDelete() throws Exception {
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
+        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, mytenantName));
+
         {
             applicationRepository.deploy(testApp, prepareParams(applicationId));
             Tenant mytenant = tenantRepository.getTenant(applicationId.tenant());
@@ -132,7 +141,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testDeleteNonExistent() throws Exception {
-        deleteAndAssertResponse(applicationId,
+        deleteAndAssertResponse(myTenantApplicationId,
                                 Zone.defaultZone(),
                                 Response.Status.NOT_FOUND,
                                 HttpErrorResponse.errorCodes.NOT_FOUND,
@@ -180,10 +189,10 @@ public class ApplicationHandlerTest {
                                                                                 InfraDeployerProvider.empty(),
                                                                                 new ConfigConvergenceChecker(stateApiFactory),
                                                                                 mockHttpProxy,
-                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                                                                new OrchestratorMock(),
-                                                                                new MockTesterClient(),
-                                                                                new NullMetric());
+                                                                                configserverConfig,
+                                                                                orchestrator,
+                                                                                testerClient,
+                                                                                metric);
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
@@ -204,16 +213,15 @@ public class ApplicationHandlerTest {
 
         HttpResponse response = fileDistributionStatus(applicationId, zone);
         assertEquals(200, response.getStatus());
-        SessionHandlerTest.getRenderedString(response);
         assertEquals("{\"hosts\":[{\"hostname\":\"mytesthost\",\"status\":\"UNKNOWN\",\"message\":\"error: Connection error(104)\",\"fileReferences\":[]}],\"status\":\"UNKNOWN\"}",
-                     SessionHandlerTest.getRenderedString(response));
+                     getRenderedString(response));
 
         // 404 for unknown application
-        ApplicationId unknown = new ApplicationId.Builder().applicationName("unknown").tenant(mytenantName).build();
+        ApplicationId unknown = new ApplicationId.Builder().applicationName("unknown").tenant("default").build();
         HttpResponse responseForUnknown = fileDistributionStatus(unknown, zone);
         assertEquals(404, responseForUnknown.getStatus());
-        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"No such application id: 'mytenant.unknown'\"}",
-                     SessionHandlerTest.getRenderedString(responseForUnknown));
+        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"No such application id: 'default.unknown'\"}",
+                     getRenderedString(responseForUnknown));
     }
 
     @Test
@@ -225,9 +233,7 @@ public class ApplicationHandlerTest {
         HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
         assertEquals(200, response.getStatus());
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        response.render(baos);
-        assertEquals("log line", baos.toString());
+        assertEquals("log line", getRenderedString(response));
     }
 
     @Test
@@ -235,13 +241,9 @@ public class ApplicationHandlerTest {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/status";
         ApplicationHandler mockHandler = createApplicationHandler();
-
         HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
         assertEquals(200, response.getStatus());
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        response.render(baos);
-        assertEquals("OK", baos.toString());
+        assertEquals("OK", getRenderedString(response));
     }
 
     @Test
@@ -252,10 +254,7 @@ public class ApplicationHandlerTest {
 
         HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
         assertEquals(200, response.getStatus());
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        response.render(baos);
-        assertEquals("log", baos.toString());
+        assertEquals("log", getRenderedString(response));
     }
 
     @Test
@@ -345,10 +344,13 @@ public class ApplicationHandlerTest {
                 "/environment/" + zone.environment().value() +
                 "/region/" + zone.region().value() +
                 "/instance/" + applicationId.instance().value() + "\"]";
+        ListApplicationsHandler listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
+                                                                                      tenantRepository,
+                                                                                      Zone.defaultZone());
         ListApplicationsHandlerTest.assertResponse(listApplicationsHandler, "http://myhost:14000/application/v2/tenant/" + tenantName + "/application/",
-                Response.Status.OK,
-                expected,
-                com.yahoo.jdisc.http.HttpRequest.Method.GET);
+                                                   Response.Status.OK,
+                                                   expected,
+                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET);
     }
 
     private void restart(ApplicationId application, Zone zone) throws IOException {
