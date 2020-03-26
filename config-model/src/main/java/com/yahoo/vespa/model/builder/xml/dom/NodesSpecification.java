@@ -66,16 +66,18 @@ public class NodesSpecification {
         this.combinedId = combinedId;
     }
 
-    private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement,
-                               Optional<String> combinedId, Optional<String> dockerImageRepo) {
-        this(toMinResources(nodesElement),
-             dedicated,
-             version,
-             nodesElement.booleanAttribute("required", false),
-             canFail,
-             nodesElement.booleanAttribute("exclusive", false),
-             dockerImageToUse(nodesElement, dockerImageRepo),
-             combinedId);
+    private static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
+                                             ModelElement nodesElement, Optional<String> dockerImageRepo) {
+        var resolvedElement = resolveElement(nodesElement);
+        var combinedId = findCombinedId(nodesElement, resolvedElement);
+        return new NodesSpecification(toMinResources(resolvedElement),
+                                      dedicated,
+                                      version,
+                                      resolvedElement.booleanAttribute("required", false),
+                                      canFail,
+                                      resolvedElement.booleanAttribute("exclusive", false),
+                                      dockerImageToUse(resolvedElement, dockerImageRepo),
+                                      combinedId);
     }
 
     private static ClusterResources toMinResources(ModelElement nodesElement) {
@@ -92,13 +94,6 @@ public class NodesSpecification {
         }
         // Specification for a content cluster that is referenced by a container cluster
         return containerIdReferencing(nodesElement);
-    }
-
-    private static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
-                                             ModelElement nodesElement, Optional<String> dockerImage) {
-        var resolvedElement = resolveElement(nodesElement);
-        var combinedId = findCombinedId(nodesElement, resolvedElement);
-        return new NodesSpecification(dedicated, canFail, version, resolvedElement, combinedId, dockerImage);
     }
 
     /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
