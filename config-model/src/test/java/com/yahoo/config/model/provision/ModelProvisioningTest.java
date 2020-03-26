@@ -1205,6 +1205,62 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testRequestingRangesMin() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "   <container version='1.0' id='container'>" +
+                "      <nodes count='[4, 6]'>" +
+                "         <resources vcpu='[11.5, 13.5]' memory='[10Gb, 100Gb]' disk='[30Gb, 1Tb]'/>" +
+                "      </nodes>" +
+                "   </container>" +
+                "   <content version='1.0' id='foo'>" +
+                "      <documents>" +
+                "        <document type='type1' mode='index'/>" +
+                "      </documents>" +
+                "      <nodes count='[6, 20]' groups='[3,4]'>" +
+                "         <resources vcpu='8' memory='200Gb' disk='1Pb'/>" +
+                "      </nodes>" +
+                "   </content>" +
+                "</services>";
+
+        int totalHosts = 10;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(new NodeResources(11.5, 10, 30, 0.3), 6);
+        tester.addHosts(new NodeResources(85, 200, 1000_000_000, 0.3), 20);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(totalHosts, model.getRoot().hostSystem().getHosts().size());
+    }
+
+    @Test
+    public void testRequestingRangesMax() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "   <container version='1.0' id='container'>" +
+                "      <nodes count='[4, 6]'>" +
+                "         <resources vcpu='[11.5, 13.5]' memory='[10Gb, 100Gb]' disk='[30Gb, 1Tb]'/>" +
+                "      </nodes>" +
+                "   </container>" +
+                "   <content version='1.0' id='foo'>" +
+                "      <documents>" +
+                "        <document type='type1' mode='index'/>" +
+                "      </documents>" +
+                "      <nodes count='[6, 20]' groups='[3,4]'>" +
+                "         <resources vcpu='8' memory='200Gb' disk='1Pb'/>" +
+                "      </nodes>" +
+                "   </content>" +
+                "</services>";
+
+        int totalHosts = 26;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(new NodeResources(13.5, 100, 1000, 0.3), 6);
+        tester.addHosts(new NodeResources(85, 200, 1000_000_000, 0.3), 20);
+        VespaModel model = tester.createModel(services, true, true);
+        assertEquals(totalHosts, model.getRoot().hostSystem().getHosts().size());
+    }
+
+    @Test
     public void testContainerOnly() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +

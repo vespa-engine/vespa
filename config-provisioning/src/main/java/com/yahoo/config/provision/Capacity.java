@@ -21,6 +21,9 @@ public final class Capacity {
     private final NodeType type;
 
     private Capacity(ClusterResources min, ClusterResources max, boolean required, boolean canFail, NodeType type) {
+        if (max.smallerThan(min))
+            throw new IllegalArgumentException("The max capacity must be larger than the min capacity, but got min " +
+                                               min + " and max " + max);
         this.min = min;
         this.max = max;
         this.required = required;
