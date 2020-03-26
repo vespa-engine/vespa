@@ -186,19 +186,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.log.MappedLevelControllerRepo": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.nio.MappedByteBuffer, int, int, java.lang.String)",
-      "public com.yahoo.log.LevelController getLevelController(java.lang.String)",
-      "public void checkBack()"
-    ],
-    "fields": []
-  },
   "com.yahoo.log.RejectFilter": {
     "superClass": "java.lang.Object",
     "interfaces": [],
