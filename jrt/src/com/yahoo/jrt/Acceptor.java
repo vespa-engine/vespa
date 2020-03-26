@@ -101,7 +101,7 @@ public class Acceptor {
         while (serverChannel.isOpen()) {
             try {
                 TransportThread tt = parent.selectThread();
-                tt.addConnection(new Connection(tt, owner, serverChannel.accept()));
+                tt.addConnection(new Connection(tt, owner, serverChannel.accept(), parent.getTcpNoDelay()));
                 tt.sync();
             } catch (ClosedChannelException ignore) {
             } catch (Exception e) {

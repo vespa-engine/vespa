@@ -33,6 +33,8 @@ mbus.rpctargetcache.ttl double default = 600
 ## Any value below 1 will be 1.
 mbus.num_threads int default=4
 
+mbus.optimize_for enum {LATENCY, THROUGHPUT} default = LATENCY
+
 ## Enable to use above thread pool for encoding replies
 ## False will use network(fnet) thread
 mbus.dispatch_on_encode bool default=true

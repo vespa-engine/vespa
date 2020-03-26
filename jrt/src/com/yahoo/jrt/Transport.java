@@ -25,6 +25,7 @@ public class Transport {
     private final Connector         connector;
     private final Worker            worker;
     private final AtomicInteger     runCnt;
+    private final boolean tcpNoDelay;
 
     private final TransportMetrics metrics = TransportMetrics.getInstance();
     private final ArrayList<TransportThread> threads = new ArrayList<>();
@@ -40,11 +41,10 @@ public class Transport {
      * @param cryptoEngine crypto engine to use
      * @param numThreads number of {@link TransportThread}s.
      **/
-    public Transport(FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads) {
-        synchronized (this) {
-            this.fatalHandler = fatalHandler; // NB: this must be set first
-        }
+    public Transport(FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay) {
+        this.fatalHandler = fatalHandler; // NB: this must be set first
         this.cryptoEngine = cryptoEngine;
+        this.tcpNoDelay = tcpNoDelay;
         connector = new Connector();
         worker = new Worker(this);
         runCnt = new AtomicInteger(numThreads);
@@ -52,10 +52,10 @@ public class Transport {
             threads.add(new TransportThread(this));
         }
     }
-    public Transport(CryptoEngine cryptoEngine, int numThreads) { this(null, cryptoEngine, numThreads); }
-    public Transport(FatalErrorHandler fatalHandler, int numThreads) { this(fatalHandler, CryptoEngine.createDefault(), numThreads); }
-    public Transport(int numThreads) { this(null, CryptoEngine.createDefault(), numThreads); }
-    public Transport() { this(null, CryptoEngine.createDefault(), 1); }
+    public Transport(CryptoEngine cryptoEngine, int numThreads) { this(null, cryptoEngine, numThreads, true); }
+    public Transport(int numThreads) { this(null, CryptoEngine.createDefault(), numThreads, true); }
+    public Transport(int numThreads, boolean tcpNoDelay) { this(null, CryptoEngine.createDefault(), numThreads, tcpNoDelay); }
+    public Transport() { this(null, CryptoEngine.createDefault(), 1, true); }
 
     /**
      * Select a random transport thread
@@ -65,6 +65,8 @@ public class Transport {
     public TransportThread selectThread() {
         return threads.get(rnd.nextInt(threads.size()));
     }
+
+    boolean getTcpNoDelay() { return tcpNoDelay; }
 
     /**
      * Use the underlying CryptoEngine to create a CryptoSocket for
@@ -130,7 +132,7 @@ public class Transport {
      * @param context application context for the new connection
      */
     Connection connect(Supervisor owner, Spec spec, Object context) {
-        Connection conn = new Connection(selectThread(), owner, spec, context);
+        Connection conn = new Connection(selectThread(), owner, spec, context, getTcpNoDelay());
         connector.connectLater(conn);
         return conn;
     }
