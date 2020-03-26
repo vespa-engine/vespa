@@ -17,6 +17,8 @@
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/vespalib/util/singleexecutor.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fastos/thread.h>
 #include <thread>
 
@@ -87,8 +89,16 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
         }
     }
     if (shouldSend) {
-        _net.send(*this);
-        delete this;
+        if (_net.allowDispatchForEncode()) {
+            auto rejected = _net.getExecutor(true).execute(vespalib::makeLambdaTask([this]() {
+                _net.send(*this);
+                delete this;
+            }));
+            assert (!rejected);
+        } else {
+            _net.send(*this);
+            delete this;
+        }
     }
 }
 
@@ -121,6 +131,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 65536)),
+    _singleExecutor(std::make_unique<vespalib::SingleExecutor>(1000)),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
@@ -401,6 +412,7 @@ RPCNetwork::sync()
 {
     SyncTask task(_scheduler);
     _executor->sync();
+    _singleExecutor->sync();
     task.await();
 }
 
@@ -410,7 +422,9 @@ RPCNetwork::shutdown()
     _transport->ShutDown(true);
     _threadPool->Close();
     _executor->shutdown();
+    _singleExecutor->shutdown();
     _executor->sync();
+    _singleExecutor->sync();
 }
 
 void
