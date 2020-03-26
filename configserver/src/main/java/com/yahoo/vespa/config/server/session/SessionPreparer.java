@@ -300,6 +300,7 @@ public class SessionPreparer {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
+            // Note: When changing the below you need to also change similar calls in SessionFactoryImpl.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
