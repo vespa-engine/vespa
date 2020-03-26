@@ -36,6 +36,14 @@ public class ClusterResources {
     public ClusterResources with(NodeResources resources) { return new ClusterResources(nodes, groups, resources); }
     public ClusterResources withGroups(int groups) { return new ClusterResources(nodes, groups, nodeResources); }
 
+    /** Returns true if this is smaller than the given resources in any dimension */
+    public boolean smallerThan(ClusterResources other) {
+        if (this.nodes < other.nodes) return true;
+        if (this.groups < other.groups) return true;
+        if ( ! this.nodeResources.justNumbers().satisfies(other.nodeResources.justNumbers())) return true;
+        return false;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
