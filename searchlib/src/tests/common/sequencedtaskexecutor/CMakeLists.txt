@@ -13,3 +13,11 @@ vespa_add_executable(searchlib_sequencedtaskexecutor_test_app TEST
     searchlib
 )
 vespa_add_test(NAME searchlib_sequencedtaskexecutor_test_app COMMAND searchlib_sequencedtaskexecutor_test_app)
+
+vespa_add_executable(searchlib_adaptive_sequenced_executor_test_app TEST
+    SOURCES
+    adaptive_sequenced_executor_test.cpp
+    DEPENDS
+    searchlib
+)
+vespa_add_test(NAME searchlib_adaptive_sequenced_executor_test_app COMMAND searchlib_adaptive_sequenced_executor_test_app)
