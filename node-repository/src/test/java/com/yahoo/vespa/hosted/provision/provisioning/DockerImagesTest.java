@@ -7,6 +7,8 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -18,6 +20,9 @@ public class DockerImagesTest {
     public void image_selection() {
         var flagSource = new InMemoryFlagSource();
         var tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
+
+        var proxyImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/proxy");
+        tester.nodeRepository().dockerImages().setDockerImage(NodeType.proxy, Optional.of(proxyImage));
 
         // Host uses tenant default image (for preload purposes)
         var defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
@@ -34,6 +39,12 @@ public class DockerImagesTest {
             for (var node : nodes) {
                 assertEquals(defaultImage, tester.nodeRepository().dockerImages().dockerImageFor(node.type()));
             }
+        }
+
+        // Proxy host uses image used by child nodes (proxy nodes), which is overridden in this case (for preload purposes)
+        var proxyHosts = tester.makeReadyNodes(2, "default", NodeType.proxyhost);
+        for (var host : proxyHosts) {
+            assertEquals(proxyImage, tester.nodeRepository().dockerImages().dockerImageFor(host.type()));
         }
     }
 

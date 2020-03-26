@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * Multithread safe class to get and set docker images for given host types.
+ * Multithread safe class to get and set docker images for given node types.
  *
  * @author freva
  */
@@ -57,9 +57,30 @@ public class DockerImages {
         return dockerImages.get();
     }
 
-    /** Returns the current docker image for given node type, or default */
+    /** Returns the current docker image for given node type, or the type for corresponding child nodes
+     * if it is a Docker host, or default */
     public DockerImage dockerImageFor(NodeType type) {
-        return getDockerImages().getOrDefault(type, defaultImage);
+        NodeType typeToUseForLookup = type;
+        if (type.isDockerHost()) {
+            switch (type) {
+                case confighost:
+                    typeToUseForLookup = NodeType.config;
+                    break;
+                case controllerhost:
+                    typeToUseForLookup = NodeType.controller;
+                    break;
+                case host:
+                    typeToUseForLookup = NodeType.tenant;
+                    break;
+                case proxyhost:
+                    typeToUseForLookup = NodeType.proxy;
+                    break;
+                default:
+                    break; // do not change
+            }
+        }
+
+        return getDockerImages().getOrDefault(typeToUseForLookup, defaultImage);
     }
 
     /** Set the docker image for nodes of given type */
