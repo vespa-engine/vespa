@@ -17,7 +17,7 @@ anyElement = element * {
 JavaId = xsd:string { pattern = "([a-zA-Z_$][a-zA-Z\d_$]*\.)*[a-zA-Z_$][a-zA-Z\d_$]*" }
 
 Nodes = element nodes {
-    attribute count { xsd:positiveInteger } &
+    attribute count { xsd:positiveInteger | xsd:string } &
     attribute flavor { xsd:string }? &
     attribute docker-image { xsd:string }? &
     Resources?
@@ -32,7 +32,7 @@ Resources = element resources {
 }
 
 OptionalDedicatedNodes = element nodes {
-    attribute count { xsd:positiveInteger } &
+    attribute count { xsd:positiveInteger | xsd:string } &
     attribute flavor { xsd:string }? &
     attribute required { xsd:boolean }? &
     attribute docker-image { xsd:string }? &

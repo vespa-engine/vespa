@@ -6,6 +6,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
@@ -57,6 +58,8 @@ public class InMemoryProvisioner implements HostProvisioner {
     /** Use this index as start index for all clusters */
     private final int startIndexForClusters;
 
+    private final boolean useMaxResources;
+
     /** Creates this with a number of nodes with resources 1, 3, 9, 1 */
     public InMemoryProvisioner(int nodeCount) {
         this(nodeCount, defaultResources);
@@ -64,27 +67,29 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     /** Creates this with a number of nodes with given resources */
     public InMemoryProvisioner(int nodeCount, NodeResources resources) {
-        this(Map.of(resources, createHostInstances(nodeCount)), true, 0);
+        this(Map.of(resources, createHostInstances(nodeCount)), true, false, 0);
     }
 
     /** Creates this with a set of host names of the flavor 'default' */
     public InMemoryProvisioner(boolean failOnOutOfCapacity, String... hosts) {
-        this(Map.of(defaultResources, toHostInstances(hosts)), failOnOutOfCapacity, 0);
+        this(Map.of(defaultResources, toHostInstances(hosts)), failOnOutOfCapacity, false, 0);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, 0, retiredHostNames);
+        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, false, 0, retiredHostNames);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
-        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, startIndexForClusters, retiredHostNames);
+        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, false, startIndexForClusters, retiredHostNames);
     }
 
     public InMemoryProvisioner(Map<NodeResources, Collection<Host>> hosts, boolean failOnOutOfCapacity,
+                               boolean useMaxResources,
                                int startIndexForClusters, String ... retiredHostNames) {
         this.failOnOutOfCapacity = failOnOutOfCapacity;
+        this.useMaxResources = useMaxResources;
         for (Map.Entry<NodeResources, Collection<Host>> hostsWithResources : hosts.entrySet())
             for (Host host : hostsWithResources.getValue())
                 freeNodes.put(hostsWithResources.getKey(), host);
@@ -119,30 +124,37 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity requestedCapacity, ProvisionLogger logger) {
-        if (cluster.group().isPresent() && requestedCapacity.minResources().groups() > 1)
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
+        if (useMaxResources)
+            return prepare(cluster, requested.maxResources(), requested.isRequired(), requested.canFail());
+        else
+            return prepare(cluster, requested.minResources(), requested.isRequired(), requested.canFail());
+    }
+
+    public List<HostSpec> prepare(ClusterSpec cluster, ClusterResources requested, boolean required, boolean canFail) {
+        if (cluster.group().isPresent() && requested.groups() > 1)
             throw new IllegalArgumentException("Cannot both be specifying a group and ask for groups to be created");
 
-        int capacity = failOnOutOfCapacity || requestedCapacity.isRequired() 
-                       ? requestedCapacity.minResources().nodes()
-                       : Math.min(requestedCapacity.minResources().nodes(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
-        int groups = requestedCapacity.minResources().groups() > capacity ? capacity : requestedCapacity.minResources().groups();
+        int capacity = failOnOutOfCapacity || required
+                       ? requested.nodes()
+                       : Math.min(requested.nodes(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
+        int groups = requested.groups() > capacity ? capacity : requested.groups();
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {
             allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(0))),
-                                                requestedCapacity.minResources().nodeResources(),
+                                                requested.nodeResources(),
                                                 capacity,
                                                 startIndexForClusters,
-                                                requestedCapacity.canFail()));
+                                                canFail));
         }
         else {
             for (int i = 0; i < groups; i++) {
                 allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(i))),
-                                                    requestedCapacity.minResources().nodeResources(),
+                                                    requested.nodeResources(),
                                                     capacity / groups,
                                                     allocation.size(),
-                                                    requestedCapacity.canFail()));
+                                                    canFail));
             }
         }
         for (ListIterator<HostSpec> i = allocation.listIterator(); i.hasNext(); ) {

@@ -7,7 +7,7 @@
   </admin>
 
   <container id="container1" version="1.0">
-    <nodes count="5" required="true">
+    <nodes count="[5,7]" required="true">
       <resources vcpu="1.2" memory="10Gb" disk="0.3 TB"/>
     </nodes>
   </container>
@@ -23,6 +23,13 @@
   <content id="search" version="1.0">
     <redundancy>2</redundancy>
     <nodes count="7" flavor="large" groups="12">
+      <resources vcpu="3.0" memory="32000.0Mb" disk="300 Gb"/>
+    </nodes>
+  </content>
+
+  <content id="ml" version="1.0">
+    <redundancy>2</redundancy>
+    <nodes count="[10-20]" flavor="large" groups="[1-3]">
       <resources vcpu="3.0" memory="32000.0Mb" disk="300 Gb"/>
     </nodes>
   </content>

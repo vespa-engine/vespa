@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
@@ -19,6 +20,8 @@ import org.w3c.dom.Node;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.
@@ -28,7 +31,7 @@ import java.util.Optional;
  */
 public class NodesSpecification {
 
-    private final ClusterResources resources;
+    private final ClusterResources min, max;
 
     private final boolean dedicated;
 
@@ -51,12 +54,14 @@ public class NodesSpecification {
     /** The ID of the cluster referencing this node specification, if any */
     private final Optional<String> combinedId;
 
-    private NodesSpecification(ClusterResources resources,
+    private NodesSpecification(ClusterResources min,
+                               ClusterResources max,
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<String> dockerImageRepo,
                                Optional<String> combinedId) {
-        this.resources = resources;
+        this.min = min;
+        this.max = max;
         this.dedicated = dedicated;
         this.version = version;
         this.required = required;
@@ -70,7 +75,9 @@ public class NodesSpecification {
                                              ModelElement nodesElement, Optional<String> dockerImageRepo) {
         var resolvedElement = resolveElement(nodesElement);
         var combinedId = findCombinedId(nodesElement, resolvedElement);
-        return new NodesSpecification(toMinResources(resolvedElement),
+        var resources = toResources(resolvedElement);
+        return new NodesSpecification(resources.getFirst(),
+                                      resources.getSecond(),
                                       dedicated,
                                       version,
                                       resolvedElement.booleanAttribute("required", false),
@@ -80,10 +87,12 @@ public class NodesSpecification {
                                       combinedId);
     }
 
-    private static ClusterResources toMinResources(ModelElement nodesElement) {
-        return new ClusterResources(nodesElement.integerAttribute("count", 1),
-                                    nodesElement.integerAttribute("groups", 1),
-                                    getResources(nodesElement));
+    private static Pair<ClusterResources, ClusterResources> toResources(ModelElement nodesElement) {
+        Pair<Integer, Integer> nodes =  toRange(nodesElement.stringAttribute("count"),  1, Integer::parseInt);
+        Pair<Integer, Integer> groups = toRange(nodesElement.stringAttribute("groups"), 1, Integer::parseInt);
+        var min = new ClusterResources(nodes.getFirst(),  groups.getFirst(),  nodeResources(nodesElement).getFirst());
+        var max = new ClusterResources(nodes.getSecond(), groups.getSecond(), nodeResources(nodesElement).getSecond());
+        return new Pair<>(min, max);
     }
 
     /** Returns the ID of the cluster referencing this node specification, if any */
@@ -139,6 +148,7 @@ public class NodesSpecification {
      */
     public static NodesSpecification nonDedicated(int count, ConfigModelContext context) {
         return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified),
+                                      new ClusterResources(count, 1, NodeResources.unspecified),
                                       false,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
@@ -151,6 +161,7 @@ public class NodesSpecification {
     /** Returns a requirement from <code>count</code> dedicated nodes in one group */
     public static NodesSpecification dedicated(int count, ConfigModelContext context) {
         return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified),
+                                      new ClusterResources(count, 1, NodeResources.unspecified),
                                       true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
@@ -160,7 +171,8 @@ public class NodesSpecification {
                                       Optional.empty());
     }
 
-    public ClusterResources resources() { return resources; }
+    public ClusterResources minResources() { return min; }
+    public ClusterResources maxResources() { return max; }
 
     /**
      * Returns whether this requires dedicated nodes.
@@ -187,27 +199,34 @@ public class NodesSpecification {
                 .combinedId(combinedId.map(ClusterSpec.Id::from))
                 .dockerImageRepo(dockerImageRepo)
                 .build();
-        return hostSystem.allocateHosts(cluster, Capacity.from(resources, required, canFail), logger);
+        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, required, canFail), logger);
     }
 
-    private static NodeResources getResources(ModelElement nodesElement) {
+    private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {
         ModelElement resources = nodesElement.child("resources");
         if (resources != null) {
-            return new NodeResources(resources.requiredDoubleAttribute("vcpu"),
-                                     parseGbAmount(resources.requiredStringAttribute("memory"), "B"),
-                                     parseGbAmount(resources.requiredStringAttribute("disk"), "B"),
-                                     Optional.ofNullable(resources.stringAttribute("bandwidth"))
-                                                                  .map(b -> parseGbAmount(b, "BPS"))
-                                                                  .orElse(0.3),
-                                     parseOptionalDiskSpeed(resources.stringAttribute("disk-speed")),
-                                     parseOptionalStorageType(resources.stringAttribute("storage-type")));
+            return nodeResourcesFromResorcesElement(resources);
         }
         else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
-            return NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor"));
+            var flavorResources = NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor"));
+            return new Pair<>(flavorResources, flavorResources);
         }
         else {
-            return NodeResources.unspecified;
+            return new Pair<>(NodeResources.unspecified, NodeResources.unspecified);
         }
+    }
+
+    private static Pair<NodeResources, NodeResources> nodeResourcesFromResorcesElement(ModelElement element) {
+        Pair<Double, Double> vcpu       = toRange(element.requiredStringAttribute("vcpu"),   .0, Double::parseDouble);
+        Pair<Double, Double> memory     = toRange(element.requiredStringAttribute("memory"), .0, s -> parseGbAmount(s, "B"));
+        Pair<Double, Double> disk       = toRange(element.requiredStringAttribute("disk"),   .0, s -> parseGbAmount(s, "B"));
+        Pair<Double, Double> bandwith   = toRange(element.stringAttribute("bandwith"),       .3, s -> parseGbAmount(s, "BPS"));
+        NodeResources.DiskSpeed   diskSpeed   = parseOptionalDiskSpeed(element.stringAttribute("disk-speed"));
+        NodeResources.StorageType storageType = parseOptionalStorageType(element.stringAttribute("storage-type"));
+
+        var min = new NodeResources(vcpu.getFirst(),  memory.getFirst(),  disk.getFirst(),  bandwith.getFirst(),  diskSpeed, storageType);
+        var max = new NodeResources(vcpu.getSecond(), memory.getSecond(), disk.getSecond(), bandwith.getSecond(), diskSpeed, storageType);
+        return new Pair<>(min, max);
     }
 
     private static double parseGbAmount(String byteAmount, String unit) {
@@ -344,9 +363,28 @@ public class NodesSpecification {
         return dockerImageFromElement == null ? dockerImage : Optional.of(dockerImageFromElement);
     }
 
+    /** Parses a value ("value") or value range ("[min-value, max-value]") */
+    private static <T> Pair<T, T> toRange(String s, T defaultValue, Function<String, T> valueParser) {
+        try {
+            if (s == null) return new Pair<>(defaultValue, defaultValue);
+            s = s.trim();
+            if (s.startsWith("[") && s.endsWith("]")) {
+                String[] numbers = s.substring(1, s.length() - 1).split(",");
+                if (numbers.length != 2) throw new IllegalArgumentException();
+                return new Pair<>(valueParser.apply(numbers[0].trim()), valueParser.apply(numbers[1].trim()));
+            } else {
+                return new Pair<>(valueParser.apply(s), valueParser.apply(s));
+            }
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Expected a number or range on the form [min, max], but got '" + s + "'");
+        }
+    }
+
     @Override
     public String toString() {
-        return "specification of " + (dedicated ? "dedicated " : "") + resources;
+        return "specification of " + (dedicated ? "dedicated " : "") +
+               (min.equals(max) ? min : "min " + min + " max " + max);
     }
 
 }

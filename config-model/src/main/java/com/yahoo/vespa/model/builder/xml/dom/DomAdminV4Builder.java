@@ -65,12 +65,12 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             createSlobroks(deployLogger, admin, allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
         }
         else {
-            createSlobroks(deployLogger, admin, pickContainerHostsForSlobrok(nodesSpecification.resources().nodes(), 2));
+            createSlobroks(deployLogger, admin, pickContainerHostsForSlobrok(nodesSpecification.minResources().nodes(), 2));
         }
     }
 
     private void assignLogserver(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
-        if (nodesSpecification.resources().nodes() > 1) throw new IllegalArgumentException("You can only request a single log server");
+        if (nodesSpecification.minResources().nodes() > 1) throw new IllegalArgumentException("You can only request a single log server");
         if (deployState.getProperties().applicationId().instance().isTester()) return; // No logserver is needed on tester applications
         if (nodesSpecification.isDedicated()) {
             Collection<HostResource> hosts = allocateHosts(admin.hostSystem(), "logserver", nodesSpecification);
@@ -79,7 +79,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             Logserver logserver = createLogserver(deployState.getDeployLogger(), admin, hosts);
             createContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
         } else if (containerModels.iterator().hasNext()) {
-            List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.resources().nodes(), false);
+            List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.minResources().nodes(), false);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
 
             createLogserver(deployState.getDeployLogger(), admin, hosts);
