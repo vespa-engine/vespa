@@ -3,6 +3,14 @@
 
 include(${CMAKE_CURRENT_LIST_DIR}/vtag.cmake)
 
+if (VESPA_USE_SANITIZER)
+    if (VESPA_USE_SANITIZER STREQUAL "address" OR VESPA_USE_SANITIZER STREQUAL "thread")
+        message("-- Instrumenting code using ${VESPA_USE_SANITIZER} sanitizer")
+    else()
+        message(FATAL_ERROR "Unsupported sanitizer option '${VESPA_USE_SANITIZER}'. Supported: 'address' or 'thread'")
+    endif()
+endif()
+
 # Build options
 # Whether to build unit tests as part of the 'all' target
 set(EXCLUDE_TESTS_FROM_ALL FALSE CACHE BOOL "If TRUE, do not build tests as part of the 'all' target")
@@ -17,7 +25,13 @@ set(RUN_BENCHMARKS FALSE CACHE BOOL "If TRUE, benchmarks are run together with t
 set(AUTORUN_UNIT_TESTS FALSE CACHE BOOL "If TRUE, tests will be run immediately after linking the test executable")
 
 # Warnings
-set(C_WARN_OPTS "-Winline -Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
+set(C_WARN_OPTS "-Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
+if (VESPA_USE_SANITIZER)
+    # Instrumenting code changes binary size, which triggers inlining warnings that
+    # don't happen during normal, non-instrumented compilation.
+else()
+    set(C_WARN_OPTS "-Winline ${C_WARN_OPTS}")
+endif()
 
 # Warnings that are specific to C++ compilation
 # Note: this is not a union of C_WARN_OPTS, since CMAKE_CXX_FLAGS already includes CMAKE_C_FLAGS, which in turn includes C_WARN_OPTS transitively
@@ -47,6 +61,10 @@ endif()
 
 # C and C++ compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
+# AddressSanitizer/ThreadSanitizer work for both GCC and Clang
+if (VESPA_USE_SANITIZER)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${VESPA_USE_SANITIZER}")
+endif()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ${CXX_SPECIFIC_WARN_OPTS} -std=c++1z -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
 else()
