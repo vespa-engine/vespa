@@ -377,7 +377,7 @@ public class NodesSpecification {
             }
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Expected a number or range on the form [min, max], but got '" + s + "'");
+            throw new IllegalArgumentException("Expected a number or range on the form [min, max], but got '" + s + "'", e);
         }
     }
 

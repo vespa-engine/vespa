@@ -30,7 +30,7 @@
   <content id="ml" version="1.0">
     <redundancy>2</redundancy>
     <nodes count="[10,20]" flavor="large" groups="[1,3]">
-      <resources vcpu="3.0" memory="32000.0Mb" disk="300 Gb"/>
+      <resources vcpu="[3.0, 4]" memory="[32000.0Mb, 33Gb]" disk="[300 Gb, 1Tb]"/>
     </nodes>
   </content>
 
