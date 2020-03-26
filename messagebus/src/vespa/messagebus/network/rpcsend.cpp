@@ -149,7 +149,7 @@ void
 RPCSend::RequestDone(FRT_RPCRequest *req)
 {
     if ( _net->allowDispatchForDecode()) {
-        auto rejected = _net->getExecutor(true).execute(makeLambdaTask([this, req]() {
+        auto rejected = _net->getDecodeExecutor(true).execute(makeLambdaTask([this, req]() {
             doRequestDone(req);
         }));
         assert (!rejected);
@@ -229,7 +229,7 @@ RPCSend::handleReply(Reply::UP reply)
 {
     const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
     if (_net->allowDispatchForEncode()) {
-        auto rejected = _net->getExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
+        auto rejected = _net->getEncodeExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
             doHandleReply(protocol, std::move(reply));
         }));
         assert (!rejected);
@@ -274,7 +274,7 @@ RPCSend::invoke(FRT_RPCRequest *req)
         return;
     }
     if (_net->allowDispatchForDecode()) {
-        auto rejected = _net->getExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, req, protocol, params = std::move(params)]() mutable {
+        auto rejected = _net->getDecodeExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, req, protocol, params = std::move(params)]() mutable {
             doRequest(req, protocol, std::move(params));
         }));
         assert (!rejected);

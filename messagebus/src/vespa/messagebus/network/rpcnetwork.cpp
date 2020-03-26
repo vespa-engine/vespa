@@ -90,7 +90,7 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
     }
     if (shouldSend) {
         if (_net.allowDispatchForEncode()) {
-            auto rejected = _net.getExecutor(true).execute(vespalib::makeLambdaTask([this]() {
+            auto rejected = _net.getEncodeExecutor(true).execute(vespalib::makeLambdaTask([this]() {
                 _net.send(*this);
                 delete this;
             }));

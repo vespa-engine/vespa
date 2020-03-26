@@ -233,7 +233,8 @@ public:
     const slobrok::api::IMirrorAPI &getMirror() const override;
     CompressionConfig getCompressionConfig() { return _compressionConfig; }
     void invoke(FRT_RPCRequest *req);
-    vespalib::Executor & getExecutor(bool requireSequencing, bool encode) const { return requireSequencing ? (encode ? *_singleEncodeExecutor : singleDecodeExecutor) : *_executor; }
+    vespalib::Executor & getEncodeExecutor(bool requireSequencing) const { return requireSequencing ?  *_singleEncodeExecutor : *_executor; }
+    vespalib::Executor & getDecodeExecutor(bool requireSequencing) const { return requireSequencing ?  *_singleDecodeExecutor : *_executor; }
     bool allowDispatchForEncode() const { return _allowDispatchForEncode; }
     bool allowDispatchForDecode() const { return _allowDispatchForDecode; }
 
