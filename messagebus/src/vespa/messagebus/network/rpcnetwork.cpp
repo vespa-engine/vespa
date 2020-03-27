@@ -17,8 +17,6 @@
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
-#include <vespa/vespalib/util/singleexecutor.h>
-#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fastos/thread.h>
 #include <thread>
 
@@ -27,8 +25,6 @@ LOG_SETUP(".rpcnetwork");
 
 using vespalib::make_string;
 using namespace std::chrono_literals;
-
-namespace mbus {
 
 namespace {
 
@@ -60,18 +56,9 @@ public:
     }
 };
 
-std::unique_ptr<vespalib::SyncableThreadExecutor>
-createExecutor(RPCNetworkParams::OptimizeFor optimizeFor) {
-    switch (optimizeFor) {
-        case RPCNetworkParams::OptimizeFor::LATENCY:
-            return std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
-        case RPCNetworkParams::OptimizeFor::THROUGHPUT:
-        default:
-            return std::make_unique<vespalib::SingleExecutor>(100);
-    }
-}
-
 } // namespace <unnamed>
+
+namespace mbus {
 
 RPCNetwork::SendContext::SendContext(RPCNetwork &net, const Message &msg,
                                      const std::vector<RoutingNode*> &recipients)
@@ -100,16 +87,8 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
         }
     }
     if (shouldSend) {
-        if (_net.allowDispatchForEncode()) {
-            auto rejected = _net.getEncodeExecutor(true).execute(vespalib::makeLambdaTask([this]() {
-                _net.send(*this);
-                delete this;
-            }));
-            assert (!rejected);
-        } else {
-            _net.send(*this);
-            delete this;
-        }
+        _net.send(*this);
+        delete this;
     }
 }
 
@@ -127,12 +106,11 @@ RPCNetwork::TargetPoolTask::PerformTask()
     Schedule(1.0);
 }
 
-
 RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _owner(nullptr),
     _ident(params.getIdentity()),
     _threadPool(std::make_unique<FastOS_ThreadPool>(128000, 0)),
-    _transport(std::make_unique<FNET_Transport>(params.getNumThreads())),
+    _transport(std::make_unique<FNET_Transport>()),
     _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _scheduler(*_transport->GetScheduler()),
     _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
@@ -142,8 +120,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
-    _singleEncodeExecutor(createExecutor(params.getOptimizeFor())),
-    _singleDecodeExecutor(createExecutor(params.getOptimizeFor())),
+    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 65536)),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
@@ -153,6 +130,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
 {
     _transport->SetMaxInputBufferSize(params.getMaxInputBufferSize());
     _transport->SetMaxOutputBufferSize(params.getMaxOutputBufferSize());
+    _transport->SetTCPNoDelay(params.getTcpNoDelay());
 }
 
 RPCNetwork::~RPCNetwork()
@@ -422,8 +400,7 @@ void
 RPCNetwork::sync()
 {
     SyncTask task(_scheduler);
-    _singleEncodeExecutor->sync();
-    _singleDecodeExecutor->sync();
+    _executor->sync();
     task.await();
 }
 
@@ -432,10 +409,8 @@ RPCNetwork::shutdown()
 {
     _transport->ShutDown(true);
     _threadPool->Close();
-    _singleEncodeExecutor->shutdown();
-    _singleDecodeExecutor->shutdown();
-    _singleEncodeExecutor->sync();
-    _singleDecodeExecutor->sync();
+    _executor->shutdown();
+    _executor->sync();
 }
 
 void

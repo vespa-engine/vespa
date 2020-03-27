@@ -148,14 +148,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
 void
 RPCSend::RequestDone(FRT_RPCRequest *req)
 {
-    if ( _net->allowDispatchForDecode()) {
-        auto rejected = _net->getDecodeExecutor(true).execute(makeLambdaTask([this, req]() {
-            doRequestDone(req);
-        }));
-        assert (!rejected);
-    } else {
-        doRequestDone(req);
-    }
+    doRequestDone(req);
 }
 
 void
@@ -228,13 +221,13 @@ void
 RPCSend::handleReply(Reply::UP reply)
 {
     const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
-    if (protocol && _net->allowDispatchForEncode()) {
-        auto rejected = _net->getEncodeExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
+    if (!protocol || protocol->requireSequencing() || !_net->allowDispatchForEncode()) {
+        doHandleReply(protocol, std::move(reply));
+    } else {
+        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
             doHandleReply(protocol, std::move(reply));
         }));
         assert (!rejected);
-    } else {
-        doHandleReply(protocol, std::move(reply));
     }
 }
 
@@ -273,13 +266,13 @@ RPCSend::invoke(FRT_RPCRequest *req)
                                                                   vespalib::string(params->getProtocol()).c_str(), _serverIdent.c_str())));
         return;
     }
-    if (_net->allowDispatchForDecode()) {
-        auto rejected = _net->getDecodeExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, req, protocol, params = std::move(params)]() mutable {
+    if (protocol->requireSequencing() || !_net->allowDispatchForDecode()) {
+        doRequest(req, protocol, std::move(params));
+    } else {
+        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req, protocol, params = std::move(params)]() mutable {
             doRequest(req, protocol, std::move(params));
         }));
         assert (!rejected);
-    } else {
-        doRequest(req, protocol, std::move(params));
     }
 }
 
