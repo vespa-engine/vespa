@@ -60,10 +60,10 @@ void
 TextUtilTest::assertSkipSeparators(const char * input, size_t len, const UCS4V & expdstbuf, const SizeV & expoffsets)
 {
     const byte * srcbuf = reinterpret_cast<const byte *>(input);
-    ucs4_t dstbuf[len];
-    size_t offsets[len];
+    auto dstbuf = std::make_unique<ucs4_t[]>(len + 1);
+    auto offsets = std::make_unique<size_t[]>(len + 1);
     UTF8StrChrFieldSearcher fs;
-    BW bw(dstbuf, offsets);
+    BW bw(dstbuf.get(), offsets.get());
     size_t dstlen = fs.skipSeparators(srcbuf, len, bw);
     EXPECT_EQUAL(dstlen, expdstbuf.size());
     ASSERT_TRUE(dstlen == expdstbuf.size());
