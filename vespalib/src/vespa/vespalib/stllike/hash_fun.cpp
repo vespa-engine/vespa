@@ -1,9 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hash_fun.h"
-
-// Enable inliining when we have xxhash 0.7.3 on all platforms
-// #define XXH_INLINE_ALL
 #include <xxhash.h>
 
 namespace vespalib {
