@@ -103,16 +103,16 @@ public class UnixPath {
         return this;
     }
 
-    public void atomicWriteUt8(String content) {
-        atomicWriteBytes(content.getBytes(StandardCharsets.UTF_8));
+    public UnixPath atomicWriteUt8(String content) {
+        return atomicWriteBytes(content.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Write a file to the same dir as this, and then atomically move it to this' path. */
-    public void atomicWriteBytes(byte[] content) {
-        Path tempPath = path.getParent().resolve(path.getFileName() + ".10Ia2f4N5");
+    public UnixPath atomicWriteBytes(byte[] content) {
         UnixPath temporaryPath = getParent().resolve(getFilename() + ".10Ia2f4N5");
         temporaryPath.writeBytes(content);
         temporaryPath.atomicMove(path);
+        return this;
     }
 
     public String getPermissions() {
@@ -159,8 +159,9 @@ public class UnixPath {
         return getAttributes().lastModifiedTime();
     }
 
-    public void setLastModifiedTime(Instant instant) {
-        uncheck(() -> Files.setLastModifiedTime(path, FileTime.from(instant)));
+    public UnixPath updateLastModifiedTime() {
+        uncheck(() -> Files.setLastModifiedTime(path, FileTime.from(Instant.now())));
+        return this;
     }
 
     public FileAttributes getAttributes() {
