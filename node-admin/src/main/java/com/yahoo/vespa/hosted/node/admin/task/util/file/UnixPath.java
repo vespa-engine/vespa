@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
@@ -37,21 +38,32 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class UnixPath {
     private final Path path;
 
-    public UnixPath(Path path) {
-        this.path = path;
+    public UnixPath(Path path) { this.path = path; }
+    public UnixPath(String path) { this(Paths.get(path)); }
+
+    public Path toPath() { return path; }
+    public UnixPath resolve(String relativeOrAbsolutePath) { return new UnixPath(path.resolve(relativeOrAbsolutePath)); }
+
+    public UnixPath getParent() {
+        Path parentPath = path.getParent();
+        if (parentPath == null) {
+            throw new IllegalStateException("Path has no parent directory: '" + path + "'");
+        }
+
+        return new UnixPath(parentPath);
     }
 
-    public UnixPath(String path) {
-        this(Paths.get(path));
+    public String getFilename() {
+        Path filename = path.getFileName();
+        if (filename == null) {
+            // E.g. "/".
+            throw new IllegalStateException("Path has no filename: '" + path.toString() + "'");
+        }
+
+        return filename.toString();
     }
 
-    public Path toPath() {
-        return path;
-    }
-
-    public boolean exists() {
-        return Files.exists(path);
-    }
+    public boolean exists() { return Files.exists(path); }
 
     public String readUtf8File() {
         return new String(readBytes(), StandardCharsets.UTF_8);
@@ -88,6 +100,18 @@ public class UnixPath {
 
     public UnixPath writeBytes(byte[] content, OpenOption... options) {
         uncheck(() -> Files.write(path, content, options));
+        return this;
+    }
+
+    public UnixPath atomicWriteUt8(String content) {
+        return atomicWriteBytes(content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Write a file to the same dir as this, and then atomically move it to this' path. */
+    public UnixPath atomicWriteBytes(byte[] content) {
+        UnixPath temporaryPath = getParent().resolve(getFilename() + ".10Ia2f4N5");
+        temporaryPath.writeBytes(content);
+        temporaryPath.atomicMove(path);
         return this;
     }
 
@@ -133,6 +157,11 @@ public class UnixPath {
 
     public Instant getLastModifiedTime() {
         return getAttributes().lastModifiedTime();
+    }
+
+    public UnixPath updateLastModifiedTime() {
+        uncheck(() -> Files.setLastModifiedTime(path, FileTime.from(Instant.now())));
+        return this;
     }
 
     public FileAttributes getAttributes() {
