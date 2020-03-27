@@ -58,7 +58,8 @@ enum PathGroup {
                "/application/v4/tenant/{tenant}/application/",
                "/application/v4/tenant/{tenant}/cost",
                "/application/v4/tenant/{tenant}/cost/{date}",
-               "/routing/v1/status/tenant/{tenant}/{*}"),
+               "/routing/v1/status/tenant/{tenant}/{*}",
+               "/billing/v1/tenant/{tenant}/{*}"),
 
     tenantKeys(Matcher.tenant,
                PathPrefix.api,
