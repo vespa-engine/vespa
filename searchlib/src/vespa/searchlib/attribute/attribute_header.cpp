@@ -22,7 +22,12 @@ const vespalib::string predicateUpperBoundTag = "predicate.upper_bound";
 }
 
 AttributeHeader::AttributeHeader()
-    : _fileName(""),
+    : AttributeHeader("")
+{
+}
+
+AttributeHeader::AttributeHeader(const vespalib::string &fileName)
+    : _fileName(fileName),
       _basicType(attribute::BasicType::Type::NONE),
       _collectionType(attribute::CollectionType::Type::SINGLE),
       _tensorType(vespalib::eval::ValueType::error_type()),
