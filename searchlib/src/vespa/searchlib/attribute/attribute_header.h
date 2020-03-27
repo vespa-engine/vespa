@@ -35,6 +35,7 @@ private:
     void internalExtractTags(const vespalib::GenericHeader &header);
 public:
     AttributeHeader();
+    AttributeHeader(const vespalib::string &fileName);
     AttributeHeader(const vespalib::string &fileName,
                     BasicType basicType,
                     CollectionType collectionType,
