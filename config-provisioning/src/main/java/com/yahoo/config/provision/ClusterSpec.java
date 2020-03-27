@@ -77,13 +77,27 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo);
     }
 
-    // TODO: Remove when when 7.200 is oldest model version in use
+    // TODO: Remove when when 7.195 is oldest model version in use
+    // TODO: Add @Deprecated when internal repo has been updated to not use this method
+    // @Deprecated
+    public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive,
+                                      Optional<Id> combinedId) {
+        return request(type, id, vespaVersion, exclusive, combinedId, Optional.empty());
+    }
+
     public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive,
                                       Optional<Id> combinedId, Optional<String> dockerImageRepo) {
         return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive, combinedId, dockerImageRepo);
     }
 
-    // TODO: Remove when when 7.200 is oldest model version in use
+    // TODO: Remove when when 7.195 is oldest model version in use
+    // TODO: Add @Deprecated when internal repo has been updated to not use this method
+    // @Deprecated
+    public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive,
+                                   Optional<Id> combinedId) {
+        return from(type, id, groupId, vespaVersion, exclusive, combinedId, Optional.empty());
+    }
+
     public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive,
                                    Optional<Id> combinedId, Optional<String> dockerImageRepo) {
         return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, combinedId, dockerImageRepo);
