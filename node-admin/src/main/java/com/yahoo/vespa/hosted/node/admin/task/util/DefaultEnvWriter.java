@@ -1,6 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util;
 
+import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -22,6 +25,8 @@ import static java.util.stream.Collectors.joining;
  * @author bjorncs
  */
 public class DefaultEnvWriter {
+
+    private static final Logger logger = Logger.getLogger(DefaultEnvWriter.class.getName());
 
     private final Map<String, Operation> operations = new LinkedHashMap<>();
 
@@ -50,12 +55,13 @@ public class DefaultEnvWriter {
      *
      * @return true if the file was modified
      */
-    public boolean updateFile(Path defaultEnvFile) {
+    public boolean updateFile(TaskContext context, Path defaultEnvFile) {
         List<String> currentDefaultEnvLines = ifExists(() -> Files.readAllLines(defaultEnvFile)).orElse(List.of());
         List<String> newDefaultEnvLines = generateContent(currentDefaultEnvLines);
         if (currentDefaultEnvLines.equals(newDefaultEnvLines)) {
             return false;
         } else {
+            context.log(logger, "Updating " + defaultEnvFile.toString());
             Path tempFile = Paths.get(defaultEnvFile.toString() + ".tmp");
             uncheck(() -> Files.write(tempFile, newDefaultEnvLines));
             uncheck(() -> Files.move(tempFile, defaultEnvFile, ATOMIC_MOVE));
