@@ -32,6 +32,7 @@ public class IndexOperation implements FieldOperation {
     private OptionalDouble densePostingListThreshold = OptionalDouble.empty();
     private Optional<Boolean> enableBm25 = Optional.empty();
 
+    private Optional<String> distanceMetric = Optional.empty();
     private Optional<HnswIndexParams.Builder> hnswIndexParams = Optional.empty();
 
     public String getIndexName() {
@@ -94,6 +95,9 @@ public class IndexOperation implements FieldOperation {
         if (enableBm25.isPresent()) {
             index.setInterleavedFeatures(enableBm25.get());
         }
+        if (distanceMetric.isPresent()) {
+            index.setDistanceMetric(distanceMetric.get());
+        }
         if (hnswIndexParams.isPresent()) {
             index.setHnswIndexParams(hnswIndexParams.get().build());
         }
@@ -125,6 +129,10 @@ public class IndexOperation implements FieldOperation {
 
     public void setEnableBm25(boolean value) {
         enableBm25 = Optional.of(value);
+    }
+
+    public void setDistanceMetric(String value) {
+        this.distanceMetric = Optional.of(value);
     }
 
     public void setHnswIndexParams(HnswIndexParams.Builder params) {
