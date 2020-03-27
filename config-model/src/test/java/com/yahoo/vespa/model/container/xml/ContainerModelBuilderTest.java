@@ -14,7 +14,6 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
@@ -44,9 +43,7 @@ import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
-import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.hamcrest.Matchers;
@@ -834,56 +831,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat("Connector must use Athenz truststore in a non-public system.",
                    connectorConfig.ssl().caCertificateFile(), equalTo("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"));
         assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
-    }
-
-    @Test
-    public void access_control_is_implicitly_added_for_hosted_apps() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                nodesXml,
-                "</container>" );
-        AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
-        DeployState state = new DeployState.Builder().properties(
-                new TestProperties()
-                        .setAthenzDomain(tenantDomain)
-                        .setHostedVespa(true))
-                .build();
-        createModel(root, state, null, clusterElem);
-        Optional<AccessControl> maybeAccessControl =
-                ((ApplicationContainer) root.getProducer("container/container.0")).getHttp().getAccessControl();
-        assertThat(maybeAccessControl.isPresent(), is(true));
-        AccessControl accessControl = maybeAccessControl.get();
-        assertThat(accessControl.writeEnabled, is(false));
-        assertThat(accessControl.readEnabled, is(false));
-        assertThat(accessControl.domain, equalTo(tenantDomain.value()));
-    }
-
-    @Test
-    public void access_control_is_implicitly_added_for_hosted_apps_with_existing_http_element() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                "  <http>",
-                "    <server port='" + getDefaults().vespaWebServicePort() + "' id='main' />",
-                "    <filtering>",
-                "      <filter id='outer' />",
-                "      <request-chain id='myChain'>",
-                "        <filter id='inner' />",
-                "      </request-chain>",
-                "    </filtering>",
-                "  </http>",
-                nodesXml,
-                "</container>" );
-        AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
-        DeployState state = new DeployState.Builder().properties(
-                new TestProperties()
-                        .setAthenzDomain(tenantDomain)
-                        .setHostedVespa(true))
-                .build();
-        createModel(root, state, null, clusterElem);
-        Http http = ((ApplicationContainer) root.getProducer("container/container.0")).getHttp();
-        assertThat(http.getAccessControl().isPresent(), is(true));
-        assertThat(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID), is(true));
-        assertThat(http.getFilterChains().hasChain(ComponentId.fromString("myChain")), is(true));
     }
 
 

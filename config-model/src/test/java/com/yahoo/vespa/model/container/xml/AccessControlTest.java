@@ -3,8 +3,13 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.collections.CollectionUtil;
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.container.jdisc.state.StateHandler;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
@@ -16,14 +21,19 @@ import org.w3c.dom.Element;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -228,6 +238,58 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                     containsBinding(http.getBindings(), notExcludedBinding));
 
     }
+
+
+    @Test
+    public void access_control_is_implicitly_added_for_hosted_apps() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                nodesXml,
+                "</container>" );
+        AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
+        DeployState state = new DeployState.Builder().properties(
+                new TestProperties()
+                        .setAthenzDomain(tenantDomain)
+                        .setHostedVespa(true))
+                .build();
+        createModel(root, state, null, clusterElem);
+        Optional<AccessControl> maybeAccessControl =
+                ((ApplicationContainer) root.getProducer("container/container.0")).getHttp().getAccessControl();
+        assertThat(maybeAccessControl.isPresent(), is(true));
+        AccessControl accessControl = maybeAccessControl.get();
+        assertThat(accessControl.writeEnabled, is(false));
+        assertThat(accessControl.readEnabled, is(false));
+        assertThat(accessControl.domain, equalTo(tenantDomain.value()));
+    }
+
+    @Test
+    public void access_control_is_implicitly_added_for_hosted_apps_with_existing_http_element() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                "  <http>",
+                "    <server port='" + getDefaults().vespaWebServicePort() + "' id='main' />",
+                "    <filtering>",
+                "      <filter id='outer' />",
+                "      <request-chain id='myChain'>",
+                "        <filter id='inner' />",
+                "      </request-chain>",
+                "    </filtering>",
+                "  </http>",
+                nodesXml,
+                "</container>" );
+        AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
+        DeployState state = new DeployState.Builder().properties(
+                new TestProperties()
+                        .setAthenzDomain(tenantDomain)
+                        .setHostedVespa(true))
+                .build();
+        createModel(root, state, null, clusterElem);
+        Http http = ((ApplicationContainer) root.getProducer("container/container.0")).getHttp();
+        assertThat(http.getAccessControl().isPresent(), is(true));
+        assertThat(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID), is(true));
+        assertThat(http.getFilterChains().hasChain(ComponentId.fromString("myChain")), is(true));
+    }
+
 
     private String httpWithExcludedBinding(String excludedBinding) {
         return joinLines(
