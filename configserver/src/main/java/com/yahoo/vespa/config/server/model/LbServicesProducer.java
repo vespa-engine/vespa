@@ -9,9 +9,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 
@@ -46,9 +44,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     @Override
     public void getConfig(LbServicesConfig.Builder builder) {
-        ZoneId zoneId = ZoneId.from(zone.environment().value(), zone.region().value());
-        builder.nginxUpstreamProxyProtocol(
-                nginxUpstreamProxyProtocol.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value());
+        builder.nginxUpstreamProxyProtocol(nginxUpstreamProxyProtocol.value());
         models.keySet().stream()
                 .sorted()
                 .forEach(tenant -> {
