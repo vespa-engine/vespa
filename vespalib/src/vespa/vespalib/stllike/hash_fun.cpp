@@ -2,24 +2,22 @@
 
 #include "hash_fun.h"
 
+// Enable inliining when we have xxhash 0.7.3 on all platforms
+// #define XXH_INLINE_ALL
+#include <xxhash.h>
+
 namespace vespalib {
 
 size_t
 hashValue(const char *str)
 {
-    size_t res = 0;
-    unsigned const char *pt = (unsigned const char *) str;
-    while (*pt != 0) {
-        res = (res << 7) + (res >> 25) + *pt++;
-    }
-    return res;
+    return hashValue(str, strlen(str));
 }
 
 /**
  * @brief Calculate hash value.
  *
- * This is the hash function used by the HashMap class.
- * The hash function is inherited from Fastserver4 / FastLib / pandora.
+ * The hash function XXH64 from xxhash library.
  * @param buf input buffer
  * @param sz input buffer size
  * @return hash value of input
@@ -27,12 +25,7 @@ hashValue(const char *str)
 size_t
 hashValue(const void * buf, size_t sz)
 {
-    size_t res = 0;
-    unsigned const char *pt = (unsigned const char *) buf;
-    for (size_t i(0); i < sz; i++) {
-        res = (res << 7) + (res >> 25) + pt[i];
-    }
-    return res;
+    return XXH64(buf, sz, 0);
 }
 
 }
