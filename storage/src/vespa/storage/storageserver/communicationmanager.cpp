@@ -25,7 +25,6 @@ LOG_SETUP(".communication.manager");
 
 using vespalib::make_string;
 using document::FixedBucketSpaces;
-using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
 
 namespace storage {
 
@@ -282,17 +281,6 @@ struct PlaceHolderBucketResolver : public BucketResolver {
     }
 };
 
-mbus::RPCNetworkParams::OptimizeFor
-convert(CommunicationManagerConfig::Mbus::OptimizeFor optimizeFor) {
-    switch (optimizeFor) {
-        case CommunicationManagerConfig::Mbus::OptimizeFor::LATENCY:
-            return mbus::RPCNetworkParams::OptimizeFor::LATENCY;
-        case CommunicationManagerConfig::Mbus::OptimizeFor::THROUGHPUT:
-        default:
-            return mbus::RPCNetworkParams::OptimizeFor::THROUGHPUT;
-    }
-}
-
 }
 
 CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
@@ -427,7 +415,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         params.setNumThreads(std::max(1, config->mbus.numThreads));
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
         params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
-        params.setOptimizeFor(convert(config->mbus.optimizeFor));
+        params.setTcpNoDelay(config->mbus.optimizeFor == CommunicationManagerConfig::Mbus::OptimizeFor::LATENCY);
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
         if (config->mbusport != -1) {

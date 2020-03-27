@@ -116,7 +116,7 @@ private:
 
     void process(const std::shared_ptr<api::StorageMessage>& msg);
 
-    using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
+    using CommunicationManagerConfig= vespa::config::content::core::StorCommunicationmanagerConfig;
     using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
