@@ -20,6 +20,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
@@ -140,8 +141,12 @@ class AutoscalingTester {
         }
     }
 
-    public Optional<AllocatableClusterResources> autoscale(ApplicationId application) {
-        return autoscaler.autoscale(nodeRepository().getNodes(application, Node.State.active));
+    public Optional<AllocatableClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
+                                                           ClusterResources min, ClusterResources max) {
+        Application application = nodeRepository().applications().get(applicationId, true).withClusterLimits(clusterId, min, max);
+        nodeRepository().applications().set(applicationId, application, nodeRepository().lock(applicationId));
+        return autoscaler.autoscale(application.cluster(clusterId),
+                                    nodeRepository().getNodes(applicationId, Node.State.active));
     }
 
     public AllocatableClusterResources assertResources(String message,

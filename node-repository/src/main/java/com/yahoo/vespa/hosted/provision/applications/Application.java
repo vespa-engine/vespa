@@ -18,20 +18,42 @@ import java.util.Optional;
  */
 public class Application {
 
-    private Map<ClusterSpec.Id, Cluster> clusters = new HashMap<>();
+    private final Map<ClusterSpec.Id, Cluster> clusters;
+
+    public Application() {
+        this(Map.of());
+    }
+
+    private Application(Map<ClusterSpec.Id, Cluster> clusters) {
+        this.clusters = Map.copyOf(clusters);
+    }
 
     /** Returns the cluster with the given id or null if none */
     public Cluster cluster(ClusterSpec.Id id) { return clusters.get(id); }
 
+    public Application with(ClusterSpec.Id id, Cluster cluster) {
+        Map<ClusterSpec.Id, Cluster> clusters = new HashMap<>(this.clusters);
+        clusters.put(id, cluster);
+        return new Application(clusters);
+    }
+
     /**
-     * Sets the min and max resource limits of the given cluster.
-     * This will create the cluster with these limits if it does not exist.
+     * Returns an application with the given cluster having the min and max resource limits of the given cluster.
      * If the cluster has a target which is not inside the new limits, the target is removed.
      */
-    public void setClusterLimits(ClusterSpec.Id id, ClusterResources min, ClusterResources max, Mutex applicationLock) {
-        Cluster cluster = clusters.computeIfAbsent(id, clusterId -> new Cluster(min, max, Optional.empty()));
-        if (cluster.targetResources().isPresent() && ! cluster.targetResources().get().isWithin(min, max))
-            clusters.put(id, cluster.withoutTarget());
+    public Application withClusterLimits(ClusterSpec.Id id, ClusterResources min, ClusterResources max) {
+        Cluster cluster = clusters.get(id);
+        return with(id, new Cluster(min, max, cluster == null ? Optional.empty() : cluster.targetResources()));
+    }
+
+    /**
+     * Returns an application with the given target for the given cluster,
+     * if it exists and the target is within the bounds
+     */
+    public Application withClusterTarget(ClusterSpec.Id id, ClusterResources target) {
+        Cluster cluster = clusters.get(id);
+        if (cluster == null) return this;
+        return with(id, cluster.withTarget(target));
     }
 
 }

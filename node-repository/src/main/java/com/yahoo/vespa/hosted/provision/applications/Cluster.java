@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ClusterResources;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -18,9 +19,14 @@ public class Cluster {
     private final Optional<ClusterResources> targetResources;
 
     Cluster(ClusterResources minResources, ClusterResources maxResources, Optional<ClusterResources> targetResources) {
-        this.minResources = minResources;
-        this.maxResources = maxResources;
-        this.targetResources = targetResources;
+        this.minResources = Objects.requireNonNull(minResources);
+        this.maxResources = Objects.requireNonNull(maxResources);
+        Objects.requireNonNull(targetResources);
+
+        if (targetResources.isPresent() && ! targetResources.get().isWithin(minResources, maxResources))
+            this.targetResources = Optional.empty();
+        else
+            this.targetResources = targetResources;
     }
 
     /** Returns the configured minimal resources in this cluster */

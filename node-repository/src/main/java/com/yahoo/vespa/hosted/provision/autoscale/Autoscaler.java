@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
@@ -66,7 +67,7 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
-    public Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes) {
+    public Optional<AllocatableClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
         if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                                    node.allocation().get().membership().retired() ||
                                                    node.allocation().get().isRemovable())) {

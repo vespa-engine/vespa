@@ -73,6 +73,10 @@ public class AllocatableClusterResources {
     public int groups() { return groups; }
     public ClusterSpec.Type clusterType() { return clusterType; }
 
+    public ClusterResources toAdvertisedClusterResources() {
+        return new ClusterResources(nodes, groups, advertisedResources);
+    }
+
     @Override
     public String toString() {
         return "$" + cost() + ": " + realResources();
