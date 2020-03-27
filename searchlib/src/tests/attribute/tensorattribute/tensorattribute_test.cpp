@@ -148,7 +148,7 @@ public:
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override {
         return std::unique_ptr<NearestNeighborIndexSaver>();
     }
-    void load(const search::fileutil::LoadedBuffer&) override {}
+    bool load(const search::fileutil::LoadedBuffer&) override { return false; }
     std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
         (void) k;
         (void) vector;

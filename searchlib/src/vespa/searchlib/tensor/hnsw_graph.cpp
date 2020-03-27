@@ -18,7 +18,8 @@ HnswGraph::HnswGraph()
 HnswGraph::~HnswGraph() {}
 
 void
-HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels) {
+HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
+{
     node_refs.ensure_size(docid + 1, AtomicEntryRef());
     // A document cannot be added twice.
     assert(!node_refs[docid].load_acquire().valid());
@@ -29,7 +30,8 @@ HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels) {
 }
 
 void
-HnswGraph::remove_node_for_document(uint32_t docid) {
+HnswGraph::remove_node_for_document(uint32_t docid)
+{
     auto node_ref = node_refs[docid].load_acquire();
     nodes.remove(node_ref);
     search::datastore::EntryRef invalid;

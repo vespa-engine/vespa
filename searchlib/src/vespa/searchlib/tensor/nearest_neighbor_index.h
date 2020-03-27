@@ -47,7 +47,7 @@ public:
      * and the caller ensures that an attribute read guard is held during the lifetime of the saver.
      */
     virtual std::unique_ptr<NearestNeighborIndexSaver> make_saver() const = 0;
-    virtual void load(const fileutil::LoadedBuffer& buf) = 0;
+    virtual bool load(const fileutil::LoadedBuffer& buf) = 0;
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              vespalib::tensor::TypedCells vector,

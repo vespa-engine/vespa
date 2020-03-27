@@ -389,14 +389,12 @@ HnswIndex::make_saver() const
     return std::make_unique<HnswIndexSaver>(_graph);
 }
 
-void
+bool
 HnswIndex::load(const fileutil::LoadedBuffer& buf)
 {
     assert(get_entry_docid() == 0); // cannot load after index has data
     HnswIndexLoader loader(_graph);
-    if (! loader.load(buf)) {
-        fprintf(stderr, "ERROR loading HNSW graph\n");
-    }
+    return loader.load(buf);
 }
 
 struct NeighborsByDocId {
