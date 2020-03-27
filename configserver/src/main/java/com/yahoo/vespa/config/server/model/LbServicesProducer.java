@@ -9,7 +9,11 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,14 +36,19 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
+    private final BooleanFlag nginxUpstreamProxyProtocol;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
+        this.nginxUpstreamProxyProtocol = Flags.NGINX_UPSTREAM_PROXY_PROTOCOL.bindTo(flagSource);
     }
 
     @Override
     public void getConfig(LbServicesConfig.Builder builder) {
+        ZoneId zoneId = ZoneId.from(zone.environment().value(), zone.region().value());
+        builder.nginxUpstreamProxyProtocol(
+                nginxUpstreamProxyProtocol.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value());
         models.keySet().stream()
                 .sorted()
                 .forEach(tenant -> {
