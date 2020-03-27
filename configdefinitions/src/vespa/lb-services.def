@@ -4,6 +4,9 @@
 
 namespace=cloud.config
 
+# Enable proxy-protocol for nginx upstreams
+nginxUpstreamProxyProtocol                                      bool default=false
+
 # Active rotation given as flag 'active' for a prod region in deployment.xml
 # Default true for now (since code in config-model to set it is not ready yet), should have no default value
 tenants{}.applications{}.activeRotation                         bool default=true

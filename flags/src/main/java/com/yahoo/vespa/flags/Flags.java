@@ -262,6 +262,11 @@ public class Flags {
             "Takes effect on redeploy",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag NGINX_UPSTREAM_PROXY_PROTOCOL = defineFeatureFlag(
+            "nginx-upstream-proxy-protocol", false,
+            "Whether the nginx should enable proxy-protocol for all upstreams",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
