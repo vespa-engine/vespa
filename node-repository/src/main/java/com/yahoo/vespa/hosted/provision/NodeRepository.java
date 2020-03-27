@@ -19,6 +19,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
@@ -98,6 +99,7 @@ public class NodeRepository extends AbstractComponent {
     private final FirmwareChecks firmwareChecks;
     private final DockerImages dockerImages;
     private final JobControl jobControl;
+    private final Applications applications;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -124,6 +126,7 @@ public class NodeRepository extends AbstractComponent {
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
         this.jobControl = new JobControl(db);
+        this.applications = new Applications();
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (State state : State.values())
@@ -153,6 +156,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the status of maintenance jobs managed by this. */
     public JobControl jobControl() { return jobControl; }
+
+    /** Returns this node repo's view of the applications deployed to it */
+    public Applications applications() { return applications; }
 
     // ---------------- Query API ----------------------------------------------------------------
 

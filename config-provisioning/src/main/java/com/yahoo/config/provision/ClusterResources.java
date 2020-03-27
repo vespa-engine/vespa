@@ -44,6 +44,13 @@ public class ClusterResources {
         return false;
     }
 
+    /** Returns true if this is within the given limits (inclusive) */
+    public boolean isWithin(ClusterResources min, ClusterResources max) {
+        if (this.smallerThan(min)) return false;
+        if (max.smallerThan(this)) return false;
+        return true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;

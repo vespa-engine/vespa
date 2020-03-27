@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -15,10 +16,14 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -87,38 +92,36 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * The nodes are ordered by increasing index number.
      */
     @Override
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requestedCapacity, 
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested,
                                   ProvisionLogger logger) {
-        if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
-
         log.log(zone.system().isCd() ? Level.INFO : LogLevel.DEBUG,
-                () -> "Received deploy prepare request for " + requestedCapacity +
+                () -> "Received deploy prepare request for " + requested +
                       " for application " + application + ", cluster " + cluster);
 
-        int effectiveGroups;
-        NodeSpec requestedNodes;
-        NodeResources resources = requestedCapacity.minResources().nodeResources();
-        if ( requestedCapacity.type() == NodeType.tenant) {
-            int nodeCount = capacityPolicies.decideSize(requestedCapacity, cluster, application);
-            if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.minResources().nodes())
-                logger.log(Level.INFO, "Requested " + requestedCapacity.minResources().nodes() + " nodes for " + cluster +
-                                       ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            resources = capacityPolicies.decideNodeResources(requestedCapacity, cluster);
-            boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
-            effectiveGroups = Math.min(requestedCapacity.minResources().groups(), nodeCount); // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, resources, exclusive, requestedCapacity.canFail());
+        if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
-            if ( ! hasQuota(application, nodeCount))
-                throw new IllegalArgumentException(requestedCapacity + " requested for " + cluster +
-                                                   (requestedCapacity.minResources().nodes() != nodeCount ? " resolved to " + nodeCount + " nodes" : "") +
-                                                   " exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
+        if ( ! hasQuota(application, requested.maxResources().nodes()))
+            throw new IllegalArgumentException(requested + " requested for " + cluster +
+                                               ". Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
+
+        int groups;
+        NodeResources resources;
+        NodeSpec nodeSpec;
+        if ( requested.type() == NodeType.tenant) {
+            ClusterResources target = decideTargetResources(application, cluster.id(), requested);
+            int nodeCount = capacityPolicies.decideSize(target.nodes(), requested, cluster, application);
+            resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested, cluster);
+            boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
+            groups = Math.min(target.groups(), nodeCount); // cannot have more groups than nodes
+            nodeSpec = NodeSpec.from(nodeCount, resources, exclusive, requested.canFail());
+            logIfDownscaled(target.nodes(), nodeCount, cluster, logger);
         }
         else {
-            requestedNodes = NodeSpec.from(requestedCapacity.type());
-            effectiveGroups = 1; // type request with multiple groups is not supported
+            groups = 1; // type request with multiple groups is not supported
+            resources = requested.minResources().nodeResources();
+            nodeSpec = NodeSpec.from(requested.type());
         }
-
-        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups), resources);
+        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
     }
 
     @Override
@@ -136,6 +139,39 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public void remove(NestedTransaction transaction, ApplicationId application) {
         nodeRepository.deactivate(application, transaction);
         loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
+    }
+
+    /**
+     * Returns the target cluster resources, a value between the min and max in the requested capacity,
+     * and updates the application store with the received min and max,
+     */
+    private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec.Id clusterId, Capacity requested) {
+        try (Mutex lock = nodeRepository.lock(applicationId)) {
+            Application application = nodeRepository.applications().get(applicationId, true);
+            application.setClusterLimits(clusterId, requested.minResources(), requested.maxResources(), lock);
+            return application.cluster(clusterId).targetResources()
+                    .orElse(currentResources(applicationId, clusterId, requested)
+                    .orElse(requested.minResources()));
+        }
+    }
+
+    /** Returns the current resources of this cluster, if it'1s already depoyed and inside the requested limits */
+    private Optional<ClusterResources> currentResources(ApplicationId applicationId,
+                                                        ClusterSpec.Id clusterId,
+                                                        Capacity requested) {
+        List<Node> nodes = NodeList.copyOf(nodeRepository.getNodes(applicationId, Node.State.active))
+                                   .cluster(clusterId).not().retired().asList();
+        if (nodes.size() < 1) return Optional.empty();
+        long groups = nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        var resources = new ClusterResources(nodes.size(), (int)groups, nodes.get(0).flavor().resources());
+        if ( ! resources.isWithin(requested.minResources(), requested.maxResources())) return Optional.empty();
+        return Optional.of(resources);
+    }
+
+    private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {
+        if (zone.environment().isManuallyDeployed() && actualNodes < targetNodes)
+            logger.log(Level.INFO, "Requested " + targetNodes + " nodes for " + cluster +
+                                   ", downscaling to " + actualNodes + " nodes in " + zone.environment());
     }
 
     private boolean hasQuota(ApplicationId application, int requestedNodes) {
