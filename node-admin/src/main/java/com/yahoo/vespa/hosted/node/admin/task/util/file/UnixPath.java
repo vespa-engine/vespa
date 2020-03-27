@@ -160,7 +160,7 @@ public class UnixPath {
     }
 
     public void setLastModifiedTime(Instant instant) {
-        uncheck(() -> Files.setLastModifiedTime(path, FileTime.from(Instant.now())));
+        uncheck(() -> Files.setLastModifiedTime(path, FileTime.from(instant)));
     }
 
     public FileAttributes getAttributes() {
