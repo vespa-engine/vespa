@@ -5,7 +5,6 @@
 #include <set>
 #include <unordered_set>
 #include <vector>
-//#define XXH_INLINE_ALL
 #include <xxhash.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
