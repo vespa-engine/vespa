@@ -228,7 +228,7 @@ void
 RPCSend::handleReply(Reply::UP reply)
 {
     const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
-    if (_net->allowDispatchForEncode()) {
+    if (protocol && _net->allowDispatchForEncode()) {
         auto rejected = _net->getEncodeExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
             doHandleReply(protocol, std::move(reply));
         }));
