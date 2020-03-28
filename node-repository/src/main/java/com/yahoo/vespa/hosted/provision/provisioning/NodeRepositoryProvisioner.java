@@ -151,7 +151,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             application = application.withClusterLimits(clusterId, requested.minResources(), requested.maxResources());
             nodeRepository.applications().set(applicationId, application, lock);
             return application.cluster(clusterId).targetResources()
-                    .orElse(currentResources(applicationId, clusterId, requested)
+                    .orElseGet(() -> currentResources(applicationId, clusterId, requested)
                     .orElse(requested.minResources()));
         }
     }
