@@ -156,7 +156,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
     }
 
-    /** Returns the current resources of this cluster, if it'1s already depoyed and inside the requested limits */
+    /** Returns the current resources of this cluster, if it's already deployed and inside the requested limits */
     private Optional<ClusterResources> currentResources(ApplicationId applicationId,
                                                         ClusterSpec.Id clusterId,
                                                         Capacity requested) {
