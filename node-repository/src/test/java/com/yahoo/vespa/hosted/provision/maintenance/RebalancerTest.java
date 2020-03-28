@@ -55,7 +55,7 @@ public class RebalancerTest {
 
         Rebalancer rebalancer = new Rebalancer(deployer,
                                                tester.nodeRepository(),
-                                               new IdentityHostResourcesCalculator(),
+                                               tester.identityHostResourcesCalculator(),
                                                Optional.empty(),
                                                metric,
                                                tester.clock(),
@@ -147,20 +147,6 @@ public class RebalancerTest {
         b.addFlavor("cpu", 40, 20, 40, 3, Flavor.Type.BARE_METAL);
         b.addFlavor("mem", 20, 40, 40, 3, Flavor.Type.BARE_METAL);
         return b.build();
-    }
-
-    private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
-
-        @Override
-        public NodeResources realResourcesOf(Node node) {
-            return node.flavor().resources();
-        }
-
-        @Override
-        public NodeResources advertisedResourcesOf(Flavor flavor) {
-            return flavor.resources();
-        }
-
     }
 
 }

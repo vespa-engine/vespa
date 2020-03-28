@@ -114,26 +114,32 @@ public class NodeResources {
     public StorageType storageType() { return storageType; }
 
     public NodeResources withVcpu(double vcpu) {
+        if (vcpu == this.vcpu) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withMemoryGb(double memoryGb) {
+        if (memoryGb == this.memoryGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withDiskGb(double diskGb) {
+        if (diskGb == this.diskGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withBandwidthGbps(double bandwidthGbps) {
+        if (bandwidthGbps == this.bandwidthGbps) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
-    public NodeResources with(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
+    public NodeResources with(DiskSpeed diskSpeed) {
+        if (diskSpeed == this.diskSpeed) return this;
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources with(StorageType storageType) {
+        if (storageType == this.storageType) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 

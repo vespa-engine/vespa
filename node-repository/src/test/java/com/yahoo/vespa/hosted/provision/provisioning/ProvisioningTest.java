@@ -493,7 +493,7 @@ public class ProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("6 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42 exceeds your quota. Resolve this at https://cloud.vespa.ai/quota",
+            assertEquals("6 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42. Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/quota",
                          e.getMessage());
         }
     }
@@ -772,10 +772,10 @@ public class ProvisioningTest {
         allHosts.addAll(content1);
 
         Function<Integer, Capacity> capacity = count -> Capacity.from(new ClusterResources(count, 1, NodeResources.unspecified), required, true);
-        int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size), containerCluster0, application);
-        int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size), containerCluster1, application);
-        int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size), contentCluster0, application);
-        int expectedContent1Size = tester.capacityPolicies().decideSize(capacity.apply(content1Size), contentCluster1, application);
+        int expectedContainer0Size = tester.capacityPolicies().decideSize(container0Size, capacity.apply(container0Size), containerCluster0, application);
+        int expectedContainer1Size = tester.capacityPolicies().decideSize(container1Size, capacity.apply(container1Size), containerCluster1, application);
+        int expectedContent0Size = tester.capacityPolicies().decideSize(content0Size, capacity.apply(content0Size), contentCluster0, application);
+        int expectedContent1Size = tester.capacityPolicies().decideSize(content1Size, capacity.apply(content1Size), contentCluster1, application);
 
         assertEquals("Hosts in each group cluster is disjunct and the total number of unretired nodes is correct",
                      expectedContainer0Size + expectedContainer1Size + expectedContent0Size + expectedContent1Size,

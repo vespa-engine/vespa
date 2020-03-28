@@ -233,6 +233,10 @@ public class ProvisioningTester {
                 InstanceName.from(UUID.randomUUID().toString()));
     }
 
+    public ApplicationId makeApplicationId(String applicationName) {
+        return ApplicationId.from("tenant", applicationName, "default");
+    }
+
     public List<Node> makeReadyNodes(int n, String flavor) {
         return makeReadyNodes(n, flavor, NodeType.tenant);
     }
@@ -418,11 +422,14 @@ public class ProvisioningTester {
     }
 
     public List<Node> deploy(ApplicationId application, Capacity capacity) {
-        List<HostSpec> prepared = prepare(application, clusterSpec(), capacity);
+        return deploy(application, clusterSpec(), capacity);
+    }
+
+    public List<Node> deploy(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
+        List<HostSpec> prepared = prepare(application, cluster, capacity);
         activate(application, Set.copyOf(prepared));
         return getNodes(application, Node.State.active).asList();
     }
-
 
     /** Returns the hosts from the input list which are not retired */
     public List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
@@ -520,6 +527,24 @@ public class ProvisioningTester {
 
     private static class NullProvisionLogger implements ProvisionLogger {
         @Override public void log(Level level, String message) { }
+    }
+
+    public IdentityHostResourcesCalculator identityHostResourcesCalculator() {
+        return new IdentityHostResourcesCalculator();
+    }
+
+    private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
+
+        @Override
+        public NodeResources realResourcesOf(Node node) {
+            return node.flavor().resources();
+        }
+
+        @Override
+        public NodeResources advertisedResourcesOf(Flavor flavor) {
+            return flavor.resources();
+        }
+
     }
 
 }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
@@ -31,42 +32,37 @@ public class CapacityPolicies {
         this.isUsingAdvertisedResources = zone.cloud().value().equals("aws");
     }
 
-    public int decideSize(Capacity capacity, ClusterSpec cluster, ApplicationId application) {
-        int requestedNodes = capacity.minResources().nodes();
-
+    public int decideSize(int requested, Capacity capacity, ClusterSpec cluster, ApplicationId application) {
         if (application.instance().isTester()) return 1;
 
-        ensureRedundancy(requestedNodes, cluster, capacity.canFail());
-
-        if (capacity.isRequired()) return requestedNodes;
-
+        ensureRedundancy(requested, cluster, capacity.canFail());
+        if (capacity.isRequired()) return requested;
         switch(zone.environment()) {
             case dev : case test : return 1;
-            case perf : return Math.min(capacity.minResources().nodes(), 3);
-            case staging: return requestedNodes <= 1 ? requestedNodes : Math.max(2, requestedNodes / 10);
-            case prod : return requestedNodes;
+            case perf : return Math.min(requested, 3);
+            case staging: return requested <= 1 ? requested : Math.max(2, requested / 10);
+            case prod : return requested;
             default : throw new IllegalArgumentException("Unsupported environment " + zone.environment());
         }
     }
 
-    public NodeResources decideNodeResources(Capacity capacity, ClusterSpec cluster) {
-        NodeResources resources = capacity.minResources().nodeResources();
-        if (resources == NodeResources.unspecified)
-            resources = defaultNodeResources(cluster.type());
-        ensureSufficientResources(resources, cluster);
+    public NodeResources decideNodeResources(NodeResources requested, Capacity capacity, ClusterSpec cluster) {
+        if (requested == NodeResources.unspecified)
+            requested = defaultNodeResources(cluster.type());
+        ensureSufficientResources(requested, cluster);
 
-        if (capacity.isRequired()) return resources;
+        if (capacity.isRequired()) return requested;
 
         // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
-            resources = resources.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
+            requested = requested.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
         // Do not cap in AWS as hosts are allocated on demand and 1-to-1, so the node can use the entire host
         if (zone.environment() == Environment.dev && !zone.region().value().contains("aws-"))
-            resources = resources.withVcpu(0.1);
+            requested = requested.withVcpu(0.1);
 
-        return resources;
+        return requested;
     }
 
     private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {

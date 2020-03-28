@@ -36,10 +36,8 @@ class MaintenanceDeployment implements Closeable {
     public MaintenanceDeployment(ApplicationId application, Deployer deployer, NodeRepository nodeRepository) {
         this.application = application;
         Optional<Mutex> lock = tryLock(application, nodeRepository);
-
         try {
             deployment = tryDeployment(lock, application, deployer, nodeRepository);
-
             this.lock = lock;
             lock = Optional.empty();
         } finally {
@@ -52,6 +50,16 @@ class MaintenanceDeployment implements Closeable {
         return deployment.isPresent();
     }
 
+    /**
+     * Returns the application lock held by this, or empty if it is not held.
+     *
+     * @throws IllegalStateException id this is called when closed
+     */
+    public Optional<Mutex> applicationLock() {
+        if (closed) throw new IllegalStateException(this + " is closed");
+        return lock;
+    }
+
     public boolean prepare() {
         return doStep(() -> deployment.get().prepare());
     }
@@ -61,7 +69,7 @@ class MaintenanceDeployment implements Closeable {
     }
 
     private boolean doStep(Runnable action) {
-        if (closed) throw new IllegalStateException("Deployment of '" + application + "' is closed");
+        if (closed) throw new IllegalStateException(this + "' is closed");
         if ( ! isValid()) return false;
         try {
             action.run();
@@ -99,6 +107,11 @@ class MaintenanceDeployment implements Closeable {
     public void close() {
         lock.ifPresent(l -> l.close());
         closed = true;
+    }
+
+    @Override
+    public String toString() {
+        return "deployment of " + application;
     }
 
 }
