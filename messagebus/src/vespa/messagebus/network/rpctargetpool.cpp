@@ -63,19 +63,20 @@ RPCTargetPool::size()
 RPCTarget::SP
 RPCTargetPool::getTarget(FRT_Supervisor &orb, const RPCServiceAddress &address)
 {
+    const string & spec = address.getConnectionSpec();
+    uint64_t currentTime = _timer->getMilliTime();
     vespalib::LockGuard guard(_lock);
-    string spec = address.getConnectionSpec();
-    TargetMap::iterator it = _targets.find(spec);
+    auto it = _targets.find(spec);
     if (it != _targets.end()) {
         Entry &entry = it->second;
         if (entry._target->isValid()) {
-            entry._lastUse = _timer->getMilliTime();
+            entry._lastUse = currentTime;
             return entry._target;
         }
         _targets.erase(it);
     }
     auto ret = std::make_shared<RPCTarget>(spec, orb);
-    _targets.insert(TargetMap::value_type(spec, Entry(ret, _timer->getMilliTime())));
+    _targets.insert(TargetMap::value_type(spec, Entry(ret, currentTime)));
     return ret;
 }
 

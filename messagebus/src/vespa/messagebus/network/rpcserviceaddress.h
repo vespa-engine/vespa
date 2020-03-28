@@ -32,8 +32,7 @@ public:
      * @param serviceName    The full service name of the address.
      * @param connectionSpec The connection specification.
      */
-    RPCServiceAddress(const string &serviceName,
-                      const string &connectionSpec);
+    RPCServiceAddress(const string &serviceName, const string &connectionSpec);
     ~RPCServiceAddress();
 
     /**
@@ -69,7 +68,7 @@ public:
      *
      * @param target The target to set.
      */
-    void setTarget(RPCTarget::SP target) { _target = target; }
+    void setTarget(RPCTarget::SP target) { _target = std::move(target); }
 
     /**
      * Returns the RPC target to be used when communicating with the remove service. Make sure that {@link

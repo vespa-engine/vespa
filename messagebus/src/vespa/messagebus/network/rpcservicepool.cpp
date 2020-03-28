@@ -14,9 +14,7 @@ RPCServicePool::RPCServicePool(RPCNetwork &net, uint32_t maxSize) :
     assert(maxSize > 0);
 }
 
-RPCServicePool::~RPCServicePool()
-{
-}
+RPCServicePool::~RPCServicePool() = default;
 
 RPCServiceAddress::UP
 RPCServicePool::resolve(const string &pattern)
@@ -24,7 +22,7 @@ RPCServicePool::resolve(const string &pattern)
     if (_lru.hasKey(pattern)) {
         return _lru[pattern]->resolve();
     } else {
-        RPCService::UP service(new RPCService(_net.getMirror(), pattern));
+        auto service = std::make_unique<RPCService>(_net.getMirror(), pattern);
         auto result = service->resolve();
         _lru[pattern] = std::move(service);
         return result;

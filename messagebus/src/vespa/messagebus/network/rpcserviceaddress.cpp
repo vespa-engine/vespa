@@ -16,7 +16,7 @@ RPCServiceAddress::RPCServiceAddress(const string &serviceName,
     }
 }
 
-RPCServiceAddress::~RPCServiceAddress() {}
+RPCServiceAddress::~RPCServiceAddress() = default;
 
 bool
 RPCServiceAddress::isMalformed()
