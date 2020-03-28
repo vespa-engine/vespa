@@ -131,7 +131,6 @@ public class Autoscaler {
     private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources,
                                                                          ClusterSpec.Type clusterType,
                                                                          Cluster cluster) {
-        System.out.println("Candidate: " + resources);
         NodeResources nodeResources = resources.nodeResources();
         if ( ! cluster.minResources().equals(cluster.maxResources())) // enforce application limits unless suggest mode
             nodeResources = cluster.capAtLimits(nodeResources);
@@ -145,10 +144,7 @@ public class Autoscaler {
                                                                        nodeResources,
                                                                        resources.nodeResources(),
                                                                        clusterType));
-                else
-                    System.out.println("  " + flavor + " with " + flavor.resources() + " does not satisfy " + nodeResources);
             }
-            System.out.println("  ... returning empty");
             return Optional.empty();
         }
         else {

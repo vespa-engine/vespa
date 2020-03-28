@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -69,10 +68,13 @@ public class AutoscalingMaintainer extends Maintainer {
         Optional<AllocatableClusterResources> target = autoscaler.autoscale(cluster, clusterNodes);
         if (target.isEmpty()) return; // current resources are fine
 
-        if (cluster.minResources().equals(cluster.maxResources())) // autoscaling is deactivated
-            logAutoscaleSuggestion(target.get(), applicationId, clusterId, clusterNodes);
-        else
+        if (cluster.minResources().equals(cluster.maxResources())) { // autoscaling is deactivated
+            logAutoscaling("Scaling suggestion for ", target.get(), applicationId, clusterId, clusterNodes);
+        }
+        else {
+            logAutoscaling("Autoscaling ", target.get(), applicationId, clusterId, clusterNodes);
             autoscaleTo(target.get(), applicationId, clusterId, application, deployment);
+        }
     }
 
     private void autoscaleTo(AllocatableClusterResources target,
@@ -86,16 +88,17 @@ public class AutoscalingMaintainer extends Maintainer {
         deployment.activate();
     }
 
-    private void logAutoscaleSuggestion(AllocatableClusterResources target,
-                                        ApplicationId application,
-                                        ClusterSpec.Id clusterId,
-                                        List<Node> clusterNodes) {
+    private void logAutoscaling(String prefix,
+                                AllocatableClusterResources target,
+                                ApplicationId application,
+                                ClusterSpec.Id clusterId,
+                                List<Node> clusterNodes) {
         Instant lastLogTime = lastLogged.get(new Pair<>(application, clusterId));
         if (lastLogTime != null && lastLogTime.isAfter(nodeRepository().clock().instant().minus(Duration.ofHours(1)))) return;
 
         int currentGroups = (int)clusterNodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        log.info("Scaling suggestion for " + application + " " + clusterType + " " + clusterId + ":" +
+        log.info(prefix + application + " " + clusterType + " " + clusterId + ":" +
                  "\nfrom " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).flavor().resources()) +
                  "\nto   " + toString(target.nodes(), target.groups(), target.advertisedResources()));
         lastLogged.put(new Pair<>(application, clusterId), nodeRepository().clock().instant());
