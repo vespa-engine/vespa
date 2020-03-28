@@ -56,7 +56,7 @@ class MaintenanceDeployment implements Closeable {
      * @throws IllegalStateException id this is called when closed
      */
     public Optional<Mutex> applicationLock() {
-        if (closed) throw new IllegalStateException(this + "is closed");
+        if (closed) throw new IllegalStateException(this + " is closed");
         return lock;
     }
 
