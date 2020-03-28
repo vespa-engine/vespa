@@ -141,6 +141,19 @@ class AutoscalingTester {
         }
     }
 
+    public void addMeasurements(Resource resource, float value, int count, ApplicationId applicationId) {
+        List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
+        for (int i = 0; i < count; i++) {
+            clock().advance(Duration.ofMinutes(1));
+            for (Node node : nodes) {
+                db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
+                                                           resource.metricName(),
+                                                           clock().instant().toEpochMilli(),
+                                                           value * 100))); // the metrics are in %
+            }
+        }
+    }
+
     public Optional<AllocatableClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId, true).withClusterLimits(clusterId, min, max);

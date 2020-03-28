@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.NodeResources;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -15,38 +16,51 @@ import java.util.Optional;
  */
 public class Cluster {
 
-    private final ClusterResources minResources, maxResources;
-    private final Optional<ClusterResources> targetResources;
+    private final ClusterResources min, max;
+    private final Optional<ClusterResources> target;
 
     Cluster(ClusterResources minResources, ClusterResources maxResources, Optional<ClusterResources> targetResources) {
-        this.minResources = Objects.requireNonNull(minResources);
-        this.maxResources = Objects.requireNonNull(maxResources);
+        this.min = Objects.requireNonNull(minResources);
+        this.max = Objects.requireNonNull(maxResources);
         Objects.requireNonNull(targetResources);
 
         if (targetResources.isPresent() && ! targetResources.get().isWithin(minResources, maxResources))
-            this.targetResources = Optional.empty();
+            this.target = Optional.empty();
         else
-            this.targetResources = targetResources;
+            this.target = targetResources;
     }
 
     /** Returns the configured minimal resources in this cluster */
-    public ClusterResources minResources() { return minResources; }
+    public ClusterResources minResources() { return min; }
 
     /** Returns the configured maximal resources in this cluster */
-    public ClusterResources maxResources() { return maxResources; }
+    public ClusterResources maxResources() { return max; }
 
     /**
      * Returns the computed resources (between min and max, inclusive) this cluster should
      * have allocated at the moment, or empty if the system currently have no opinion on this.
      */
-    public Optional<ClusterResources> targetResources() { return targetResources; }
+    public Optional<ClusterResources> targetResources() { return target; }
 
     public Cluster withTarget(ClusterResources target) {
-        return new Cluster(minResources, maxResources, Optional.of(target));
+        return new Cluster(min, max, Optional.of(target));
     }
 
     public Cluster withoutTarget() {
-        return new Cluster(minResources, maxResources, Optional.empty());
+        return new Cluster(min, max, Optional.empty());
+    }
+
+    public NodeResources capAtLimits(NodeResources resources) {
+        resources = resources.withVcpu(between(min.nodeResources().vcpu(), max.nodeResources().vcpu(), resources.vcpu()));
+        resources = resources.withMemoryGb(between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), resources.memoryGb()));
+        resources = resources.withDiskGb(between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), resources.diskGb()));
+        return resources;
+    }
+
+    private double between(double min, double max, double value) {
+        value = Math.max(min, value);
+        value = Math.min(max, value);
+        return value;
     }
 
 }

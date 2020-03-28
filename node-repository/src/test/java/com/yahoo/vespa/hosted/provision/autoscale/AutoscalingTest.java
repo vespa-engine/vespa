@@ -64,8 +64,8 @@ public class AutoscalingTest {
         assertEquals("Load change is small -> No change", Optional.empty(), tester.autoscale(application1, cluster1.id(), min, max));
 
         tester.addMeasurements(Resource.cpu,  0.1f, 1f, 120, application1);
-        tester.assertResources("Scaling down since resource usage has gone down significantly",
-                               26, 1, 0.6, 16.0, 16.0,
+        tester.assertResources("Scaling down to minimum since usage has gone down significantly",
+                               14, 1, 1.0, 30.8, 30.8,
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
@@ -98,10 +98,87 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void testAutoscalingGroupSize1() {
+    public void testAutoscalingRespectsUpperLimit() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
+        ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.addMeasurements(Resource.cpu,    0.25f, 120, application1);
+        tester.addMeasurements(Resource.memory, 0.95f, 120, application1);
+        tester.addMeasurements(Resource.disk,   0.95f, 120, application1);
+        tester.assertResources("Scaling up to limit since resource usage is too high",
+                               6, 1, 2.4,  78.0, 79.0,
+                               tester.autoscale(application1, cluster1.id(), min, max));
+    }
+
+    @Test
+    public void testAutoscalingRespectsLowerLimit() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1.8, 7.4, 8.5, 1));
+        ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.addMeasurements(Resource.cpu,    0.05f, 120, application1);
+        tester.addMeasurements(Resource.memory, 0.05f, 120, application1);
+        tester.addMeasurements(Resource.disk,   0.05f, 120, application1);
+        tester.assertResources("Scaling down to limit since resource usage is low",
+                               3, 1, 1.8,  7.4, 8.5,
+                               tester.autoscale(application1, cluster1.id(), min, max));
+    }
+
+    @Test
+    public void testAutoscalingRespectsGroupLimit() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(18, 6, new NodeResources(100, 1000, 1000, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 5, 5, resources);
+        tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
+        tester.assertResources("Scaling up since resource usage is too high",
+                               6, 6, 2.5,  80.0, 80.0,
+                               tester.autoscale(application1, cluster1.id(), min, max));
+    }
+
+    /** This condition ensures we get recommendation suggestions when deactivated */
+    @Test
+    public void testAutoscalingLimitsAreIgnoredIfMinEqualsMax() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = min;
+        AutoscalingTester tester = new AutoscalingTester(resources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
+        tester.assertResources("Scaling up since resource usage is too high",
+                               7, 1, 2.6,  80.0, 80.0,
+                               tester.autoscale(application1, cluster1.id(), min, max));
+    }
+
+    @Test
+    public void testAutoscalingGroupSize1() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(20, 20, new NodeResources(100, 1000, 1000, 1));
         AutoscalingTester tester = new AutoscalingTester(resources);
 
         ApplicationId application1 = tester.applicationId("application1");
@@ -118,8 +195,8 @@ public class AutoscalingTest {
     @Test
     public void testAutoscalingGroupSize3() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
+        ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
         AutoscalingTester tester = new AutoscalingTester(resources);
 
         ApplicationId application1 = tester.applicationId("application1");
