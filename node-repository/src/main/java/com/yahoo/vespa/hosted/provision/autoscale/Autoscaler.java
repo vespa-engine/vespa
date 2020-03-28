@@ -102,11 +102,11 @@ public class Autoscaler {
                                                                      Cluster cluster) {
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation, cluster); i.hasNext(); ) {
-            ClusterResources allocation = i.next();
-            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(allocation,
-                                                                                                currentAllocation.clusterType());
+            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(i.next(),
+                                                                                                currentAllocation.clusterType(),
+                                                                                                cluster);
             if (allocatableResources.isEmpty()) continue;
-            if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
+            if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                 bestAllocation = allocatableResources;
         }
         return bestAllocation;
@@ -129,16 +129,26 @@ public class Autoscaler {
      * or empty if none available.
      */
     private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources,
-                                                                         ClusterSpec.Type clusterType) {
-        NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(), clusterType);
+                                                                         ClusterSpec.Type clusterType,
+                                                                         Cluster cluster) {
+        System.out.println("Candidate: " + resources);
+        NodeResources nodeResources = resources.nodeResources();
+        if ( ! cluster.minResources().equals(cluster.maxResources())) // enforce application limits unless suggest mode
+            nodeResources = cluster.capAtLimits(nodeResources);
+        nodeResources = nodeResourceLimits.enlargeToLegal(nodeResources, clusterType); // enforce system limits
+
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
                 if (flavor.resources().satisfies(nodeResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
                                                                        nodeResources,
+                                                                       resources.nodeResources(),
                                                                        clusterType));
+                else
+                    System.out.println("  " + flavor + " with " + flavor.resources() + " does not satisfy " + nodeResources);
             }
+            System.out.println("  ... returning empty");
             return Optional.empty();
         }
         else {
@@ -151,6 +161,7 @@ public class Autoscaler {
                     flavor = flavor.with(FlavorOverrides.ofDisk(nodeResources.diskGb()));
                 var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
                                                                 flavor,
+                                                                resources.nodeResources(),
                                                                 clusterType,
                                                                 resourcesCalculator);
 

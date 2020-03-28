@@ -72,7 +72,6 @@ public class ResourceIterator {
     public ClusterResources next() {
         ClusterResources next = resourcesWith(currentNodes);
         currentNodes += nodeIncrement;
-        System.out.println("Candidate: " + next);
         return next;
     }
 
@@ -135,10 +134,7 @@ public class ResourceIterator {
             }
         }
 
-        NodeResources resources = allocation.realResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
-        if ( ! suggestMode())
-            resources = cluster.capAtLimits(resources);
-        return resources;
+        return allocation.realResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }
 
     private double clusterUsage(Resource resource, double load) {

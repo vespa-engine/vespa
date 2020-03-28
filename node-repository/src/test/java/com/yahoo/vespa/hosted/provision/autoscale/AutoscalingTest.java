@@ -120,7 +120,7 @@ public class AutoscalingTest {
     @Test
     public void testAutoscalingRespectsLowerLimit() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1.8, 7.4, 8.5, 1));
+        ClusterResources min = new ClusterResources( 4, 1, new NodeResources(1.8, 7.4, 8.5, 1));
         ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
         AutoscalingTester tester = new AutoscalingTester(resources);
 
@@ -133,25 +133,25 @@ public class AutoscalingTest {
         tester.addMeasurements(Resource.memory, 0.05f, 120, application1);
         tester.addMeasurements(Resource.disk,   0.05f, 120, application1);
         tester.assertResources("Scaling down to limit since resource usage is low",
-                               3, 1, 1.8,  7.4, 8.5,
+                               4, 1, 1.8,  7.4, 8.5,
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
     @Test
     public void testAutoscalingRespectsGroupLimit() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        NodeResources hostResources = new NodeResources(30.0, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(18, 6, new NodeResources(100, 1000, 1000, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        AutoscalingTester tester = new AutoscalingTester(hostResources);
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
-        tester.deploy(application1, cluster1, 5, 5, resources);
-        tester.addMeasurements(Resource.cpu,  0.25f, 1f, 120, application1);
+        tester.deploy(application1, cluster1, 5, 5, new NodeResources(3.0, 10, 10, 1));
+        tester.addMeasurements(Resource.cpu,  0.3f, 1f, 240, application1);
         tester.assertResources("Scaling up since resource usage is too high",
-                               6, 6, 2.5,  80.0, 80.0,
+                               6, 6, 3.6,  8.0, 8.0,
                                tester.autoscale(application1, cluster1.id(), min, max));
     }
 
