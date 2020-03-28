@@ -517,7 +517,11 @@ struct FieldIndexTest : public ::testing::Test {
 };
 
 using FieldIndexTestTypes = ::testing::Types<FieldIndex<false>, FieldIndex<true>>;
+#ifdef TYPED_TEST_SUITE
+TYPED_TEST_SUITE(FieldIndexTest, FieldIndexTestTypes);
+#else
 TYPED_TEST_CASE(FieldIndexTest, FieldIndexTestTypes);
+#endif
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push

@@ -9,8 +9,13 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
+#ifdef INSTANTIATE_TEST_SUITE_P
+INSTANTIATE_TEST_SUITE_P(BTreeDatabase, BucketDatabaseTest,
+                        ::testing::Values(std::make_shared<BTreeBucketDatabase>()));
+#else
 INSTANTIATE_TEST_CASE_P(BTreeDatabase, BucketDatabaseTest,
                         ::testing::Values(std::make_shared<BTreeBucketDatabase>()));
+#endif
 
 using document::BucketId;
 

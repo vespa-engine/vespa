@@ -105,11 +105,17 @@ std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
 
 }
 
-// TODO replace with INSTANTIATE_TEST_SUITE_P on newer gtest versions
+#ifdef INSTANTIATE_TEST_SUITE_P
+INSTANTIATE_TEST_SUITE_P(MultiVersionTest, StorageProtocolTest,
+                        Values(vespalib::Version(6, 240, 0),
+                               vespalib::Version(7, 41, 19)),
+                        version_as_gtest_string);
+#else
 INSTANTIATE_TEST_CASE_P(MultiVersionTest, StorageProtocolTest,
                         Values(vespalib::Version(6, 240, 0),
                                vespalib::Version(7, 41, 19)),
                         version_as_gtest_string);
+#endif
 
 namespace {
     mbus::Message::UP lastCommand;
