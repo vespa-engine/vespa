@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
@@ -53,7 +54,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Container is started with uncapped CPU and is kept that way until the first successful health check + this duration
     // Subtract 1 second to avoid warmup coming in lockstep with tick time and always end up using an extra tick when there are just a few ms left
-    private static final Duration DEFAULT_WARM_UP_DURATION = Duration.ofMinutes(1).minus(Duration.ofSeconds(1));
+    private static final Duration DEFAULT_WARM_UP_DURATION = Duration.ofSeconds(90).minus(Duration.ofSeconds(1));
 
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
 
@@ -102,9 +103,9 @@ public class NodeAgentImpl implements NodeAgent {
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
                          Orchestrator orchestrator, DockerOperations dockerOperations, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
-                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock) {
+                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock, ZoneApi zone) {
         this(contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource, credentialsMaintainer,
-                aclMaintainer, healthChecker, clock, DEFAULT_WARM_UP_DURATION);
+             aclMaintainer, healthChecker, clock, warmUpDurationForZone(zone));
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
@@ -604,5 +605,11 @@ public class NodeAgentImpl implements NodeAgent {
 
     protected Optional<CredentialsMaintainer> credentialsMaintainer() {
         return credentialsMaintainer;
+    }
+
+    private static Duration warmUpDurationForZone(ZoneApi zone) {
+        return zone.getSystemName() == SystemName.cd || zone.getEnvironment().isTest()
+                ? Duration.ZERO
+                : DEFAULT_WARM_UP_DURATION;
     }
 }
