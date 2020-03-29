@@ -88,7 +88,7 @@ public class FeederParamsTest {
     }
     @Test
     public void requireThatNumConnectionsAreParsed() throws ParseException, FileNotFoundException {
-        assertEquals(2, new FeederParams().getNumConnectionsPerTarget());
+        assertEquals(1, new FeederParams().getNumConnectionsPerTarget());
         assertEquals(17, new FeederParams().parseArgs("-c 17").getNumConnectionsPerTarget());
         assertEquals(17, new FeederParams().parseArgs("--numconnections", "17").getNumConnectionsPerTarget());
     }
