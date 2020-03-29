@@ -34,7 +34,7 @@ class FeederParams {
     private boolean benchmarkMode = false;
     private int numDispatchThreads = 1;
     private int maxPending = 0;
-    private int numConnectionsPerTarget = 1;
+    private int numConnectionsPerTarget = 2;
     private List<InputStream> inputStreams = new ArrayList<>();
 
     FeederParams() {
