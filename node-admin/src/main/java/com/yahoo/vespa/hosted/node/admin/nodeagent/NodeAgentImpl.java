@@ -53,7 +53,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Container is started with uncapped CPU and is kept that way until the first successful health check + this duration
     // Subtract 1 second to avoid warmup coming in lockstep with tick time and always end up using an extra tick when there are just a few ms left
-    private static final Duration DEFAULT_WARM_UP_DURATION = Duration.ofMinutes(1).minus(Duration.ofSeconds(1));
+    private static final Duration DEFAULT_WARM_UP_DURATION = Duration.ofSeconds(90).minus(Duration.ofSeconds(1));
 
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
 
@@ -104,7 +104,7 @@ public class NodeAgentImpl implements NodeAgent {
                          FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock) {
         this(contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource, credentialsMaintainer,
-                aclMaintainer, healthChecker, clock, DEFAULT_WARM_UP_DURATION);
+             aclMaintainer, healthChecker, clock, DEFAULT_WARM_UP_DURATION);
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
@@ -212,7 +212,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Container startContainer(NodeAgentContext context) {
         ContainerData containerData = createContainerData(context);
-        ContainerResources wantedResources = context.nodeType() != NodeType.tenant || warmUpDuration.isNegative() ?
+        ContainerResources wantedResources = context.nodeType() != NodeType.tenant || warmUpDuration(context.zone()).isNegative() ?
                 getContainerResources(context) : getContainerResources(context).withUnlimitedCpus();
         dockerOperations.createContainer(context, containerData, wantedResources);
         dockerOperations.startContainer(context);
@@ -358,7 +358,7 @@ public class NodeAgentImpl implements NodeAgent {
         ContainerResources wantedContainerResources = getContainerResources(context);
 
         if (healthChecker.isPresent() && firstSuccessfulHealthCheckInstant
-                .map(clock.instant().minus(warmUpDuration)::isBefore)
+                .map(clock.instant().minus(warmUpDuration(context.zone()))::isBefore)
                 .orElse(true))
             return existingContainer;
 
@@ -474,7 +474,7 @@ public class NodeAgentImpl implements NodeAgent {
                     if (firstSuccessfulHealthCheckInstant.isEmpty())
                         firstSuccessfulHealthCheckInstant = Optional.of(clock.instant());
 
-                    Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration));
+                    Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context.zone())));
                     if (!container.get().resources.equalsCpu(getContainerResources(context)))
                         throw new ConvergenceException("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
@@ -604,5 +604,11 @@ public class NodeAgentImpl implements NodeAgent {
 
     protected Optional<CredentialsMaintainer> credentialsMaintainer() {
         return credentialsMaintainer;
+    }
+
+    private Duration warmUpDuration(ZoneApi zone) {
+        return zone.getSystemName().isCd() || zone.getEnvironment().isTest()
+                ? Duration.ofSeconds(-1)
+                : warmUpDuration;
     }
 }
