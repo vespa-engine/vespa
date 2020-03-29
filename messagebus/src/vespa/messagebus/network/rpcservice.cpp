@@ -5,8 +5,7 @@
 
 namespace mbus {
 
-RPCService::RPCService(const Mirror &mirror,
-                       const string &pattern) :
+RPCService::RPCService(const Mirror &mirror, const string &pattern) :
     _mirror(mirror),
     _pattern(pattern),
     _addressIdx(random()),

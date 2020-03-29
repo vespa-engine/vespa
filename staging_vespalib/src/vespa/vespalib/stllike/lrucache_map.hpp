@@ -267,7 +267,7 @@ typename lrucache_map<P>::internal_iterator
 lrucache_map<P>::findAndRef(const K & key)
 {
     internal_iterator found = HashTable::find(key);
-    if (found != HashTable::end()) {
+    if (found != HashTable::end() && (size()*2 > capacity())) {
         ref(found);
     }
     return found;
