@@ -608,7 +608,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private static Duration warmUpDurationForZone(ZoneApi zone) {
-        return zone.getSystemName() == SystemName.cd || zone.getEnvironment().isTest()
+        return zone.getSystemName().isCd() || zone.getEnvironment().isTest()
                 ? Duration.ZERO
                 : DEFAULT_WARM_UP_DURATION;
     }
