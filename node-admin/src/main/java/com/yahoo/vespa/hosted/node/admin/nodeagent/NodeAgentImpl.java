@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
@@ -103,9 +102,9 @@ public class NodeAgentImpl implements NodeAgent {
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
                          Orchestrator orchestrator, DockerOperations dockerOperations, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
-                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock, ZoneApi zone) {
+                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock) {
         this(contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource, credentialsMaintainer,
-             aclMaintainer, healthChecker, clock, warmUpDurationForZone(zone));
+             aclMaintainer, healthChecker, clock, DEFAULT_WARM_UP_DURATION);
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
@@ -213,7 +212,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Container startContainer(NodeAgentContext context) {
         ContainerData containerData = createContainerData(context);
-        ContainerResources wantedResources = context.nodeType() != NodeType.tenant || warmUpDuration.isNegative() ?
+        ContainerResources wantedResources = context.nodeType() != NodeType.tenant || warmUpDuration(context.zone()).isNegative() ?
                 getContainerResources(context) : getContainerResources(context).withUnlimitedCpus();
         dockerOperations.createContainer(context, containerData, wantedResources);
         dockerOperations.startContainer(context);
@@ -359,7 +358,7 @@ public class NodeAgentImpl implements NodeAgent {
         ContainerResources wantedContainerResources = getContainerResources(context);
 
         if (healthChecker.isPresent() && firstSuccessfulHealthCheckInstant
-                .map(clock.instant().minus(warmUpDuration)::isBefore)
+                .map(clock.instant().minus(warmUpDuration(context.zone()))::isBefore)
                 .orElse(true))
             return existingContainer;
 
@@ -475,7 +474,7 @@ public class NodeAgentImpl implements NodeAgent {
                     if (firstSuccessfulHealthCheckInstant.isEmpty())
                         firstSuccessfulHealthCheckInstant = Optional.of(clock.instant());
 
-                    Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration));
+                    Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context.zone())));
                     if (!container.get().resources.equalsCpu(getContainerResources(context)))
                         throw new ConvergenceException("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
@@ -607,9 +606,9 @@ public class NodeAgentImpl implements NodeAgent {
         return credentialsMaintainer;
     }
 
-    private static Duration warmUpDurationForZone(ZoneApi zone) {
+    private Duration warmUpDuration(ZoneApi zone) {
         return zone.getSystemName().isCd() || zone.getEnvironment().isTest()
                 ? Duration.ofSeconds(-1)
-                : DEFAULT_WARM_UP_DURATION;
+                : warmUpDuration;
     }
 }
