@@ -59,7 +59,7 @@ public class ClusterResources {
         ClusterResources other = (ClusterResources)o;
         if (other.nodes != this.nodes) return false;
         if (other.groups != this.groups) return false;
-        if (other.nodeResources.equals(this.nodeResources)) return false;
+        if ( ! other.nodeResources.equals(this.nodeResources)) return false;
         return true;
     }
 

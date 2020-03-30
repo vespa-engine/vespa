@@ -67,9 +67,12 @@ public class AutoscalingMaintainerTest {
         tester.makeReadyNodes(20, "flt", NodeType.host, 8);
         tester.deployZoneApp();
 
-        tester.deploy(app1, cluster1, Capacity.from(new ClusterResources(5, 1, lowResources), false, true));
-        tester.deploy(app2, cluster2, Capacity.from(new ClusterResources(5, 1, lowResources),
-                                                    new ClusterResources(10, 1, highResources), false, true));
+        tester.deploy(app1, cluster1, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
+                                                    new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
+                                                    false, true));
+        tester.deploy(app2, cluster2, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
+                                                    new ClusterResources(10, 1, new NodeResources(6.5, 9, 20, 0.1)),
+                                                    false, true));
 
         maintainer.maintain(); // noop
         assertTrue(deployer.lastDeployTime(app1).isEmpty());
