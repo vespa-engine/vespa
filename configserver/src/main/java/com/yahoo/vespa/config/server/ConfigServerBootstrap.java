@@ -62,7 +62,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final StateMonitor stateMonitor;
     private final VipStatus vipStatus;
     private final ConfigserverConfig configserverConfig;
-    private final SuperModelManager superModelManager;
     private final Duration maxDurationOfRedeployment;
     private final Duration sleepTimeWhenRedeployingFails;
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
@@ -71,32 +70,29 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     @SuppressWarnings("unused")
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                 SuperModelManager superModelManager) {
+                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus) {
         this(applicationRepository, server, versionState, stateMonitor, vipStatus, BOOTSTRAP_IN_CONSTRUCTOR, EXIT_JVM,
              applicationRepository.configserverConfig().hostedVespa()
                      ? VipStatusMode.VIP_STATUS_FILE
-                     : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY,
-                superModelManager);
+                     : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY);
     }
 
     // For testing only
     ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
-                          StateMonitor stateMonitor, VipStatus vipStatus, Mode mode,  VipStatusMode vipStatusMode) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE, vipStatusMode, null);
+                          StateMonitor stateMonitor, VipStatus vipStatus, Mode mode, VipStatusMode vipStatusMode) {
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE, vipStatusMode);
     }
 
     private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                   VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
                                   Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
-                                  VipStatusMode vipStatusMode, SuperModelManager superModelManager) {
+                                  VipStatusMode vipStatusMode) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
         this.stateMonitor = stateMonitor;
         this.vipStatus = vipStatus;
         this.configserverConfig = applicationRepository.configserverConfig();
-        this.superModelManager = superModelManager;
         this.maxDurationOfRedeployment = Duration.ofSeconds(configserverConfig.maxDurationOfBootstrap());
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
