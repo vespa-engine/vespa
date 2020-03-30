@@ -250,6 +250,7 @@
       "public void <init>(com.yahoo.container.QrSearchersConfig)",
       "public void <init>(com.yahoo.container.handler.ClustersStatus)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus)",
+      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus)",
       "public void setInRotation(java.lang.Boolean)",
