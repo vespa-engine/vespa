@@ -26,12 +26,13 @@ void
 RPCTarget::resolveVersion(duration timeout, RPCTarget::IVersionHandler &handler)
 {
     bool shouldInvoke = false;
-    ResolveState state = _state.load(std::memory_order_relaxed);
+    ResolveState state = _state.load(std::memory_order_acquire);
     bool hasVersion = (state == VERSION_RESOLVED);
     if ( ! hasVersion ) {
         vespalib::MonitorGuard guard(_lock);
-        if (state == PROCESSING_HANDLERS) {
-            while (_state == PROCESSING_HANDLERS) {
+        state = _state.load(std::memory_order_relaxed);
+        if (state == VERSION_RESOLVED || state == PROCESSING_HANDLERS) {
+            while (_state.load(std::memory_order::memory_order_relaxed) == PROCESSING_HANDLERS) {
                 guard.wait();
             }
             hasVersion = true;
