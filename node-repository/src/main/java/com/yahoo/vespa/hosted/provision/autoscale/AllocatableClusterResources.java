@@ -15,6 +15,11 @@ import java.util.List;
  */
 public class AllocatableClusterResources {
 
+    // We only depend on the ratios between these values
+    private static final double cpuUnitCost = 12.0;
+    private static final double memoryUnitCost = 1.2;
+    private static final double diskUnitCost = 0.045;
+
     /** The node count in the cluster */
     private final int nodes;
 
@@ -82,7 +87,7 @@ public class AllocatableClusterResources {
     public int groups() { return groups; }
     public ClusterSpec.Type clusterType() { return clusterType; }
 
-    public double cost() { return nodes * Autoscaler.costOf(advertisedResources); }
+    public double cost() { return nodes * costOf(advertisedResources); }
 
     /**
      * Returns the fraction measuring how well the real resources fulfils the ideal: 1 means completely fulfiled,
@@ -90,6 +95,12 @@ public class AllocatableClusterResources {
      * The real may be short of the ideal due to resource limits imposed by the system or application.
      */
     public double fulfilment() { return fulfilment; }
+
+    private static double costOf(NodeResources resources) {
+        return resources.vcpu() * cpuUnitCost +
+               resources.memoryGb() * memoryUnitCost +
+               resources.diskGb() * diskUnitCost;
+    }
 
     private static double fulfilment(NodeResources realResources, NodeResources idealResources) {
         double vcpuFulfilment     = Math.min(1, realResources.vcpu()     / idealResources.vcpu());
@@ -105,7 +116,9 @@ public class AllocatableClusterResources {
 
     @Override
     public String toString() {
-        return "$" + cost() + " (fulfilment " + fulfilment + "): " + realResources();
+        return nodes + " nodes with " + realResources() +
+               " at cost $" + cost() +
+               (fulfilment < 1.0 ? " (fulfilment " + fulfilment + ")" : "");
     }
 
 }
