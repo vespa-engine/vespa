@@ -10,8 +10,4 @@ public class UserId extends NonDefaultIdentifier {
         super(id);
     }
 
-    public TenantId toTenantId() {
-        return new TenantId("by-" + id().replace('_', '-'));
-    }
-
 }
