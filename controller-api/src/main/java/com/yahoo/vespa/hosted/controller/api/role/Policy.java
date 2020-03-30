@@ -137,7 +137,12 @@ enum Policy {
     /** Access to /system-flags/v1/dryrun. */
     systemFlagsDryrun(Privilege.grant(Action.update)
                                   .on(PathGroup.systemFlagsDryrun)
-                                  .in(SystemName.all()));
+                                  .in(SystemName.all())),
+
+    /** Access to /payment/notification */
+    paymentProcessor(Privilege.grant(Action.create)
+                                .on(PathGroup.paymentProcessor)
+                                .in(SystemName.PublicCd));
 
     private final Set<Privilege> privileges;
 
