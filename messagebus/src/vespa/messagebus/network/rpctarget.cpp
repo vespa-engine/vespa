@@ -25,12 +25,14 @@ RPCTarget::~RPCTarget()
 void
 RPCTarget::resolveVersion(duration timeout, RPCTarget::IVersionHandler &handler)
 {
-    bool hasVersion = false;
     bool shouldInvoke = false;
-    {
+    ResolveState state = _state.load(std::memory_order_acquire);
+    bool hasVersion = (state == VERSION_RESOLVED);
+    if ( ! hasVersion ) {
         vespalib::MonitorGuard guard(_lock);
-        if (_state == VERSION_RESOLVED || _state == PROCESSING_HANDLERS) {
-            while (_state == PROCESSING_HANDLERS) {
+        state = _state.load(std::memory_order_relaxed);
+        if (state == VERSION_RESOLVED || state == PROCESSING_HANDLERS) {
+            while (_state.load(std::memory_order::memory_order_relaxed) == PROCESSING_HANDLERS) {
                 guard.wait();
             }
             hasVersion = true;
@@ -54,11 +56,11 @@ RPCTarget::resolveVersion(duration timeout, RPCTarget::IVersionHandler &handler)
 bool
 RPCTarget::isValid() const
 {
-    vespalib::MonitorGuard guard(_lock);
     if (_target.IsValid()) {
         return true;
     }
-    if (_state == TARGET_INVOKED || _state == PROCESSING_HANDLERS) {
+    ResolveState state = _state.load(std::memory_order_relaxed);
+    if (state == TARGET_INVOKED || state == PROCESSING_HANDLERS) {
         return true; // keep alive until RequestDone() is called
     }
     return false;

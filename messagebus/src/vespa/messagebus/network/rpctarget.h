@@ -50,13 +50,13 @@ private:
     };
     typedef std::unique_ptr<vespalib::Version> Version_UP;
 
-    vespalib::Monitor _lock;
-    FRT_Supervisor   &_orb;
-    string            _name;
-    FRT_Target       &_target;
-    ResolveState      _state;
-    Version_UP        _version;
-    HandlerList       _versionHandlers;
+    vespalib::Monitor          _lock;
+    FRT_Supervisor            &_orb;
+    string                     _name;
+    FRT_Target                &_target;
+    std::atomic<ResolveState>  _state;
+    Version_UP                 _version;
+    HandlerList                _versionHandlers;
 
 public:
     /**
