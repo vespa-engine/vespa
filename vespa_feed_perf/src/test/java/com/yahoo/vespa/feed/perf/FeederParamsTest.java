@@ -89,8 +89,15 @@ public class FeederParamsTest {
     @Test
     public void requireThatNumConnectionsAreParsed() throws ParseException, FileNotFoundException {
         assertEquals(1, new FeederParams().getNumConnectionsPerTarget());
-        assertEquals(17, new FeederParams().parseArgs("-c 17").getNumConnectionsPerTarget());
+        assertEquals(16, new FeederParams().parseArgs("-c 16").getNumConnectionsPerTarget());
         assertEquals(17, new FeederParams().parseArgs("--numconnections", "17").getNumConnectionsPerTarget());
+    }
+
+    @Test
+    public void requireThatNumMessagesToSendAreParsed() throws ParseException, FileNotFoundException {
+        assertEquals(Long.MAX_VALUE, new FeederParams().getNumMessagesToSend());
+        assertEquals(18, new FeederParams().parseArgs("-l 18").getNumMessagesToSend());
+        assertEquals(19, new FeederParams().parseArgs("--nummessages", "19").getNumMessagesToSend());
     }
 
     @Test
