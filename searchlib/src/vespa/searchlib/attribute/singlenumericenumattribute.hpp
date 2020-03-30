@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include "singlenumericenumattribute.h"
-#include <vespa/searchlib/common/sort.h>
-#include "singleenumattribute.hpp"
+#include "attributeiterators.hpp"
+#include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "primitivereader.h"
-#include "attributeiterators.hpp"
-#include <vespa/searchlib/queryeval/emptysearch.h>
+#include "singleenumattribute.hpp"
+#include "singlenumericenumattribute.h"
+#include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/fileutil.hpp>
 
 namespace search {
@@ -79,7 +80,7 @@ template <typename B>
 bool
 SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 {
-    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
 
     uint64_t numValues = attrReader.getEnumCount();
     uint32_t numDocs = numValues;

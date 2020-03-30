@@ -19,7 +19,6 @@ public:
     bool hasWeight() const;
     bool hasIdx() const;
     bool hasData() const;
-    bool hasUData() const;
 
     uint32_t getNumIdx() const {
         return (_idxFileSize - _idxHeaderLen) /sizeof(uint32_t);
@@ -51,7 +50,6 @@ protected:
 private:
     std::unique_ptr<FastOS_FileInterface>  _weightFile;
     std::unique_ptr<FastOS_FileInterface>  _idxFile;
-    std::unique_ptr<FastOS_FileInterface>  _udatFile;
     FileReader<int32_t>   _weightReader;
     FileReader<uint32_t>  _idxReader;
     FileReader<uint32_t>  _enumReader;
@@ -59,7 +57,6 @@ private:
     uint32_t              _datHeaderLen;
     uint32_t              _idxHeaderLen;
     uint32_t              _weightHeaderLen;
-    uint32_t              _udatHeaderLen;
     uint64_t              _createSerialNum;
     size_t                _fixedWidth;
     bool                  _enumerated;
