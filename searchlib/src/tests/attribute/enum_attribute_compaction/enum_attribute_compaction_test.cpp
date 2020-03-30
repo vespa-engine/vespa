@@ -221,7 +221,7 @@ TEST_P(IntegerCompactionTest, compact)
     test_enum_store_compaction();
 }
 
-INSTANTIATE_TEST_CASE_P(IntegerCompactionTestSet, IntegerCompactionTest, ::testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET));
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(IntegerCompactionTestSet, IntegerCompactionTest, ::testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET));
 
 using StringCompactionTest = CompactionTest<StringAttribute>;
 
@@ -230,6 +230,6 @@ TEST_P(StringCompactionTest, compact)
     test_enum_store_compaction();
 }
 
-INSTANTIATE_TEST_CASE_P(StringCompactionTestSet, StringCompactionTest, ::testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET));
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(StringCompactionTestSet, StringCompactionTest, ::testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET));
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -5,7 +5,7 @@
 
 namespace storage::distributor {
 
-INSTANTIATE_TEST_CASE_P(MapDatabase, BucketDatabaseTest,
-                        ::testing::Values(std::make_shared<MapBucketDatabase>()));
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(MapDatabase, BucketDatabaseTest,
+                                     ::testing::Values(std::make_shared<MapBucketDatabase>()));
 
 }
