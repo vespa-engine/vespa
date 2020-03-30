@@ -3,6 +3,7 @@
 #include "attrvector.h"
 #include "attrvector.hpp"
 #include "iattributesavetarget.h"
+#include "load_utils.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attr_vector");
@@ -123,7 +124,7 @@ bool StringDirectAttribute::onLoad()
         setCommittedDocIdLimit(0);
     }
 
-    fileutil::LoadedBuffer::UP tmpBuffer(loadDAT());
+    auto tmpBuffer = attribute::LoadUtils::loadDAT(*this);
     bool rc(tmpBuffer.get());
     if (rc) {
         if ( ! tmpBuffer->empty()) {
@@ -158,7 +159,7 @@ bool StringDirectAttribute::onLoad()
         }
 
         if (hasMultiValue()) {
-            fileutil::LoadedBuffer::UP tmpIdx(loadIDX());
+            auto tmpIdx = attribute::LoadUtils::loadIDX(*this);
             size_t tmpIdxLen(tmpIdx->size(sizeof(uint32_t)));
             _idx.clear();
             _idx.reserve(tmpIdxLen);

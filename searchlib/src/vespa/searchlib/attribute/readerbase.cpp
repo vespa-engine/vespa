@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "readerbase.h"
 #include "attributevector.h"
+#include "load_utils.h"
+#include "readerbase.h"
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/util/filesizecalculator.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.attribute.readerbase");
@@ -28,11 +29,11 @@ namespace {
 }
 
 ReaderBase::ReaderBase(AttributeVector &attr)
-    : _datFile(attr.openDAT()),
+    : _datFile(attribute::LoadUtils::openDAT(attr)),
       _weightFile(attr.hasWeightedSetType() ?
-                  attr.openWeight() : std::unique_ptr<Fast_BufferedFile>()),
+                  attribute::LoadUtils::openWeight(attr) : std::unique_ptr<Fast_BufferedFile>()),
       _idxFile(attr.hasMultiValue() ?
-               attr.openIDX() : std::unique_ptr<Fast_BufferedFile>()),
+               attribute::LoadUtils::openIDX(attr) : std::unique_ptr<Fast_BufferedFile>()),
       _udatFile(),
       _weightReader(*_weightFile),
       _idxReader(*_idxFile),
@@ -83,7 +84,7 @@ ReaderBase::ReaderBase(AttributeVector &attr)
     }
     if (hasData() && AttributeVector::isEnumerated(_datHeader)) {
         _enumerated = true;
-        _udatFile = attr.openUDAT();
+        _udatFile = attribute::LoadUtils::openUDAT(attr);
         vespalib::FileHeader udatHeader(DIRECTIO_ALIGNMENT);
         _udatHeaderLen = udatHeader.readFile(*_udatFile);
         _udatFile->SetPosition(_udatHeaderLen);

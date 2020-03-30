@@ -5,13 +5,78 @@
 #include "loadedenumvalue.h"
 #include "multi_value_mapping.h"
 #include "multivalue.h"
+#include <vespa/fastos/file.h>
+#include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/util/array.hpp>
 
 using search::multivalue::Value;
 using search::multivalue::WeightedValue;
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
+
+using FileInterfaceUP = LoadUtils::FileInterfaceUP;
+using LoadedBufferUP = LoadUtils::LoadedBufferUP;
+
+FileInterfaceUP
+LoadUtils::openFile(AttributeVector& attr, const vespalib::string& suffix)
+{
+    return FileUtil::openFile(attr.getBaseFileName() + "." + suffix);
+}
+
+LoadedBufferUP
+LoadUtils::loadFile(AttributeVector& attr, const vespalib::string& suffix)
+{
+    return FileUtil::loadFile(attr.getBaseFileName() + "." + suffix);
+}
+
+FileInterfaceUP
+LoadUtils::openDAT(AttributeVector& attr)
+{
+    return openFile(attr, "dat");
+}
+
+FileInterfaceUP
+LoadUtils::openIDX(AttributeVector& attr)
+{
+    return openFile(attr, "idx");
+}
+
+FileInterfaceUP
+LoadUtils::openWeight(AttributeVector& attr)
+{
+    return openFile(attr, "weight");
+}
+
+FileInterfaceUP
+LoadUtils::openUDAT(AttributeVector& attr)
+{
+    return openFile(attr, "udat");
+}
+
+LoadedBufferUP
+LoadUtils::loadDAT(AttributeVector& attr)
+{
+    return loadFile(attr, "dat");
+}
+
+LoadedBufferUP
+LoadUtils::loadIDX(AttributeVector& attr)
+{
+    return loadFile(attr, "idx");
+}
+
+LoadedBufferUP
+LoadUtils::loadWeight(AttributeVector& attr)
+{
+    return loadFile(attr, "weight");
+}
+
+LoadedBufferUP
+LoadUtils::loadUDAT(AttributeVector& attr)
+{
+    return loadFile(attr, "udat");
+}
+
 
 #define INSTANTIATE_ARRAY(ValueType, Saver) \
 template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<Value<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
@@ -40,5 +105,4 @@ INSTANTIATE_VALUE(int64_t);
 INSTANTIATE_VALUE(float);
 INSTANTIATE_VALUE(double);
 
-} // namespace search::attribute
-} // namespace search
+}
