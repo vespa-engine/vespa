@@ -19,8 +19,9 @@ RPCServicePool::~RPCServicePool() = default;
 RPCServiceAddress::UP
 RPCServicePool::resolve(const string &pattern)
 {
-    if (_lru.hasKey(pattern)) {
-        return _lru[pattern]->resolve();
+    std::unique_ptr<RPCService> * found = _lru.findAndRef(pattern);
+    if (found) {
+        return (*found)->resolve();
     } else {
         auto service = std::make_unique<RPCService>(_net.getMirror(), pattern);
         auto result = service->resolve();

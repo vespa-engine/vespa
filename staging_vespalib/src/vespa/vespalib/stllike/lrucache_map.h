@@ -108,7 +108,7 @@ public:
     /**
      * This fetches the object without modifying the lru list.
      */
-    const V & get(const K & key) { return HashTable::find(key)->second._value; }
+    const V & get(const K & key) const { return HashTable::find(key)->second._value; }
 
     /**
      * This simply erases the object.
@@ -133,13 +133,11 @@ public:
     insert_result insert(const K & key, V && value);
 
     /**
-     * Return the object with the given key. If it does not exist an empty one will be created.
-     * This can be used as an insert.
-     * Object is then put at head of LRU list.
+     * Return pointer to the object with the given key.
+     * Object is then put at head of LRU list if found.
+     * If not found nullptr is returned.
      */
-    const V & operator [] (const K & key) const {
-        return const_cast<lrucache_map<P> *>(this)->findAndRef(key).second._value;
-    }
+    V * findAndRef(const K & key);
 
     /**
      * Return the object with the given key. If it does not exist an empty one will be created.
@@ -183,7 +181,6 @@ private:
      * Implements the resize of the hashtable
      */
     void move(NodeStore && oldStore) override;
-    internal_iterator findAndRef(const K & key);
     void ref(const internal_iterator & it);
     insert_result insert(value_type && value);
     void removeOld();
