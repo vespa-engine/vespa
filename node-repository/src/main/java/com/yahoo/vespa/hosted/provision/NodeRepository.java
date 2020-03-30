@@ -198,6 +198,11 @@ public class NodeRepository extends AbstractComponent {
         return NodeList.copyOf(getNodes());
     }
 
+    /** Returns a filterable list of all nodes of an application */
+    public NodeList list(ApplicationId application) {
+        return NodeList.copyOf(getNodes(application));
+    }
+
     /** Returns a locked list of all nodes in this repository */
     public LockedNodeList list(Mutex lock) {
         return new LockedNodeList(getNodes(), lock);

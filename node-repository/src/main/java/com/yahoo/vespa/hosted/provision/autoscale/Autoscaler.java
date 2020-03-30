@@ -63,11 +63,7 @@ public class Autoscaler {
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
     public Optional<AllocatableClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
-        if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
-                                                   node.allocation().get().membership().retired() ||
-                                                   node.allocation().get().isRemovable())) {
-            return Optional.empty(); // Don't autoscale clusters that are in flux
-        }
+        if (unstable(clusterNodes)) return Optional.empty();
 
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, resourcesCalculator);
@@ -186,6 +182,12 @@ public class Autoscaler {
     private boolean allowsHostSharing(CloudName cloudName) {
         if (cloudName.value().equals("aws")) return false;
         return true;
+    }
+
+    public static boolean unstable(List<Node> nodes) {
+        return nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
+                                                      node.allocation().get().membership().retired() ||
+                                                      node.allocation().get().isRemovable());
     }
 
 }

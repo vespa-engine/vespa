@@ -5,6 +5,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class NodeMetricsFetcherTest {
 
@@ -57,6 +60,12 @@ public class NodeMetricsFetcherTest {
             assertEquals("metric value cpu.util: 10.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(0).toString());
             assertEquals("metric value mem_total.util: 15.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(1).toString());
             assertEquals("metric value disk.util: 20.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(2).toString());
+        }
+
+        {
+            tester.nodeRepository().write(tester.nodeRepository().getNodes(application1, Node.State.active).get(0).retire(tester.clock().instant()),
+                                          tester.nodeRepository().lock(application1));
+            assertTrue("No metrics fetching while unstable", fetcher.fetchMetrics(application1).isEmpty());
         }
     }
 

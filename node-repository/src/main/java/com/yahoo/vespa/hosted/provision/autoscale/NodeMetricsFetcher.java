@@ -7,6 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -51,13 +52,15 @@ public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics
 
     @Override
     public Collection<MetricValue> fetchMetrics(ApplicationId application) {
-        Optional<Node> metricsV2Container = nodeRepository.list()
-                                                          .owner(application)
-                                                          .state(Node.State.active)
-                                                          .container()
-                                                          .filter(node -> expectedUp(node))
-                                                          .stream()
-                                                          .findFirst();
+        NodeList applicationNodes = nodeRepository.list(application).state(Node.State.active);
+
+        // Do not try to draw conclusions from utilization while unstable
+        if (Autoscaler.unstable(applicationNodes.asList())) return Collections.emptyList();
+
+        Optional<Node> metricsV2Container = applicationNodes.container()
+                                                            .filter(node -> expectedUp(node))
+                                                            .stream()
+                                                            .findFirst();
         if (metricsV2Container.isEmpty()) return Collections.emptyList();
         String url = "http://" + metricsV2Container.get().hostname() + ":" + 4080 + apiPath + "?consumer=default";
         String response = httpClient.get(url);
