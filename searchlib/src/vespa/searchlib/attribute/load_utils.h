@@ -17,18 +17,18 @@ public:
     using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
 
 private:
-    static FileInterfaceUP openFile(AttributeVector& attr, const vespalib::string& suffix);
-    static LoadedBufferUP loadFile(AttributeVector& attr, const vespalib::string& suffix);
+    static FileInterfaceUP openFile(const AttributeVector& attr, const vespalib::string& suffix);
+    static LoadedBufferUP loadFile(const AttributeVector& attr, const vespalib::string& suffix);
 
 public:
-    static FileInterfaceUP openDAT(AttributeVector& attr);
-    static FileInterfaceUP openIDX(AttributeVector& attr);
-    static FileInterfaceUP openWeight(AttributeVector& attr);
+    static FileInterfaceUP openDAT(const AttributeVector& attr);
+    static FileInterfaceUP openIDX(const AttributeVector& attr);
+    static FileInterfaceUP openWeight(const AttributeVector& attr);
 
-    static LoadedBufferUP loadDAT(AttributeVector& attr);
-    static LoadedBufferUP loadIDX(AttributeVector& attr);
-    static LoadedBufferUP loadWeight(AttributeVector& attr);
-    static LoadedBufferUP loadUDAT(AttributeVector& attr);
+    static LoadedBufferUP loadDAT(const AttributeVector& attr);
+    static LoadedBufferUP loadIDX(const AttributeVector& attr);
+    static LoadedBufferUP loadWeight(const AttributeVector& attr);
+    static LoadedBufferUP loadUDAT(const AttributeVector& attr);
 };
 
 /**

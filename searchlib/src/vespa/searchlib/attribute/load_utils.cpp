@@ -18,55 +18,55 @@ using FileInterfaceUP = LoadUtils::FileInterfaceUP;
 using LoadedBufferUP = LoadUtils::LoadedBufferUP;
 
 FileInterfaceUP
-LoadUtils::openFile(AttributeVector& attr, const vespalib::string& suffix)
+LoadUtils::openFile(const AttributeVector& attr, const vespalib::string& suffix)
 {
     return FileUtil::openFile(attr.getBaseFileName() + "." + suffix);
 }
 
 LoadedBufferUP
-LoadUtils::loadFile(AttributeVector& attr, const vespalib::string& suffix)
+LoadUtils::loadFile(const AttributeVector& attr, const vespalib::string& suffix)
 {
     return FileUtil::loadFile(attr.getBaseFileName() + "." + suffix);
 }
 
 FileInterfaceUP
-LoadUtils::openDAT(AttributeVector& attr)
+LoadUtils::openDAT(const AttributeVector& attr)
 {
     return openFile(attr, "dat");
 }
 
 FileInterfaceUP
-LoadUtils::openIDX(AttributeVector& attr)
+LoadUtils::openIDX(const AttributeVector& attr)
 {
     return openFile(attr, "idx");
 }
 
 FileInterfaceUP
-LoadUtils::openWeight(AttributeVector& attr)
+LoadUtils::openWeight(const AttributeVector& attr)
 {
     return openFile(attr, "weight");
 }
 
 LoadedBufferUP
-LoadUtils::loadDAT(AttributeVector& attr)
+LoadUtils::loadDAT(const AttributeVector& attr)
 {
     return loadFile(attr, "dat");
 }
 
 LoadedBufferUP
-LoadUtils::loadIDX(AttributeVector& attr)
+LoadUtils::loadIDX(const AttributeVector& attr)
 {
     return loadFile(attr, "idx");
 }
 
 LoadedBufferUP
-LoadUtils::loadWeight(AttributeVector& attr)
+LoadUtils::loadWeight(const AttributeVector& attr)
 {
     return loadFile(attr, "weight");
 }
 
 LoadedBufferUP
-LoadUtils::loadUDAT(AttributeVector& attr)
+LoadUtils::loadUDAT(const AttributeVector& attr)
 {
     return loadFile(attr, "udat");
 }
