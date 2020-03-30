@@ -81,8 +81,9 @@ public class TensorFieldProcessor extends Processor {
             var index = field.getIndex(field.getName());
             // TODO: Calculate default params based on tensor dimension size
             var params = new HnswIndexParams();
-            if (index != null && index.getHnswIndexParams().isPresent()) {
-                params = params.overrideFrom(index.getHnswIndexParams().get());
+            if (index != null) {
+                params = params.overrideFrom(index.getHnswIndexParams());
+                field.getAttribute().setDistanceMetric(index.getDistanceMetric());
             }
             field.getAttribute().setHnswIndexParams(params);
         }

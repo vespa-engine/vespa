@@ -240,13 +240,14 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             aaB.tensortype(attribute.tensorType().get().toString());
         }
         aaB.imported(imported);
+        var dma = attribute.distanceMetric();
         if (attribute.hnswIndexParams().isPresent()) {
             var ib = new AttributesConfig.Attribute.Index.Builder();
             var params = attribute.hnswIndexParams().get();
             ib.hnsw.enabled(true);
             ib.hnsw.maxlinkspernode(params.maxLinksPerNode());
             ib.hnsw.neighborstoexploreatinsert(params.neighborsToExploreAtInsert());
-            var dm = AttributesConfig.Attribute.Index.Hnsw.Distancemetric.Enum.valueOf(params.distanceMetric().toString());
+            var dm = AttributesConfig.Attribute.Index.Hnsw.Distancemetric.Enum.valueOf(dma.toString());
             ib.hnsw.distancemetric(dm);
             aaB.index(ib);
         }
