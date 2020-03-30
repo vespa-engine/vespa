@@ -24,6 +24,8 @@ public class VipStatus {
     /** If this is non-null, its value decides whether this container is in rotation */
     private Boolean rotationOverride = null;
 
+    private final boolean initiallyInRotation;
+
     /** The current state of this */
     private boolean currentlyInRotation;
 
@@ -44,20 +46,30 @@ public class VipStatus {
         this(new QrSearchersConfig.Builder().build(), clustersStatus);
     }
 
+    /** For testing */
     public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
-        this(dispatchers, clustersStatus, new StateMonitor());
+        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, new StateMonitor());
     }
 
     @Inject
-    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus, StateMonitor healthState) {
+    public VipStatus(QrSearchersConfig dispatchers,
+                     VipStatusConfig vipStatusConfig,
+                     ClustersStatus clustersStatus,
+                     StateMonitor healthState) {
         this.clustersStatus = clustersStatus;
         this.healthState = healthState;
+        initiallyInRotation = vipStatusConfig.initiallyInRotation();
         healthState.status(StateMonitor.Status.initializing);
         clustersStatus.setContainerHasClusters(! dispatchers.searchcluster().isEmpty());
         updateCurrentlyInRotation();
     }
 
-    /** @deprecated don't pass VipStatusConfig */
+    @Deprecated // TODO: Remove on Vespa 8
+    @Inject
+    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus, StateMonitor healthState) {
+        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, healthState);
+    }
+
     @Deprecated // TODO: Remove on Vespa 8
     public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig ignored, ClustersStatus clustersStatus) {
         this(dispatchers, clustersStatus);
@@ -107,7 +119,12 @@ public class VipStatus {
             } else {
                 if (healthState.status() == StateMonitor.Status.up) {
                     currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ONE);
-                } else {
+                }
+                else if (healthState.status() == StateMonitor.Status.initializing) {
+                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL)
+                                          && initiallyInRotation;
+                }
+                else {
                     currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL);
                 }
             }
