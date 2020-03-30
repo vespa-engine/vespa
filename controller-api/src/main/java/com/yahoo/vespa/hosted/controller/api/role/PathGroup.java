@@ -202,7 +202,11 @@ enum PathGroup {
 
 
     /** Paths used for "dry-running" system-wide feature flags. */
-    systemFlagsDryrun(PathPrefix.none, "/system-flags/v1/dryrun");
+    systemFlagsDryrun(PathPrefix.none, "/system-flags/v1/dryrun"),
+
+    /** Paths used for receiving payment callbacks */
+    paymentProcessor(PathPrefix.none, "/payment/notification");
+
 
     final List<String> pathSpecs;
     final PathPrefix prefix;
