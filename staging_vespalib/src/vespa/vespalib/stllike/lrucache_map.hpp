@@ -263,14 +263,17 @@ lrucache_map<P>::operator [] (const K & key)
 }
 
 template< typename P >
-typename lrucache_map<P>::internal_iterator
+typename P::Value *
 lrucache_map<P>::findAndRef(const K & key)
 {
     internal_iterator found = HashTable::find(key);
-    if (found != HashTable::end() && (size()*2 > capacity())) {
-        ref(found);
+    if (found != HashTable::end()) {
+        if (size()*2 > capacity()) {
+            ref(found);
+        }
+        return &found->second._value;
     }
-    return found;
+    return nullptr;
 }
 
 }
