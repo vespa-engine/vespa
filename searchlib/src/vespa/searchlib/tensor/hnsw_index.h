@@ -8,6 +8,7 @@
 #include "hnsw_node.h"
 #include "nearest_neighbor_index.h"
 #include "random_level_generator.h"
+#include "hnsw_graph.h"
 #include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
@@ -57,54 +58,30 @@ public:
     };
 
 protected:
-    using AtomicEntryRef = search::datastore::AtomicEntryRef;
+    using AtomicEntryRef = HnswGraph::AtomicEntryRef;
+    using NodeStore = HnswGraph::NodeStore;
 
-    // This uses 10 bits for buffer id -> 1024 buffers.
-    // As we have very short arrays we get less fragmentation with fewer and larger buffers.
-    using EntryRefType = search::datastore::EntryRefT<22>;
-
-    // Provides mapping from document id -> node reference.
-    // The reference is used to lookup the node data in NodeStore.
-    using NodeRefVector = vespalib::RcuVector<AtomicEntryRef>;
-
-    // This stores the level arrays for all nodes.
-    // Each node consists of an array of levels (from level 0 to n) where each entry is a reference to the link array at that level.
-    using NodeStore = search::datastore::ArrayStore<AtomicEntryRef, EntryRefType>;
-    using LevelArrayRef = NodeStore::ConstArrayRef;
-    using LevelArray = vespalib::Array<AtomicEntryRef>;
-
-    // This stores all link arrays.
-    // A link array consists of the document ids of the nodes a particular node is linked to.
-    using LinkStore = search::datastore::ArrayStore<uint32_t, EntryRefType>;
-    using LinkArrayRef = LinkStore::ConstArrayRef;
+    using LinkStore = HnswGraph::LinkStore;
+    using LinkArrayRef = HnswGraph::LinkArrayRef;
     using LinkArray = vespalib::Array<uint32_t>;
+
+    using LevelArrayRef = HnswGraph::LevelArrayRef;
+    using LevelArray = vespalib::Array<AtomicEntryRef>;
 
     using TypedCells = vespalib::tensor::TypedCells;
 
+    HnswGraph _graph;
     const DocVectorAccess& _vectors;
     DistanceFunction::UP _distance_func;
     RandomLevelGenerator::UP _level_generator;
     Config _cfg;
-    NodeRefVector _node_refs;
-    NodeStore _nodes;
-    LinkStore _links;
     mutable vespalib::ReusableSetPool _visited_set_pool;
-    uint32_t _entry_docid;
-    int _entry_level;
-
-    static search::datastore::ArrayStoreConfig make_default_node_store_config();
-    static search::datastore::ArrayStoreConfig make_default_link_store_config();
 
     uint32_t max_links_for_level(uint32_t level) const;
-    void make_node_for_document(uint32_t docid, uint32_t num_levels);
-    void remove_node_for_document(uint32_t docid);
-    LevelArrayRef get_level_array(uint32_t docid) const;
-    LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const;
-    void set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& links);
     void add_link_to(uint32_t docid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
         LinkArray new_links(old_links.begin(), old_links.end());
         new_links.push_back(new_link);
-        set_link_array(docid, level, new_links);
+        _graph.set_link_array(docid, level, new_links);
     }
 
     /**
@@ -156,20 +133,23 @@ public:
     void get_state(const vespalib::slime::Inserter& inserter) const override;
 
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override;
-    void load(const fileutil::LoadedBuffer& buf) override;
+    bool load(const fileutil::LoadedBuffer& buf) override;
 
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
     const DistanceFunction *distance_function() const override { return _distance_func.get(); }
 
     FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k) const;
 
-    uint32_t get_entry_docid() const { return _entry_docid; }
-    uint32_t get_entry_level() const { return _entry_level; }
+    uint32_t get_entry_docid() const { return _graph.entry_docid; }
+    int32_t get_entry_level() const { return _graph.entry_level; }
 
     // Should only be used by unit tests.
     HnswNode get_node(uint32_t docid) const;
     void set_node(uint32_t docid, const HnswNode &node);
     bool check_link_symmetry() const;
+
+    static search::datastore::ArrayStoreConfig make_default_node_store_config();
+    static search::datastore::ArrayStoreConfig make_default_link_store_config();
 };
 
 }

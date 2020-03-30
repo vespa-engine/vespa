@@ -21,7 +21,7 @@ namespace search::tensor {
 class NearestNeighborIndexSaver {
 public:
     virtual ~NearestNeighborIndexSaver() {}
-    virtual void save(BufferWriter& writer) const;
+    virtual void save(BufferWriter& writer) const = 0;
 };
 
 }
