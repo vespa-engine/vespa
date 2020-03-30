@@ -67,6 +67,12 @@ public class Flags {
             "Takes effect on next host admin tick.",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_NEW_VESPA_RPMS = defineFeatureFlag(
+            "use-new-vespa-rpms", false,
+            "Whether to use the new vespa-rpms YUM repo when upgrading/downgrading.",
+            "Takes effect when upgrading or downgrading host admin to a different version.",
+            HOSTNAME, NODE_TYPE);
+
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
