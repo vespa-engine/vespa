@@ -72,11 +72,7 @@ public:
 #endif
 
 using FloatEnumStoreTestTypes = ::testing::Types<FloatEnumStore, DoubleEnumStore>;
-#ifdef TYPED_TEST_SUITE
-TYPED_TEST_SUITE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
-#else
-TYPED_TEST_CASE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
-#endif
+VESPA_GTEST_TYPED_TEST_SUITE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
 
 TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
 {
@@ -456,11 +452,7 @@ LoaderTest<StringEnumStore>::load_values(enumstore::EnumeratedLoaderBase& loader
 #endif
 
 using LoaderTestTypes = ::testing::Types<NumericEnumStore, FloatEnumStore, StringEnumStore>;
-#ifdef TYPED_TEST_SUITE
-TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
-#else
-TYPED_TEST_CASE(LoaderTest, LoaderTestTypes);
-#endif
+VESPA_GTEST_TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
 
 TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
 {
