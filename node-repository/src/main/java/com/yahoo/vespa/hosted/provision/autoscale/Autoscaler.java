@@ -37,10 +37,10 @@ public class Autoscaler {
 
     private static final int minimumMeasurements = 500; // TODO: Per node instead? Also say something about interval?
 
-    /** What cost difference factor warrants reallocation? */
-    private static final double costDifferenceRatioWorthReallocation = 0.1;
-    /** What difference factor from ideal (for any resource) warrants a change? */
-    private static final double idealDivergenceWorthReallocation = 0.1;
+    /** What cost difference factor is worth a reallocation? */
+    private static final double costDifferenceWorthReallocation = 0.1;
+    /** What difference factor for a resource is worth a reallocation? */
+    private static final double resourceDifferenceWorthReallocation = 0.1;
 
     private final HostResourcesCalculator resourcesCalculator;
     private final NodeMetricsDb metricsDb;
@@ -82,13 +82,7 @@ public class Autoscaler {
                                                                                   currentAllocation,
                                                                                   cluster);
         if (bestAllocation.isEmpty()) return Optional.empty();
-
-        if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
-            closeToIdeal(Resource.memory, memoryLoad.get()) &&
-            closeToIdeal(Resource.disk, diskLoad.get()) &&
-            similarCost(bestAllocation.get().cost(), currentAllocation.cost())) {
-            return Optional.empty(); // Avoid small, unnecessary changes
-        }
+        if (similar(bestAllocation.get(), currentAllocation)) return Optional.empty();
         return bestAllocation;
     }
 
@@ -107,12 +101,16 @@ public class Autoscaler {
         return bestAllocation;
     }
 
-    private boolean similarCost(double cost1, double cost2) {
-        return similar(cost1, cost2, costDifferenceRatioWorthReallocation);
-    }
-
-    private boolean closeToIdeal(Resource resource, double value) {
-        return similar(resource.idealAverageLoad(), value, idealDivergenceWorthReallocation);
+    /** Returns true if both total real resources and total cost are similar */
+    private boolean similar(AllocatableClusterResources a, AllocatableClusterResources b) {
+        return similar(a.cost(), b.cost(), costDifferenceWorthReallocation) &&
+               similar(a.realResources().vcpu() * a.nodes(),
+                       b.realResources().vcpu() * b.nodes(), resourceDifferenceWorthReallocation) &&
+               similar(a.realResources().memoryGb() * a.nodes(),
+                       b.realResources().memoryGb() * b.nodes(), resourceDifferenceWorthReallocation) &&
+               similar(a.realResources().diskGb() * a.nodes(),
+                       b.realResources().diskGb() * b.nodes(),
+                       resourceDifferenceWorthReallocation);
     }
 
     private boolean similar(double r1, double r2, double threshold) {

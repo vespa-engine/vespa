@@ -116,7 +116,9 @@ public class AllocatableClusterResources {
 
     @Override
     public String toString() {
-        return "$" + cost() + " (fulfilment " + fulfilment + "): " + realResources();
+        return nodes + " nodes with " + realResources() +
+               " at cost $" + cost() +
+               (fulfilment < 1.0 ? " (fulfilment " + fulfilment + ")" : "");
     }
 
 }

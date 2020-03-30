@@ -99,16 +99,17 @@ public class AutoscalingTest {
 
     @Test
     public void testAutoscalingRespectsUpperLimit() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        NodeResources hostResources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        AutoscalingTester tester = new AutoscalingTester(hostResources);
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
-        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.deploy(application1, cluster1, 5, 1,
+                      new NodeResources(1.9, 70, 70, 1));
         tester.addMeasurements(Resource.cpu,    0.25f, 120, application1);
         tester.addMeasurements(Resource.memory, 0.95f, 120, application1);
         tester.addMeasurements(Resource.disk,   0.95f, 120, application1);
