@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -103,52 +105,46 @@ public class LogFileHandlerTestCase {
       h.shutdown();
     }
 
-    @Test
+    @Test(timeout = /*5 minutes*/300_000)
     public void testSymlink() throws IOException, InterruptedException {
         File root = temporaryFolder.newFolder("testlogforsymlinkchecking");
-        LogFileHandler h = new LogFileHandler();
-        h.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s");
-        h.setFormatter(new Formatter() {
+        LogFileHandler handler = new LogFileHandler();
+        handler.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s");
+        handler.setFormatter(new Formatter() {
             public String format(LogRecord r) {
                 DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
                 String timeStamp = df.format(new Date(r.getMillis()));
                 return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
             }
         } );
-        h.setSymlinkName("symlink");
-        LogRecord lr = new LogRecord(Level.INFO, "test");
-        h.publish(lr);
-        String f1 = h.getFileName();
-        String f2 = null;
-        while (f1 == null) {
+        handler.setSymlinkName("symlink");
+
+        handler.publish(new LogRecord(Level.INFO, "test"));
+        String firstFile;
+        do {
+             Thread.sleep(1);
+             firstFile = handler.getFileName();
+        } while (firstFile == null);
+        handler.rotateNow();
+        String secondFileName;
+        do {
             Thread.sleep(1);
-            f1 = h.getFileName();
-        }
-        h.rotateNow();
-        Thread.sleep(1);
-        f2 = h.getFileName();
-        while (f1.equals(f2)) {
+            secondFileName = handler.getFileName();
+        } while (firstFile.equals(secondFileName));
+
+        handler.publish(new LogRecord(Level.INFO, "string which is way longer than the word test"));
+        handler.waitDrained();
+        assertThat(Files.size(Paths.get(firstFile))).isEqualTo(31);
+        final long expectedSecondFileLength = 72;
+        long secondFileLength;
+        do {
             Thread.sleep(1);
-            f2 = h.getFileName();
-        }
-        lr = new LogRecord(Level.INFO, "string which is way longer than the word test");
-        h.publish(lr);
-        h.waitDrained();
-        File f = new File(f1);
-        long first = f.length();
-        f = new File(f2);
-        long second = f.length();
-        final long secondLength = 72;
-        for (int n = 0; n < 20 && second != secondLength; ++n) {
-            Thread.sleep(1);
-            second = f.length();
-        }
-        f = new File(root, "symlink");
-        long link = f.length();
-        assertThat(secondLength).isEqualTo(link);
-        assertThat(31).isEqualTo(first);
-        assertThat(secondLength).isEqualTo(second);
-        h.shutdown();
+            secondFileLength = Files.size(Paths.get(secondFileName));
+        } while (secondFileLength != expectedSecondFileLength);
+
+        long symlinkFileLength = Files.size(root.toPath().resolve("symlink"));
+        assertThat(symlinkFileLength).isEqualTo(expectedSecondFileLength);
+        handler.shutdown();
     }
 
     @Test
