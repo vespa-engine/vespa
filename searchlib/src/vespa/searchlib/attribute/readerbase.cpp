@@ -13,18 +13,18 @@ LOG_SETUP(".search.attribute.readerbase");
 namespace search {
 
 namespace {
-    const vespalib::string versionTag = "version";
-    const vespalib::string docIdLimitTag = "docIdLimit";
-    const vespalib::string createSerialNumTag = "createSerialNum";
 
-    constexpr size_t DIRECTIO_ALIGNMENT(4096);
+const vespalib::string versionTag = "version";
+const vespalib::string docIdLimitTag = "docIdLimit";
+const vespalib::string createSerialNumTag = "createSerialNum";
 
-    uint64_t
-    extractCreateSerialNum(const vespalib::GenericHeader &header)
-    {
-        return (header.hasTag(createSerialNumTag)) ? header.getTag(createSerialNumTag).asInteger() : 0u;
-    }
+constexpr size_t DIRECTIO_ALIGNMENT(4096);
 
+uint64_t
+extractCreateSerialNum(const vespalib::GenericHeader &header)
+{
+    return (header.hasTag(createSerialNumTag)) ? header.getTag(createSerialNumTag).asInteger() : 0u;
+}
 
 }
 
@@ -34,7 +34,6 @@ ReaderBase::ReaderBase(AttributeVector &attr)
                   attribute::LoadUtils::openWeight(attr) : std::unique_ptr<Fast_BufferedFile>()),
       _idxFile(attr.hasMultiValue() ?
                attribute::LoadUtils::openIDX(attr) : std::unique_ptr<Fast_BufferedFile>()),
-      _udatFile(),
       _weightReader(*_weightFile),
       _idxReader(*_idxFile),
       _enumReader(*_datFile),
@@ -42,7 +41,6 @@ ReaderBase::ReaderBase(AttributeVector &attr)
       _datHeaderLen(0u),
       _idxHeaderLen(0u),
       _weightHeaderLen(0u),
-      _udatHeaderLen(0u),
       _createSerialNum(0u),
       _fixedWidth(attr.getFixedWidth()),
       _enumerated(false),
@@ -84,19 +82,11 @@ ReaderBase::ReaderBase(AttributeVector &attr)
     }
     if (hasData() && AttributeVector::isEnumerated(_datHeader)) {
         _enumerated = true;
-        _udatFile = attribute::LoadUtils::openUDAT(attr);
-        vespalib::FileHeader udatHeader(DIRECTIO_ALIGNMENT);
-        _udatHeaderLen = udatHeader.readFile(*_udatFile);
-        _udatFile->SetPosition(_udatHeaderLen);
-        if (!attr.headerTypeOK(udatHeader))
-            _udatFile->Close();
     }
     _hasLoadData = hasData() &&
                    (!attr.hasMultiValue() || hasIdx()) &&
-                   (!attr.hasWeightedSetType() || hasWeight()) &&
-                   (!getEnumerated() || hasUData());
+                   (!attr.hasWeightedSetType() || hasWeight());
 }
-
 
 ReaderBase::~ReaderBase() = default;
 
@@ -116,11 +106,6 @@ ReaderBase::hasData() const {
 }
 
 bool
-ReaderBase::hasUData() const {
-    return _udatFile.get() && _udatFile->IsOpened();
-}
-
-bool
 ReaderBase::
 extractFileSize(const vespalib::GenericHeader &header,
                 FastOS_FileInterface &file, uint64_t &fileSize)
@@ -129,7 +114,6 @@ extractFileSize(const vespalib::GenericHeader &header,
     return FileSizeCalculator::extractFileSize(header, header.getSize(),
                                                file.GetFileName(), fileSize);
 }
-
 
 void
 ReaderBase::rewind()
@@ -143,11 +127,7 @@ ReaderBase::rewind()
     if (hasWeight()) {
         _weightFile->SetPosition(_weightHeaderLen);
     }
-    if (getEnumerated()) {
-        _udatFile->SetPosition(_udatHeaderLen);
-    }
 }
-
 
 size_t
 ReaderBase::getNumValues()
@@ -169,7 +149,6 @@ ReaderBase::getNumValues()
         }
     }
 }
-
 
 uint32_t
 ReaderBase::getNextValueCount()

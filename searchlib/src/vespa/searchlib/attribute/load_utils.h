@@ -24,7 +24,6 @@ public:
     static FileInterfaceUP openDAT(AttributeVector& attr);
     static FileInterfaceUP openIDX(AttributeVector& attr);
     static FileInterfaceUP openWeight(AttributeVector& attr);
-    static FileInterfaceUP openUDAT(AttributeVector& attr);
 
     static LoadedBufferUP loadDAT(AttributeVector& attr);
     static LoadedBufferUP loadIDX(AttributeVector& attr);

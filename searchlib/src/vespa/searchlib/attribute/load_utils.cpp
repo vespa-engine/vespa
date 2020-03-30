@@ -47,12 +47,6 @@ LoadUtils::openWeight(AttributeVector& attr)
     return openFile(attr, "weight");
 }
 
-FileInterfaceUP
-LoadUtils::openUDAT(AttributeVector& attr)
-{
-    return openFile(attr, "udat");
-}
-
 LoadedBufferUP
 LoadUtils::loadDAT(AttributeVector& attr)
 {
