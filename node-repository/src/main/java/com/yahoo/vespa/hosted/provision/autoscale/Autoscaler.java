@@ -42,11 +42,6 @@ public class Autoscaler {
     /** What difference factor from ideal (for any resource) warrants a change? */
     private static final double idealDivergenceWorthReallocation = 0.1;
 
-    // We only depend on the ratios between these values
-    private static final double cpuUnitCost = 12.0;
-    private static final double memoryUnitCost = 1.2;
-    private static final double diskUnitCost = 0.045;
-
     private final HostResourcesCalculator resourcesCalculator;
     private final NodeMetricsDb metricsDb;
     private final NodeRepository nodeRepository;
@@ -193,12 +188,6 @@ public class Autoscaler {
     private boolean allowsHostSharing(CloudName cloudName) {
         if (cloudName.value().equals("aws")) return false;
         return true;
-    }
-
-    static double costOf(NodeResources resources) {
-        return resources.vcpu() * cpuUnitCost +
-               resources.memoryGb() * memoryUnitCost +
-               resources.diskGb() * diskUnitCost;
     }
 
 }
