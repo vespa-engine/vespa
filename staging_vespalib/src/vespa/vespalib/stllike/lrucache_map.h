@@ -133,7 +133,7 @@ public:
     insert_result insert(const K & key, V && value);
 
     /**
-     * Return pointre to the object with the given key.
+     * Return pointer to the object with the given key.
      * Object is then put at head of LRU list if found.
      * If not found nullptr is returned.
      */
