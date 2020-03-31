@@ -108,17 +108,18 @@ SignalHandler::unhook()
 void
 SignalHandler::shutdown()
 {
-    // Block SIGTERM at shutdown in case valgrind is used.
-    sigset_t signals_to_block;
-    sigemptyset(&signals_to_block);
-    sigaddset(&signals_to_block, SIGTERM);
-    sigprocmask(SIG_BLOCK, &signals_to_block, nullptr);
     for (std::vector<SignalHandler*>::iterator
              it = _handlers.begin(), ite = _handlers.end();
          it != ite;
          ++it) {
-        if (*it != nullptr)
-            (*it)->unhook();
+        if (*it != nullptr) {
+            // Ignore SIGTERM at shutdown in case valgrind is used.
+            if ((*it)->_signal == SIGTERM) {
+                (*it)->ignore();
+            } else {
+                (*it)->unhook();
+            }
+        }
     }
     std::vector<SignalHandler *>().swap(_handlers);
 }
