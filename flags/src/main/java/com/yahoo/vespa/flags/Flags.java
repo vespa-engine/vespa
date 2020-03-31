@@ -69,9 +69,10 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NEW_VESPA_RPMS = defineFeatureFlag(
             "use-new-vespa-rpms", false,
-            "Whether to use the new vespa-rpms YUM repo when upgrading/downgrading.",
+            "Whether to use the new vespa-rpms YUM repo when upgrading/downgrading.  The vespa-version " +
+            "when fetching the flag value is the wanted version of the host.",
             "Takes effect when upgrading or downgrading host admin to a different version.",
-            HOSTNAME, NODE_TYPE);
+            HOSTNAME, NODE_TYPE, VESPA_VERSION);
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
