@@ -160,7 +160,7 @@ public:
     FieldValueNode & operator = (const FieldValueNode &) = delete;
     FieldValueNode(FieldValueNode &&) = default;
     FieldValueNode & operator = (FieldValueNode &&) = default;
-    ~FieldValueNode();
+    ~FieldValueNode() override;
 
     const vespalib::string& getDocType() const { return _doctype; }
     const vespalib::string& getRealFieldName() const { return _fieldName; }
@@ -175,7 +175,7 @@ public:
         return wrapParens(new FieldValueNode(_doctype, _fieldExpression));
     }
 
-    static vespalib::string extractFieldName(const std::string & fieldExpression);
+    static vespalib::string extractFieldName(const vespalib::string & fieldExpression);
 
 private:
 
@@ -192,13 +192,15 @@ class FieldExprNode final : public ValueNode {
 public:
     explicit FieldExprNode(const vespalib::string& doctype) : _left_expr(), _right_expr(doctype) {}
     FieldExprNode(std::unique_ptr<FieldExprNode> left_expr, vespalib::stringref right_expr)
-        : _left_expr(std::move(left_expr)), _right_expr(right_expr)
+        : ValueNode(left_expr->max_depth() + 1),
+          _left_expr(std::move(left_expr)),
+          _right_expr(right_expr)
     {}
     FieldExprNode(const FieldExprNode &) = delete;
     FieldExprNode & operator = (const FieldExprNode &) = delete;
     FieldExprNode(FieldExprNode &&) = default;
     FieldExprNode & operator = (FieldExprNode &&) = default;
-    ~FieldExprNode();
+    ~FieldExprNode() override;
 
     std::unique_ptr<FieldValueNode> convert_to_field_value() const;
     std::unique_ptr<FunctionValueNode> convert_to_function_call() const;

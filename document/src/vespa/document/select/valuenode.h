@@ -5,12 +5,13 @@
  *
  * @brief Node representing a value in the tree
  *
- * @author H�kon Humberset
+ * @author Håkon Humberset
  */
 
 #pragma once
 
 #include "value.h"
+#include "parser_limits.h"
 
 namespace document::select {
 
@@ -22,8 +23,19 @@ class ValueNode : public Printable
 public:
     using UP = std::unique_ptr<ValueNode>;
 
-    ValueNode() : _parentheses(false) {}
-    virtual ~ValueNode() {}
+    explicit ValueNode(uint32_t max_depth)
+        : _max_depth(max_depth), _parentheses(false)
+    {
+        throw_parse_error_if_max_depth_exceeded();
+    }
+    ValueNode() : _max_depth(1), _parentheses(false) {}
+    ~ValueNode() override = default;
+
+    // See comments for same function in node.h for a description on how and why
+    // we track this. Since Node and ValueNode live in completely separate type
+    // hierarchies, this particular bit of code duplication is unfortunate but
+    // incurs the least cognitive overhead.
+    [[nodiscard]] uint32_t max_depth() const noexcept { return _max_depth; }
 
     void setParentheses() { _parentheses = true; }
     void clearParentheses() { _parentheses = false; }
@@ -34,9 +46,17 @@ public:
     virtual ValueNode::UP clone() const = 0;
     virtual std::unique_ptr<Value> traceValue(const Context &context, std::ostream &out) const;
 private:
+    uint32_t _max_depth;
     bool _parentheses; // Set to true if parentheses was used around this part
                        // Set such that we can recreate original query in print.
+
 protected:
+    void throw_parse_error_if_max_depth_exceeded() const {
+        if (_max_depth > ParserLimits::MaxRecursionDepth) {
+            throw_max_depth_exceeded_exception();
+        }
+    }
+
     ValueNode::UP wrapParens(ValueNode* node) const {
         ValueNode::UP ret(node);
         if (_parentheses) {
