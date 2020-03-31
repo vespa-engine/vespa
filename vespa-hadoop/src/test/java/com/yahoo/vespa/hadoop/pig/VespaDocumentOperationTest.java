@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.pig;
 
-import com.google.gson.JsonArray;
 import org.apache.pig.data.*;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
@@ -120,7 +119,7 @@ public class VespaDocumentOperationTest {
         addToTuple("bag", DataType.BAG, bag, bagSchema, schema, tuple);
         addToTuple("id", DataType.CHARARRAY, "123", schema, tuple);
 
-        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=id", "remove-bag-as-map-fields=bag","operation=update");
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=id", "remove-map-fields=bag","operation=update");
         docOp.setInputSchema(schema);
         String json = docOp.exec(tuple);
 
@@ -154,7 +153,7 @@ public class VespaDocumentOperationTest {
         Tuple tuple = TupleFactory.getInstance().newTuple();
         addToTuple("bag", DataType.BAG, bag, bagSchema, schema, tuple);
         addToTuple("id", DataType.CHARARRAY, "123", schema, tuple);
-        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=id", "add-bag-as-map-fields=bag","operation=update");
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=id", "update-map-fields=bag","operation=update");
         docOp.setInputSchema(schema);
         String json = docOp.exec(tuple);
 
@@ -184,7 +183,7 @@ public class VespaDocumentOperationTest {
         addToTuple("id", DataType.CHARARRAY, "123", schema, tuple);
         addToTuple("tensor", DataType.MAP, tensor, schema, tuple);
 
-        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=empty", "add-tensor-fields=tensor","operation=update");
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=empty", "update-tensor-fields=tensor","operation=update");
         docOp.setInputSchema(schema);
         String json = docOp.exec(tuple);
 
@@ -232,7 +231,7 @@ public class VespaDocumentOperationTest {
         JsonNode fields = root.get("fields");
         JsonNode tensorValue = fields.get("tensor");
         JsonNode remove = tensorValue.get("remove");
-        JsonNode address = remove.get("address");
+        JsonNode address = remove.get("addresses");
 
         Iterator<JsonNode> addressIterator = address.getElements();
 
