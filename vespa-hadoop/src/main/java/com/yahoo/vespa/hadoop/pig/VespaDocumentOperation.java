@@ -80,6 +80,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     private static final String PARTIAL_UPDATE_REMOVE = "remove";
 
     private static Map<String, String> mapPartialOperationMap;
+
     static {
         mapPartialOperationMap = new HashMap<>();
         mapPartialOperationMap.put(REMOVE_MAP_FIELDS, PARTIAL_UPDATE_REMOVE);
@@ -87,6 +88,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     }
 
     private static Map<String, String> partialOperationMap;
+
     static {
         partialOperationMap = new HashMap<>();
         partialOperationMap.put(REMOVE_TENSOR_FIELDS, PARTIAL_UPDATE_REMOVE);
@@ -102,9 +104,9 @@ public class VespaDocumentOperation extends EvalFunc<String> {
 
     public VespaDocumentOperation(String... params) {
         statusReporter = PigStatusReporter.getInstance();
-        if(statusReporter != null){
-            statusReporter.incrCounter("Vespa Document Operation Counters","Document operation ok",0);
-            statusReporter.incrCounter("Vespa Document Operation Counters","Document operation failed",0);
+        if (statusReporter != null) {
+            statusReporter.incrCounter("Vespa Document Operation Counters", "Document operation ok", 0);
+            statusReporter.incrCounter("Vespa Document Operation Counters", "Document operation failed", 0);
         }
         properties = VespaConfiguration.loadProperties(params);
         template = properties.getProperty(PROPERTY_ID_TEMPLATE);
@@ -114,20 +116,20 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     @Override
     public String exec(Tuple tuple) throws IOException {
         if (tuple == null || tuple.size() == 0) {
-            if(statusReporter != null) {
+            if (statusReporter != null) {
                 statusReporter.incrCounter("Vespa Document Operation Counters", "Document operation failed", 1);
             }
             return null;
         }
         if (template == null || template.length() == 0) {
-            if(statusReporter != null) {
+            if (statusReporter != null) {
                 statusReporter.incrCounter("Vespa Document Operation Counters", "Document operation failed", 1);
             }
             warn("No valid document id template found. Skipping.", PigWarning.UDF_WARNING_1);
             return null;
         }
         if (operation == null) {
-            if(statusReporter != null) {
+            if (statusReporter != null) {
                 statusReporter.incrCounter("Vespa Document Operation Counters", "Document operation failed", 1);
             }
             warn("No valid operation found. Skipping.", PigWarning.UDF_WARNING_1);
@@ -154,7 +156,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
 
         } catch (Exception e) {
             if (statusReporter != null) {
-                statusReporter.incrCounter("Vespa Document Operation Counters","Document operation failed",1);
+                statusReporter.incrCounter("Vespa Document Operation Counters", "Document operation failed", 1);
             }
             StringBuilder sb = new StringBuilder();
             sb.append("Caught exception processing input row: \n");
@@ -165,7 +167,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             return null;
         }
         if (statusReporter != null) {
-            statusReporter.incrCounter("Vespa Document Operation Counters","Document operation ok",1);
+            statusReporter.incrCounter("Vespa Document Operation Counters", "Document operation ok", 1);
         }
         return json;
     }
@@ -175,14 +177,14 @@ public class VespaDocumentOperation extends EvalFunc<String> {
      * Create a JSON Vespa document operation given the supplied fields,
      * operation and document id template.
      *
-     * @param op        Operation (put, remove, update)
-     * @param docId     Document id
-     * @param fields    Fields to put in document operation
-     * @return          A valid JSON Vespa document operation
+     * @param op     Operation (put, remove, update)
+     * @param docId  Document id
+     * @param fields Fields to put in document operation
+     * @return A valid JSON Vespa document operation
      * @throws IOException ...
      */
     public static String create(Operation op, String docId, Map<String, Object> fields, Properties properties,
-            Schema schema) throws IOException {
+                                Schema schema) throws IOException {
         if (op == null) {
             return null;
         }
@@ -227,7 +229,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         // name date
         // properties "update-map-fields":"date,month"
         // output: assign
-        for (String label: operationMap.keySet()) {
+        for (String label : operationMap.keySet()) {
             if (properties.getProperty(label) != null) {
                 String[] p = properties.getProperty(label).split(",");
                 if (Arrays.asList(p).contains(name)) {
@@ -247,8 +249,8 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             // be aware the the operation here is not vespa operation such as "put" and "update"
             // operation here are the field name we wish use to such as "assign" and "remove"
             if (operation != null) {
-                writePartialUpdateAndRemoveMap(name ,value, g, properties, schema, op, depth, operation);
-            }else{
+                writePartialUpdateAndRemoveMap(name, value, g, properties, schema, op, depth, operation);
+            } else {
                 g.writeFieldName(name);
                 if (shouldWritePartialUpdate(op, depth)) {
                     writePartialUpdate(value, type, g, name, properties, schema, op, depth);
@@ -282,7 +284,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
                     g.writeFieldName(PARTIAL_UPDATE_REMOVE);
                     g.writeNumber(0);
                     g.writeEndObject();
-                }else{
+                } else {
                     writePartialUpdate(v, t, g, name, properties, valueSchema, op, depth);
                 }
             }
@@ -333,18 +335,18 @@ public class VespaDocumentOperation extends EvalFunc<String> {
                 g.writeStartObject();
                 Map<Object, Object> map = (Map<Object, Object>) value;
                 if (shouldCreateTensor(map, name, properties)) {
-                    if(isRemoveTensor(name,properties)){
+                    if (isRemoveTensor(name, properties)) {
                         writeRemoveTensor(map, g);
-                    }else{
+                    } else {
                         writeTensor(map, g);
                     }
                 } else {
                     for (Map.Entry<Object, Object> entry : map.entrySet()) {
                         String k = entry.getKey().toString();
                         Object v = entry.getValue();
-                        Byte   t = DataType.findType(v);
+                        Byte t = DataType.findType(v);
                         Schema fieldSchema = (schema != null) ? schema.getField(k).schema : null;
-                        writeField(k, v, t, g, properties, fieldSchema, op, depth+1);
+                        writeField(k, v, t, g, properties, fieldSchema, op, depth + 1);
                     }
                 }
                 g.writeEndObject();
@@ -386,9 +388,9 @@ public class VespaDocumentOperation extends EvalFunc<String> {
                         Byte t = DataType.findType(v);
                         if (t == DataType.TUPLE) {
                             Map<String, Object> fields = TupleTools.tupleMap(valueSchema, (Tuple) v);
-                            writeField(k, fields, DataType.MAP, g, properties, valueSchema, op, depth+1);
+                            writeField(k, fields, DataType.MAP, g, properties, valueSchema, op, depth + 1);
                         } else {
-                            writeField(k, v, t, g, properties, valueSchema, op, depth+1);
+                            writeField(k, v, t, g, properties, valueSchema, op, depth + 1);
                         }
                     }
                     g.writeEndObject();
@@ -416,24 +418,11 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         String operation = getPartialOperation(partialOperationMap, name, properties);
         if (operation != null) {
             g.writeFieldName(operation);
-        }else{
+        } else {
             g.writeFieldName(PARTIAL_UPDATE_ASSIGN);
         }
         writeValue(value, type, g, name, properties, schema, op, depth);
         g.writeEndObject();
-    }
-
-    private static boolean isPartialOperation(String label, String name, Properties properties) {
-        // when dealing with partial update operations, write the desired operation
-        // writeFieldName decides if a field name should be written when checking
-        boolean isPartialOperation = false;
-        if (properties.getProperty(label) != null) {
-            String[] p = properties.getProperty(label).split(",");
-            if (Arrays.asList(p).contains(name)) {
-                isPartialOperation = true;
-            }
-        }
-        return isPartialOperation;
     }
 
     private static boolean shouldWriteTupleStart(Tuple tuple, String name, Properties properties) {
@@ -467,7 +456,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         if (simpleObjectFields == null && addBagAsMapFields == null) {
             return false;
         }
-        if (addBagAsMapFields != null){
+        if (addBagAsMapFields != null) {
             if (addBagAsMapFields.equals("*")) {
                 return true;
             }
@@ -479,8 +468,8 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             }
 
         }
-        if(simpleObjectFields != null){
-                if (simpleObjectFields.equals("*")) {
+        if (simpleObjectFields != null) {
+            if (simpleObjectFields.equals("*")) {
                 return true;
             }
             String[] fields = simpleObjectFields.split(",");
@@ -552,7 +541,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         return false;
     }
 
-    private static boolean isRemoveTensor(String name, Properties properties){
+    private static boolean isRemoveTensor(String name, Properties properties) {
         if (properties == null) {
             return false;
         }
