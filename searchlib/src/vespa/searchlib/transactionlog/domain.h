@@ -60,7 +60,7 @@ struct DomainInfo {
 
 typedef std::map<vespalib::string, DomainInfo> DomainStats;
 
-class Domain
+class Domain final : public FastOS_Runnable
 {
 public:
     using SP = std::shared_ptr<Domain>;
@@ -68,7 +68,7 @@ public:
     Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
            Executor & sessionExecutor, const DomainConfig & cfg, const common::FileHeaderContext &fileHeaderContext);
 
-    ~Domain();
+    ~Domain() override;
 
     DomainInfo getDomainInfo() const;
     const vespalib::string & name() const { return _name; }
@@ -103,6 +103,26 @@ public:
     uint64_t size() const;
     Domain & setConfig(const DomainConfig & cfg);
 private:
+    void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
+    void commitIfStale(const vespalib::MonitorGuard & guard);
+    void commitIfFull(const vespalib::MonitorGuard & guard);
+    class Chunk {
+    public:
+        Chunk();
+        ~Chunk();
+        void add(const Packet & packet, Writer::DoneCallback onDone);
+        size_t sizeBytes() const { return _data.sizeBytes(); }
+        const Packet & getPacket() const { return _data; }
+        vespalib::duration age() const;
+    private:
+        Packet                             _data;
+        std::vector<Writer::DoneCallback>  _callBacks;
+        vespalib::steady_time              _firstArrivalTime;
+    };
+
+    std::unique_ptr<Chunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
+    void commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
+    void doCommit(std::unique_ptr<Chunk> chunk);
     SerialNum begin(const vespalib::LockGuard & guard) const;
     SerialNum end(const vespalib::LockGuard & guard) const;
     size_t byteSize(const vespalib::LockGuard & guard) const;
@@ -120,6 +140,7 @@ private:
     using DurationSeconds = std::chrono::duration<double>;
 
     DomainConfig           _config;
+    std::unique_ptr<Chunk> _currentChunk;
     SerialNum              _lastSerial;
     std::unique_ptr<Executor> _singleCommiter;
     Executor             & _commitExecutor;

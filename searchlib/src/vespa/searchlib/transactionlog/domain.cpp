@@ -40,6 +40,7 @@ DomainConfig::DomainConfig()
 Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
                Executor & sessionExecutor, const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
     : _config(cfg),
+      _currentChunk(std::make_unique<Chunk>()),
       _lastSerial(0),
       _singleCommiter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128*1024)),
       _commitExecutor(commitExecutor),
@@ -79,12 +80,24 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
         vespalib::File::sync(dir());
     }
     _lastSerial = end();
+    _self = _threadPool.NewThread(this);
+    assert(_self);
 }
 
 Domain &
 Domain::setConfig(const DomainConfig & cfg) {
     _config = cfg;
     return *this;
+}
+
+void
+Domain::Run(FastOS_ThreadInterface *thisThread, void *) {
+
+    while (!thisThread->GetBreakFlag()) {
+        vespalib::MonitorGuard guard(_currentChunkMonitor);
+        guard.wait(_config.getChunkAgeLimit());
+        commitIfStale(guard);
+    }
 }
 
 void Domain::addPart(int64_t partId, bool isLastPart) {
@@ -127,7 +140,17 @@ private:
     bool              & _pendingSync;
 };
 
-Domain::~Domain() { }
+Domain::~Domain() {
+    if (_self) {
+        _self->SetBreakFlag();
+        {
+            MonitorGuard guard(_currentChunkMonitor);
+            guard.broadcast();
+        }
+        _self->Join();
+    }
+    _singleCommiter->shutdown().sync();
+}
 
 DomainInfo
 Domain::getDomainInfo() const
@@ -308,10 +331,79 @@ waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 
 }
 
+Domain::Chunk::Chunk()
+    : _data(size_t(-1)),
+      _callBacks(),
+      _firstArrivalTime()
+{}
+
+Domain::Chunk::~Chunk() = default;
+
 void
-Domain::commit(const Packet & packet, Writer::DoneCallback onDone)
-{
-    (void) onDone;
+Domain::Chunk::add(const Packet &packet, Writer::DoneCallback onDone) {
+    if (_callBacks.empty()) {
+        _firstArrivalTime = vespalib::steady_clock::now();
+    }
+    _data.merge(packet);
+    _callBacks.emplace_back(std::move(onDone));
+}
+
+vespalib::duration
+Domain::Chunk::age() const {
+    if (_callBacks.empty()) {
+        return 0ms;
+    }
+    return (vespalib::steady_clock::now() - _firstArrivalTime);
+}
+
+void
+Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
+    vespalib::MonitorGuard guard(_currentChunkMonitor);
+    if (! (_lastSerial < packet.range().from())) {
+        throw runtime_error(make_string("Incomming serial number(%ld) must be bigger than the last one (%ld).",
+                                        packet.range().from(), _lastSerial));
+    } else {
+        _lastSerial = packet.range().to();
+    }
+    _currentChunk->add(packet, std::move(onDone));
+    commitIfFull(guard);
+}
+
+void
+Domain::commitIfFull(const vespalib::MonitorGuard &guard) {
+    if (_currentChunk->sizeBytes() > _config.getChunkSizeLimit()) {
+        auto completed = grabCurrentChunk(guard);
+        if (completed) {
+            commitChunk(std::move(completed), guard);
+        }
+    }
+}
+
+std::unique_ptr<Domain::Chunk>
+Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
+    assert(guard.monitors(_currentChunkMonitor));
+    auto chunk = std::move(_currentChunk);
+    _currentChunk = std::make_unique<Chunk>();
+    return chunk;
+}
+
+void
+Domain::commitIfStale(const vespalib::MonitorGuard & guard) {
+    assert(guard.monitors(_currentChunkMonitor));
+    if (_currentChunk->age() > _config.getChunkAgeLimit()) {
+        commitChunk(grabCurrentChunk(guard), guard);
+    }
+}
+
+void
+Domain::commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard) {
+    assert(chunkOrderGuard.monitors(_currentChunkMonitor));
+    _singleCommiter->execute(vespalib::makeLambdaTask([this, chunk = std::move(chunk)] () mutable { doCommit(std::move(chunk)); } ));
+}
+
+void
+Domain::doCommit(std::unique_ptr<Chunk> chunk) {
+    const Packet & packet = chunk->getPacket();
     DomainPart::SP dp(_parts.rbegin()->second);
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
     Packet::Entry entry;
