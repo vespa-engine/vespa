@@ -1653,4 +1653,14 @@ TEST_F(DocumentSelectParserTest, selection_has_upper_limit_on_input_size) {
     verifyFailedParse(expr, "ParsingFailedException: expression is too large to be parsed");
 }
 
+TEST_F(DocumentSelectParserTest, lexing_does_not_have_superlinear_time_complexity) {
+    createDocs();
+    std::string expr = ("testdoctype1.hstringval == 'a_biii"
+                        + std::string(select::ParserLimits::MaxSelectionByteSize - 100, 'i')
+                        + "iiig string'");
+    // If the lexer is not compiled with the appropriate options, this will take a long time.
+    // A really, really long time.
+    PARSE(expr, *_doc[0], False);
+}
+
 } // document
