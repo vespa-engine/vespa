@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -149,6 +150,14 @@ class HttpRequestDispatch {
         if (maxRequestsPerConnection > 0) {
             HttpConnection connection = getConnection(request);
             if (connection.getMessagesIn() >= maxRequestsPerConnection) {
+                connection.getGenerator().setPersistent(false);
+            }
+        }
+        double maxConnectionLifeInSeconds = connectorConfig.maxConnectionLife();
+        if (maxConnectionLifeInSeconds > 0) {
+            HttpConnection connection = getConnection(request);
+            Instant expireAt = Instant.ofEpochMilli((long)(connection.getCreatedTimeStamp() + maxConnectionLifeInSeconds * 1000));
+            if (Instant.now().isAfter(expireAt)) {
                 connection.getGenerator().setPersistent(false);
             }
         }

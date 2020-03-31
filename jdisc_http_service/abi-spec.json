@@ -44,6 +44,7 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder proxyProtocol(com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder secureRedirect(com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect$Builder)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder maxRequestsPerConnection(int)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Builder maxConnectionLife(double)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -359,7 +360,8 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy healthCheckProxy()",
       "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol proxyProtocol()",
       "public com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect secureRedirect()",
-      "public int maxRequestsPerConnection()"
+      "public int maxRequestsPerConnection()",
+      "public double maxConnectionLife()"
     ],
     "fields": [
       "public static final java.lang.String CONFIG_DEF_MD5",

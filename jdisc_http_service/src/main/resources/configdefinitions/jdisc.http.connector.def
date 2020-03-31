@@ -115,3 +115,6 @@ secureRedirect.port            int     default=443
 
 # Maximum number of request per connection before server marks connections as non-persistent. Set to '0' to disable.
 maxRequestsPerConnection       int     default=0
+
+# Maximum number of seconds a connection can live before it's marked as non-persistent. Set to '0' to disable.
+maxConnectionLife              double  default=0.0
