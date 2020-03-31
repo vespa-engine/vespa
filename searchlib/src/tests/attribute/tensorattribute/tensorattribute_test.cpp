@@ -37,6 +37,7 @@ using search::tensor::DenseTensorAttribute;
 using search::tensor::DocVectorAccess;
 using search::tensor::GenericTensorAttribute;
 using search::tensor::HnswIndex;
+using search::tensor::HnswNode;
 using search::tensor::NearestNeighborIndex;
 using search::tensor::NearestNeighborIndexFactory;
 using search::tensor::NearestNeighborIndexSaver;
@@ -265,11 +266,20 @@ struct Fixture {
         return *result;
     }
 
-    MockNearestNeighborIndex& mock_index() {
+    template <typename IndexType>
+    IndexType& get_nearest_neighbor_index() {
         assert(as_dense_tensor().nearest_neighbor_index() != nullptr);
-        auto mock_index = dynamic_cast<const MockNearestNeighborIndex*>(as_dense_tensor().nearest_neighbor_index());
-        assert(mock_index != nullptr);
-        return *const_cast<MockNearestNeighborIndex*>(mock_index);
+        auto index = dynamic_cast<const IndexType*>(as_dense_tensor().nearest_neighbor_index());
+        assert(index != nullptr);
+        return *const_cast<IndexType*>(index);
+    }
+
+    HnswIndex& hnsw_index() {
+        return get_nearest_neighbor_index<HnswIndex>();
+    }
+
+    MockNearestNeighborIndex& mock_index() {
+        return get_nearest_neighbor_index<MockNearestNeighborIndex>();
     }
 
     void ensureSpace(uint32_t docId) {
@@ -536,19 +546,47 @@ TEST_F("Hnsw index is NOT instantiated in dense tensor attribute by default",
     EXPECT_TRUE(tensor.nearest_neighbor_index() == nullptr);
 }
 
-TEST_F("Hnsw index is instantiated in dense tensor attribute when specified in config",
-       Fixture(vec_2d_spec, true, true))
-{
-    const auto& tensor = f.as_dense_tensor();
-    ASSERT_TRUE(tensor.nearest_neighbor_index() != nullptr);
-    auto hnsw_index = dynamic_cast<const HnswIndex*>(tensor.nearest_neighbor_index());
-    ASSERT_TRUE(hnsw_index != nullptr);
+class DenseTensorAttributeHnswIndex : public Fixture {
+public:
+    DenseTensorAttributeHnswIndex() : Fixture(vec_2d_spec, true, true, false) {}
+};
 
-    const auto& cfg = hnsw_index->config();
+TEST_F("Hnsw index is instantiated in dense tensor attribute when specified in config", DenseTensorAttributeHnswIndex)
+{
+    auto& index = f.hnsw_index();
+
+    const auto& cfg = index.config();
     EXPECT_EQUAL(8u, cfg.max_links_at_level_0());
     EXPECT_EQUAL(4u, cfg.max_links_on_inserts());
     EXPECT_EQUAL(20u, cfg.neighbors_to_explore_at_construction());
     EXPECT_TRUE(cfg.heuristic_select_neighbors());
+}
+
+void
+expect_level_0(uint32_t exp_docid, const HnswNode& node)
+{
+    ASSERT_GREATER_EQUAL(node.size(), 1u);
+    ASSERT_EQUAL(1u, node.level(0).size());
+    EXPECT_EQUAL(exp_docid, node.level(0)[0]);
+}
+
+TEST_F("Hnsw index is integrated in dense tensor attribute and can be saved and loaded", DenseTensorAttributeHnswIndex)
+{
+    // Set two points that will be linked together in level 0 of the hnsw graph.
+    f.set_tensor(1, vec_2d(3, 5));
+    f.set_tensor(2, vec_2d(7, 9));
+
+    auto &index_a = f.hnsw_index();
+    expect_level_0(2, index_a.get_node(1));
+    expect_level_0(1, index_a.get_node(2));
+    f.save();
+    EXPECT_TRUE(vespalib::fileExists(attr_name + ".nnidx"));
+
+    f.load();
+    auto &index_b = f.hnsw_index();
+    EXPECT_NOT_EQUAL(&index_a, &index_b);
+    expect_level_0(2, index_b.get_node(1));
+    expect_level_0(1, index_b.get_node(2));
 }
 
 class DenseTensorAttributeMockIndex : public Fixture {
