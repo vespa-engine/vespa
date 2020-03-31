@@ -18,12 +18,14 @@ public:
 
 private:
     static FileInterfaceUP openFile(const AttributeVector& attr, const vespalib::string& suffix);
-    static LoadedBufferUP loadFile(const AttributeVector& attr, const vespalib::string& suffix);
 
 public:
     static FileInterfaceUP openDAT(const AttributeVector& attr);
     static FileInterfaceUP openIDX(const AttributeVector& attr);
     static FileInterfaceUP openWeight(const AttributeVector& attr);
+
+    static bool file_exists(const AttributeVector& attr, const vespalib::string& suffix);
+    static LoadedBufferUP loadFile(const AttributeVector& attr, const vespalib::string& suffix);
 
     static LoadedBufferUP loadDAT(const AttributeVector& attr);
     static LoadedBufferUP loadIDX(const AttributeVector& attr);

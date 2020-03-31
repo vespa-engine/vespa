@@ -7,6 +7,7 @@
 #include "multivalue.h"
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/array.hpp>
 
 using search::multivalue::Value;
@@ -23,11 +24,7 @@ LoadUtils::openFile(const AttributeVector& attr, const vespalib::string& suffix)
     return FileUtil::openFile(attr.getBaseFileName() + "." + suffix);
 }
 
-LoadedBufferUP
-LoadUtils::loadFile(const AttributeVector& attr, const vespalib::string& suffix)
-{
-    return FileUtil::loadFile(attr.getBaseFileName() + "." + suffix);
-}
+
 
 FileInterfaceUP
 LoadUtils::openDAT(const AttributeVector& attr)
@@ -45,6 +42,18 @@ FileInterfaceUP
 LoadUtils::openWeight(const AttributeVector& attr)
 {
     return openFile(attr, "weight");
+}
+
+bool
+LoadUtils::file_exists(const AttributeVector& attr, const vespalib::string& suffix)
+{
+    return vespalib::fileExists(attr.getBaseFileName() + "." + suffix);
+}
+
+LoadedBufferUP
+LoadUtils::loadFile(const AttributeVector& attr, const vespalib::string& suffix)
+{
+    return FileUtil::loadFile(attr.getBaseFileName() + "." + suffix);
 }
 
 LoadedBufferUP
