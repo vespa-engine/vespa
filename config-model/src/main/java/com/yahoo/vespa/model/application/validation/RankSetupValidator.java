@@ -138,7 +138,7 @@ public class RankSetupValidator extends Validator {
 
     private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger deployLogger) {
         String job = String.format("%s %s", binaryName, configId);
-        ProcessExecuter executer = new ProcessExecuter();
+        ProcessExecuter executer = new ProcessExecuter(true);
         try {
             Pair<Integer, String> ret = executer.exec(job);
             if (ret.getFirst() != 0) {
