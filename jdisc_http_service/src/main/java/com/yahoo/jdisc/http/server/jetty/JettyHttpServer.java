@@ -34,9 +34,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.log.JavaUtilLog;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceReference;
 
 import javax.management.remote.JMXServiceURL;
 import javax.servlet.DispatcherType;
@@ -44,10 +41,8 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
 import java.net.MalformedURLException;
-import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -283,25 +278,6 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private static String getDisplayName(List<Integer> ports) {
         return ports.stream().map(Object::toString).collect(Collectors.joining(":"));
-    }
-
-    private ServerSocketChannel getChannelFromServiceLayer(int listenPort, BundleContext bundleContext) {
-        log.log(Level.FINE, "Retrieving channel for port " + listenPort + " from " + bundleContext.getClass().getName());
-        Collection<ServiceReference<ServerSocketChannel>> refs;
-        final String filter = "(port=" + listenPort + ")";
-        try {
-            refs = bundleContext.getServiceReferences(ServerSocketChannel.class, filter);
-        } catch (InvalidSyntaxException e) {
-            throw new IllegalStateException("OSGi framework rejected filter " + filter, e);
-        }
-        if (refs.isEmpty()) {
-            return null;
-        }
-        if (refs.size() != 1) {
-            throw new IllegalStateException("Got more than one service reference for " + ServerSocketChannel.class + " port " + listenPort + ".");
-        }
-        ServiceReference<ServerSocketChannel> ref = refs.iterator().next();
-        return bundleContext.getService(ref);
     }
 
     private static ExecutorService newJanitor(ThreadFactory factory) {
