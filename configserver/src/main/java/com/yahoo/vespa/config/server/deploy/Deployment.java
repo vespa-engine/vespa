@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.deploy;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.log.LogLevel;
@@ -56,6 +57,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** True if this deployment is done to bootstrap the config server */
     private final boolean isBootstrap;
 
+    /** The (optional) Athenz domain this application should use */
+    private final Optional<AthenzDomain> athenzDomain;
+
     private boolean prepared = false;
     
     /** Whether this model should be validated (only takes effect if prepared=false) */
@@ -66,7 +70,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
                        Optional<Provisioner> hostProvisioner, Tenant tenant,
                        Duration timeout, Clock clock, boolean prepared, boolean validate,
-                       Optional<String> dockerImageRepository, Version version, boolean isBootstrap) {
+                       Optional<String> dockerImageRepository, Version version, boolean isBootstrap,
+                       Optional<AthenzDomain> athenzDomain) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.hostProvisioner = hostProvisioner;
@@ -78,15 +83,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.dockerImageRepository = dockerImageRepository;
         this.version = version;
         this.isBootstrap = isBootstrap;
+        this.athenzDomain = athenzDomain;
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> hostProvisioner, Tenant tenant,
                                         Duration timeout, Clock clock, boolean validate,
                                         Optional<String> dockerImageRepository, Version version,
-                                        boolean isBootstrap) {
-        return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, false, validate, dockerImageRepository, version, isBootstrap);
+                                        boolean isBootstrap, Optional<AthenzDomain> athenzDomain) {
+        return new Deployment(session, applicationRepository, hostProvisioner, tenant, timeout, clock, false,
+                              validate, dockerImageRepository, version, isBootstrap, athenzDomain);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
@@ -94,7 +100,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                       Duration timeout, Clock clock, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
                               timeout, clock, true, true, session.getDockerImageRepository(),
-                              session.getVespaVersion(), isBootstrap);
+                              session.getVespaVersion(), isBootstrap, session.getAthenzDomain());
     }
 
     public void setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
@@ -114,6 +120,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .vespaVersion(version.toString())
                     .isBootstrap(isBootstrap);
             dockerImageRepository.ifPresent(params::dockerImageRepository);
+            athenzDomain.ifPresent(params::athenzDomain);
             session.prepare(logger, params.build(), Optional.empty(), tenant.getPath(), clock.instant());
             this.prepared = true;
         }

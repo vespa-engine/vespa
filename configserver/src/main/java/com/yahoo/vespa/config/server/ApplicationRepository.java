@@ -317,7 +317,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                  false /* don't validate as this is already deployed */,
                                                  newSession.getDockerImageRepository(),
                                                  newSession.getVespaVersion(),
-                                                 bootstrap));
+                                                 bootstrap,
+                                                 newSession.getAthenzDomain()));
     }
 
     @Override
