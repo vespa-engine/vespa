@@ -68,10 +68,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private boolean ignoreSessionStaleFailure = false;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
-                       Optional<Provisioner> hostProvisioner, Tenant tenant,
-                       Duration timeout, Clock clock, boolean prepared, boolean validate,
-                       Optional<String> dockerImageRepository, Version version, boolean isBootstrap,
-                       Optional<AthenzDomain> athenzDomain) {
+                       Optional<Provisioner> hostProvisioner, Tenant tenant, Duration timeout,
+                       Clock clock, boolean prepared, boolean validate, boolean isBootstrap) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.hostProvisioner = hostProvisioner;
@@ -80,27 +78,24 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.clock = clock;
         this.prepared = prepared;
         this.validate = validate;
-        this.dockerImageRepository = dockerImageRepository;
-        this.version = version;
+        this.dockerImageRepository = session.getDockerImageRepository();
+        this.version = session.getVespaVersion();
         this.isBootstrap = isBootstrap;
-        this.athenzDomain = athenzDomain;
+        this.athenzDomain = session.getAthenzDomain();
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> hostProvisioner, Tenant tenant,
-                                        Duration timeout, Clock clock, boolean validate,
-                                        Optional<String> dockerImageRepository, Version version,
-                                        boolean isBootstrap, Optional<AthenzDomain> athenzDomain) {
+                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant, timeout, clock, false,
-                              validate, dockerImageRepository, version, isBootstrap, athenzDomain);
+                              validate, isBootstrap);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> hostProvisioner, Tenant tenant,
                                       Duration timeout, Clock clock, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, true, true, session.getDockerImageRepository(),
-                              session.getVespaVersion(), isBootstrap, session.getAthenzDomain());
+                              timeout, clock, true, true, isBootstrap);
     }
 
     public void setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
