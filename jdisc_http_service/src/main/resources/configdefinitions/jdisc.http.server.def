@@ -7,8 +7,9 @@ developerMode                         bool   default=false
 # The gzip compression level to use, if compression is enabled in a request.
 responseCompressionLevel              int    default=6
 
-# Whether to enable HTTP keep-alive for requests that support this.
+# DEPRECATED - Ignored, no longer in use.
 httpKeepAliveEnabled                  bool   default=true
+# TODO Vespa 8 Remove httpKeepAliveEnabled
 
 # Maximum number of request per http connection before server will hangup.
 # Naming taken from apache http server.
