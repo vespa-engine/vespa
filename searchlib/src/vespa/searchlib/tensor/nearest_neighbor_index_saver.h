@@ -21,6 +21,12 @@ namespace search::tensor {
 class NearestNeighborIndexSaver {
 public:
     virtual ~NearestNeighborIndexSaver() {}
+
+    /**
+     * Saves the index in binary form using the given writer.
+     *
+     * It is the responsibility of the implementer to call BufferWriter::flush() at the end.
+     */
     virtual void save(BufferWriter& writer) const = 0;
 };
 

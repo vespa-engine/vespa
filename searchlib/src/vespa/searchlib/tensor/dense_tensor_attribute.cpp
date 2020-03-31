@@ -3,16 +3,19 @@
 #include "dense_tensor_attribute.h"
 #include "dense_tensor_attribute_saver.h"
 #include "nearest_neighbor_index.h"
+#include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute.hpp"
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
 
+using search::attribute::LoadUtils;
 using vespalib::eval::ValueType;
 using vespalib::slime::ObjectInserter;
 using vespalib::tensor::MutableDenseTensorView;
@@ -148,6 +151,8 @@ DenseTensorAttribute::onLoad()
     if (!tensorReader.hasData()) {
         return false;
     }
+    bool has_index_file = LoadUtils::file_exists(*this, DenseTensorAttributeSaver::index_file_suffix());
+
     setCreateSerialNum(tensorReader.getCreateSerialNum());
     assert(tensorReader.getVersion() == DENSE_TENSOR_ATTRIBUTE_VERSION);
     assert(getConfig().tensorType().to_spec() ==
@@ -160,7 +165,7 @@ DenseTensorAttribute::onLoad()
             auto raw = _denseTensorStore.allocRawBuffer();
             tensorReader.readTensor(raw.data, _denseTensorStore.getBufSize());
             _refVector.push_back(raw.ref);
-            if (_index) {
+            if (_index && !has_index_file) {
                 // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
                 setCommittedDocIdLimit(lid + 1);
                 _index->add_document(lid);
@@ -171,6 +176,12 @@ DenseTensorAttribute::onLoad()
     }
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
+    if (_index && has_index_file) {
+        auto buffer = LoadUtils::loadFile(*this, DenseTensorAttributeSaver::index_file_suffix());
+        if (!_index->load(*buffer)) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -180,11 +191,13 @@ DenseTensorAttribute::onInitSave(vespalib::stringref fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
+    auto index_saver = (_index ? _index->make_saver() : std::unique_ptr<NearestNeighborIndexSaver>());
     return std::make_unique<DenseTensorAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
          getRefCopy(),
-         _denseTensorStore);
+         _denseTensorStore,
+         std::move(index_saver));
 }
 
 void

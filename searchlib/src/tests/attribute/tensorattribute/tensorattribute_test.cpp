@@ -16,10 +16,13 @@
 #include <vespa/searchlib/tensor/nearest_neighbor_index_factory.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index_saver.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/bufferwriter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("tensorattribute_test");
@@ -77,6 +80,18 @@ vec_2d(double x0, double x1)
     return TensorSpec(vec_2d_spec).add({{"x", 0}}, x0).add({{"x", 1}}, x1);
 }
 
+class MockIndexSaver : public NearestNeighborIndexSaver {
+private:
+    int _index_value;
+
+public:
+    MockIndexSaver(int index_value) : _index_value(index_value) {}
+    void save(search::BufferWriter& writer) const override {
+        writer.write(&_index_value, sizeof(int));
+        writer.flush();
+    }
+};
+
 class MockNearestNeighborIndex : public NearestNeighborIndex {
 private:
     using Entry = std::pair<uint32_t, DoubleVector>;
@@ -88,6 +103,7 @@ private:
     generation_t _transfer_gen;
     generation_t _trim_gen;
     mutable size_t _memory_usage_cnt;
+    int _index_value;
 
 public:
     MockNearestNeighborIndex(const DocVectorAccess& vectors)
@@ -96,12 +112,19 @@ public:
           _removes(),
           _transfer_gen(std::numeric_limits<generation_t>::max()),
           _trim_gen(std::numeric_limits<generation_t>::max()),
-          _memory_usage_cnt(0)
+          _memory_usage_cnt(0),
+          _index_value(0)
     {
     }
     void clear() {
         _adds.clear();
         _removes.clear();
+    }
+    int get_index_value() const {
+        return _index_value;
+    }
+    void save_index_with_value(int value) {
+        _index_value = value;
     }
     void expect_empty_add() const {
         EXPECT_TRUE(_adds.empty());
@@ -146,9 +169,16 @@ public:
     }
     void get_state(const vespalib::slime::Inserter&) const override {}
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override {
+        if (_index_value != 0) {
+            return std::make_unique<MockIndexSaver>(_index_value);
+        }
         return std::unique_ptr<NearestNeighborIndexSaver>();
     }
-    bool load(const search::fileutil::LoadedBuffer&) override { return false; }
+    bool load(const search::fileutil::LoadedBuffer& buf) override {
+        ASSERT_EQUAL(sizeof(int), buf.size());
+        _index_value = (reinterpret_cast<const int*>(buf.buffer()))[0];
+        return true;
+    }
     std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
         (void) k;
         (void) vector;
@@ -172,12 +202,15 @@ class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
     }
 };
 
-struct Fixture
-{
+const vespalib::string test_dir = "test_data/";
+const vespalib::string attr_name = test_dir + "my_attr";
+
+struct Fixture {
     using BasicType = search::attribute::BasicType;
     using CollectionType = search::attribute::CollectionType;
     using Config = search::attribute::Config;
 
+    search::test::DirectoryHandler _dir_handler;
     Config _cfg;
     vespalib::string _name;
     vespalib::string _typeSpec;
@@ -191,8 +224,9 @@ struct Fixture
             bool useDenseTensorAttribute = false,
             bool enable_hnsw_index = false,
             bool use_mock_index = false)
-        : _cfg(BasicType::TENSOR, CollectionType::SINGLE),
-          _name("test"),
+        : _dir_handler(test_dir),
+          _cfg(BasicType::TENSOR, CollectionType::SINGLE),
+          _name(attr_name),
           _typeSpec(typeSpec),
           _index_factory(std::make_unique<DefaultNearestNeighborIndexFactory>()),
           _tensorAttr(),
@@ -328,7 +362,6 @@ struct Fixture
     void testEmptyTensor();
 };
 
-
 void
 Fixture::testEmptyAttribute()
 {
@@ -389,7 +422,6 @@ Fixture::testSaveLoad()
     TEST_DO(assertGetNoTensor(2));
 }
 
-
 void
 Fixture::testCompaction()
 {
@@ -444,7 +476,8 @@ Fixture::testTensorTypeFileHeaderTag()
 
     vespalib::FileHeader header;
     FastOS_File file;
-    EXPECT_TRUE(file.OpenReadOnly("test.dat"));
+    vespalib::string file_name = attr_name + ".dat";
+    EXPECT_TRUE(file.OpenReadOnly(file_name.c_str()));
     (void) header.readFile(file);
     file.Close();
     EXPECT_TRUE(header.hasTag("tensortype"));
@@ -455,7 +488,6 @@ Fixture::testTensorTypeFileHeaderTag()
         EXPECT_EQUAL(0u, header.getTag("version").asInteger());
     }
 }
-
 
 void
 Fixture::testEmptyTensor()
@@ -470,7 +502,6 @@ Fixture::testEmptyTensor()
         EXPECT_EQUAL(emptyTensor->type(), ValueType::from_spec(_typeSpec));
     }
 }
-
 
 template <class MakeFixture>
 void testAll(MakeFixture &&f)
@@ -557,17 +588,6 @@ TEST_F("clearDoc() updates nearest neighbor index", DenseTensorAttributeMockInde
     index.expect_empty_add();
 }
 
-TEST_F("onLoad() updates nearest neighbor index", DenseTensorAttributeMockIndex)
-{
-    f.set_tensor(1, vec_2d(3, 5));
-    f.set_tensor(2, vec_2d(7, 9));
-    f.save();
-    f.load();
-    auto& index = f.mock_index();
-    index.expect_adds({{1, {3, 5}}, {2, {7, 9}}});
-}
-
-
 TEST_F("commit() ensures transfer and trim hold lists on nearest neighbor index", DenseTensorAttributeMockIndex)
 {
     auto& index = f.mock_index();
@@ -604,4 +624,32 @@ TEST_F("Memory usage is extracted from index when updating stats on attribute", 
     EXPECT_EQUAL(before + 1, after);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); vespalib::unlink("test.dat"); }
+TEST_F("Nearest neighbor index can be saved to disk and then loaded from file", DenseTensorAttributeMockIndex)
+{
+    f.set_tensor(1, vec_2d(3, 5));
+    f.set_tensor(2, vec_2d(7, 9));
+    f.mock_index().save_index_with_value(123);
+    f.save();
+    EXPECT_TRUE(vespalib::fileExists(attr_name + ".nnidx"));
+
+    f.load(); // index is loaded from saved file
+    auto& index = f.mock_index();
+    EXPECT_EQUAL(123, index.get_index_value());
+    index.expect_adds({});
+}
+
+TEST_F("onLoad() reconstructs nearest neighbor index if save file does not exists", DenseTensorAttributeMockIndex)
+{
+    f.set_tensor(1, vec_2d(3, 5));
+    f.set_tensor(2, vec_2d(7, 9));
+    f.save();
+    EXPECT_FALSE(vespalib::fileExists(attr_name + ".nnidx"));
+
+    f.load(); // index is reconstructed by adding all loaded tensors
+    auto& index = f.mock_index();
+    EXPECT_EQUAL(0, index.get_index_value());
+    index.expect_adds({{1, {3, 5}}, {2, {7, 9}}});
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }
+
