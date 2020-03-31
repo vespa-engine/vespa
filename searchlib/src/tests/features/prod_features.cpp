@@ -1238,10 +1238,11 @@ Test::testDotProduct()
             assertDotProduct(0,   "(f:5,g:5)",             1, "wsextstr");
             assertDotProduct(550, "(a:1,b:2,c:3,d:4,e:5)", 1, "wsextstr");
         }
-        for (const char * name : {"wsbyte", "wsint"}) {
-            assertDotProduct(0,  "()",                    1, name);
-            assertDotProduct(0,  "(6:5,7:5)",             1, name);
-            assertDotProduct(55, "(1:1,2:2,3:3,4:4,5:5)", 1, name);
+        for (const char * name : {"wsbyte", "wsint", "wsint_fast"}) {
+            TEST_DO(assertDotProduct(0,  "()",                    1, name));
+            TEST_DO(assertDotProduct(0,  "(6:5,7:5)",             1, name));
+            TEST_DO(assertDotProduct(18, "(4:4.5)", 1, name));
+            TEST_DO(assertDotProduct(57, "(1:1,2:2,3:3,4:4.5,5:5)", 1, name));
         }
         for (const char * name : {"arrbyte", "arrint", "arrfloat", "arrint_fast", "arrfloat_fast"}) {
             assertDotProduct(0,  "()",                    1, name);
@@ -1300,6 +1301,7 @@ Test::setupForDotProductTest(FtFeatureTest & ft)
     };
     std::vector<Config> cfgList = { {"wsint", AVBT::INT32, AVCT::WSET, false},
                                     {"wsbyte", AVBT::INT8, AVCT::WSET, false},
+                                    {"wsint_fast", AVBT::INT8, AVCT::WSET, true},
                                     {"arrbyte", AVBT::INT8, AVCT::ARRAY, false},
                                     {"arrint", AVBT::INT32, AVCT::ARRAY, false},
                                     {"arrfloat", AVBT::FLOAT, AVCT::ARRAY, false},

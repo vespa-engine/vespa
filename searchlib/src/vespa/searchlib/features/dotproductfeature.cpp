@@ -224,25 +224,27 @@ private:
 template <typename A>
 class SingleDotProductExecutorByValue final : public fef::FeatureExecutor {
 public:
-    SingleDotProductExecutorByValue(const A * attribute, multivalue::WeightedValue<typename A::BaseType> keyValue)
+    SingleDotProductExecutorByValue(const A * attribute, typename A::BaseType key, feature_t value)
         : _attribute(attribute),
-          _keyValue(keyValue)
+          _key(key),
+          _value(value)
     {}
 
     void execute(uint32_t docId) override {
         const multivalue::WeightedValue<typename A::BaseType> *values(nullptr);
         uint32_t sz = _attribute->getRawValues(docId, values);
         for (size_t i = 0; i < sz; ++i) {
-            if (values[i].value() == _keyValue.value()) {
-                outputs().set_number(0, values[i].weight()*_keyValue.weight());
+            if (values[i].value() == _key) {
+                outputs().set_number(0, values[i].weight() * _value);
                 return;
             }
         }
         outputs().set_number(0, 0);
     }
 private:
-    const A                                          * _attribute;
-    multivalue::WeightedValue<typename A::BaseType>    _keyValue;
+    const A               * _attribute;
+    typename A::BaseType    _key;
+    feature_t               _value;
 };
 
 }
@@ -628,9 +630,9 @@ size_t extractSize(const dotproduct::wset::IntegerVectorT<T> & v) {
 }
 
 template<typename T>
-multivalue::WeightedValue<T> extractElem(const dotproduct::wset::IntegerVectorT<T> & v, size_t idx) {
+std::pair<T, feature_t> extractElem(const dotproduct::wset::IntegerVectorT<T> & v, size_t idx) {
     const auto & pair = v.getVector()[idx];
-    return multivalue::WeightedValue<T>(pair.first, pair.second);
+    return std::pair<T, feature_t>(pair.first, pair.second);
 }
 
 template<typename T>
@@ -639,7 +641,7 @@ size_t extractSize(const std::unique_ptr<dotproduct::wset::IntegerVectorT<T>> & 
 }
 
 template<typename T>
-multivalue::WeightedValue<T> extractElem(const std::unique_ptr<dotproduct::wset::IntegerVectorT<T>> & v, size_t idx) {
+std::pair<T, feature_t> extractElem(const std::unique_ptr<dotproduct::wset::IntegerVectorT<T>> & v, size_t idx) {
     return extractElem(*v, idx);
 }
 
@@ -656,7 +658,8 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V && vector, vespali
         auto * exactA = dynamic_cast<const ExactA *>(iattr);
         if (exactA != nullptr) {
             if (extractSize(vector) == 1) {
-                return stash.create<SingleDotProductExecutorByValue<ExactA>>(exactA, extractElem(vector, 0ul));
+                auto elem = extractElem(vector, 0ul);
+                return stash.create<SingleDotProductExecutorByValue<ExactA>>(exactA, elem.first, elem.second);
             }
             return stash.create<DotProductExecutor<ExactA>>(exactA, std::forward<V>(vector));
         }
