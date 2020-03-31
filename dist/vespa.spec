@@ -406,6 +406,17 @@ if [ $1 -eq 0 ]; then # this is an uninstallation
     ! getent group %{_vespa_group} >/dev/null || groupdel %{_vespa_group}
 %endif
 fi
+# Temporarily keep modifications to conf/vespa/default-env.txt across
+# package uninstall + install.
+if test -f %{_prefix}/conf/vespa/default-env.txt.rpmsave
+then
+    if test -f %{_prefix}/conf/vespa/default-env.txt
+    then
+	rm -f %{_prefix}/conf/vespa/default-env.txt.rpmsave
+    else
+	mv %{_prefix}/conf/vespa/default-env.txt.rpmsave %{_prefix}/conf/vespa/default-env.txt
+    fi
+fi
 
 %files
 %if %{_defattr_is_vespa_vespa}
