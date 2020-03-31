@@ -69,7 +69,7 @@ ControlFile::ensureHeader()
 	    perror("log::ControlFile write(A) failed");
 	}
 
-        char spaces[_maxPrefix + 1];
+        char spaces[_maxPrefix + 3];
         memset(spaces, ' ', sizeof spaces);
         spaces[sizeof(spaces) - 1] = '\0';
 
