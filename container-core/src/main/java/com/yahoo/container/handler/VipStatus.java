@@ -65,7 +65,6 @@ public class VipStatus {
     }
 
     @Deprecated // TODO: Remove on Vespa 8
-    @Inject
     public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus, StateMonitor healthState) {
         this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, healthState);
     }
