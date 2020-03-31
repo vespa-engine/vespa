@@ -69,21 +69,19 @@ public:
         vespalib::ConstBufferRef _data;
     };
 public:
-    Packet(size_t m=0xf000) : _count(0), _range(), _limit(m), _buf(m) { }
+    Packet(size_t reserved) : _count(0), _range(), _buf(reserved) { }
     Packet(const void * buf, size_t sz);
-    bool add(const Entry & data);
-    void close() { }
+    void add(const Entry & data);
     void clear() { _buf.clear(); _count = 0; _range.from(0); _range.to(0); }
     const SerialNumRange & range() const { return _range; }
     const vespalib::nbostream & getHandle() const { return _buf; }
     size_t                  size() const { return _count; }
     bool                   empty() const { return _count == 0; }
     size_t             sizeBytes() const { return _buf.size(); }
-    bool merge(const Packet & packet);
+    void merge(const Packet & packet);
 private:
     size_t                            _count;
     SerialNumRange                    _range;
-    size_t                            _limit;
     vespalib::nbostream_longlivedbuf  _buf;
 };
 

@@ -4,11 +4,14 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
 
 #include <vespa/log/log.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
 LOG_SETUP(".transactionlog.domain");
 
 using vespalib::string;
@@ -20,29 +23,44 @@ using vespalib::Monitor;
 using vespalib::MonitorGuard;
 using search::common::FileHeaderContext;
 using std::runtime_error;
-using namespace std::chrono_literals;
+using std::make_shared;
 
 namespace search::transactionlog {
 
-Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
-               Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
-               const FileHeaderContext &fileHeaderContext) :
-    _defaultCrcType(defaultCrcType),
-    _commitExecutor(commitExecutor),
-    _sessionExecutor(sessionExecutor),
-    _sessionId(1),
-    _syncMonitor(),
-    _pendingSync(false),
-    _name(domainName),
-    _domainPartSize(domainPartSize),
-    _parts(),
-    _lock(),
-    _sessionLock(),
-    _sessions(),
-    _maxSessionRunTime(),
-    _baseDir(baseDir),
-    _fileHeaderContext(fileHeaderContext),
-    _markedDeleted(false)
+VESPA_THREAD_STACK_TAG(domain_commit_executor);
+
+DomainConfig::DomainConfig()
+    : _encoding(Encoding::Crc::xxh64, Encoding::Compression::none),
+      _compressionLevel(9),
+      _partSizeLimit(0x10000000), // 256M
+      _chunkSizeLimit(0x40000),   // 256k
+      _chunkAgeLimit(10ms)
+{ }
+
+Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPool & threadPool,
+               Executor & commitExecutor, Executor & sessionExecutor, const DomainConfig & cfg,
+               const FileHeaderContext &fileHeaderContext)
+    : _config(cfg),
+      _currentChunk(std::make_unique<Chunk>()),
+      _lastSerial(0),
+      _threadPool(threadPool),
+      _singleCommiter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128*1024)),
+      _commitExecutor(commitExecutor),
+      _sessionExecutor(sessionExecutor),
+      _sessionId(1),
+      _syncMonitor(),
+      _pendingSync(false),
+      _name(domainName),
+      _parts(),
+      _lock(),
+      _currentChunkMonitor(),
+      _sessionLock(),
+      _sessions(),
+      _maxSessionRunTime(),
+      _baseDir(baseDir),
+      _fileHeaderContext(fileHeaderContext),
+      _markedDeleted(false),
+      _self(nullptr)
 {
     int retval(0);
     if ((retval = makeDirectory(_baseDir.c_str())) != 0) {
@@ -60,13 +78,34 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
     }
     _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
-        _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false);
+        _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _config.getEncoding(),
+                                                        _config.getCompressionlevel(), _fileHeaderContext, false);
         vespalib::File::sync(dir());
+    }
+    _lastSerial = end();
+    _self = _threadPool.NewThread(this);
+    assert(_self);
+}
+
+Domain &
+Domain::setConfig(const DomainConfig & cfg) {
+    _config = cfg;
+    return *this;
+}
+
+void
+Domain::Run(FastOS_ThreadInterface *thisThread, void *) {
+
+    while (!thisThread->GetBreakFlag()) {
+        vespalib::MonitorGuard guard(_currentChunkMonitor);
+        guard.wait(_config.getChunkAgeLimit());
+        commitIfStale(guard);
     }
 }
 
 void Domain::addPart(int64_t partId, bool isLastPart) {
-    auto dp = std::make_shared<DomainPart>(_name, dir(), partId, _defaultCrcType, _fileHeaderContext, isLastPart);
+    auto dp = std::make_shared<DomainPart>(_name, dir(), partId, _config.getEncoding(),
+                                           _config.getCompressionlevel(), _fileHeaderContext, isLastPart);
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
@@ -104,7 +143,17 @@ private:
     bool              & _pendingSync;
 };
 
-Domain::~Domain() { }
+Domain::~Domain() {
+    if (_self) {
+        _self->SetBreakFlag();
+        {
+            MonitorGuard guard(_currentChunkMonitor);
+            guard.broadcast();
+        }
+        _self->Join();
+    }
+    _singleCommiter->shutdown().sync();
+}
 
 DomainInfo
 Domain::getDomainInfo() const
@@ -131,7 +180,7 @@ Domain::begin(const LockGuard & guard) const
     assert(guard.locks(_lock));
     SerialNum s(0);
     if ( ! _parts.empty() ) {
-        s = _parts.begin()->second->range().from();
+        s = _parts.cbegin()->second->range().from();
     }
     return s;
 }
@@ -149,7 +198,7 @@ Domain::end(const LockGuard & guard) const
     assert(guard.locks(_lock));
     SerialNum s(0);
     if ( ! _parts.empty() ) {
-        s = _parts.rbegin()->second->range().to();
+        s = _parts.crbegin()->second->range().to();
     }
     return s;
 }
@@ -203,7 +252,8 @@ Domain::triggerSyncNow()
     }
 }
 
-DomainPart::SP Domain::findPart(SerialNum s)
+DomainPart::SP
+Domain::findPart(SerialNum s)
 {
     LockGuard guard(_lock);
     DomainPartList::iterator it(_parts.upper_bound(s));
@@ -220,12 +270,14 @@ DomainPart::SP Domain::findPart(SerialNum s)
     return DomainPart::SP();
 }
 
-uint64_t Domain::size() const
+uint64_t
+Domain::size() const
 {
     return size(LockGuard(_lock));
 }
 
-uint64_t Domain::size(const LockGuard & guard) const
+uint64_t
+Domain::size(const LockGuard & guard) const
 {
     (void) guard;
     assert(guard.locks(_lock));
@@ -236,7 +288,8 @@ uint64_t Domain::size(const LockGuard & guard) const
     return sz;
 }
 
-SerialNum Domain::findOldestActiveVisit() const
+SerialNum
+Domain::findOldestActiveVisit() const
 {
     SerialNum oldestActive(std::numeric_limits<SerialNum>::max());
     LockGuard guard(_sessionLock);
@@ -249,7 +302,8 @@ SerialNum Domain::findOldestActiveVisit() const
     return oldestActive;
 }
 
-void Domain::cleanSessions()
+void
+Domain::cleanSessions()
 {
     if ( _sessions.empty()) {
         return;
@@ -269,7 +323,8 @@ void Domain::cleanSessions()
 
 namespace {
 
-void waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
+void
+waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 {
     MonitorGuard guard(syncMonitor);
     while (pendingSync) {
@@ -279,18 +334,90 @@ void waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 
 }
 
-void Domain::commit(const Packet & packet)
-{
+Domain::Chunk::Chunk()
+    : _data(size_t(-1)),
+      _callBacks(),
+      _firstArrivalTime()
+{}
+
+Domain::Chunk::~Chunk() = default;
+
+void
+Domain::Chunk::add(const Packet &packet, Writer::DoneCallback onDone) {
+    if (_callBacks.empty()) {
+        _firstArrivalTime = vespalib::steady_clock::now();
+    }
+    _data.merge(packet);
+    _callBacks.emplace_back(std::move(onDone));
+}
+
+vespalib::duration
+Domain::Chunk::age() const {
+    if (_callBacks.empty()) {
+        return 0ms;
+    }
+    return (vespalib::steady_clock::now() - _firstArrivalTime);
+}
+
+void
+Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
+    vespalib::MonitorGuard guard(_currentChunkMonitor);
+    if (! (_lastSerial < packet.range().from())) {
+        throw runtime_error(make_string("Incomming serial number(%ld) must be bigger than the last one (%ld).",
+                                        packet.range().from(), _lastSerial));
+    } else {
+        _lastSerial = packet.range().to();
+    }
+    _currentChunk->add(packet, std::move(onDone));
+    commitIfFull(guard);
+}
+
+void
+Domain::commitIfFull(const vespalib::MonitorGuard &guard) {
+    if (_currentChunk->sizeBytes() > _config.getChunkSizeLimit()) {
+        auto completed = grabCurrentChunk(guard);
+        if (completed) {
+            commitChunk(std::move(completed), guard);
+        }
+    }
+}
+
+std::unique_ptr<Domain::Chunk>
+Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
+    assert(guard.monitors(_currentChunkMonitor));
+    auto chunk = std::move(_currentChunk);
+    _currentChunk = std::make_unique<Chunk>();
+    return chunk;
+}
+
+void
+Domain::commitIfStale(const vespalib::MonitorGuard & guard) {
+    assert(guard.monitors(_currentChunkMonitor));
+    if (_currentChunk->age() > _config.getChunkAgeLimit()) {
+        commitChunk(grabCurrentChunk(guard), guard);
+    }
+}
+
+void
+Domain::commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard) {
+    assert(chunkOrderGuard.monitors(_currentChunkMonitor));
+    _singleCommiter->execute(vespalib::makeLambdaTask([this, chunk = std::move(chunk)] () mutable { doCommit(std::move(chunk)); } ));
+}
+
+void
+Domain::doCommit(std::unique_ptr<Chunk> chunk) {
+    const Packet & packet = chunk->getPacket();
     DomainPart::SP dp(_parts.rbegin()->second);
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
-    if (dp->byteSize() > _domainPartSize) {
+    if (dp->byteSize() > _config.getPartSizeLimit()) {
         waitPendingSync(_syncMonitor, _pendingSync);
         triggerSyncNow();
         waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
-        dp = std::make_shared<DomainPart>(_name, dir(), entry.serial(), _defaultCrcType, _fileHeaderContext, false);
+        dp = std::make_shared<DomainPart>(_name, dir(), entry.serial(), _config.getEncoding(),
+                                          _config.getCompressionlevel(), _fileHeaderContext, false);
         {
             LockGuard guard(_lock);
             _parts[entry.serial()] = dp;
@@ -302,7 +429,8 @@ void Domain::commit(const Packet & packet)
     cleanSessions();
 }
 
-bool Domain::erase(SerialNum to)
+bool
+Domain::erase(SerialNum to)
 {
     bool retval(true);
     /// Do not erase the last element
@@ -321,8 +449,9 @@ bool Domain::erase(SerialNum to)
     return retval;
 }
 
-int Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
-                  std::unique_ptr<Session::Destination> dest)
+int
+Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
+              std::unique_ptr<Session::Destination> dest)
 {
     assert(this == domain.get());
     cleanSessions();
@@ -334,7 +463,8 @@ int Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
     return id;
 }
 
-int Domain::startSession(int sessionId)
+int
+Domain::startSession(int sessionId)
 {
     int retval(-1);
     LockGuard guard(_sessionLock);
@@ -350,7 +480,8 @@ int Domain::startSession(int sessionId)
     return retval;
 }
 
-int Domain::closeSession(int sessionId)
+int
+Domain::closeSession(int sessionId)
 {
     _commitExecutor.sync();
     int retval(-1);

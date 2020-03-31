@@ -23,7 +23,6 @@
 #include <vespa/searchcore/proton/server/i_feed_handler_owner.h>
 #include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
@@ -50,6 +49,7 @@ using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using vespalib::makeLambdaTask;
 using search::transactionlog::TransLogServer;
+using search::transactionlog::DomainConfig;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
@@ -460,7 +460,7 @@ struct FeedHandlerFixture
     FeedHandler                  handler;
     FeedHandlerFixture()
         : _fileHeaderContext(),
-          tls("mytls", 9016, "mytlsdir", _fileHeaderContext, 0x10000),
+          tls("mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
           tlsSpec("tcp/localhost:9016"),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),

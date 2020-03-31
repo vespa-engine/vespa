@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for feedstates.
 
-
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/bucket/bucketid.h>
@@ -102,11 +101,10 @@ struct RemoveOperationContext
 RemoveOperationContext::RemoveOperationContext(search::SerialNum serial)
     : doc_id("id:ns:doctypename::bar"),
       op(BucketFactory::getBucketId(doc_id), Timestamp(10), doc_id),
-      str(), packet()
+      str(), packet(std::make_unique<Packet>(0xf000))
 {
     op.serialize(str);
     ConstBufferRef buf(str.data(), str.wp());
-    packet = std::make_unique<Packet>();
     packet->add(Packet::Entry(serial, FeedOperation::REMOVE, buf));
 }
 RemoveOperationContext::~RemoveOperationContext() = default;
