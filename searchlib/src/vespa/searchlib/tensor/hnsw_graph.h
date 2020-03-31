@@ -69,6 +69,8 @@ struct HnswGraph {
     }
 
     size_t size() const { return node_refs.size(); }
+
+    std::vector<uint32_t> level_histogram() const;
 };
 
 }

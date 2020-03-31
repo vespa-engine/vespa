@@ -381,6 +381,13 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
 {
     auto& object = inserter.insertObject();
     StateExplorerUtils::memory_usage_to_slime(memory_usage(), object.setObject("memory_usage"));
+    object.setLong("nodes", _graph.size());
+    auto& level_histogram = object.setArray("level_histogram");
+    for (uint32_t hist_val : _graph.level_histogram()) {
+        level_histogram.addLong(hist_val);
+    }
+    object.setLong("entry_docid", _graph.entry_docid);
+    object.setLong("entry_level", _graph.entry_level);
 }
 
 std::unique_ptr<NearestNeighborIndexSaver>
