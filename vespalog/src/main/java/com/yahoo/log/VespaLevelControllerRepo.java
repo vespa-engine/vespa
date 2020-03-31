@@ -4,12 +4,15 @@ package com.yahoo.log;
 import com.yahoo.text.Utf8;
 
 import java.io.RandomAccessFile;
+import java.io.FileOutputStream;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Enumeration;
 import java.util.TimerTask;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * @author Ulf Lilleengen
@@ -181,8 +184,12 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
                         sb.append(" ");
                     }
                     sb.append(inherit.getOnOffString()).append("\n");
+                    byte[] lineBytes = sb.toString().getBytes(US_ASCII);
+                    try (var out = new FileOutputStream(logControlFilename, true)) {
+                        out.write(lineBytes);
+                        out.flush();
+                    }
                     ctlFile.seek(ctlFile.length());
-                    ctlFile.writeBytes(sb.toString());
                     extendMapping();
                     ctrl = levelControllerRepo.getLevelController(suffix);
                 } catch(java.nio.channels.ClosedByInterruptException e) {
