@@ -129,7 +129,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         long activeSessionId = getActiveSessionId(existingApplicationId);
         logger.log(LogLevel.DEBUG, "Create from existing application id " + existingApplicationId + ", active session id is " + activeSessionId);
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
-        // Note: Needs to be kept in sync with callss in SessionPreparer.writeStateToZooKeeper()
+        // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());

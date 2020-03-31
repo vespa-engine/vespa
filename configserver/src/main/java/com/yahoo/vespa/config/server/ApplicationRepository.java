@@ -314,10 +314,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         tenant.getLocalSessionRepo().addSession(newSession);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
-                                                 false /* don't validate as this is already deployed */,
-                                                 newSession.getDockerImageRepository(),
-                                                 newSession.getVespaVersion(),
-                                                 bootstrap));
+                                                 false /* don't validate as this is already deployed */, bootstrap));
     }
 
     @Override
