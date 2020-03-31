@@ -100,6 +100,8 @@ class JDiscHttpServlet extends HttpServlet {
         }
     }
 
+
+
     static JDiscServerConnector getConnector(HttpServletRequest request) {
         return (JDiscServerConnector)getConnection(request).getConnector();
     }
