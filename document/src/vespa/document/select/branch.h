@@ -19,8 +19,7 @@ namespace document::select {
 class Branch : public Node
 {
 public:
-    explicit Branch(vespalib::stringref name) : Node(name) {}
-    Branch(vespalib::stringref name, uint32_t max_depth) : Node(name, max_depth) {}
+    Branch(vespalib::stringref name) : Node(name) {}
 
     bool isLeafNode() const override { return false; }
 };
@@ -31,7 +30,7 @@ class And : public Branch
     std::unique_ptr<Node> _right;
 public:
     And(std::unique_ptr<Node> left, std::unique_ptr<Node> right,
-        const char* name = nullptr);
+        const char* name = 0);
 
     ResultList contains(const Context& context) const override {
         return (_left->contains(context) && _right->contains(context));
@@ -54,7 +53,7 @@ class Or : public Branch
     std::unique_ptr<Node> _right;
 public:
     Or(std::unique_ptr<Node> left, std::unique_ptr<Node> right,
-       const char* name = nullptr);
+        const char* name = 0);
 
     ResultList contains(const Context& context) const  override {
         return (_left->contains(context) || _right->contains(context));
@@ -75,7 +74,7 @@ class Not : public Branch
 {
     std::unique_ptr<Node> _child;
 public:
-    Not(std::unique_ptr<Node> child, const char* name = nullptr);
+    Not(std::unique_ptr<Node> child, const char* name = 0);
 
     ResultList contains(const Context& context) const override { return !_child->contains(context); }
     ResultList trace(const Context&, std::ostream& trace) const override;

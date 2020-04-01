@@ -8,7 +8,7 @@
 namespace document::select {
 
 And::And(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* name)
-    : Branch(name ? name : "and", std::max(left->max_depth(), right->max_depth()) + 1),
+    : Branch(name ? name : "and"),
       _left(std::move(left)),
       _right(std::move(right))
 {
@@ -54,7 +54,7 @@ And::trace(const Context& context, std::ostream& out) const
 }
 
 Or::Or(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* name)
-    : Branch(name ? name : "or", std::max(left->max_depth(), right->max_depth()) + 1),
+    : Branch(name ? name : "or"),
       _left(std::move(left)),
       _right(std::move(right))
 {
@@ -100,7 +100,7 @@ Or::trace(const Context& context, std::ostream& out) const
 }
 
 Not::Not(std::unique_ptr<Node> child, const char* name)
-    : Branch(name ? name : "not", child->max_depth() + 1),
+    : Branch(name ? name : "not"),
       _child(std::move(child))
 {
     assert(_child.get());

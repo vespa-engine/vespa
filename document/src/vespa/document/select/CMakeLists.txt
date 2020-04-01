@@ -36,7 +36,6 @@ vespa_add_library(document_select OBJECT
     parser.cpp
     parse_utils.cpp
     parsing_failed_exception.cpp
-    parser_limits.cpp
     ${BISON_DocSelParser_OUTPUTS}
     ${FLEX_DocSelLexer_OUTPUTS}
     AFTER

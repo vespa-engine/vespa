@@ -7,13 +7,6 @@
 %option noyywrap nounput
 %option yyclass="document::select::DocSelScanner"
 
- /* Flex lexer must be compiled with batch mode (as opposed to interactive mode)
-  * or parsing of large tokens appears to trigger superlinear time complexity.
-  * Also use full, non-compressed lookup tables for maximum performance.
-  */
-%option batch
-%option full
-
  /* Used to track source locations, see https://github.com/bingmann/flex-bison-cpp-example/blob/master/src/scanner.ll */
 %{
 #define YY_USER_ACTION yyloc->columns(yyleng);

@@ -12,7 +12,6 @@
 
 #include "resultlist.h"
 #include "context.h"
-#include "parser_limits.h"
 
 namespace document::select {
 
@@ -22,33 +21,19 @@ class Node : public Printable
 {
 protected:
     vespalib::string _name;
-    uint32_t _max_depth;
     bool _parentheses; // Set to true if parentheses was used around this part
                        // Set such that we can recreate original query in print.
 public:
     typedef std::unique_ptr<Node> UP;
     typedef std::shared_ptr<Node> SP;
 
-    Node(vespalib::stringref name, uint32_t max_depth)
-        : _name(name), _max_depth(max_depth), _parentheses(false)
-    {
-        throw_parse_error_if_max_depth_exceeded();
-    }
-
-    explicit Node(vespalib::stringref name)
-        : _name(name), _max_depth(1), _parentheses(false)
-    {}
-    ~Node() override = default;
-
-    // Depth is explicitly tracked to limit recursion to a sane maximum when building and
-    // processing ASTs, as the Bison framework does not have anything useful for us there.
-    // The AST is built from the leaves up towards the root, so we can cheaply track depth
-    // of subtrees in O(1) time per node by computing a node's own depth based on immediate
-    // children at node construction time.
-    [[nodiscard]] uint32_t max_depth() const noexcept { return _max_depth; }
+    Node(vespalib::stringref name) : _name(name), _parentheses(false) {}
+    ~Node() override {}
 
     void setParentheses() { _parentheses = true; }
+
     void clearParentheses() { _parentheses = false; }
+
     bool hadParentheses() const { return _parentheses; }
 
     virtual ResultList contains(const Context&) const = 0;
@@ -58,12 +43,6 @@ public:
 
     virtual Node::UP clone() const = 0;
 protected:
-    void throw_parse_error_if_max_depth_exceeded() const {
-        if (_max_depth > ParserLimits::MaxRecursionDepth) {
-            throw_max_depth_exceeded_exception();
-        }
-    }
-
     Node::UP wrapParens(Node* node) const {
         Node::UP ret(node);
         if (_parentheses) {

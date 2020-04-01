@@ -18,7 +18,6 @@
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/operator.h>
 #include <vespa/document/select/parse_utils.h>
-#include <vespa/document/select/parser_limits.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <limits>
 #include <gtest/gtest.h>
@@ -1248,17 +1247,17 @@ TEST_F(DocumentSelectParserTest, testThatSimpleFieldValuesHaveCorrectFieldName)
 
 TEST_F(DocumentSelectParserTest, testThatComplexFieldValuesHaveCorrectFieldNames)
 {
-    EXPECT_EQ(vespalib::string("headerval"),
-              parseFieldValue("testdoctype1.headerval{test}")->getRealFieldName());
+    EXPECT_EQ(
+        vespalib::string("headerval"),
+        parseFieldValue("testdoctype1.headerval{test}")->getRealFieldName());
 
-    EXPECT_EQ(vespalib::string("headerval"),
-              parseFieldValue("testdoctype1.headerval[42]")->getRealFieldName());
+    EXPECT_EQ(
+        vespalib::string("headerval"),
+        parseFieldValue("testdoctype1.headerval[42]")->getRealFieldName());
 
-    EXPECT_EQ(vespalib::string("headerval"),
-              parseFieldValue("testdoctype1.headerval.meow.meow{test}")->getRealFieldName());
-
-    EXPECT_EQ(vespalib::string("headerval"),
-              parseFieldValue("testdoctype1.headerval .meow.meow{test}")->getRealFieldName());
+    EXPECT_EQ(
+        vespalib::string("headerval"),
+        parseFieldValue("testdoctype1.headerval.meow.meow{test}")->getRealFieldName());
 }
 
 namespace {
@@ -1602,66 +1601,6 @@ TEST_F(DocumentSelectParserTest, redundant_glob_wildcards_are_collapsed_into_min
     EXPECT_EQ(GlobOperator::convertToRegex("**foo***bar**"), "foo.*bar");
     EXPECT_EQ(GlobOperator::convertToRegex("*?*"), ".");
     EXPECT_EQ(GlobOperator::convertToRegex("*?*?*?*"), "..*..*."); // Don't try this at home, kids!
-}
-
-TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_field_exprs) {
-    createDocs();
-    std::string expr = "testdoctype1";
-    for (size_t i = 0; i < 50000; ++i) {
-        expr += ".foo";
-    }
-    expr += ".hash() != 0";
-    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
-}
-
-TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_arithmetic_exprs) {
-    createDocs();
-    std::string expr = "1";
-    for (size_t i = 0; i < 50000; ++i) {
-        expr += "+1";
-    }
-    expr += " != 0";
-    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
-}
-
-TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_binary_logical_exprs) {
-    createDocs();
-    // Also throw in some comparisons to ensure they carry over the max depth.
-    std::string expr = "1 == 2";
-    std::string cmp_subexpr = "3 != 4";
-    for (size_t i = 0; i < 10000; ++i) {
-        expr += (i % 2 == 0 ? " and " : " or ") + cmp_subexpr;
-    }
-    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
-}
-
-TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_unary_logical_exprs) {
-    createDocs();
-    std::string expr;
-    for (size_t i = 0; i < 10000; ++i) {
-        expr += "not ";
-    }
-    expr += "true";
-    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
-}
-
-TEST_F(DocumentSelectParserTest, selection_has_upper_limit_on_input_size) {
-    createDocs();
-    std::string expr = ("testdoctype1.a_biii"
-                        + std::string(select::ParserLimits::MaxSelectionByteSize, 'i')
-                        + "iiig_identifier");
-    verifyFailedParse(expr, "ParsingFailedException: expression is too large to be "
-                            "parsed (max 1048576 bytes, got 1048610)");
-}
-
-TEST_F(DocumentSelectParserTest, lexing_does_not_have_superlinear_time_complexity) {
-    createDocs();
-    std::string expr = ("testdoctype1.hstringval == 'a_biii"
-                        + std::string(select::ParserLimits::MaxSelectionByteSize - 100, 'i')
-                        + "iiig string'");
-    // If the lexer is not compiled with the appropriate options, this will take a long time.
-    // A really, really long time.
-    PARSE(expr, *_doc[0], False);
 }
 
 } // document
