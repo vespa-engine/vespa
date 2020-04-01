@@ -72,6 +72,15 @@ public class YumPackageName {
             architecture = packageName.architecture;
         }
 
+        /**
+         * Set the epoch of the YUM package.
+         *
+         * <p>WARNING: Should only be invoked if the YUM package actually has an epoch. Typically
+         * YUM packages doesn't have one explicitly set, and in case "0" will be used with
+         * {@link #toVersionLockName()} (otherwise it fails), but it will be absent from an
+         * install with {@link #toName()} (otherwise it fails). This typically means that
+         * you should set this only if the epoch is != "0".</p>
+         */
         public Builder setEpoch(String epoch) { this.epoch = Optional.of(epoch); return this; }
         public Builder setName(String name) { this.name = name; return this; }
         public Builder setVersion(String version) { this.version = Optional.of(version); return this; }
@@ -235,7 +244,7 @@ public class YumPackageName {
      */
     public String toVersionLockName() {
         return String.format("%s:%s-%s-%s.%s",
-                epoch.orElseThrow(() -> new IllegalStateException("Epoch is missing for YUM package " + name)),
+                epoch.orElse("0"),
                 name,
                 version.orElseThrow(() -> new IllegalStateException("Version is missing for YUM package " + name)),
                 release.orElseThrow(() -> new IllegalStateException("Release is missing for YUM package " + name)),
