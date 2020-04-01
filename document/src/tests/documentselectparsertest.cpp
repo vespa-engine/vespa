@@ -1650,7 +1650,8 @@ TEST_F(DocumentSelectParserTest, selection_has_upper_limit_on_input_size) {
     std::string expr = ("testdoctype1.a_biii"
                         + std::string(select::ParserLimits::MaxSelectionByteSize, 'i')
                         + "iiig_identifier");
-    verifyFailedParse(expr, "ParsingFailedException: expression is too large to be parsed (max 1048576 bytes)");
+    verifyFailedParse(expr, "ParsingFailedException: expression is too large to be "
+                            "parsed (max 1048576 bytes, got 1048610)");
 }
 
 TEST_F(DocumentSelectParserTest, lexing_does_not_have_superlinear_time_complexity) {
