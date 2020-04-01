@@ -34,6 +34,8 @@ protected:
     std::vector<Document::SP > _doc;
     std::vector<DocumentUpdate::SP > _update;
 
+    ~DocumentSelectParserTest();
+
     Document::SP createDoc(
             const std::string& doctype, const std::string& id, uint32_t hint,
             double hfloat, const std::string& hstr, const std::string& cstr,
@@ -65,6 +67,7 @@ protected:
     void testDocumentUpdates4();
 };
 
+DocumentSelectParserTest::~DocumentSelectParserTest() = default;
 
 namespace {
     std::shared_ptr<const DocumentTypeRepo> _repo;
