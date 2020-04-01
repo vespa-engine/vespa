@@ -403,6 +403,21 @@ public class ProvisioningTest {
         prepare(application, 1, 2, 3, 3, defaultResources, tester);
     }
 
+    @Test
+    public void below_resource_limit() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+
+        ApplicationId application = tester.makeApplicationId();
+        tester.makeReadyNodes(10, defaultResources);
+        try {
+            prepare(application, 2, 2, 3, 3,
+                    new NodeResources(2, 2, 10, 2), tester);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Must specify at least 4.00 Gb of memory for container cluster 'container0', was: 2.00 Gb", e.getMessage());
+        }
+    }
+
     /** Dev always uses the zone default flavor */
     @Test
     public void dev_deployment_flavor() {

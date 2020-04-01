@@ -67,7 +67,6 @@ public class CapacityPolicies {
     private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
         double minMemoryGb = nodeResourceLimits.minMemoryGb(cluster.type());
         if (resources.memoryGb() >= minMemoryGb) return;
-
         throw new IllegalArgumentException(String.format(Locale.ENGLISH,
                 "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
                 minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
