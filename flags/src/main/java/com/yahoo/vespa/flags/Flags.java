@@ -258,7 +258,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DISABLE_ROUTING_GENERATOR = defineFeatureFlag(
-            "disable-routing-generator", false,
+            "disable-routing-generator", true,
             "Whether the controller should stop asking the routing layer for endpoints",
             "Takes effect immediately",
             APPLICATION_ID);
