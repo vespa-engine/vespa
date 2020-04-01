@@ -112,13 +112,10 @@ public:
     Test();
     ~Test();
     int Main() override;
-    void testSendToAny();
     void testSendToCol();
-    void testSendToAnyThenCol();
     void testDirectHop();
     void testDirectRoute();
     void testRoutingPolicyCache();
-    void debugTrace();
 
 private:
     void setup();
@@ -131,21 +128,18 @@ private:
 
 TEST_APPHOOK(Test);
 
-Test::Test() {}
-Test::~Test() {}
+Test::Test() = default;
+Test::~Test() = default;
 
 int
 Test::Main()
 {
     TEST_INIT("messagebus_test");
 
-    testSendToAny();          TEST_FLUSH();
     testSendToCol();          TEST_FLUSH();
-    testSendToAnyThenCol();   TEST_FLUSH();
     testDirectHop();          TEST_FLUSH();
     testDirectRoute();        TEST_FLUSH();
     testRoutingPolicyCache(); TEST_FLUSH();
-    debugTrace();             TEST_FLUSH();
 
     TEST_DONE();
 }
@@ -206,38 +200,6 @@ void Test::teardown()
 }
 
 void
-Test::testSendToAny()
-{
-    setup();
-    for (uint32_t i = 0; i < 300; ++i) {
-        Message::UP msg(new SimpleMessage("test"));
-        EXPECT_TRUE(client->session->send(std::move(msg), "DocProc").isAccepted());
-    }
-    EXPECT_TRUE(dp0->waitQueueSize(100));
-    EXPECT_TRUE(dp1->waitQueueSize(100));
-    EXPECT_TRUE(dp2->waitQueueSize(100));
-    for (uint32_t i = 0; i < dpVec.size(); ++i) {
-        DocProc *p = dpVec[i];
-        while (p->queue.size() > 0) {
-            Routable::UP msg = p->queue.dequeue();
-            ASSERT_TRUE(msg);
-            Reply::UP reply(new EmptyReply());
-            msg->swapState(*reply);
-            reply->addError(Error(ErrorCode::FATAL_ERROR, ""));
-            p->session->forward(std::move(reply));
-        }
-    }
-    EXPECT_TRUE(client->waitQueueSize(300));
-    while (client->queue.size() > 0) {
-        Routable::UP reply = client->queue.dequeue();
-        ASSERT_TRUE(reply);
-        ASSERT_TRUE(reply->isReply());
-        EXPECT_TRUE(static_cast<Reply&>(*reply).getNumErrors() == 1);
-    }
-    teardown();
-}
-
-void
 Test::testSendToCol()
 {
     setup();
@@ -267,83 +229,6 @@ Test::testSendToCol()
             Reply::UP reply(new EmptyReply());
             msg->swapState(*reply);
             s->session->reply(std::move(reply));
-        }
-    }
-    client->waitQueueSize(300);
-    std::this_thread::sleep_for(100ms);
-    client->waitQueueSize(300);
-    while (client->queue.size() > 0) {
-        Routable::UP reply = client->queue.dequeue();
-        ASSERT_TRUE(reply);
-        ASSERT_TRUE(reply->isReply());
-        EXPECT_TRUE(static_cast<Reply&>(*reply).getNumErrors() == 0);
-    }
-    teardown();
-}
-
-void
-Test::testSendToAnyThenCol()
-{
-    setup();
-    ASSERT_TRUE(SimpleMessage("msg").getHash() % 2 == 0);
-    for (uint32_t i = 0; i < 150; ++i) {
-        Message::UP msg(new SimpleMessage("msg"));
-        EXPECT_TRUE(client->session->send(std::move(msg), "Index").isAccepted());
-    }
-    EXPECT_TRUE(dp0->waitQueueSize(50));
-    EXPECT_TRUE(dp1->waitQueueSize(50));
-    EXPECT_TRUE(dp2->waitQueueSize(50));
-    for (uint32_t i = 0; i < dpVec.size(); ++i) {
-        DocProc *p = dpVec[i];
-        while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue();
-            ASSERT_TRUE(r);
-            p->session->forward(std::move(r));
-        }
-    }
-    EXPECT_TRUE(search00->waitQueueSize(150));
-    EXPECT_TRUE(search01->waitQueueSize(0));
-    EXPECT_TRUE(search10->waitQueueSize(150));
-    EXPECT_TRUE(search11->waitQueueSize(0));
-    ASSERT_TRUE(SimpleMessage("msh").getHash() % 2 == 1);
-    for (uint32_t i = 0; i < 150; ++i) {
-        Message::UP msg(new SimpleMessage("msh"));
-        ASSERT_TRUE(client->session->send(std::move(msg), "Index").isAccepted());
-    }
-    EXPECT_TRUE(dp0->waitQueueSize(50));
-    EXPECT_TRUE(dp1->waitQueueSize(50));
-    EXPECT_TRUE(dp2->waitQueueSize(50));
-    for (uint32_t i = 0; i < dpVec.size(); ++i) {
-        DocProc *p = dpVec[i];
-        while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue();
-            ASSERT_TRUE(r);
-            p->session->forward(std::move(r));
-        }
-    }
-    EXPECT_TRUE(search00->waitQueueSize(150));
-    EXPECT_TRUE(search01->waitQueueSize(150));
-    EXPECT_TRUE(search10->waitQueueSize(150));
-    EXPECT_TRUE(search11->waitQueueSize(150));
-    for (uint32_t i = 0; i < searchVec.size(); ++i) {
-        Search *s = searchVec[i];
-        while (s->queue.size() > 0) {
-            Routable::UP msg = s->queue.dequeue();
-            ASSERT_TRUE(msg);
-            Reply::UP reply(new EmptyReply());
-            msg->swapState(*reply);
-            s->session->reply(std::move(reply));
-        }
-    }
-    EXPECT_TRUE(dp0->waitQueueSize(100));
-    EXPECT_TRUE(dp1->waitQueueSize(100));
-    EXPECT_TRUE(dp2->waitQueueSize(100));
-    for (uint32_t i = 0; i < dpVec.size(); ++i) {
-        DocProc *p = dpVec[i];
-        while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue();
-            ASSERT_TRUE(r);
-            p->session->forward(std::move(r));
         }
     }
     client->waitQueueSize(300);
@@ -466,67 +351,5 @@ Test::testRoutingPolicyCache()
     ASSERT_TRUE(refArg.get() != NULL);
     ASSERT_TRUE(allArg.get() == refArg.get());
 
-    teardown();
-}
-
-void
-Test::debugTrace()
-{
-    setup();
-    ASSERT_TRUE(SimpleMessage("msg").getHash() % 2 == 0);
-    for (uint32_t i = 0; i < 3; ++i) {
-        Message::UP msg(new SimpleMessage("msg"));
-        msg->getTrace().setLevel(4 + i);
-        EXPECT_TRUE(client->session->send(std::move(msg), "Index").isAccepted());
-    }
-    EXPECT_TRUE(dp0->waitQueueSize(1));
-    EXPECT_TRUE(dp1->waitQueueSize(1));
-    EXPECT_TRUE(dp2->waitQueueSize(1));
-    for (uint32_t i = 0; i < dpVec.size(); ++i) {
-        DocProc *p = dpVec[i];
-        while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue();
-            ASSERT_TRUE(r);
-            p->session->forward(std::move(r));
-        }
-    }
-    EXPECT_TRUE(search00->waitQueueSize(3));
-    EXPECT_TRUE(search01->waitQueueSize(0));
-    EXPECT_TRUE(search10->waitQueueSize(3));
-    EXPECT_TRUE(search11->waitQueueSize(0));
-    for (uint32_t i = 0; i < searchVec.size(); ++i) {
-        Search *s = searchVec[i];
-        while (s->queue.size() > 0) {
-            Routable::UP msg = s->queue.dequeue();
-            ASSERT_TRUE(msg);
-            Reply::UP reply(new EmptyReply());
-            msg->swapState(*reply);
-            s->session->reply(std::move(reply));
-        }
-    }
-    EXPECT_TRUE(dp0->waitQueueSize(1));
-    EXPECT_TRUE(dp1->waitQueueSize(1));
-    EXPECT_TRUE(dp2->waitQueueSize(1));
-    for (uint32_t i = 0; i < dpVec.size(); ++i) {
-        DocProc *p = dpVec[i];
-        while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue();
-            ASSERT_TRUE(r);
-            p->session->forward(std::move(r));
-        }
-    }
-    client->waitQueueSize(3);
-    Routable::UP reply = client->queue.dequeue();
-    fprintf(stderr, "\nTRACE DUMP(level=%d):\n%s\n\n",
-            reply->getTrace().getLevel(),
-            reply->getTrace().toString().c_str());
-    reply = client->queue.dequeue();
-    fprintf(stderr, "\nTRACE DUMP(level=%d):\n%s\n\n",
-            reply->getTrace().getLevel(),
-            reply->getTrace().toString().c_str());
-    reply = client->queue.dequeue();
-    fprintf(stderr, "\nTRACE DUMP(level=%d):\n%s\n\n",
-            reply->getTrace().getLevel(),
-            reply->getTrace().toString().c_str());
     teardown();
 }

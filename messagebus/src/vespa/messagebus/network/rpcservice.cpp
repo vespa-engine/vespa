@@ -6,36 +6,36 @@
 namespace mbus {
 
 RPCService::RPCService(const Mirror &mirror, const string &pattern) :
-    _mirror(mirror),
-    _pattern(pattern),
-    _addressIdx(random()),
-    _addressGen(0),
-    _addressList()
-{ }
+    _serviceName(),
+    _connectionSpec()
+{
+    if (pattern.find("tcp/") == 0) {
+        size_t pos = pattern.find_last_of('/');
+        if (pos != string::npos && pos < pattern.size() - 1) {
+            RPCServiceAddress test(pattern, pattern.substr(0, pos));
+            if ( ! test.isMalformed()) {
+                _serviceName = pattern;
+                _connectionSpec = pattern.substr(0, pos);
+            }
+        }
+    } else {
+        Mirror::SpecList addressList = mirror.lookup(pattern);
+        if (!addressList.empty()) {
+            assert(addressList.size() == 1);
+            const auto &entry = addressList[random() % addressList.size()];
+            _serviceName = entry.first;
+            _connectionSpec = entry.second;
+        }
+    }
+}
 
 RPCService::~RPCService() = default;
 
 RPCServiceAddress::UP
 RPCService::resolve()
 {
-    if (_pattern.find("tcp/") == 0) {
-        size_t pos = _pattern.find_last_of('/');
-        if (pos != string::npos && pos < _pattern.size() - 1) {
-            auto ret = std::make_unique<RPCServiceAddress>(_pattern, _pattern.substr(0, pos));
-            if (!ret->isMalformed()) {
-                return ret;
-            }
-        }
-    } else {
-        if (_addressGen != _mirror.updates()) {
-            _addressGen = _mirror.updates();
-            _addressList = _mirror.lookup(_pattern);
-        }
-        if (!_addressList.empty()) {
-            _addressIdx = (_addressIdx + 1) % _addressList.size();
-            const AddressList::value_type &entry = _addressList[_addressIdx];
-            return std::make_unique<RPCServiceAddress>(entry.first, entry.second);
-        }
+    if ( !_serviceName.empty()) {
+        return std::make_unique<RPCServiceAddress>(_serviceName, _connectionSpec);
     }
     return RPCServiceAddress::UP();
 }

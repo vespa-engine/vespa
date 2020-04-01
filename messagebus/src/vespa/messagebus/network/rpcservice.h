@@ -16,13 +16,9 @@ class RPCNetwork;
 class RPCService {
 private:
     typedef slobrok::api::IMirrorAPI  Mirror;
-    typedef Mirror::SpecList          AddressList;
 
-    const Mirror &_mirror;
-    string        _pattern;
-    uint32_t      _addressIdx;
-    uint32_t      _addressGen;
-    AddressList   _addressList;
+    string        _serviceName;
+    string        _connectionSpec;
 
 public:
     using UP = std::unique_ptr<RPCService>;
@@ -46,13 +42,7 @@ public:
      */
     RPCServiceAddress::UP resolve();
 
-    /**
-     * Returns the pattern used when querying for the naming server for
-     * addresses. This is given at construtor time.
-     *
-     * @return The service pattern.
-     */
-    const string &getPattern() const { return _pattern; }
+    bool isValid() const { return ! _connectionSpec.empty(); }
 };
 
 } // namespace mbus

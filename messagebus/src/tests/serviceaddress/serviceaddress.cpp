@@ -7,34 +7,49 @@
 
 using namespace mbus;
 
-class Test : public vespalib::TestApp {
-public:
-    int Main() override;
-    void testAddrServiceAddress();
-    void testNameServiceAddress();
-
-private:
-    bool waitSlobrok(RPCNetwork &network, const string &pattern, size_t num);
-    bool testAddress(RPCNetwork& network, const string &pattern,
-                     const string &expectedSpec, const string &expectedSession);
-    bool testNullAddress(RPCNetwork &network, const string &pattern);
-};
-
-int
-Test::Main()
+bool
+waitSlobrok(RPCNetwork &network, const string &pattern, size_t num)
 {
-    TEST_INIT("serviceaddress_test");
-
-    testAddrServiceAddress(); TEST_FLUSH();
-    testNameServiceAddress(); TEST_FLUSH();
-
-    TEST_DONE();
+    for (int i = 0; i < 1000; i++) {
+        slobrok::api::IMirrorAPI::SpecList res = network.getMirror().lookup(pattern);
+        if (res.size() == num) {
+            return true;
+        }
+        std::this_thread::sleep_for(10ms);
+    }
+    return false;
 }
 
-TEST_APPHOOK(Test);
+bool
+testNullAddress(RPCNetwork &network, const string &pattern)
+{
+    RPCService service(network.getMirror(), pattern);
+    RPCServiceAddress::UP obj = service.resolve();
+    if ( ! EXPECT_FALSE(obj)) {
+        return false;
+    }
+    return true;
+}
 
-void
-Test::testAddrServiceAddress()
+bool
+testAddress(RPCNetwork &network, const string &pattern,
+            const string &expectedSpec, const string &expectedSession)
+{
+    RPCService service(network.getMirror(), pattern);
+    RPCServiceAddress::UP obj = service.resolve();
+    if (!EXPECT_TRUE(obj)) {
+        return false;
+    }
+    if (!EXPECT_EQUAL(expectedSpec, obj->getConnectionSpec())) {
+        return false;
+    }
+    if (!EXPECT_EQUAL(expectedSession, obj->getSessionName())) {
+        return false;
+    }
+    return true;
+}
+
+TEST("testAddrServiceAddress")
 {
     Slobrok slobrok;
     RPCNetwork network(RPCNetworkParams(slobrok.config())
@@ -55,8 +70,7 @@ Test::testAddrServiceAddress()
     network.shutdown();
 }
 
-void
-Test::testNameServiceAddress()
+TEST("testNameServiceAddress")
 {
     Slobrok slobrok;
     RPCNetwork network(RPCNetworkParams(slobrok.config())
@@ -74,45 +88,4 @@ Test::testNameServiceAddress()
     network.shutdown();
 }
 
-bool
-Test::waitSlobrok(RPCNetwork &network, const string &pattern, size_t num)
-{
-    for (int i = 0; i < 1000; i++) {
-        slobrok::api::IMirrorAPI::SpecList res = network.getMirror().lookup(pattern);
-        if (res.size() == num) {
-            return true;
-        }
-        std::this_thread::sleep_for(10ms);
-    }
-    return false;
-}
-
-bool
-Test::testNullAddress(RPCNetwork &network, const string &pattern)
-{
-    RPCService service(network.getMirror(), pattern);
-    RPCServiceAddress::UP obj = service.resolve();
-    if (!EXPECT_TRUE(obj.get() == NULL)) {
-        return false;
-    }
-    return true;
-}
-
-bool
-Test::testAddress(RPCNetwork &network, const string &pattern,
-                    const string &expectedSpec, const string &expectedSession)
-{
-    RPCService service(network.getMirror(), pattern);
-    RPCServiceAddress::UP obj = service.resolve();
-    if (!EXPECT_TRUE(obj.get() != NULL)) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(expectedSpec, obj->getConnectionSpec())) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(expectedSession, obj->getSessionName())) {
-        return false;
-    }
-    return true;
-}
-
+TEST_MAIN() { TEST_RUN_ALL(); }

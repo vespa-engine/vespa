@@ -26,6 +26,8 @@ LOG_SETUP(".rpcnetwork");
 using vespalib::make_string;
 using namespace std::chrono_literals;
 
+namespace mbus {
+
 namespace {
 
 /**
@@ -56,9 +58,22 @@ public:
     }
 };
 
-} // namespace <unnamed>
+struct TargetPoolTask : public FNET_Task {
+    RPCTargetPool &_pool;
 
-namespace mbus {
+    TargetPoolTask(FNET_Scheduler &scheduler, RPCTargetPool &pool)
+        : FNET_Task(&scheduler),
+        _pool(pool)
+    {
+        ScheduleNow();
+    }
+    void PerformTask() override {
+        _pool.flushTargets(false);
+        Schedule(1.0);
+    }
+};
+
+}
 
 RPCNetwork::SendContext::SendContext(RPCNetwork &net, const Message &msg,
                                      const std::vector<RoutingNode*> &recipients)
@@ -92,20 +107,6 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
     }
 }
 
-RPCNetwork::TargetPoolTask::TargetPoolTask(FNET_Scheduler &scheduler, RPCTargetPool &pool)
-    : FNET_Task(&scheduler),
-      _pool(pool)
-{
-    ScheduleNow();
-}
-
-void
-RPCNetwork::TargetPoolTask::PerformTask()
-{
-    _pool.flushTargets(false);
-    Schedule(1.0);
-}
-
 RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _owner(nullptr),
     _ident(params.getIdentity()),
@@ -113,13 +114,13 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _transport(std::make_unique<FNET_Transport>()),
     _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _scheduler(*_transport->GetScheduler()),
-    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
-    _targetPoolTask(_scheduler, *_targetPool),
-    _servicePool(std::make_unique<RPCServicePool>(*this, 4096)),
     _slobrokCfgFactory(std::make_unique<slobrok::ConfiguratorFactory>(params.getSlobrokConfig())),
     _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
+    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
+    _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
+    _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4096)),
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 65536)),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),

@@ -22,12 +22,7 @@ public:
     }
 };
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("targetpool_test");
+TEST("targetpool_test") {
 
     // Necessary setup to be able to resolve targets.
     Slobrok slobrok;
@@ -46,9 +41,9 @@ Test::Main()
 
     // Assert that all connections expire.
     RPCTarget::SP target;
-    ASSERT_TRUE((target = pool.getTarget(orb, adr1)).get() != NULL); target.reset();
-    ASSERT_TRUE((target = pool.getTarget(orb, adr2)).get() != NULL); target.reset();
-    ASSERT_TRUE((target = pool.getTarget(orb, adr3)).get() != NULL); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr1))); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr2))); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr3))); target.reset();
     EXPECT_EQUAL(3u, pool.size());
     for (uint32_t i = 0; i < 10; ++i) {
         pool.flushTargets(false);
@@ -59,19 +54,19 @@ Test::Main()
     EXPECT_EQUAL(0u, pool.size());
 
     // Assert that only idle connections expire.
-    ASSERT_TRUE((target = pool.getTarget(orb, adr1)).get() != NULL); target.reset();
-    ASSERT_TRUE((target = pool.getTarget(orb, adr2)).get() != NULL); target.reset();
-    ASSERT_TRUE((target = pool.getTarget(orb, adr3)).get() != NULL); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr1))); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr2))); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr3))); target.reset();
     EXPECT_EQUAL(3u, pool.size());
     timer.millis += 444;
     pool.flushTargets(false);
     EXPECT_EQUAL(3u, pool.size());
-    ASSERT_TRUE((target = pool.getTarget(orb, adr2)).get() != NULL); target.reset();
-    ASSERT_TRUE((target = pool.getTarget(orb, adr3)).get() != NULL); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr2))); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr3))); target.reset();
     timer.millis += 444;
     pool.flushTargets(false);
     EXPECT_EQUAL(2u, pool.size());
-    ASSERT_TRUE((target = pool.getTarget(orb, adr3)).get() != NULL); target.reset();
+    ASSERT_TRUE((target = pool.getTarget(orb, adr3))); target.reset();
     timer.millis += 444;
     pool.flushTargets(false);
     EXPECT_EQUAL(1u, pool.size());
@@ -80,7 +75,7 @@ Test::Main()
     EXPECT_EQUAL(0u, pool.size());
 
     // Assert that connections never expire while they are referenced.
-    ASSERT_TRUE((target = pool.getTarget(orb, adr1)).get() != NULL);
+    ASSERT_TRUE((target = pool.getTarget(orb, adr1)));
     EXPECT_EQUAL(1u, pool.size());
     for (int i = 0; i < 10; ++i) {
         timer.millis += 999;
@@ -91,6 +86,6 @@ Test::Main()
     timer.millis += 999;
     pool.flushTargets(false);
     EXPECT_EQUAL(0u, pool.size());
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

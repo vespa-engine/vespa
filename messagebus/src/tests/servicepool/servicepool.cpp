@@ -4,67 +4,59 @@
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/network/rpcservicepool.h>
 #include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace mbus;
 
-class Test : public vespalib::TestApp {
-private:
-    void testMaxSize();
-
-public:
-    int Main() override {
-        TEST_INIT("servicepool_test");
-
-        testMaxSize(); TEST_FLUSH();
-
-        TEST_DONE();
-    }
-};
-
-TEST_APPHOOK(Test);
-
-void
-Test::testMaxSize()
+TEST("testMaxSize")
 {
     Slobrok slobrok;
-    RPCNetwork net(RPCNetworkParams(slobrok.config()));
-    RPCServicePool pool(net, 2);
+    TestServer me(Identity("me"), RoutingSpec(), slobrok);
+    RPCNetwork & net = me.net;
+    net.registerSession("foo");
+    net.registerSession("bar");
+    net.registerSession("baz");
+    me.waitSlobrok("me/baz");
+    RPCServicePool pool(net.getMirror(), 2);
     net.start();
+    net.waitUntilReady(30s);
 
-    pool.resolve("foo");
+    RPCServiceAddress::UP addr = pool.resolve("me/foo");
     EXPECT_EQUAL(1u, pool.getSize());
-    EXPECT_TRUE(pool.hasService("foo"));
-    EXPECT_TRUE(!pool.hasService("bar"));
-    EXPECT_TRUE(!pool.hasService("baz"));
+    EXPECT_TRUE(pool.hasService("me/foo"));
+    EXPECT_TRUE(!pool.hasService("me/bar"));
+    EXPECT_TRUE(!pool.hasService("me/baz"));
 
-    pool.resolve("foo");
+    addr = pool.resolve("me/foo");
     EXPECT_EQUAL(1u, pool.getSize());
-    EXPECT_TRUE(pool.hasService("foo"));
-    EXPECT_TRUE(!pool.hasService("bar"));
-    EXPECT_TRUE(!pool.hasService("baz"));
+    EXPECT_TRUE(pool.hasService("me/foo"));
+    EXPECT_TRUE(!pool.hasService("me/bar"));
+    EXPECT_TRUE(!pool.hasService("me/baz"));
 
-    pool.resolve("bar");
+    addr = pool.resolve("me/bar");
     EXPECT_EQUAL(2u, pool.getSize());
-    EXPECT_TRUE(pool.hasService("foo"));
-    EXPECT_TRUE(pool.hasService("bar"));
-    EXPECT_TRUE(!pool.hasService("baz"));
+    EXPECT_TRUE(pool.hasService("me/foo"));
+    EXPECT_TRUE(pool.hasService("me/bar"));
+    EXPECT_TRUE(!pool.hasService("me/baz"));
 
-    pool.resolve("baz");
+    addr = pool.resolve("me/baz");
     EXPECT_EQUAL(2u, pool.getSize());
-    EXPECT_TRUE(!pool.hasService("foo"));
-    EXPECT_TRUE(pool.hasService("bar"));
-    EXPECT_TRUE(pool.hasService("baz"));
+    EXPECT_TRUE(!pool.hasService("me/foo"));
+    EXPECT_TRUE(pool.hasService("me/bar"));
+    EXPECT_TRUE(pool.hasService("me/baz"));
 
-    pool.resolve("bar");
+    addr = pool.resolve("me/bar");
     EXPECT_EQUAL(2u, pool.getSize());
-    EXPECT_TRUE(!pool.hasService("foo"));
-    EXPECT_TRUE(pool.hasService("bar"));
-    EXPECT_TRUE(pool.hasService("baz"));
+    EXPECT_TRUE(!pool.hasService("me/foo"));
+    EXPECT_TRUE(pool.hasService("me/bar"));
+    EXPECT_TRUE(pool.hasService("me/baz"));
 
-    pool.resolve("foo");
+    addr = pool.resolve("me/foo");
     EXPECT_EQUAL(2u, pool.getSize());
-    EXPECT_TRUE(pool.hasService("foo"));
-    EXPECT_TRUE(pool.hasService("bar"));
-    EXPECT_TRUE(!pool.hasService("baz"));
+    EXPECT_TRUE(pool.hasService("me/foo"));
+    EXPECT_TRUE(pool.hasService("me/bar"));
+    EXPECT_TRUE(!pool.hasService("me/baz"));
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

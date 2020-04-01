@@ -28,9 +28,10 @@ private:
 
         Entry(RPCTarget::SP target, uint64_t lastUse);
     };
-    typedef std::map<string, Entry> TargetMap;
+    using TargetMap = std::map<string, Entry>;
+    using LockGuard = std::lock_guard<std::mutex>;
 
-    vespalib::Lock _lock;
+    std::mutex     _lock;
     TargetMap      _targets;
     ITimer::UP     _timer;
     uint64_t       _expireMillis;
