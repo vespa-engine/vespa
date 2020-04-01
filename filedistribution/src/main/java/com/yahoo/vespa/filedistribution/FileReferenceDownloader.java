@@ -37,7 +37,8 @@ public class FileReferenceDownloader {
     private final static Duration rpcTimeout = Duration.ofSeconds(10);
 
     private final ExecutorService downloadExecutor =
-            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory("filereference downloader"));
+            Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
+                                         new DaemonThreadFactory("filereference downloader"));
     private final ConnectionPool connectionPool;
     private final Map<FileReference, FileReferenceDownload> downloads = new LinkedHashMap<>();
     private final Map<FileReference, Double> downloadStatus = new HashMap<>();  // between 0 and 1
