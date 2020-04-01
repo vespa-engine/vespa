@@ -85,6 +85,27 @@ public class VespaDocumentOperationTest {
 
 
     @Test
+    public void requireThatUDFReturnsNullWhenExceptionHappens() throws IOException {
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+
+        // broken DELTA format that would throw internally
+        Map<String, Double> tensor = new HashMap<String, Double>() {{
+            put("xlabel1", 2.0); // missing : between 'x' and 'label1'
+        }};
+
+        addToTuple("id", DataType.CHARARRAY, "123", schema, tuple);
+        addToTuple("tensor", DataType.MAP, tensor, schema, tuple);
+
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=empty", "create-tensor-fields=tensor");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        assertNull(json);
+    }
+
+
+    @Test
     public void requireThatUDFCorrectlyGeneratesRemoveOperation() throws Exception {
         String json = getDocumentOperationJson("operation=remove", "docid=id:<application>:metrics::<name>-<date>");
         ObjectMapper m = new ObjectMapper();

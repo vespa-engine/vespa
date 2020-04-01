@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.vespa.hadoop.mapreduce.util.TupleTools;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.data.DataBag;
@@ -18,6 +17,9 @@ import org.joda.time.DateTime;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -89,11 +91,11 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             return null;
         }
         if (template == null || template.length() == 0) {
-            warn("No valid document id template found. Skipping.", PigWarning.UDF_WARNING_1);
+            warnLog("No valid document id template found. Skipping.", PigWarning.UDF_WARNING_1);
             return null;
         }
         if (operation == null) {
-            warn("No valid operation found. Skipping.", PigWarning.UDF_WARNING_1);
+            warnLog("No valid operation found. Skipping.", PigWarning.UDF_WARNING_2);
             return null;
         }
 
@@ -111,7 +113,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             // create json
             json = create(operation, docId, fields, properties, inputSchema);
             if (json == null || json.length() == 0) {
-                warn("No valid document operation could be created.", PigWarning.UDF_WARNING_1);
+                warnLog("No valid document operation could be created.", PigWarning.UDF_WARNING_3);
                 return null;
             }
 
@@ -121,8 +123,8 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             sb.append("Caught exception processing input row: \n");
             sb.append(tuple.toString());
             sb.append("\nException: ");
-            sb.append(ExceptionUtils.getStackTrace(e));
-            warn(sb.toString(), PigWarning.UDF_WARNING_1);
+            sb.append(getStackTraceAsString(e));
+            warnLog(sb.toString(), PigWarning.UDF_WARNING_4);
             return null;
         }
 
@@ -449,4 +451,20 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         g.writeEndArray();
     }
 
+    // copied from vespajlib for reducing dependency and building with JDK 8
+    private static String getStackTraceAsString(Throwable throwable) {
+        try (StringWriter stringWriter = new StringWriter();
+             PrintWriter printWriter = new PrintWriter(stringWriter, true)) {
+            throwable.printStackTrace(printWriter);
+            return stringWriter.getBuffer().toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    // wrapper to emit logs
+    private void warnLog(String msg, PigWarning warning) {
+        warn(msg, warning);
+        System.err.println(msg);
+    }
 }
