@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.search.Tuning;
 import org.junit.Test;
 import org.w3c.dom.Element;
@@ -228,6 +227,8 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(cfg.summary().log().chunk().maxbytes(), 256);
         assertEquals(cfg.summary().log().chunk().compression().type(), ProtonConfig.Summary.Log.Chunk.Compression.Type.LZ4);
         assertEquals(cfg.summary().log().chunk().compression().level(), 5);
+        assertEquals(cfg.summary().log().compact().compression().type(), ProtonConfig.Summary.Log.Compact.Compression.Type.LZ4);
+        assertEquals(cfg.summary().log().compact().compression().level(), 5);
     }
 
     @Test

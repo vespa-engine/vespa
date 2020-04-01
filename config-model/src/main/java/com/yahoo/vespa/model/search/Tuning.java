@@ -245,6 +245,11 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                         if (level != null) compression.level(level);
                     }
 
+                    public void getConfig(ProtonConfig.Summary.Log.Compact.Compression.Builder compression) {
+                        if (type != null)  compression.type(ProtonConfig.Summary.Log.Compact.Compression.Type.Enum.valueOf(type.name));
+                        if (level != null) compression.level(level);
+                    }
+
                     public void getConfig(ProtonConfig.Summary.Log.Chunk.Compression.Builder compression) {
                         if (type != null) compression.type(ProtonConfig.Summary.Log.Chunk.Compression.Type.Enum.valueOf(type.name));
                         if (level != null) compression.level(level);
@@ -281,6 +286,12 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                         }
                     }
 
+                    public void getConfig(ProtonConfig.Summary.Log.Compact.Builder compact) {
+                        if (compression != null) {
+                           compression.getConfig(compact.compression);
+                        }
+                    }
+
                     public void getConfig(ProtonConfig.Summary.Log.Chunk.Builder chunk) {
                         if (outputInt) {
                             if (maxSize!=null) chunk.maxbytes(maxSize.intValue());
@@ -288,7 +299,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                             throw new IllegalStateException("Fix this, chunk does not have long types");
                         }
                         if (compression != null) {
-                           compression.getConfig(chunk.compression);
+                            compression.getConfig(chunk.compression);
                         }
                     }
                 }
@@ -303,6 +314,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                         if (minFileSizeFactor!=null) log.minfilesizefactor(minFileSizeFactor);
                         if (chunk != null) {
                             chunk.getConfig(log.chunk);
+                            chunk.getConfig(log.compact);
                         }
                     }
                 }
