@@ -724,6 +724,7 @@ public class SelectTestCase {
         assertEquals("all(group(time.dayofmonth(a)) each(output(count())))", query.getSelect().getGrouping().get(0).toString());
 
         Query clone = query.clone();
+        assertEquals(clone.getSelect().getGroupingExpressionString(), query.getSelect().getGroupingExpressionString());
         assertNotSame(query.getSelect(), clone.getSelect());
         assertNotSame(query.getSelect().getGrouping(), clone.getSelect().getGrouping());
         assertNotSame(query.getSelect().getGrouping().get(0), clone.getSelect().getGrouping().get(0));
@@ -732,8 +733,15 @@ public class SelectTestCase {
         assertEquals(query.getSelect().getGroupingString(), clone.getSelect().getGroupingString());
         assertEquals(query.getSelect().getGrouping().get(0).toString(), clone.getSelect().getGrouping().get(0).toString());
         assertEquals(query.getSelect().getGrouping().get(1).toString(), clone.getSelect().getGrouping().get(1).toString());
+    }
 
+    @Test
+    public void testCloneWithGroupingExpressionString() {
+        Query query = new Query();
+        query.getSelect().setGroupingExpressionString("all(group(foo) each(output(count())))");
 
+        Query clone = query.clone();
+        assertEquals(clone.getSelect().getGroupingExpressionString(), query.getSelect().getGroupingExpressionString());
     }
 
     //------------------------------------------------------------------- Assert methods
