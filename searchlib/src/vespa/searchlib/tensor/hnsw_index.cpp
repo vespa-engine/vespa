@@ -381,6 +381,20 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
 {
     auto& object = inserter.insertObject();
     StateExplorerUtils::memory_usage_to_slime(memory_usage(), object.setObject("memory_usage"));
+    object.setLong("nodes", _graph.size());
+    auto& histogram_array = object.setArray("level_histogram");
+    auto level_histogram = _graph.level_histogram();
+    for (uint32_t hist_val : level_histogram) {
+        histogram_array.addLong(hist_val);
+    }
+    uint32_t reachable = count_reachable_nodes();
+    uint32_t unreachable = _graph.size() - reachable;
+    if (level_histogram.size() > 0) {
+        unreachable -= level_histogram[0];
+    }
+    object.setLong("unreachable_nodes", unreachable);
+    object.setLong("entry_docid", _graph.entry_docid);
+    object.setLong("entry_level", _graph.entry_level);
 }
 
 std::unique_ptr<NearestNeighborIndexSaver>
@@ -496,6 +510,33 @@ HnswIndex::check_link_symmetry() const
         }
     }
     return all_sym;
+}
+
+uint32_t
+HnswIndex::count_reachable_nodes() const
+{
+    int search_level = get_entry_level();
+    if (search_level < 0) {
+        return 0;
+    }
+    auto visited = _visited_set_pool.get(_graph.size());
+    uint32_t entry_id = get_entry_docid();
+    LinkArray found_links;
+    found_links.push_back(entry_id);
+    visited.mark(entry_id);
+    while (search_level >= 0) {
+        for (uint32_t idx = 0; idx < found_links.size(); ++idx) {
+            uint32_t docid = found_links[idx];
+            auto neighbors = _graph.get_link_array(docid, search_level);
+            for (uint32_t neighbor : neighbors) {
+                if (visited.is_marked(neighbor)) continue;
+                visited.mark(neighbor);
+                found_links.push_back(neighbor);
+            }
+        }
+        --search_level;
+    }
+    return found_links.size();
 }
 
 } // namespace

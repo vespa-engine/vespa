@@ -50,4 +50,23 @@ HnswGraph::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& ne
     links.remove(old_links_ref);
 }
 
+std::vector<uint32_t>
+HnswGraph::level_histogram() const
+{
+    std::vector<uint32_t> result;
+    size_t num_nodes = node_refs.size();
+    for (size_t i = 0; i < num_nodes; ++i) {
+        uint32_t levels = 0;
+        auto node_ref = node_refs[i].load_acquire();
+        if (node_ref.valid()) {
+            levels = nodes.get(node_ref).size();
+        }
+        while (result.size() <= levels) {
+            result.push_back(0);
+        }
+        ++result[levels];
+    }
+    return result;
+}
+
 } // namespace

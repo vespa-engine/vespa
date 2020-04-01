@@ -23,7 +23,7 @@ private:
     const uint32_t *_ptr;
     const uint32_t *_end;
     bool _failed;
-    uint32_t nextVal() {
+    uint32_t next_int() {
         if (__builtin_expect((_ptr == _end), false)) {
             _failed = true;
             return 0;
