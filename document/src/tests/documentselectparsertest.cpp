@@ -1611,7 +1611,7 @@ TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_field_exprs) {
         expr += ".foo";
     }
     expr += ".hash() != 0";
-    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested");
+    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
 }
 
 TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_arithmetic_exprs) {
@@ -1621,7 +1621,7 @@ TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_arithmetic_exprs
         expr += "+1";
     }
     expr += " != 0";
-    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested");
+    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
 }
 
 TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_binary_logical_exprs) {
@@ -1632,7 +1632,7 @@ TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_binary_logical_e
     for (size_t i = 0; i < 10000; ++i) {
         expr += (i % 2 == 0 ? " and " : " or ") + cmp_subexpr;
     }
-    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested");
+    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
 }
 
 TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_unary_logical_exprs) {
@@ -1642,7 +1642,7 @@ TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_unary_logical_ex
         expr += "not ";
     }
     expr += "true";
-    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested");
+    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
 }
 
 TEST_F(DocumentSelectParserTest, selection_has_upper_limit_on_input_size) {
@@ -1650,7 +1650,7 @@ TEST_F(DocumentSelectParserTest, selection_has_upper_limit_on_input_size) {
     std::string expr = ("testdoctype1.a_biii"
                         + std::string(select::ParserLimits::MaxSelectionByteSize, 'i')
                         + "iiig_identifier");
-    verifyFailedParse(expr, "ParsingFailedException: expression is too large to be parsed");
+    verifyFailedParse(expr, "ParsingFailedException: expression is too large to be parsed (max 1048576 bytes)");
 }
 
 TEST_F(DocumentSelectParserTest, lexing_does_not_have_superlinear_time_complexity) {

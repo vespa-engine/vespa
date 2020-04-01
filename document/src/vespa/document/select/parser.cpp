@@ -13,7 +13,9 @@ namespace {
 
 void verify_expression_not_too_large(const std::string& expr) {
     if (expr.size() > ParserLimits::MaxSelectionByteSize) {
-        throw ParsingFailedException("expression is too large to be parsed");
+        throw ParsingFailedException(vespalib::make_string(
+                "expression is too large to be parsed (max %zu bytes)",
+                ParserLimits::MaxSelectionByteSize));
     }
 }
 
