@@ -148,10 +148,9 @@ public class BundleLoader {
 
     /**
      * Returns the bundles that are not assumed to be retained by the new application generation.
-     * and cleans up the map of active file references. Note that at this point we don't yet know
-     * the full set of new bundles, because of the potential pre-install directives in the new bundles.
-     * However, only "disk bundles" (file:) can be listed in the pre-install directive, so we know
-     * about all the obsolete application bundles.
+     * Note that at this point we don't yet know the full set of new bundles, because of the potential
+     * pre-install directives in the new bundles. However, only "disk bundles" (file:) can be listed
+     * in the pre-install directive, so we know about all the obsolete application bundles.
      */
     private Set<Bundle> getObsoleteBundles(List<FileReference> newReferences) {
         Set<Bundle> bundlesToRemove = new HashSet<>(osgi.getCurrentBundles());
@@ -165,6 +164,9 @@ public class BundleLoader {
         return bundlesToRemove;
     }
 
+    /**
+     * Cleans up the map of active file references
+     */
     private void removeInactiveFileReferences(List<FileReference> newReferences) {
         // Clean up the map of active bundles
         Set<FileReference> fileReferencesToRemove = getObsoleteFileReferences(newReferences);
