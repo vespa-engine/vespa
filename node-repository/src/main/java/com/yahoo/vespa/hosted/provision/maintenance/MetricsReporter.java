@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
+import static com.yahoo.vespa.hosted.provision.Node.State.active;
 
 /**
  * @author oyving
@@ -249,16 +250,16 @@ public class MetricsReporter extends Maintainer {
     }
 
     private static NodeResources getCapacityTotal(NodeList nodes) {
-        return nodes.nodeType(NodeType.host).asList().stream()
+        return nodes.nodeType(NodeType.host).state(active).asList().stream()
                 .map(host -> host.flavor().resources())
-                .map(resources -> resources.justNumbers())
+                .map(NodeResources::justNumbers)
                 .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
     private static NodeResources getFreeCapacityTotal(NodeList nodes) {
-        return nodes.nodeType(NodeType.host).asList().stream()
+        return nodes.nodeType(NodeType.host).state(active).asList().stream()
                 .map(n -> freeCapacityOf(nodes, n))
-                .map(resources -> resources.justNumbers())
+                .map(NodeResources::justNumbers)
                 .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 

@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -142,6 +143,10 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
     }
 
+    public void setAthenzDomain(Optional<AthenzDomain> athenzDomain) {
+        zooKeeperClient.writeAthenzDomain(athenzDomain);
+    }
+
     public enum Mode {
         READ, WRITE
     }
@@ -155,6 +160,8 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     public Optional<String> getDockerImageRepository() { return zooKeeperClient.readDockerImageRepository(); }
 
     public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
+
+    public Optional<AthenzDomain> getAthenzDomain() { return zooKeeperClient.readAthenzDomain(); }
 
     public AllocatedHosts getAllocatedHosts() {
         return zooKeeperClient.getAllocatedHosts();

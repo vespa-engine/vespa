@@ -7,6 +7,7 @@ import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -67,10 +68,13 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     @Override
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
         super.getConfig(connectorBuilder);
-        connectorBuilder.tlsClientAuthEnforcer(new ConnectorConfig.TlsClientAuthEnforcer.Builder()
-                                                       .pathWhitelist(INSECURE_WHITELISTED_PATHS)
-                                                       .enable(enforceClientAuth));
-        connectorBuilder.proxyProtocol(configureProxyProtocol());
+        connectorBuilder
+                .tlsClientAuthEnforcer(new ConnectorConfig.TlsClientAuthEnforcer.Builder()
+                                               .pathWhitelist(INSECURE_WHITELISTED_PATHS)
+                                               .enable(enforceClientAuth))
+                .proxyProtocol(configureProxyProtocol())
+                .idleTimeout(Duration.ofMinutes(3).toSeconds())
+                .maxConnectionLife(Duration.ofMinutes(10).toSeconds());
     }
 
     private ConnectorConfig.ProxyProtocol.Builder configureProxyProtocol() {

@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
@@ -139,19 +140,19 @@ public class MockNodeRepository extends NodeRepository {
 
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
-        activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), 1, null), zoneApp, provisioner);
+        activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), null), zoneApp, provisioner);
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        provisioner.prepare(app1, cluster1, Capacity.fromCount(2, new NodeResources(2, 8, 50, 1)), 1, null);
+        provisioner.prepare(app1, cluster1, Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1))), null);
 
         ApplicationId app2 = ApplicationId.from(TenantName.from("tenant2"), ApplicationName.from("application2"), InstanceName.from("instance2"));
         ClusterSpec cluster2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id2")).vespaVersion("6.42").build();
-        activate(provisioner.prepare(app2, cluster2, Capacity.fromCount(2, new NodeResources(2, 8, 50, 1)), 1, null), app2, provisioner);
+        activate(provisioner.prepare(app2, cluster2, Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1))), null), app2, provisioner);
 
         ApplicationId app3 = ApplicationId.from(TenantName.from("tenant3"), ApplicationName.from("application3"), InstanceName.from("instance3"));
         ClusterSpec cluster3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id3")).vespaVersion("6.42").build();
-        activate(provisioner.prepare(app3, cluster3, Capacity.fromCount(2, new NodeResources(1, 4, 100, 1), false, true), 1, null), app3, provisioner);
+        activate(provisioner.prepare(app3, cluster3, Capacity.from(new ClusterResources(2, 1, new NodeResources(1, 4, 100, 1)), false, true), null), app3, provisioner);
 
         List<Node> largeNodes = new ArrayList<>();
         largeNodes.add(createNode("node13", "host13.yahoo.com", ipConfig(13), Optional.empty(),
@@ -162,7 +163,7 @@ public class MockNodeRepository extends NodeRepository {
         setReady(largeNodes, Agent.system, getClass().getSimpleName());
         ApplicationId app4 = ApplicationId.from(TenantName.from("tenant4"), ApplicationName.from("application4"), InstanceName.from("instance4"));
         ClusterSpec cluster4 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id4")).vespaVersion("6.42").build();
-        activate(provisioner.prepare(app4, cluster4, Capacity.fromCount(2, new NodeResources(10, 48, 500, 1), false, true), 1, null), app4, provisioner);
+        activate(provisioner.prepare(app4, cluster4, Capacity.from(new ClusterResources(2, 1, new NodeResources(10, 48, 500, 1)), false, true), null), app4, provisioner);
     }
 
     private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {

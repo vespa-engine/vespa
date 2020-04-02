@@ -126,7 +126,6 @@ abstract class SimpleParser extends StructuredParser {
 
             if (topLevelItem != null && topLevelItem != not) {
                 // => neutral rank items becomes implicit positives
-                System.out.println("Extracting positive item from " + topLevelItem);
                 not.addPositiveItem(getItemAsPositiveItem(topLevelItem, not));
                 return not;
             } else { // Only negatives - ignore them

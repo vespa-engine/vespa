@@ -15,7 +15,7 @@ Compare::Compare(std::unique_ptr<ValueNode> left,
                  const Operator& op,
                  std::unique_ptr<ValueNode> right,
                  const BucketIdFactory& bucketIdFactory)
-    : Node("Compare"),
+    : Node("Compare", std::max(left->max_depth(), right->max_depth()) + 1),
       _left(std::move(left)),
       _right(std::move(right)),
       _operator(op),

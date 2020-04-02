@@ -1816,6 +1816,7 @@ Object indexBody(IndexOperation index) :
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
       | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
       | <ENABLE_BM25>                                                  { index.setEnableBm25(true); }
+      | <DISTANCEMETRIC> <COLON> str = identifierWithDash()            { index.setDistanceMetric(str); }
       | hnswIndex(index)                                               { }
     )
     { return null; }
@@ -1841,7 +1842,6 @@ void hnswIndexBody(HnswIndexParams.Builder params) :
 }
 {
     ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
-      | <DISTANCEMETRIC> <COLON> str = identifierWithDash()  { params.setDistanceMetric(str); }
       | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); } )
 }
 

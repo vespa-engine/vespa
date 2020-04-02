@@ -31,6 +31,10 @@ public:
         _service.sync();
         return *this;
     }
+    ThreadServiceObserver &shutdown() override {
+        _service.shutdown();
+        return *this;
+    }
     bool isCurrentThread() const override {
         return _service.isCurrentThread();
     }

@@ -163,6 +163,11 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder athenzDomain(AthenzDomain athenzDomain) {
+            this.athenzDomain = Optional.of(athenzDomain);
+            return this;
+        }
+
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
                                      verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName,

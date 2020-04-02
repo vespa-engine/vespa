@@ -18,15 +18,17 @@ public interface HostProvisioner {
     // TODO: Remove
     HostSpec allocateHost(String alias);
 
+    @Deprecated // TODO: Remove after April 2020
+    List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger);
+
     /**
      * Prepares allocation of a set of hosts with a given type, common id and the amount.
      *
      * @param  cluster the cluster to allocate nodes to
      * @param  capacity the capacity describing the capacity requested
-     * @param  groups the number of groups to divide the nodes into
      * @param  logger a logger to which messages to the deployer may be written
      * @return the specification of the allocated hosts
      */
-    List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger);
+    List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger);
 
 }

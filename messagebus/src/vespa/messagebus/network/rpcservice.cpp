@@ -5,8 +5,7 @@
 
 namespace mbus {
 
-RPCService::RPCService(const Mirror &mirror,
-                       const string &pattern) :
+RPCService::RPCService(const Mirror &mirror, const string &pattern) :
     _mirror(mirror),
     _pattern(pattern),
     _addressIdx(random()),
@@ -14,7 +13,7 @@ RPCService::RPCService(const Mirror &mirror,
     _addressList()
 { }
 
-RPCService::~RPCService() {}
+RPCService::~RPCService() = default;
 
 RPCServiceAddress::UP
 RPCService::resolve()
@@ -22,9 +21,7 @@ RPCService::resolve()
     if (_pattern.find("tcp/") == 0) {
         size_t pos = _pattern.find_last_of('/');
         if (pos != string::npos && pos < _pattern.size() - 1) {
-            RPCServiceAddress::UP ret(new RPCServiceAddress(
-                            _pattern,
-                            _pattern.substr(0, pos)));
+            auto ret = std::make_unique<RPCServiceAddress>(_pattern, _pattern.substr(0, pos));
             if (!ret->isMalformed()) {
                 return ret;
             }
@@ -37,9 +34,7 @@ RPCService::resolve()
         if (!_addressList.empty()) {
             _addressIdx = (_addressIdx + 1) % _addressList.size();
             const AddressList::value_type &entry = _addressList[_addressIdx];
-            return RPCServiceAddress::UP(new RPCServiceAddress(
-                            entry.first,
-                            entry.second));
+            return std::make_unique<RPCServiceAddress>(entry.first, entry.second);
         }
     }
     return RPCServiceAddress::UP();

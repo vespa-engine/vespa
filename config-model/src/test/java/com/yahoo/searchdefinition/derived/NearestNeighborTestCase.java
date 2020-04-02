@@ -31,6 +31,9 @@ public class NearestNeighborTestCase extends AbstractExportingTestCase {
         } catch (QueryException e) {
             // success
             assertEquals("Invalid request parameter", e.getMessage());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 

@@ -58,7 +58,8 @@ enum PathGroup {
                "/application/v4/tenant/{tenant}/application/",
                "/application/v4/tenant/{tenant}/cost",
                "/application/v4/tenant/{tenant}/cost/{date}",
-               "/routing/v1/status/tenant/{tenant}/{*}"),
+               "/routing/v1/status/tenant/{tenant}/{*}",
+               "/billing/v1/tenant/{tenant}/{*}"),
 
     tenantKeys(Matcher.tenant,
                PathPrefix.api,
@@ -201,7 +202,11 @@ enum PathGroup {
 
 
     /** Paths used for "dry-running" system-wide feature flags. */
-    systemFlagsDryrun(PathPrefix.none, "/system-flags/v1/dryrun");
+    systemFlagsDryrun(PathPrefix.none, "/system-flags/v1/dryrun"),
+
+    /** Paths used for receiving payment callbacks */
+    paymentProcessor(PathPrefix.none, "/payment/notification");
+
 
     final List<String> pathSpecs;
     final PathPrefix prefix;

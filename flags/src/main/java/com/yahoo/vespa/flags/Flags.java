@@ -67,6 +67,13 @@ public class Flags {
             "Takes effect on next host admin tick.",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_NEW_VESPA_RPMS = defineFeatureFlag(
+            "use-new-vespa-rpms", false,
+            "Whether to use the new vespa-rpms YUM repo when upgrading/downgrading.  The vespa-version " +
+            "when fetching the flag value is the wanted version of the host.",
+            "Takes effect when upgrading or downgrading host admin to a different version.",
+            HOSTNAME, NODE_TYPE, VESPA_VERSION);
+
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
@@ -103,7 +110,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
-            "tls-insecure-mixed-mode", "tls_client_mixed_server",
+            "tls-insecure-mixed-mode", "tls_client_tls_server",
             "TLS insecure mixed mode. Allowed values: ['plaintext_client_mixed_server', 'tls_client_mixed_server', 'tls_client_tls_server']",
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
@@ -193,12 +200,6 @@ public class Flags {
             "Takes effect on next node agent tick (but does not clear existing failure reports)",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag GENERATE_L4_ROUTING_CONFIG = defineFeatureFlag(
-            "generate-l4-routing-config", false,
-            "Whether routing nodes should generate L4 routing config",
-            "Takes effect immediately",
-            ZONE_ID, HOSTNAME);
-
     public static final UnboundBooleanFlag USE_REFRESHED_ENDPOINT_CERTIFICATE = defineFeatureFlag(
             "use-refreshed-endpoint-certificate", false,
             "Whether an application should start using a newer certificate/key pair if available",
@@ -251,16 +252,21 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DISABLE_ROUTING_GENERATOR = defineFeatureFlag(
-            "disable-routing-generator", false,
+            "disable-routing-generator", true,
             "Whether the controller should stop asking the routing layer for endpoints",
             "Takes effect immediately",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DEDICATED_NODES_WHEN_UNSPECIFIED = defineFeatureFlag(
-            "dedicated-nodes-when-unspecified", false,
+            "dedicated-nodes-when-unspecified", true,
             "Whether config-server should allocate dedicated container nodes when <nodes/> is not specified in services.xml",
             "Takes effect on redeploy",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag NGINX_UPSTREAM_PROXY_PROTOCOL = defineFeatureFlag(
+            "nginx-upstream-proxy-protocol", false,
+            "Whether the nginx should enable proxy-protocol for all upstreams",
+            "Takes effect immediately");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

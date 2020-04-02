@@ -32,6 +32,7 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/net/state_server.h>
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>

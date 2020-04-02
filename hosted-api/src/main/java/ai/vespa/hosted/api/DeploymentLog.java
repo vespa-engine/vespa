@@ -112,6 +112,7 @@ public class DeploymentLog {
         outOfCapacity,
         installationFailed,
         deploymentFailed,
+        endpointCertificateTimeout,
         success;
     }
 

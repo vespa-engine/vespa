@@ -30,12 +30,12 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
     /**
      * length of fixed header content of a control file, constant:
      **/
-    public static final int controlFileHeaderLength;
+    static final int controlFileHeaderLength;
     /**
      * number of distinctly controlled levels (in logctl files),
      * must be compatible with C++ Vespa logging
      **/
-    public static final int numLevels = 8;
+    static final int numLevels = 8;
 
     static {
         controlFileHeaderLength = CFHEADER.length()
@@ -50,7 +50,7 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
      **/
     private LevelController defaultLevelCtrl;
 
-    public VespaLevelControllerRepo(String logCtlFn, String logLevel, String applicationPrefix) {
+    VespaLevelControllerRepo(String logCtlFn, String logLevel, String applicationPrefix) {
         this.logControlFilename = logCtlFn;
         this.appPrefix = applicationPrefix;
         defaultLevelCtrl = new DefaultLevelController(logLevel);
@@ -142,7 +142,7 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
         levelControllerRepo = new MappedLevelControllerRepo(mapBuf, controlFileHeaderLength, numLevels, logControlFilename);
     }
 
-    public LevelController getLevelControl(String suffix) {
+    private LevelController getLevelControl(String suffix) {
         LevelController ctrl = null;
         if (levelControllerRepo != null) {
             if (suffix == null || suffix.equals("default")) {

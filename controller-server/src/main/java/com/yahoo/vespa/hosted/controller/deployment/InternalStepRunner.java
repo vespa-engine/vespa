@@ -941,8 +941,8 @@ public class InternalStepRunner implements StepRunner {
         Duration endpoint() { return Duration.ofMinutes(15); }
         Duration endpointCertificate() { return Duration.ofMinutes(15); }
         Duration tester() { return Duration.ofMinutes(30); }
-        Duration nodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 60); }
-        Duration noNodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 120); }
+        Duration nodesDown() { return Duration.ofMinutes(system.isCd() ? 20 : 60); }
+        Duration noNodesDown() { return Duration.ofMinutes(system.isCd() ? 20 : 120); }
         Duration testerCertificate() { return Duration.ofMinutes(300); }
 
     }

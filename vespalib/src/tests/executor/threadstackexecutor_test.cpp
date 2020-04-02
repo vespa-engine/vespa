@@ -78,10 +78,10 @@ struct MyState {
         EXPECT_EQUAL(expect_rejected, stats.rejectedTasks);
         EXPECT_TRUE(!(gate.getCount() == 1) || (expect_deleted == 0));
         if (expect_deleted == 0) {
-            EXPECT_EQUAL(expect_queue + expect_running, stats.maxPendingTasks);
+            EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
         }
         stats = executor.getStats();
-        EXPECT_EQUAL(expect_queue + expect_running, stats.maxPendingTasks);
+        EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
         EXPECT_EQUAL(0u, stats.acceptedTasks);
         EXPECT_EQUAL(0u, stats.rejectedTasks);
         return *this;
@@ -187,12 +187,18 @@ TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(
 }
 
 TEST("require that stats can be accumulated") {
-    ThreadStackExecutor::Stats stats(1,2,3);
-    EXPECT_EQUAL(1u, stats.maxPendingTasks);
+    ThreadStackExecutor::Stats stats(ThreadExecutor::Stats::QueueSizeT(1) ,2,3);
+    EXPECT_EQUAL(1u, stats.queueSize.max());
     EXPECT_EQUAL(2u, stats.acceptedTasks);
     EXPECT_EQUAL(3u, stats.rejectedTasks);
-    stats += ThreadStackExecutor::Stats(7,8,9);
-    EXPECT_EQUAL(8u, stats.maxPendingTasks);
+    stats += ThreadStackExecutor::Stats(ThreadExecutor::Stats::QueueSizeT(7),8,9);
+    EXPECT_EQUAL(2u, stats.queueSize.count());
+    EXPECT_EQUAL(8u, stats.queueSize.total());
+    EXPECT_EQUAL(8u, stats.queueSize.max());
+    EXPECT_EQUAL(8u, stats.queueSize.min());
+    EXPECT_EQUAL(8u, stats.queueSize.max());
+    EXPECT_EQUAL(4.0, stats.queueSize.average());
+
     EXPECT_EQUAL(10u, stats.acceptedTasks);
     EXPECT_EQUAL(12u, stats.rejectedTasks);
 

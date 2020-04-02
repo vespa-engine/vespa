@@ -788,6 +788,7 @@ public class ControllerTest {
 
     @Test
     public void testDeployWithRoutingGeneratorEndpoints() {
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.DISABLE_ROUTING_GENERATOR.id(), false);
         var context = tester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
@@ -804,6 +805,7 @@ public class ControllerTest {
                                 List.of(new RoutingEndpoint("http://legacy-endpoint", "hostname",
                                                             false, "upstreamName")));
         }
+
         // Defer load balancer provisioning in all environments so that routing controller uses routing generator
         context.deferLoadBalancerProvisioningIn(zones.stream().map(ZoneId::environment).collect(Collectors.toSet()))
                .submit(applicationPackage)

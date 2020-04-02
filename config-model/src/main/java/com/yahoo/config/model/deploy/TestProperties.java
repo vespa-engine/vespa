@@ -43,7 +43,6 @@ public class TestProperties implements ModelContext.Properties {
     private double defaultTermwiseLimit = 1.0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private boolean useNewAthenzFilter = false;
-    private boolean useDedicatedNodesWhenUnspecified = false;
     private AthenzDomain athenzDomain;
 
     @Override public boolean multitenant() { return multitenant; }
@@ -65,7 +64,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useBucketSpaceMetric() { return true; }
     @Override public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
-    @Override public boolean useDedicatedNodesWhenUnspecified() { return useDedicatedNodesWhenUnspecified; }
+    @Override public boolean useDedicatedNodesWhenUnspecified() { return true; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
@@ -115,11 +114,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setZone(Zone zone) {
         this.zone = zone;
-        return this;
-    }
-
-    public TestProperties setUseDedicatedNodesWhenUnspecified(boolean useDedicatedNodesWhenUnspecified) {
-        this.useDedicatedNodesWhenUnspecified = useDedicatedNodesWhenUnspecified;
         return this;
     }
 

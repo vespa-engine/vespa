@@ -226,7 +226,7 @@ public:
      *
      * @return this object; for chaining
      **/
-    ThreadStackExecutorBase &shutdown();
+    ThreadStackExecutorBase &shutdown() override;
 
     /**
      * Will invoke shutdown then sync.

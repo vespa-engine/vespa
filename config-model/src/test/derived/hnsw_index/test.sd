@@ -3,9 +3,9 @@ search test {
     field t1 type tensor(x[128]) {
       indexing: attribute | index
       index {
+        distance-metric: angular
         hnsw {
           max-links-per-node: 32
-          distance-metric: angular
           neighbors-to-explore-at-insert: 300
         }
       }

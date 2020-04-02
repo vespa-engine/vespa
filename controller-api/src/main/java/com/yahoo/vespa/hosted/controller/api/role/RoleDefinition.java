@@ -76,7 +76,9 @@ public enum RoleDefinition {
 
     systemFlagsDeployer(Policy.systemFlagsDeploy, Policy.systemFlagsDryrun),
 
-    systemFlagsDryrunner(Policy.systemFlagsDryrun);
+    systemFlagsDryrunner(Policy.systemFlagsDryrun),
+
+    paymentProcessor(Policy.paymentProcessor);
 
     private final Set<RoleDefinition> parents;
     private final Set<Policy> policies;

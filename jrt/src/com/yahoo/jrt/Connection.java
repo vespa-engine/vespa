@@ -36,6 +36,7 @@ class Connection extends Target {
     private final Buffer output  = new Buffer(WRITE_SIZE * 2);
     private int maxInputSize  = 64*1024;
     private int maxOutputSize = 64*1024;
+    private final boolean tcpNoDelay;
     private final Map<Integer, ReplyHandler> replyMap = new HashMap<>();
     private final Map<TargetWatcher, TargetWatcher> watchers = new IdentityHashMap<>();
     private int activeReqs = 0;
@@ -89,21 +90,23 @@ class Connection extends Target {
     }
 
     public Connection(TransportThread parent, Supervisor owner,
-                      SocketChannel channel) {
+                      SocketChannel channel, boolean tcpNoDelay) {
 
         this.parent = parent;
         this.owner = owner;
         this.socket = parent.transport().createServerCryptoSocket(channel);
         this.spec = null;
+        this.tcpNoDelay = tcpNoDelay;
         server = true;
         owner.sessionInit(this);
     }
 
-    public Connection(TransportThread parent, Supervisor owner, Spec spec, Object context) {
+    public Connection(TransportThread parent, Supervisor owner, Spec spec, Object context, boolean tcpNoDelay) {
         super(context);
         this.parent = parent;
         this.owner = owner;
         this.spec = spec;
+        this.tcpNoDelay = tcpNoDelay;
         server = false;
         owner.sessionInit(this);
     }
@@ -184,7 +187,7 @@ class Connection extends Target {
         }
         try {
             socket.channel().configureBlocking(false);
-            socket.channel().socket().setTcpNoDelay(true);
+            socket.channel().socket().setTcpNoDelay(tcpNoDelay);
             selectionKey = socket.channel().register(selector,
                     SelectionKey.OP_READ | SelectionKey.OP_WRITE,
                     this);

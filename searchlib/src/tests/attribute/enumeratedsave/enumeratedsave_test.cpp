@@ -108,6 +108,17 @@ public:
     }
     IAttributeFileWriter &udatWriter() override { return _udatWriter; }
 
+    bool setup_writer(const vespalib::string& file_suffix,
+                      const vespalib::string& desc) override {
+        (void) file_suffix;
+        (void) desc;
+        abort();
+    }
+    IAttributeFileWriter& get_writer(const vespalib::string& file_suffix) override {
+        (void) file_suffix;
+        abort();
+    }
+
     bool bufEqual(const Buffer &lhs, const Buffer &rhs) const;
  
     bool operator==(const MemAttr &rhs) const;

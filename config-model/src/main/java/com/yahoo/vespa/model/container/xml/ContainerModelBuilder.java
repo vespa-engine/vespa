@@ -23,9 +23,11 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -324,13 +326,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
         if (isHostedTenantApplication(context)) {
-            addHostedImplicitHttpIfNotPresent(deployState, cluster);
+            addHostedImplicitHttpIfNotPresent(cluster);
+            addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addAdditionalHostedConnector(deployState, cluster);
         }
     }
 
     private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
-        JettyHttpServer server = cluster.getHttp().getHttpServer();
+        JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
         String proxyProtocol = deployState.getProperties().proxyProtocol();
@@ -356,39 +359,31 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
     }
 
-    private static void addHostedImplicitHttpIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
+    private static void addHostedImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
         if(cluster.getHttp() == null) {
-            Http http = deployState.getProperties().athenzDomain()
-                    .map(tenantDomain -> createHostedImplicitHttpWithAccessControl(deployState, tenantDomain, cluster))
-                    .orElseGet(() -> createHostedImplicitHttpWithoutAccessControl(cluster));
-            cluster.setHttp(http);
+            cluster.setHttp(new Http(new FilterChains(cluster)));
         }
-        if(cluster.getHttp().getHttpServer() == null) {
+        if(cluster.getHttp().getHttpServer().isEmpty()) {
             JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
             cluster.getHttp().setHttpServer(defaultHttpServer);
             defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
         }
     }
 
-    private static Http createHostedImplicitHttpWithAccessControl(
-            DeployState deployState, AthenzDomain tenantDomain, ApplicationContainerCluster cluster) {
+    private void addHostedImplicitAccessControlIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
+        Http http = cluster.getHttp();
+        if (http.getAccessControl().isPresent()) return; // access control added explicitly
+        AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
+        if (tenantDomain == null) return; // tenant domain not present, cannot add access control. this should eventually be a failure.
         AccessControl accessControl =
                 new AccessControl.Builder(tenantDomain.value(), deployState.getDeployLogger())
                         .setHandlers(cluster)
                         .readEnabled(false)
                         .writeEnabled(false)
                         .build();
-        Http http = new Http(accessControl.getBindings(), accessControl);
-        FilterChains filterChains = new FilterChains(cluster);
-        filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
-        http.setFilterChains(filterChains);
-        return http;
-    }
-
-    private static Http createHostedImplicitHttpWithoutAccessControl(ApplicationContainerCluster cluster) {
-        Http http = new Http(Collections.emptyList());
-        http.setFilterChains(new FilterChains(cluster));
-        return http;
+        http.getFilterChains().add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
+        http.setAccessControl(accessControl);
+        http.getBindings().addAll(accessControl.getBindings());
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
@@ -672,11 +667,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                          .vespaVersion(deployState.getWantedNodeVespaVersion())
                                                          .dockerImageRepo(deployState.getWantedDockerImageRepo())
                                                          .build();
-                    Capacity capacity = Capacity.fromCount(1,
-                                                           Optional.empty(),
-                                                           false,
-                                                           ! deployState.getProperties().isBootstrap());
-                    HostResource host = hostSystem.allocateHosts(clusterSpec, capacity, 1, log).keySet().iterator().next();
+                    Capacity capacity = Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified),
+                                                      false,
+                                                      ! deployState.getProperties().isBootstrap());
+                    HostResource host = hostSystem.allocateHosts(clusterSpec, capacity, log).keySet().iterator().next();
                     return singleHostContainerCluster(cluster, host, context);
                 }
             }
@@ -687,11 +681,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                  .dockerImageRepo(deployState.getWantedDockerImageRepo())
                                                  .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
-            Capacity capacity = Capacity.fromCount(nodeCount,
-                                                   Optional.empty(),
-                                                   false,
-                                                   !deployState.getProperties().isBootstrap());
-            var hosts = hostSystem.allocateHosts(clusterSpec, capacity, 1, log);
+            Capacity capacity = Capacity.from(new ClusterResources(nodeCount, 1, NodeResources.unspecified),
+                                              false,
+                                              !deployState.getProperties().isBootstrap());
+            var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
             return createNodesFromHosts(log, hosts, cluster);
         }
         return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
@@ -721,7 +714,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .build();
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
-                                                             Capacity.fromRequiredNodeType(type), 1, log);
+                                                             Capacity.fromRequiredNodeType(type), log);
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
     

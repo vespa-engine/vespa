@@ -53,7 +53,8 @@ public class NodeWithServices {
     }
 
     public boolean needsPlatformUpgrade() {
-        return node.wantedVersion().isAfter(node.currentVersion());
+        return node.wantedVersion().isAfter(node.currentVersion())
+                || ! node.wantedDockerImage().equals(node.currentDockerImage());
     }
 
     public boolean needsReboot() {

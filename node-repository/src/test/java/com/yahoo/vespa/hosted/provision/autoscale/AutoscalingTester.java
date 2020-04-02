@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
@@ -82,7 +84,7 @@ class AutoscalingTester {
     }
 
     public List<HostSpec> deploy(ApplicationId application, ClusterSpec cluster, int nodes, int groups, NodeResources resources) {
-        List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.fromCount(nodes, resources), groups);
+        List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.from(new ClusterResources(nodes, groups, resources)));
         for (HostSpec host : hosts)
             makeReady(host.hostname());
         provisioningTester.deployZoneApp();
@@ -139,8 +141,25 @@ class AutoscalingTester {
         }
     }
 
-    public Optional<AllocatableClusterResources> autoscale(ApplicationId application) {
-        return autoscaler.autoscale(nodeRepository().getNodes(application, Node.State.active));
+    public void addMeasurements(Resource resource, float value, int count, ApplicationId applicationId) {
+        List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
+        for (int i = 0; i < count; i++) {
+            clock().advance(Duration.ofMinutes(1));
+            for (Node node : nodes) {
+                db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
+                                                           resource.metricName(),
+                                                           clock().instant().toEpochMilli(),
+                                                           value * 100))); // the metrics are in %
+            }
+        }
+    }
+
+    public Optional<AllocatableClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
+                                                           ClusterResources min, ClusterResources max) {
+        Application application = nodeRepository().applications().get(applicationId, true).withClusterLimits(clusterId, min, max);
+        nodeRepository().applications().set(applicationId, application, nodeRepository().lock(applicationId));
+        return autoscaler.autoscale(application.cluster(clusterId),
+                                    nodeRepository().getNodes(applicationId, Node.State.active));
     }
 
     public AllocatableClusterResources assertResources(String message,

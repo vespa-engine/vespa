@@ -191,8 +191,22 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusIsDefaultDownWithOnlySingleLocalDispatch() {
+    public void requireThatVipStatusStaysUpWithLocalDispatchAndClusterSize1() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost())) {
+            assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
+
+            assertFalse(test.vipStatus.isInRotation());
+            test.waitOneFullPingRound();
+            assertTrue(test.vipStatus.isInRotation());
+            test.numDocsPerNode.get(0).set(-1);
+            test.waitOneFullPingRound();
+            assertTrue(test.vipStatus.isInRotation());
+        }
+    }
+
+    @Test
+    public void requireThatVipStatusIsDefaultDownWithLocalDispatchAndClusterSize2() {
+        try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "otherhost")) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());

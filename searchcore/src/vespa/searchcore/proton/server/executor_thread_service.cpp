@@ -2,13 +2,14 @@
 
 #include "executor_thread_service.h"
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/fastos/thread.h>
 
 using vespalib::makeLambdaTask;
 using vespalib::Executor;
 using vespalib::Gate;
 using vespalib::Runnable;
-using vespalib::ThreadStackExecutorBase;
+using vespalib::SyncableThreadExecutor;
 
 namespace proton {
 
@@ -28,7 +29,7 @@ sampleThreadId(FastOS_ThreadId *threadId)
 }
 
 std::unique_ptr<internal::ThreadId>
-getThreadId(ThreadStackExecutorBase &executor)
+getThreadId(SyncableThreadExecutor &executor)
 {
     std::unique_ptr<internal::ThreadId> id = std::make_unique<internal::ThreadId>();
     executor.execute(makeLambdaTask([threadId=&id->_id] { sampleThreadId(threadId);}));
@@ -45,7 +46,7 @@ runRunnable(Runnable *runnable, Gate *gate)
 
 } // namespace
 
-ExecutorThreadService::ExecutorThreadService(ThreadStackExecutorBase &executor)
+ExecutorThreadService::ExecutorThreadService(SyncableThreadExecutor &executor)
     : _executor(executor),
       _threadId(getThreadId(executor))
 {

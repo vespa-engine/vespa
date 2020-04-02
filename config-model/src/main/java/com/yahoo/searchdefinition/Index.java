@@ -10,10 +10,10 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
 
 /**
  * An index definition in a search definition.
@@ -23,6 +23,8 @@ import java.util.Set;
  * @author bratseth
  */
 public class Index implements Cloneable, Serializable {
+
+    public static enum DistanceMetric { EUCLIDEAN, ANGULAR, GEODEGREES }
 
     public enum Type {
 
@@ -61,7 +63,9 @@ public class Index implements Cloneable, Serializable {
     /** The boolean index definition, if set */
     private BooleanIndexDefinition boolIndex;
 
-    private Optional<HnswIndexParams> hnswIndexParams;
+    private Optional<HnswIndexParams> hnswIndexParams = Optional.empty();
+
+    private Optional<DistanceMetric> distanceMetric = Optional.empty();
 
     /** Whether the posting lists of this index field should have interleaved features (num occs, field length) in document id stream. */
     private boolean interleavedFeatures = false;
@@ -134,12 +138,13 @@ public class Index implements Cloneable, Serializable {
                 stemming == index.stemming &&
                 type == index.type &&
                 Objects.equals(boolIndex, index.boolIndex) &&
+                Objects.equals(distanceMetric, index.distanceMetric) &&
                 Objects.equals(hnswIndexParams, index.hnswIndexParams);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, rankType, prefix, aliases, stemming, normalized, type, boolIndex, hnswIndexParams, interleavedFeatures);
+        return Objects.hash(name, rankType, prefix, aliases, stemming, normalized, type, boolIndex, distanceMetric, hnswIndexParams, interleavedFeatures);
     }
 
     public String toString() {
@@ -185,6 +190,16 @@ public class Index implements Cloneable, Serializable {
     /** Sets the boolean index definition */
     public void setBooleanIndexDefiniton(BooleanIndexDefinition def) {
         boolIndex = def;
+    }
+
+    public Optional<DistanceMetric> getDistanceMetric() {
+        return distanceMetric;
+    }
+
+    public void setDistanceMetric(String value) {
+        String upper = value.toUpperCase(Locale.ENGLISH);
+        DistanceMetric dm = DistanceMetric.valueOf(upper);
+        distanceMetric = Optional.of(dm);
     }
 
     public Optional<HnswIndexParams> getHnswIndexParams() {

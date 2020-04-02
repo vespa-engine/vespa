@@ -86,12 +86,10 @@ public class InfraDeployerImpl implements InfraDeployer {
             try (Mutex lock = nodeRepository.lock(application.getApplicationId())) {
                 NodeType nodeType = application.getCapacity().type();
                 Version targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
-                hostSpecs = provisioner.prepare(
-                        application.getApplicationId(),
-                        application.getClusterSpecWithVersion(targetVersion),
-                        application.getCapacity(),
-                        1, // groups
-                        logger::log);
+                hostSpecs = provisioner.prepare(application.getApplicationId(),
+                                                application.getClusterSpecWithVersion(targetVersion),
+                                                application.getCapacity(),
+                                                logger::log);
 
                 prepared = true;
             }

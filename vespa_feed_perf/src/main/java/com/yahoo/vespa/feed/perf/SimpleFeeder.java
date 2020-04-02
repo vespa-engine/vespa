@@ -65,6 +65,7 @@ public class SimpleFeeder implements ReplyHandler {
     private final RPCMessageBus mbus;
     private final SourceSession session;
     private final int numThreads;
+    private final long numMessagesToSend;
     private final Destination destination;
     private final boolean benchmarkMode;
     private final static long REPORT_INTERVAL = TimeUnit.SECONDS.toMillis(10);
@@ -81,18 +82,20 @@ public class SimpleFeeder implements ReplyHandler {
         private final Destination destination;
         private final FeedReader reader;
         private final Executor executor;
-        AtomicReference<Throwable> failure;
+        private final long messagesToSend;
+        private final AtomicReference<Throwable> failure;
 
-        Metrics(Destination destination, FeedReader reader, Executor executor, AtomicReference<Throwable> failure) {
+        Metrics(Destination destination, FeedReader reader, Executor executor, AtomicReference<Throwable> failure, long messagesToSend) {
             this.destination = destination;
             this.reader = reader;
             this.executor = executor;
+            this.messagesToSend = messagesToSend;
             this.failure = failure;
         }
 
         long feed() throws Throwable {
             long numMessages = 0;
-            while (failure.get() == null) {
+            while ((failure.get() == null) && (numMessages < messagesToSend)) {
                 FeedOperation op = reader.read();
                 if (op.getType() == FeedOperation.Type.INVALID) {
                     break;
@@ -341,6 +344,7 @@ public class SimpleFeeder implements ReplyHandler {
         inputStreams = params.getInputStreams();
         out = params.getStdOut();
         numThreads = params.getNumDispatchThreads();
+        numMessagesToSend = params.getNumMessagesToSend();
         mbus = newMessageBus(docTypeMgr, params);
         session = newSession(mbus, this, params.getMaxPending());
         docTypeMgr.configure(params.getConfigId());
@@ -380,7 +384,7 @@ public class SimpleFeeder implements ReplyHandler {
         printHeader(out);
         long numMessagesSent = 0;
         for (InputStream in : inputStreams) {
-            Metrics m = new Metrics(destination, createFeedReader(in), executor, failure);
+            Metrics m = new Metrics(destination, createFeedReader(in), executor, failure, numMessagesToSend);
             numMessagesSent += m.feed();
         }
         while (failure.get() == null && numReplies.get() < numMessagesSent) {

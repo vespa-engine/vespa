@@ -2,6 +2,7 @@
 #pragma once
 
 #include "attrvector.h"
+#include "load_utils.h"
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/util/filekit.h>
@@ -23,7 +24,7 @@ NumericDirectAttribute<B>::~NumericDirectAttribute() = default;
 template <typename B>
 bool NumericDirectAttribute<B>::onLoad()
 {
-    fileutil::LoadedBuffer::UP dataBuffer(B::loadDAT());
+    auto dataBuffer = attribute::LoadUtils::loadDAT(*this);
     bool rc(dataBuffer.get());
     if (rc) {
         const BaseType * tmpData(static_cast <const BaseType *>(dataBuffer->buffer()));
@@ -56,7 +57,7 @@ bool NumericDirectAttribute<B>::onLoad()
         }
         dataBuffer.reset();
         if (this->hasMultiValue()) {
-            fileutil::LoadedBuffer::UP idxBuffer(B::loadIDX());
+            auto idxBuffer = attribute::LoadUtils::loadIDX(*this);
             rc = idxBuffer.get();
             if (rc) {
                 const uint32_t * tmpIdx(static_cast<const uint32_t *>(idxBuffer->buffer()));

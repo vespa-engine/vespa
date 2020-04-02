@@ -20,9 +20,6 @@
       "routingMethod": "shared"
     }
   ],
-  "serviceUrls": [
-    "https://instance1--application1--tenant1.us-west-1.vespa.oath.cloud:4443/"
-  ],
   "nodes": "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-west-1&application=tenant1.application1.instance1",
   "version": "(ignore)",

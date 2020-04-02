@@ -12,7 +12,7 @@ public enum Resource {
 
     /** Cpu utilization ratio */
     cpu {
-        String metricName() { return "cpu.util"; }
+        public String metricName() { return "cpu.util"; }
         double idealAverageLoad() { return 0.2; }
         double valueFrom(NodeResources resources) { return resources.vcpu(); }
         double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
@@ -20,7 +20,7 @@ public enum Resource {
 
     /** Memory utilization ratio */
     memory {
-        String metricName() { return "mem_total.util"; }
+        public String metricName() { return "mem_total.util"; }
         double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.memoryGb(); }
         double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
@@ -28,13 +28,13 @@ public enum Resource {
 
     /** Disk utilization ratio */
     disk {
-        String metricName() { return "disk.util"; }
+        public String metricName() { return "disk.util"; }
         double idealAverageLoad() { return 0.6; }
         double valueFrom(NodeResources resources) { return resources.diskGb(); }
         double valueFromMetric(double metricValue) { return metricValue / 100; } // % to ratio
     };
 
-    abstract String metricName();
+    public abstract String metricName();
 
     /** The load we should have of this resource on average, when one node in the cluster is down */
     abstract double idealAverageLoad();

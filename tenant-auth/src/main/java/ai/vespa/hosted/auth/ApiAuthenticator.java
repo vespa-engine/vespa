@@ -13,10 +13,12 @@ public class ApiAuthenticator implements ai.vespa.hosted.api.ApiAuthenticator {
                          .map(certificateFile -> ControllerHttpClient.withKeyAndCertificate(Properties.apiEndpoint(),
                                                                                             Properties.apiKeyFile(),
                                                                                             certificateFile))
-                         .orElseGet(() ->
-                                            ControllerHttpClient.withSignatureKey(Properties.apiEndpoint(),
-                                                                                  Properties.apiKeyFile(),
-                                                                                  Properties.application()));
+                         .or(() -> Properties.apiKey().map(apiKey -> ControllerHttpClient.withSignatureKey(Properties.apiEndpoint(),
+                                                                                                           apiKey,
+                                                                                                           Properties.application())))
+                         .orElseGet(() -> ControllerHttpClient.withSignatureKey(Properties.apiEndpoint(),
+                                                                                Properties.apiKeyFile(),
+                                                                                Properties.application()));
     }
 
 }

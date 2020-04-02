@@ -434,15 +434,16 @@ public abstract class ControllerHttpClient {
 
     private static DeploymentLog.Status valueOf(String status) {
         switch (status) {
-            case "running":             return DeploymentLog.Status.running;
-            case "aborted":             return DeploymentLog.Status.aborted;
-            case "error":               return DeploymentLog.Status.error;
-            case "testFailure":         return DeploymentLog.Status.testFailure;
-            case "outOfCapacity":       return DeploymentLog.Status.outOfCapacity;
-            case "installationFailed":  return DeploymentLog.Status.installationFailed;
-            case "deploymentFailed":    return DeploymentLog.Status.deploymentFailed;
-            case "success":             return DeploymentLog.Status.success;
-            default:                    throw new IllegalArgumentException("Unexpected status '" + status + "'");
+            case "running":                    return DeploymentLog.Status.running;
+            case "aborted":                    return DeploymentLog.Status.aborted;
+            case "error":                      return DeploymentLog.Status.error;
+            case "testFailure":                return DeploymentLog.Status.testFailure;
+            case "outOfCapacity":              return DeploymentLog.Status.outOfCapacity;
+            case "installationFailed":         return DeploymentLog.Status.installationFailed;
+            case "deploymentFailed":           return DeploymentLog.Status.deploymentFailed;
+            case "endpointCertificateTimeout": return DeploymentLog.Status.endpointCertificateTimeout;
+            case "success":                    return DeploymentLog.Status.success;
+            default: throw new IllegalArgumentException("Unexpected status '" + status + "'");
         }
     }
 

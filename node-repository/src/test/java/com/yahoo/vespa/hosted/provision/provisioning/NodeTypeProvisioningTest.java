@@ -93,7 +93,7 @@ public class NodeTypeProvisioningTest {
                 tester.provisioner(),
                 tester.clock(),
                 Collections.singletonMap(
-                        application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
+                        application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer,
                 tester.clock(), Duration.ofDays(30), Duration.ofMinutes(10));
 
@@ -157,7 +157,7 @@ public class NodeTypeProvisioningTest {
         MockDeployer deployer = new MockDeployer(tester.provisioner(),
                                                  tester.clock(),
                                                  Collections.singletonMap(application,
-                                                                          new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
+                                                                          new MockDeployer.ApplicationContext(application, clusterSpec, capacity)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
                                                             tester.orchestrator(),
                                                             deployer,
@@ -263,7 +263,7 @@ public class NodeTypeProvisioningTest {
     }
 
     private List<HostSpec> deployProxies(ApplicationId application, ProvisioningTester tester) {
-        return tester.prepare(application, clusterSpec, capacity, 1);
+        return tester.prepare(application, clusterSpec, capacity);
     }
 
 }

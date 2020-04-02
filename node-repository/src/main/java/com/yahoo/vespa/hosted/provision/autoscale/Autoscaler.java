@@ -2,12 +2,14 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
@@ -35,15 +37,10 @@ public class Autoscaler {
 
     private static final int minimumMeasurements = 500; // TODO: Per node instead? Also say something about interval?
 
-    /** What cost difference factor warrants reallocation? */
-    private static final double costDifferenceRatioWorthReallocation = 0.1;
-    /** What difference factor from ideal (for any resource) warrants a change? */
-    private static final double idealDivergenceWorthReallocation = 0.1;
-
-    // We only depend on the ratios between these values
-    private static final double cpuUnitCost = 12.0;
-    private static final double memoryUnitCost = 1.2;
-    private static final double diskUnitCost = 0.045;
+    /** What cost difference factor is worth a reallocation? */
+    private static final double costDifferenceWorthReallocation = 0.1;
+    /** What difference factor for a resource is worth a reallocation? */
+    private static final double resourceDifferenceWorthReallocation = 0.1;
 
     private final HostResourcesCalculator resourcesCalculator;
     private final NodeMetricsDb metricsDb;
@@ -65,12 +62,8 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
-    public Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes) {
-        if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
-                                                   node.allocation().get().membership().retired() ||
-                                                   node.allocation().get().isRemovable())) {
-            return Optional.empty(); // Don't autoscale clusters that are in flux
-        }
+    public Optional<AllocatableClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
+        if (unstable(clusterNodes)) return Optional.empty();
 
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, resourcesCalculator);
@@ -82,37 +75,38 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation = findBestAllocation(cpuLoad.get(),
                                                                                   memoryLoad.get(),
                                                                                   diskLoad.get(),
-                                                                                  currentAllocation);
+                                                                                  currentAllocation,
+                                                                                  cluster);
         if (bestAllocation.isEmpty()) return Optional.empty();
-
-        if (closeToIdeal(Resource.cpu, cpuLoad.get()) &&
-            closeToIdeal(Resource.memory, memoryLoad.get()) &&
-            closeToIdeal(Resource.disk, diskLoad.get()) &&
-            similarCost(bestAllocation.get().cost(), currentAllocation.cost())) {
-            return Optional.empty(); // Avoid small, unnecessary changes
-        }
+        if (similar(bestAllocation.get(), currentAllocation)) return Optional.empty();
         return bestAllocation;
     }
 
     private Optional<AllocatableClusterResources> findBestAllocation(double cpuLoad, double memoryLoad, double diskLoad,
-                                                                     AllocatableClusterResources currentAllocation) {
+                                                                     AllocatableClusterResources currentAllocation,
+                                                                     Cluster cluster) {
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation); i.hasNext(); ) {
-            ClusterResources allocation = i.next();
-            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(allocation);
+        for (ResourceIterator i = new ResourceIterator(cpuLoad, memoryLoad, diskLoad, currentAllocation, cluster); i.hasNext(); ) {
+            Optional<AllocatableClusterResources> allocatableResources = toAllocatableResources(i.next(),
+                                                                                                currentAllocation.clusterType(),
+                                                                                                cluster);
             if (allocatableResources.isEmpty()) continue;
-            if (bestAllocation.isEmpty() || allocatableResources.get().cost() < bestAllocation.get().cost())
+            if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                 bestAllocation = allocatableResources;
         }
         return bestAllocation;
     }
 
-    private boolean similarCost(double cost1, double cost2) {
-        return similar(cost1, cost2, costDifferenceRatioWorthReallocation);
-    }
-
-    private boolean closeToIdeal(Resource resource, double value) {
-        return similar(resource.idealAverageLoad(), value, idealDivergenceWorthReallocation);
+    /** Returns true if both total real resources and total cost are similar */
+    private boolean similar(AllocatableClusterResources a, AllocatableClusterResources b) {
+        return similar(a.cost(), b.cost(), costDifferenceWorthReallocation) &&
+               similar(a.realResources().vcpu() * a.nodes(),
+                       b.realResources().vcpu() * b.nodes(), resourceDifferenceWorthReallocation) &&
+               similar(a.realResources().memoryGb() * a.nodes(),
+                       b.realResources().memoryGb() * b.nodes(), resourceDifferenceWorthReallocation) &&
+               similar(a.realResources().diskGb() * a.nodes(),
+                       b.realResources().diskGb() * b.nodes(),
+                       resourceDifferenceWorthReallocation);
     }
 
     private boolean similar(double r1, double r2, double threshold) {
@@ -123,15 +117,22 @@ public class Autoscaler {
      * Returns the smallest allocatable node resources larger than the given node resources,
      * or empty if none available.
      */
-    private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources) {
-        NodeResources nodeResources = nodeResourceLimits.enlargeToLegal(resources.nodeResources(),
-                                                                        resources.clusterType());
+    private Optional<AllocatableClusterResources> toAllocatableResources(ClusterResources resources,
+                                                                         ClusterSpec.Type clusterType,
+                                                                         Cluster cluster) {
+        NodeResources nodeResources = resources.nodeResources();
+        if ( ! cluster.minResources().equals(cluster.maxResources())) // enforce application limits unless suggest mode
+            nodeResources = cluster.capAtLimits(nodeResources);
+        nodeResources = nodeResourceLimits.enlargeToLegal(nodeResources, clusterType); // enforce system limits
+
         if (allowsHostSharing(nodeRepository.zone().cloud())) {
             // return the requested resources, or empty if they cannot fit on existing hosts
             for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
                 if (flavor.resources().satisfies(nodeResources))
                     return Optional.of(new AllocatableClusterResources(resources.with(nodeResources),
-                                                                       nodeResources));
+                                                                       nodeResources,
+                                                                       resources.nodeResources(),
+                                                                       clusterType));
             }
             return Optional.empty();
         }
@@ -145,6 +146,8 @@ public class Autoscaler {
                     flavor = flavor.with(FlavorOverrides.ofDisk(nodeResources.diskGb()));
                 var candidate = new AllocatableClusterResources(resources.with(flavor.resources()),
                                                                 flavor,
+                                                                resources.nodeResources(),
+                                                                clusterType,
                                                                 resourcesCalculator);
 
                 if (best.isEmpty() || candidate.cost() <= best.get().cost())
@@ -181,10 +184,10 @@ public class Autoscaler {
         return true;
     }
 
-    static double costOf(NodeResources resources) {
-        return resources.vcpu() * cpuUnitCost +
-               resources.memoryGb() * memoryUnitCost +
-               resources.diskGb() * diskUnitCost;
+    public static boolean unstable(List<Node> nodes) {
+        return nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
+                                                      node.allocation().get().membership().retired() ||
+                                                      node.allocation().get().isRemovable());
     }
 
 }

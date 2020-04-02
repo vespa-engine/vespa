@@ -243,6 +243,10 @@ public class AthenzFacade implements AccessControl {
         return hasAccess(dryRun ? "dryrun" : "deploy", new AthenzResourceName(service.getDomain(), "system-flags").toResourceNameString(), identity);
     }
 
+    public boolean hasPaymentCallbackAccess(AthenzIdentity identity) {
+        return hasAccess("callback", new AthenzResourceName(service.getDomain().getName(), "payment-notification-resource").toResourceNameString(), identity);
+    }
+
     /**
      * Used when creating tenancies. As there are no tenancy policies at this point,
      * we cannot use {@link #hasTenantAdminAccess(AthenzIdentity, AthenzDomain)}

@@ -484,8 +484,8 @@ public class HttpServerTest {
     public void requireThatConnectionIsClosedAfterXRequests() throws Exception {
         final int MAX_KEEPALIVE_REQUESTS = 100;
         final TestDriver driver = TestDrivers.newConfiguredInstance(new EchoRequestHandler(),
-                new ServerConfig.Builder().maxKeepAliveRequests(MAX_KEEPALIVE_REQUESTS),
-                new ConnectorConfig.Builder());
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder().maxRequestsPerConnection(MAX_KEEPALIVE_REQUESTS));
         for (int i = 0; i < MAX_KEEPALIVE_REQUESTS - 1; i++) {
             driver.client().get("/status.html")
                     .expectStatusCode(is(OK))

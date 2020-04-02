@@ -24,6 +24,7 @@ import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
+import com.yahoo.vespa.config.server.session.PrepareParams;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -87,17 +88,21 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testDeployWithWantedDockerImageRepository() throws IOException {
+    public void testReDeployWithWantedDockerImageRepositoryAndAthenzDomain() throws IOException {
         CountingModelFactory modelFactory = createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
         DeployTester tester = new DeployTester(List.of(modelFactory), createConfigserverConfig());
         String dockerImageRepository = "docker.foo.com:4443/bar/baz";
-        tester.deployApp("src/test/apps/hosted/", "4.5.6", dockerImageRepository);
+        tester.deployApp("src/test/apps/hosted/", Instant.now(), new PrepareParams.Builder()
+                .vespaVersion("4.5.6")
+                .dockerImageRepository(dockerImageRepository)
+                .athenzDomain("foo"));
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
         assertTrue(deployment.isPresent());
         deployment.get().activate();
         assertEquals("4.5.6", ((Deployment) deployment.get()).session().getVespaVersion().toString());
         assertEquals(dockerImageRepository, ((Deployment) deployment.get()).session().getDockerImageRepository().get());
+        assertEquals("foo", ((Deployment) deployment.get()).session().getAthenzDomain().get().value());
     }
 
     @Test

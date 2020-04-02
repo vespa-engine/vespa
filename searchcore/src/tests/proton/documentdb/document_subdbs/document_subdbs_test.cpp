@@ -447,8 +447,8 @@ void
 assertAttributes2(const AttributeGuardList &attributes)
 {
     EXPECT_EQUAL(2u, attributes.size());
-    EXPECT_EQUAL("attr2", attributes[0]->getName());
-    EXPECT_EQUAL("attr1", attributes[1]->getName());
+    EXPECT_EQUAL("attr1", attributes[0]->getName());
+    EXPECT_EQUAL("attr2", attributes[1]->getName());
 }
 
 void
@@ -833,8 +833,8 @@ requireThatAttributesArePopulatedDuringReprocessing(FixtureType &f)
         std::vector<AttributeGuard> attrs;
         f.getAttributeManager()->getAttributeList(attrs);
         EXPECT_EQUAL(2u, attrs.size());
-        TEST_DO(assertAttribute1(attrs[1], CFG_SERIAL, 40));
-        TEST_DO(assertAttribute2(attrs[0], 40, 40));
+        TEST_DO(assertAttribute1(attrs[0], CFG_SERIAL, 40));
+        TEST_DO(assertAttribute2(attrs[1], 40, 40));
     }
 }
 

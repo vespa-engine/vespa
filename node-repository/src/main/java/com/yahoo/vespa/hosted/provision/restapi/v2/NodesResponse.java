@@ -219,7 +219,7 @@ class NodesResponse extends HttpResponse {
         object.setString("storageType", serializer.toString(resources.storageType()));
     }
 
-    // Hack: For non-docker noder, return current docker image as default prefix + current Vespa version
+    // Hack: For non-docker nodes, return current docker image as default prefix + current Vespa version
     // TODO: Remove current + wanted docker image from response for non-docker types
     private Optional<DockerImage> currentDockerImage(Node node) {
         return node.status().dockerImage()

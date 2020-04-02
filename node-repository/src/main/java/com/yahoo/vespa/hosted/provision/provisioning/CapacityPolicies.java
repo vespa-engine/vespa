@@ -31,46 +31,42 @@ public class CapacityPolicies {
         this.isUsingAdvertisedResources = zone.cloud().value().equals("aws");
     }
 
-    public int decideSize(Capacity capacity, ClusterSpec cluster, ApplicationId application) {
-        int requestedNodes = capacity.nodeCount();
-
+    public int decideSize(int requested, Capacity capacity, ClusterSpec cluster, ApplicationId application) {
         if (application.instance().isTester()) return 1;
 
-        ensureRedundancy(requestedNodes, cluster, capacity.canFail());
-
-        if (capacity.isRequired()) return requestedNodes;
-
+        ensureRedundancy(requested, cluster, capacity.canFail());
+        if (capacity.isRequired()) return requested;
         switch(zone.environment()) {
             case dev : case test : return 1;
-            case perf : return Math.min(capacity.nodeCount(), 3);
-            case staging: return requestedNodes <= 1 ? requestedNodes : Math.max(2, requestedNodes / 10);
-            case prod : return requestedNodes;
+            case perf : return Math.min(requested, 3);
+            case staging: return requested <= 1 ? requested : Math.max(2, requested / 10);
+            case prod : return requested;
             default : throw new IllegalArgumentException("Unsupported environment " + zone.environment());
         }
     }
 
-    public NodeResources decideNodeResources(Capacity capacity, ClusterSpec cluster) {
-        NodeResources resources = capacity.nodeResources().orElse(defaultNodeResources(cluster.type()));
-        ensureSufficientResources(resources, cluster);
+    public NodeResources decideNodeResources(NodeResources requested, Capacity capacity, ClusterSpec cluster) {
+        if (requested == NodeResources.unspecified)
+            requested = defaultNodeResources(cluster.type());
+        ensureSufficientResources(requested, cluster);
 
-        if (capacity.isRequired()) return resources;
+        if (capacity.isRequired()) return requested;
 
         // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
-            resources = resources.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
+            requested = requested.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
         // Do not cap in AWS as hosts are allocated on demand and 1-to-1, so the node can use the entire host
         if (zone.environment() == Environment.dev && !zone.region().value().contains("aws-"))
-            resources = resources.withVcpu(0.1);
+            requested = requested.withVcpu(0.1);
 
-        return resources;
+        return requested;
     }
 
     private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
         double minMemoryGb = nodeResourceLimits.minMemoryGb(cluster.type());
         if (resources.memoryGb() >= minMemoryGb) return;
-
         throw new IllegalArgumentException(String.format(Locale.ENGLISH,
                 "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
                 minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));

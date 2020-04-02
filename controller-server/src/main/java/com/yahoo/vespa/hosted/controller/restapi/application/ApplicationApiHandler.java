@@ -29,7 +29,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -106,7 +105,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -205,7 +203,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleGET(Path path, HttpRequest request) {
         if (path.matches("/application/v4/")) return root(request);
-        if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/cost")) return tenantCost(path.get("tenant"), request);
@@ -248,7 +245,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePUT(Path path, HttpRequest request) {
-        if (path.matches("/application/v4/user")) return new EmptyResponse();
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
@@ -325,24 +321,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse root(HttpRequest request) {
         return recurseOverTenants(request)
                 ? recursiveRoot(request)
-                : new ResourceResponse(request, "user", "tenant");
-    }
-
-    // TODO jonmv: Move to Athenz API.
-    private HttpResponse authenticatedUser(HttpRequest request) {
-        Principal user = requireUserPrincipal(request);
-
-        String userName = user instanceof AthenzPrincipal ? ((AthenzPrincipal) user).getIdentity().getName() : user.getName();
-        List<Tenant> tenants = controller.tenants().asList(new Credentials(user));
-
-        Slime slime = new Slime();
-        Cursor response = slime.setObject();
-        response.setString("user", userName);
-        Cursor tenantsArray = response.setArray("tenants");
-        for (Tenant tenant : tenants)
-            tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
-        response.setBool("tenantExists", true);
-        return new SlimeJsonResponse(slime);
+                : new ResourceResponse(request, "tenant");
     }
 
     private HttpResponse tenants(HttpRequest request) {
@@ -1062,12 +1041,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add zone endpoints
         var endpointArray = response.setArray("endpoints");
-        var serviceUrls = new ArrayList<URI>();
         for (var endpoint : controller.routing().endpointsOf(deploymentId)) {
             toSlime(endpoint, endpoint.name(), endpointArray.addObject());
-            if (endpoint.routingMethod() == RoutingMethod.shared) {
-                serviceUrls.add(endpoint.url());
-            }
         }
         // Add global endpoints
         var globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
@@ -1077,9 +1052,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             // TODO(mpolden): Pass cluster name. Cluster that a global endpoint points to is not available at this level.
             toSlime(endpoint, "", endpointArray.addObject());
         }
-        // TODO(mpolden): Remove this once all clients stop reading it
-        Cursor serviceUrlArray = response.setArray("serviceUrls");
-        serviceUrls.forEach(url -> serviceUrlArray.addString(url.toString()));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());

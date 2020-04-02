@@ -212,11 +212,6 @@ protected:
     void setNumDocs(uint32_t n)          { _status.setNumDocs(n); }
     void incNumDocs()                    { _status.incNumDocs(); }
 
-    LoadedBufferUP loadDAT();
-    LoadedBufferUP loadIDX();
-    LoadedBufferUP loadWeight();
-    LoadedBufferUP loadUDAT();
-
     class ValueModifier
     {
     public:
@@ -269,10 +264,6 @@ protected:
     }
     
 public:
-    std::unique_ptr<FastOS_FileInterface> openDAT();
-    std::unique_ptr<FastOS_FileInterface> openIDX();
-    std::unique_ptr<FastOS_FileInterface> openWeight();
-    std::unique_ptr<FastOS_FileInterface> openUDAT();
     void incGeneration();
     void removeAllOldGenerations();
 
@@ -572,8 +563,6 @@ private:
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);
     virtual void onSave(IAttributeSaveTarget & saveTarget);
     virtual bool onLoad();
-    std::unique_ptr<FastOS_FileInterface> openFile(const char *suffix);
-    LoadedBufferUP loadFile(const char *suffix);
 
 
     BaseName                              _baseFileName;
