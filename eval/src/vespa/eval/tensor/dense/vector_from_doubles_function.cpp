@@ -9,6 +9,7 @@ namespace vespalib::tensor {
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;
@@ -90,7 +91,7 @@ VectorFromDoublesFunction::push_children(std::vector<Child::CREF> &target) const
 }
 
 eval::InterpretedFunction::Instruction
-VectorFromDoublesFunction::compile_self(Stash &) const
+VectorFromDoublesFunction::compile_self(const TensorEngine &, Stash &) const
 {
     return eval::InterpretedFunction::Instruction(my_vector_from_doubles_op, (uint64_t)&_self);
 }

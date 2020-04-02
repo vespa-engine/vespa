@@ -12,6 +12,7 @@ using eval::DoubleValue;
 using eval::ValueType;
 using eval::TensorSpec;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;
@@ -67,7 +68,7 @@ DenseTensorPeekFunction::push_children(std::vector<Child::CREF> &target) const
 }
 
 eval::InterpretedFunction::Instruction
-DenseTensorPeekFunction::compile_self(Stash &) const
+DenseTensorPeekFunction::compile_self(const TensorEngine &, Stash &) const
 {
     static_assert(sizeof(uint64_t) == sizeof(&_spec));
     auto op = select_1<MyTensorPeekOp>(_children[0].get().result_type().cell_type());

@@ -243,7 +243,7 @@ Op2::visit_children(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-ConstValue::compile_self(Stash &) const
+ConstValue::compile_self(const TensorEngine &, Stash &) const
 {
     return Instruction(op_load_const, wrap_param<Value>(_value));
 }
@@ -262,7 +262,7 @@ ConstValue::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Inject::compile_self(Stash &) const
+Inject::compile_self(const TensorEngine &, Stash &) const
 {
     return Instruction::fetch_param(_param_idx);
 }
@@ -277,7 +277,7 @@ Inject::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Reduce::compile_self(Stash &stash) const
+Reduce::compile_self(const TensorEngine &, Stash &stash) const
 {
     ReduceParams &params = stash.create<ReduceParams>(_aggr, _dimensions);
     return Instruction(op_tensor_reduce, wrap_param<ReduceParams>(params));
@@ -294,7 +294,7 @@ Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Map::compile_self(Stash &) const
+Map::compile_self(const TensorEngine &, Stash &) const
 {
     if (result_type().is_double()) {
         return Instruction(op_double_map, to_param(_function));
@@ -312,7 +312,7 @@ Map::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Join::compile_self(Stash &) const
+Join::compile_self(const TensorEngine &, Stash &) const
 {
     if (result_type().is_double()) {
         if (_function == operation::Mul::f) {
@@ -336,7 +336,7 @@ Join::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Merge::compile_self(Stash &) const
+Merge::compile_self(const TensorEngine &, Stash &) const
 {
     return Instruction(op_tensor_merge, to_param(_function));
 }
@@ -351,7 +351,7 @@ Merge::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Concat::compile_self(Stash &) const
+Concat::compile_self(const TensorEngine &, Stash &) const
 {
     return Instruction(op_tensor_concat, wrap_param<vespalib::string>(_dimension));
 }
@@ -374,7 +374,7 @@ Create::push_children(std::vector<Child::CREF> &children) const
 }
 
 Instruction
-Create::compile_self(Stash &) const
+Create::compile_self(const TensorEngine &, Stash &) const
 {
     return Instruction(op_tensor_create, wrap_param<Create>(*this));
 }
@@ -436,7 +436,7 @@ Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const 
 }
 
 InterpretedFunction::Instruction
-Lambda::compile_self(Stash &) const
+Lambda::compile_self(const TensorEngine &, Stash &) const
 {
     return Instruction(op_tensor_lambda, wrap_param<Lambda>(*this));
 }
@@ -471,7 +471,7 @@ Peek::push_children(std::vector<Child::CREF> &children) const
 }
 
 Instruction
-Peek::compile_self(Stash &) const
+Peek::compile_self(const TensorEngine &, Stash &) const
 {
     return Instruction(op_tensor_peek, wrap_param<Peek>(*this));
 }
@@ -500,7 +500,7 @@ Peek::visit_children(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Rename::compile_self(Stash &stash) const
+Rename::compile_self(const TensorEngine &, Stash &stash) const
 {
     RenameParams &params = stash.create<RenameParams>(_from, _to);
     return Instruction(op_tensor_rename, wrap_param<RenameParams>(params));
@@ -524,7 +524,7 @@ If::push_children(std::vector<Child::CREF> &children) const
 }
 
 Instruction
-If::compile_self(Stash &) const
+If::compile_self(const TensorEngine &, Stash &) const
 {
     // 'if' is handled directly by compile_tensor_function to enable
     // lazy-evaluation of true/false sub-expressions.

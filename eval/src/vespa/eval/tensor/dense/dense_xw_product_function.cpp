@@ -13,6 +13,7 @@ namespace vespalib::tensor {
 
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using eval::as;
 using eval::Aggr;
 using namespace eval::tensor_function;
@@ -156,7 +157,7 @@ DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &result_typ
 }
 
 eval::InterpretedFunction::Instruction
-DenseXWProductFunction::compile_self(Stash &stash) const
+DenseXWProductFunction::compile_self(const TensorEngine &, Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
     auto op = my_select(lhs().result_type().cell_type(),

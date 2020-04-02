@@ -63,7 +63,7 @@ InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const Tenso
       _stash(),
       _tensor_engine(engine)
 {
-    _program = compile_tensor_function(function, _stash);
+    _program = compile_tensor_function(engine, function, _stash);
 }
 
 InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types)
@@ -73,7 +73,7 @@ InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes
 {
     const TensorFunction &plain_fun = make_tensor_function(engine, root, types, _stash);
     const TensorFunction &optimized = engine.optimize(plain_fun, _stash);
-    _program = compile_tensor_function(optimized, _stash);
+    _program = compile_tensor_function(engine, optimized, _stash);
 }
 
 InterpretedFunction::~InterpretedFunction() = default;
