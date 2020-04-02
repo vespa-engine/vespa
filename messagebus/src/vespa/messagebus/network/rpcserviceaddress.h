@@ -33,7 +33,7 @@ public:
      * @param connectionSpec The connection specification.
      */
     RPCServiceAddress(const string &serviceName, const string &connectionSpec);
-    ~RPCServiceAddress();
+    ~RPCServiceAddress() override;
 
     /**
      * Returns whether or not this service address is malformed.

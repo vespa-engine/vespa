@@ -32,7 +32,7 @@ void
 RPCTargetPool::flushTargets(bool force)
 {
     uint64_t currentTime = _timer->getMilliTime();
-    vespalib::LockGuard guard(_lock);
+    LockGuard guard(_lock);
     TargetMap::iterator it = _targets.begin();
     while (it != _targets.end()) {
         Entry &entry = it->second;
@@ -56,7 +56,7 @@ RPCTargetPool::flushTargets(bool force)
 size_t
 RPCTargetPool::size()
 {
-    vespalib::LockGuard guard(_lock);
+    LockGuard guard(_lock);
     return _targets.size();
 }
 
@@ -65,7 +65,7 @@ RPCTargetPool::getTarget(FRT_Supervisor &orb, const RPCServiceAddress &address)
 {
     const string & spec = address.getConnectionSpec();
     uint64_t currentTime = _timer->getMilliTime();
-    vespalib::LockGuard guard(_lock);
+    LockGuard guard(_lock);
     auto it = _targets.find(spec);
     if (it != _targets.end()) {
         Entry &entry = it->second;
