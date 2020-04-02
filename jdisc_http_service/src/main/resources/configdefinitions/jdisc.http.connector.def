@@ -106,3 +106,9 @@ proxyProtocol.enabled          bool    default=false
 
 # Allow https in parallel with proxy protocol
 proxyProtocol.mixedMode        bool    default=false
+
+# Redirect all requests to https port
+secureRedirect.enabled         bool    default=false
+
+# Target port for redirect
+secureRedirect.port            int     default=443
