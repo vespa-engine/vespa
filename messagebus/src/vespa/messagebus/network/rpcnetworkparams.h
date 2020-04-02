@@ -12,21 +12,10 @@ namespace mbus {
  * held by this class. This class has reasonable default values for each parameter.
  */
 class RPCNetworkParams {
-private:
-    using CompressionConfig = vespalib::compression::CompressionConfig;
-    Identity          _identity;
-    config::ConfigUri _slobrokConfig;
-    int               _listenPort;
-    uint32_t          _maxInputBufferSize;
-    uint32_t          _maxOutputBufferSize;
-    uint32_t          _numThreads;
-    bool              _tcpNoDelay;
-    bool              _dispatchOnEncode;
-    bool              _dispatchOnDecode;
-    double            _connectionExpireSecs;
-    CompressionConfig _compressionConfig;
-
 public:
+    enum class OptimizeFor { LATENCY, THROUGHPUT};
+    using CompressionConfig = vespalib::compression::CompressionConfig;
+
     RPCNetworkParams();
     RPCNetworkParams(config::ConfigUri configUri);
     ~RPCNetworkParams();
@@ -107,12 +96,12 @@ public:
 
     uint32_t getNumThreads() const { return _numThreads; }
 
-    RPCNetworkParams &setTcpNoDelay(bool tcpNoDelay) {
-        _tcpNoDelay = tcpNoDelay;
+    RPCNetworkParams &setOptimizeFor(OptimizeFor tcpNoDelay) {
+        _optimizeFor = tcpNoDelay;
         return *this;
     }
 
-    bool getTcpNoDelay() const { return _tcpNoDelay; }
+    OptimizeFor getOptimizeFor() const { return _optimizeFor; }
 
     /**
      * Returns the number of seconds before an idle network connection expires.
@@ -198,6 +187,18 @@ public:
     }
 
     uint32_t getDispatchOnEncode() const { return _dispatchOnEncode; }
+private:
+    Identity          _identity;
+    config::ConfigUri _slobrokConfig;
+    int               _listenPort;
+    uint32_t          _maxInputBufferSize;
+    uint32_t          _maxOutputBufferSize;
+    uint32_t          _numThreads;
+    OptimizeFor       _optimizeFor;
+    bool              _dispatchOnEncode;
+    bool              _dispatchOnDecode;
+    double            _connectionExpireSecs;
+    CompressionConfig _compressionConfig;
 };
 
 }
