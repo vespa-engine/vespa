@@ -109,12 +109,6 @@ public class Flags {
             "Takes effect on the next deployment of the application",
             APPLICATION_ID);
 
-    public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
-            "tls-insecure-mixed-mode", "tls_client_tls_server",
-            "TLS insecure mixed mode. Allowed values: ['plaintext_client_mixed_server', 'tls_client_mixed_server', 'tls_client_tls_server']",
-            "Takes effect on restart of Docker container",
-            NODE_TYPE, APPLICATION_ID, HOSTNAME);
-
     public static final UnboundStringFlag TLS_INSECURE_AUTHORIZATION_MODE = defineStringFlag(
             "tls-insecure-authorization-mode", "log_only",
             "TLS insecure authorization mode. Allowed values: ['disable', 'log_only', 'enforce']",
