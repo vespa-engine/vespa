@@ -2,12 +2,20 @@
 
 #include "signalhandler.h"
 #include <cassert>
+#include <atomic>
+#include <chrono>
+#include <thread>
+
+using namespace std::chrono_literals;
 
 namespace vespalib {
 
 std::vector<SignalHandler*> SignalHandler::_handlers;
 
 namespace {
+
+// 31 bit concurrency counter, 1 (lsb) bit indicating shutdown
+std::atomic<int> signal_counter;
 
 class Shutdown
 {
@@ -39,9 +47,13 @@ Shutdown shutdown;
 void
 SignalHandler::handleSignal(int signal)
 {
-    if ((((size_t)signal) < _handlers.size()) && (_handlers[signal] != 0)) {
-        _handlers[signal]->gotSignal();
+    static_assert(std::atomic<int>::is_always_lock_free, "signal_counter must be lock free");
+    if ((signal_counter.fetch_add(2) & 1) == 0) {
+        if ((((size_t)signal) < _handlers.size()) && (_handlers[signal] != 0)) {
+            _handlers[signal]->gotSignal();
+        }
     }
+    signal_counter.fetch_sub(2);
 }
 
 void
@@ -108,6 +120,9 @@ SignalHandler::unhook()
 void
 SignalHandler::shutdown()
 {
+    while ((signal_counter.fetch_or(1) & ~1) != 0) {
+        std::this_thread::sleep_for(10ms);
+    }
     for (std::vector<SignalHandler*>::iterator
              it = _handlers.begin(), ite = _handlers.end();
          it != ite;
