@@ -200,6 +200,28 @@ FBench::StopClients()
     printf("\nClients Joined.\n");
 }
 
+namespace {
+
+const char *
+approx(double latency, const ClientStatus & status) {
+    return (latency > (status._timetable.size() / status._timetableResolution - 1))
+           ? "ms (approx)"
+           : "ms";
+}
+
+std::string
+fmtPercentile(double percentile) {
+    char buf[32];
+    if (percentile <= 99.0) {
+        snprintf(buf, sizeof(buf), "%2d  ", int(percentile));
+    } else {
+        snprintf(buf, sizeof(buf), "%2.1f", percentile);
+    }
+    return buf;
+}
+
+}
+
 void
 FBench::PrintSummary()
 {
@@ -227,13 +249,6 @@ FBench::PrintSummary()
     actualRate = (status._realTime > 0) ?
                  realNumClients * 1000.0 * status._requestCnt / status._realTime : 0;
 
-    double p25 = status.GetPercentile(25);
-    double p50 = status.GetPercentile(50);
-    double p75 = status.GetPercentile(75);
-    double p90 = status.GetPercentile(90);
-    double p95 = status.GetPercentile(95);
-    double p99 = status.GetPercentile(99);
-
     if (_keepAlive) {
         printf("*** HTTP keep-alive statistics ***\n");
         printf("connection reuse count -- %" PRIu64 "\n", status._reuseCnt);
@@ -250,24 +265,13 @@ FBench::PrintSummary()
     printf("minimum response time:  %8.2f ms\n", status._minTime);
     printf("maximum response time:  %8.2f ms\n", status._maxTime);
     printf("average response time:  %8.2f ms\n", status.GetAverage());
-    if (p25 > status._timetable.size() / status._timetableResolution - 1)
-        printf("25 percentile:          %8.2f ms (approx)\n", p25);
-    else         printf("25 percentile:          %8.2f ms\n", p25);
-    if (p50 > status._timetable.size() / status._timetableResolution - 1)
-        printf("50 percentile:          %8.2f ms (approx)\n", p50);
-    else         printf("50 percentile:          %8.2f ms\n", p50);
-    if (p75 > status._timetable.size() / status._timetableResolution - 1)
-        printf("75 percentile:          %8.2f ms (approx)\n", p75);
-    else         printf("75 percentile:          %8.2f ms\n", p75);
-    if (p90 > status._timetable.size() / status._timetableResolution - 1)
-        printf("90 percentile:          %8.2f ms (approx)\n", p90);
-    else         printf("90 percentile:          %8.2f ms\n", p90);
-    if (p95 > status._timetable.size() / status._timetableResolution - 1)
-        printf("95 percentile:          %8.2f ms (approx)\n", p95);
-    else         printf("95 percentile:          %8.2f ms\n", p95);
-    if (p99 > status._timetable.size() / status._timetableResolution - 1)
-        printf("99 percentile:          %8.2f ms (approx)\n", p99);
-    else         printf("99 percentile:          %8.2f ms\n", p99);
+
+    for (double percentile : {25.0, 50.0, 75.0, 90.0, 98.0, 99.0, 99.5, 99.6, 99.7, 99.8, 99.9}) {
+        double latency = status.GetPercentile(percentile);
+        printf("%s percentile:          %8.2f %s\n",
+               fmtPercentile(percentile).c_str(), latency, approx(latency, status));
+    }
+
     printf("actual query rate:      %8.2f Q/s\n", actualRate);
     printf("utilization:            %8.2f %%\n",
            (maxRate > 0) ? 100 * (actualRate / maxRate) : 0);
