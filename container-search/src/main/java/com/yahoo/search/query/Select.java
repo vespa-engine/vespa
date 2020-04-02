@@ -57,12 +57,13 @@ public class Select implements Cloneable {
     }
 
     public Select(String where, String grouping, Query query) {
-        this(where, grouping, query, Collections.emptyList());
+        this(where, grouping, null, query, Collections.emptyList());
     }
 
-    private Select(String where, String grouping, Query query, List<GroupingRequest> groupingRequests) {
+    private Select(String where, String grouping, String groupingExpressionString, Query query, List<GroupingRequest> groupingRequests) {
         this.where = Objects.requireNonNull(where, "A Select must have a where string (possibly the empty string)");
         this.grouping = Objects.requireNonNull(grouping, "A Select must have a select string (possibly the empty string)");
+        this.groupingExpressionString = groupingExpressionString;
         this.parent = Objects.requireNonNull(query, "A Select must have a parent query");
         this.groupingRequests = deepCopy(groupingRequests, this);
     }
@@ -136,11 +137,11 @@ public class Select implements Cloneable {
 
     @Override
     public Object clone() {
-        return new Select(where, grouping, parent, groupingRequests);
+        return new Select(where, grouping, groupingExpressionString, parent, groupingRequests);
     }
 
     public Select cloneFor(Query parent)  {
-        return new Select(where, grouping, parent, groupingRequests);
+        return new Select(where, grouping, groupingExpressionString, parent, groupingRequests);
     }
 
 }
