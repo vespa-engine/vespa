@@ -26,9 +26,12 @@ private:
     std::vector<vespalib::string> _errors;
 public:
     NodeTypes();
+    NodeTypes(NodeTypes &&rhs) = default;
+    NodeTypes &operator=(NodeTypes &&rhs) = default;
     NodeTypes(const Function &function, const std::vector<ValueType> &input_types);
     ~NodeTypes();
     const std::vector<vespalib::string> &errors() const { return _errors; }
+    NodeTypes export_types(const nodes::Node &root) const;
     const ValueType &get_type(const nodes::Node &node) const;
     template <typename F>
     void each(F &&f) const {
