@@ -266,7 +266,7 @@ FBench::PrintSummary()
     printf("maximum response time:  %8.2f ms\n", status._maxTime);
     printf("average response time:  %8.2f ms\n", status.GetAverage());
 
-    for (double percentile : {25.0, 50.0, 75.0, 90.0, 98.0, 99.0, 99.5, 99.6, 99.7, 99.8, 99.9}) {
+    for (double percentile : {25.0, 50.0, 75.0, 90.0, 95.0, 98.0, 99.0, 99.5, 99.6, 99.7, 99.8, 99.9}) {
         double latency = status.GetPercentile(percentile);
         printf("%s percentile:          %8.2f %s\n",
                fmtPercentile(percentile).c_str(), latency, approx(latency, status));
