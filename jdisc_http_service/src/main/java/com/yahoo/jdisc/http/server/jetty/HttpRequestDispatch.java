@@ -10,6 +10,7 @@ import com.yahoo.jdisc.handler.BindingNotFoundException;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 import org.eclipse.jetty.io.EofException;
@@ -22,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -34,6 +36,7 @@ import java.util.logging.Logger;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
+import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
 
 /**
  * @author Simon Thoresen Hult
@@ -64,14 +67,13 @@ class HttpRequestDispatch {
 
         this.jettyRequest = (Request) servletRequest;
         this.metricReporter = new MetricReporter(jDiscContext.metric, metricContext, jettyRequest.getTimeStamp());
-        honourMaxKeepAliveRequests();
         this.servletResponseController = new ServletResponseController(
                 servletRequest,
                 servletResponse,
                 jDiscContext.janitor,
                 metricReporter,
                 jDiscContext.developerMode());
-
+        markConnectionAsNonPersistentIfThresholdReached(servletRequest);
         this.async = servletRequest.startAsync();
         async.setTimeout(0);
         metricReporter.uriLength(jettyRequest.getOriginalURI().length());
@@ -99,15 +101,6 @@ class HttpRequestDispatch {
                     .whenComplete(completeRequestCallback);
         } catch (Throwable throwable) {
             log.log(Level.WARNING, "Failed registering finished listeners.", throwable);
-        }
-    }
-
-    private void honourMaxKeepAliveRequests() {
-        if (jDiscContext.serverConfig.maxKeepAliveRequests() > 0) {
-            HttpConnection connection = getConnection(jettyRequest);
-            if (connection.getMessagesIn() >= jDiscContext.serverConfig.maxKeepAliveRequests()) {
-                connection.getGenerator().setPersistent(false);
-            }
         }
     }
 
@@ -149,6 +142,25 @@ class HttpRequestDispatch {
                 log.log(level, "async.complete failed", throwable);
             }
         };
+    }
+
+    private static void markConnectionAsNonPersistentIfThresholdReached(HttpServletRequest request) {
+        ConnectorConfig connectorConfig = getConnector(request).connectorConfig();
+        int maxRequestsPerConnection = connectorConfig.maxRequestsPerConnection();
+        if (maxRequestsPerConnection > 0) {
+            HttpConnection connection = getConnection(request);
+            if (connection.getMessagesIn() >= maxRequestsPerConnection) {
+                connection.getGenerator().setPersistent(false);
+            }
+        }
+        double maxConnectionLifeInSeconds = connectorConfig.maxConnectionLife();
+        if (maxConnectionLifeInSeconds > 0) {
+            HttpConnection connection = getConnection(request);
+            Instant expireAt = Instant.ofEpochMilli((long)(connection.getCreatedTimeStamp() + maxConnectionLifeInSeconds * 1000));
+            if (Instant.now().isAfter(expireAt)) {
+                connection.getGenerator().setPersistent(false);
+            }
+        }
     }
 
     @SafeVarargs
