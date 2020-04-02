@@ -329,14 +329,24 @@ public:
 class Lambda : public Node
 {
     using Super = Node;
+public:
+    struct Self {
+        const Lambda &parent;
+        InterpretedFunction fun;
+        Self(const Lambda &parent_in, InterpretedFunction fun_in)
+            : parent(parent_in), fun(std::move(fun_in)) {}
+    };
 private:
     std::vector<size_t> _bindings;
-    InterpretedFunction _lambda;
+    std::shared_ptr<Function const> _lambda;
+    NodeTypes _lambda_types;
 public:
-    Lambda(const ValueType &result_type_in, const std::vector<size_t> &bindings_in, InterpretedFunction lambda_in)
-        : Node(result_type_in), _bindings(bindings_in), _lambda(std::move(lambda_in)) {}
+    Lambda(const ValueType &result_type_in, const std::vector<size_t> &bindings_in, const Function &lambda_in, NodeTypes lambda_types_in)
+        : Node(result_type_in), _bindings(bindings_in), _lambda(lambda_in.shared_from_this()), _lambda_types(std::move(lambda_types_in)) {}
     static TensorSpec create_spec_impl(const ValueType &type, const LazyParams &params, const std::vector<size_t> &bind, const InterpretedFunction &fun);
-    TensorSpec create_spec(const LazyParams &params) const { return create_spec_impl(result_type(), params, _bindings, _lambda); }
+    TensorSpec create_spec(const LazyParams &params, const InterpretedFunction &fun) const {
+        return create_spec_impl(result_type(), params, _bindings, fun);
+    }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
@@ -435,7 +445,7 @@ const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &s
 const Node &merge(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
 const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash);
 const Node &create(const ValueType &type, const std::map<TensorSpec::Address, Node::CREF> &spec, Stash &stash);
-const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, InterpretedFunction function, Stash &stash);
+const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash);
 const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash);
 const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
 const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash);

@@ -135,8 +135,8 @@ void op_tensor_create(State &state, uint64_t param) {
 }
 
 void op_tensor_lambda(State &state, uint64_t param) {
-    const Lambda &self = unwrap_param<Lambda>(param);
-    TensorSpec spec = self.create_spec(*state.params);
+    const Lambda::Self &self = unwrap_param<Lambda::Self>(param);
+    TensorSpec spec = self.parent.create_spec(*state.params, self.fun);
     const Value &result = *state.stash.create<Value::UP>(state.engine.from_spec(spec));
     state.stack.emplace_back(result);
 }
@@ -436,9 +436,11 @@ Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const 
 }
 
 InterpretedFunction::Instruction
-Lambda::compile_self(const TensorEngine &, Stash &) const
+Lambda::compile_self(const TensorEngine &engine, Stash &stash) const
 {
-    return Instruction(op_tensor_lambda, wrap_param<Lambda>(*this));
+    InterpretedFunction fun(engine, _lambda->root(), _lambda_types);
+    Self &self = stash.create<Self>(*this, std::move(fun));
+    return Instruction(op_tensor_lambda, wrap_param<Self>(self));
 }
 
 void
@@ -578,8 +580,8 @@ const Node &create(const ValueType &type, const std::map<TensorSpec::Address,Nod
     return stash.create<Create>(type, spec);
 }
 
-const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, InterpretedFunction function, Stash &stash) {
-    return stash.create<Lambda>(type, bindings, std::move(function));
+const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash) {
+    return stash.create<Lambda>(type, bindings, function, std::move(node_types));
 }
 
 const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash) {
