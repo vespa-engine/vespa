@@ -258,7 +258,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DEDICATED_NODES_WHEN_UNSPECIFIED = defineFeatureFlag(
-            "dedicated-nodes-when-unspecified", false,
+            "dedicated-nodes-when-unspecified", true,
             "Whether config-server should allocate dedicated container nodes when <nodes/> is not specified in services.xml",
             "Takes effect on redeploy",
             APPLICATION_ID);

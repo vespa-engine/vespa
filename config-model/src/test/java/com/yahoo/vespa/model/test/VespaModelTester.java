@@ -15,7 +15,6 @@ import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -49,7 +48,6 @@ public class VespaModelTester {
     private Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
-    private boolean useDedicatedNodesWhenUnspecified = false;
 
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
@@ -97,10 +95,6 @@ public class VespaModelTester {
 
     public void useDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
-    }
-
-    public void setUseDedicatedNodesWhenUnspecified(boolean useDedicatedNodesWhenUnspecified) {
-        this.useDedicatedNodesWhenUnspecified = useDedicatedNodesWhenUnspecified;
     }
 
     /** Creates a model which uses 0 as start index and fails on out of capacity */
@@ -151,8 +145,7 @@ public class VespaModelTester {
                 .setMultitenant(true)
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
-                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
-                .setUseDedicatedNodesWhenUnspecified(useDedicatedNodesWhenUnspecified);
+                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
 
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)
