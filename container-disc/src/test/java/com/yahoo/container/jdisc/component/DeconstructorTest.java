@@ -2,13 +2,12 @@
 package com.yahoo.container.jdisc.component;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.container.bundle.MockBundle;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.SharedResource;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Collections;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -51,6 +50,18 @@ public class DeconstructorTest {
         assertTrue(sharedResource.released);
     }
 
+    @Test
+    public void bundles_are_uninstalled() throws InterruptedException {
+        var bundle = new UninstallableMockBundle();
+        // Done by executor, so it takes some time even with a 0 delay.
+        deconstructor.deconstruct(emptyList(), singleton(bundle));
+        int cnt = 0;
+        while (! bundle.uninstalled && (cnt++ < 12000)) {
+            Thread.sleep(10);
+        }
+        assertTrue(bundle.uninstalled);
+    }
+
     private static class TestAbstractComponent extends AbstractComponent {
         boolean destructed = false;
         @Override public void deconstruct() { destructed = true; }
@@ -68,5 +79,12 @@ public class DeconstructorTest {
 
         @Override public ResourceReference refer() { return null; }
         @Override public void release() { released = true; }
+    }
+
+    private static class UninstallableMockBundle extends MockBundle {
+        boolean uninstalled = false;
+        @Override public void uninstall() {
+            uninstalled = true;
+        }
     }
 }
