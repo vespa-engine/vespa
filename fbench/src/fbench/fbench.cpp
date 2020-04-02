@@ -200,6 +200,28 @@ FBench::StopClients()
     printf("\nClients Joined.\n");
 }
 
+namespace {
+
+const char *
+approx(double latency, const ClientStatus & status) {
+    return (latency > (status._timetable.size() / status._timetableResolution - 1))
+           ? "ms (approx)"
+           : "ms";
+}
+
+std::string
+fmtPercentile(double percentile) {
+    char buf[32];
+    if (percentile <= 99.0) {
+        snprintf(buf, sizeof(buf), "%2d", int(percentile));
+    } else {
+        snprintf(buf, sizeof(buf), "%2.1f", percentile);
+    }
+    return buf;
+}
+
+}
+
 void
 FBench::PrintSummary()
 {
@@ -245,20 +267,9 @@ FBench::PrintSummary()
     printf("average response time:  %8.2f ms\n", status.GetAverage());
 
     for (double percentile : {25.0, 50.0, 75.0, 90.0, 98.0, 99.0, 99.5, 99.6, 99.7, 99.8, 99.9}) {
-        if (percentile <= 99.0) {
-            //Backwards compatible printing
-            if (percentile > (status._timetable.size() / status._timetableResolution - 1)) {
-                printf("%2d percentile:          %8.2f ms (approx)\n", int(percentile), status.GetPercentile(percentile));
-            } else {
-                printf("%2d percentile:          %8.2f ms\n", int(percentile), status.GetPercentile(percentile));
-            }
-        } else {
-            if (percentile > (status._timetable.size() / status._timetableResolution - 1)) {
-                printf("%2.1f percentile:          %8.2f ms (approx)\n", percentile, status.GetPercentile(percentile));
-            } else {
-                printf("%2.1f percentile:          %8.2f ms\n", percentile, status.GetPercentile(percentile));
-            }
-        }
+        double latency = status.GetPercentile(percentile);
+        printf("%s percentile:          %8.2f %s\n",
+               fmtPercentile(percentile).c_str(), latency, approx(latency, status));
     }
 
     printf("actual query rate:      %8.2f Q/s\n", actualRate);
