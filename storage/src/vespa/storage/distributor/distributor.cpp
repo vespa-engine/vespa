@@ -13,6 +13,7 @@
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");
@@ -768,6 +769,16 @@ Distributor::updateInternalMetricsForCompletedScan()
         _must_send_updated_host_info = true;
     }
     _bucketSpacesStats = std::move(new_space_stats);
+    update_bucket_db_memory_usage_stats();
+}
+
+void Distributor::update_bucket_db_memory_usage_stats() {
+    for (auto& space : *_bucketSpaceRepo) {
+        _bucketDBMetricUpdater.update_db_memory_usage(space.second->getBucketDatabase().memory_usage(), true);
+    }
+    for (auto& space : *_readOnlyBucketSpaceRepo) {
+        _bucketDBMetricUpdater.update_db_memory_usage(space.second->getBucketDatabase().memory_usage(), false);
+    }
 }
 
 void

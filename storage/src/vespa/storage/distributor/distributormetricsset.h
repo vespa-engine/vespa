@@ -5,12 +5,21 @@
 #include "update_metric_set.h"
 #include "visitormetricsset.h"
 #include <vespa/metrics/metrics.h>
+#include <vespa/metrics/common/memory_usage_metrics.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
+
+namespace vespalib { class MemoryUsage; }
 
 namespace storage::distributor {
 
-class DistributorMetricSet : public metrics::MetricSet
-{
+struct BucketDbMetrics : metrics::MetricSet {
+    BucketDbMetrics(const vespalib::string& db_type, metrics::MetricSet* owner);
+    ~BucketDbMetrics() override;
+
+    metrics::MemoryUsageMetrics memory_usage;
+};
+
+class DistributorMetricSet : public metrics::MetricSet {
 public:
     metrics::LoadMetric<PersistenceOperationMetricSet> puts;
     metrics::LoadMetric<UpdateMetricSet> updates;
@@ -29,6 +38,8 @@ public:
     metrics::DoubleAverageMetric recoveryModeTime;
     metrics::LongValueMetric docsStored;
     metrics::LongValueMetric bytesStored;
+    BucketDbMetrics mutable_dbs;
+    BucketDbMetrics read_only_dbs;
 
     explicit DistributorMetricSet(const metrics::LoadTypeSet& lt);
     ~DistributorMetricSet() override;

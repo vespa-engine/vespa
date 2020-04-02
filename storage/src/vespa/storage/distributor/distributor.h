@@ -226,6 +226,7 @@ private:
      * Takes metric lock.
      */
     void updateInternalMetricsForCompletedScan();
+    void update_bucket_db_memory_usage_stats();
     void scanAllBuckets();
     MaintenanceScanner::ScanResult scanNextBucket();
     void enableNextConfig();

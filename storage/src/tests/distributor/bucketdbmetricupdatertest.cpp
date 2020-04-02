@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <string>
 #include <sstream>
@@ -98,6 +99,40 @@ TEST_F(BucketDBMetricUpdaterTest, doc_and_byte_counts_are_updated) {
 
     EXPECT_EQ(32, dms.docsStored.getLast());
     EXPECT_EQ(34, dms.bytesStored.getLast());
+}
+
+TEST_F(BucketDBMetricUpdaterTest, bucket_db_memory_usage_metrics_are_updated) {
+    BucketDBMetricUpdater metric_updater;
+    IdealStateMetricSet ims;
+    DistributorMetricSet dms(_loadTypes);
+
+    vespalib::MemoryUsage mem_usage;
+    mem_usage.incAllocatedBytes(1000);
+    mem_usage.incDeadBytes(700);
+    metric_updater.update_db_memory_usage(mem_usage, true);
+
+    mem_usage.incAllocatedBytes(500);
+    mem_usage.incDeadBytes(100);
+    metric_updater.update_db_memory_usage(mem_usage, false);
+
+    metric_updater.completeRound(false);
+    metric_updater.getLastCompleteStats().propagateMetrics(ims, dms);
+
+    auto* m = dms.mutable_dbs.memory_usage.getMetric("allocated_bytes");
+    ASSERT_TRUE(m != nullptr);
+    EXPECT_EQ(m->getLongValue("last"), 1000);
+
+    m = dms.mutable_dbs.memory_usage.getMetric("dead_bytes");
+    ASSERT_TRUE(m != nullptr);
+    EXPECT_EQ(m->getLongValue("last"), 700);
+
+    m = dms.read_only_dbs.memory_usage.getMetric("allocated_bytes");
+    ASSERT_TRUE(m != nullptr);
+    EXPECT_EQ(m->getLongValue("last"), 1500);
+
+    m = dms.read_only_dbs.memory_usage.getMetric("dead_bytes");
+    ASSERT_TRUE(m != nullptr);
+    EXPECT_EQ(m->getLongValue("last"), 800);
 }
 
 TEST_F(BucketDBMetricUpdaterTest, buckets_with_too_few_and_too_many_copies) {

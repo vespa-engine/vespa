@@ -91,6 +91,8 @@ public:
     std::unique_ptr<ReadGuard> acquire_read_guard() const override {
         return std::make_unique<ReadGuardImpl>(*this);
     }
+
+    vespalib::MemoryUsage memory_usage() const noexcept override;
 };
 
 }

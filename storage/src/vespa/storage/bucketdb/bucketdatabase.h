@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/storage/bucketdb/bucketinfo.h>
 #include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 namespace storage {
 
@@ -250,6 +251,8 @@ public:
     virtual std::unique_ptr<ReadGuard> acquire_read_guard() const {
         return std::unique_ptr<ReadGuard>();
     }
+
+    [[nodiscard]] virtual vespalib::MemoryUsage memory_usage() const noexcept = 0;
 };
 
 template <typename BucketInfoType>

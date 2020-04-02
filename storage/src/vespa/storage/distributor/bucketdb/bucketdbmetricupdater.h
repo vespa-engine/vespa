@@ -4,7 +4,7 @@
 
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
-
+#include <vespa/vespalib/util/memoryusage.h>
 #include <unordered_map>
 
 namespace storage::distributor {
@@ -22,10 +22,12 @@ public:
         uint64_t _tooManyCopies;
         uint64_t _noTrusted;
         uint64_t _totalBuckets;
+        vespalib::MemoryUsage _mutable_db_mem_usage;
+        vespalib::MemoryUsage _read_only_db_mem_usage;
 
         Stats();
         Stats(const Stats &rhs);
-        ~Stats() { }
+        ~Stats() = default;
 
         Stats &operator=(const Stats &rhs) = default;
 
@@ -63,7 +65,6 @@ private:
 
 public:
     BucketDBMetricUpdater();
-
     ~BucketDBMetricUpdater();
 
     void setMinimumReplicaCountingMode(ReplicaCountingMode mode) noexcept {
@@ -97,6 +98,8 @@ public:
     Stats getLastCompleteStats() const {
         return _lastCompleteStats;
     }
+
+    void update_db_memory_usage(const vespalib::MemoryUsage& mem_usage, bool is_mutable_db);
 
 private:
     void updateMinReplicationStats(const BucketDatabase::Entry& entry, uint32_t trustedCopies);
