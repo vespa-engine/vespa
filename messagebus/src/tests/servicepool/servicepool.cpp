@@ -17,10 +17,10 @@ TEST("testMaxSize")
     net.registerSession("foo");
     net.registerSession("bar");
     net.registerSession("baz");
+    me.waitSlobrok("me/foo");
+    me.waitSlobrok("me/bar");
     me.waitSlobrok("me/baz");
     RPCServicePool pool(net.getMirror(), 2);
-    net.start();
-    net.waitUntilReady(30s);
 
     RPCServiceAddress::UP addr = pool.resolve("me/foo");
     EXPECT_EQUAL(1u, pool.getSize());
