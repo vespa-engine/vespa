@@ -213,7 +213,7 @@ std::string
 fmtPercentile(double percentile) {
     char buf[32];
     if (percentile <= 99.0) {
-        snprintf(buf, sizeof(buf), "%2d", int(percentile));
+        snprintf(buf, sizeof(buf), "%2d  ", int(percentile));
     } else {
         snprintf(buf, sizeof(buf), "%2.1f", percentile);
     }
