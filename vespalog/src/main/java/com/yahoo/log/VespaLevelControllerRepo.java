@@ -116,17 +116,17 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
                 ctlFile.writeBytes(appPrefix);
             }
             ctlFile.writeBytes("\n");
-            for (int i = appLen; i < maxPrefix; i++) {
+            for (int i = appLen; i < maxPrefix + 2; i++) {
                 byte space = ' ';
                 ctlFile.write(space);
             }
             ctlFile.writeBytes("\n");
             ctlFile.setLength(ctlFile.getFilePointer());
-            if (ctlFile.getFilePointer() != controlFileHeaderLength) {
+            if (ctlFile.getFilePointer() != (controlFileHeaderLength + 2)) {
                 System.err.println("internal error, bad header length: "
                                    + ctlFile.getFilePointer()
                                    + " (should have been: "
-                                   + controlFileHeaderLength
+                                   + (controlFileHeaderLength + 2)
                                    + ")");
             }
         }
