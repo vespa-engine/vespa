@@ -241,12 +241,12 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                     public Integer level = null;
 
                     public void getConfig(ProtonConfig.Summary.Cache.Compression.Builder compression) {
-                        if (type != null)  compression.type(ProtonConfig.Summary.Cache.Compression.Type.Enum.valueOf(type.name));
+                        if (type != null) compression.type(ProtonConfig.Summary.Cache.Compression.Type.Enum.valueOf(type.name));
                         if (level != null) compression.level(level);
                     }
 
                     public void getConfig(ProtonConfig.Summary.Log.Compact.Compression.Builder compression) {
-                        if (type != null)  compression.type(ProtonConfig.Summary.Log.Compact.Compression.Type.Enum.valueOf(type.name));
+                        if (type != null) compression.type(ProtonConfig.Summary.Log.Compact.Compression.Type.Enum.valueOf(type.name));
                         if (level != null) compression.level(level);
                     }
 
@@ -288,7 +288,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
 
                     public void getConfig(ProtonConfig.Summary.Log.Compact.Builder compact) {
                         if (compression != null) {
-                           compression.getConfig(compact.compression);
+                            compression.getConfig(compact.compression);
                         }
                     }
 
