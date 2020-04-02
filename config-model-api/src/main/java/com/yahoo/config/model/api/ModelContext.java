@@ -67,7 +67,7 @@ public interface ModelContext {
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
         double defaultTermwiseLimit();
         boolean useBucketSpaceMetric();
-        default boolean useNewAthenzFilter() { return false; }
+        default boolean useNewAthenzFilter() { return true; } // TODO bjorncs: Remove after end of April
 
         // TODO: Remove after April 2020
         default boolean usePhraseSegmenting() { return false; }

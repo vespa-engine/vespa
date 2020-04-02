@@ -42,7 +42,6 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useAdaptiveDispatch = false;
     private double defaultTermwiseLimit = 1.0;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
-    private boolean useNewAthenzFilter = false;
     private AthenzDomain athenzDomain;
 
     @Override public boolean multitenant() { return multitenant; }
@@ -63,7 +62,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Optional<TlsSecrets> tlsSecrets() { return endpointCertificateSecrets.map(TlsSecrets::new); }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useBucketSpaceMetric() { return true; }
-    @Override public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
     @Override public boolean useDedicatedNodesWhenUnspecified() { return true; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
 
@@ -104,11 +102,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setEndpointCertificateSecrets(Optional<EndpointCertificateSecrets> endpointCertificateSecrets) {
         this.endpointCertificateSecrets = endpointCertificateSecrets;
-        return this;
-    }
-
-    public TestProperties setUseNewAthenzFilter(boolean useNewAthenzFilter) {
-        this.useNewAthenzFilter = useNewAthenzFilter;
         return this;
     }
 

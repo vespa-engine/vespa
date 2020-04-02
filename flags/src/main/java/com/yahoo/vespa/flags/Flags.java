@@ -216,12 +216,6 @@ public class Flags {
             "Whether the endpoint certificate maintainer should backfill missing certificate data from cameo",
             "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\"");
 
-    public static final UnboundBooleanFlag USE_NEW_ATHENZ_FILTER = defineFeatureFlag(
-            "use-new-athenz-filter", false,
-            "Use new Athenz filter that supports access-tokens",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
             "docker-image-repo", "",
             "Override default docker image repo. Docker image version will be Vespa version.",
