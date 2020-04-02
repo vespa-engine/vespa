@@ -1,20 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("error_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("error_test");
+
 using namespace mbus;
 using vespalib::make_string;
 
-TEST_SETUP(Test);
 
-int
-Test::Main()
-{
-    TEST_INIT("error_test");
+TEST("error_test") {
     Slobrok slobrok;
     const std::string routing_template = TEST_PATH("routing-template.cfg");
     const std::string ctl_script = TEST_PATH("ctl.sh");
@@ -44,5 +42,6 @@ Test::Main()
         EXPECT_TRUE(system("../../binref/runjava JavaClient") == 0);
         EXPECT_TRUE(system((ctl_script + " stop server java").c_str()) == 0);
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }
