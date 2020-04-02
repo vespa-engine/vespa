@@ -186,6 +186,7 @@ public class BundleLoader {
 
         // The bundle at index 0 for each file reference always corresponds to the bundle at the file reference location
         Set<Bundle> allowedDuplicates = obsoleteReferences.stream()
+                .filter(reference -> ! isDiskBundle(reference))
                 .map(reference -> reference2Bundles.get(reference).get(0))
                 .collect(Collectors.toSet());
 
