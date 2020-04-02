@@ -47,7 +47,9 @@ public:
         _gate() {
         ScheduleNow();
     }
-    ~SyncTask() override = default;
+    ~SyncTask() override {
+        Kill();
+    }
 
     void await() {
         _gate.await();
@@ -66,6 +68,9 @@ struct TargetPoolTask : public FNET_Task {
         _pool(pool)
     {
         ScheduleNow();
+    }
+    ~TargetPoolTask() override {
+        Kill();
     }
     void PerformTask() override {
         _pool.flushTargets(false);
