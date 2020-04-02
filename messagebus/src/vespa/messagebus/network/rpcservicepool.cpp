@@ -33,10 +33,10 @@ RPCServicePool::resolve(const string &pattern)
     }
 
     if (service) {
-        return service->resolve();
+        return service->make_address();
     } else {
         service = std::make_shared<RPCService>(_mirror, pattern);
-        auto result = service->resolve();
+        auto result = service->make_address();
         if (service->isValid()) {
             LockGuard guard(_lock);
             (*_lru)[pattern] = std::move(service);

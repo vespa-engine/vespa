@@ -21,8 +21,8 @@ RPCService::RPCService(const Mirror &mirror, const string &pattern) :
     } else {
         Mirror::SpecList addressList = mirror.lookup(pattern);
         if (!addressList.empty()) {
-            assert(addressList.size() == 1);
-            const auto &entry = addressList[random() % addressList.size()];
+            assert(addressList.size() == 1); //TODO URGENT remove assert after a few factory runs.
+            const auto &entry = addressList.front();
             _serviceName = entry.first;
             _connectionSpec = entry.second;
         }
@@ -32,7 +32,7 @@ RPCService::RPCService(const Mirror &mirror, const string &pattern) :
 RPCService::~RPCService() = default;
 
 RPCServiceAddress::UP
-RPCService::resolve()
+RPCService::make_address()
 {
     if ( !_serviceName.empty()) {
         return std::make_unique<RPCServiceAddress>(_serviceName, _connectionSpec);

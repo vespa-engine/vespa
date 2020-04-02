@@ -18,8 +18,6 @@
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
 RoutingSpec getRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
@@ -28,10 +26,7 @@ RoutingSpec getRouting() {
                   .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("error_test");
+TEST("error_test") {
 
     Slobrok     slobrok;
     TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
@@ -76,5 +71,6 @@ Test::Main()
         EXPECT_EQUAL(reply->getError(0).getService(), "test/dst/session");
         EXPECT_EQUAL(reply->getError(1).getService(), "test/pxy/session");
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

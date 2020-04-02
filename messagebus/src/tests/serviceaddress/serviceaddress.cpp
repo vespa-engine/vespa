@@ -24,7 +24,7 @@ bool
 testNullAddress(RPCNetwork &network, const string &pattern)
 {
     RPCService service(network.getMirror(), pattern);
-    RPCServiceAddress::UP obj = service.resolve();
+    RPCServiceAddress::UP obj = service.make_address();
     if ( ! EXPECT_FALSE(obj)) {
         return false;
     }
@@ -36,7 +36,7 @@ testAddress(RPCNetwork &network, const string &pattern,
             const string &expectedSpec, const string &expectedSession)
 {
     RPCService service(network.getMirror(), pattern);
-    RPCServiceAddress::UP obj = service.resolve();
+    RPCServiceAddress::UP obj = service.make_address();
     if (!EXPECT_TRUE(obj)) {
         return false;
     }

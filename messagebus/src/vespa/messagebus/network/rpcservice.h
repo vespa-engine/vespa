@@ -40,7 +40,7 @@ public:
      *
      * @return A concrete service address.
      */
-    RPCServiceAddress::UP resolve();
+    RPCServiceAddress::UP make_address();
 
     bool isValid() const { return ! _connectionSpec.empty(); }
 };
