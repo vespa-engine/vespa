@@ -60,16 +60,13 @@ public class FileDownloader {
     private Future<Optional<File>> getFutureFile(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Objects.requireNonNull(fileReference, "file reference cannot be null");
-        log.log(LogLevel.DEBUG, () -> "Checking if file reference '" + fileReference.value() + "' exists in '" +
-                downloadDirectory.getAbsolutePath() + "' ");
+
         Optional<File> file = getFileFromFileSystem(fileReference, downloadDirectory);
         if (file.isPresent()) {
             SettableFuture<Optional<File>> future = SettableFuture.create();
             future.set(file);
             return future;
         } else {
-            log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' not found in " +
-                    downloadDirectory.getAbsolutePath() + ", starting download");
             return download(fileReferenceDownload);
         }
     }
@@ -86,6 +83,7 @@ public class FileDownloader {
         return downloadDirectory;
     }
 
+    // Files are moved atomically, so if file reference exists and is accessible we can use it
     private Optional<File> getFileFromFileSystem(FileReference fileReference, File directory) {
         File[] files = new File(directory, fileReference.value()).listFiles();
         if (directory.exists() && directory.isDirectory() && files != null && files.length > 0) {
@@ -111,27 +109,18 @@ public class FileDownloader {
         }
     }
 
-    public boolean downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        if (!alreadyDownloaded(fileReferenceDownload.fileReference())) {
-            download(fileReferenceDownload);
-            return true;
-        } else {
-            log.log(LogLevel.DEBUG, () -> "Download not needed, " + fileReferenceDownload.fileReference() + " already downloaded" );
-            return false;
-        }
+    /** Start a download, don't wait for result */
+    public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
+        FileReference fileReference = fileReferenceDownload.fileReference();
+        if (alreadyDownloaded(fileReference) || fileReferenceDownloader.isDownloading(fileReference)) return;
+
+        queueForDownload(fileReferenceDownload);
     }
 
     private synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReferenceDownload));
-        if (inProgress != null) {
-            log.log(LogLevel.DEBUG, () -> "Already downloading '" + fileReference.value() + "'");
-            return inProgress;
-        }
-
-        Future<Optional<File>> future = queueForDownload(fileReferenceDownload);
-        log.log(LogLevel.DEBUG, () -> "Queued '" + fileReference.value() + "' for download with timeout " + timeout);
-        return future;
+        return (inProgress == null) ? queueForDownload(fileReferenceDownload) : inProgress;
     }
 
     private Future<Optional<File>> queueForDownload(FileReferenceDownload fileReferenceDownload) {

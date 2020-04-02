@@ -197,11 +197,15 @@ public class FileDownloaderTest {
         FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, tempDir, timeout, sleepBetweenRetries);
         FileReference foo = new FileReference("foo");
         // Should download since we do not have the file on disk
-        assertTrue(fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo)));
+        fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
+        assertTrue(fileDownloader.fileReferenceDownloader().isDownloading(foo));
+        assertFalse(fileDownloader.getFile(foo).isPresent());
         // Receive files to simulate download
         receiveFile();
         // Should not download, since file has already been downloaded
-        assertFalse(fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo)));
+        fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
+        // and file should be available
+        assertTrue(fileDownloader.getFile(foo).isPresent());
     }
 
     @Test
