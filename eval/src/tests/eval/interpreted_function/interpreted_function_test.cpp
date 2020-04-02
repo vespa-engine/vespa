@@ -83,7 +83,6 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
                                ? NodeTypes(function, std::vector<ValueType>(params.params.size(), ValueType::double_type()))
                                : NodeTypes();
         InterpretedFunction ifun(engine, function, node_types);
-        ASSERT_EQUAL(ifun.num_params(), params.params.size());
         InterpretedFunction::Context ictx(ifun);
         const Value &result_value = ifun.eval(ictx, params);
         report_result(result_value.is_double(), result_value.as_double(), expected_result, description);

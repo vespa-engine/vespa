@@ -122,10 +122,10 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_lambda(const TensorLambda &node) {
-        InterpretedFunction my_fun(tensor_engine, node.lambda().root(), node.type().dimensions().size(), types);
+        InterpretedFunction my_fun(tensor_engine, node.lambda().root(), types);
         if (node.bindings().empty()) {
-            NoParams no_params;
-            TensorSpec spec = tensor_function::Lambda::create_spec_impl(node.type(), no_params, node.bindings(), my_fun);
+            NoParams no_bound_params;
+            TensorSpec spec = tensor_function::Lambda::create_spec_impl(node.type(), no_bound_params, node.bindings(), my_fun);
             make_const(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
         } else {
             stack.push_back(tensor_function::lambda(node.type(), node.bindings(), std::move(my_fun), stash));
