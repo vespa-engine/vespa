@@ -19,9 +19,6 @@ public:
 
 }
 
-// Clear SignalHandler::_handlers in a slightly less unsafe manner.
-Shutdown shutdown;
-
 SignalHandler SignalHandler::HUP(SIGHUP);
 SignalHandler SignalHandler::INT(SIGINT);
 SignalHandler SignalHandler::TERM(SIGTERM);
@@ -35,6 +32,9 @@ SignalHandler SignalHandler::TRAP(SIGTRAP);
 SignalHandler SignalHandler::FPE(SIGFPE);
 SignalHandler SignalHandler::QUIT(SIGQUIT);
 SignalHandler SignalHandler::USR1(SIGUSR1);
+
+// Clear SignalHandler::_handlers in a slightly less unsafe manner.
+Shutdown shutdown;
 
 void
 SignalHandler::handleSignal(int signal)
@@ -112,8 +112,14 @@ SignalHandler::shutdown()
              it = _handlers.begin(), ite = _handlers.end();
          it != ite;
          ++it) {
-        if (*it != nullptr)
-            (*it)->unhook();
+        if (*it != nullptr) {
+            // Ignore SIGTERM at shutdown in case valgrind is used.
+            if ((*it)->_signal == SIGTERM) {
+                (*it)->ignore();
+            } else {
+                (*it)->unhook();
+            }
+        }
     }
     std::vector<SignalHandler *>().swap(_handlers);
 }
