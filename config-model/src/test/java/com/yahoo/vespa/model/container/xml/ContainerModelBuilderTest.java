@@ -624,7 +624,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                         .setMultitenant(true)
                         .setHostedVespa(true))
                 .build());
-        assertEquals(1, model.hostSystem().getHosts().size());
+        assertEquals(2, model.hostSystem().getHosts().size());
     }
 
     @Test(expected = IllegalArgumentException.class)
