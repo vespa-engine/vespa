@@ -60,6 +60,13 @@ public class NodesSpecification {
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<String> dockerImageRepo,
                                Optional<String> combinedId) {
+        if (max.smallerThan(min))
+            throw new IllegalArgumentException("Min resources must be larger or equal to max resources, but " +
+                                               max + " is smaller than " + min);
+        if ( ! min.nodeResources().justNonNumbers().equals(max.nodeResources().justNonNumbers()))
+            throw new IllegalArgumentException("Min and max resources must have the same non-numeric settings, but " +
+                                               "min is " + min + " and max " + max);
+
         this.min = min;
         this.max = max;
         this.dedicated = dedicated;
