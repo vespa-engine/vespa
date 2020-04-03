@@ -2,10 +2,18 @@
 #include "distributormetricsset.h"
 #include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
+#include <vespa/vespalib/util/memoryusage.h>
 
 namespace storage::distributor {
 
 using metrics::MetricSet;
+
+BucketDbMetrics::BucketDbMetrics(const vespalib::string& db_type, metrics::MetricSet* owner)
+    : metrics::MetricSet("bucket_db", {{"bucket_db_type", db_type}}, "", owner),
+      memory_usage(this)
+{}
+
+BucketDbMetrics::~BucketDbMetrics() = default;
 
 DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
     : MetricSet("distributor", {{"distributor"}}, ""),
@@ -41,7 +49,9 @@ DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
       bytesStored("bytesstored",
               {{"logdefault"},{"yamasdefault"}},
               "Number of bytes stored in all buckets controlled by "
-              "this distributor", this)
+              "this distributor", this),
+      mutable_dbs("mutable", this),
+      read_only_dbs("read_only", this)
 {
     docsStored.logOnlyIfSet();
     bytesStored.logOnlyIfSet();

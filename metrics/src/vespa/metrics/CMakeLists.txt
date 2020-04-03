@@ -20,6 +20,7 @@ vespa_add_library(metrics
     valuemetric.cpp
     valuemetricvalues.cpp
     xmlwriter.cpp
+    $<TARGET_OBJECTS:metrics_common>
 
     INSTALL lib64
     DEPENDS

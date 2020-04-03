@@ -30,6 +30,7 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     std::unique_ptr<ReadGuard> acquire_read_guard() const override;
+    vespalib::MemoryUsage memory_usage() const noexcept override;
 private:
     struct E {
         E() : value(-1), e_0(-1), e_1(-1) {};

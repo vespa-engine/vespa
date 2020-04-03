@@ -9,6 +9,7 @@ vespa_define_module(
 
     LIBS
     src/vespa/metrics
+    src/vespa/metrics/common
 
     TESTS
     src/tests

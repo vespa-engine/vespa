@@ -132,6 +132,8 @@ BucketDBMetricUpdater::Stats::propagateMetrics(
 {
     distributorMetrics.docsStored.set(_docCount);
     distributorMetrics.bytesStored.set(_byteCount);
+    distributorMetrics.mutable_dbs.memory_usage.update(_mutable_db_mem_usage);
+    distributorMetrics.read_only_dbs.memory_usage.update(_read_only_db_mem_usage);
 
     idealStateMetrics.buckets_toofewcopies.set(_tooFewCopies);
     idealStateMetrics.buckets_toomanycopies.set(_tooManyCopies);
@@ -143,6 +145,12 @@ void
 BucketDBMetricUpdater::reset()
 {
     resetStats();
+}
+
+void BucketDBMetricUpdater::update_db_memory_usage(const vespalib::MemoryUsage& mem_usage, bool is_mutable_db) {
+    auto& target = (is_mutable_db ? _workingStats._mutable_db_mem_usage
+                                  : _workingStats._read_only_db_mem_usage);
+    target.merge(mem_usage);
 }
 
 } // storage::distributor

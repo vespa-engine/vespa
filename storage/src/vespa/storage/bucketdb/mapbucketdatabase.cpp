@@ -594,4 +594,30 @@ void MapBucketDatabase::ReadGuardImpl::find_parents_and_self(const document::Buc
     _db->getParents(bucket, entries);
 }
 
+namespace {
+
+template <typename T>
+size_t allocated_by_vec(const T& vec) noexcept {
+    return (vec.capacity() * sizeof(typename T::value_type));
+}
+
+template <typename T>
+size_t used_by_vec(const T& vec) noexcept {
+    return (vec.size() * sizeof(typename T::value_type));
+}
+
+}
+
+vespalib::MemoryUsage MapBucketDatabase::memory_usage() const noexcept {
+    // We don't have a concept of hold lists here, nor do we know the exact size of the
+    // entries on our free list (these wrap a secondary replica vector allocation).
+    // So we fudge the numbers a bit, returning a lower bound approximation only.
+    // That's OK since this is a legacy database that's on the way out anyway.
+    vespalib::MemoryUsage mem_usage;
+    mem_usage.incAllocatedBytes(allocated_by_vec(_values) + allocated_by_vec(_db));
+    mem_usage.incUsedBytes(used_by_vec(_values) + used_by_vec(_db));
+    mem_usage.incDeadBytes(allocated_by_vec(_free) + allocated_by_vec(_freeValues));
+    return mem_usage;
+}
+
 } // storage

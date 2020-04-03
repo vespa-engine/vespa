@@ -526,6 +526,12 @@ void BTreeBucketDatabase::print(std::ostream& out, bool verbose,
     (void)indent;
 }
 
+vespalib::MemoryUsage BTreeBucketDatabase::memory_usage() const noexcept {
+    auto mem_usage = _tree.getMemoryUsage();
+    mem_usage.merge(_store.getMemoryUsage());
+    return mem_usage;
+}
+
 BTreeBucketDatabase::ReadGuardImpl::ReadGuardImpl(const BTreeBucketDatabase& db)
     : _db(&db),
       _guard(_db->_generation_handler.takeGuard()),
