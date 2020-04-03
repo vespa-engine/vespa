@@ -61,7 +61,7 @@ public class Deconstructor implements ComponentDeconstructor {
                 ((SharedResource) component).release();
             }
         }
-        if (! destructibleComponents.isEmpty())
+        if (! destructibleComponents.isEmpty() || ! bundles.isEmpty())
             executor.schedule(new DestructComponentTask(destructibleComponents, bundles),
                               delay.getSeconds(), TimeUnit.SECONDS);
     }
