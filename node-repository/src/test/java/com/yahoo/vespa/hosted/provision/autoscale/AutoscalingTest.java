@@ -31,16 +31,18 @@ public class AutoscalingTest {
 
     @Test
     public void testAutoscalingSingleContentGroup() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        NodeResources hostResources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 2, 1,
+                                                     new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any));
+        ClusterResources max = new ClusterResources(20, 1,
+                                                    new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
+        AutoscalingTester tester = new AutoscalingTester(hostResources);
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
-        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.deploy(application1, cluster1, 5, 1, hostResources);
 
         assertTrue("No measurements -> No change", tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
 
@@ -67,6 +69,35 @@ public class AutoscalingTest {
         tester.assertResources("Scaling down to minimum since usage has gone down significantly",
                                14, 1, 1.0, 30.8, 30.8,
                                tester.autoscale(application1, cluster1.id(), min, max));
+    }
+
+    @Test
+    public void testAutoscalingHandlesDiskSettingChanges() {
+        NodeResources hostResources = new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.slow);
+        AutoscalingTester tester = new AutoscalingTester(hostResources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+
+        // deploy with slow
+        tester.deploy(application1, cluster1, 5, 1, hostResources);
+        tester.nodeRepository().getNodes(application1).stream()
+              .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.slow);
+
+        tester.addMeasurements(Resource.cpu, 0.25f, 1f, 120, application1);
+        // Changing min and max from slow to any
+        ClusterResources min = new ClusterResources( 2, 1,
+                                                     new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any));
+        ClusterResources max = new ClusterResources(20, 1,
+                                                    new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
+        AllocatableClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
+                                                                             15, 1, 1.3,  28.6, 28.6,
+                                                                             tester.autoscale(application1, cluster1.id(), min, max));
+        assertEquals("Disk speed from min/max is used",
+                     NodeResources.DiskSpeed.any, scaledResources.realResources().diskSpeed());
+        tester.deploy(application1, cluster1, scaledResources);
+        tester.nodeRepository().getNodes(application1).stream()
+              .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any);
     }
 
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
