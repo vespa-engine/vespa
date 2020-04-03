@@ -142,7 +142,6 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final boolean useBucketSpaceMetric;
-        private final boolean useNewAthenzFilter;
         private final String proxyProtocol;
         private final Optional<AthenzDomain> athenzDomain;
         private final boolean useDedicatedNodesWhenUnspecified;
@@ -178,8 +177,6 @@ public class ModelContextImpl implements ModelContext {
             defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useBucketSpaceMetric = Flags.USE_BUCKET_SPACE_METRIC.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.useNewAthenzFilter = Flags.USE_NEW_ATHENZ_FILTER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -241,7 +238,7 @@ public class ModelContextImpl implements ModelContext {
         public boolean useBucketSpaceMetric() { return useBucketSpaceMetric; }
 
         @Override
-        public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
+        public boolean useNewAthenzFilter() { return true; }
 
         @Override
         public String proxyProtocol() { return proxyProtocol; }
