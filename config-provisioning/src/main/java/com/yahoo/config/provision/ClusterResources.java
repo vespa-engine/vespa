@@ -44,10 +44,12 @@ public class ClusterResources {
         return false;
     }
 
-    /** Returns true if this is within the given limits (inclusive) */
+    /** Returns true if this is within the given limits (inclusive) and is compatible with them */
     public boolean isWithin(ClusterResources min, ClusterResources max) {
         if (this.smallerThan(min)) return false;
         if (max.smallerThan(this)) return false;
+        if ( ! this.nodeResources.justNonNumbers().compatibleWith(min.nodeResources.justNonNumbers())) return false;
+        if ( ! this.nodeResources.justNonNumbers().compatibleWith(max.nodeResources.justNonNumbers())) return false;
         return true;
     }
 
