@@ -14,6 +14,7 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_tensor_address_mapper.cpp
     dense_tensor_cells_iterator.cpp
     dense_tensor_create_function.cpp
+    dense_lambda_peek_optimizer.cpp
     dense_tensor_modify.cpp
     dense_tensor_peek_function.cpp
     dense_tensor_reduce.cpp
