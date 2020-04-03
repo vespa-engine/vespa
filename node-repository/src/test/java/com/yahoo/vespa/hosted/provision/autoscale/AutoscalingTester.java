@@ -206,6 +206,8 @@ class AutoscalingTester {
         flavor.minMainMemoryAvailableGb(resources.memoryGb());
         flavor.minDiskAvailableGb(resources.diskGb());
         flavor.bandwidth(resources.bandwidthGbps() * 1000);
+        flavor.fastDisk(resources.diskSpeed().compatibleWith(NodeResources.DiskSpeed.fast));
+        flavor.remoteStorage(resources.storageType().compatibleWith(NodeResources.StorageType.remote));
         return flavor;
     }
 

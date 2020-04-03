@@ -148,6 +148,11 @@ public class NodeResources {
         return with(NodeResources.DiskSpeed.any).with(StorageType.any);
     }
 
+    /** Returns this with all numbers set to 0 */
+    public NodeResources justNonNumbers() {
+        return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0);
+    }
+
     public NodeResources subtract(NodeResources other) {
         if ( ! this.isInterchangeableWith(other))
             throw new IllegalArgumentException(this + " and " + other + " are not interchangeable");

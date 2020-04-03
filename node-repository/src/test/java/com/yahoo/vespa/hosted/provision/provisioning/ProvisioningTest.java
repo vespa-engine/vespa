@@ -354,6 +354,17 @@ public class ProvisioningTest {
             assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.fast));
             assertTrue(tester.nodeRepository().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.fast));
         }
+
+        {
+            // Go back to any
+            SystemState state = prepare(application, 0, 0, 5, 3,
+                                        defaultResources.justNumbers(),
+                                        tester);
+            assertEquals(8, state.allHosts.size());
+            tester.activate(application, state.allHosts);
+            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.any));
+            assertTrue(tester.nodeRepository().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+        }
     }
 
     @Test

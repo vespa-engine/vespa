@@ -134,7 +134,12 @@ public class ResourceIterator {
             }
         }
 
-        return allocation.realResources().withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
+        // Combine the scaled resource values computed here
+        // and the currently combined values of non-scaled resources
+        return new NodeResources(cpu, memory, disk,
+                                 cluster.minResources().nodeResources().bandwidthGbps(),
+                                 cluster.minResources().nodeResources().diskSpeed(),
+                                 cluster.minResources().nodeResources().storageType());
     }
 
     private double clusterUsage(Resource resource, double load) {

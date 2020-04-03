@@ -161,12 +161,22 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                         ClusterSpec.Id clusterId,
                                                         Capacity requested) {
         List<Node> nodes = NodeList.copyOf(nodeRepository.getNodes(applicationId, Node.State.active))
-                                   .cluster(clusterId).not().retired().asList();
-        if (nodes.size() < 1) return Optional.empty();
+                                   .cluster(clusterId)
+                                   .not().retired()
+                                   .not().removable()
+                                   .asList();
+        if (nodes.isEmpty()) return Optional.empty();
         long groups = nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
-        var resources = new ClusterResources(nodes.size(), (int)groups, nodes.get(0).flavor().resources());
-        if ( ! resources.isWithin(requested.minResources(), requested.maxResources())) return Optional.empty();
-        return Optional.of(resources);
+
+        // To allow non-numeric settings to be updated without resetting to the min target, we need to use
+        // the non-numeric settings of the current min limit with the current numeric settings
+        NodeResources nodeResources = nodes.get(0).allocation().get().requestedResources()
+                                           .with(requested.minResources().nodeResources().diskSpeed())
+                                           .with(requested.maxResources().nodeResources().storageType());
+        var currentResources = new ClusterResources(nodes.size(), (int)groups, nodeResources);
+        if ( ! currentResources.isWithin(requested.minResources(), requested.maxResources())) return Optional.empty();
+
+        return Optional.of(currentResources);
     }
 
     private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {
