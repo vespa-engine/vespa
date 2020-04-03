@@ -101,9 +101,9 @@ public class Yum {
         boolean modified = false;
 
         if (!alreadyLocked) {
-            terminal.newCommandLine(context)
-                    .add("yum", "versionlock", "add", targetVersionLockName)
-                    .execute();
+            CommandLine commandLine = terminal.newCommandLine(context).add("yum", "versionlock", "add");
+            for (String repo : repos) commandLine.add("--enablerepo=" + repo);
+            commandLine.add(targetVersionLockName).execute();
             modified = true;
         }
 
@@ -121,7 +121,6 @@ public class Yum {
         var installCommand = terminal.newCommandLine(context).add("yum", "install");
         for (String repo : repos) installCommand.add("--enablerepo=" + repo);
         installCommand.add("--assumeyes", yumPackage.toName());
-
         String output = installCommand.executeSilently().getUntrimmedOutput();
 
         if (NOTHING_TO_DO_PATTERN.matcher(output).find()) {
