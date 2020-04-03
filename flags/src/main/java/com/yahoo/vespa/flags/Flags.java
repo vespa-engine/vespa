@@ -239,12 +239,6 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DEDICATED_NODES_WHEN_UNSPECIFIED = defineFeatureFlag(
-            "dedicated-nodes-when-unspecified", true,
-            "Whether config-server should allocate dedicated container nodes when <nodes/> is not specified in services.xml",
-            "Takes effect on redeploy",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag NGINX_UPSTREAM_PROXY_PROTOCOL = defineFeatureFlag(
             "nginx-upstream-proxy-protocol", false,
             "Whether the nginx should enable proxy-protocol for all upstreams",

@@ -74,7 +74,9 @@ public interface ModelContext {
 
         default String proxyProtocol() { return "https-only"; }
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
-        default boolean useDedicatedNodesWhenUnspecified() { return false; }
+
+        // TODO(mpolden): Remove after May 2020
+        default boolean useDedicatedNodesWhenUnspecified() { return true; }
     }
 
 }
