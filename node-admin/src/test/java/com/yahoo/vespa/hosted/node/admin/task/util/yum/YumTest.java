@@ -180,15 +180,18 @@ public class YumTest {
 
         terminal.expectCommand("yum versionlock delete \"0:package-1-0.1-8.el7.*\" 2>&1");
 
-        terminal.expectCommand("yum versionlock add \"0:package-1-0.10-654.el7.*\" 2>&1");
+        terminal.expectCommand("yum versionlock add --enablerepo=somerepo \"0:package-1-0.10-654.el7.*\" 2>&1");
 
         terminal.expectCommand(
-                "yum install --assumeyes 0:package-1-0.10-654.el7 2>&1",
+                "yum install --enablerepo=somerepo --assumeyes 0:package-1-0.10-654.el7 2>&1",
                 0,
                 "Nothing to do\n");
 
 
-        assertTrue(yum.installFixedVersion(taskContext, YumPackageName.fromString("0:package-1-0.10-654.el7")));
+        assertTrue(yum.installFixedVersion(
+                taskContext,
+                YumPackageName.fromString("0:package-1-0.10-654.el7"),
+                "somerepo"));
     }
 
     @Test
