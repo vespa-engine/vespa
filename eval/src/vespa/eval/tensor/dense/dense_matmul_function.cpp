@@ -13,6 +13,7 @@ namespace vespalib::tensor {
 
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using eval::as;
 using eval::Aggr;
 using namespace eval::tensor_function;
@@ -194,7 +195,7 @@ DenseMatMulFunction::DenseMatMulFunction(const eval::ValueType &result_type,
 DenseMatMulFunction::~DenseMatMulFunction() = default;
 
 eval::InterpretedFunction::Instruction
-DenseMatMulFunction::compile_self(Stash &stash) const
+DenseMatMulFunction::compile_self(const TensorEngine &, Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _lhs_size, _common_size, _rhs_size);
     auto op = my_select(lhs().result_type().cell_type(), rhs().result_type().cell_type(),

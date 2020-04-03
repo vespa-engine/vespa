@@ -18,6 +18,14 @@ struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
     }
 };
 
+void print_errors(const NodeTypes &types) {
+    if (!types.errors().empty()) {
+        for (const auto &msg: types.errors()) {
+            fprintf(stderr, "type error: %s\n", msg.c_str());
+        }
+    }
+}
+
 void verify(const vespalib::string &type_expr, const vespalib::string &type_spec) {
     auto function = Function::parse(type_expr, TypeSpecExtractor());
     if (!EXPECT_TRUE(!function->has_error())) {
@@ -29,11 +37,7 @@ void verify(const vespalib::string &type_expr, const vespalib::string &type_spec
         input_types.push_back(ValueType::from_spec(function->param_name(i)));
     }
     NodeTypes types(*function, input_types);
-    if (!types.errors().empty()) {
-        for (const auto &msg: types.errors()) {
-            fprintf(stderr, "type error: %s\n", msg.c_str());
-        }
-    }
+    print_errors(types);
     ValueType expected_type = ValueType::from_spec(type_spec);
     ValueType actual_type = types.get_type(function->root());
     EXPECT_EQUAL(expected_type, actual_type);
@@ -304,6 +308,40 @@ TEST("require that empty type repo works as expected") {
     EXPECT_FALSE(function->has_error());
     EXPECT_TRUE(types.get_type(function->root()).is_error());
     EXPECT_FALSE(types.all_types_are_double());
+}
+
+TEST("require that types for a subtree can be exported") {
+    auto function = Function::parse("(1+2)+3");
+    const auto &root = function->root();
+    ASSERT_EQUAL(root.num_children(), 2u);
+    const auto &n_1_2 = root.get_child(0);
+    const auto &n_3 = root.get_child(1);
+    ASSERT_EQUAL(n_1_2.num_children(), 2u);
+    const auto &n_1 = n_1_2.get_child(0);
+    const auto &n_2 = n_1_2.get_child(1);
+    NodeTypes all_types(*function, {});
+    NodeTypes some_types = all_types.export_types(n_1_2);
+    EXPECT_EQUAL(all_types.errors().size(), 0u);
+    EXPECT_EQUAL(some_types.errors().size(), 0u);
+    for (const auto node: {&root, &n_3}) {
+        EXPECT_TRUE(all_types.get_type(*node).is_double());
+        EXPECT_TRUE(some_types.get_type(*node).is_error());
+    }
+    for (const auto node: {&n_1_2, &n_1, &n_2}) {
+        EXPECT_TRUE(all_types.get_type(*node).is_double());
+        EXPECT_TRUE(some_types.get_type(*node).is_double());
+    }
+}
+
+TEST("require that export_types produces an error for missing types") {
+    auto fun1 = Function::parse("1+2");
+    auto fun2 = Function::parse("1+2");
+    NodeTypes fun1_types(*fun1, {});
+    NodeTypes bad_export = fun1_types.export_types(fun2->root());
+    EXPECT_EQUAL(bad_export.errors().size(), 1u);
+    print_errors(bad_export);
+    EXPECT_TRUE(fun1_types.get_type(fun1->root()).is_double());
+    EXPECT_TRUE(bad_export.get_type(fun2->root()).is_error());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

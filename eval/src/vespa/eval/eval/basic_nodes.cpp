@@ -25,7 +25,7 @@ struct Frame {
 double
 Node::get_const_value() const {
     assert(is_const());
-    InterpretedFunction function(SimpleTensorEngine::ref(), *this, 0, NodeTypes());
+    InterpretedFunction function(SimpleTensorEngine::ref(), *this, NodeTypes());
     NoParams no_params;
     InterpretedFunction::Context ctx(function);
     return function.eval(ctx, no_params).as_double();

@@ -11,6 +11,7 @@ namespace vespalib::tensor {
 
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using eval::as;
 using eval::Aggr;
 using namespace eval::tensor_function;
@@ -71,7 +72,7 @@ DenseDotProductFunction::DenseDotProductFunction(const eval::TensorFunction &lhs
 }
 
 eval::InterpretedFunction::Instruction
-DenseDotProductFunction::compile_self(Stash &) const
+DenseDotProductFunction::compile_self(const TensorEngine &, Stash &) const
 {
     auto op = my_select(lhs().result_type().cell_type(), rhs().result_type().cell_type());
     return eval::InterpretedFunction::Instruction(op);

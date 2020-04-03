@@ -297,6 +297,26 @@ TypeResolver::TypeResolver(const std::vector<ValueType> &params_in,
 
 TypeResolver::~TypeResolver() {}
 
+struct TypeExporter : public NodeTraverser {
+    const std::map<const Node *, ValueType> &parent_type_map;
+    std::map<const Node *, ValueType> &exported_type_map;
+    size_t missing_cnt;
+    TypeExporter(const std::map<const Node *, ValueType> &parent_type_map_in,
+                 std::map<const Node *, ValueType> &exported_type_map_out)
+        : parent_type_map(parent_type_map_in),
+          exported_type_map(exported_type_map_out),
+          missing_cnt(0) {}
+    bool open(const Node &) override { return true; }
+    void close(const Node &node) override {
+        auto pos = parent_type_map.find(&node);
+        if (pos != parent_type_map.end()) {
+            exported_type_map.emplace(&node, pos->second);
+        } else {
+            ++missing_cnt;
+        }
+    }
+};
+
 } // namespace vespalib::eval::nodes::<unnamed>
 } // namespace vespalib::eval::nodes
 
@@ -316,6 +336,18 @@ NodeTypes::NodeTypes(const Function &function, const std::vector<ValueType> &inp
 }
 
 NodeTypes::~NodeTypes() = default;
+
+NodeTypes
+NodeTypes::export_types(const nodes::Node &root) const
+{
+    NodeTypes exported_types;
+    nodes::TypeExporter exporter(_type_map, exported_types._type_map);
+    root.traverse(exporter);
+    if (exporter.missing_cnt > 0) {
+        exported_types._errors.push_back(fmt("[export]: %zu nodes had missing types", exporter.missing_cnt));
+    }
+    return exported_types;
+}
 
 const ValueType &
 NodeTypes::get_type(const nodes::Node &node) const

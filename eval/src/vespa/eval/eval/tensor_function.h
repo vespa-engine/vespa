@@ -101,9 +101,10 @@ struct TensorFunction
      * the value stack during execution.
      *
      * @return instruction representing the operation of this node
+     * @param engine the tensor engine used for evaluation
      * @param stash heterogeneous object store
      **/
-    virtual InterpretedFunction::Instruction compile_self(Stash &stash) const = 0;
+    virtual InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const = 0;
 
     // for debug dumping
     vespalib::string as_string() const;
@@ -185,7 +186,7 @@ public:
     ConstValue(const Value &value_in) : Leaf(value_in.type()), _value(value_in) {}
     const Value &value() const { return _value; }
     bool result_is_mutable() const override { return false; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -201,7 +202,7 @@ public:
         : Leaf(result_type_in), _param_idx(param_idx_in) {}
     size_t param_idx() const { return _param_idx; }
     bool result_is_mutable() const override { return false; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -222,7 +223,7 @@ public:
     Aggr aggr() const { return _aggr; }
     const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -240,7 +241,7 @@ public:
         : Op1(result_type_in, child_in), _function(function_in) {}
     map_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -259,7 +260,7 @@ public:
         : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -278,7 +279,7 @@ public:
         : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -297,7 +298,7 @@ public:
         : Op2(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
     const vespalib::string &dimension() const { return _dimension; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -318,7 +319,7 @@ public:
     }
     const std::map<TensorSpec::Address, Child> &spec() const { return _spec; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
@@ -328,16 +329,26 @@ public:
 class Lambda : public Node
 {
     using Super = Node;
+public:
+    struct Self {
+        const Lambda &parent;
+        InterpretedFunction fun;
+        Self(const Lambda &parent_in, InterpretedFunction fun_in)
+            : parent(parent_in), fun(std::move(fun_in)) {}
+    };
 private:
     std::vector<size_t> _bindings;
-    InterpretedFunction _lambda;
+    std::shared_ptr<Function const> _lambda;
+    NodeTypes _lambda_types;
 public:
-    Lambda(const ValueType &result_type_in, const std::vector<size_t> &bindings_in, InterpretedFunction lambda_in)
-        : Node(result_type_in), _bindings(bindings_in), _lambda(std::move(lambda_in)) {}
+    Lambda(const ValueType &result_type_in, const std::vector<size_t> &bindings_in, const Function &lambda_in, NodeTypes lambda_types_in)
+        : Node(result_type_in), _bindings(bindings_in), _lambda(lambda_in.shared_from_this()), _lambda_types(std::move(lambda_types_in)) {}
     static TensorSpec create_spec_impl(const ValueType &type, const LazyParams &params, const std::vector<size_t> &bind, const InterpretedFunction &fun);
-    TensorSpec create_spec(const LazyParams &params) const { return create_spec_impl(result_type(), params, _bindings, _lambda); }
+    TensorSpec create_spec(const LazyParams &params, const InterpretedFunction &fun) const {
+        return create_spec_impl(result_type(), params, _bindings, fun);
+    }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
@@ -372,7 +383,7 @@ public:
     const std::map<vespalib::string, MyLabel> &spec() const { return _spec; }
     const ValueType &param_type() const { return _param.get().result_type(); }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
@@ -394,7 +405,7 @@ public:
     const std::vector<vespalib::string> &from() const { return _from; }
     const std::vector<vespalib::string> &to() const { return _to; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -420,7 +431,7 @@ public:
         return (true_child().result_is_mutable() &&
                 false_child().result_is_mutable());
     }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
 
@@ -434,7 +445,7 @@ const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &s
 const Node &merge(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
 const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash);
 const Node &create(const ValueType &type, const std::map<TensorSpec::Address, Node::CREF> &spec, Stash &stash);
-const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, InterpretedFunction function, Stash &stash);
+const Node &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash);
 const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash);
 const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
 const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash);
