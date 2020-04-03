@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Int32Value;
@@ -18,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -73,7 +72,7 @@ public class FileReferenceDownloader {
         }
 
         if ( !downloadStarted) {
-            fileReferenceDownload.future().setException(new RuntimeException("Failed getting file reference '" + fileReference.value() + "'"));
+            fileReferenceDownload.future().completeExceptionally(new RuntimeException("Failed getting file reference '" + fileReference.value() + "'"));
             synchronized (downloads) {
                 downloads.remove(fileReference);
             }
@@ -96,7 +95,7 @@ public class FileReferenceDownloader {
             if (download != null) {
                 downloadStatus.put(fileReference, 1.0);
                 downloads.remove(fileReference);
-                download.future().set(Optional.of(file));
+                download.future().complete(Optional.of(file));
             } else {
                 log.log(LogLevel.DEBUG, () -> "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
             }
@@ -143,15 +142,10 @@ public class FileReferenceDownloader {
         }
     }
 
-    ListenableFuture<Optional<File>> addDownloadListener(FileReference fileReference, Runnable runnable) {
+    FileReferenceDownload getDownloadInProgress(FileReference fileReference) {
         synchronized (downloads) {
-            FileReferenceDownload download = downloads.get(fileReference);
-            if (download != null) {
-                download.future().addListener(runnable, downloadExecutor);
-                return download.future();
-            }
+            return downloads.get(fileReference);
         }
-        return null;
     }
 
     private void execute(Request request, Connection connection) {
@@ -189,7 +183,7 @@ public class FileReferenceDownloader {
 
     Map<FileReference, Double> downloadStatus() {
         synchronized (downloads) {
-            return ImmutableMap.copyOf(downloadStatus);
+            return Map.copyOf(downloadStatus);
         }
     }
 
