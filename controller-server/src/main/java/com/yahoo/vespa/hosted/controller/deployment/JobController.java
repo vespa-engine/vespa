@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -46,6 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -54,6 +56,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
@@ -304,8 +307,10 @@ public class JobController {
     private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
         return new DeploymentStatus(application,
                                     DeploymentStatus.jobsFor(application, controller.system()).stream()
-                                                    .collect(toUnmodifiableMap(job -> job,
-                                                                               job -> jobStatus(job))),
+                                                    .collect(toMap(job -> job,
+                                                                   job -> jobStatus(job),
+                                                                   (j1, j2) -> { throw new IllegalArgumentException("Duplicate key " + j1.id()); },
+                                                                   LinkedHashMap::new)),
                                     controller.system(),
                                     systemVersion,
                                     controller.clock().instant());

@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
@@ -65,6 +66,7 @@ public class DeploymentTester {
     public Application application(TenantAndApplicationId id ) { return applications().requireApplication(id); }
     public Instance instance() { return instance(instanceId); }
     public Instance instance(ApplicationId id) { return applications().requireInstance(id); }
+    public DeploymentStatusList deploymentStatuses() { return jobs.deploymentStatuses(ApplicationList.from(applications().asList())); }
 
     public DeploymentTester() {
         this(new ControllerTester());

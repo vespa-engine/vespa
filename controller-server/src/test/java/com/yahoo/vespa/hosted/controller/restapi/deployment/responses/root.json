@@ -53,6 +53,15 @@
           "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
+          "failing": "system-test",
+          "status": "error"
+        },
+        {
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy": "default",
           "failing": "staging-test",
           "status": "error"
         }
@@ -69,6 +78,14 @@
         }
       ],
       "deployingApplications": [
+        {
+          "tenant": "tenant1",
+          "application": "application1",
+          "instance": "default",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "upgradePolicy": "default",
+          "running": "system-test"
+        },
         {
           "tenant": "tenant1",
           "application": "application1",

@@ -119,8 +119,8 @@ public class VersionStatus {
         }
 
 
-        var deploymentStatistics = computeDeploymentStatistics(infrastructureVersions.keySet(),
-                                                               controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
+        var deploymentStatistics = DeploymentStatistics.compute(infrastructureVersions.keySet(),
+                                                                controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
                                                                                                                             .withProjectId()));
         List<VespaVersion> versions = new ArrayList<>();
         List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
@@ -188,50 +188,6 @@ public class VersionStatus {
         return versions;
     }
 
-    private static Collection<DeploymentStatistics> computeDeploymentStatistics(Set<Version> infrastructureVersions,
-                                                                                DeploymentStatusList statuses) {
-        Map<Version, DeploymentStatistics> versionMap = new HashMap<>();
-
-        for (Version infrastructureVersion : infrastructureVersions) {
-            versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
-        }
-
-        for (DeploymentStatus status : statuses.asList()) {
-            for (Instance instance : status.application().instances().values())
-                for (Deployment deployment : instance.productionDeployments().values())
-                    versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
-
-            status.instanceJobs().forEach((id, jobs) -> {
-                // Add all unsuccessful runs for failing jobs as any run may have resulted in an incomplete deployment
-                // where a subset of nodes have upgraded.
-                jobs.failing()
-                    .not().failingApplicationChange()
-                    .not().withStatus(RunStatus.outOfCapacity)
-                    .mapToList(JobStatus::runs)
-                    .forEach(runs -> runs.descendingMap().values().stream()
-                                         .dropWhile(run -> !run.hasEnded())
-                                         .takeWhile(run -> run.hasFailed())
-                                         .map(run -> run.versions().targetPlatform())
-                                         .forEach(version -> versionMap.put(version,
-                                                                            versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                                                      .withFailing(id))));
-
-                jobs.production()
-                    .lastSuccess().mapToList(run -> run.versions().targetPlatform())
-                    .forEach(version -> versionMap.put(version,
-                                                       versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                                 .withProduction(id)));
-
-                jobs.upgrading()
-                    .lastTriggered().mapToList(run -> run.versions().targetPlatform())
-                    .forEach(version -> versionMap.put(version,
-                                                       versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                                 .withDeploying(id)));
-            });
-        }
-        return versionMap.values();
-    }
-
     private static VespaVersion createVersion(DeploymentStatistics statistics,
                                               Set<ControllerVersion> controllerVersions,
                                               Version systemVersion,
@@ -271,7 +227,7 @@ public class VersionStatus {
             }
         }
 
-        return new VespaVersion(statistics,
+        return new VespaVersion(statistics.version(),
                                 commitSha,
                                 commitDate,
                                 isControllerVersion,

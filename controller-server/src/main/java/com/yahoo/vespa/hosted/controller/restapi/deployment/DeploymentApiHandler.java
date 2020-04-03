@@ -19,10 +19,13 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
+import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
@@ -30,8 +33,14 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * This implements the deployment/v1 API which provides information about the status of Vespa platform and
@@ -89,10 +98,10 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         Cursor platformArray = root.setArray("versions");
         var versionStatus = controller.versionStatus();
         var systemVersion = versionStatus.systemVersion().map(VespaVersion::versionNumber).orElse(Vtag.currentVersion);
-        Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().readable()), systemVersion)
-                                                     .asList().stream()
-                                                     .flatMap(status -> status.instanceJobs().entrySet().stream())
-                                                     .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        var deploymentStatuses = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()), systemVersion);
+        var deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(Collectors.toList()),
+                                                                deploymentStatuses)
+                                                       .stream().collect(Collectors.toMap(DeploymentStatistics::version, Function.identity()));
         for (VespaVersion version : versionStatus.versions()) {
             Cursor versionObject = platformArray.addObject();
             versionObject.setString("version", version.versionNumber().toString());
@@ -109,36 +118,31 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             }
 
             Cursor failingArray = versionObject.setArray("failingApplications");
-            for (ApplicationId id : version.statistics().failing()) {
-                if (jobs.containsKey(id))
-                    firstFailingOn(version.versionNumber(), jobs.get(id)).ifPresent(firstFailing -> {
-                        Cursor applicationObject = failingArray.addObject();
-                        toSlime(applicationObject, id, request);
-                        applicationObject.setString("failing", firstFailing.id().type().jobName());
-                        applicationObject.setString("status", firstFailing.status().name());
-                    });
+            for (Run run : deploymentStatistics.get(version.versionNumber()).failingUpgrades()) {
+                Cursor applicationObject = failingArray.addObject();
+                toSlime(applicationObject, run.id().application(), request);
+                applicationObject.setString("failing", run.id().type().jobName());
+                applicationObject.setString("status", run.status().name());
             }
 
+            var jobsByInstance = deploymentStatuses.asList().stream()
+                                                   .flatMap(status -> status.instanceJobs().entrySet().stream())
+                                                   .collect(toUnmodifiableMap(jobs -> jobs.getKey(), jobs -> jobs.getValue()));
             Cursor productionArray = versionObject.setArray("productionApplications");
-            for (ApplicationId id : version.statistics().production()) {
-                if (jobs.containsKey(id)) {
-                    int successes = productionSuccessesFor(version.versionNumber(), jobs.get(id));
-                    if (successes == 0) continue; // Just upgraded to a newer version.
-                    Cursor applicationObject = productionArray.addObject();
-                    toSlime(applicationObject, id, request);
-                    applicationObject.setLong("productionJobs", jobs.get(id).production().size());
-                    applicationObject.setLong("productionSuccesses", productionSuccessesFor(version.versionNumber(), jobs.get(id)));
-                }
-            }
+            deploymentStatistics.get(version.versionNumber()).productionSuccesses().stream()
+                                .collect(groupingBy(run -> run.id().application()))
+                                .forEach((id, runs) -> {
+                                    Cursor applicationObject = productionArray.addObject();
+                                    toSlime(applicationObject, id, request);
+                                    applicationObject.setLong("productionJobs", jobsByInstance.get(id).production().size());
+                                    applicationObject.setLong("productionSuccesses", runs.size());
+                                });
 
             Cursor runningArray = versionObject.setArray("deployingApplications");
-            for (ApplicationId id : version.statistics().deploying()) {
-                if (jobs.containsKey(id))
-                    lastDeployingTo(version.versionNumber(), jobs.get(id)).ifPresent(lastDeploying -> {
-                        Cursor applicationObject = runningArray.addObject();
-                        toSlime(applicationObject, id, request);
-                        applicationObject.setString("running", lastDeploying.id().type().jobName());
-                    });
+            for (Run run : deploymentStatistics.get(version.versionNumber()).runningUpgrade()) {
+                Cursor applicationObject = runningArray.addObject();
+                toSlime(applicationObject, run.id().application(), request);
+                applicationObject.setString("running", run.id().type().jobName());
             }
         }
         return new SlimeJsonResponse(slime);
@@ -165,32 +169,5 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     }
 
     // ----------------------------- Utilities to pick out the relevant JobStatus -- filter chains should mirror the ones in VersionStatus
-
-    /** The first upgrade job to fail on this version, for this application */
-    private Optional<Run> firstFailingOn(Version version, JobList jobs) {
-        return jobs.failing()
-                   .not().failingApplicationChange()
-                   .not().withStatus(RunStatus.outOfCapacity)
-                   .lastCompleted().on(version)
-                   .lastCompleted().asList().stream()
-                   .min(Comparator.<Run, Instant>comparing(run -> run.start())
-                                .thenComparing(run -> run.id().type()));
-    }
-
-    /** The number of production jobs with last success on the given version, for this application */
-    private int productionSuccessesFor(Version version, JobList jobs) {
-        return jobs.production()
-                   .lastSuccess().on(version)
-                   .size();
-    }
-
-    /** The last triggered upgrade to this version, for this application */
-    private Optional<Run> lastDeployingTo(Version version, JobList jobs) {
-        return jobs.upgrading()
-                   .lastTriggered().on(version)
-                   .lastTriggered().asList().stream()
-                   .max(Comparator.<Run, Instant>comparing(run -> run.start())
-                                .thenComparing(run -> run.id().type()));
-    }
 
 }
