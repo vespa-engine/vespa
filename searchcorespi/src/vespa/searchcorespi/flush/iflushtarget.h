@@ -153,7 +153,7 @@ public:
     virtual Time getLastFlushTime() const = 0;
 
     /**
-     * Return if the traget itself is in bad need for a flush.
+     * Return if the target itself is in bad need for a flush.
      *
      * @return true if an urgent flush is needed
      */
