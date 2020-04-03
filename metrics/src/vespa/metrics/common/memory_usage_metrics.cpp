@@ -8,8 +8,8 @@ namespace metrics {
 MemoryUsageMetrics::MemoryUsageMetrics(metrics::MetricSet* parent)
     : MetricSet("memory_usage", {}, "The memory usage for a given component", parent),
       _allocated_bytes("allocated_bytes", {}, "The number of allocated bytes", this),
-      _used_bytes("used_bytes", {}, "The number of used bytes (<= allocatedbytes)", this),
-      _dead_bytes("dead_bytes", {}, "The number of dead bytes (<= usedbytes)", this),
+      _used_bytes("used_bytes", {}, "The number of used bytes (<= allocated_bytes)", this),
+      _dead_bytes("dead_bytes", {}, "The number of dead bytes (<= used_bytes)", this),
       _on_hold_bytes("onhold_bytes", {}, "The number of bytes on hold", this)
 {
 }
