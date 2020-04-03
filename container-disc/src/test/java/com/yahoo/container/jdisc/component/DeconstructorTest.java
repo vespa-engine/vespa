@@ -68,14 +68,14 @@ public class DeconstructorTest {
     }
 
     private static class TestProvider implements Provider<Void> {
-        boolean destructed = false;
+        volatile boolean destructed = false;
 
         @Override public Void get() { return null; }
         @Override public void deconstruct() { destructed = true; }
     }
 
     private static class TestSharedResource implements SharedResource {
-        boolean released = false;
+        volatile boolean released = false;
 
         @Override public ResourceReference refer() { return null; }
         @Override public void release() { released = true; }
