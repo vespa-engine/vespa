@@ -396,5 +396,19 @@ class SystemFlagsDeployResult {
         }
 
         Warning toWarning(Set<FlagsTarget> targets) { return new Warning(message, targets, flagId); }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            WarningWithoutTarget that = (WarningWithoutTarget) o;
+            return Objects.equals(message, that.message) &&
+                    Objects.equals(flagId, that.flagId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(message, flagId);
+        }
     }
 }
