@@ -104,6 +104,7 @@ public class Yum {
             CommandLine commandLine = terminal.newCommandLine(context).add("yum", "versionlock", "add");
             // If the targetVersionLockName refers to a package in a by-default-disabled repo,
             // we must enable the repo unless targetVersionLockName is already installed.
+            // The other versionlock commands (list, delete) does not require --enablerepo.
             for (String repo : repos) commandLine.add("--enablerepo=" + repo);
             commandLine.add(targetVersionLockName).execute();
             modified = true;
