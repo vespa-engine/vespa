@@ -28,7 +28,7 @@ using search::AttributeGuard;
 using search::AttributeVector;
 using search::IAttributeManager;
 using search::NotImplementedAttribute;
-using search::ISequencedTaskExecutor;
+using vespalib::ISequencedTaskExecutor;
 using vespa::config::search::ImportedFieldsConfig;
 
 namespace proton {

@@ -10,9 +10,9 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
 #include <future>
@@ -154,7 +154,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
                                        tuneFileAttributes,
                                        const FileHeaderContext &
                                        fileHeaderContext,
-                                       search::ISequencedTaskExecutor &
+                                       vespalib::ISequencedTaskExecutor &
                                        attributeFieldWriter,
                                        const HwInfo &hwInfo)
     : IFlushTarget(make_string("attribute.flush.%s", attr->getName().c_str()), Type::SYNC, Component::ATTRIBUTE),

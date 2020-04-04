@@ -4,7 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/common/documentsummary.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
@@ -149,8 +149,8 @@ void Test::testSearch(Searchable &source,
 void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     Schema schema = getSchema();
     vespalib::ThreadStackExecutor sharedExecutor(2, 0x10000);
-    auto indexFieldInverter = search::SequencedTaskExecutor::create(2);
-    auto indexFieldWriter = search::SequencedTaskExecutor::create(2);
+    auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(2);
+    auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(2);
     MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
     DocBuilder doc_builder(schema);
 

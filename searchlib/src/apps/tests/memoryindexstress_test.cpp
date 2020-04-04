@@ -9,7 +9,6 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -24,6 +23,7 @@
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("memoryindexstress_test");
@@ -195,8 +195,8 @@ struct Fixture {
     Schema       schema;
     DocumentTypeRepo  repo;
     vespalib::ThreadStackExecutor _executor;
-    std::unique_ptr<search::ISequencedTaskExecutor> _invertThreads;
-    std::unique_ptr<search::ISequencedTaskExecutor> _pushThreads;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _invertThreads;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _pushThreads;
     MemoryIndex  index;
     uint32_t _readThreads;
     vespalib::ThreadStackExecutor _writer; // 1 write thread
@@ -247,8 +247,8 @@ Fixture::Fixture(uint32_t readThreads)
     : schema(makeSchema()),
       repo(makeDocTypeRepoConfig()),
       _executor(1, 128 * 1024),
-      _invertThreads(search::SequencedTaskExecutor::create(2)),
-      _pushThreads(search::SequencedTaskExecutor::create(2)),
+      _invertThreads(vespalib::SequencedTaskExecutor::create(2)),
+      _pushThreads(vespalib::SequencedTaskExecutor::create(2)),
       index(schema, MockFieldLengthInspector(), *_invertThreads, *_pushThreads),
       _readThreads(readThreads),
       _writer(1, 128 * 1024),

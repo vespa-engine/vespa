@@ -7,7 +7,7 @@
 #include <vespa/searchcorespi/index/indexcollection.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchcorespi/index/indexfusiontarget.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -31,7 +31,7 @@ using document::Document;
 using document::FieldValue;
 using proton::index::IndexConfig;
 using proton::index::IndexManager;
-using search::SequencedTaskExecutor;
+using vespalib::SequencedTaskExecutor;
 using search::SerialNum;
 using search::TuneFileAttributes;
 using search::TuneFileIndexManager;

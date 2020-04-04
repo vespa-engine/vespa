@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/scheduletaskcallback.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -14,9 +13,10 @@
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("memory_index_test");
@@ -31,6 +31,8 @@ using vespalib::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
+using vespalib::ISequencedTaskExecutor;
+using vespalib::SequencedTaskExecutor;
 using namespace search::fef;
 using namespace search::index;
 using namespace search::memoryindex;
@@ -64,8 +66,8 @@ struct MySetup : public IFieldLengthInspector {
 struct Index {
     Schema       schema;
     vespalib::ThreadStackExecutor _executor;
-    std::unique_ptr<search::ISequencedTaskExecutor> _invertThreads;
-    std::unique_ptr<search::ISequencedTaskExecutor> _pushThreads;
+    std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
+    std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     MemoryIndex  index;
     DocBuilder builder;
     uint32_t     docid;
@@ -123,8 +125,8 @@ private:
 Index::Index(const MySetup &setup)
     : schema(setup.schema),
       _executor(1, 128 * 1024),
-      _invertThreads(search::SequencedTaskExecutor::create(2)),
-      _pushThreads(search::SequencedTaskExecutor::create(2)),
+      _invertThreads(SequencedTaskExecutor::create(2)),
+      _pushThreads(SequencedTaskExecutor::create(2)),
       index(schema, setup, *_invertThreads, *_pushThreads),
       builder(schema),
       docid(1),

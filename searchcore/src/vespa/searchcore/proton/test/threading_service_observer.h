@@ -4,7 +4,7 @@
 #include "executor_observer.h"
 #include "thread_service_observer.h"
 #include <vespa/searchcorespi/index/ithreadingservice.h>
-#include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
+#include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
 
 namespace proton:: test {
 
@@ -16,9 +16,9 @@ private:
     ThreadServiceObserver _index;
     ThreadServiceObserver _summary;
     vespalib::ThreadExecutor & _shared;
-    search::SequencedTaskExecutorObserver _indexFieldInverter;
-    search::SequencedTaskExecutorObserver _indexFieldWriter;
-    search::SequencedTaskExecutorObserver _attributeFieldWriter;
+    vespalib::SequencedTaskExecutorObserver _indexFieldInverter;
+    vespalib::SequencedTaskExecutorObserver _indexFieldWriter;
+    vespalib::SequencedTaskExecutorObserver _attributeFieldWriter;
 
 public:
     ThreadingServiceObserver(searchcorespi::index::IThreadingService &service);
@@ -32,14 +32,14 @@ public:
     const ThreadServiceObserver &summaryObserver() const {
         return _summary;
     }
-    const search::SequencedTaskExecutorObserver &indexFieldInverterObserver() const {
+    const vespalib::SequencedTaskExecutorObserver &indexFieldInverterObserver() const {
         return _indexFieldInverter;
     }
-    const search::SequencedTaskExecutorObserver &indexFieldWriterObserver() const {
+    const vespalib::SequencedTaskExecutorObserver &indexFieldWriterObserver() const {
         return _indexFieldWriter;
     }
 
-    const search::SequencedTaskExecutorObserver &attributeFieldWriterObserver() const {
+    const vespalib::SequencedTaskExecutorObserver &attributeFieldWriterObserver() const {
         return _attributeFieldWriter;
     }
 
@@ -59,14 +59,14 @@ public:
     vespalib::ThreadExecutor &shared() override {
         return _shared;
     }
-    search::ISequencedTaskExecutor &indexFieldInverter() override {
+    vespalib::ISequencedTaskExecutor &indexFieldInverter() override {
         return _indexFieldInverter;
     }
-    search::ISequencedTaskExecutor &indexFieldWriter() override {
+    vespalib::ISequencedTaskExecutor &indexFieldWriter() override {
         return _indexFieldWriter;
     }
 
-    search::ISequencedTaskExecutor &attributeFieldWriter() override {
+    vespalib::ISequencedTaskExecutor &attributeFieldWriter() override {
         return _attributeFieldWriter;
     }
 

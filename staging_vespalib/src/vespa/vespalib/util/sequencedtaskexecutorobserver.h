@@ -4,7 +4,7 @@
 #include "isequencedtaskexecutor.h"
 #include <atomic>
 
-namespace search {
+namespace vespalib {
 
 /**
  * Observer class to observe class to run multiple tasks in parallel,

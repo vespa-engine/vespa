@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "foregroundtaskexecutor.h"
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <cassert>
 
-using vespalib::ThreadStackExecutor;
-
-namespace search {
+namespace vespalib {
 
 ForegroundTaskExecutor::ForegroundTaskExecutor()
     : ForegroundTaskExecutor(1)

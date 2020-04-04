@@ -1,7 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_common OBJECT
     SOURCES
-    adaptive_sequenced_executor.cpp
     allocatedbitvector.cpp
     bitvector.cpp
     bitvectorcache.cpp
@@ -12,11 +11,9 @@ vespa_add_library(searchlib_common OBJECT
     documentsummary.cpp
     featureset.cpp
     fileheadercontext.cpp
-    foregroundtaskexecutor.cpp
     gatecallback.cpp
     growablebitvector.cpp
     indexmetainfo.cpp
-    isequencedtaskexecutor.cpp
     location.cpp
     locationiterators.cpp
     mapnames.cpp
@@ -24,8 +21,6 @@ vespa_add_library(searchlib_common OBJECT
     packets.cpp
     partialbitvector.cpp
     resultset.cpp
-    sequencedtaskexecutor.cpp
-    sequencedtaskexecutorobserver.cpp
     serialnumfileheadercontext.cpp
     sort.cpp
     sortdata.cpp

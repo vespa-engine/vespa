@@ -6,7 +6,7 @@
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -18,7 +18,7 @@ LOG_SETUP("attributes_state_explorer_test");
 using namespace proton;
 using namespace proton::test;
 using search::AttributeVector;
-using search::ForegroundTaskExecutor;
+using vespalib::ForegroundTaskExecutor;
 using search::TuneFileAttributes;
 using search::index::DummyFileHeaderContext;
 using search::test::DirectoryHandler;

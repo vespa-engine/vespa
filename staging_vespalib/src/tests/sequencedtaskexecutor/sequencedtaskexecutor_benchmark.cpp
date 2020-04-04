@@ -1,15 +1,15 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
-#include <vespa/searchlib/common/adaptive_sequenced_executor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/adaptive_sequenced_executor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/time.h>
 #include <atomic>
 
-using search::ISequencedTaskExecutor;
-using search::SequencedTaskExecutor;
-using search::AdaptiveSequencedExecutor;
-using ExecutorId = search::ISequencedTaskExecutor::ExecutorId;
+using vespalib::ISequencedTaskExecutor;
+using vespalib::SequencedTaskExecutor;
+using vespalib::AdaptiveSequencedExecutor;
+using ExecutorId = vespalib::ISequencedTaskExecutor::ExecutorId;
 
 size_t do_work(size_t size) {
     size_t ret = 0;

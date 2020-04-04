@@ -787,7 +787,7 @@ Test::requireThatAttributesAreUsed()
     TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
 
     proton::IAttributeManager::SP attributeManager = dc._ddb->getReadySubDB()->getAttributeManager();
-    search::ISequencedTaskExecutor &attributeFieldWriter = attributeManager->getAttributeFieldWriter();
+    vespalib::ISequencedTaskExecutor &attributeFieldWriter = attributeManager->getAttributeFieldWriter();
     search::AttributeVector *bjAttr = attributeManager->getWritableAttribute("bj");
     auto bjTensorAttr = dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
 

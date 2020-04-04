@@ -7,14 +7,10 @@
 #include <vespa/searchcore/proton/common/hw_info.h>
 
 
-namespace search {
+namespace search { class AttributeVector; }
 
-class ISequencedTaskExecutor;
-class AttributeVector;
-
-namespace common { class FileHeaderContext; }
-
-}
+namespace search::common { class FileHeaderContext; }
+namespace vespalib { class ISequencedTaskExecutor; }
 
 namespace proton {
 
@@ -39,7 +35,7 @@ private:
     FlushStats                  _lastStats;
     const search::TuneFileAttributes _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    search::ISequencedTaskExecutor &_attributeFieldWriter;
+    vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
     HwInfo                       _hwInfo;
     std::shared_ptr<AttributeDirectory> _attrDir;
 
@@ -59,7 +55,7 @@ public:
                        const search::TuneFileAttributes &tuneFileAttributes,
                        const search::common::FileHeaderContext &
                        fileHeaderContext,
-                       search::ISequencedTaskExecutor &attributeFieldWriter,
+                       vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                        const HwInfo &hwInfo);
 
     virtual

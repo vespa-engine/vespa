@@ -5,10 +5,11 @@
 #include <vespa/vespalib/stllike/hashtable.h>
 #include <cassert>
 
-namespace search {
-    namespace {
-        constexpr uint8_t MAGIC = 255;
-    }
+namespace vespalib {
+
+namespace {
+    constexpr uint8_t MAGIC = 255;
+}
 
 ISequencedTaskExecutor::ISequencedTaskExecutor(uint32_t numExecutors)
     : _component2Id(vespalib::hashtable_base::getModuloStl(numExecutors*8), MAGIC),

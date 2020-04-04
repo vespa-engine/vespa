@@ -10,7 +10,7 @@
 #include <condition_variable>
 #include <cassert>
 
-namespace search {
+namespace vespalib {
 
 /**
  * Sequenced executor that balances the number of active threads in

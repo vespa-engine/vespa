@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
@@ -9,6 +8,8 @@
 #include <vespa/searchlib/memoryindex/i_field_index_collection.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace search {
@@ -18,6 +19,8 @@ using index::DocBuilder;
 using index::Schema;
 using index::schema::CollectionType;
 using index::schema::DataType;
+using vespalib::SequencedTaskExecutor;
+using vespalib::ISequencedTaskExecutor;
 
 using namespace index;
 

@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sequencedtaskexecutor.h"
+#include "singleexecutor.h"
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <vespa/vespalib/util/singleexecutor.h>
 
-using vespalib::BlockingThreadStackExecutor;
-using vespalib::SingleExecutor;
-
-namespace search {
+namespace vespalib {
 
 namespace {
 

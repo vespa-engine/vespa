@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
@@ -19,6 +18,7 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -37,6 +37,7 @@ using search::common::FileHeaderContext;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
+using vespalib::SequencedTaskExecutor;
 
 using namespace index;
 

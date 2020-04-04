@@ -2,7 +2,7 @@
 
 #include "sequencedtaskexecutorobserver.h"
 
-namespace search {
+namespace vespalib {
 
 SequencedTaskExecutorObserver::SequencedTaskExecutorObserver(ISequencedTaskExecutor &executor)
     : ISequencedTaskExecutor(executor.getNumExecutors()),
