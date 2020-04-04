@@ -81,7 +81,7 @@ struct TargetPoolTask : public FNET_Task {
 };
 
 std::unique_ptr<vespalib::SyncableThreadExecutor>
-createExecutor(RPCNetworkParams::OptimizeFor optimizeFor) {
+createSingleExecutor(RPCNetworkParams::OptimizeFor optimizeFor) {
     switch (optimizeFor) {
         case RPCNetworkParams::OptimizeFor::LATENCY:
             return std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
@@ -89,6 +89,14 @@ createExecutor(RPCNetworkParams::OptimizeFor optimizeFor) {
         default:
             return std::make_unique<vespalib::SingleExecutor>(1000, 10, 1ms);
     }
+}
+
+std::unique_ptr<vespalib::SyncableThreadExecutor>
+createExecutor(RPCNetworkParams::OptimizeFor optimizeFor, uint32_t numThreads) {
+    if ((optimizeFor == RPCNetworkParams::OptimizeFor::LATENCY) || (numThreads >= 2)) {
+        return std::make_unique<vespalib::ThreadStackExecutor>(numThreads, 0x10000);
+    }
+    return std::make_unique<vespalib::SingleExecutor>(1000, 10, 1ms);
 }
 
 }
@@ -147,9 +155,10 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
     _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
     _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4096)),
-    _singleEncodeExecutor(createExecutor(params.getOptimizeFor())),
-    _singleDecodeExecutor(createExecutor(params.getOptimizeFor())),
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 128000)),
+    _singleEncodeExecutor(createSingleExecutor(params.getOptimizeFor())),
+    _singleDecodeExecutor(createSingleExecutor(params.getOptimizeFor())),
+    _encodeExecutor(createExecutor(params.getOptimizeFor(), std::max(1u, params.getNumThreads()/4))),
+    _decodeExecutor(createExecutor(params.getOptimizeFor(), std::max(1u, params.getNumThreads()/4))),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
