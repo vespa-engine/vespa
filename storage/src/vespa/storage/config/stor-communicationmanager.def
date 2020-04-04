@@ -35,9 +35,9 @@ mbus.num_network_threads int default=2
 
 ## Number of workers threads for messagebus.
 ## Any value below 1 will be 1.
-mbus.num_threads int default=2
+mbus.num_threads int default=1
 
-mbus.optimize_for enum {LATENCY, THROUGHPUT} default = LATENCY
+mbus.optimize_for enum {LATENCY, THROUGHPUT} default = THROUGHPUT
 
 ## Enable to use above thread pool for encoding replies
 ## False will use network(fnet) thread

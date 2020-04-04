@@ -6,6 +6,10 @@
 namespace vespalib {
 
 SingleExecutor::SingleExecutor(uint32_t taskLimit)
+    : SingleExecutor(taskLimit, taskLimit/10, 5ms)
+{ } 
+
+SingleExecutor::SingleExecutor(uint32_t taskLimit, uint32_t watermark, duration napTime)
     : _taskLimit(vespalib::roundUp2inN(taskLimit)),
       _wantedTaskLimit(_taskLimit.load()),
       _rp(0),
@@ -19,10 +23,13 @@ SingleExecutor::SingleExecutor(uint32_t taskLimit)
       _wakeupConsumerAt(0),
       _producerNeedWakeupAt(0),
       _wp(0),
+      _watermark(watermark),
+      _napTime(napTime),
       _closed(false)
 {
     _thread.start();
 }
+
 SingleExecutor::~SingleExecutor() {
     shutdown();
     sync();
@@ -102,10 +109,10 @@ SingleExecutor::run() {
     while (!_thread.stopped()) {
         drain_tasks();
         _producerCondition.notify_all();
-        _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + (_taskLimit.load(std::memory_order_relaxed) / 4), std::memory_order_relaxed);
+        _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + _watermark, std::memory_order_relaxed);
         Lock lock(_mutex);
         if (numTasks() <= 0) {
-            _consumerCondition.wait_for(lock, 10ms);
+            _consumerCondition.wait_for(lock, _napTime);
         }
         _wakeupConsumerAt.store(0, std::memory_order_relaxed);
     }
@@ -144,7 +151,7 @@ SingleExecutor::wait_for_room(Lock & lock) {
     }
     _queueSize.add(numTasks());
     while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
-        sleepProducer(lock, 10ms, wp - taskLimit/4);
+        sleepProducer(lock, _napTime, wp - _watermark);
     }
 }
 
