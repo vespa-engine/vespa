@@ -46,4 +46,4 @@ mbus.dispatch_on_encode bool default=true
 ## Enable to use above thread pool for decoding replies
 ## False will use network(fnet) thread
 ## Todo: Change default once verified in large scale deployment.
-mbus.dispatch_on_decode bool default=true
+mbus.dispatch_on_decode bool default=false
