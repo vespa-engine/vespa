@@ -28,18 +28,11 @@ public class VersionStatusSerializerTest {
     @Test
     public void testSerialization() {
         List<VespaVersion> vespaVersions = new ArrayList<>();
-        DeploymentStatistics statistics = new DeploymentStatistics(
-                Version.fromString("5.0"),
-                Collections.singletonList(ApplicationId.from("tenant1", "failing1", "default")),
-                List.of(ApplicationId.from("tenant2", "success1", "default"),
-                        ApplicationId.from("tenant2", "success2", "default")),
-                List.of(ApplicationId.from("tenant1", "failing1", "default"),
-                        ApplicationId.from("tenant2", "success2", "default"))
-        );
-        vespaVersions.add(new VespaVersion(statistics, "dead", Instant.now(), false, false,
+        Version version = Version.fromString("5.0");
+        vespaVersions.add(new VespaVersion(version, "dead", Instant.now(), false, false,
                                            true, nodeVersions(Version.fromString("5.0"), Version.fromString("5.1"),
                                                               Instant.ofEpochMilli(123), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
-        vespaVersions.add(new VespaVersion(statistics, "cafe", Instant.now(), true, true,
+        vespaVersions.add(new VespaVersion(version, "cafe", Instant.now(), true, true,
                                            false, nodeVersions(Version.fromString("5.0"), Version.fromString("5.1"),
                                                                Instant.ofEpochMilli(456), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
         VersionStatus status = new VersionStatus(vespaVersions);
@@ -55,7 +48,7 @@ public class VersionStatusSerializerTest {
             assertEquals(a.isControllerVersion(), b.isControllerVersion());
             assertEquals(a.isSystemVersion(), b.isSystemVersion());
             assertEquals(a.isReleased(), b.isReleased());
-            assertEquals(a.statistics(), b.statistics());
+            assertEquals(a.versionNumber(), b.versionNumber());
             assertEquals(a.nodeVersions(), b.nodeVersions());
             assertEquals(a.confidence(), b.confidence());
         }
