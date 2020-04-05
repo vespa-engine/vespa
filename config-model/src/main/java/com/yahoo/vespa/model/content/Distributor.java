@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -47,6 +48,13 @@ public class Distributor extends ContentNode {
     public void getConfig(StorServerConfig.Builder builder) {
         super.getConfig(builder);
         provider.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(StorCommunicationmanagerConfig.Builder builder) {
+        super.getConfig(builder);
+        // Single distributor needs help to encode the messages.
+        builder.mbus.dispatch_on_encode(true);
     }
 
     @Override

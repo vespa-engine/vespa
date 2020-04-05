@@ -5,6 +5,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
+import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
@@ -91,6 +92,12 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
             builder.num_threads(Math.max(4, (int)nodeFlavor.getMinCpuCores()));
         }
         cluster.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(StorCommunicationmanagerConfig.Builder builder) {
+        super.getConfig(builder);
+        builder.mbus.dispatch_on_encode(false);
     }
 
 }
