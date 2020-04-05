@@ -96,19 +96,6 @@ public:
 
     uint32_t getNumThreads() const { return _numThreads; }
 
-    /**
-     * Sets number of threads for the network.
-     *
-     * @param numNetworkThreads number of threads for the network
-     * @return This, to allow chaining.
-     */
-    RPCNetworkParams &setNumNetworkThreads(uint32_t numNetworkThreads) {
-        _numNetworkThreads = numNetworkThreads;
-        return *this;
-    }
-
-    uint32_t getNumNetworkThreads() const { return _numNetworkThreads; }
-
     RPCNetworkParams &setOptimizeFor(OptimizeFor tcpNoDelay) {
         _optimizeFor = tcpNoDelay;
         return *this;
@@ -207,7 +194,6 @@ private:
     uint32_t          _maxInputBufferSize;
     uint32_t          _maxOutputBufferSize;
     uint32_t          _numThreads;
-    uint32_t          _numNetworkThreads;
     OptimizeFor       _optimizeFor;
     bool              _dispatchOnEncode;
     bool              _dispatchOnDecode;

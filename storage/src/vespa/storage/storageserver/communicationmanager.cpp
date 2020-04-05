@@ -422,7 +422,6 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         mbus::RPCNetworkParams params(_configUri);
         params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
         params.setNumThreads(std::max(1, config->mbus.numThreads));
-        params.setNumNetworkThreads(std::max(1, config->mbus.numNetworkThreads));
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
         params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
         params.setOptimizeFor(convert(config->mbus.optimizeFor));
