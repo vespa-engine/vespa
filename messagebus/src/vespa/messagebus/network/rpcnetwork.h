@@ -65,11 +65,9 @@ private:
     std::unique_ptr<RPCTargetPool>                     _targetPool;
     std::unique_ptr<FNET_Task>                         _targetPoolTask;
     std::unique_ptr<RPCServicePool>                    _servicePool;
-    // TODO Instead of having 4 different executors, we should move the SequencedTaskExecutor into vespalib and use it there.
     std::unique_ptr<vespalib::SyncableThreadExecutor>  _singleEncodeExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>  _singleDecodeExecutor;
-    std::unique_ptr<vespalib::SyncableThreadExecutor>  _encodeExecutor;
-    std::unique_ptr<vespalib::SyncableThreadExecutor>  _decodeExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _executor;
     std::unique_ptr<RPCSendAdapter>                    _sendV1;
     std::unique_ptr<RPCSendAdapter>                    _sendV2;
     SendAdapterMap                                     _sendAdapters;
@@ -227,8 +225,8 @@ public:
     const slobrok::api::IMirrorAPI &getMirror() const override;
     CompressionConfig getCompressionConfig() { return _compressionConfig; }
     void invoke(FRT_RPCRequest *req);
-    vespalib::Executor & getEncodeExecutor(bool requireSequencing) const { return requireSequencing ?  *_singleEncodeExecutor : *_encodeExecutor; }
-    vespalib::Executor & getDecodeExecutor(bool requireSequencing) const { return requireSequencing ?  *_singleDecodeExecutor : *_decodeExecutor; }
+    vespalib::Executor & getEncodeExecutor(bool requireSequencing) const { return requireSequencing ?  *_singleEncodeExecutor : *_executor; }
+    vespalib::Executor & getDecodeExecutor(bool requireSequencing) const { return requireSequencing ?  *_singleDecodeExecutor : *_executor; }
     bool allowDispatchForEncode() const { return _allowDispatchForEncode; }
     bool allowDispatchForDecode() const { return _allowDispatchForDecode; }
 
