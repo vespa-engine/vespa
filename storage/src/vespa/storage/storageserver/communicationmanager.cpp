@@ -14,11 +14,13 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/bufferedlogger.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
+
 LOG_SETUP(".communication.manager");
 
 using vespalib::make_string;
@@ -300,6 +302,7 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _listener(),
       _eventQueue(),
       _mbus(),
+      _count(0),
       _configUri(configUri),
       _closed(false),
       _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>())
@@ -489,8 +492,8 @@ void
 CommunicationManager::enqueue(std::shared_ptr<api::StorageMessage> msg)
 {
     assert(msg);
-    LOG(spam, "Process storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
-    process(msg);
+    LOG(spam, "Enq storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
+    _eventQueue.enqueue(std::move(msg));
 }
 
 bool

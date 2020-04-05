@@ -123,9 +123,9 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
         default:
             LOG(error, "Link %s trying to send %s down while in state %s",
                 toString().c_str(), msg->toString().c_str(), stateToString(getState()));
-            return;
+            assert(false);
     }
-    assert(msg);
+    assert(msg.get());
     LOG(spam, "Storage Link %s to handle %s", toString().c_str(), msg->toString().c_str());
     if (isBottom()) {
         LOG(spam, "Storage link %s at bottom of chain got message %s.", toString().c_str(), msg->toString().c_str());
@@ -165,9 +165,9 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
         default:
             LOG(error, "Link %s trying to send %s up while in state %s",
                 toString().c_str(), msg->toString(true).c_str(), stateToString(getState()));
-            return;
+            assert(false);
     }
-    assert(msg);
+    assert(msg.get());
     if (isTop()) {
         ostringstream ost;
         ost << "Unhandled message at top of chain " << *msg << ".";
