@@ -14,16 +14,17 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/bufferedlogger.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
+
 LOG_SETUP(".communication.manager");
 
 using vespalib::make_string;
 using document::FixedBucketSpaces;
-using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
 
 namespace storage {
 
@@ -280,17 +281,6 @@ struct PlaceHolderBucketResolver : public BucketResolver {
     }
 };
 
-mbus::RPCNetworkParams::OptimizeFor
-convert(CommunicationManagerConfig::Mbus::OptimizeFor optimizeFor) {
-    switch (optimizeFor) {
-        case CommunicationManagerConfig::Mbus::OptimizeFor::LATENCY:
-            return mbus::RPCNetworkParams::OptimizeFor::LATENCY;
-        case CommunicationManagerConfig::Mbus::OptimizeFor::THROUGHPUT:
-        default:
-            return mbus::RPCNetworkParams::OptimizeFor::THROUGHPUT;
-    }
-}
-
 }
 
 CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
@@ -300,6 +290,7 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _listener(),
       _eventQueue(),
       _mbus(),
+      _count(0),
       _configUri(configUri),
       _closed(false),
       _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>())
@@ -422,10 +413,9 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         mbus::RPCNetworkParams params(_configUri);
         params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
         params.setNumThreads(std::max(1, config->mbus.numThreads));
-        params.setNumNetworkThreads(std::max(1, config->mbus.numNetworkThreads));
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
         params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
-        params.setOptimizeFor(convert(config->mbus.optimizeFor));
+        params.setTcpNoDelay(config->mbus.optimizeFor == CommunicationManagerConfig::Mbus::OptimizeFor::LATENCY);
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
         if (config->mbusport != -1) {
@@ -490,8 +480,8 @@ void
 CommunicationManager::enqueue(std::shared_ptr<api::StorageMessage> msg)
 {
     assert(msg);
-    LOG(spam, "Process storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
-    process(msg);
+    LOG(spam, "Enq storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
+    _eventQueue.enqueue(std::move(msg));
 }
 
 bool

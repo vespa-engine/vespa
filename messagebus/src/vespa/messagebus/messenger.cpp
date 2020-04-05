@@ -246,13 +246,13 @@ Messenger::start()
 void
 Messenger::deliverMessage(Message::UP msg, IMessageHandler &handler)
 {
-    handler.handleMessage(std::move(msg));
+    enqueue(std::make_unique<MessageTask>(std::move(msg), handler));
 }
 
 void
 Messenger::deliverReply(Reply::UP reply, IReplyHandler &handler)
 {
-    handler.handleReply(std::move(reply));
+    enqueue(std::make_unique<ReplyTask>(std::move(reply), handler));
 }
 
 void
