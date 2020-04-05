@@ -11,38 +11,14 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <setjmp.h>
-#include <dlfcn.h>
 #include <unistd.h>
+#include <vespa/fastos/file_rw_ops.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("ioerrorhandler_test");
 
-extern "C" {
-
-ssize_t read(int fd, void *buf, size_t count);
-ssize_t write(int fd, const void *buf, size_t count);
-ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
-
-}
-
-using ReadFunc = ssize_t (*)(int fd, void *buf, size_t count);
-using WriteFunc = ssize_t (*)(int fd, const void *buf, size_t count);
-using PreadFunc = ssize_t (*)(int fd, void *buf, size_t count, off_t offset);
-using PwriteFunc = ssize_t (*)(int fd, const void *buf, size_t count, off_t offset);
-
 using namespace search::test::statefile;
 using namespace search::test::statestring;
-
-namespace {
-
-ReadFunc libc_read;
-WriteFunc libc_write;
-PreadFunc libc_pread;
-PwriteFunc libc_pwrite;
-
-}
 
 int injectErrno;
 std::atomic<int> injectreadErrnoTrigger;
@@ -50,56 +26,51 @@ std::atomic<int> injectpreadErrnoTrigger;
 std::atomic<int> injectwriteErrnoTrigger;
 std::atomic<int> injectpwriteErrnoTrigger;
 
-ssize_t read(int fd, void *buf, size_t count)
+ssize_t error_injecting_read(int fd, void* buf, size_t count)
 {
     if (--injectreadErrnoTrigger == 0) {
         errno = injectErrno;
         return -1;
     }
-    if (!libc_read) {
-        libc_read = reinterpret_cast<ReadFunc>(dlsym(RTLD_NEXT, "read"));
-    }
-    return libc_read(fd, buf, count);
+    return read(fd, buf, count);
 }
 
-ssize_t write(int fd, const void *buf, size_t count)
+ssize_t error_injecting_write(int fd, const void* buf, size_t count)
 {
     if (--injectwriteErrnoTrigger == 0) {
         errno = injectErrno;
         return -1;
     }
-    if (!libc_write) {
-        libc_write = reinterpret_cast<WriteFunc>(dlsym(RTLD_NEXT, "write"));
-    }
-    return libc_write(fd, buf, count);
+    return write(fd, buf, count);
 }
 
-ssize_t pread(int fd, void *buf, size_t count, off_t offset)
+ssize_t error_injecting_pread(int fd, void* buf, size_t count, off_t offset)
 {
     if (--injectpreadErrnoTrigger == 0) {
         errno = injectErrno;
         return -1;
     }
-    if (!libc_pread) {
-        libc_pread = reinterpret_cast<PreadFunc>(dlsym(RTLD_NEXT, "pread"));
-    }
-    return libc_pread(fd, buf, count, offset);
+    return pread(fd, buf, count, offset);
 }
 
 
-ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
+ssize_t error_injecting_pwrite(int fd, const void* buf, size_t count, off_t offset)
 {
     if (--injectpwriteErrnoTrigger == 0) {
         errno = injectErrno;
         return -1;
     }
-    if (!libc_pwrite) {
-        libc_pwrite = reinterpret_cast<PwriteFunc>(dlsym(RTLD_NEXT, "pwrite"));
-    }
-    return libc_pwrite(fd, buf, count, offset);
+    return pwrite(fd, buf, count, offset);
 }
 
-
+void setup_error_injections()
+{
+    using Ops = fastos::File_RW_Ops;
+    Ops::_read = error_injecting_read;
+    Ops::_write = error_injecting_write;
+    Ops::_pread = error_injecting_pread;
+    Ops::_pwrite = error_injecting_pwrite;
+}
 
 namespace search
 {
@@ -347,6 +318,7 @@ TEST_F("Test that ioerror handler can process pwrite error", Fixture)
 
 TEST_MAIN()
 {
+    setup_error_injections();
     TEST_RUN_ALL();
     search::StateFile::erase("state");
     unlink("testfile");

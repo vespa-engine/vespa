@@ -21,11 +21,14 @@
 #else
 #include <sys/mount.h>
 #endif
+#include "file_rw_ops.h"
+
+using fastos::File_RW_Ops;
 
 ssize_t
 FastOS_UNIX_File::Read(void *buffer, size_t len)
 {
-    ssize_t nRead = read(_filedes, buffer, len);
+    ssize_t nRead = File_RW_Ops::read(_filedes, buffer, len);
     if (nRead < 0 && _failedHandler != nullptr) {
         int error = errno;
         int64_t readOffset = GetPosition();
@@ -40,7 +43,7 @@ FastOS_UNIX_File::Read(void *buffer, size_t len)
 ssize_t
 FastOS_UNIX_File::Write2(const void *buffer, size_t len)
 {
-    ssize_t writeRes = write(_filedes, buffer, len);
+    ssize_t writeRes = File_RW_Ops::write(_filedes, buffer, len);
     if (writeRes < 0 && _failedHandler != nullptr) {
         int error = errno;
         int64_t writeOffset = GetPosition();
@@ -71,7 +74,7 @@ void FastOS_UNIX_File::ReadBuf(void *buffer, size_t length,
 {
     ssize_t readResult;
 
-    readResult = pread(_filedes, buffer, length, readOffset);
+    readResult = File_RW_Ops::pread(_filedes, buffer, length, readOffset);
     if (readResult < 0 && _failedHandler != nullptr) {
         int error = errno;
         const char *fileName = GetFileName();
