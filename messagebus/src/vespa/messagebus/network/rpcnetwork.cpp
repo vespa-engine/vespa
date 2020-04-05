@@ -87,7 +87,7 @@ createExecutor(RPCNetworkParams::OptimizeFor optimizeFor) {
             return std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
         case RPCNetworkParams::OptimizeFor::THROUGHPUT:
         default:
-            return std::make_unique<vespalib::SingleExecutor>(1000, 10, 1ms);
+            return std::make_unique<vespalib::SingleExecutor>(100);
     }
 }
 
