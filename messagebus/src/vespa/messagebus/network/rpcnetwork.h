@@ -52,27 +52,30 @@ private:
 
     using SendAdapterMap = std::map<vespalib::Version, RPCSendAdapter*>;
 
-    INetworkOwner                                  *_owner;
-    Identity                                        _ident;
-    std::unique_ptr<FastOS_ThreadPool>              _threadPool;
-    std::unique_ptr<FNET_Transport>                 _transport;
-    std::unique_ptr<FRT_Supervisor>                 _orb;
-    FNET_Scheduler                                 &_scheduler;
-    std::unique_ptr<slobrok::ConfiguratorFactory>   _slobrokCfgFactory;
-    std::unique_ptr<slobrok::api::IMirrorAPI>       _mirror;
-    std::unique_ptr<slobrok::api::RegisterAPI>      _regAPI;
-    int                                             _requestedPort;
-    std::unique_ptr<RPCTargetPool>                  _targetPool;
-    std::unique_ptr<FNET_Task>                      _targetPoolTask;
-    std::unique_ptr<RPCServicePool>                 _servicePool;
-    std::unique_ptr<vespalib::ThreadStackExecutor>  _executor;
-    std::unique_ptr<RPCSendAdapter>                 _sendV1;
-    std::unique_ptr<RPCSendAdapter>                 _sendV2;
-    SendAdapterMap                                  _sendAdapters;
-    CompressionConfig                               _compressionConfig;
-    bool                                            _allowDispatchForEncode;
-    bool                                            _allowDispatchForDecode;
-
+    INetworkOwner                                     *_owner;
+    Identity                                           _ident;
+    std::unique_ptr<FastOS_ThreadPool>                 _threadPool;
+    std::unique_ptr<FNET_Transport>                    _transport;
+    std::unique_ptr<FRT_Supervisor>                    _orb;
+    FNET_Scheduler                                    &_scheduler;
+    std::unique_ptr<slobrok::ConfiguratorFactory>      _slobrokCfgFactory;
+    std::unique_ptr<slobrok::api::IMirrorAPI>          _mirror;
+    std::unique_ptr<slobrok::api::RegisterAPI>         _regAPI;
+    int                                                _requestedPort;
+    std::unique_ptr<RPCTargetPool>                     _targetPool;
+    std::unique_ptr<FNET_Task>                         _targetPoolTask;
+    std::unique_ptr<RPCServicePool>                    _servicePool;
+    // TODO Instead of having 4 different executors, we should move the SequencedTaskExecutor into vespalib and use it there.
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _singleEncodeExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _singleDecodeExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _encodeExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _decodeExecutor;
+    std::unique_ptr<RPCSendAdapter>                    _sendV1;
+    std::unique_ptr<RPCSendAdapter>                    _sendV2;
+    SendAdapterMap                                     _sendAdapters;
+    CompressionConfig                                  _compressionConfig;
+    bool                                               _allowDispatchForEncode;
+    bool                                               _allowDispatchForDecode;
 
     /**
      * Resolves and assigns a service address for the given recipient using the
@@ -224,7 +227,8 @@ public:
     const slobrok::api::IMirrorAPI &getMirror() const override;
     CompressionConfig getCompressionConfig() { return _compressionConfig; }
     void invoke(FRT_RPCRequest *req);
-    vespalib::Executor & getExecutor() const { return *_executor; }
+    vespalib::Executor & getEncodeExecutor(bool requireSequencing) const { return requireSequencing ?  *_singleEncodeExecutor : *_encodeExecutor; }
+    vespalib::Executor & getDecodeExecutor(bool requireSequencing) const { return requireSequencing ?  *_singleDecodeExecutor : *_decodeExecutor; }
     bool allowDispatchForEncode() const { return _allowDispatchForEncode; }
     bool allowDispatchForDecode() const { return _allowDispatchForDecode; }
 
