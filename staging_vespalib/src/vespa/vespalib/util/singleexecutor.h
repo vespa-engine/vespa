@@ -19,6 +19,7 @@ namespace vespalib {
 class SingleExecutor final : public vespalib::SyncableThreadExecutor, vespalib::Runnable {
 public:
     explicit SingleExecutor(uint32_t taskLimit);
+    SingleExecutor(uint32_t taskLimit, uint32_t watermark, duration reactionTime);
     ~SingleExecutor() override;
     Task::UP execute(Task::UP task) override;
     void setTaskLimit(uint32_t taskLimit) override;
@@ -56,6 +57,8 @@ private:
     std::atomic<uint64_t>       _wakeupConsumerAt;
     std::atomic<uint64_t>       _producerNeedWakeupAt;
     std::atomic<uint64_t>       _wp;
+    const uint32_t              _watermark;
+    const duration              _reactionTime;
     bool                        _closed;
 };
 

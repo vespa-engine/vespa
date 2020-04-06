@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "executorthreadingservice.h"
+#include "threading_service_config.h"
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/singleexecutor.h>
@@ -28,20 +29,24 @@ createExecutorWithOneThread(uint32_t stackSize, uint32_t taskLimit, OptimizeFor 
 
 }
 
+ExecutorThreadingService::ExecutorThreadingService(vespalib::SyncableThreadExecutor &sharedExecutor, uint32_t num_treads)
+    : ExecutorThreadingService(sharedExecutor, ThreadingServiceConfig::make(num_treads))
+{}
+
 ExecutorThreadingService::ExecutorThreadingService(vespalib::SyncableThreadExecutor & sharedExecutor,
-                                                   uint32_t threads, uint32_t stackSize, uint32_t taskLimit,
-                                                   OptimizeFor optimize)
+                                                   const ThreadingServiceConfig & cfg,  uint32_t stackSize)
 
     : _sharedExecutor(sharedExecutor),
       _masterExecutor(1, stackSize),
-      _indexExecutor(createExecutorWithOneThread(stackSize, taskLimit, optimize)),
-      _summaryExecutor(createExecutorWithOneThread(stackSize, taskLimit, optimize)),
+      _indexExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize())),
+      _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize())),
       _masterService(_masterExecutor),
       _indexService(*_indexExecutor),
       _summaryService(*_summaryExecutor),
-      _indexFieldInverter(SequencedTaskExecutor::create(threads, taskLimit)),
-      _indexFieldWriter(SequencedTaskExecutor::create(threads, taskLimit)),
-      _attributeFieldWriter(SequencedTaskExecutor::create(threads, taskLimit, optimize))
+      _indexFieldInverter(SequencedTaskExecutor::create(cfg.indexingThreads(), cfg.defaultTaskLimit())),
+      _indexFieldWriter(SequencedTaskExecutor::create(cfg.indexingThreads(), cfg.defaultTaskLimit())),
+      _attributeFieldWriter(SequencedTaskExecutor::create(cfg.indexingThreads(), cfg.defaultTaskLimit(), cfg.optimize(),
+                                                          cfg.kindOfwatermark(), cfg.reactionTime()))
 {
 }
 

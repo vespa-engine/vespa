@@ -79,7 +79,7 @@ struct ViewPtrs
     ~ViewPtrs();
 };
 
-ViewPtrs::~ViewPtrs() {}
+ViewPtrs::~ViewPtrs() = default;
 
 struct ViewSet
 {

@@ -9,14 +9,19 @@ namespace proton {
 using ProtonConfig = ThreadingServiceConfig::ProtonConfig;
 using OptimizeFor = vespalib::Executor::OptimizeFor;
 
+
 ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
                                                uint32_t defaultTaskLimit_,
                                                uint32_t semiUnboundTaskLimit_,
-                                               OptimizeFor optimize)
+                                               OptimizeFor optimize_,
+                                               uint32_t kindOfWatermark_,
+                                               vespalib::duration reactionTime_)
     : _indexingThreads(indexingThreads_),
       _defaultTaskLimit(defaultTaskLimit_),
       _semiUnboundTaskLimit(semiUnboundTaskLimit_),
-      _optimize(optimize)
+      _optimize(optimize_),
+      _kindOfWatermark(kindOfWatermark_),
+      _reactionTime(reactionTime_)
 {
 }
 
@@ -52,7 +57,14 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
     uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing.threads, concurrency, cpuInfo);
     return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
                                   (cfg.indexing.semiunboundtasklimit / indexingThreads),
-                                  selectOptimization(cfg.indexing.optimize));
+                                  selectOptimization(cfg.indexing.optimize),
+                                  cfg.indexing.kindOfWatermark,
+                                  vespalib::from_s(cfg.indexing.reactiontime));
+}
+
+ThreadingServiceConfig
+ThreadingServiceConfig::make(uint32_t indexingThreads) {
+    return ThreadingServiceConfig(indexingThreads, 100, 1000, OptimizeFor::LATENCY, 0, 10ms);
 }
 
 }
