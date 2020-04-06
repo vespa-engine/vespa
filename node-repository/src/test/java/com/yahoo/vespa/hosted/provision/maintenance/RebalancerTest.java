@@ -17,7 +17,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Test;
@@ -46,7 +45,7 @@ public class RebalancerTest {
         NodeResources memResources = new NodeResources(4, 9, 1, 0.1);
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        MetricsReporterTest.TestMetric metric = new MetricsReporterTest.TestMetric();
+        TestMetric metric = new TestMetric();
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),

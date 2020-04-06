@@ -12,6 +12,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
+import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -140,8 +141,13 @@ public class MultigroupProvisioningTest {
                              Collections.singletonMap(application1, 
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
                                                                                           Capacity.from(new ClusterResources(8, 1, large), false, true))));
-        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
-                Duration.ofHours(12)).run();
+        new RetiredExpirer(tester.nodeRepository(),
+                           tester.orchestrator(),
+                           deployer,
+                           new TestMetric(),
+                           tester.clock(),
+                           Duration.ofDays(30),
+                           Duration.ofHours(12)).run();
 
         assertEquals(8, tester.getNodes(application1, Node.State.inactive).resources(small).size());
         deploy(application1, 8, 8, large, tester);

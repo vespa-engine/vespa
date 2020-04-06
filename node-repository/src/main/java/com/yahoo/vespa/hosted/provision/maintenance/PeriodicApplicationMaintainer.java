@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -29,9 +30,9 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     private final Clock clock;
     private final Instant start;
 
-    PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository,
+    PeriodicApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository,
                                   Duration interval, Duration minTimeBetweenRedeployments) {
-        super(deployer, nodeRepository, interval);
+        super(deployer, metric, nodeRepository, interval);
         this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
         this.clock = nodeRepository.clock();
         this.start = clock.instant();

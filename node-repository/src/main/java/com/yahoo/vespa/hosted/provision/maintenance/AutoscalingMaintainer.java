@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -32,15 +33,18 @@ public class AutoscalingMaintainer extends Maintainer {
 
     private final Autoscaler autoscaler;
     private final Deployer deployer;
+    private final Metric metric;
     private final Map<Pair<ApplicationId, ClusterSpec.Id>, Instant> lastLogged = new HashMap<>();
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
                                  HostResourcesCalculator hostResourcesCalculator,
                                  NodeMetricsDb metricsDb,
                                  Deployer deployer,
+                                 Metric metric,
                                  Duration interval) {
         super(nodeRepository, interval);
         this.autoscaler = new Autoscaler(hostResourcesCalculator, metricsDb, nodeRepository);
+        this.metric = metric;
         this.deployer = deployer;
     }
 
@@ -52,7 +56,7 @@ public class AutoscalingMaintainer extends Maintainer {
     }
 
     private void autoscale(ApplicationId application, List<Node> applicationNodes) {
-        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
             if ( ! deployment.isValid()) return; // Another config server will consider this application
             nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, clusterNodes, deployment));
         }

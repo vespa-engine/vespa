@@ -241,6 +241,7 @@ public class RetiredExpirerTest {
                 nodeRepository,
                 orchestrator,
                 deployer,
+                new TestMetric(),
                 clock,
                 Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */
                 RETIRED_EXPIRATION);

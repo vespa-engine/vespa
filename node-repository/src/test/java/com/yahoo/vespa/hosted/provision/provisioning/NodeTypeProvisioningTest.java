@@ -8,6 +8,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
+import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Before;
@@ -94,8 +95,13 @@ public class NodeTypeProvisioningTest {
                 tester.clock(),
                 Collections.singletonMap(
                         application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity)));
-        RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer,
-                tester.clock(), Duration.ofDays(30), Duration.ofMinutes(10));
+        RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
+                                                            tester.orchestrator(),
+                                                            deployer,
+                                                            new TestMetric(),
+                                                            tester.clock(),
+                                                            Duration.ofDays(30),
+                                                            Duration.ofMinutes(10));
 
         { // Deploy
             List<HostSpec> hosts = deployProxies(application, tester);
@@ -161,6 +167,7 @@ public class NodeTypeProvisioningTest {
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
                                                             tester.orchestrator(),
                                                             deployer,
+                                                            new TestMetric(),
                                                             tester.clock(),
                                                             Duration.ofDays(30),
                                                             Duration.ofMinutes(10));

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
+    private final Metric metric;
     private final CopyOnWriteArrayList<ApplicationId> pendingDeployments = new CopyOnWriteArrayList<>();
 
     // Use a fixed thread pool to avoid overload on config servers. Resource usage when deploying varies
@@ -32,9 +34,10 @@ public abstract class ApplicationMaintainer extends Maintainer {
                                                                                  new LinkedBlockingQueue<>(),
                                                                                  new DaemonThreadFactory("node repo application maintainer"));
 
-    protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
+    protected ApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository, Duration interval) {
         super(nodeRepository, interval);
         this.deployer = deployer;
+        this.metric = metric;
     }
 
     @Override
@@ -73,7 +76,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
     protected final void deployWithLock(ApplicationId application) {
-        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
             if ( ! deployment.isValid()) return; // this will be done at another config server
             if ( ! canDeployNow(application)) return; // redeployment is no longer needed
             deployment.activate();

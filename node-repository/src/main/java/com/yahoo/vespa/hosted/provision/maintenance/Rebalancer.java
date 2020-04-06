@@ -129,7 +129,7 @@ public class Rebalancer extends Maintainer {
      */
     private boolean deployTo(Move move) {
         ApplicationId application = move.node.allocation().get().owner();
-        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
             if ( ! deployment.isValid()) return false;
 
             boolean couldMarkRetiredNow = markWantToRetire(move.node, true);
