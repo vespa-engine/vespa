@@ -135,7 +135,7 @@ public:
      *
      * @return True to enable bucket sequencing.
      */
-    virtual bool hasBucketSequence() { return false; }
+    virtual bool hasBucketSequence() const { return false; }
 
     /**
      * Obtain the approximate size of this message object in bytes. This enables

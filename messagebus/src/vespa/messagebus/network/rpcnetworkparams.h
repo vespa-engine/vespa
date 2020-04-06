@@ -4,6 +4,7 @@
 #include "identity.h"
 #include <vespa/slobrok/cfg.h>
 #include <vespa/vespalib/util/compressionconfig.h>
+#include <vespa/vespalib/util/executor.h>
 
 namespace mbus {
 
@@ -13,7 +14,7 @@ namespace mbus {
  */
 class RPCNetworkParams {
 public:
-    enum class OptimizeFor { LATENCY, THROUGHPUT};
+    using OptimizeFor = vespalib::Executor::OptimizeFor;
     using CompressionConfig = vespalib::compression::CompressionConfig;
 
     RPCNetworkParams();

@@ -10,12 +10,10 @@
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/frt/reflection.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/vespalib/data/slime/cursor.h>
 
 using vespalib::make_string;
-using vespalib::makeLambdaTask;
 
 namespace mbus {
 
@@ -114,7 +112,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
               const PayLoadFiller & payload, duration timeRemaining)
 {
     auto ctx = std::make_unique<SendContext>(recipient, timeRemaining);
-    RPCServiceAddress &address = static_cast<RPCServiceAddress&>(recipient.getServiceAddress());
+    auto &address = static_cast<RPCServiceAddress&>(recipient.getServiceAddress());
     const Message &msg = recipient.getMessage();
     Route route = recipient.getRoute();
     Hop hop = route.removeHop(0);
@@ -148,11 +146,11 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
 void
 RPCSend::RequestDone(FRT_RPCRequest *req)
 {
-    if ( _net->allowDispatchForDecode()) {
-        auto rejected = _net->getDecodeExecutor(true).execute(makeLambdaTask([this, req]() {
+    if (_net->allowDispatchForDecode()) {
+        // Send uses 0
+        _net->getExecutor().execute(1, [this, req]() {
             doRequestDone(req);
-        }));
-        assert (!rejected);
+        });
     } else {
         doRequestDone(req);
     }
@@ -229,10 +227,10 @@ RPCSend::handleReply(Reply::UP reply)
 {
     const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
     if (protocol && _net->allowDispatchForEncode()) {
-        auto rejected = _net->getEncodeExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
+        uint64_t executorId = protocol->requireSequencing() ? 0 : random();
+        _net->getExecutor().execute(executorId, [this, protocol, reply = std::move(reply)]() mutable {
             doHandleReply(protocol, std::move(reply));
-        }));
-        assert (!rejected);
+        });
     } else {
         doHandleReply(protocol, std::move(reply));
     }
@@ -265,8 +263,10 @@ RPCSend::invoke(FRT_RPCRequest *req)
     req->Detach();
     FRT_Values &args = *req->GetParams();
 
+    // TODO We should probably just dispatch base on remote peer
+    // Then we can do parameter decoding in dispatched thread
     std::unique_ptr<Params> params = toParams(args);
-    IProtocol * protocol = _net->getOwner().getProtocol(params->getProtocol());
+    const IProtocol * protocol = _net->getOwner().getProtocol(params->getProtocol());
     if (protocol == nullptr) {
         replyError(req, params->getVersion(), params->getTraceLevel(),
                    Error(ErrorCode::UNKNOWN_PROTOCOL, make_string("Protocol '%s' is not known by %s.",
@@ -274,10 +274,10 @@ RPCSend::invoke(FRT_RPCRequest *req)
         return;
     }
     if (_net->allowDispatchForDecode()) {
-        auto rejected = _net->getDecodeExecutor(protocol->requireSequencing()).execute(makeLambdaTask([this, req, protocol, params = std::move(params)]() mutable {
+        uint64_t executorId = protocol->requireSequencing() ? 1 : random();
+        _net->getExecutor().execute(executorId, [this, req, protocol, params = std::move(params)]() mutable {
             doRequest(req, protocol, std::move(params));
-        }));
-        assert (!rejected);
+        });
     } else {
         doRequest(req, protocol, std::move(params));
     }
