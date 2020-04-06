@@ -3,8 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.systemd;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * A {@link SystemCtl} tester that simplifies testing interaction with systemd units.
@@ -13,8 +12,6 @@ import java.util.Set;
  */
 public class SystemCtlTester extends SystemCtl {
 
-    private final Set<String> runningUnits = new HashSet<>();
-
     private final TestTerminal terminal;
 
     public SystemCtlTester(TestTerminal terminal) {
@@ -22,93 +19,64 @@ public class SystemCtlTester extends SystemCtl {
         this.terminal = terminal;
     }
 
-    /** Create expectation for given unit */
-    public Expectation expect(String unit) {
-        return new Expectation(unit, this);
+    public Expectation expectServiceExists(String unit) {
+        return new Expectation(wantedReturn ->
+                expectCommand("systemctl list-unit-files " + unit + ".service 2>&1", 0, (wantedReturn ? 1 : 0) + " unit files listed."));
     }
 
-    private void startUnit(String unit) {
-        runningUnits.add(unit);
+    public Expectation expectIsActive(String unit) {
+        return new Expectation(wantedReturn -> {
+            expectCommand("systemctl --quiet is-active " + unit + ".service 2>&1", wantedReturn ? 0 : 1, "");
+        });
     }
+
+    public Expectation expectEnable(String unit) { return forChangeEnabledState(unit, true); }
+    public Expectation expectDisable(String unit) { return forChangeEnabledState(unit, false); }
+    public Expectation expectStart(String unit) { return forChangeRunningState(unit, true); }
+    public Expectation expectStop(String unit) { return forChangeRunningState(unit, false); }
+
+    public SystemCtlTester expectRestart(String unit) {
+        expectCommand("systemctl restart " + unit + " 2>&1", 0, "");
+        return this;
+    }
+
+    public SystemCtlTester expectDaemonReload() {
+        expectCommand("systemctl daemon-reload 2>&1", 0, "");
+        return this;
+    }
+
 
     private void expectCommand(String command, int exitCode, String output) {
         terminal.expectCommand((useSudo() ? "sudo " : "") + command, exitCode, output);
     }
 
-    public static class Expectation {
+    private Expectation forChangeEnabledState(String unit, boolean enable) {
+        return new Expectation(wantedReturn -> {
+            expectCommand("systemctl --quiet is-enabled " + unit + " 2>&1", enable != wantedReturn ? 0 : 1, "");
+            if (wantedReturn)
+                expectCommand("systemctl " + (enable ? "enable" : "disable") + " " + unit + " 2>&1", 0, "");
+        });
+    }
 
-        private final String unit;
-        private final SystemCtlTester systemCtl;
+    private Expectation forChangeRunningState(String unit, boolean start) {
+        return new Expectation(wantedReturn -> {
+            expectCommand("systemctl show " + unit + " 2>&1", 0, "ActiveState=" + (start != wantedReturn ? "active" : "inactive"));
+            if (wantedReturn)
+                expectCommand("systemctl " + (start ? "start" : "stop") + " " + unit + " 2>&1", 0, "");
+        });
+    }
 
-        public Expectation(String unit, SystemCtlTester systemCtl) {
-            this.unit = unit;
-            this.systemCtl = systemCtl;
+    public class Expectation {
+        private final Consumer<Boolean> converger;
+        public Expectation(Consumer<Boolean> converger) {
+            this.converger = converger;
         }
 
-        /** Create expectation for given unit */
-        public Expectation expect(String name) {
-            return systemCtl.expect(name);
+        /** Mock the return value of the converge(TaskContext) method for this operation (true iff system was modified) */
+        public SystemCtlTester andReturn(boolean value) {
+            converger.accept(value);
+            return SystemCtlTester.this;
         }
-
-        /** Expect that this will be started */
-        public Expectation toStart() {
-            return toStart(true);
-        }
-
-        /** Expect that this is already started */
-        public Expectation isStarted() {
-            return toStart(false);
-        }
-
-        /** Expect that given unit will be restarted */
-        public Expectation toRestart() {
-            systemCtl.expectCommand("systemctl restart " + unit + " 2>&1", 0, "");
-            systemCtl.startUnit(unit);
-            return this;
-        }
-
-        /** Expect that this will be stopped */
-        public Expectation toStop() {
-            systemCtl.expectCommand("systemctl stop " + unit + " 2>&1", 0, "");
-            systemCtl.runningUnits.remove(unit);
-            return this;
-        }
-
-        /** Expect query for state of this */
-        public Expectation toQueryState() {
-            systemCtl.expectCommand("systemctl --quiet is-active " + unit + ".service 2>&1",
-                                    systemCtl.runningUnits.contains(unit) ? 0 : 1, "");
-            return this;
-        }
-
-        /** Expect that this will be enabled */
-        public Expectation toEnable() {
-            return toEnable(true);
-        }
-
-        /** Expect that given unit is already enabled */
-        public Expectation isEnabled() {
-            return toEnable(false);
-        }
-
-        private Expectation toStart(boolean start) {
-            systemCtl.expectCommand("systemctl show " + unit + " 2>&1", 0,
-                                    "ActiveState=" + (start ? "inactive" : "active"));
-            if (start) {
-                systemCtl.expectCommand("systemctl start " + unit + " 2>&1", 0, "");
-                systemCtl.startUnit(unit);
-            }
-            return this;
-        }
-
-        private Expectation toEnable(boolean enable) {
-            systemCtl.expectCommand("systemctl --quiet is-enabled " + unit + " 2>&1", enable ? 1 : 0, "");
-            if (enable) {
-                systemCtl.expectCommand("systemctl enable " + unit + " 2>&1", 0, "");
-            }
-            return this;
-        }
-
     }
 
 }
