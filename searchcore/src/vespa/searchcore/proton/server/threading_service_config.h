@@ -23,7 +23,7 @@ private:
     uint32_t           _semiUnboundTaskLimit;
     OptimizeFor        _optimize;
     uint32_t           _kindOfWatermark;
-    vespalib::duration _reactionTime;         // Minimum reaction time to new tasks
+    vespalib::duration _reactionTime;         // Maximum reaction time to new tasks
 
 private:
     ThreadingServiceConfig(uint32_t indexingThreads_, uint32_t defaultTaskLimit_, uint32_t semiUnboundTaskLimit_, OptimizeFor optimize, uint32_t kindOfWatermark, vespalib::duration reactionTime);
