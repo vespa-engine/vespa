@@ -18,13 +18,13 @@ std::unique_ptr<ISequencedTaskExecutor>
 SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize)
 {
     if (optimize == OptimizeFor::ADAPTIVE) {
-        return std::make_unique<AdaptiveSequencedExecutor>(threads, threads, taskLimit/100, taskLimit);
+        return std::make_unique<AdaptiveSequencedExecutor>(threads, threads, 0, taskLimit);
     } else {
         auto executors = std::make_unique<std::vector<std::unique_ptr<SyncableThreadExecutor>>>();
         executors->reserve(threads);
         for (uint32_t id = 0; id < threads; ++id) {
             if (optimize == OptimizeFor::THROUGHPUT) {
-                executors->push_back(std::make_unique<SingleExecutor>(taskLimit, taskLimit/100, 1ms));
+                executors->push_back(std::make_unique<SingleExecutor>(taskLimit));
             } else {
                 executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));
             }
