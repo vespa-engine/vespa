@@ -44,7 +44,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         long delay = staggeredDelay(nodeRepository.database().cluster(), hostname, nodeRepository.clock().instant(), interval);
         service = new ScheduledThreadPoolExecutor(1);
         service.scheduleAtFixedRate(this, delay, interval.toMillis(), TimeUnit.MILLISECONDS);
-        jobControl.started(name());
+        jobControl.started(name(), this);
     }
 
     /** Returns the node repository */
@@ -64,7 +64,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
                 runWithLock();
             }
         } catch (UncheckedTimeoutException ignored) {
-            // Another config server is running this job
+            // Another config server or operator is running this job
         } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
         }

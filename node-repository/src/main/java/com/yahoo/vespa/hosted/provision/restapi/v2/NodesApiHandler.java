@@ -20,8 +20,8 @@ import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.Type;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -176,9 +176,15 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
         }
         if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), false);
+        if (path.matches("/nodes/v2/maintenance/run/{job}")) return runJob(path.get("job"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return requestFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+    }
+
+    private HttpResponse runJob(String job) {
+        nodeRepository.jobControl().run(job);
+        return new MessageResponse("Executed job '" + job + "'");
     }
 
     private HttpResponse handleDELETE(HttpRequest request) {

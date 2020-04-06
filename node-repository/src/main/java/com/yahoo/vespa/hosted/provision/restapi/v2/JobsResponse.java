@@ -26,7 +26,7 @@ public class JobsResponse extends HttpResponse {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor jobArray = root.setArray("jobs");
-        for (String jobName : new TreeSet<>(jobControl.jobs()))
+        for (String jobName : jobControl.jobs())
             jobArray.addObject().setString("name", jobName);
 
         Cursor inactiveArray = root.setArray("inactive");
