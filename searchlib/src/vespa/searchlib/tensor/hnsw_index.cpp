@@ -383,18 +383,27 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
     StateExplorerUtils::memory_usage_to_slime(memory_usage(), object.setObject("memory_usage"));
     object.setLong("nodes", _graph.size());
     auto& histogram_array = object.setArray("level_histogram");
-    auto level_histogram = _graph.level_histogram();
-    for (uint32_t hist_val : level_histogram) {
+    auto& links_hst_array = object.setArray("level_0_links_histogram");
+    auto histograms = _graph.histograms();
+    uint32_t valid_nodes = 0;
+    for (uint32_t hist_val : histograms.level_histogram) {
         histogram_array.addLong(hist_val);
+        valid_nodes += hist_val;
+    }
+    object.setLong("valid_nodes", valid_nodes);
+    for (uint32_t hist_val : histograms.links_histogram) {
+        links_hst_array.addLong(hist_val);
     }
     uint32_t reachable = count_reachable_nodes();
-    uint32_t unreachable = _graph.size() - reachable;
-    if (level_histogram.size() > 0) {
-        unreachable -= level_histogram[0];
-    }
+    uint32_t unreachable = valid_nodes - reachable;
     object.setLong("unreachable_nodes", unreachable);
     object.setLong("entry_docid", _graph.entry_docid);
     object.setLong("entry_level", _graph.entry_level);
+    auto& cfgObj = object.setObject("cfg");
+    cfgObj.setLong("max_links_at_level_0", _cfg.max_links_at_level_0());
+    cfgObj.setLong("max_links_on_inserts", _cfg.max_links_on_inserts());
+    cfgObj.setLong("neighbors_to_explore_at_construction",
+                   _cfg.neighbors_to_explore_at_construction());
 }
 
 std::unique_ptr<NearestNeighborIndexSaver>
