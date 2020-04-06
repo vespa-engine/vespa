@@ -16,16 +16,16 @@ class ExecutorThreadingServiceStats;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
-    vespalib::SyncableThreadExecutor                 & _sharedExecutor;
-    vespalib::ThreadStackExecutor                      _masterExecutor;
-    std::unique_ptr<vespalib::SyncableThreadExecutor>  _indexExecutor;
-    std::unique_ptr<vespalib::SyncableThreadExecutor>  _summaryExecutor;
-    ExecutorThreadService                              _masterService;
-    ExecutorThreadService                              _indexService;
-    ExecutorThreadService                              _summaryService;
-    std::unique_ptr<search::ISequencedTaskExecutor>    _indexFieldInverter;
-    std::unique_ptr<search::ISequencedTaskExecutor>    _indexFieldWriter;
-    std::unique_ptr<search::ISequencedTaskExecutor>    _attributeFieldWriter;
+    vespalib::SyncableThreadExecutor                   & _sharedExecutor;
+    vespalib::ThreadStackExecutor                        _masterExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>    _indexExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;
+    ExecutorThreadService                                _masterService;
+    ExecutorThreadService                                _indexService;
+    ExecutorThreadService                                _summaryService;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldInverter;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldWriter;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _attributeFieldWriter;
 
 public:
     using OptimizeFor = vespalib::Executor::OptimizeFor;
@@ -79,9 +79,9 @@ public:
         return _sharedExecutor;
     }
 
-    search::ISequencedTaskExecutor &indexFieldInverter() override;
-    search::ISequencedTaskExecutor &indexFieldWriter() override;
-    search::ISequencedTaskExecutor &attributeFieldWriter() override;
+    vespalib::ISequencedTaskExecutor &indexFieldInverter() override;
+    vespalib::ISequencedTaskExecutor &indexFieldWriter() override;
+    vespalib::ISequencedTaskExecutor &attributeFieldWriter() override;
     ExecutorThreadingServiceStats getStats();
 };
 

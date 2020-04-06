@@ -11,7 +11,7 @@
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_handler.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -29,6 +29,7 @@ using search::attribute::BasicType;
 using search::attribute::Config;
 using search::index::schema::DataType;
 using search::test::DirectoryHandler;
+using vespalib::ForegroundTaskExecutor;
 
 const vespalib::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;
@@ -41,10 +42,10 @@ struct MyReprocessingHandler : public IReprocessingHandler
     IReprocessingReader::SP _reader;
     std::vector<IReprocessingRewriter::SP> _rewriters;
     MyReprocessingHandler() : _reader(), _rewriters() {}
-    virtual void addReader(const IReprocessingReader::SP &reader) override {
+    void addReader(const IReprocessingReader::SP &reader) override {
         _reader = reader;
     }
-    virtual void addRewriter(const IReprocessingRewriter::SP &rewriter) override {
+    void addRewriter(const IReprocessingRewriter::SP &rewriter) override {
         _rewriters.push_back(rewriter);
     }
 };

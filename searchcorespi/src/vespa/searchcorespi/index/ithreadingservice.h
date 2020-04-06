@@ -4,7 +4,7 @@
 #include "i_thread_service.h"
 #include <vespa/vespalib/util/syncable.h>
 
-namespace search { class ISequencedTaskExecutor; }
+namespace vespalib { class ISequencedTaskExecutor; }
 namespace searchcorespi::index {
 
 /**
@@ -55,9 +55,9 @@ struct IThreadingService : public vespalib::Syncable
     virtual IThreadService &index() = 0;
     virtual IThreadService &summary() = 0;
     virtual vespalib::ThreadExecutor &shared() = 0;
-    virtual search::ISequencedTaskExecutor &indexFieldInverter() = 0;
-    virtual search::ISequencedTaskExecutor &indexFieldWriter() = 0;
-    virtual search::ISequencedTaskExecutor &attributeFieldWriter() = 0;
+    virtual vespalib::ISequencedTaskExecutor &indexFieldInverter() = 0;
+    virtual vespalib::ISequencedTaskExecutor &indexFieldWriter() = 0;
+    virtual vespalib::ISequencedTaskExecutor &attributeFieldWriter() = 0;
 };
 
 }

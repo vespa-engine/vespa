@@ -4,9 +4,7 @@
 #include "isequencedtaskexecutor.h"
 #include <atomic>
 
-namespace vespalib { class ThreadStackExecutorBase; }
-
-namespace search {
+namespace vespalib {
 
 /**
  * Class to run multiple tasks in parallel, but tasks with same

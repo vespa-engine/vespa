@@ -26,9 +26,9 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
+#include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
@@ -42,8 +42,6 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-
-
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");
@@ -76,6 +74,8 @@ using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::DefaultTensorEngine;
+using vespalib::ForegroundTaskExecutor;
+using vespalib::SequencedTaskExecutorObserver;
 
 using AVConfig = search::attribute::Config;
 using AVBasicType = search::attribute::BasicType;

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/config-attributes.h>
 #include <vespa/fastos/file.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
@@ -24,18 +23,16 @@
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
-#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
-#include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -55,7 +52,7 @@ using proton::initializer::InitializerTask;
 using proton::test::AttributeUtils;
 using proton::test::createInt32Attribute;
 using proton::test::Int32Attribute;
-using search::ForegroundTaskExecutor;
+using vespalib::ForegroundTaskExecutor;
 using search::TuneFileAttributes;
 using search::attribute::BasicType;
 using search::attribute::IAttributeContext;

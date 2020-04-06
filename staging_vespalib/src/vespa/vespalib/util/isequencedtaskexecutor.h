@@ -8,7 +8,7 @@
 #include <vector>
 #include <mutex>
 
-namespace search {
+namespace vespalib {
 
 /**
  * Interface class to run multiple tasks in parallel, but tasks with same
@@ -110,4 +110,4 @@ private:
     mutable uint32_t             _nextId;
 };
 
-} // namespace search
+}

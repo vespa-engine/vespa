@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sequencedtaskexecutor.h"
+#include "adaptive_sequenced_executor.h"
+#include "singleexecutor.h"
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <vespa/vespalib/util/singleexecutor.h>
 
-using vespalib::BlockingThreadStackExecutor;
-using vespalib::SingleExecutor;
-
-namespace search {
+namespace vespalib {
 
 namespace {
 
@@ -19,16 +17,20 @@ constexpr uint32_t stackSize = 128 * 1024;
 std::unique_ptr<ISequencedTaskExecutor>
 SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize)
 {
-    auto executors = std::make_unique<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>>();
-    executors->reserve(threads);
-    for (uint32_t id = 0; id < threads; ++id) {
-        if (optimize == OptimizeFor::THROUGHPUT) {
-            executors->push_back(std::make_unique<SingleExecutor>(taskLimit));
-        } else {
-            executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));
+    if (optimize == OptimizeFor::ADAPTIVE) {
+        return std::make_unique<AdaptiveSequencedExecutor>(threads, threads, 0, taskLimit);
+    } else {
+        auto executors = std::make_unique<std::vector<std::unique_ptr<SyncableThreadExecutor>>>();
+        executors->reserve(threads);
+        for (uint32_t id = 0; id < threads; ++id) {
+            if (optimize == OptimizeFor::THROUGHPUT) {
+                executors->push_back(std::make_unique<SingleExecutor>(taskLimit));
+            } else {
+                executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));
+            }
         }
+        return std::unique_ptr<ISequencedTaskExecutor>(new SequencedTaskExecutor(std::move(executors)));
     }
-    return std::unique_ptr<ISequencedTaskExecutor>(new SequencedTaskExecutor(std::move(executors)));
 }
 
 SequencedTaskExecutor::~SequencedTaskExecutor()

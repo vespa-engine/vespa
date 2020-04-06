@@ -2,7 +2,7 @@
 
 #include "adaptive_sequenced_executor.h"
 
-namespace search {
+namespace vespalib {
 
 //-----------------------------------------------------------------------------
 

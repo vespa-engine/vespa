@@ -39,6 +39,7 @@ selectOptimization(ProtonConfig::Indexing::Optimize optimize) {
     switch (optimize) {
         case CfgOptimize::LATENCY: return OptimizeFor::LATENCY;
         case CfgOptimize::THROUGHPUT: return OptimizeFor::THROUGHPUT;
+        case CfgOptimize::ADAPTIVE: return OptimizeFor::ADAPTIVE;
     }
     return OptimizeFor::LATENCY;
 }

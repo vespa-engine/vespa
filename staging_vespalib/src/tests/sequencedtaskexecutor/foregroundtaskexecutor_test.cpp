@@ -1,16 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <mutex>
 #include <condition_variable>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("foregroundtaskexecutor_test");
 
-namespace search::common {
+namespace vespalib {
 
 
 class Fixture

@@ -6,11 +6,23 @@
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <map>
 
-namespace document { class DocumentType; class DocumentTypeRepo; }
-namespace search { class ISequencedTaskExecutor; class IAttributeManager; struct IDocumentMetaStoreContext;
-    namespace attribute { class IAttributeVector; class ReferenceAttribute; } }
-namespace vespa { namespace config { namespace search { namespace internal { class InternalImportedFieldsType; } } } }
+namespace document {
+    class DocumentType;
+    class DocumentTypeRepo;
+}
+namespace search {
+    class IAttributeManager;
+    struct IDocumentMetaStoreContext;
+}
+namespace search::attribute {
+    class IAttributeVector;
+    class ReferenceAttribute;
+}
+namespace vespa::config::search::internal { class InternalImportedFieldsType; }
 
+namespace vespalib {
+    class ISequencedTaskExecutor;
+}
 namespace proton {
 
 class IDocumentDBReference;
@@ -27,12 +39,12 @@ class DocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
 private:
     using ImportedFieldsConfig = const vespa::config::search::internal::InternalImportedFieldsType;
     const IDocumentDBReferenceRegistry &_registry;
-    const document::DocumentType &_thisDocType;
-    const ImportedFieldsConfig &_importedFieldsCfg;
-    const document::DocumentType &_prevThisDocType;
-    MonitoredRefCount              &_refCount;
-    search::ISequencedTaskExecutor &_attributeFieldWriter;
-    bool                            _useReferences;
+    const document::DocumentType       &_thisDocType;
+    const ImportedFieldsConfig         &_importedFieldsCfg;
+    const document::DocumentType       &_prevThisDocType;
+    MonitoredRefCount                  &_refCount;
+    vespalib::ISequencedTaskExecutor     &_attributeFieldWriter;
+    bool                                _useReferences;
     std::map<vespalib::string, std::unique_ptr<GidToLidChangeRegistrator>> _registrators;
 
     GidToLidChangeRegistrator &getRegistrator(const vespalib::string &docTypeName);
@@ -50,7 +62,7 @@ public:
                                 const ImportedFieldsConfig &importedFieldsCfg,
                                 const document::DocumentType &prevThisDocType,
                                 MonitoredRefCount &refCount,
-                                search::ISequencedTaskExecutor &attributeFieldWriter,
+                                vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                 bool useReferences);
     ~DocumentDBReferenceResolver() override;
 

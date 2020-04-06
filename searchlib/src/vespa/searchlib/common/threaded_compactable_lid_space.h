@@ -3,7 +3,7 @@
 #pragma once
 
 #include "i_compactable_lid_space.h"
-#include "isequencedtaskexecutor.h"
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <memory>
 
 namespace search::common {
@@ -15,6 +15,7 @@ namespace search::common {
  */
 class ThreadedCompactableLidSpace : public ICompactableLidSpace
 {
+    using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
     std::shared_ptr<ICompactableLidSpace> _target;
     ISequencedTaskExecutor               &_executor;
     ISequencedTaskExecutor::ExecutorId    _executorId;

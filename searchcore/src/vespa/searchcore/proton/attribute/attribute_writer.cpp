@@ -13,7 +13,6 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -22,7 +21,8 @@ LOG_SETUP(".proton.attribute.attribute_writer");
 using namespace document;
 using namespace search;
 using search::attribute::ImportedAttributeVector;
-using ExecutorId = search::ISequencedTaskExecutor::ExecutorId;
+using vespalib::ISequencedTaskExecutor;
+using ExecutorId = vespalib::ISequencedTaskExecutor::ExecutorId;
 
 namespace proton {
 

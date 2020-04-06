@@ -18,7 +18,7 @@
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>

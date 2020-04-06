@@ -100,11 +100,9 @@ vespa_define_module(
     src/tests/bitvector
     src/tests/bytecomplens
     src/tests/common/bitvector
-    src/tests/common/foregroundtaskexecutor
     src/tests/common/location
     src/tests/common/matching_elements
     src/tests/common/resultset
-    src/tests/common/sequencedtaskexecutor
     src/tests/common/struct_field_mapper
     src/tests/common/summaryfeatures
     src/tests/diskindex/bitvector

@@ -9,13 +9,14 @@ LOG_SETUP("attribute_populator_test");
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using document::config_builder::DocumenttypesConfigBuilderHelper;
 using document::config_builder::Struct;
+using vespalib::ForegroundTaskExecutor;
 using namespace document;
 using namespace proton;
 using namespace search;

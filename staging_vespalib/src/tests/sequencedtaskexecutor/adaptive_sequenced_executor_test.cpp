@@ -1,17 +1,16 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/adaptive_sequenced_executor.h>
+#include <vespa/vespalib/util/adaptive_sequenced_executor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
-#include <mutex>
 #include <condition_variable>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("adaptive_sequenced_executor_test");
 
-namespace search::common {
+namespace vespalib {
 
 
 class Fixture

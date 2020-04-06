@@ -2,14 +2,10 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
-#include <vector>
 
 namespace vespalib {
-    struct ExecutorStats;
-    class SyncableThreadExecutor;
-}
 
-namespace search {
+class SyncableThreadExecutor;
 
 /**
  * Class to run multiple tasks in parallel, but tasks with same

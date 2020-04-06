@@ -8,7 +8,7 @@
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/repo/fixedtyperepo.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/text/lowercase.h>

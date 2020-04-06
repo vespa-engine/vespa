@@ -2,7 +2,7 @@
 
 #include "executorthreadingservice.h"
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/singleexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 
@@ -10,7 +10,7 @@
 using vespalib::SyncableThreadExecutor;
 using vespalib::BlockingThreadStackExecutor;
 using vespalib::SingleExecutor;
-using search::SequencedTaskExecutor;
+using vespalib::SequencedTaskExecutor;
 using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 namespace proton {
@@ -101,17 +101,17 @@ ExecutorThreadingService::getStats()
                                          _attributeFieldWriter->getStats());
 }
 
-search::ISequencedTaskExecutor &
+vespalib::ISequencedTaskExecutor &
 ExecutorThreadingService::indexFieldInverter() {
     return *_indexFieldInverter;
 }
 
-search::ISequencedTaskExecutor &
+vespalib::ISequencedTaskExecutor &
 ExecutorThreadingService::indexFieldWriter() {
     return *_indexFieldWriter;
 }
 
-search::ISequencedTaskExecutor &
+vespalib::ISequencedTaskExecutor &
 ExecutorThreadingService::attributeFieldWriter() {
     return *_attributeFieldWriter;
 }

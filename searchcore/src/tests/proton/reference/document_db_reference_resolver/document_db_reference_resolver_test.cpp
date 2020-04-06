@@ -19,7 +19,7 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
@@ -33,6 +33,8 @@ using proton::test::MockDocumentDBReference;
 using search::attribute::test::MockAttributeManager;
 using vespa::config::search::ImportedFieldsConfig;
 using vespa::config::search::ImportedFieldsConfigBuilder;
+using vespalib::SequencedTaskExecutor;
+using vespalib::ISequencedTaskExecutor;
 
 const ReferenceAttribute *getReferenceAttribute(const IGidToLidChangeListener &listener) {
     auto mylistener = dynamic_cast<const GidToLidChangeListener *>(&listener);

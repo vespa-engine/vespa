@@ -55,7 +55,7 @@ public:
     const IAttributeFactory::SP &getFactory() const override {
         HDR_ABORT("should not be reached");
     }
-    search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
+    vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
         HDR_ABORT("should not be reached");
     }
     search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
