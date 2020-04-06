@@ -95,17 +95,6 @@ public class RestApiTest {
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"rebootGeneration\":4");
 
-        // POST deactivation of a maintenance job
-        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
-                                   new byte[0], Request.Method.POST),
-                       "{\"message\":\"Deactivated job 'NodeFailer'\"}");
-        // GET a list of all maintenance jobs
-        assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
-        // DELETE deactivation of a maintenance job
-        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
-                                   new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Re-activated job 'NodeFailer'\"}");
-
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.8.1") + "," + // test with only 1 ip address
@@ -240,6 +229,32 @@ public class RestApiTest {
                 .suspend(new HostName("host4.yahoo.com"));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
+    }
+
+    @Test
+    public void maintenance_requests() throws Exception {
+        // POST deactivation of a maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
+                                   new byte[0], Request.Method.POST),
+                       "{\"message\":\"Deactivated job 'NodeFailer'\"}");
+        // GET a list of all maintenance jobs
+        assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
+
+        // DELETE deactivation of a maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
+                                   new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Re-activated job 'NodeFailer'\"}");
+
+        // POST run of a maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/run/PeriodicApplicationMaintainer",
+                                   new byte[0], Request.Method.POST),
+                       "{\"message\":\"Executed job 'PeriodicApplicationMaintainer'\"}");
+
+        // POST run of unknown maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/run/foo",
+                                   new byte[0], Request.Method.POST),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such job 'foo'\"}");
     }
 
     @Test
