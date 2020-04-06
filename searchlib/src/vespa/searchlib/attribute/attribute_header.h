@@ -5,8 +5,10 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchcommon/attribute/collectiontype.h>
+#include <vespa/searchcommon/attribute/hnsw_index_params.h>
 #include <vespa/searchcommon/attribute/predicate_params.h>
 #include <vespa/eval/eval/value_type.h>
+#include <optional>
 
 namespace vespalib { class GenericHeader; }
 
@@ -26,6 +28,7 @@ private:
     bool        _collectionTypeParamsSet;
     bool        _predicateParamsSet;
     PersistentPredicateParams _predicateParams;
+    std::optional<HnswIndexParams> _hnsw_index_params;
     uint32_t    _numDocs;
     uint64_t    _uniqueValueCount;
     uint64_t    _totalValueCount;
@@ -42,8 +45,8 @@ public:
                     const vespalib::eval::ValueType &tensorType,
                     bool enumerated,
                     const PersistentPredicateParams &predicateParams,
+                    const std::optional<HnswIndexParams>& hnsw_index_params,
                     uint32_t numDocs,
-                    uint32_t fixedWidth,
                     uint64_t uniqueValueCount,
                     uint64_t totalValueCount,
                     uint64_t createSerialNum,
@@ -63,6 +66,7 @@ public:
     const PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
     bool getPredicateParamsSet() const { return _predicateParamsSet; }
     bool getCollectionTypeParamsSet() const { return _collectionTypeParamsSet; }
+    const std::optional<HnswIndexParams>& get_hnsw_index_params() const { return _hnsw_index_params; }
     static AttributeHeader extractTags(const vespalib::GenericHeader &header);
     void addTags(vespalib::GenericHeader &header) const;
 };

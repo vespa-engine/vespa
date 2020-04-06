@@ -306,19 +306,19 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, vespalib::stringref file
 attribute::AttributeHeader
 AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
     return attribute::AttributeHeader(fileName,
-                                   getConfig().basicType(),
-                                   getConfig().collectionType(),
-                                   getConfig().basicType().type() == BasicType::Type::TENSOR
-                                      ? getConfig().tensorType()
-                                      : vespalib::eval::ValueType::error_type(),
-                                   getEnumeratedSave(),
-                                   getConfig().predicateParams(),
-                                   getCommittedDocIdLimit(),
-                                   getFixedWidth(),
-                                   getUniqueValueCount(),
-                                   getTotalValueCount(),
-                                   getCreateSerialNum(),
-                                   getVersion());
+                                      getConfig().basicType(),
+                                      getConfig().collectionType(),
+                                      (getConfig().basicType().type() == BasicType::Type::TENSOR
+                                       ? getConfig().tensorType()
+                                       : vespalib::eval::ValueType::error_type()),
+                                      getEnumeratedSave(),
+                                      getConfig().predicateParams(),
+                                      getConfig().hnsw_index_params(),
+                                      getCommittedDocIdLimit(),
+                                      getUniqueValueCount(),
+                                      getTotalValueCount(),
+                                      getCreateSerialNum(),
+                                      getVersion());
 }
 
 void AttributeVector::onSave(IAttributeSaveTarget &)
