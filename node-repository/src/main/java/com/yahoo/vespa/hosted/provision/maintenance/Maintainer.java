@@ -68,7 +68,16 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
     @Override
     public void deconstruct() {
-        this.service.shutdown();
+        var timeout = Duration.ofSeconds(30);
+        service.shutdown();
+        try {
+            if (!service.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.log(Level.WARNING, "Maintainer " + name() + " failed to shutdown " +
+                                       "within " + timeout);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Returns the simple name of this job */
