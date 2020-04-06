@@ -6,9 +6,14 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.hamcrest.CoreMatchers;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,9 +21,22 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 @SuppressWarnings("serial")
 public class VespaDocumentOperationTest {
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+
+    @Before
+    public void setUpStreams() {
+        System.setOut(new PrintStream(outContent));
+    }
+
+    @After
+    public void restoreStreams() {
+        System.setOut(originalOut);
+    }
     @Test
     public void requireThatUDFReturnsCorrectJson() throws Exception {
         String json = getDocumentOperationJson("docid=id:<application>:metrics::<name>-<date>");
@@ -539,6 +557,32 @@ public class VespaDocumentOperationTest {
         assertEquals(234567, bagNode.get("234567").asInt());
     }
 
+    @Test
+    public void requireThatUDFPrintIdWhenError() throws IOException {
+        DataBag bag = BagFactory.getInstance().newDefaultBag();
+
+        Schema objectSchema = new Schema();
+        Tuple objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "123456", objectSchema, objectTuple);
+        addToTuple("value", DataType.INTEGER, 123456, objectSchema, objectTuple);
+        bag.add(objectTuple);
+
+        objectSchema = new Schema();
+        objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "234567", objectSchema, objectTuple);
+        addToTuple("value", DataType.INTEGER, 234567, objectSchema, objectTuple);
+        bag.add(objectTuple);
+
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+        addToTuple("bag", DataType.BAG, bag, objectSchema, schema, tuple);
+
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=7654321", "simple-object-fields=bag","print-docid-when-error=true");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        assertThat(outContent.toString(), CoreMatchers.containsString("Error occur when processing document with docID: 7654321"));
+    }
 
     private void addToTuple(String alias, byte type, Object value, Schema schema, Tuple tuple) {
         schema.add(new Schema.FieldSchema(alias, type));
