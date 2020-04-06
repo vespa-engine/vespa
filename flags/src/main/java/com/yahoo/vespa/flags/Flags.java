@@ -239,12 +239,6 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DISABLE_ROUTING_GENERATOR = defineFeatureFlag(
-            "disable-routing-generator", true,
-            "Whether the controller should stop asking the routing layer for endpoints",
-            "Takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag DEDICATED_NODES_WHEN_UNSPECIFIED = defineFeatureFlag(
             "dedicated-nodes-when-unspecified", true,
             "Whether config-server should allocate dedicated container nodes when <nodes/> is not specified in services.xml",

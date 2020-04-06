@@ -64,7 +64,6 @@ public class RoutingController {
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
     private final BooleanFlag allowDirectRouting;
-    private final BooleanFlag disableRoutingGenerator;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -72,7 +71,6 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(rotationsConfig, controller.applications(),
                                                          controller.curator());
         this.allowDirectRouting = Flags.ALLOW_DIRECT_ROUTING.bindTo(controller.flagSource());
-        this.disableRoutingGenerator = Flags.DISABLE_ROUTING_GENERATOR.bindTo(controller.flagSource());
     }
 
     public RoutingPolicies policies() {
@@ -86,27 +84,12 @@ public class RoutingController {
     /** Returns zone-scoped endpoints for given deployment */
     public EndpointList endpointsOf(DeploymentId deployment) {
         var endpoints = new LinkedHashSet<Endpoint>();
-        // TODO(mpolden): Remove this once all applications have deployed once and config server passes correct cluster
-        //                id for combined cluster type
-        var disableRoutingGenerator = this.disableRoutingGenerator.with(FetchVector.Dimension.APPLICATION_ID,
-                                                                        deployment.applicationId().serializedForm())
-                                                                  .value();
-        if (!disableRoutingGenerator) {
-            controller.serviceRegistry().routingGenerator().clusterEndpoints(deployment)
-                      .forEach((cluster, url) -> endpoints.add(Endpoint.of(deployment.applicationId())
-                                                                       .target(cluster, deployment.zoneId())
-                                                                       .routingMethod(RoutingMethod.shared)
-                                                                       .on(Port.fromRoutingMethod(RoutingMethod.shared))
-                                                                       .in(controller.system())));
-        }
-        boolean hasSharedEndpoint = !endpoints.isEmpty();
         // Avoid reading application more than once per call to this
         var application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())));
         for (var policy : routingPolicies.get(deployment).values()) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
                 if (routingMethod.isDirect() && !canRouteDirectlyTo(deployment, application.get())) continue;
-                if (hasSharedEndpoint && routingMethod == RoutingMethod.shared) continue;
                 endpoints.add(policy.endpointIn(controller.system(), routingMethod));
             }
         }

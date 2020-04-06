@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -178,8 +177,6 @@ public class InternalStepRunnerTest {
               .deferLoadBalancerProvisioningIn(testZone.environment());
         tester.newDeploymentContext(app.instanceId())
               .deferLoadBalancerProvisioningIn(stagingZone.environment());
-        tester.controllerTester().serviceRegistry().routingGeneratorMock().putEndpoints(new DeploymentId(app.testerId().id(), testZone), List.of());
-        tester.controllerTester().serviceRegistry().routingGeneratorMock().putEndpoints(new DeploymentId(app.instanceId(), stagingZone), List.of());
 
         tester.runner().run();
         tester.configServer().convergeServices(app.instanceId(), JobType.stagingTest.zone(system()));
