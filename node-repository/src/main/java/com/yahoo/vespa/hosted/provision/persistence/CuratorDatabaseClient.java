@@ -366,8 +366,11 @@ public class CuratorDatabaseClient {
         return curatorDatabase.getData(path).filter(data -> data.length > 0).map(mapper);
     }
 
-
     // Maintenance jobs
+    public Lock lockMaintenanceJob(String jobName) {
+        return lock(lockRoot.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
+    }
+
     public Set<String> readInactiveJobs() {
         try {
             return read(inactiveJobsPath(), stringSetSerializer::fromJson).orElseGet(HashSet::new);
@@ -554,4 +557,5 @@ public class CuratorDatabaseClient {
                 .mapToObj(i -> firstProvisionIndex + i)
                 .collect(Collectors.toList());
     }
+
 }

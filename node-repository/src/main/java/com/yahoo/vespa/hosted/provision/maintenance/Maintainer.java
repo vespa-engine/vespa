@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -59,8 +60,11 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
-            if (jobControl.isActive(name()))
-                maintain();
+            if (jobControl.isActive(name())) {
+                runWithLock();
+            }
+        } catch (UncheckedTimeoutException ignored) {
+            // Another config server is running this job
         } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
         }
@@ -83,6 +87,13 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     /** Returns the simple name of this job */
     @Override
     public final String toString() { return name(); }
+
+    /** Run this while holding the job lock */
+    public void runWithLock() {
+        try (var lock = nodeRepository.database().lockMaintenanceJob(name())) {
+            maintain();
+        }
+    }
 
     /** Called once each time this maintenance job should run */
     protected abstract void maintain();
