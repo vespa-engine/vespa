@@ -15,16 +15,17 @@ constexpr uint32_t stackSize = 128 * 1024;
 
 
 std::unique_ptr<ISequencedTaskExecutor>
-SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize)
+SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize, uint32_t kindOfWatermark, duration reactionTime)
 {
     if (optimize == OptimizeFor::ADAPTIVE) {
-        return std::make_unique<AdaptiveSequencedExecutor>(threads, threads, 0, taskLimit);
+        return std::make_unique<AdaptiveSequencedExecutor>(threads, threads, kindOfWatermark, taskLimit);
     } else {
         auto executors = std::make_unique<std::vector<std::unique_ptr<SyncableThreadExecutor>>>();
         executors->reserve(threads);
         for (uint32_t id = 0; id < threads; ++id) {
             if (optimize == OptimizeFor::THROUGHPUT) {
-                executors->push_back(std::make_unique<SingleExecutor>(taskLimit));
+                uint32_t watermark = kindOfWatermark == 0 ? taskLimit / 10 : kindOfWatermark;
+                executors->push_back(std::make_unique<SingleExecutor>(taskLimit, watermark, reactionTime));
             } else {
                 executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));
             }

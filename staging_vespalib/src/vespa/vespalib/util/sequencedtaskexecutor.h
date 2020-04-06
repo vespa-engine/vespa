@@ -2,6 +2,7 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
+#include <vespa/vespalib/util/time.h>
 
 namespace vespalib {
 
@@ -30,9 +31,10 @@ public:
 
     /*
      * Note that if you choose Optimize::THROUGHPUT, you must ensure only a single producer, or synchronize on the outside.
+     *
      */
     static std::unique_ptr<ISequencedTaskExecutor>
-    create(uint32_t threads, uint32_t taskLimit = 1000, OptimizeFor optimize = OptimizeFor::LATENCY);
+    create(uint32_t threads, uint32_t taskLimit = 1000, OptimizeFor optimize = OptimizeFor::LATENCY, uint32_t kindOfWatermark = 0, duration reactionTime = 10ms);
 };
 
 } // namespace search

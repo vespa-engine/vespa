@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/adaptive_sequenced_executor.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
@@ -243,6 +245,26 @@ TEST("require that you distribute well") {
     }
     EXPECT_EQUAL(97u, seven->getComponentHashSize());
     EXPECT_EQUAL(97u, seven->getComponentEffectiveHashSize());
+}
+
+TEST("Test creation of different types") {
+    auto iseq = SequencedTaskExecutor::create(1);
+
+    EXPECT_EQUAL(1u, iseq->getNumExecutors());
+    auto * seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
+    ASSERT_TRUE(seq != nullptr);
+
+    iseq = SequencedTaskExecutor::create(1, 1000, Executor::OptimizeFor::LATENCY);
+    seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
+    ASSERT_TRUE(seq != nullptr);
+
+    iseq = SequencedTaskExecutor::create(1, 1000, Executor::OptimizeFor::THROUGHPUT);
+    seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
+    ASSERT_TRUE(seq != nullptr);
+
+    iseq = SequencedTaskExecutor::create(1, 1000, Executor::OptimizeFor::ADAPTIVE, 17);
+    auto aseq = dynamic_cast<AdaptiveSequencedExecutor *>(iseq.get());
+    ASSERT_TRUE(aseq != nullptr);
 }
 
 }

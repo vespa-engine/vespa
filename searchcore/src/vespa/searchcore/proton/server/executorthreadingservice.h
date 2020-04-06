@@ -8,6 +8,7 @@
 namespace proton {
 
 class ExecutorThreadingServiceStats;
+class ThreadingServiceConfig;
 
 /**
  * Implementation of IThreadingService using 2 underlying thread stack executors
@@ -33,13 +34,11 @@ public:
      * Constructor.
      *
      * @stackSize The size of the stack of the underlying executors.
-     * @taskLimit The task limit for the index executor.
+     * @cfg config used to set up all executors.
      */
     ExecutorThreadingService(vespalib::SyncableThreadExecutor &sharedExecutor,
-                             uint32_t threads = 1,
-                             uint32_t stackSize = 128 * 1024,
-                             uint32_t taskLimit = 1000,
-                             OptimizeFor optimize = OptimizeFor::LATENCY);
+                             const ThreadingServiceConfig & cfg, uint32_t stackSize = 128 * 1024);
+    ExecutorThreadingService(vespalib::SyncableThreadExecutor &sharedExecutor, uint32_t num_treads = 1);
     ~ExecutorThreadingService() override;
 
     /**
