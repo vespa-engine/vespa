@@ -426,6 +426,8 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
         params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
         params.setOptimizeFor(convert(config->mbus.optimizeFor));
+        params.setKindOfWatermark(config->mbus.kind_of_watermark);
+        params.setReactionTime(vespalib::from_s(config->mbus.reactiontime));
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
         if (config->mbusport != -1) {

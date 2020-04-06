@@ -17,6 +17,8 @@ RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :
     _numThreads(2),
     _numNetworkThreads(1),
     _optimizeFor(OptimizeFor::LATENCY),
+    _kindOfWatermark(0),
+    _reactionTime(2ms),
     _dispatchOnEncode(true),
     _dispatchOnDecode(false),
     _connectionExpireSecs(600),

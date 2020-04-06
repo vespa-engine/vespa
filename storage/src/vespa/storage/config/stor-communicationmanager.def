@@ -37,7 +37,14 @@ mbus.num_network_threads int default=1
 ## Any value below 1 will be 1.
 mbus.num_threads int default=1
 
+## Temporary until experimentations is completed
 mbus.optimize_for enum {LATENCY, THROUGHPUT, ADAPTIVE} default = LATENCY
+
+## Temporary until experimentations is completed
+mbus.kind_of_watermark int default = 0
+
+## Temporary until experimentations is completed
+mbus.reactiontime double default = 0.002
 
 ## Enable to use above thread pool for encoding replies
 ## False will use network(fnet) thread

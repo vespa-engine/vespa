@@ -5,6 +5,7 @@
 #include <vespa/slobrok/cfg.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace mbus {
 
@@ -117,6 +118,20 @@ public:
 
     OptimizeFor getOptimizeFor() const { return _optimizeFor; }
 
+    RPCNetworkParams &setKindOfWatermark(uint32_t kindOfWatermark) {
+        _kindOfWatermark = kindOfWatermark;
+        return *this;
+    }
+
+    uint32_t getKindOfWatermark() const { return _kindOfWatermark; }
+
+    RPCNetworkParams &setReactionTime(vespalib::duration reactionTime) {
+        _reactionTime = reactionTime;
+        return *this;
+    }
+
+    vespalib::duration getReactionTime() const { return _reactionTime; }
+
     /**
      * Returns the number of seconds before an idle network connection expires.
      *
@@ -202,18 +217,20 @@ public:
 
     uint32_t getDispatchOnEncode() const { return _dispatchOnEncode; }
 private:
-    Identity          _identity;
-    config::ConfigUri _slobrokConfig;
-    int               _listenPort;
-    uint32_t          _maxInputBufferSize;
-    uint32_t          _maxOutputBufferSize;
-    uint32_t          _numThreads;
-    uint32_t          _numNetworkThreads;
-    OptimizeFor       _optimizeFor;
-    bool              _dispatchOnEncode;
-    bool              _dispatchOnDecode;
-    double            _connectionExpireSecs;
-    CompressionConfig _compressionConfig;
+    Identity           _identity;
+    config::ConfigUri  _slobrokConfig;
+    int                _listenPort;
+    uint32_t           _maxInputBufferSize;
+    uint32_t           _maxOutputBufferSize;
+    uint32_t           _numThreads;
+    uint32_t           _numNetworkThreads;
+    OptimizeFor        _optimizeFor;
+    uint32_t           _kindOfWatermark;      // Temporary until tuning complete
+    vespalib::duration _reactionTime;        // Temporary until tuning complete
+    bool               _dispatchOnEncode;
+    bool               _dispatchOnDecode;
+    double             _connectionExpireSecs;
+    CompressionConfig  _compressionConfig;
 };
 
 }
