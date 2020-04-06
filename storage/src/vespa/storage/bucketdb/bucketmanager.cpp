@@ -33,7 +33,7 @@ namespace storage {
 
 BucketManager::BucketManager(const config::ConfigUri & configUri,
                              ServiceLayerComponentRegister& compReg)
-    : StorageLinkQueued("Bucket manager", compReg),
+    : StorageLink("Bucket manager"),
       framework::StatusReporter("bucketdb", "Bucket database"),
       _configUri(configUri),
       _workerLock(),
@@ -85,7 +85,6 @@ void BucketManager::onClose()
         _thread->interruptAndJoin(_workerLock, _workerCond);
         _thread.reset();
     }
-    StorageLinkQueued::onClose();
 }
 
 void
@@ -417,11 +416,6 @@ void BucketManager::startWorkerThread()
     _thread = _component.startThread(*this, maxProcessingTime, waitTime);
 }
 
-void BucketManager::onFlush(bool downwards)
-{
-    StorageLinkQueued::onFlush(downwards);
-}
-
 // --------- Commands --------- //
 
 bool BucketManager::onRequestBucketInfo(
@@ -471,7 +465,7 @@ bool BucketManager::onRequestBucketInfo(
             entry._bucketId.toString().c_str(),
             entry._info.toString().c_str());
     }
-    dispatchUp(reply);
+    sendUp(reply);
     // Remaining replies dispatched by queueGuard upon function exit.
     return true;
 }
@@ -527,7 +521,7 @@ BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGuard)
     --_requestsCurrentlyProcessing;
     if (_requestsCurrentlyProcessing == 0) {
         for (auto& qr : _queuedReplies) {
-            dispatchUp(qr);
+            sendUp(qr);
         }
         _queuedReplies.clear();
         _conflictingBuckets.clear();
@@ -618,7 +612,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         LOG(debug, "Rejecting request from distributor %u: %s",
             (*it)->getDistributor(),
             error.str().c_str());
-        dispatchUp(reply);
+        sendUp(reply);
     }
 
     if (requests.empty()) {
@@ -669,7 +663,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         auto reply(std::make_shared<api::RequestBucketInfoReply>(
                 *nodeAndCmd.second));
         reply->getBucketInfo().swap(result[nodeAndCmd.first]);
-        dispatchUp(reply);
+        sendUp(reply);
     }
 
     reqs.clear();
@@ -689,7 +683,7 @@ bool
 BucketManager::onUp(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (!StorageLink::onUp(msg)) {
-        dispatchUp(msg);
+        sendUp(msg);
     }
     return true;
 }

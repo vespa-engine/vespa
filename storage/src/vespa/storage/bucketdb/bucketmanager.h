@@ -27,7 +27,7 @@
 
 namespace storage {
 
-class BucketManager : public StorageLinkQueued,
+class BucketManager : public StorageLink,
                       public framework::StatusReporter,
                       private framework::Runnable,
                       private framework::MetricUpdateHook
@@ -122,7 +122,6 @@ private:
     void onOpen() override;
     void onDoneInit() override { _doneInitialized = true; }
     void onClose() override;
-    void onFlush(bool downwards) override;
 
     void updateMetrics(bool updateDocCount);
     void updateMetrics(const MetricLockGuard &) override { updateMetrics(true); }
