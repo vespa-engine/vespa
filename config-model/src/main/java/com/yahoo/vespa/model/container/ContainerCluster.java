@@ -217,15 +217,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addComponent(handler);
     }
 
-    public Optional<Handler<?>> handlerWithBinding(String binding) {
-        Collection<Handler<?>> handlers = getHandlers();
-        for (Handler handler : handlers) {
-            if (handler.getServerBindings().contains(binding))
-                return Optional.of(handler);
-        }
-        return Optional.empty();
-    }
-
     public void addApplicationStatusHandler() {
         Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(
