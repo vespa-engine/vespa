@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/time.h>
 #include <atomic>
+#include <cinttypes>
 
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
@@ -65,6 +66,6 @@ int main(int argc, char **argv) {
                               vespalib::makeLambdaTask([&counter,work_size] { (void) do_work(work_size); counter++; }));
     }
     executor.reset();
-    fprintf(stderr, "\ntotal time: %zu ms\n", vespalib::count_ms(timer.elapsed()));
+    fprintf(stderr, "\ntotal time: %" PRId64 " ms\n", vespalib::count_ms(timer.elapsed()));
     return (size_t(counter) == num_tasks) ? 0 : 1;
 }
