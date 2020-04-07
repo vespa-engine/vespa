@@ -106,24 +106,24 @@ public class FeederParamsTest {
         assertEquals(17, new FeederParams().parseArgs("--window_incrementsize", "17").getWindowIncrementSize());
     }
 
-    static final double SMALL_NUMBER = 0.000000000001;
+    static final double EPSILON = 0.000000000001;
 
     @Test
     public void requireThatWindowSizeDecrementFactorIsParsed() throws ParseException, FileNotFoundException {
-        assertEquals(1.2, new FeederParams().getWindowDecrementFactor(), SMALL_NUMBER);
-        assertEquals(1.3, new FeederParams().parseArgs("--window_decrementfactor", "1.3").getWindowSizeDecrementFactor(), SMALL_NUMBER);
+        assertEquals(1.2, new FeederParams().getWindowDecrementFactor(), EPSILON);
+        assertEquals(1.3, new FeederParams().parseArgs("--window_decrementfactor", "1.3").getWindowDecrementFactor(), EPSILON);
     }
 
     @Test
     public void requireThatWindowResizeRateIsParsed() throws ParseException, FileNotFoundException {
-        assertEquals(3.0, new FeederParams().getWindowResizeRate(), SMALL_NUMBER);
-        assertEquals(5.5, new FeederParams().parseArgs("--window_resizerate", "5.5").getWindowResizeRate(), SMALL_NUMBER);
+        assertEquals(3.0, new FeederParams().getWindowResizeRate(), EPSILON);
+        assertEquals(5.5, new FeederParams().parseArgs("--window_resizerate", "5.5").getWindowResizeRate(), EPSILON);
     }
 
     @Test
     public void requireThatWindowBackOffIsParsed() throws ParseException, FileNotFoundException {
-        assertEquals(0.95, new FeederParams().getWindowSizeBackOff(), SMALL_NUMBER);
-        assertEquals(0.97, new FeederParams().parseArgs("--window_backoff", "0.97").getWindowSizeBackOff(), SMALL_NUMBER);
+        assertEquals(0.95, new FeederParams().getWindowSizeBackOff(), EPSILON);
+        assertEquals(0.97, new FeederParams().parseArgs("--window_backoff", "0.97").getWindowSizeBackOff(), EPSILON);
     }
 
     @Test
