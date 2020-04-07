@@ -50,21 +50,32 @@ HnswGraph::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& ne
     links.remove(old_links_ref);
 }
 
-std::vector<uint32_t>
-HnswGraph::level_histogram() const
+HnswGraph::Histograms
+HnswGraph::histograms() const
 {
-    std::vector<uint32_t> result;
+    Histograms result;
     size_t num_nodes = node_refs.size();
     for (size_t i = 0; i < num_nodes; ++i) {
-        uint32_t levels = 0;
         auto node_ref = node_refs[i].load_acquire();
         if (node_ref.valid()) {
-            levels = nodes.get(node_ref).size();
+            uint32_t levels = 0;
+            uint32_t l0links = 0;
+            auto level_array = nodes.get(node_ref);
+            levels = level_array.size();
+            if (levels > 0) {
+                auto links_ref = level_array[0].load_acquire();
+                auto link_array = links.get(links_ref);
+                l0links = link_array.size();
+            }
+            while (result.level_histogram.size() <= levels) {
+                result.level_histogram.push_back(0);
+            }
+            ++result.level_histogram[levels];
+            while (result.links_histogram.size() <= l0links) {
+                result.links_histogram.push_back(0);
+            }
+            ++result.links_histogram[l0links];
         }
-        while (result.size() <= levels) {
-            result.push_back(0);
-        }
-        ++result[levels];
     }
     return result;
 }

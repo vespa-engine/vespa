@@ -70,7 +70,11 @@ struct HnswGraph {
 
     size_t size() const { return node_refs.size(); }
 
-    std::vector<uint32_t> level_histogram() const;
+    struct Histograms {
+        std::vector<uint32_t> level_histogram;
+        std::vector<uint32_t> links_histogram;
+    };
+    Histograms histograms() const;
 };
 
 }
