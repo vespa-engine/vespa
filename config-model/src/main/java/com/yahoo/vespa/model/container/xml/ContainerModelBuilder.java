@@ -573,7 +573,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addNodesFromXml(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) {
-            cluster.addContainers(allocateWithoutNodesTag(cluster, containerElement, context));
+            cluster.addContainers(allocateWithoutNodesTag(cluster, context));
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, nodesElement, context);
 
@@ -651,29 +651,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     /** Allocate a container cluster without a nodes tag */
-    private List<ApplicationContainer> allocateWithoutNodesTag(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
+    private List<ApplicationContainer> allocateWithoutNodesTag(ApplicationContainerCluster cluster, ConfigModelContext context) {
         DeployState deployState = context.getDeployState();
         HostSystem hostSystem = cluster.hostSystem();
         if (deployState.isHosted()) {
-            // TODO(mpolden): The old way of allocating. Remove when 7.198 is the oldest model in production and the
-            //                feature flag is set to true in all zones.
-            if (!context.properties().useDedicatedNodesWhenUnspecified()) {
-                Optional<HostResource> singleContentHost = getHostResourceFromContentClusters(cluster, containerElement, context);
-                if (singleContentHost.isPresent()) { // there is a content cluster; put the container on its first node
-                    return singleHostContainerCluster(cluster, singleContentHost.get(), context);
-                }
-                else { // request 1 node
-                    ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
-                                                         .vespaVersion(deployState.getWantedNodeVespaVersion())
-                                                         .dockerImageRepo(deployState.getWantedDockerImageRepo())
-                                                         .build();
-                    Capacity capacity = Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified),
-                                                      false,
-                                                      ! deployState.getProperties().isBootstrap());
-                    HostResource host = hostSystem.allocateHosts(clusterSpec, capacity, log).keySet().iterator().next();
-                    return singleHostContainerCluster(cluster, host, context);
-                }
-            }
             // request just enough nodes to satisfy environment capacity requirement
             ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                           ClusterSpec.Id.from(cluster.getName()))

@@ -62,7 +62,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Optional<TlsSecrets> tlsSecrets() { return endpointCertificateSecrets.map(TlsSecrets::new); }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useBucketSpaceMetric() { return true; }
-    @Override public boolean useDedicatedNodesWhenUnspecified() { return true; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
