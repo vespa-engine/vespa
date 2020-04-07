@@ -97,7 +97,8 @@ public class DeploymentStatistics {
                                         .takeWhile(run -> run.hasFailed())
                                         .forEach(run -> {
                                             failingUpgrade.putIfAbsent(run.versions().targetPlatform(), new ArrayList<>());
-                                            failingUpgrade.get(run.versions().targetPlatform()).add(run);
+                                            if (failingUpgrade.get(run.versions().targetPlatform()).stream().noneMatch(existing -> existing.id().job().equals(run.id().job())))
+                                                failingUpgrade.get(run.versions().targetPlatform()).add(run);
                                         }));
 
             failing.failingApplicationChange()
