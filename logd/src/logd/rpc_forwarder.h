@@ -6,11 +6,19 @@
 #include "proto_converter.h"
 #include <vespa/log/log_message.h>
 #include <vespa/fnet/frt/frt.h>
+#include <memory>
 #include <vector>
 
 namespace logdemon {
 
 struct Metrics;
+
+struct RpcTargetSubRef {
+    void operator()(FRT_Target* target) const noexcept {
+        target->SubRef();
+    }
+};
+using RpcTargetGuard = std::unique_ptr<FRT_Target, RpcTargetSubRef>;
 
 /**
  * Implementation of the Forwarder interface that uses RPC to send protobuf encoded log messages to the logserver.
@@ -21,7 +29,7 @@ private:
     vespalib::string _connection_spec;
     double _rpc_timeout_secs;
     size_t _max_messages_per_request;
-    FRT_Target* _target;
+    RpcTargetGuard _target;
     std::vector<ns_log::LogMessage> _messages;
     int _bad_lines;
     ForwardMap _forward_filter;
