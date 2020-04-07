@@ -12,6 +12,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
@@ -461,6 +462,51 @@ TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) 
         EXPECT_EQ(0, metrics.operations[MO::JOIN_BUCKET]->pending.getLast());
         EXPECT_EQ(0, metrics.operations[MO::GARBAGE_COLLECTION]->pending.getLast());
     }
+}
+
+namespace {
+
+uint64_t db_sample_interval_sec(const Distributor& d) noexcept {
+    return std::chrono::duration_cast<std::chrono::seconds>(d.db_memory_sample_interval()).count();
+}
+
+}
+
+TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_time_intervals) {
+    getClock().setAbsoluteTimeInSeconds(1000);
+
+    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a,1=2/2/2");
+    tickDistributorNTimes(10);
+
+    vespalib::Monitor l;
+    distributor_metric_update_hook().updateMetrics(vespalib::MonitorGuard(l));
+    auto* m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
+    ASSERT_TRUE(m != nullptr);
+    auto last_used = m->getLongValue("last");
+    EXPECT_GT(last_used, 0);
+
+    // Add another bucket to the DB. This should increase the underlying used number of
+    // bytes, but this should not be aggregated into the metrics until the sampling time
+    // interval has passed. Instead, old metric gauge values should be preserved.
+    addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a,1=2/2/2");
+
+    const auto sample_interval_sec = db_sample_interval_sec(getDistributor());
+    getClock().setAbsoluteTimeInSeconds(1000 + sample_interval_sec - 1); // Not there yet.
+    tickDistributorNTimes(50);
+    distributor_metric_update_hook().updateMetrics(vespalib::MonitorGuard(l));
+
+    m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
+    auto now_used = m->getLongValue("last");
+    EXPECT_EQ(now_used, last_used);
+
+    getClock().setAbsoluteTimeInSeconds(1000 + sample_interval_sec + 1);
+    tickDistributorNTimes(10);
+    distributor_metric_update_hook().updateMetrics(vespalib::MonitorGuard(l));
+
+    m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
+    now_used = m->getLongValue("last");
+    EXPECT_GT(now_used, last_used);
 }
 
 TEST_F(DistributorTest, priority_config_is_propagated_to_distributor_configuration) {

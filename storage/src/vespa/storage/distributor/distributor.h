@@ -191,6 +191,10 @@ public:
         Distributor& _self;
     };
 
+    std::chrono::steady_clock::duration db_memory_sample_interval() const noexcept {
+        return _db_memory_sample_interval;
+    }
+
 private:
     friend struct DistributorTest;
     friend class BucketDBUpdaterTest;
@@ -226,7 +230,7 @@ private:
      * Takes metric lock.
      */
     void updateInternalMetricsForCompletedScan();
-    void update_bucket_db_memory_usage_stats();
+    void maybe_update_bucket_db_memory_usage_stats();
     void scanAllBuckets();
     MaintenanceScanner::ScanResult scanNextBucket();
     void enableNextConfig();
@@ -330,6 +334,8 @@ private:
     BucketDBMetricUpdater::Stats _bucketDbStats;
     DistributorHostInfoReporter _hostInfoReporter;
     std::unique_ptr<OwnershipTransferSafeTimePointCalculator> _ownershipSafeTimeCalc;
+    std::chrono::steady_clock::duration _db_memory_sample_interval;
+    std::chrono::steady_clock::time_point _last_db_memory_sample_time_point;
     bool _must_send_updated_host_info;
     const bool _use_btree_database;
 };
