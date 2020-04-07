@@ -26,10 +26,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.Charset;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,7 +92,15 @@ public class EndpointCertificateManager {
     }
 
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone) {
+        var t0 = Instant.now();
+        Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone);
+        Duration duration = Duration.between(t0, Instant.now());
+        if (duration.toSeconds() > 30) log.log(LogLevel.INFO, String.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
+        return metadata;
+    }
 
+    @NotNull
+    private Optional<EndpointCertificateMetadata> getOrProvision(Instance instance, ZoneId zone) {
         boolean endpointCertInSharedRouting = this.endpointCertInSharedRouting.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value();
         if (!zoneRegistry.zones().directlyRouted().ids().contains(zone) && !endpointCertInSharedRouting)
             return Optional.empty();
