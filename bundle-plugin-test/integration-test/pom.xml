@@ -62,7 +62,6 @@
           <systemPropertyVariables>
             <test.bundle.path>${project.build.directory}/dependency</test.bundle.path>
           </systemPropertyVariables>
-          <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
       <plugin>
