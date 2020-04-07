@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "config-handler.h"
 #include <vespa/config/common/exceptions.h>
-#include <unistd.h>
-#include <sys/time.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/defaults.h>
-#include "config-handler.h"
+#include <chrono>
+#include <string>
+#include <unistd.h>
+#include <sys/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("config-sentinel");
@@ -31,7 +33,7 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    const char *configId = strdup(optarg);
+    std::string configId(optarg);
 
     const char *rootDir = getenv("ROOT");
     if (!rootDir) {
