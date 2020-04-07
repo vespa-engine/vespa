@@ -111,7 +111,7 @@ public class FeederParamsTest {
     @Test
     public void requireThatWindowSizeDecrementFactorIsParsed() throws ParseException, FileNotFoundException {
         assertEquals(1.2, new FeederParams().getWindowDecrementFactor(), SMALL_NUMBER);
-        assertEquals(1.3, new FeederParams().parseArgs("--window_decrementfactor", "1.3").getWindowIncrementSize(), SMALL_NUMBER);
+        assertEquals(1.3, new FeederParams().parseArgs("--window_decrementfactor", "1.3").getWindowSizeDecrementFactor(), SMALL_NUMBER);
     }
 
     @Test

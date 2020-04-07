@@ -157,8 +157,8 @@ class FeederParams {
         if (cmd.hasOption("wi")) {
             windowIncrementSize = Integer.valueOf(cmd.getOptionValue("wi").trim());
         }
-        if (cmd.hasOption("wi")) {
-            windowDecrementFactor = Double.valueOf(cmd.getOptionValue("wi").trim());
+        if (cmd.hasOption("wd")) {
+            windowDecrementFactor = Double.valueOf(cmd.getOptionValue("wd").trim());
         }
         if (cmd.hasOption("wb")) {
             windowSizeBackOff = Double.valueOf(cmd.getOptionValue("wb").trim());
