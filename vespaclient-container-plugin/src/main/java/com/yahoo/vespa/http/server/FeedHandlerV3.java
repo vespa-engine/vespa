@@ -47,7 +47,7 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     private final Object monitor = new Object();
     private int remainingThreadsForFeedingAllowance;
     private final Duration timeBetweenBumpingMaxThreads;
-    private Instant nextTimeToAllocateAnotherThread;
+    private Instant nextTimeToAllocateAnotherThread = Instant.now();
     private final AtomicInteger threadsAvailableForFeeding;
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
