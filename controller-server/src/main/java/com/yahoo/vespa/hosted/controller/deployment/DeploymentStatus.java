@@ -587,7 +587,6 @@ public class DeploymentStatus {
                               .filter(run -> ! status.jobs()
                                                      .instance(instance)
                                                      .type(prodType)
-                                                     .successOn(versions)
                                                      .lastCompleted().endedNoLaterThan(run.start())
                                                      .isEmpty())
                               .map(run -> run.end().get());
