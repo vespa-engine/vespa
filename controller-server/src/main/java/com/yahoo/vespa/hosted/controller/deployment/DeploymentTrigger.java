@@ -153,7 +153,7 @@ public class DeploymentTrigger {
                                  .parallel().map(Supplier::get).reduce(0L, Long::sum);
     }
 
-    /** Attempts to trigger the given job for the given application and returns the outcome. */
+    /** Attempts to trigger the given job. */
     public void trigger(Job job) {
         log.log(LogLevel.DEBUG, "Triggering " + job);
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
@@ -427,4 +427,3 @@ public class DeploymentTrigger {
     }
 
 }
-
