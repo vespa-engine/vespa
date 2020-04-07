@@ -120,6 +120,7 @@
       "public void processReply(com.yahoo.messagebus.Reply)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setEfficiencyThreshold(double)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setWindowSizeIncrement(double)",
+      "public com.yahoo.messagebus.DynamicThrottlePolicy setWindowSizeDecrementFactor(double)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setWindowSizeBackOff(double)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setResizeRate(double)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setWeight(double)",

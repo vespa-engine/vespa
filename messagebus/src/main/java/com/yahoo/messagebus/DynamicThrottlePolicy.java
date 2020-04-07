@@ -114,7 +114,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
             }
             double efficiency = throughput*period/windowSize;
             if (efficiency < efficiencyThreshold) {
-                windowSize = Math.max(windowSize * windowSizeBackOff, windowSize - decrementFactor * windowSizeIncrement);
+                windowSize = Math.min(windowSize * windowSizeBackOff, windowSize - decrementFactor * windowSizeIncrement);
                 localMaxThroughput = 0;
             } else {
                 windowSize += weight*windowSizeIncrement;
