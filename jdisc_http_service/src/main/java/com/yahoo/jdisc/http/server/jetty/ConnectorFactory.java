@@ -72,7 +72,7 @@ public class ConnectorFactory {
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {
         HttpConnectionFactory httpFactory = newHttpConnectionFactory();
-        if (connectorConfig.healthCheckProxy().enable()) {
+        if (connectorConfig.healthCheckProxy().enable() || connectorConfig.secureRedirect().enabled()) {
             return List.of(httpFactory);
         } else if (connectorConfig.ssl().enabled()) {
             return connectionFactoriesForHttps(metric, httpFactory);
