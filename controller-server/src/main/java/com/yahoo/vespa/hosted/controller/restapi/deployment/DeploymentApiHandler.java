@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
@@ -93,7 +94,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         var versionStatus = controller.versionStatus();
         var systemVersion = versionStatus.systemVersion().map(VespaVersion::versionNumber).orElse(Vtag.currentVersion);
         var deploymentStatuses = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()), systemVersion);
-        var deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(Collectors.toList()),
+        var deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toList()),
                                                                 deploymentStatuses)
                                                        .stream().collect(toMap(DeploymentStatistics::version, identity()));
         for (VespaVersion version : versionStatus.versions()) {
@@ -155,7 +156,9 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                   .flatMap(identity())
                   .collect(Collectors.groupingBy(run -> run.run.id().application(),
                                                  LinkedHashMap::new, // Put apps with failing and running jobs first.
-                                                 groupingBy(run -> run.run.id().type())))
+                                                 groupingBy(run -> run.run.id().type(),
+                                                            LinkedHashMap::new,
+                                                            toList())))
                   .forEach((instance, runs) -> {
                       Cursor instanceObject = instancesArray.addObject();
                       instanceObject.setString("tenant", instance.tenant().value());
@@ -168,17 +171,18 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                                                                                            .orElse(DeploymentSpec.UpgradePolicy.defaultPolicy)));
                       Cursor allJobsObject = instanceObject.setObject("allJobs");
                       Cursor upgradeJobsObject = instanceObject.setObject("upgradeJobs");
-                      for (JobType type : JobType.allIn(controller.system())) {
+                      runs.forEach((type, rs) -> {
                           Cursor jobObject = allJobsObject.setObject(type.jobName());
                           Cursor upgradeObject = upgradeJobsObject.setObject(type.jobName());
-                          for (RunInfo run : runs.getOrDefault(type, List.of())) {
+                          for (RunInfo run : rs) {
                               toSlime(jobObject, run.run);
                               if (run.upgrade)
                                   toSlime(upgradeObject, run.run);
                           }
-                      }
+                      });
                   });
         }
+        JobType.allIn(controller.system()).stream().map(JobType::jobName).forEach(root.setArray("jobs")::addString);
         return new SlimeJsonResponse(slime);
     }
 

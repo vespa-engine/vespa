@@ -38,72 +38,24 @@
           "productionJobCount": 1,
           "upgradePolicy": "default",
           "allJobs": {
-            "system-test": {},
-            "staging-test": {},
-            "production-us-east-3": {},
-            "test-us-east-3": {},
             "production-us-west-1": {
               "success": {
                 "number": 1,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "success"
               }
-            },
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
+            }
           },
           "upgradeJobs": {
-            "system-test": {},
-            "staging-test": {},
-            "production-us-east-3": {},
-            "test-us-east-3": {},
             "production-us-west-1": {
               "success": {
                 "number": 1,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "success"
               }
-            },
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
+            }
           }
         },
         {
@@ -113,72 +65,24 @@
           "productionJobCount": 1,
           "upgradePolicy": "default",
           "allJobs": {
-            "system-test": {},
-            "staging-test": {},
-            "production-us-east-3": {},
-            "test-us-east-3": {},
             "production-us-west-1": {
               "success": {
                 "number": 1,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "success"
               }
-            },
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
+            }
           },
           "upgradeJobs": {
-            "system-test": {},
-            "staging-test": {},
-            "production-us-east-3": {},
-            "test-us-east-3": {},
             "production-us-west-1": {
               "success": {
                 "number": 1,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "success"
               }
-            },
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
+            }
           }
         }
       ]
@@ -266,176 +170,57 @@
             "system-test": {
               "failing": {
                 "number": 2,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "error"
               },
               "running": {
                 "number": 3,
-                "start": 1586278617924,
+                "start": "(ignore)",
                 "status": "running"
               }
             },
             "staging-test": {
               "failing": {
                 "number": 2,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "error"
               },
               "running": {
                 "number": 3,
-                "start": 1586278617924,
+                "start": "(ignore)",
                 "status": "running"
               }
-            },
-            "production-us-east-3": {},
-            "test-us-east-3": {},
-            "production-us-west-1": {},
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
+            }
           },
           "upgradeJobs": {
             "system-test": {
               "failing": {
                 "number": 2,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "error"
               },
               "running": {
                 "number": 3,
-                "start": 1586278617924,
+                "start": "(ignore)",
                 "status": "running"
               }
             },
             "staging-test": {
               "failing": {
                 "number": 2,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "error"
               },
               "running": {
                 "number": 3,
-                "start": 1586278617924,
+                "start": "(ignore)",
                 "status": "running"
               }
-            },
-            "production-us-east-3": {},
-            "test-us-east-3": {},
-            "production-us-west-1": {},
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
-          }
-        },
-        {
-          "tenant": "tenant2",
-          "application": "application2",
-          "instance": "i2",
-          "productionJobCount": 1,
-          "upgradePolicy": "default",
-          "allJobs": {
-            "system-test": {},
-            "staging-test": {},
-            "production-us-east-3": {},
-            "test-us-east-3": {},
-            "production-us-west-1": {
-              "running": {
-                "number": 2,
-                "start": 1586278617924,
-                "status": "running"
-              }
-            },
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
-          },
-          "upgradeJobs": {
-            "system-test": {},
-            "staging-test": {},
-            "production-us-east-3": {},
-            "test-us-east-3": {},
-            "production-us-west-1": {
-              "running": {
-                "number": 2,
-                "start": 1586278617924,
-                "status": "running"
-              }
-            },
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
+            }
           }
         },
         {
@@ -445,75 +230,112 @@
           "productionJobCount": 1,
           "upgradePolicy": "default",
           "allJobs": {
-            "system-test": {},
-            "staging-test": {},
-            "production-us-east-3": {},
-            "test-us-east-3": {},
+            "system-test": {
+              "failing": {
+                "number": 3,
+                "start": "(ignore)",
+                "end": "(ignore)",
+                "status": "error"
+              }
+            },
+            "staging-test": {
+              "running": {
+                "number": 3,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
             "production-us-west-1": {
               "success": {
                 "number": 2,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "success"
               }
-            },
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
+            }
           },
           "upgradeJobs": {
             "system-test": {},
             "staging-test": {},
-            "production-us-east-3": {},
-            "test-us-east-3": {},
             "production-us-west-1": {
               "success": {
                 "number": 2,
-                "start": 1586278617924,
-                "end": 1586278617924,
+                "start": "(ignore)",
+                "end": "(ignore)",
                 "status": "success"
               }
+            }
+          }
+        },
+        {
+          "tenant": "tenant2",
+          "application": "application2",
+          "instance": "i2",
+          "productionJobCount": 1,
+          "upgradePolicy": "default",
+          "allJobs": {
+            "production-us-west-1": {
+              "running": {
+                "number": 2,
+                "start": "(ignore)",
+                "status": "running"
+              }
             },
-            "test-us-west-1": {},
-            "production-us-central-1": {},
-            "test-us-central-1": {},
-            "production-ap-northeast-1": {},
-            "test-ap-northeast-1": {},
-            "production-ap-northeast-2": {},
-            "test-ap-northeast-2": {},
-            "production-ap-southeast-1": {},
-            "test-ap-southeast-1": {},
-            "production-eu-west-1": {},
-            "test-eu-west-1": {},
-            "production-aws-us-east-1a": {},
-            "test-aws-us-east-1a": {},
-            "production-aws-us-west-2a": {},
-            "test-aws-us-west-2a": {},
-            "production-aws-us-east-1b": {},
-            "test-aws-us-east-1b": {},
-            "dev-us-east-1": {},
-            "dev-aws-us-east-2a": {},
-            "perf-us-east-3": {}
+            "system-test": {
+              "running": {
+                "number": 1,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
+            "staging-test": {
+              "running": {
+                "number": 1,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            }
+          },
+          "upgradeJobs": {
+            "production-us-west-1": {
+              "running": {
+                "number": 2,
+                "start": "(ignore)",
+                "status": "running"
+              }
+            },
+            "system-test": {},
+            "staging-test": {}
           }
         }
       ]
     }
+  ],
+  "jobs": [
+    "system-test",
+    "staging-test",
+    "production-us-east-3",
+    "test-us-east-3",
+    "production-us-west-1",
+    "test-us-west-1",
+    "production-us-central-1",
+    "test-us-central-1",
+    "production-ap-northeast-1",
+    "test-ap-northeast-1",
+    "production-ap-northeast-2",
+    "test-ap-northeast-2",
+    "production-ap-southeast-1",
+    "test-ap-southeast-1",
+    "production-eu-west-1",
+    "test-eu-west-1",
+    "production-aws-us-east-1a",
+    "test-aws-us-east-1a",
+    "production-aws-us-west-2a",
+    "test-aws-us-west-2a",
+    "production-aws-us-east-1b",
+    "test-aws-us-east-1b",
+    "dev-us-east-1",
+    "dev-aws-us-east-2a",
+    "perf-us-east-3"
   ]
 }
