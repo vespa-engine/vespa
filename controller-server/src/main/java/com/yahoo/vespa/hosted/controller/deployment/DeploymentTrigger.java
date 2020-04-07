@@ -153,12 +153,7 @@ public class DeploymentTrigger {
                                  .parallel().map(Supplier::get).reduce(0L, Long::sum);
     }
 
-    /**
-     * Attempts to trigger the given job for the given application and returns the outcome.
-     *
-     * If the build service can not find the given job, or claims it is illegal to trigger it,
-     * the project id is removed from the application owning the job, to prevent further trigger attempts.
-     */
+    /** Attempts to trigger the given job. */
     public void trigger(Job job) {
         log.log(LogLevel.DEBUG, "Triggering " + job);
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
@@ -432,4 +427,3 @@ public class DeploymentTrigger {
     }
 
 }
-

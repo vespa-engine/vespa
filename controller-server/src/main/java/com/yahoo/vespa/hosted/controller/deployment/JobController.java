@@ -416,16 +416,14 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions, JobProfile profile) {
-        controller.applications().lockApplicationIfPresent(TenantAndApplicationId.from(id), application -> {
-            locked(id, type, __ -> {
-                Optional<Run> last = last(id, type);
-                if (last.flatMap(run -> active(run.id())).isPresent())
-                    throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
+        locked(id, type, __ -> {
+            Optional<Run> last = last(id, type);
+            if (last.flatMap(run -> active(run.id())).isPresent())
+                throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
-                RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-                curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant(), profile));
-                metric.jobStarted(newId.job());
-            });
+            RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
+            curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant(), profile));
+            metric.jobStarted(newId.job());
         });
     }
 
@@ -439,7 +437,8 @@ public class JobController {
         });
 
         last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
-        locked(id, type, __ -> {
+
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
             start(id,
                   type,
@@ -450,7 +449,9 @@ public class JobController {
                                Optional.empty(),
                                Optional.empty()),
                   JobProfile.development);
+        });
 
+        locked(id, type, __ -> {
             runner.get().accept(last(id, type).get());
         });
     }
