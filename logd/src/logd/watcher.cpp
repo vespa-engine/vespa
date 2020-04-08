@@ -116,6 +116,7 @@ void
 Watcher::watchfile()
 {
     struct donecache already;
+    char newfn[FILENAME_MAX];
 
     char *target = getenv("VESPA_LOG_TARGET");
     if (target == nullptr || strncmp(target, "file:", 5) != 0) {
@@ -222,6 +223,12 @@ Watcher::watchfile()
                 } else {
                     LOG(debug, "logfile rotation complete after %2.3f s", vespalib::to_s(rotTime));
                 }
+                if (((now - created) < (rotTime + 300s))
+                    && (sb.st_size > (1.1 * _confsubscriber.getRotateSize())))
+                {
+                    LOG(warning, "logfile spamming, aggressively removing %s", newfn);
+                    unlink(newfn);
+                }
                 created = now;
                 rotate = false;
                 close(_wfd);
@@ -240,7 +247,6 @@ Watcher::watchfile()
             rotTimer = vespalib::Timer();
             LOG(debug, "preparing to rotate logfile, old logfile size %d, age %2.3f seconds",
                 (int)offset, vespalib::to_s(now-created));
-            char newfn[FILENAME_MAX];
             int l = strlen(filename);
             strcpy(newfn, filename);
             time_t seconds = vespalib::count_s(now.time_since_epoch());
