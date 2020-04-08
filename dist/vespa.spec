@@ -217,7 +217,7 @@ Vespa - The open big data serving engine
 
 Summary: Vespa - The open big data serving engine - base
 
-Requires: java-11-openjdk
+Requires: java-11-openjdk-devel
 Requires: perl
 Requires: perl-Getopt-Long
 Requires(pre): shadow-utils
