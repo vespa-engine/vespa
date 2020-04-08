@@ -2,6 +2,7 @@
 package com.yahoo.feedhandler.v3;
 
 import com.google.common.base.Splitter;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
@@ -46,7 +47,7 @@ public class FeedTesterV3 {
 
     @Test
     public void feedOneDocument() throws Exception {
-        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler();
+        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(null);
         HttpResponse httpResponse = feedHandlerV3.handle(createRequest(1));
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpResponse.render(outStream);
@@ -56,7 +57,7 @@ public class FeedTesterV3 {
 
     @Test
     public void feedOneBrokenDocument() throws Exception {
-        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler();
+        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(null);
         HttpResponse httpResponse = feedHandlerV3.handle(createBrokenRequest());
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpResponse.render(outStream);
@@ -67,13 +68,27 @@ public class FeedTesterV3 {
 
     @Test
     public void feedManyDocument() throws Exception {
-        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler();
+        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(null);
         HttpResponse httpResponse = feedHandlerV3.handle(createRequest(100));
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpResponse.render(outStream);
         assertThat(httpResponse.getContentType(), is("text/plain"));
         String result = Utf8.toString(outStream.toByteArray());
         assertThat(Splitter.on("\n").splitToList(result).size(), is(101));
+    }
+
+    @Test
+    public void softRestart() throws Exception {
+        ThreadpoolConfig.Builder builder = new ThreadpoolConfig.Builder().softStartSeconds(5);
+        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(builder.build());
+        for (int i= 0; i < 100; i++) {
+            HttpResponse httpResponse = feedHandlerV3.handle(createRequest(100));
+            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+            httpResponse.render(outStream);
+            assertThat(httpResponse.getContentType(), is("text/plain"));
+            String result = Utf8.toString(outStream.toByteArray());
+            assertThat(Splitter.on("\n").splitToList(result).size(), is(101));
+        }
     }
 
     private static DocumentTypeManager createDoctypeManager() {
@@ -115,14 +130,14 @@ public class FeedTesterV3 {
         return request;
     }
 
-    private FeedHandlerV3 setupFeederHandler() throws Exception {
+    private FeedHandlerV3 setupFeederHandler(ThreadpoolConfig threadPoolConfig) throws Exception {
         Executor threadPool = Executors.newCachedThreadPool();
         DocumentmanagerConfig docMan = new DocumentmanagerConfig(new DocumentmanagerConfig.Builder().enablecompression(true));
         FeedHandlerV3 feedHandlerV3 = new FeedHandlerV3(
                 new FeedHandlerV3.Context(threadPool, AccessLog.voidAccessLog(), metric),
                 docMan,
                 null /* session cache */,
-                null /* thread pool config */,
+                threadPoolConfig /* thread pool config */,
                 new DocumentApiMetrics(MetricReceiver.nullImplementation, "test")) {
             @Override
             protected ReferencedResource<SharedSourceSession> retainSource(
