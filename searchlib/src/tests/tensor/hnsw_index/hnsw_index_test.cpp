@@ -8,6 +8,7 @@
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -16,6 +17,9 @@ LOG_SETUP("hnsw_index_test");
 using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
 using namespace search::tensor;
+using namespace vespalib::slime;
+using vespalib::Slime;
+
 
 template <typename FloatType>
 class MyDocVectorAccess : public DocVectorAccess {
@@ -293,6 +297,19 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     expect_level_0(5, {2, 6});
     expect_levels(6, {{2, 5, 7}, {3}, {}});
     expect_level_0(7, {3, 6});
+    {
+        Slime actualSlime;
+        SlimeInserter inserter(actualSlime);
+        index->get_state(inserter);
+        const auto &root = actualSlime.get();
+        EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
+        EXPECT_EQ(8, root["nodes"].asLong());
+        EXPECT_EQ(7, root["valid_nodes"].asLong());
+        EXPECT_EQ(0, root["level_histogram"][0].asLong());
+        EXPECT_EQ(5, root["level_histogram"][1].asLong());
+        EXPECT_EQ(0, root["level_0_links_histogram"][0].asLong());
+        EXPECT_EQ(0, root["unreachable_nodes"].asLong());
+    }
 
     // removing 1, its neighbors {2,3,4} will try to
     // link together, but since 2 already has enough links
@@ -305,6 +322,19 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     expect_level_0(5, {2, 6});
     expect_levels(6, {{2, 5, 7}, {3}, {}});
     expect_level_0(7, {3, 6});
+    {
+        Slime actualSlime;
+        SlimeInserter inserter(actualSlime);
+        index->get_state(inserter);
+        const auto &root = actualSlime.get();
+        EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
+        EXPECT_EQ(8, root["nodes"].asLong());
+        EXPECT_EQ(6, root["valid_nodes"].asLong());
+        EXPECT_EQ(0, root["level_histogram"][0].asLong());
+        EXPECT_EQ(4, root["level_histogram"][1].asLong());
+        EXPECT_EQ(0, root["level_0_links_histogram"][0].asLong());
+        EXPECT_EQ(0, root["unreachable_nodes"].asLong());
+    }
 }
 
 TEST_F(HnswIndexTest, manual_insert)
@@ -491,4 +521,3 @@ TEST(LevelGeneratorTest, gives_various_levels)
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
-
