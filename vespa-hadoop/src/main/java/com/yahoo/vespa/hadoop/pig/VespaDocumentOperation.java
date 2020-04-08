@@ -67,7 +67,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     private static final String PROPERTY_CREATE_IF_NON_EXISTENT = "create-if-non-existent";
     private static final String PROPERTY_ID_TEMPLATE = "docid";
     private static final String PROPERTY_OPERATION = "operation";
-    private static final String PROPERTY_PRINT_DOCID_WHEN_ERROR = "print-docid-when-error";
+    private static final String PROPERTY_VERBOSE = "verbose";
     private static final String BAG_AS_MAP_FIELDS = "bag-as-map-fields";
     private static final String SIMPLE_ARRAY_FIELDS = "simple-array-fields";
     private static final String SIMPLE_OBJECT_FIELDS = "simple-object-fields";
@@ -81,7 +81,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     private static final String PARTIAL_UPDATE_ASSIGN = "assign";
     private static final String PARTIAL_UPDATE_ADD = "add";
     private static final String PARTIAL_UPDATE_REMOVE = "remove";
-    private static boolean printIdOnError;
+    private static boolean printId;
 
     private static Map<String, String> mapPartialOperationMap;
 
@@ -115,7 +115,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         properties = VespaConfiguration.loadProperties(params);
         template = properties.getProperty(PROPERTY_ID_TEMPLATE);
         operation = Operation.fromString(properties.getProperty(PROPERTY_OPERATION, "put"));
-        printIdOnError = Boolean.parseBoolean(properties.getProperty(PROPERTY_PRINT_DOCID_WHEN_ERROR, "false"));
+        printId = Boolean.parseBoolean(properties.getProperty(PROPERTY_VERBOSE, "false"));
     }
 
     @Override
@@ -148,6 +148,9 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             Schema inputSchema = getInputSchema();
             Map<String, Object> fields = TupleTools.tupleMap(inputSchema, tuple);
             String docId = TupleTools.toString(fields, template);
+            if (printId) {
+                System.out.println("Processing docId: "+ docId);
+            }
             // create json
             json = create(operation, docId, fields, properties, inputSchema);
             if (json == null || json.length() == 0) {
@@ -159,12 +162,6 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         } catch (Exception e) {
             if (statusReporter != null) {
                 statusReporter.incrCounter("Vespa Document Operation Counters", "Document operation failed", 1);
-            }
-            if (printIdOnError) {
-                Schema inputSchema = getInputSchema();
-                Map<String, Object> fields = TupleTools.tupleMap(inputSchema, tuple);
-                String docId = TupleTools.toString(fields, template);
-                System.out.println("Error occur when processing document with docID: " +docId);
             }
             StringBuilder sb = new StringBuilder();
             sb.append("Caught exception processing input row: \n");

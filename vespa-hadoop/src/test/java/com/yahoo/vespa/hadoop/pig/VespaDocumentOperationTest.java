@@ -558,7 +558,7 @@ public class VespaDocumentOperationTest {
     }
 
     @Test
-    public void requireThatUDFPrintIdWhenError() throws IOException {
+    public void requireThatUDFPrintIdWhenVerbose() throws IOException {
         DataBag bag = BagFactory.getInstance().newDefaultBag();
 
         Schema objectSchema = new Schema();
@@ -577,11 +577,38 @@ public class VespaDocumentOperationTest {
         Tuple tuple = TupleFactory.getInstance().newTuple();
         addToTuple("bag", DataType.BAG, bag, objectSchema, schema, tuple);
 
-        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=7654321", "simple-object-fields=bag","print-docid-when-error=true");
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=7654321", "bag-as-map-fields=bag","verbose=true");
         docOp.setInputSchema(schema);
         String json = docOp.exec(tuple);
 
-        assertThat(outContent.toString(), CoreMatchers.containsString("Error occur when processing document with docID: 7654321"));
+        assertThat(outContent.toString(), CoreMatchers.containsString("Processing docId: 7654321"));
+    }
+
+    @Test
+    public void requireThatUDFVerboseSetToFalseByDefault() throws IOException {
+        DataBag bag = BagFactory.getInstance().newDefaultBag();
+
+        Schema objectSchema = new Schema();
+        Tuple objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "123456", objectSchema, objectTuple);
+        addToTuple("value", DataType.INTEGER, 123456, objectSchema, objectTuple);
+        bag.add(objectTuple);
+
+        objectSchema = new Schema();
+        objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "234567", objectSchema, objectTuple);
+        addToTuple("value", DataType.INTEGER, 234567, objectSchema, objectTuple);
+        bag.add(objectTuple);
+
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+        addToTuple("bag", DataType.BAG, bag, objectSchema, schema, tuple);
+
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=7654321", "bag-as-map-fields=bag");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        assertEquals("", outContent.toString());
     }
 
     private void addToTuple(String alias, byte type, Object value, Schema schema, Tuple tuple) {
