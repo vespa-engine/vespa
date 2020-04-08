@@ -27,6 +27,7 @@ public interface ModelContext {
     Optional<Model> previousModel();
     Optional<ApplicationPackage> permanentApplicationPackage();
     Optional<HostProvisioner> hostProvisioner();
+    Provisioned provisioned();
     DeployLogger deployLogger();
     ConfigDefinitionRepo configDefinitionRepo();
     FileRegistry getFileRegistry();

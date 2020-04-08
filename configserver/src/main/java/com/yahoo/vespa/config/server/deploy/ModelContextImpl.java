@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -41,6 +42,7 @@ public class ModelContextImpl implements ModelContext {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final FileRegistry fileRegistry;
     private final Optional<HostProvisioner> hostProvisioner;
+    private final Provisioned provisioned;
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
 
@@ -65,6 +67,7 @@ public class ModelContextImpl implements ModelContext {
                             ConfigDefinitionRepo configDefinitionRepo,
                             FileRegistry fileRegistry,
                             Optional<HostProvisioner> hostProvisioner,
+                            Provisioned provisioned,
                             ModelContext.Properties properties,
                             Optional<File> appDir,
                             Optional<String> wantedDockerImageRepository,
@@ -77,6 +80,7 @@ public class ModelContextImpl implements ModelContext {
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileRegistry = fileRegistry;
         this.hostProvisioner = hostProvisioner;
+        this.provisioned = provisioned;
         this.properties = properties;
         this.appDir = appDir;
         this.wantedDockerImageRepository = wantedDockerImageRepository;
@@ -100,6 +104,9 @@ public class ModelContextImpl implements ModelContext {
     // TODO: Don't allow empty here but create the right provisioner when this is set up instead
     @Override
     public Optional<HostProvisioner> hostProvisioner() { return hostProvisioner; }
+
+    @Override
+    public Provisioned provisioned() { return provisioned; }
 
     @Override
     public DeployLogger deployLogger() { return deployLogger; }

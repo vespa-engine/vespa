@@ -30,7 +30,7 @@ public class ResourcesReductionValidatorTest {
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
             assertEquals("resources-reduction: Resource reduction in 'default' is too large. " +
-                            "Current memory GB: 64.00, new: 16.00. New resources must be at least 50% of the current resources. " +
+                            "Current memory GB: 64.00, new: 16.00. New min resources must be at least 50% of the current min resources. " +
                             ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
                     Exceptions.toMessageString(expected));
         }
@@ -45,7 +45,7 @@ public class ResourcesReductionValidatorTest {
         } catch (IllegalArgumentException expected) {
             assertEquals("resources-reduction: Resource reduction in 'default' is too large. " +
                             "Current vCPU: 8.00, new: 3.00. Current memory GB: 64.00, new: 16.00. Current disk GB: 800.00, new: 200.00. " +
-                            "New resources must be at least 50% of the current resources. " +
+                            "New min resources must be at least 50% of the current min resources. " +
                             ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
                     Exceptions.toMessageString(expected));
         }
