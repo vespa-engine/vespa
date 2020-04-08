@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -46,6 +47,7 @@ public class ModelContextImplTest {
                 new StaticConfigDefinitionRepo(),
                 new MockFileRegistry(),
                 Optional.empty(),
+                new Provisioned(),
                 new ModelContextImpl.Properties(
                         ApplicationId.defaultId(),
                         true,

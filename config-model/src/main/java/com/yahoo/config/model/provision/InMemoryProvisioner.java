@@ -4,6 +4,7 @@ package com.yahoo.config.model.provision;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
@@ -60,6 +61,8 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     private final boolean useMaxResources;
 
+    private Provisioned provisioned = new Provisioned();
+
     /** Creates this with a number of nodes with resources 1, 3, 9, 1 */
     public InMemoryProvisioner(int nodeCount) {
         this(nodeCount, defaultResources);
@@ -85,9 +88,11 @@ public class InMemoryProvisioner implements HostProvisioner {
         this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, false, startIndexForClusters, retiredHostNames);
     }
 
-    public InMemoryProvisioner(Map<NodeResources, Collection<Host>> hosts, boolean failOnOutOfCapacity,
+    public InMemoryProvisioner(Map<NodeResources, Collection<Host>> hosts,
+                               boolean failOnOutOfCapacity,
                                boolean useMaxResources,
-                               int startIndexForClusters, String ... retiredHostNames) {
+                               int startIndexForClusters,
+                               String ... retiredHostNames) {
         this.failOnOutOfCapacity = failOnOutOfCapacity;
         this.useMaxResources = useMaxResources;
         for (Map.Entry<NodeResources, Collection<Host>> hostsWithResources : hosts.entrySet())
@@ -125,6 +130,7 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
+        provisioned.add(cluster.id(), requested);
         if (useMaxResources)
             return prepare(cluster, requested.maxResources(), requested.isRequired(), requested.canFail());
         else
@@ -163,6 +169,12 @@ public class InMemoryProvisioner implements HostProvisioner {
                 i.set(retire(host));
         }
         return allocation;
+    }
+
+    /** Create a new provisioned instance to record provision requests to this and returns it */
+    public Provisioned startProvisionedRecording() {
+        provisioned = new Provisioned();
+        return provisioned;
     }
 
     private HostSpec retire(HostSpec host) {

@@ -2,6 +2,8 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -21,35 +23,32 @@ public class ClusterSizeReductionValidator implements ChangeValidator {
 
     @Override
     public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
-        for (ContainerCluster currentCluster : current.getContainerClusters().values()) {
-            ContainerCluster nextCluster = next.getContainerClusters().get(currentCluster.getName());
-            if (nextCluster == null) continue;
-            validate(currentCluster.getContainers().size(),
-                     nextCluster.getContainers().size(),
-                     currentCluster.getName(),
+        for (var clusterId : current.allClusters()) {
+            Capacity currentCapacity = current.provisioned().all().get(clusterId);
+            Capacity nextCapacity = next.provisioned().all().get(clusterId);
+            if (currentCapacity == null || nextCapacity == null) continue;
+            validate(currentCapacity,
+                     nextCapacity,
+                     clusterId,
                      overrides,
                      now);
         }
-
-        for (ContentCluster currentCluster : current.getContentClusters().values()) {
-            ContentCluster nextCluster = next.getContentClusters().get(currentCluster.getName());
-            if (nextCluster == null) continue;
-            validate(currentCluster.getSearch().getSearchNodes().size(),
-                     nextCluster.getSearch().getSearchNodes().size(),
-                     currentCluster.getName(),
-                     overrides,
-                     now);
-        }
-
         return Collections.emptyList();
     }
 
-    private void validate(int currentSize, int nextSize, String clusterName, ValidationOverrides overrides, Instant now) {
+    private void validate(Capacity current,
+                          Capacity next,
+                          ClusterSpec.Id clusterId,
+                          ValidationOverrides overrides,
+                          Instant now) {
+        int currentSize = current.minResources().nodes();
+        int nextSize = next.minResources().nodes();
         // don't allow more than 50% reduction, but always allow to reduce size with 1
         if ( nextSize < ((double)currentSize) * 0.5 && nextSize != currentSize - 1)
             overrides.invalid(ValidationId.clusterSizeReduction,
-                              "Size reduction in '" + clusterName + "' is too large. Current size: " + currentSize +
-                              ", new size: " + nextSize + ". New size must be at least 50% of the current size",
+                              "Size reduction in '" + clusterId.value() + "' is too large: " +
+                              "New min size must be at least 50% of the current min size. " +
+                              "Current size: " + currentSize + ", new size: " + nextSize,
                               now);
     }
 

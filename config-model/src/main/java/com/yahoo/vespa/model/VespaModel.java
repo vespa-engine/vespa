@@ -23,11 +23,13 @@ import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.log.LogLevel;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -122,6 +124,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     private final FileDistributor fileDistributor;
 
+    private final Provisioned provisioned;
+
     /** Creates a Vespa Model from internal model types only */
     public VespaModel(ApplicationPackage app) throws IOException, SAXException {
         this(app, new NullConfigModelRegistry());
@@ -162,6 +166,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
         this.applicationPackage = deployState.getApplicationPackage();
+        this.provisioned = deployState.provisioned();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
 
         createGlobalRankProfiles(deployState.getDeployLogger(), deployState.getImportedModels(),
@@ -611,11 +616,23 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         return Collections.unmodifiableMap(id2producer);
     }
 
-    /**
-     * Returns this root's model repository
-     */
+    /** Returns this root's model repository */
     public ConfigModelRepo configModelRepo() {
         return configModelRepo;
     }
+
+    /** If provisioning through the node repo, returns the provision requests issued during build of this */
+    public Provisioned provisioned() { return provisioned; }
+
+    /** Returns the id of all clusters in this */
+    public Set<ClusterSpec.Id> allClusters() {
+        return hostSystem().getHosts().stream()
+                                      .map(HostResource::spec)
+                                      .filter(spec -> spec.membership().isPresent())
+                                      .map(spec -> spec.membership().get().cluster().id())
+                                      .collect(Collectors.toSet());
+    }
+
+
 
 }

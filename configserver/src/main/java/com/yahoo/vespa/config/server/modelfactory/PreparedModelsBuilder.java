@@ -11,6 +11,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -92,6 +93,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(context.getServerDBSessionDir());
 
         // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
+        Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 modelOf(modelVersion),
@@ -99,7 +101,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 logger,
                 configDefinitionRepo,
                 fileDistributionProvider.getFileRegistry(),
-                createHostProvisioner(allocatedHosts),
+                createHostProvisioner(allocatedHosts, provisioned),
+                provisioned,
                 properties,
                 getAppDir(applicationPackage),
                 wantedDockerImageRepository,
@@ -122,11 +125,15 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
     // This method is an excellent demonstration of what happens when one is too liberal with Optional   
     // -bratseth, who had to write the below  :-\
-    private Optional<HostProvisioner> createHostProvisioner(Optional<AllocatedHosts> allocatedHosts) {
-        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties);
+    private Optional<HostProvisioner> createHostProvisioner(Optional<AllocatedHosts> allocatedHosts,
+                                                            Provisioned provisioned) {
+        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties.applicationId(),
+                                                                                              provisioned);
         if ( ! allocatedHosts.isPresent()) return nodeRepositoryProvisioner;
         
-        Optional<HostProvisioner> staticProvisioner = createStaticProvisioner(allocatedHosts, properties);
+        Optional<HostProvisioner> staticProvisioner = createStaticProvisioner(allocatedHosts,
+                                                                              properties.applicationId(),
+                                                                              provisioned);
         if ( ! staticProvisioner.isPresent()) return Optional.empty(); // Since we have hosts allocated this means we are on non-hosted
             
         // Nodes are already allocated by a model and we should use them unless this model requests hosts from a

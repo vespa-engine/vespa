@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo;
@@ -51,6 +52,9 @@ public class MockModelContext implements ModelContext {
     public Optional<HostProvisioner> hostProvisioner() {
         return Optional.empty();
     }
+
+    @Override
+    public Provisioned provisioned() { return new Provisioned(); }
 
     @Override
     public DeployLogger deployLogger() {

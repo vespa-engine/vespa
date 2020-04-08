@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
@@ -252,15 +253,17 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      * returns empty otherwise, which may either mean that no hosts are allocated or that we are running
      * non-hosted and should default to use hosts defined in the application package, depending on context
      */
-    Optional<HostProvisioner> createStaticProvisioner(Optional<AllocatedHosts> allocatedHosts, ModelContext.Properties properties) {
+    Optional<HostProvisioner> createStaticProvisioner(Optional<AllocatedHosts> allocatedHosts,
+                                                      ApplicationId applicationId,
+                                                      Provisioned provisioned) {
         if (hosted && allocatedHosts.isPresent())
-            return Optional.of(new StaticProvisioner(allocatedHosts.get(), createNodeRepositoryProvisioner(properties).get()));
+            return Optional.of(new StaticProvisioner(allocatedHosts.get(), createNodeRepositoryProvisioner(applicationId, provisioned).get()));
         return Optional.empty();
     }
 
-    Optional<HostProvisioner> createNodeRepositoryProvisioner(ModelContext.Properties properties) {
+    Optional<HostProvisioner> createNodeRepositoryProvisioner(ApplicationId applicationId, Provisioned provisioned) {
         return hostProvisionerProvider.getHostProvisioner().map(
-                provisioner -> new ProvisionerAdapter(provisioner, properties.applicationId()));
+                provisioner -> new ProvisionerAdapter(provisioner, applicationId, provisioned));
     }
 
 }
