@@ -308,6 +308,10 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
         EXPECT_EQ(0, root["level_histogram"][0].asLong());
         EXPECT_EQ(5, root["level_histogram"][1].asLong());
         EXPECT_EQ(0, root["level_0_links_histogram"][0].asLong());
+        EXPECT_EQ(1, root["level_0_links_histogram"][1].asLong());
+        EXPECT_EQ(3, root["level_0_links_histogram"][2].asLong());
+        EXPECT_EQ(3, root["level_0_links_histogram"][3].asLong());
+        EXPECT_EQ(0, root["level_0_links_histogram"][4].asLong());
         EXPECT_EQ(0, root["unreachable_nodes"].asLong());
     }
 
@@ -333,6 +337,10 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
         EXPECT_EQ(0, root["level_histogram"][0].asLong());
         EXPECT_EQ(4, root["level_histogram"][1].asLong());
         EXPECT_EQ(0, root["level_0_links_histogram"][0].asLong());
+        EXPECT_EQ(1, root["level_0_links_histogram"][1].asLong());
+        EXPECT_EQ(4, root["level_0_links_histogram"][2].asLong());
+        EXPECT_EQ(1, root["level_0_links_histogram"][3].asLong());
+        EXPECT_EQ(0, root["level_0_links_histogram"][4].asLong());
         EXPECT_EQ(0, root["unreachable_nodes"].asLong());
     }
 }
