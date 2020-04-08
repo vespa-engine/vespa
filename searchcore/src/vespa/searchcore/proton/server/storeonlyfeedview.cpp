@@ -530,9 +530,7 @@ StoreOnlyFeedView::removeIndexedFields(SerialNum, Lid, bool, OnRemoveDoneType) {
 void
 StoreOnlyFeedView::prepareRemove(RemoveOperation &rmOp)
 {
-    const DocumentId &id = rmOp.getDocumentId();
-    const document::GlobalId &gid = id.getGlobalId();
-    documentmetastore::IStore::Result inspectRes = _metaStore.inspect(gid);
+    documentmetastore::IStore::Result inspectRes = _metaStore.inspect(rmOp.getGlobalId());
     if (_params._subDbType == SubDbType::REMOVED) {
         rmOp.setDbDocumentId(DbDocumentId(_params._subDbId, inspectRes._lid));
     }
@@ -541,11 +539,16 @@ StoreOnlyFeedView::prepareRemove(RemoveOperation &rmOp)
 
 void
 StoreOnlyFeedView::handleRemove(FeedToken token, const RemoveOperation &rmOp) {
-    internalRemove(std::move(token), rmOp);
+    if (rmOp.getType() == FeedOperation::REMOVE) {
+        internalRemove(std::move(token), dynamic_cast<const RemoveOperationWithDocId &>(rmOp));
+    } else {
+        assert(rmOp.getType() == FeedOperation::REMOVE);
+    }
+
 }
 
 void
-StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperation &rmOp)
+StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocId &rmOp)
 {
     assert(rmOp.getValidNewOrPrevDbdId());
     assert(rmOp.notMovingLidInSameSubDb());
@@ -561,7 +564,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperation &rmOp)
     considerEarlyAck(token);
 
     if (rmOp.getValidDbdId(_params._subDbId)) {
-        Document::UP clearDoc(new Document(*_docType, docId));
+        auto clearDoc = std::make_unique<Document>(*_docType, docId);
         clearDoc->setRepo(*_repo);
 
         putSummary(serialNum, rmOp.getLid(), std::move(clearDoc), std::shared_ptr<OperationDoneContext>());

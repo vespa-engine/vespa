@@ -36,7 +36,7 @@ ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
         replay(op, is, entry);
         break;
     } case FeedOperation::REMOVE: {
-        RemoveOperation op;
+        RemoveOperationWithDocId op;
         replay(op, is, entry);
         break;
     } case FeedOperation::UPDATE: {

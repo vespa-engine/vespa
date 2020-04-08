@@ -41,21 +41,21 @@ PersistenceHandlerProxy::initialize()
 void
 PersistenceHandlerProxy::handlePut(FeedToken token, const Bucket &bucket, Timestamp timestamp, const DocumentSP &doc)
 {
-    FeedOperation::UP op(new PutOperation(bucket.getBucketId().stripUnused(), timestamp, doc));
+    auto op = std::make_unique<PutOperation>(bucket.getBucketId().stripUnused(), timestamp, doc);
     _feedHandler.handleOperation(token, std::move(op));
 }
 
 void
 PersistenceHandlerProxy::handleUpdate(FeedToken token, const Bucket &bucket, Timestamp timestamp, const DocumentUpdateSP &upd)
 {
-    FeedOperation::UP op(new UpdateOperation(bucket.getBucketId().stripUnused(), timestamp, upd));
+    auto op = std::make_unique<UpdateOperation>(bucket.getBucketId().stripUnused(), timestamp, upd);
     _feedHandler.handleOperation(token, std::move(op));
 }
 
 void
 PersistenceHandlerProxy::handleRemove(FeedToken token, const Bucket &bucket, Timestamp timestamp, const document::DocumentId &id)
 {
-    FeedOperation::UP op(new RemoveOperation(bucket.getBucketId().stripUnused(), timestamp, id));
+    auto op = std::make_unique<RemoveOperationWithDocId>(bucket.getBucketId().stripUnused(), timestamp, id);
     _feedHandler.handleOperation(token, std::move(op));
 }
 
@@ -88,14 +88,14 @@ PersistenceHandlerProxy::handleGetBucketInfo(const Bucket &bucket, IBucketInfoRe
 void
 PersistenceHandlerProxy::handleCreateBucket(FeedToken token, const Bucket &bucket)
 {
-    FeedOperation::UP op(new CreateBucketOperation(bucket.getBucketId().stripUnused()));
+    auto op = std::make_unique<CreateBucketOperation>(bucket.getBucketId().stripUnused());
     _feedHandler.handleOperation(token, std::move(op));
 }
 
 void
 PersistenceHandlerProxy::handleDeleteBucket(FeedToken token, const Bucket &bucket)
 {
-    FeedOperation::UP op(new DeleteBucketOperation(bucket.getBucketId().stripUnused()));
+    auto op = std::make_unique<DeleteBucketOperation>(bucket.getBucketId().stripUnused());
     _feedHandler.handleOperation(token, std::move(op));
 }
 
@@ -108,9 +108,9 @@ PersistenceHandlerProxy::handleGetModifiedBuckets(IBucketIdListResultHandler &re
 void
 PersistenceHandlerProxy::handleSplit(FeedToken token, const Bucket &source, const Bucket &target1, const Bucket &target2)
 {
-    FeedOperation::UP op(new SplitBucketOperation(source.getBucketId().stripUnused(),
-                                                  target1.getBucketId().stripUnused(),
-                                                  target2.getBucketId().stripUnused()));
+    auto op = std::make_unique<SplitBucketOperation>(source.getBucketId().stripUnused(),
+                                                     target1.getBucketId().stripUnused(),
+                                                     target2.getBucketId().stripUnused());
     _feedHandler.handleOperation(token, std::move(op));
 }
 

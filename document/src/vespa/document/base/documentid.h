@@ -65,7 +65,7 @@ public:
 
     const IdString& getScheme() const { return _id; }
     bool hasDocType() const { return _id.hasDocType(); }
-    vespalib::string getDocType() const { return _id.getDocType(); }
+    vespalib::stringref getDocType() const { return _id.getDocType(); }
 
     const GlobalId& getGlobalId() const {
         if (!_globalId.first) { calculateGlobalId(); }

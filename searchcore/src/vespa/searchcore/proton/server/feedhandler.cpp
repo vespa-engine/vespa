@@ -169,8 +169,8 @@ FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &o
 void FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
     _activeFeedView->prepareRemove(op);
     if (ignoreOperation(op)) {
-        LOG(debug, "performRemove(): ignoreOperation: docId(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
-            op.getDocumentId().toString().c_str(), (uint64_t)op.getTimestamp(), (uint64_t)op.getPrevTimestamp());
+        LOG(debug, "performRemove(): ignoreOperation: remove(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
+            op.toString().c_str(), (uint64_t)op.getTimestamp(), (uint64_t)op.getPrevTimestamp());
         if (token) {
             token->setResult(make_unique<RemoveResult>(false), false);
         }

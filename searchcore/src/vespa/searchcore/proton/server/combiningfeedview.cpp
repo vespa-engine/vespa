@@ -151,9 +151,7 @@ CombiningFeedView::prepareRemove(RemoveOperation &rmOp)
 {
     getRemFeedView()->prepareRemove(rmOp);
     if (!rmOp.getPrevDbDocumentId().valid()) {
-        const DocumentId &docId = rmOp.getDocumentId();
-        const document::GlobalId &gid = docId.getGlobalId();
-        findPrevDbdId(gid, rmOp);
+        findPrevDbdId(rmOp.getGlobalId(), rmOp);
     }
 }
 

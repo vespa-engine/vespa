@@ -194,10 +194,10 @@ TEST("require that toString() on derived classes are meaningful")
 
     EXPECT_EQUAL("Remove(id::::, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
-                 RemoveOperation().toString());
+                 RemoveOperationWithDocId().toString());
     EXPECT_EQUAL("Remove(id:ns:foo:::bar, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
-                 RemoveOperation(bucket_id1, timestamp, doc_id).toString());
+                 RemoveOperationWithDocId(bucket_id1, timestamp, doc_id).toString());
 
     EXPECT_EQUAL("SplitBucket("
                  "source=BucketId(0x0000000000000000), "
@@ -311,7 +311,7 @@ TEST_F("require that we can serialize and deserialize remove operations", Fixtur
     uint32_t expSerializedDocSize = getDocIdSize(docId);
     EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
     {
-        RemoveOperation op(bucket, Timestamp(10), docId);
+        RemoveOperationWithDocId op(bucket, Timestamp(10), docId);
         op.setDbDocumentId({1, 2});
         op.setPrevDbDocumentId({3, 4});
         EXPECT_EQUAL(0u, op.getSerializedDocSize());
@@ -319,7 +319,7 @@ TEST_F("require that we can serialize and deserialize remove operations", Fixtur
         EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
     }
     {
-        RemoveOperation op;
+        RemoveOperationWithDocId op;
         op.deserialize(stream, *f._repo);
         EXPECT_EQUAL(docId, op.getDocumentId());
         TEST_DO(assertDocumentOperation(op, bucket, expSerializedDocSize));

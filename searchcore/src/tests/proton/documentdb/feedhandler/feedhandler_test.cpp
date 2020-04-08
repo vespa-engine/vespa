@@ -193,7 +193,7 @@ struct MyFeedView : public test::DummyFeedView {
     MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr,
                const DocTypeName &docTypeName);
     ~MyFeedView() override;
-    void resetPutLatch(uint32_t count) { putLatch.reset(new vespalib::CountDownLatch(count)); }
+    void resetPutLatch(uint32_t count) { putLatch = std::make_unique<vespalib::CountDownLatch>(count); }
     void preparePut(PutOperation &op) override {
         prepareDocumentOperation(op, op.getDocument()->getId().getGlobalId());
     }
@@ -532,7 +532,7 @@ TEST_F("require that heartBeat calls FeedView's heartBeat",
 TEST_F("require that outdated remove is ignored", FeedHandlerFixture)
 {
     DocumentContext doc_context("id:ns:searchdocument::foo", *f.schema.builder);
-    FeedOperation::UP op(new RemoveOperation(doc_context.bucketId, Timestamp(10), doc_context.doc->getId()));
+    auto op = std::make_unique<RemoveOperationWithDocId>(doc_context.bucketId, Timestamp(10), doc_context.doc->getId());
     static_cast<DocumentOperation &>(*op).setPrevDbDocumentId(DbDocumentId(4));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
     FeedTokenContext token_context;
@@ -544,8 +544,7 @@ TEST_F("require that outdated remove is ignored", FeedHandlerFixture)
 TEST_F("require that outdated put is ignored", FeedHandlerFixture)
 {
     DocumentContext doc_context("id:ns:searchdocument::foo", *f.schema.builder);
-    FeedOperation::UP op(new PutOperation(doc_context.bucketId,
-                                          Timestamp(10), doc_context.doc));
+    auto op =std::make_unique<PutOperation>(doc_context.bucketId, Timestamp(10), doc_context.doc);
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
@@ -556,7 +555,7 @@ TEST_F("require that outdated put is ignored", FeedHandlerFixture)
 void
 addLidToRemove(RemoveDocumentsOperation &op)
 {
-    LidVectorContext::SP lids(new LidVectorContext(42));
+    auto lids = std::make_shared<LidVectorContext>(42);
     lids->addLid(4);
     op.setLidsToRemove(0, lids);
 }
@@ -625,7 +624,7 @@ TEST_F("require that flush cannot unprune", FeedHandlerFixture)
 TEST_F("require that remove of unknown document with known data type stores remove", FeedHandlerFixture)
 {
     DocumentContext doc_context("id:test:searchdocument::foo", *f.schema.builder);
-    FeedOperation::UP op(new RemoveOperation(doc_context.bucketId, Timestamp(10), doc_context.doc->getId()));
+    auto op = std::make_unique<RemoveOperationWithDocId>(doc_context.bucketId, Timestamp(10), doc_context.doc->getId());
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
     EXPECT_EQUAL(1, f.feedView.remove_count);
@@ -635,7 +634,7 @@ TEST_F("require that remove of unknown document with known data type stores remo
 TEST_F("require that partial update for non-existing document is tagged as such", FeedHandlerFixture)
 {
     UpdateContext upCtx("id:test:searchdocument::foo", *f.schema.builder);
-    FeedOperation::UP op(new UpdateOperation(upCtx.bucketId, Timestamp(10), upCtx.update));
+    auto  op = std::make_unique<UpdateOperation>(upCtx.bucketId, Timestamp(10), upCtx.update);
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
     const UpdateResult *result = static_cast<const UpdateResult *>(token_context.getResult());
@@ -653,7 +652,7 @@ TEST_F("require that partial update for non-existing document is created if spec
     UpdateContext upCtx("id:test:searchdocument::foo", *f.schema.builder);
     upCtx.update->setCreateIfNonExistent(true);
     f.feedView.metaStore.insert(upCtx.update->getId().getGlobalId(), MyDocumentMetaStore::Entry(5, 5, Timestamp(10)));
-    FeedOperation::UP op(new UpdateOperation(upCtx.bucketId, Timestamp(10), upCtx.update));
+    auto op = std::make_unique<UpdateOperation>(upCtx.bucketId, Timestamp(10), upCtx.update);
     FeedTokenContext token_context;
     f.handler.performOperation(std::move(token_context.token), std::move(op));
     const UpdateResult *result = static_cast<const UpdateResult *>(token_context.getResult());
@@ -674,7 +673,7 @@ TEST_F("require that put is rejected if resource limit is reached", FeedHandlerF
     f.writeFilter._message = "Attribute resource limit reached";
 
     DocumentContext docCtx("id:test:searchdocument::foo", *f.schema.builder);
-    FeedOperation::UP op = std::make_unique<PutOperation>(docCtx.bucketId, Timestamp(10), docCtx.doc);
+    auto op = std::make_unique<PutOperation>(docCtx.bucketId, Timestamp(10), docCtx.doc);
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.put_count);
@@ -689,7 +688,7 @@ TEST_F("require that update is rejected if resource limit is reached", FeedHandl
     f.writeFilter._message = "Attribute resource limit reached";
 
     UpdateContext updCtx("id:test:searchdocument::foo", *f.schema.builder);
-    FeedOperation::UP op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
+    auto op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.update_count);
@@ -705,7 +704,7 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
     f.writeFilter._message = "Attribute resource limit reached";
 
     DocumentContext docCtx("id:test:searchdocument::foo", *f.schema.builder);
-    FeedOperation::UP op = std::make_unique<RemoveOperation>(docCtx.bucketId, Timestamp(10), docCtx.doc->getId());
+    auto op = std::make_unique<RemoveOperationWithDocId>(docCtx.bucketId, Timestamp(10), docCtx.doc->getId());
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(1, f.feedView.remove_count);
@@ -726,7 +725,7 @@ checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
     } else {
         updCtx.update->setCreateIfNonExistent(true);
     }
-    FeedOperation::UP op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
+    auto op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));

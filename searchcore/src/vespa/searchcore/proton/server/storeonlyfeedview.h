@@ -20,6 +20,7 @@
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
 #include <future>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 
 namespace search { class IDestructorCallback; }
 
@@ -176,7 +177,7 @@ private:
     void internalUpdate(FeedToken token, const UpdateOperation &updOp);
 
     bool lookupDocId(const document::DocumentId &docId, Lid & lid) const;
-    void internalRemove(FeedToken token, const RemoveOperation &rmOp);
+    void internalRemove(FeedToken token, const RemoveOperationWithDocId &rmOp);
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
