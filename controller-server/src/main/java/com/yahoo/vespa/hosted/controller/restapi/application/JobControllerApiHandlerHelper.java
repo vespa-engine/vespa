@@ -604,6 +604,9 @@ class JobControllerApiHandlerHelper {
             application.latestVersion().map(Change::of).flatMap(stepStatus::blockedUntil) // Dummy version — just anything with an application.
                       .ifPresent(until -> stepObject.setLong("applicationBlockedUntil", until.toEpochMilli()));
 
+            if (stepStatus.type() == DeploymentStatus.StepType.delay)
+                stepStatus.completedAt(change).ifPresent(completed -> stepObject.setLong("completedAt", completed.toEpochMilli()));
+
             if (stepStatus.type() == DeploymentStatus.StepType.instance) {
                 Cursor deployingObject = stepObject.setObject("deploying");
                 if ( ! change.isEmpty()) {
