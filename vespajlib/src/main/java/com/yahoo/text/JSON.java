@@ -10,7 +10,7 @@ import java.util.Objects;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
- * Static mthods for working with JSON.
+ * Static methods for working with JSON.
  *
  * @author bratseth
  */
