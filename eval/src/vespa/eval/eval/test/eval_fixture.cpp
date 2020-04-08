@@ -26,7 +26,14 @@ NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
         param_types.push_back(ValueType::from_spec(pos->second.value.type()));
         ASSERT_TRUE(!param_types.back().is_error());
     }
-    return NodeTypes(function, param_types);
+    NodeTypes node_types(function, param_types);
+    if (!node_types.errors().empty()) {
+        for (const auto &msg: node_types.errors()) {
+            fprintf(stderr, "eval_fixture: type error: %s\n", msg.c_str());
+        }
+    }
+    ASSERT_TRUE(node_types.errors().empty());
+    return node_types;
 }
 
 std::set<size_t> get_mutable(const Function &function, const ParamRepo &param_repo) {

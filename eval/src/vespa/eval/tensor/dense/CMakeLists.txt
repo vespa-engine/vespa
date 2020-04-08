@@ -2,11 +2,14 @@
 vespa_add_library(eval_tensor_dense OBJECT
     SOURCES
     dense_add_dimension_optimizer.cpp
+    dense_cell_range_function.cpp
     dense_dimension_combiner.cpp
     dense_dot_product_function.cpp
     dense_fast_rename_optimizer.cpp
     dense_inplace_join_function.cpp
     dense_inplace_map_function.cpp
+    dense_lambda_peek_function.cpp
+    dense_lambda_peek_optimizer.cpp
     dense_matmul_function.cpp
     dense_remove_dimension_optimizer.cpp
     dense_replace_type_function.cpp
@@ -14,7 +17,6 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_tensor_address_mapper.cpp
     dense_tensor_cells_iterator.cpp
     dense_tensor_create_function.cpp
-    dense_lambda_peek_optimizer.cpp
     dense_tensor_modify.cpp
     dense_tensor_peek_function.cpp
     dense_tensor_reduce.cpp
