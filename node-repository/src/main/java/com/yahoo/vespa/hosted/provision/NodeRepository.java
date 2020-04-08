@@ -296,8 +296,10 @@ public class NodeRepository extends AbstractComponent {
                 // Controllers:
                 // - port 4443 (HTTPS + Athenz) from the world
                 // - port 443 (HTTPS + Okta) from the world
+                // - port 80 (HTTP) from the world - for redirect to HTTPS/443 only
                 trustedPorts.add(4443);
                 trustedPorts.add(443);
+                trustedPorts.add(80);
                 break;
 
             default:

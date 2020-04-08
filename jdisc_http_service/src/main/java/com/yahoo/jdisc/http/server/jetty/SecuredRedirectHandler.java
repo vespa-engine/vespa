@@ -21,6 +21,8 @@ import java.util.Map;
  */
 class SecuredRedirectHandler extends HandlerWrapper {
 
+    private static final String HEALTH_CHECK_PATH = "/status.html";
+
     private final Map<Integer, Integer> redirectMap;
 
     SecuredRedirectHandler(List<ConnectorConfig> connectorConfigs) {
@@ -35,8 +37,10 @@ class SecuredRedirectHandler extends HandlerWrapper {
             return;
         }
         servletResponse.setContentLength(0);
-        servletResponse.sendRedirect(
-                URIUtil.newURI("https", request.getServerName(), redirectMap.get(localPort), request.getRequestURI(), request.getQueryString()));
+        if (!servletRequest.getRequestURI().equals(HEALTH_CHECK_PATH)) {
+            servletResponse.sendRedirect(
+                    URIUtil.newURI("https", request.getServerName(), redirectMap.get(localPort), request.getRequestURI(), request.getQueryString()));
+        }
         request.setHandled(true);
     }
 
