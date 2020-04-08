@@ -56,7 +56,7 @@ public class HostedVespaClusterPolicyTest {
     public void testTenantHostSuspensionLimit() {
         when(applicationApi.applicationId()).thenReturn(VespaModelUtil.TENANT_HOST_APPLICATION_ID);
         when(clusterApi.isStorageCluster()).thenReturn(false);
-        assertEquals(ConcurrentSuspensionLimitForCluster.TEN_PERCENT,
+        assertEquals(ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT,
                 policy.getConcurrentSuspensionLimit(clusterApi));
     }
 
