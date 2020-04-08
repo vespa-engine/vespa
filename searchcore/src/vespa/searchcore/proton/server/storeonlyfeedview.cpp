@@ -27,6 +27,7 @@ LOG_SETUP(".proton.server.storeonlyfeedview");
 using document::BucketId;
 using document::Document;
 using document::DocumentId;
+using document::GlobalId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using proton::attribute::isUpdateableInMemoryOnly;
@@ -142,46 +143,45 @@ std::vector<document::GlobalId> getGidsToRemove(const IDocumentMetaStore &metaSt
     return gids;
 }
 
-void putMetaData(documentmetastore::IStore &meta_store, const DocumentId &doc_id,
+void putMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentId & doc_id,
                  const DocumentOperation &op, bool is_removed_doc)
 {
     documentmetastore::IStore::Result putRes(
-            meta_store.put(doc_id.getGlobalId(),
+            meta_store.put(gid,
                            op.getBucketId(), op.getTimestamp(), op.getSerializedDocSize(), op.getLid()));
     if (!putRes.ok()) {
         throw IllegalStateException(
                 make_string("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
                             is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
-                            doc_id.getGlobalId().toString().c_str()));
+                            gid.toString().c_str()));
     }
     assert(op.getLid() == putRes._lid);
 }
 
-void removeMetaData(documentmetastore::IStore &meta_store, const DocumentId &doc_id,
+void removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentId &doc_id,
                     const DocumentOperation &op, bool is_removed_doc) {
     assert(meta_store.validLid(op.getPrevLid()));
     assert(is_removed_doc == op.getPrevMarkedAsRemoved());
     const RawDocumentMetaData &meta(meta_store.getRawMetaData(op.getPrevLid()));
-    assert(meta.getGid() == doc_id.getGlobalId());
+    assert(meta.getGid() == gid);
     (void) meta;
     if (!meta_store.remove(op.getPrevLid())) {
         throw IllegalStateException(
                 make_string("Could not remove <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
                             is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
-                            doc_id.getGlobalId().toString().c_str()));
+                            gid.toString().c_str()));
     }
 }
 
 void
-moveMetaData(documentmetastore::IStore &meta_store, const DocumentId &doc_id, const DocumentOperation &op)
+moveMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentOperation &op)
 {
-    (void) doc_id;
     assert(op.getLid() != op.getPrevLid());
     assert(meta_store.validLid(op.getPrevLid()));
     assert(!meta_store.validLid(op.getLid()));
     const RawDocumentMetaData &meta(meta_store.getRawMetaData(op.getPrevLid()));
     (void) meta;
-    assert(meta.getGid() == doc_id.getGlobalId());
+    assert(meta.getGid() == gid);
     assert(meta.getTimestamp() == op.getTimestamp());
     meta_store.move(op.getPrevLid(), op.getLid());
 }
@@ -280,7 +280,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
          putOp.getSubDbId(), putOp.getLid(), putOp.getPrevSubDbId(), putOp.getPrevLid(),
          _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
-    PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(putOp, docId);
+    PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(putOp, docId.getGlobalId(), docId);
     considerEarlyAck(token);
 
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
@@ -541,6 +541,8 @@ void
 StoreOnlyFeedView::handleRemove(FeedToken token, const RemoveOperation &rmOp) {
     if (rmOp.getType() == FeedOperation::REMOVE) {
         internalRemove(std::move(token), dynamic_cast<const RemoveOperationWithDocId &>(rmOp));
+    } else if (rmOp.getType() == FeedOperation::REMOVE_GID) {
+        internalRemove(std::move(token), dynamic_cast<const RemoveOperationWithGid &>(rmOp));
     } else {
         assert(rmOp.getType() == FeedOperation::REMOVE);
     }
@@ -560,7 +562,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocI
          _params._docTypeName.toString().c_str(), serialNum, docId.toString().c_str(),
          rmOp.getSubDbId(), rmOp.getLid(), rmOp.getPrevSubDbId(), rmOp.getPrevLid(), _params._subDbId);
 
-    PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(rmOp, docId);
+    PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(rmOp, docId.getGlobalId(), docId);
     considerEarlyAck(token);
 
     if (rmOp.getValidDbdId(_params._subDbId)) {
@@ -568,6 +570,29 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocI
         clearDoc->setRepo(*_repo);
 
         putSummary(serialNum, rmOp.getLid(), std::move(clearDoc), std::shared_ptr<OperationDoneContext>());
+    }
+    if (rmOp.getValidPrevDbdId(_params._subDbId)) {
+        if (rmOp.changedDbdId()) {
+            assert(!rmOp.getValidDbdId(_params._subDbId));
+            internalRemove(std::move(token), serialNum, std::move(pendingNotifyRemoveDone),
+                           rmOp.getPrevLid(), IDestructorCallback::SP());
+        }
+    }
+}
+
+void
+StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithGid &rmOp)
+{
+    assert(rmOp.getValidNewOrPrevDbdId());
+    assert(rmOp.notMovingLidInSameSubDb());
+    const SerialNum serialNum = rmOp.getSerialNum();
+    DocumentId dummy;
+    PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(rmOp, rmOp.getGlobalId(), dummy);
+    considerEarlyAck(token);
+
+    if (rmOp.getValidDbdId(_params._subDbId)) {
+        internalRemove(std::move(token), serialNum, std::move(pendingNotifyRemoveDone),
+                       rmOp.getPrevLid(), IDestructorCallback::SP());
     }
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
@@ -595,7 +620,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, SerialNum serialNum,
 }
 
 PendingNotifyRemoveDone
-StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const DocumentId &docId)
+StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const GlobalId & gid, const DocumentId &docId)
 {
     PendingNotifyRemoveDone pendingNotifyRemoveDone;
     const SerialNum serialNum = op.getSerialNum();
@@ -605,14 +630,14 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const DocumentId
                 op.getValidPrevDbdId(_params._subDbId) &&
                 op.getLid() != op.getPrevLid())
             {
-                moveMetaData(_metaStore, docId, op);
+                moveMetaData(_metaStore, docId.getGlobalId(), op);
             } else {
-                putMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
+                putMetaData(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
-            _gidToLidChangeHandler.notifyRemove(docId.getGlobalId(), serialNum);
-            pendingNotifyRemoveDone.setup(_gidToLidChangeHandler, docId.getGlobalId(), serialNum);
-            removeMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
+            _gidToLidChangeHandler.notifyRemove(gid, serialNum);
+            pendingNotifyRemoveDone.setup(_gidToLidChangeHandler, gid, serialNum);
+            removeMetaData(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
         }
         _metaStore.commit(serialNum, serialNum);
     }
@@ -731,7 +756,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
          moveOp.getSubDbId(), moveOp.getLid(), moveOp.getPrevSubDbId(), moveOp.getPrevLid(),
          _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
-    PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(moveOp, docId);
+    PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(moveOp, docId.getGlobalId(), docId);
     bool docAlreadyExists = moveOp.getValidPrevDbdId(_params._subDbId);
     if (moveOp.getValidDbdId(_params._subDbId)) {
         bool immediateCommit = _commitTimeTracker.needCommit();

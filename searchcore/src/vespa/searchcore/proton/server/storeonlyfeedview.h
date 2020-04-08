@@ -172,12 +172,13 @@ private:
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
     }
 
-    PendingNotifyRemoveDone adjustMetaStore(const DocumentOperation &op, const document::DocumentId &docId);
+    PendingNotifyRemoveDone adjustMetaStore(const DocumentOperation &op, const document::GlobalId & gid, const document::DocumentId &docId);
     void internalPut(FeedToken token, const PutOperation &putOp);
     void internalUpdate(FeedToken token, const UpdateOperation &updOp);
 
     bool lookupDocId(const document::DocumentId &docId, Lid & lid) const;
     void internalRemove(FeedToken token, const RemoveOperationWithDocId &rmOp);
+    void internalRemove(FeedToken token, const RemoveOperationWithGid &rmOp);
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.

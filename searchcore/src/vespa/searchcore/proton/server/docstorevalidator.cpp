@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 
@@ -127,7 +128,7 @@ void DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::
             document::Document::UP document = store.read(lid, repo);
             assert(document);
             LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s", document->getId().toString().c_str(), lid, metaData.gid.toString().c_str(), metaData.bucketId.toString().c_str());
-            auto remove = std::make_unique<RemoveOperationWithDocId>(metaData.bucketId, metaData.timestamp, document->getId());
+            auto remove = std::make_unique<RemoveOperationWithGid>(metaData.bucketId, metaData.timestamp, gid, document->getType().getName(), lid);
             feedHandler.performOperation(FeedToken(), std::move(remove));
         }
     }

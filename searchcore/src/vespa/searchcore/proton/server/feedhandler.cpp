@@ -564,6 +564,7 @@ FeedHandler::performOperation(FeedToken token, FeedOperation::UP op)
         performPut(std::move(token), static_cast<PutOperation &>(*op));
         return;
     case FeedOperation::REMOVE:
+    case FeedOperation::REMOVE_GID:
         performRemove(std::move(token), static_cast<RemoveOperation &>(*op));
         return;
     case FeedOperation::UPDATE_42:
