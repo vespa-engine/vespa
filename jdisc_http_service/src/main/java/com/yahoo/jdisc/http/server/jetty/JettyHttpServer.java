@@ -110,6 +110,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         String CONTENT_SIZE = "jdisc.http.request.content_size";
 
         String SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.missing_client_cert";
+        String SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.expired_client_cert";
         String SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.invalid_client_cert";
         String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS = "jdisc.http.ssl.handshake.failure.incompatible_protocols";
         String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS = "jdisc.http.ssl.handshake.failure.incompatible_ciphers";
