@@ -104,6 +104,13 @@ public class SystemFlagsDataArchiveTest {
         archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget));
     }
 
+    @Test
+    public void throws_on_unknown_field() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Failed to reconstruct the original JSON at flags/my-test-flag/main.prod.us-west-1.json, got: {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}");
+        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
+    }
+
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {
         assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "main.controller");
         assertFlagDataHasValue(archive, MY_TEST_FLAG, prodUsWestCfgTarget, "main.prod.us-west-1");

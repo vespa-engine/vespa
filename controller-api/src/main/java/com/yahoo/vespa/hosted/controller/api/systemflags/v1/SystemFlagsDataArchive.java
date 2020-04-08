@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.text.JSON;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 
@@ -152,6 +153,9 @@ public class SystemFlagsDataArchive {
                 throw new IllegalArgumentException(
                         String.format("Flag data file with flag id '%s' in directory for '%s'",
                                       flagData.id(), directoryDeducedFlagId.toString()));
+            } else if (!JSON.equals(flagData.serializeToJson(), rawData)) {
+                throw new IllegalArgumentException("Failed to reconstruct the original JSON at " +
+                        filePath + ", got: " + flagData.serializeToJson());
             }
         }
         builder.addFile(filename, flagData);
