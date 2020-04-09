@@ -393,9 +393,6 @@
     "production-aws-us-west-2a",
     "test-aws-us-west-2a",
     "production-aws-us-east-1b",
-    "test-aws-us-east-1b",
-    "dev-us-east-1",
-    "dev-aws-us-east-2a",
-    "perf-us-east-3"
+    "test-aws-us-east-1b"
   ]
 }
