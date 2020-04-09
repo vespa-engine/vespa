@@ -56,7 +56,7 @@ public:
         : PutDoneContext(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut),
           _moveDoneCtx(std::move(moveDoneCtx))
     {}
-    ~PutDoneContextForMove() = default;
+    ~PutDoneContextForMove() override = default;
 };
 
 std::shared_ptr<PutDoneContext>
@@ -81,7 +81,7 @@ createPutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHand
                      std::shared_ptr<const Document> doc,
                      const document::GlobalId &gid, uint32_t lid, SerialNum serialNum, bool enableNotifyPut)
 {
-    return createPutDoneContext(token, gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut, IDestructorCallback::SP());
+    return createPutDoneContext(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut, IDestructorCallback::SP());
 }
 
 std::shared_ptr<UpdateDoneContext>
@@ -111,7 +111,7 @@ public:
         : RemoveDoneContext(std::move(token), executor, documentMetaStore, std::move(pendingNotifyRemoveDone) ,lid),
           _moveDoneCtx(std::move(moveDoneCtx))
     {}
-    ~RemoveDoneContextForMove() = default;
+    ~RemoveDoneContextForMove() override = default;
 };
 
 std::shared_ptr<RemoveDoneContext>
@@ -143,17 +143,17 @@ std::vector<document::GlobalId> getGidsToRemove(const IDocumentMetaStore &metaSt
     return gids;
 }
 
-void putMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentId & doc_id,
+void putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id,
                  const DocumentOperation &op, bool is_removed_doc)
 {
     documentmetastore::IStore::Result putRes(
-            meta_store.put(gid,
+            meta_store.put(doc_id.getGlobalId(),
                            op.getBucketId(), op.getTimestamp(), op.getSerializedDocSize(), op.getLid()));
     if (!putRes.ok()) {
         throw IllegalStateException(
                 make_string("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
                             is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
-                            gid.toString().c_str()));
+                            doc_id.getGlobalId().toString().c_str()));
     }
     assert(op.getLid() == putRes._lid);
 }
@@ -174,14 +174,15 @@ void removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid,
 }
 
 void
-moveMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentOperation &op)
+moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, const DocumentOperation &op)
 {
+    (void) doc_id;
     assert(op.getLid() != op.getPrevLid());
     assert(meta_store.validLid(op.getPrevLid()));
     assert(!meta_store.validLid(op.getLid()));
     const RawDocumentMetaData &meta(meta_store.getRawMetaData(op.getPrevLid()));
     (void) meta;
-    assert(meta.getGid() == gid);
+    assert(meta.getGid() == doc_id.getGlobalId());
     assert(meta.getTimestamp() == op.getTimestamp());
     meta_store.move(op.getPrevLid(), op.getLid());
 }
@@ -531,7 +532,7 @@ void
 StoreOnlyFeedView::prepareRemove(RemoveOperation &rmOp)
 {
     documentmetastore::IStore::Result inspectRes = _metaStore.inspect(rmOp.getGlobalId());
-    if (_params._subDbType == SubDbType::REMOVED) {
+    if ((_params._subDbType == SubDbType::REMOVED) && (rmOp.getType() == FeedOperation::REMOVE)) {
         rmOp.setDbDocumentId(DbDocumentId(_params._subDbId, inspectRes._lid));
     }
     setPrev(rmOp, inspectRes, _params._subDbId, _params._subDbType == SubDbType::REMOVED);
@@ -590,10 +591,6 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithGid 
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(rmOp, rmOp.getGlobalId(), dummy);
     considerEarlyAck(token);
 
-    if (rmOp.getValidDbdId(_params._subDbId)) {
-        internalRemove(std::move(token), serialNum, std::move(pendingNotifyRemoveDone),
-                       rmOp.getPrevLid(), IDestructorCallback::SP());
-    }
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
             assert(!rmOp.getValidDbdId(_params._subDbId));
@@ -630,9 +627,9 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const GlobalId &
                 op.getValidPrevDbdId(_params._subDbId) &&
                 op.getLid() != op.getPrevLid())
             {
-                moveMetaData(_metaStore, docId.getGlobalId(), op);
+                moveMetaData(_metaStore, docId, op);
             } else {
-                putMetaData(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
+                putMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
             _gidToLidChangeHandler.notifyRemove(gid, serialNum);
