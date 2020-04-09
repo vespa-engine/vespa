@@ -200,7 +200,9 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                       });
                   });
         }
-        JobType.allIn(controller.system()).stream().map(JobType::jobName).forEach(root.setArray("jobs")::addString);
+        JobType.allIn(controller.system()).stream()
+               .filter(job -> ! job.environment().isManuallyDeployed())
+               .map(JobType::jobName).forEach(root.setArray("jobs")::addString);
         return new SlimeJsonResponse(slime);
     }
 
