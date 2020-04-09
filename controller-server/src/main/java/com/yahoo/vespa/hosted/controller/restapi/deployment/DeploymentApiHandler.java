@@ -18,7 +18,9 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
@@ -26,7 +28,8 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -121,9 +124,13 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                 applicationObject.setString("status", run.status().name());
             }
 
-            var jobsByInstance = deploymentStatuses.asList().stream()
-                                                   .flatMap(status -> status.instanceJobs().entrySet().stream())
-                                                   .collect(toUnmodifiableMap(jobs -> jobs.getKey(), jobs -> jobs.getValue()));
+            var statusByInstance = deploymentStatuses.asList().stream()
+                                                     .flatMap(status -> status.instanceJobs().keySet().stream()
+                                                                              .map(instance -> Map.entry(instance, status)))
+                                                     .collect(toUnmodifiableMap(entry -> entry.getKey(), entry -> entry.getValue()));
+            var jobsByInstance = statusByInstance.entrySet().stream()
+                                                 .collect(toUnmodifiableMap(entry -> entry.getKey(),
+                                                                            entry -> entry.getValue().instanceJobs().get(entry.getKey())));
             Cursor productionArray = versionObject.setArray("productionApplications");
             statistics.productionSuccesses().stream()
                       .collect(groupingBy(run -> run.id().application()))
@@ -160,22 +167,33 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                                                             LinkedHashMap::new,
                                                             toList())))
                   .forEach((instance, runs) -> {
+                      var status = statusByInstance.get(instance);
                       Cursor instanceObject = instancesArray.addObject();
                       instanceObject.setString("tenant", instance.tenant().value());
                       instanceObject.setString("application", instance.application().value());
                       instanceObject.setString("instance", instance.instance().value());
-                      instanceObject.setLong("productionJobCount", jobsByInstance.get(instance).production().size());
-                      instanceObject.setString("upgradePolicy", toString(deploymentStatuses.matching(status -> status.application().id().equals(TenantAndApplicationId.from(instance)))
-                                                                                           .first().map(status -> status.application().deploymentSpec())
-                                                                                           .flatMap(spec -> spec.instance(instance.instance()).map(DeploymentInstanceSpec::upgradePolicy))
-                                                                                           .orElse(DeploymentSpec.UpgradePolicy.defaultPolicy)));
-                      Cursor allJobsObject = instanceObject.setObject("allJobs");
-                      Cursor upgradeJobsObject = instanceObject.setObject("upgradeJobs");
+                      instanceObject.setBool("upgrading", status.application().require(instance.instance()).change().platform().equals(Optional.of(statistics.version())));
+                      status.instanceSteps().get(instance.instance()).blockedUntil(Change.of(statistics.version()))
+                            .ifPresent(until -> instanceObject.setLong("blockedUntil", until.toEpochMilli()));
+                      instanceObject.setString("upgradePolicy", toString(status.application().deploymentSpec().instance(instance.instance())
+                                                                               .map(DeploymentInstanceSpec::upgradePolicy)
+                                                                               .orElse(DeploymentSpec.UpgradePolicy.defaultPolicy)));
+                      Cursor jobsArray = instanceObject.setArray("jobs");
+                      status.jobSteps().forEach((job, jobStatus) -> {
+                          if ( ! job.application().equals(instance)) return;
+                          Cursor jobObject = jobsArray.addObject();
+                          jobObject.setString("name", job.type().jobName());
+                          jobStatus.pausedUntil().ifPresent(until -> jobObject.setLong("pausedUntil", until.toEpochMilli()));
+                          jobStatus.coolingDownUntil(status.application().require(instance.instance()).change())
+                                   .ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
+                      });
+                      Cursor allRunsObject = instanceObject.setObject("allRuns");
+                      Cursor upgradeRunsObject = instanceObject.setObject("upgradeRuns");
                       runs.forEach((type, rs) -> {
-                          Cursor jobObject = allJobsObject.setObject(type.jobName());
-                          Cursor upgradeObject = upgradeJobsObject.setObject(type.jobName());
+                          Cursor runObject = allRunsObject.setObject(type.jobName());
+                          Cursor upgradeObject = upgradeRunsObject.setObject(type.jobName());
                           for (RunInfo run : rs) {
-                              toSlime(jobObject, run.run);
+                              toSlime(runObject, run.run);
                               if (run.upgrade)
                                   toSlime(upgradeObject, run.run);
                           }
