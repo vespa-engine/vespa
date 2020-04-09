@@ -35,9 +35,22 @@
           "tenant": "tenant1",
           "application": "application1",
           "instance": "default",
-          "productionJobCount": 1,
+          "upgrading": false,
           "upgradePolicy": "default",
-          "allJobs": {
+          "jobs": [
+            {
+              "name": "system-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "staging-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
             "production-us-west-1": {
               "success": {
                 "number": 1,
@@ -47,7 +60,7 @@
               }
             }
           },
-          "upgradeJobs": {
+          "upgradeRuns": {
             "production-us-west-1": {
               "success": {
                 "number": 1,
@@ -62,9 +75,20 @@
           "tenant": "tenant2",
           "application": "application2",
           "instance": "i2",
-          "productionJobCount": 1,
+          "upgrading": false,
           "upgradePolicy": "default",
-          "allJobs": {
+          "jobs": [
+            {
+              "name": "system-test"
+            },
+            {
+              "name": "staging-test"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
             "production-us-west-1": {
               "success": {
                 "number": 1,
@@ -74,7 +98,7 @@
               }
             }
           },
-          "upgradeJobs": {
+          "upgradeRuns": {
             "production-us-west-1": {
               "success": {
                 "number": 1,
@@ -164,9 +188,22 @@
           "tenant": "tenant1",
           "application": "application1",
           "instance": "default",
-          "productionJobCount": 1,
+          "upgrading": true,
           "upgradePolicy": "default",
-          "allJobs": {
+          "jobs": [
+            {
+              "name": "system-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "staging-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
             "system-test": {
               "failing": {
                 "number": 2,
@@ -194,7 +231,7 @@
               }
             }
           },
-          "upgradeJobs": {
+          "upgradeRuns": {
             "system-test": {
               "failing": {
                 "number": 2,
@@ -227,9 +264,21 @@
           "tenant": "tenant2",
           "application": "application2",
           "instance": "i1",
-          "productionJobCount": 1,
+          "upgrading": false,
           "upgradePolicy": "default",
-          "allJobs": {
+          "jobs": [
+            {
+              "name": "system-test",
+              "coolingDownUntil": "(ignore)"
+            },
+            {
+              "name": "staging-test"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
             "system-test": {
               "failing": {
                 "number": 3,
@@ -254,7 +303,7 @@
               }
             }
           },
-          "upgradeJobs": {
+          "upgradeRuns": {
             "system-test": {},
             "staging-test": {},
             "production-us-west-1": {
@@ -271,9 +320,20 @@
           "tenant": "tenant2",
           "application": "application2",
           "instance": "i2",
-          "productionJobCount": 1,
+          "upgrading": true,
           "upgradePolicy": "default",
-          "allJobs": {
+          "jobs": [
+            {
+              "name": "system-test"
+            },
+            {
+              "name": "staging-test"
+            },
+            {
+              "name": "production-us-west-1"
+            }
+          ],
+          "allRuns": {
             "production-us-west-1": {
               "running": {
                 "number": 2,
@@ -296,7 +356,7 @@
               }
             }
           },
-          "upgradeJobs": {
+          "upgradeRuns": {
             "production-us-west-1": {
               "running": {
                 "number": 2,
