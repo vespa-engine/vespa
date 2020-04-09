@@ -114,7 +114,8 @@ DocStoreValidator::getInvalidLids() const
     return res;
 }
 
-void DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::IDocumentStore &store, const document::DocumentTypeRepo & repo) const {
+void
+DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::IDocumentStore &store, const document::DocumentTypeRepo & repo) const {
     for (search::DocumentIdT lid(_invalid->getFirstTrueBit(1));
          lid < _docIdLimit;
          lid = _invalid->getNextTrueBit(lid + 1))
@@ -128,7 +129,7 @@ void DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::
             document::Document::UP document = store.read(lid, repo);
             assert(document);
             LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s", document->getId().toString().c_str(), lid, metaData.gid.toString().c_str(), metaData.bucketId.toString().c_str());
-            auto remove = std::make_unique<RemoveOperationWithGid>(metaData.bucketId, metaData.timestamp, gid, document->getType().getName(), lid);
+            auto remove = std::make_unique<RemoveOperationWithGid>(metaData.bucketId, metaData.timestamp, gid, document->getType().getName());
             feedHandler.performOperation(FeedToken(), std::move(remove));
         }
     }

@@ -40,17 +40,14 @@ public:
 class RemoveOperationWithGid : public RemoveOperation {
     document::GlobalId _gid;
     vespalib::string   _docType;
-    uint32_t           _lid;
 
 public:
     RemoveOperationWithGid();
     RemoveOperationWithGid(document::BucketId bucketId,
                            storage::spi::Timestamp timestamp,
                            const document::GlobalId & gid,
-                           vespalib::stringref docType,
-                           uint32_t lid);
+                           vespalib::stringref docType);
     ~RemoveOperationWithGid() override;
-    uint32_t  getLid() const { return _lid; }
     const document::GlobalId & getGlobalId() const override { return _gid; }
     void serialize(vespalib::nbostream &os) const override;
     void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
