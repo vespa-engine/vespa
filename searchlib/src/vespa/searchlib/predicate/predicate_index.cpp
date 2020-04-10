@@ -194,10 +194,8 @@ void PredicateIndex::removeDocument(uint32_t doc_id) {
     auto features = _features_store.get(doc_id);
     if (!features.empty()) {
         for (auto feature : features) {
-            removeFromIndex(feature, doc_id, _interval_index,
-                            _interval_store);
-            removeFromIndex(feature, doc_id, _bounds_index,
-                            _interval_store);
+            removeFromIndex(feature, doc_id, _interval_index, _interval_store);
+            removeFromIndex(feature, doc_id, _bounds_index, _interval_store);
         }
         _cache.removeIndex(doc_id);
     }
@@ -242,7 +240,7 @@ PredicateIndex::lookup(uint64_t key) const
     if (dictIterator.valid()) {
         auto it = _interval_index.getBTreePostingList(dictIterator.getData());
         if (it.valid()) {
-            return PopulateInterface::Iterator::UP(new DocIdIterator(it));
+            return std::make_unique<DocIdIterator>(it);
         }
     }
     return PopulateInterface::Iterator::UP();

@@ -18,9 +18,7 @@ BitVectorCache::BitVectorCache(GenerationHolder &genHolder) :
 {
 }
 
-BitVectorCache::~BitVectorCache()
-{
-}
+BitVectorCache::~BitVectorCache() = default;
 
 void
 BitVectorCache::computeCountVector(KeySet & keys, CountVector & v) const
@@ -148,14 +146,19 @@ BitVectorCache::populate(Key2Index & newKeys, CondensedBitVector & chunk, const 
             m.chunkIndex(index);
             LOG(info, "Populating bitvector %2d with feature %" PRIu64 " and %ld bits set. Cost is %8f = %2.2f%%, accumulated cost is %2.2f%%",
                        index, e.first, m.bitCount(), m.cost(), percentage, accum);
-            index++;
             assert(m.isCached());
             assert(newKeys[e.first].isCached());
             assert(&m == &newKeys[e.first]);
             PopulateInterface::Iterator::UP iterator = lookup.lookup(e.first);
-            for (int32_t docId(iterator->getNext()); docId >= 0; docId = iterator->getNext()) {
-                chunk.set(m.chunkIndex(), docId, true);
+            if (iterator) {
+                for (int32_t docId(iterator->getNext()); docId >= 0; docId = iterator->getNext()) {
+                    chunk.set(m.chunkIndex(), docId, true);
+                }
+            } else {
+                LOG(error, "Unable to to find a valid iterator for feature %" PRIu64 " and %ld bits set at while populating bitvector %2d. This should in theory be impossible.",
+                           e.first, m.bitCount(), index);
             }
+            index++;
         }
     }
 }
