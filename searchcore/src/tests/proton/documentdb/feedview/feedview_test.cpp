@@ -620,7 +620,7 @@ struct FixtureBase
 
     void removeAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
-        RemoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
+        RemoveOperationWithDocId op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
         runInMaster([&] () { performRemove(token.ft, op); });
     }
 

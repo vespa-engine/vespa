@@ -147,6 +147,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _activeConfigSnapshot(),
       _activeConfigSnapshotGeneration(0),
       _activeConfigSnapshotSerialNum(0u),
+      _validateAndSanitizeDocStore(protonCfg.validateAndSanitizeDocstore == vespa::config::search::core::ProtonConfig::ValidateAndSanitizeDocstore::YES),
       _initGate(),
       _clusterStateHandler(_writeService.master()),
       _bucketHandler(_writeService.master()),
@@ -660,6 +661,12 @@ DocumentDB::onTransactionLogReplayDone()
         // This document db is added when system is up,
         // must signal that all existing buckets must be checked.
         notifyAllBucketsChanged();
+    }
+    if (_validateAndSanitizeDocStore) {
+        LOG(info, "Validating documentdb %s", getName().c_str());
+        SerialNum serialNum = _feedHandler.getSerialNum();
+        sync(serialNum);
+        _subDBs.validateDocStore(_feedHandler, serialNum);
     }
 }
 

@@ -743,13 +743,13 @@ struct DocumentHandler
         op.setSerialNum(serialNum);
         return op;
     }
-    RemoveOperation createRemove(const DocumentId &docId, Timestamp timestamp, SerialNum serialNum)
+    RemoveOperationWithDocId createRemove(const DocumentId &docId, Timestamp timestamp, SerialNum serialNum)
     {
         const document::GlobalId &gid = docId.getGlobalId();
         BucketId bucket = gid.convertToBucketId();
         bucket.setUsedBits(BUCKET_USED_BITS);
         bucket = bucket.stripUnused();
-        RemoveOperation op(bucket, timestamp, docId);
+        RemoveOperationWithDocId op(bucket, timestamp, docId);
         op.setSerialNum(serialNum);
         return op;
     }
@@ -883,7 +883,7 @@ TEST_F("require that lid allocation uses lowest free lid", StoreOnlyFixture)
     DocumentHandler<StoreOnlyFixture> handler(f);
     Document::UP doc;
     PutOperation putOp;
-    RemoveOperation rmOp;
+    RemoveOperationWithDocId rmOp;
     MoveOperation moveOp;
 
     doc = handler.createEmptyDoc(1);

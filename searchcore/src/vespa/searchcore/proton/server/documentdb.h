@@ -112,6 +112,7 @@ private:
     DocumentDBConfig::SP          _activeConfigSnapshot;
     int64_t                       _activeConfigSnapshotGeneration;
     SerialNum                     _activeConfigSnapshotSerialNum;
+    const bool                    _validateAndSanitizeDocStore;
 
     vespalib::Gate                _initGate;
 
