@@ -326,6 +326,36 @@ TEST_F("require that we can serialize and deserialize remove operations", Fixtur
     }
 }
 
+TEST_F("require that we can serialize and deserialize remove by gid operations", Fixture)
+{
+    vespalib::nbostream stream;
+    GlobalId gid = docId.getGlobalId();
+    BucketId bucket(toBucket(gid));
+    uint32_t expSerializedDocSize = 25;
+    vespalib::string expDocType = "testdoc_type";
+    EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
+    {
+        RemoveOperationWithGid op(bucket, Timestamp(10), gid, expDocType);
+        op.setPrevDbDocumentId({3, 4});
+        EXPECT_EQUAL(0u, op.getSerializedDocSize());
+        op.serialize(stream);
+        EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
+    }
+    {
+        RemoveOperationWithGid op;
+        op.deserialize(stream, *f._repo);
+        EXPECT_EQUAL(gid, op.getGlobalId());
+        EXPECT_EQUAL(expDocType, op.getDocType());
+        EXPECT_EQUAL(bucket, op.getBucketId());
+        EXPECT_EQUAL(10u, op.getTimestamp().getValue());
+        EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
+        EXPECT_FALSE( op.getValidDbdId());
+        EXPECT_EQUAL(3u, op.getPrevSubDbId());
+        EXPECT_EQUAL(4u, op.getPrevLid());
+        EXPECT_TRUE(stream.empty());
+    }
+}
+
 }  // namespace
 
 TEST_MAIN() { TEST_RUN_ALL(); }
