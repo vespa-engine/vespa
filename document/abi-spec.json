@@ -1927,7 +1927,8 @@
       "public void <init>(java.lang.String)",
       "public java.lang.String getSelection()",
       "public boolean isPresent()",
-      "public static com.yahoo.document.TestAndSetCondition fromConditionString(java.util.Optional)"
+      "public static com.yahoo.document.TestAndSetCondition fromConditionString(java.util.Optional)",
+      "public java.lang.String toString()"
     ],
     "fields": [
       "public static final com.yahoo.document.TestAndSetCondition NOT_PRESENT_CONDITION"
