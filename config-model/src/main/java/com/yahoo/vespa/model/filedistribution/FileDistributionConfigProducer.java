@@ -20,7 +20,8 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
     private final Map<Host, FileDistributionConfigProvider> fileDistributionConfigProviders = new IdentityHashMap<>();
     private final FileDistributor fileDistributor;
 
-    public FileDistributionConfigProducer(AbstractConfigProducer ancestor, FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpec) {
+    public FileDistributionConfigProducer(AbstractConfigProducer ancestor, FileRegistry fileRegistry,
+                                          List<ConfigServerSpec> configServerSpec) {
         this(ancestor, new FileDistributor(fileRegistry, configServerSpec));
     }
 

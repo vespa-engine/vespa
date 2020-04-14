@@ -461,6 +461,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     public FileReference sendFile(String relativePath) {
         return getRoot().getFileDistributor().sendFileToHost(relativePath, getHost());
     }
+
     public FileReference sendUri(String uri) {
         return getRoot().getFileDistributor().sendUriToHost(uri, getHost());
     }
