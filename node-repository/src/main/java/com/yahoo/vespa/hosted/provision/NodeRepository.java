@@ -757,6 +757,17 @@ public class NodeRepository extends AbstractComponent {
         return resultingNodes;
     }
 
+    public boolean canAllocateTenantNodeTo(Node host) {
+        if (!host.type().canRun(NodeType.tenant)) return false;
+
+        // Do not allocate to hosts we want to retire or are currently retiring
+        if (host.status().wantToRetire() || host.allocation().map(alloc -> alloc.membership().retired()).orElse(false))
+            return false;
+
+        if (!zone.cloud().value().equals("aws")) return host.state() == State.active;
+        else return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
+    }
+
     /** Returns the time keeper of this system */
     public Clock clock() { return clock; }
 

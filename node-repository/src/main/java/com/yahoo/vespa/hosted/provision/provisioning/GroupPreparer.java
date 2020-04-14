@@ -79,7 +79,7 @@ public class GroupPreparer {
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes();
+                prioritizer.addNewDockerNodes(nodeRepository::canAllocateTenantNodeTo);
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,

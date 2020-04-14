@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -31,9 +32,6 @@ import java.util.stream.Collectors;
  */
 public class NodePrioritizer {
 
-    /** Node states in which host can get new nodes allocated in, ordered by preference (ascending) */
-    public static final List<Node.State> ALLOCATABLE_HOST_STATES =
-            List.of(Node.State.provisioned, Node.State.ready, Node.State.active);
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
@@ -119,11 +117,11 @@ public class NodePrioritizer {
     }
 
     /** Add a node on each docker host with enough capacity for the requested flavor  */
-    void addNewDockerNodes() {
+    void addNewDockerNodes(Predicate<Node> canAllocateTenantNodeTo) {
         if ( ! isDocker) return;
 
         LockedNodeList candidates = allNodes
-                .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()))
+                .filter(node -> node.type() != NodeType.host || canAllocateTenantNodeTo.test(node))
                 .filter(node -> node.reservedTo().isEmpty() || node.reservedTo().get().equals(application.tenant()));
 
         if (allocateFully) {
@@ -145,9 +143,6 @@ public class NodePrioritizer {
         NodeResources wantedResources = resources(requestedNodes);
 
         for (Node host : candidates) {
-            if (!host.type().canRun(requestedNodes.type())) continue;
-            if (host.status().wantToRetire()) continue;
-
             boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(host, wantedResources);
             boolean conflictingCluster = allNodes.childrenOf(host).owner(application).asList().stream()
                                                  .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));

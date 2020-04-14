@@ -3,12 +3,16 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -47,7 +51,6 @@ import static com.yahoo.vespa.hosted.provision.maintenance.DynamicProvisioningMa
 import static com.yahoo.vespa.hosted.provision.maintenance.DynamicProvisioningMaintainerTest.HostProvisionerTester.tenantApp;
 import static com.yahoo.vespa.hosted.provision.maintenance.DynamicProvisioningMaintainerTest.HostProvisionerTester.tenantHostApp;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -121,8 +124,8 @@ public class DynamicProvisioningMaintainerTest {
         verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host2")));
         verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host3")));
         verifyNoMoreInteractions(hostProvisioner);
-        assertEquals(Node.State.deprovisioned, tester.nodeRepository.getNode("host2").get().state());
-        assertEquals(Node.State.deprovisioned, tester.nodeRepository.getNode("host3").get().state());
+        assertTrue(tester.nodeRepository.getNode("host2").isEmpty());
+        assertTrue(tester.nodeRepository.getNode("host3").isEmpty());
     }
 
     @Test
@@ -144,7 +147,7 @@ public class DynamicProvisioningMaintainerTest {
         addNodes();
 
         maintainer.convergeToCapacity(tester.nodeRepository.list());
-        assertEquals(Node.State.deprovisioned, tester.nodeRepository.getNode("host2").get().state());
+        assertTrue(tester.nodeRepository.getNode("host2").isEmpty());
         assertTrue(tester.nodeRepository.getNode("host3").isPresent());
         verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host2")));
         verify(hostProvisioner, times(2)).provisionHosts(argThatLambda(list -> list.size() == 1), eq(new NodeResources(2, 3, 2, 1)), any());
@@ -208,8 +211,9 @@ public class DynamicProvisioningMaintainerTest {
         static final ApplicationId proxyApp = ApplicationId.from("vespa", "proxy", "default");
 
         private final ManualClock clock = new ManualClock();
+        private final Zone zone = new Zone(CloudName.from("aws"), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
         private final NodeRepository nodeRepository = new NodeRepository(
-                nodeFlavors, new MockCurator(), clock, Zone.defaultZone(), new MockNameResolver().mockAnyLookup(),
+                nodeFlavors, new MockCurator(), clock, zone, new MockNameResolver().mockAnyLookup(),
                 DockerImage.fromString("docker-image"), true);
 
         Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, Optional<ApplicationId> application) {

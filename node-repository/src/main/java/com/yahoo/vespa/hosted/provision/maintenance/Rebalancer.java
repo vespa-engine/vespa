@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -93,7 +92,7 @@ public class Rebalancer extends Maintainer {
             if (node.parentHostname().isEmpty()) continue;
             if (node.allocation().get().owner().instance().isTester()) continue;
             if (node.allocation().get().owner().application().value().equals("lsbe-dictionaries")) continue; // TODO: Remove
-            for (Node toHost : allNodes.nodeType(NodeType.host).state(NodePrioritizer.ALLOCATABLE_HOST_STATES)) {
+            for (Node toHost : allNodes.filter(nodeRepository()::canAllocateTenantNodeTo)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;
 
