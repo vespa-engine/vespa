@@ -784,17 +784,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             if ( ! status.outstandingChange(instance.name()).isEmpty())
                 toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
 
-            Cursor deploymentJobsArray = object.setArray("deploymentJobs");
-            for (JobStatus job : jobStatus) {
-                Cursor jobObject = deploymentJobsArray.addObject();
-                jobObject.setString("type", job.id().type().jobName());
-                jobObject.setBool("success", job.isSuccess());
-                job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
-                job.lastCompleted().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastCompleted")));
-                job.firstFailing().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("firstFailing")));
-                job.lastSuccess().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastSuccess")));
-            }
-
             // Change blockers
             Cursor changeBlockers = object.setArray("changeBlockers");
             deploymentSpec.instance(instance.name()).ifPresent(spec -> spec.changeBlocker().forEach(changeBlocker -> {
@@ -895,18 +884,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             // Outstanding change
             if ( ! status.outstandingChange(instance.name()).isEmpty())
                 toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
-
-            Cursor deploymentsArray = object.setArray("deploymentJobs");
-            for (JobStatus job : jobStatus) {
-                Cursor jobObject = deploymentsArray.addObject();
-                jobObject.setString("type", job.id().type().jobName());
-                jobObject.setBool("success", job.isSuccess());
-
-                job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
-                job.lastCompleted().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastCompleted")));
-                job.firstFailing().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("firstFailing")));
-                job.lastSuccess().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastSuccess")));
-            }
 
             // Change blockers
             Cursor changeBlockers = object.setArray("changeBlockers");
