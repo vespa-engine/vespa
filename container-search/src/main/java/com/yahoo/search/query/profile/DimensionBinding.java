@@ -61,14 +61,14 @@ public class DimensionBinding {
 
     /** Returns a binding for a (possibly) new set of variants. Variants may be null, but not bindings */
     public DimensionBinding createFor(List<String> newDimensions) {
-        if (newDimensions==null) return this; // Note: Not necessarily null - if no new variants then keep the existing binding
+        if (newDimensions == null) return this; // Note: Not necessarily null - if no new variants then keep the existing binding
         // if (this.context==null && values.length==0) return nullBinding; // No data from which to create a non-null binding
-        if (this.dimensions==newDimensions) return this; // Avoid creating a new object if the dimensions are the same
+        if (this.dimensions == newDimensions) return this; // Avoid creating a new object if the dimensions are the same
 
-        Map<String,String> context=this.context;
-        if (context==null)
-            context=this.values.asContext(this.dimensions !=null ? this.dimensions : newDimensions);
-        return new DimensionBinding(newDimensions,extractDimensionValues(newDimensions,context),context);
+        Map<String,String> context = this.context;
+        if (context == null)
+            context = this.values.asContext(this.dimensions != null ? this.dimensions : newDimensions);
+        return new DimensionBinding(newDimensions, extractDimensionValues(newDimensions, context), context);
     }
 
     /**
@@ -76,20 +76,20 @@ public class DimensionBinding {
      * The array will not be modified. The context is needed in order to convert this binding to another
      * given another set of variant dimensions.
      */
-    private DimensionBinding(List<String> dimensions, DimensionValues values, Map<String,String> context) {
-        this.dimensions=dimensions;
-        this.values=values;
+    private DimensionBinding(List<String> dimensions, DimensionValues values, Map<String, String> context) {
+        this.dimensions = dimensions;
+        this.values = values;
         this.context = context;
-        containsAllNulls=values.isEmpty();
+        containsAllNulls = values.isEmpty();
     }
 
     /** Returns a read-only list of the dimensions of this. This value is undefined if this isNull() */
     public List<String> getDimensions() { return dimensions; }
 
     /** Returns a context created from the dimensions and values of this */
-    public Map<String,String> getContext() {
-        if (context !=null) return context;
-        context =values.asContext(dimensions);
+    public Map<String, String> getContext() {
+        if (context != null) return context;
+        context = values.asContext(dimensions);
         return context;
     }
 
@@ -102,7 +102,7 @@ public class DimensionBinding {
     public DimensionValues getValues() { return values; }
 
     /** Returns true only if this binding is null (contains no values for its dimensions (if any) */
-    public boolean isNull() { return dimensions==null || containsAllNulls; }
+    public boolean isNull() { return dimensions == null || containsAllNulls; }
 
     /**
      * Returns an array of the dimension values corresponding to the dimensions of this from the given context,
@@ -156,7 +156,7 @@ public class DimensionBinding {
      */
     private List<String> combineDimensions(List<String> d1, List<String> d2) {
         List<String> combined = new ArrayList<>();
-        int d1Index = 0, d2Index=0;
+        int d1Index = 0, d2Index = 0;
         while (d1Index < d1.size() && d2Index < d2.size()) {
             if (d1.get(d1Index).equals(d2.get(d2Index))) { // agreement on next element
                 combined.add(d1.get(d1Index));
@@ -186,15 +186,17 @@ public class DimensionBinding {
      * or null if they are incompatible.
      */
     private Map<String, String> combineValues(Map<String, String> m1, Map<String, String> m2) {
-        Map<String, String> combinedValues = new LinkedHashMap<>(m1);
+        Map<String, String> combinedValues = null;
         for (Map.Entry<String, String> m2Entry : m2.entrySet()) {
             if (m2Entry.getValue() == null) continue;
             String m1Value = m1.get(m2Entry.getKey());
             if (m1Value != null && ! m1Value.equals(m2Entry.getValue()))
                 return null; // conflicting values of a key
+            if (combinedValues == null)
+                combinedValues = new LinkedHashMap<>(m1);
             combinedValues.put(m2Entry.getKey(), m2Entry.getValue());
         }
-        return combinedValues;
+        return combinedValues == null ? m1 : combinedValues;
     }
 
     private boolean intersects(List<String> l1, List<String> l2) {

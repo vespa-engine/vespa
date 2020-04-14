@@ -564,7 +564,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         if (visitor.isDone()) return;
 
         if (allowContent) {
-            visitContent(visitor,dimensionBinding);
+            visitContent(visitor, dimensionBinding);
             if (visitor.isDone()) return;
         }
 
@@ -601,7 +601,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
             visitor.acceptValue(contentKey, getContent(contentKey), dimensionBinding, this, null);
         }
         else { // get all content in this
-            for (Map.Entry<String,Object> entry : getContent().entrySet()) {
+            for (Map.Entry<String, Object> entry : getContent().entrySet()) {
                 visitor.acceptValue(entry.getKey(), entry.getValue(), dimensionBinding, this, null);
                 if (visitor.isDone()) return;
             }
@@ -614,7 +614,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     }
 
     /** Returns all the content from this as an unmodifiable map */
-    protected Map<String,Object> getContent() {
+    protected Map<String, Object> getContent() {
         return content.unmodifiableMap();
     }
 
