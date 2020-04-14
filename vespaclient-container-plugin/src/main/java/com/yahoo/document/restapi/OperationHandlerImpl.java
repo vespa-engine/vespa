@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Sends operations to messagebus via document api.
@@ -352,12 +353,16 @@ public class OperationHandlerImpl implements OperationHandler {
     protected static ClusterDef resolveClusterDef(Optional<String> wantedCluster, List<ClusterDef> clusters) throws RestApiException {
         if (clusters.size() == 0) {
             throw new IllegalArgumentException("Your Vespa cluster does not have any content clusters " +
-                    "declared. Visiting feature is not available.");
+                                               "declared. Visiting feature is not available.");
         }
         if (! wantedCluster.isPresent()) {
             if (clusters.size() != 1) {
-                throw new RestApiException(Response.createErrorResponse(400, "Several clusters exist: " +
-                        clusterListToString(clusters) + " you must specify one. ", RestUri.apiErrorCodes.SEVERAL_CLUSTERS));
+                String message = "Several clusters exist: " +
+                                 clusters.stream().map(c -> "'" + c.getName() + "'").collect(Collectors.joining(", ")) +
+                                 ". You must specify one.";
+                throw new RestApiException(Response.createErrorResponse(400,
+                                                                        message,
+                                                                        RestUri.apiErrorCodes.SEVERAL_CLUSTERS));
             }
             return clusters.get(0);
         }
@@ -367,18 +372,16 @@ public class OperationHandlerImpl implements OperationHandler {
                 return clusterDef;
             }
         }
-        throw new RestApiException(Response.createErrorResponse(400, "Your vespa cluster contains the content clusters " +
-                clusterListToString(clusters) + " not " + wantedCluster.get() + ". Please select a valid vespa cluster.", RestUri.apiErrorCodes.MISSING_CLUSTER));
+        String message = "Your vespa cluster contains the content clusters " +
+                         clusters.stream().map(c -> "'" + c.getName() + "'").collect(Collectors.joining(", ")) +
+                         ", not '" + wantedCluster.get() + "'. Please select a valid vespa cluster.";
+        throw new RestApiException(Response.createErrorResponse(400,
+                                                                message,
+                                                                RestUri.apiErrorCodes.MISSING_CLUSTER));
     }
 
     protected static String clusterDefToRoute(ClusterDef clusterDef) {
         return "[Storage:cluster=" + clusterDef.getName() + ";clusterconfigid=" + clusterDef.getConfigId() + "]";
-    }
-
-    private static String clusterListToString(List<ClusterDef> clusters) {
-        StringBuilder clusterListString = new StringBuilder();
-        clusters.forEach(x -> clusterListString.append(x.getName()).append(" (").append(x.getConfigId()).append("), "));
-        return clusterListString.toString();
     }
 
     private static String buildAugmentedDocumentSelection(RestUri restUri, String  documentSelection) {
