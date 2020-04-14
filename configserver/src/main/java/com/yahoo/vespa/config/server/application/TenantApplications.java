@@ -21,10 +21,8 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
@@ -49,7 +47,6 @@ public class TenantApplications {
     private final Path locksPath;
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
-    private final Map<ApplicationId, Lock> locks;
     private final Executor zkWatcherExecutor;
 
     private TenantApplications(Curator curator, ReloadHandler reloadHandler, TenantName tenant,
@@ -57,7 +54,6 @@ public class TenantApplications {
         this.curator = curator;
         this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
         this.locksPath = TenantRepository.getLocksPath(tenant);
-        this.locks = new ConcurrentHashMap<>(2);
         this.reloadHandler = reloadHandler;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -148,10 +144,7 @@ public class TenantApplications {
 
     /** Returns the lock for changing the session status of the given application. */
     public Lock lock(ApplicationId id) {
-        curator.create(lockPath(id));
-        Lock lock = locks.computeIfAbsent(id, __ -> new Lock(lockPath(id).getAbsolute(), curator));
-        lock.acquire(Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
-        return lock;
+        return curator.lock(lockPath(id), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
     }
 
     private void childEvent(CuratorFramework client, PathChildrenCacheEvent event) {

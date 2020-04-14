@@ -109,12 +109,6 @@ public class CuratorDb {
     // For each job id (path), store the ZK node version and its deserialised data — update when version changes. 
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
-    /**
-     * All keys, to allow reentrancy.
-     * This will grow forever, but this should be too slow to be a problem.
-     */
-    private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
-
     @Inject
     public CuratorDb(Curator curator) {
         this(curator, defaultTryLockTimeout);
@@ -136,28 +130,20 @@ public class CuratorDb {
 
     // -------------- Locks ---------------------------------------------------
 
-    /** Creates a reentrant lock */
-    private Lock lock(Path path, Duration timeout) {
-        curator.create(path);
-        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
-        lock.acquire(timeout);
-        return lock;
-    }
-
     public Lock lock(TenantName name) {
-        return lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
+        return curator.lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
     public Lock lock(TenantAndApplicationId id) {
-        return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+        return curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
     public Lock lockForDeployment(ApplicationId id, ZoneId zone) {
-        return lock(lockPath(id, zone), deployLockTimeout);
+        return curator.lock(lockPath(id, zone), deployLockTimeout);
     }
 
     public Lock lock(ApplicationId id, JobType type) {
-        return lock(lockPath(id, type), defaultLockTimeout);
+        return curator.lock(lockPath(id, type), defaultLockTimeout);
     }
 
     public Lock lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
@@ -165,15 +151,15 @@ public class CuratorDb {
     }
 
     public Lock lockRotations() {
-        return lock(lockRoot.append("rotations"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("rotations"), defaultLockTimeout);
     }
 
     public Lock lockConfidenceOverrides() {
-        return lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
     }
 
     public Lock lockInactiveJobs() {
-        return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
     public Lock lockMaintenanceJob(String jobName) throws TimeoutException {
@@ -182,27 +168,27 @@ public class CuratorDb {
 
     @SuppressWarnings("unused") // Called by internal code
     public Lock lockProvisionState(String provisionStateId) {
-        return lock(lockPath(provisionStateId), Duration.ofSeconds(1));
+        return curator.lock(lockPath(provisionStateId), Duration.ofSeconds(1));
     }
 
     public Lock lockOsVersions() {
-        return lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
     }
 
     public Lock lockOsVersionStatus() {
-        return lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
     public Lock lockRoutingPolicies() {
-        return lock(lockRoot.append("routingPolicies"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("routingPolicies"), defaultLockTimeout);
     }
 
     public Lock lockAuditLog() {
-        return lock(lockRoot.append("auditLog"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("auditLog"), defaultLockTimeout);
     }
 
     public Lock lockNameServiceQueue() {
-        return lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -213,7 +199,7 @@ public class CuratorDb {
      */
     private Lock tryLock(Path path) throws TimeoutException {
         try {
-            return lock(path, tryLockTimeout);
+            return curator.lock(path, tryLockTimeout);
         }
         catch (UncheckedTimeoutException e) {
             throw new TimeoutException(e.getMessage());
