@@ -131,10 +131,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
             ApplicationId applicationId = session.getApplicationId();
+            LocalSession currentActiveSession;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
                 validateSessionStatus(session);
                 NestedTransaction transaction = new NestedTransaction();
-                transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(applicationId), session, ignoreSessionStaleFailure));
+                currentActiveSession = applicationRepository.getActiveSession(applicationId);
+                transaction.add(deactivateCurrentActivateNew(currentActiveSession, session, ignoreSessionStaleFailure));
                 hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
                 transaction.commit();
             }
@@ -151,6 +153,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                    " activated successfully using " +
                                    (hostProvisioner.isPresent() ? hostProvisioner.get().getClass().getSimpleName() : "no host provisioner") +
                                    ". Config generation " + session.getMetaData().getGeneration() +
+                                   (currentActiveSession != null ? ". Activated session based on previous active session " + currentActiveSession.getSessionId() : "") +
                                    ". File references used: " + applicationRepository.getFileReferences(applicationId));
         }
     }
