@@ -56,6 +56,10 @@ class SslHandshakeFailedListener implements SslHandshakeListener {
         MISSING_CLIENT_CERT(
                 Metrics.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT,
                 "Empty server certificate chain"),
+        EXPIRED_CLIENT_CERTIFICATE(
+                Metrics.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT,
+                // Note: this pattern will match certificates with too late notBefore as well
+                "PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"),
         INVALID_CLIENT_CERT(
                 Metrics.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT,
                 "PKIX path (building|validation) failed: .+");

@@ -27,6 +27,8 @@ import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers.TlsClientAuth;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.Pkcs10Csr;
+import com.yahoo.security.Pkcs10CsrBuilder;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
@@ -56,6 +58,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -667,6 +670,29 @@ public class HttpServerTest {
     }
 
     @Test
+    public void requireThatMetricIsIncrementedWhenClientUsesExpiredCertificateInHandshake() throws IOException {
+        Path rootPrivateKeyFile = tmpFolder.newFile().toPath();
+        Path rootCertificateFile = tmpFolder.newFile().toPath();
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        Instant notAfter = Instant.now().minus(100, ChronoUnit.DAYS);
+        generatePrivateKeyAndCertificate(rootPrivateKeyFile, rootCertificateFile, privateKeyFile, certificateFile, notAfter);
+        var metricConsumer = new MetricConsumerMock();
+        TestDriver driver = createSslTestDriver(rootCertificateFile, rootPrivateKeyFile, metricConsumer);
+
+        SSLContext clientCtx = new SslContextBuilder()
+                .withTrustStore(rootCertificateFile)
+                .withKeyStore(privateKeyFile, certificateFile)
+                .build();
+
+        assertHttpsRequestTriggersSslHandshakeException(
+                driver, clientCtx, null, null, "Received fatal alert: certificate_unknown");
+        verify(metricConsumer.mockitoMock())
+                .add(Metrics.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        assertThat(driver.close(), is(true));
+    }
+
+    @Test
     public void requireThatProxyProtocolIsAcceptedAndActualRemoteAddressStoredInAccessLog() throws Exception {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
@@ -784,6 +810,21 @@ public class HttpServerTest {
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(
                         keyPair, new X500Principal("CN=localhost"), Instant.EPOCH, Instant.EPOCH.plus(100_000, ChronoUnit.DAYS), SHA256_WITH_RSA, BigInteger.ONE)
+                .build();
+        Files.writeString(certificateFile, X509CertificateUtils.toPem(certificate));
+    }
+
+    private static void generatePrivateKeyAndCertificate(Path rootPrivateKeyFile, Path rootCertificateFile,
+                                                         Path privateKeyFile, Path certificateFile, Instant notAfter) throws IOException {
+        generatePrivateKeyAndCertificate(rootPrivateKeyFile, rootCertificateFile);
+        X509Certificate rootCertificate = X509CertificateUtils.fromPem(Files.readString(rootCertificateFile));
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(Files.readString(rootPrivateKeyFile));
+
+        KeyPair keyPair = KeyUtils.generateKeypair(RSA, 2048);
+        Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
+        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(new X500Principal("CN=myclient"), keyPair, SHA256_WITH_RSA).build();
+        X509Certificate certificate = X509CertificateBuilder
+                .fromCsr(csr, rootCertificate.getSubjectX500Principal(), Instant.EPOCH, notAfter, privateKey, SHA256_WITH_RSA, BigInteger.ONE)
                 .build();
         Files.writeString(certificateFile, X509CertificateUtils.toPem(certificate));
     }
