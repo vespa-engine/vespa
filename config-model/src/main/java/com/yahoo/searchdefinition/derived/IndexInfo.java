@@ -43,6 +43,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_PLAIN_TOKENS = "plain-tokens";
     private static final String CMD_MULTIVALUE = "multivalue";
     private static final String CMD_FAST_SEARCH = "fast-search";
+    private static final String CMD_PREDICATE = "predicate";
     private static final String CMD_PREDICATE_BOUNDS = "predicate-bounds";
     private static final String CMD_NUMERICAL = "numerical";
     private static final String CMD_PHRASE_SEGMENTING = "phrase-segmenting";
@@ -100,6 +101,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     protected void derive(ImmutableSDField field, Search search, boolean inPosition) {
         if (field.getDataType().equals(DataType.PREDICATE)) {
+            addIndexCommand(field, CMD_PREDICATE);
             Index index = field.getIndex(field.getName());
             if (index != null) {
                 BooleanIndexDefinition options = index.getBooleanIndexDefiniton();

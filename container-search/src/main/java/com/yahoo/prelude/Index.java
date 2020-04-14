@@ -63,6 +63,7 @@ public class Index {
     private boolean normalize = false;
     private boolean literalBoost = false;
     private boolean numerical = false;
+    private boolean predicate = false;
     private long predicateUpperBound = Long.MAX_VALUE;
     private long predicateLowerBound = Long.MIN_VALUE;
 
@@ -181,6 +182,8 @@ public class Index {
             setLiteralBoost(true);
         } else if (commandString.equals("numerical")) {
             setNumerical(true);
+        } else if (commandString.equals("predicate")) {
+            setPredicate(true);
         } else if (commandString.startsWith("predicate-bounds ")) {
             setPredicateBounds(commandString.substring(17));
         } else if (commandString.equals("phrase-segmenting")) {
@@ -303,6 +306,10 @@ public class Index {
     public void setNumerical(boolean numerical) { this.numerical = numerical; }
 
     public boolean isNumerical() { return numerical; }
+
+    public void setPredicate(boolean isPredicate) { this.predicate = isPredicate; }
+
+    public boolean isPredicate() { return predicate; }
 
     public long getPredicateUpperBound() { return predicateUpperBound; }
 
