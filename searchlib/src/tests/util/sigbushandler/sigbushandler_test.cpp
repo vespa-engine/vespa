@@ -66,16 +66,22 @@ TEST("Test that sigbus handler can trap synthetic sigbus")
         LOG_ABORT("Should never get here");
     }
     EXPECT_TRUE(sbh.fired());
+#ifdef __APPLE__
+    vespalib::string exp_state = "state=down ts=0.0 operation=sigbus errno=0 code=2 addr=0x0000000000000000\n";
+#else
+    vespalib::string exp_state = "state=down ts=0.0 operation=sigbus errno=0 code=0\n";
+#endif
     {
         vespalib::string act = readState(sf);
         normalizeTimestamp(act);
-        EXPECT_EQUAL("state=down ts=0.0 operation=sigbus errno=0 code=0\n",
-                     act);
+        normalizeAddr(act, nullptr);
+        EXPECT_EQUAL(exp_state, act);
     }
     {
-        strvec exp({"state=down ts=0.0 operation=sigbus errno=0 code=0\n" });
+        strvec exp({exp_state});
         std::vector<vespalib::string> act(readHistory("state.history"));
         normalizeTimestamps(act);
+        normalizeAddrs(act, nullptr);
         TEST_DO(assertHistory(exp, act));
     }
 }
