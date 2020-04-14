@@ -170,6 +170,7 @@ ProtoConverter::monitor_reply_to_proto(const MonitorReply &reply, ProtoMonitorRe
     proto.set_online(reply.timestamp != 0);
     proto.set_active_docs(reply.activeDocs);
     proto.set_distribution_key(reply.distribution_key);
+    proto.set_is_blocking_writes(reply.is_blocking_writes);
 }
 
 //-----------------------------------------------------------------------------

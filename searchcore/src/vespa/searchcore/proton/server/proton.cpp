@@ -662,6 +662,7 @@ Proton::ping(MonitorRequest::UP request, MonitorClient & client)
     ret.timestamp = (_matchEngine->isOnline()) ? 42 : 0;
     ret.activeDocs = (_matchEngine->isOnline()) ? getNumActiveDocs() : 0;
     ret.activeDocsRequested = request->reportActiveDocs;
+    ret.is_blocking_writes = !_diskMemUsageSampler->writeFilter().acceptWriteOperation();
     return reply;
 }
 
