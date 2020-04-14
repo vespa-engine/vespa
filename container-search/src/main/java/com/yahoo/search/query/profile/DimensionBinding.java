@@ -3,7 +3,6 @@ package com.yahoo.search.query.profile;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,7 @@ public class DimensionBinding {
     private DimensionValues values;
 
     /** The binding from those dimensions to values, and possibly other values */
-    private Map<String, String> context; // TODO: This is not needed any more
+    private Map<String, String> context;
 
     public static final DimensionBinding nullBinding =
         new DimensionBinding(Collections.unmodifiableList(Collections.emptyList()), DimensionValues.empty, null);
@@ -34,13 +33,13 @@ public class DimensionBinding {
     private boolean containsAllNulls;
 
     // NOTE: Map must be ordered
-    public static DimensionBinding createFrom(Map<String,String> values) {
+    public static DimensionBinding createFrom(Map<String, String> values) {
         return createFrom(new ArrayList<>(values.keySet()), values);
     }
 
     /** Creates a binding from a variant and a context. Any of the arguments may be null. */
     // NOTE: Map must be ordered
-    public static DimensionBinding createFrom(List<String> dimensions, Map<String,String> context) {
+    public static DimensionBinding createFrom(List<String> dimensions, Map<String, String> context) {
         if (dimensions == null || dimensions.size() == 0) {
             if (context == null) return nullBinding;
             if (dimensions == null) return new DimensionBinding(null, DimensionValues.empty, context); // Null, but must preserve context
@@ -51,7 +50,7 @@ public class DimensionBinding {
 
     /** Creates a binding from a variant and a context. Any of the arguments may be null. */
     public static DimensionBinding createFrom(List<String> dimensions, DimensionValues dimensionValues) {
-        if (dimensionValues==null || dimensionValues == DimensionValues.empty) return nullBinding;
+        if (dimensionValues == null || dimensionValues == DimensionValues.empty) return nullBinding;
 
         // If null, preserve raw material for creating a context later (in createFor)
         if (dimensions == null) return new DimensionBinding(null, dimensionValues, null);
@@ -62,7 +61,6 @@ public class DimensionBinding {
     /** Returns a binding for a (possibly) new set of variants. Variants may be null, but not bindings */
     public DimensionBinding createFor(List<String> newDimensions) {
         if (newDimensions == null) return this; // Note: Not necessarily null - if no new variants then keep the existing binding
-        // if (this.context==null && values.length==0) return nullBinding; // No data from which to create a non-null binding
         if (this.dimensions == newDimensions) return this; // Avoid creating a new object if the dimensions are the same
 
         Map<String,String> context = this.context;
@@ -110,10 +108,10 @@ public class DimensionBinding {
      * Dimensions which are not set in this context get a null value.
      */
     private static DimensionValues extractDimensionValues(List<String> dimensions, Map<String,String> context) {
-        String[] dimensionValues=new String[dimensions.size()];
-        if (context==null || context.size()==0) return DimensionValues.createFrom(dimensionValues);
-        for (int i=0; i<dimensions.size(); i++)
-            dimensionValues[i]=context.get(dimensions.get(i));
+        String[] dimensionValues = new String[dimensions.size()];
+        if (context == null || context.size() == 0) return DimensionValues.createFrom(dimensionValues);
+        for (int i = 0; i < dimensions.size(); i++)
+            dimensionValues[i] = context.get(dimensions.get(i));
         return DimensionValues.createFrom(dimensionValues);
     }
 
@@ -138,16 +136,6 @@ public class DimensionBinding {
         return DimensionBinding.createFrom(combinedDimensions, combinedValues);
     }
 
-    /** Returns the binding of this (dimension->value) as a map */
-    private Map<String, String> asMap() {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (int i = 0; i < Math.min(dimensions.size(), values.size()); i++) {
-            if (values.getValues()[i] != null)
-                map.put(dimensions.get(i), values.getValues()[i]);
-        }
-        return map;
-    }
-
     /**
      * Returns a combined list of dimensions from two separate lists,
      * or null if they are incompatible.
@@ -155,6 +143,10 @@ public class DimensionBinding {
      * (or return null if impossible).
      */
     private List<String> combineDimensions(List<String> d1, List<String> d2) {
+        if (d1.equals(d2)) return d1;
+        if (d1.isEmpty()) return d2;
+        if (d2.isEmpty()) return d1;
+
         List<String> combined = new ArrayList<>();
         int d1Index = 0, d2Index = 0;
         while (d1Index < d1.size() && d2Index < d2.size()) {
@@ -186,6 +178,8 @@ public class DimensionBinding {
      * or null if they are incompatible.
      */
     private Map<String, String> combineValues(Map<String, String> m1, Map<String, String> m2) {
+        if (m1.isEmpty()) return m2;
+        if (m2.isEmpty()) return m1;
         Map<String, String> combinedValues = null;
         for (Map.Entry<String, String> m2Entry : m2.entrySet()) {
             if (m2Entry.getValue() == null) continue;
@@ -199,16 +193,7 @@ public class DimensionBinding {
         return combinedValues == null ? m1 : combinedValues;
     }
 
-    private boolean intersects(List<String> l1, List<String> l2) {
-        for (String l1Item : l1)
-            if (l2.contains(l1Item))
-                return true;
-        return false;
-    }
-
-    /**
-     * Returns true if <code>this == invalidBinding</code>
-     */
+    /** Returns true if this == invalidBinding */
     public boolean isInvalid() { return this == invalidBinding; }
 
     @Override
@@ -228,7 +213,7 @@ public class DimensionBinding {
     /** Two bindings are equal if they contain the same dimensions and the same non-null values */
     @Override
     public boolean equals(Object o) {
-        if (o==this) return true;
+        if (o == this) return true;
         if (! (o instanceof DimensionBinding)) return false;
         DimensionBinding other = (DimensionBinding)o;
         if ( ! this.dimensions.equals(other.dimensions)) return false;
