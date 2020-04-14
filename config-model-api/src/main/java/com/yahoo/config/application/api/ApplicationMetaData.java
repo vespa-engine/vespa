@@ -2,14 +2,16 @@
 package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.TenantName;
-import com.yahoo.slime.*;
-
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.JsonDecoder;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Metadata about an application package.
@@ -27,32 +29,6 @@ public class ApplicationMetaData {
     private final long generation;
     private final long previousActiveGeneration;
 
-    // TODO: Remove after September 2019
-    public ApplicationMetaData(File appDir,
-                               String deployedByUser,
-                               String deployedFromDir,
-                               Long deployTimestamp,
-                               boolean internalRedeploy,
-                               String checksum,
-                               Long generation,
-                               long previousActiveGeneration) {
-        this(deployedByUser, deployedFromDir, deployTimestamp, internalRedeploy,
-             appDir.getName(), checksum, generation, previousActiveGeneration);
-    }
-
-    // TODO: Remove after September 2019
-    public ApplicationMetaData(String deployedByUser, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
-                               String applicationName, String checksum, Long generation, long previousActiveGeneration) {
-        this(deployedByUser,
-             deployedFromDir,
-             deployTimestamp,
-             internalRedeploy,
-             ApplicationId.from(TenantName.defaultName(), ApplicationName.from(applicationName), InstanceName.from("default")),
-             checksum,
-             generation,
-             previousActiveGeneration);
-    }
-
     public ApplicationMetaData(String deployedByUser, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
                                ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
         this.deployedByUser = deployedByUser;
@@ -64,15 +40,6 @@ public class ApplicationMetaData {
         this.generation = generation;
         this.previousActiveGeneration = previousActiveGeneration;
     }
-
-    /**
-     * Gets the name of the application (name of the directory from which application was deployed.
-     * Will return null if a problem occurred while getting metadata
-     *
-     * @return application name
-     */
-    // TODO: Remove after September 2019
-    public String getApplicationName() { return applicationId.application().toString(); }
 
     /**
      * Gets the user who deployed the application.
@@ -117,10 +84,6 @@ public class ApplicationMetaData {
     public boolean isInternalRedeploy() { return internalRedeploy; }
 
     /** Returns an md5 hash of the contents of the application package */
-    // TODO: Remove after September 2019
-    public String getCheckSum() { return checksum; }
-
-    /** Returns an md5 hash of the contents of the application package */
     public String getChecksum() { return checksum; }
 
     /** Returns the previously active generation at the point when this application was created. */
@@ -140,18 +103,11 @@ public class ApplicationMetaData {
             Inspector deploy = root.field("deploy");
             Inspector app = root.field("application");
 
-            // TODO: Simplify to just ApplicationId.fromSerializedForm(app.field("id").asString()) after September 2019
-            ApplicationId applicationId = app.field("id").valid() ?
-                                          ApplicationId.fromSerializedForm(app.field("id").asString()) :
-                                          ApplicationId.from(TenantName.defaultName(),
-                                                             ApplicationName.from(app.field("name").asString()),
-                                                             InstanceName.from("default"));
-
             return new ApplicationMetaData(deploy.field("user").asString(),
                                            deploy.field("from").asString(),
                                            deploy.field("timestamp").asLong(),
                                            booleanField("internalRedeploy", false, deploy),
-                                           applicationId,
+                                           ApplicationId.fromSerializedForm(app.field("id").asString()),
                                            app.field("checksum").asString(),
                                            app.field("generation").asLong(),
                                            app.field("previousActiveGeneration").asLong());
@@ -170,7 +126,6 @@ public class ApplicationMetaData {
         deploy.setBool("internalRedeploy", internalRedeploy);
         Cursor app = meta.setObject("application");
         app.setString("id", applicationId.serializedForm());
-        app.setString("name", applicationId.application().value()); // TODO: Remove after September 2019
         app.setString("checksum", checksum);
         app.setLong("generation", generation);
         app.setLong("previousActiveGeneration", previousActiveGeneration);
@@ -188,7 +143,7 @@ public class ApplicationMetaData {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             new JsonFormat(false).encode(baos, slime);
-            return baos.toString("UTF-8");
+            return baos.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException("Unable to encode metadata", e);
         }

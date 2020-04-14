@@ -90,7 +90,7 @@ public class ZKApplicationPackageTest {
     private void feed(ConfigCurator zk, File dirToFeed) throws IOException {
         assertTrue(dirToFeed.isDirectory());
         zk.feedZooKeeper(dirToFeed, "/0" + ConfigCurator.USERAPP_ZK_SUBPATH, null, true);
-        String metaData = "{\"deploy\":{\"user\":\"foo\",\"from\":\"bar\",\"timestamp\":1},\"application\":{\"name\":\"foo\",\"checksum\":\"abc\",\"generation\":4,\"previousActiveGeneration\":3}}";
+        String metaData = "{\"deploy\":{\"user\":\"foo\",\"from\":\"bar\",\"timestamp\":1},\"application\":{\"id\":\"foo:foo:default\",\"checksum\":\"abc\",\"generation\":4,\"previousActiveGeneration\":3}}";
         zk.putData("/0", ConfigCurator.META_ZK_PATH, metaData);
         zk.putData("/0/" + ZKApplicationPackage.fileRegistryNode + "/3.0.0", "dummyfiles");
         zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode, toJson(ALLOCATED_HOSTS));
