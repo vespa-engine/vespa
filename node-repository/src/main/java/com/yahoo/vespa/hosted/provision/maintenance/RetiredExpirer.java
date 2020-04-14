@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public class RetiredExpirer extends Maintainer {
 
     private final Deployer deployer;
+    private final Metric metric;
     private final Orchestrator orchestrator;
     private final Duration retiredExpiry;
     private final Clock clock;
@@ -33,11 +35,13 @@ public class RetiredExpirer extends Maintainer {
     public RetiredExpirer(NodeRepository nodeRepository,
                           Orchestrator orchestrator,
                           Deployer deployer,
+                          Metric metric,
                           Clock clock,
                           Duration maintenanceInterval,
                           Duration retiredExpiry) {
         super(nodeRepository, maintenanceInterval);
         this.deployer = deployer;
+        this.metric = metric;
         this.orchestrator = orchestrator;
         this.retiredExpiry = retiredExpiry;
         this.clock = clock;
@@ -56,7 +60,7 @@ public class RetiredExpirer extends Maintainer {
             ApplicationId application = entry.getKey();
             List<Node> retiredNodes = entry.getValue();
 
-            try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
+            try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
                 if ( ! deployment.isValid()) continue; // this will be done at another config server
 
                 List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
@@ -103,7 +107,7 @@ public class RetiredExpirer extends Maintainer {
             log.info("Node " + node + " has been granted permission to be removed");
             return true;
         } catch (UncheckedTimeoutException e) {
-            log.info("Timed out trying to aquire permission to remove " + node.hostname() + ": " + e.getMessage());
+            log.info("Timed out trying to acquire permission to remove " + node.hostname() + ": " + e.getMessage());
             return false;
         } catch (OrchestrationException e) {
             log.info("Did not get permission to remove retired " + node + ": " + e.getMessage());

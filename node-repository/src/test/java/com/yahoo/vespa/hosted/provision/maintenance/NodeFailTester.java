@@ -65,7 +65,7 @@ public class NodeFailTester {
     public NodeFailer failer;
     public ServiceMonitorStub serviceMonitor;
     public MockDeployer deployer;
-    public MetricsReporterTest.TestMetric metric;
+    public TestMetric metric;
     private final TestHostLivenessTracker hostLivenessTracker;
     private final Orchestrator orchestrator;
     private final NodeRepositoryProvisioner provisioner;
@@ -103,7 +103,7 @@ public class NodeFailTester {
                 app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
-        tester.metric = new MetricsReporterTest.TestMetric();
+        tester.metric = new TestMetric();
         tester.failer = tester.createFailer();
         return tester;
     }
@@ -139,7 +139,7 @@ public class NodeFailTester {
                 app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
-        tester.metric = new MetricsReporterTest.TestMetric();
+        tester.metric = new TestMetric();
         tester.failer = tester.createFailer();
         return tester;
     }
@@ -158,7 +158,7 @@ public class NodeFailTester {
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allNodes));
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
-        tester.metric = new MetricsReporterTest.TestMetric();
+        tester.metric = new TestMetric();
         tester.failer = tester.createFailer();
         return tester;
     }
@@ -167,7 +167,7 @@ public class NodeFailTester {
         NodeFailTester tester = new NodeFailTester();
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), Map.of());
         tester.serviceMonitor = new ServiceMonitorStub(Map.of(), tester.nodeRepository);
-        tester.metric = new MetricsReporterTest.TestMetric();
+        tester.metric = new TestMetric();
         tester.failer = tester.createFailer();
         return tester;
     }

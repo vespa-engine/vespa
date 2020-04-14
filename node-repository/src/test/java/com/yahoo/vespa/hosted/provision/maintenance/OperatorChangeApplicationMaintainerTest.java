@@ -66,7 +66,10 @@ public class OperatorChangeApplicationMaintainerTest {
         // Create applications
         fixture.activate();
         assertEquals("Initial applications are deployed", 3, fixture.deployer.redeployments);
-        OperatorChangeApplicationMaintainer maintainer = new OperatorChangeApplicationMaintainer(fixture.deployer, nodeRepository, Duration.ofMinutes(1));
+        OperatorChangeApplicationMaintainer maintainer = new OperatorChangeApplicationMaintainer(fixture.deployer,
+                                                                                                 new TestMetric(),
+                                                                                                 nodeRepository,
+                                                                                                 Duration.ofMinutes(1));
         
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();

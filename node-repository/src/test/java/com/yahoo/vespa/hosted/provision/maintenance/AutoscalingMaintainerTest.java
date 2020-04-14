@@ -59,6 +59,7 @@ public class AutoscalingMaintainerTest {
                                                                      tester.identityHostResourcesCalculator(),
                                                                      nodeMetricsDb,
                                                                      deployer,
+                                                                     new TestMetric(),
                                                                      Duration.ofMinutes(1));
         maintainer.maintain(); // noop
         assertTrue(deployer.lastDeployTime(app1).isEmpty());

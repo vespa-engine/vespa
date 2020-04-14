@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
+import com.yahoo.vespa.hosted.provision.testutils.MockNodeMetrics;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import org.junit.Test;
@@ -152,7 +153,7 @@ public class InactiveAndFailedExpirerTest {
         );
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
-        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
+        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, new TestMetric(), tester.clock(), Duration.ofDays(30),
                            Duration.ofMinutes(10)).run();
         assertEquals(1, tester.nodeRepository().getNodes(Node.State.inactive).size());
 
