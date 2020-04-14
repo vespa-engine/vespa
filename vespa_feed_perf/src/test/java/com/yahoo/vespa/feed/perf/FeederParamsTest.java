@@ -28,6 +28,8 @@ public class FeederParamsTest {
     private static final String TESTFILE_JSON = "test.json";
     private static final String TESTFILE_VESPA = "test.vespa";
     private static final String TESTFILE_UNKNOWN = "test.xyz";
+    private static final double EPSILON = 0.000000000001;
+
 
     @Test
     public void requireThatAccessorsWork() {
@@ -94,6 +96,13 @@ public class FeederParamsTest {
     }
 
     @Test
+    public void requireThatTimeoutIsParsed() throws ParseException, FileNotFoundException {
+        assertEquals(180.0, new FeederParams().getTimeout(), EPSILON);
+        assertEquals(16.7, new FeederParams().parseArgs("-t 16.7").getTimeout(), EPSILON);
+        assertEquals(1700.9, new FeederParams().parseArgs("--timeout", "1700.9").getTimeout(), EPSILON);
+    }
+
+    @Test
     public void requireThatNumMessagesToSendAreParsed() throws ParseException, FileNotFoundException {
         assertEquals(Long.MAX_VALUE, new FeederParams().getNumMessagesToSend());
         assertEquals(18, new FeederParams().parseArgs("-l 18").getNumMessagesToSend());
@@ -105,8 +114,6 @@ public class FeederParamsTest {
         assertEquals(20, new FeederParams().getWindowIncrementSize());
         assertEquals(17, new FeederParams().parseArgs("--window_incrementsize", "17").getWindowIncrementSize());
     }
-
-    static final double EPSILON = 0.000000000001;
 
     @Test
     public void requireThatWindowSizeDecrementFactorIsParsed() throws ParseException, FileNotFoundException {

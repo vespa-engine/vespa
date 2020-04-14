@@ -129,11 +129,13 @@ public class SimpleFeeder implements ReplyHandler {
         private final PrintStream err;
         private final Route route;
         private final SourceSession session;
+        private final long timeoutMS;
         private final AtomicReference<Throwable> failure;
-        MbusDestination(SourceSession session, Route route, AtomicReference<Throwable> failure, PrintStream err) {
+        MbusDestination(SourceSession session, Route route, double timeoutS, AtomicReference<Throwable> failure, PrintStream err) {
             this.route = route;
             this.err = err;
             this.session = session;
+            this.timeoutMS = (long)(timeoutS * 1000.0);
             this.failure = failure;
         }
         public void send(FeedOperation op) {
@@ -142,6 +144,7 @@ public class SimpleFeeder implements ReplyHandler {
                 err.println("ignoring operation; " + op.getType());
                 return;
             }
+            msg.setTimeRemaining(timeoutMS);
             msg.setContext(System.currentTimeMillis());
             msg.setRoute(route);
             try {
@@ -352,7 +355,7 @@ public class SimpleFeeder implements ReplyHandler {
         benchmarkMode = params.isBenchmarkMode();
         destination = (params.getDumpStream() != null)
                 ? createDumper(params)
-                : new MbusDestination(session, params.getRoute(), failure, params.getStdErr());
+                : new MbusDestination(session, params.getRoute(), params.getTimeout(), failure, params.getStdErr());
     }
 
     SourceSession getSourceSession() { return session; }
