@@ -37,7 +37,7 @@ public class JSONTest {
         assertTrue(JSON.equals("{\"a\":0, \"c\":1}", "{\"c\":1, \"a\":0}"));
 
         // Order of elements of array is significant
-        assertFalse(JSON.equals("[\"a\",\"b\"]", "[\"b\",\"c\"]"));
+        assertFalse(JSON.equals("[\"a\",\"b\"]", "[\"b\",\"a\"]"));
 
         // Verify null-valued fields are not ignored
         assertFalse(JSON.equals("{\"a\":null}", "{}"));
