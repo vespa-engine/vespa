@@ -2,7 +2,6 @@
 package com.yahoo.prelude.searcher.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
@@ -19,8 +18,6 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.yql.YqlParser;
 import org.junit.Test;
-
-import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -46,6 +43,14 @@ public class ValidatePredicateSearcherTestCase {
         assertEquals(ErrorMessage.createIllegalQuery("age=200 outside configured predicate bounds."), r.hits().getError());
     }
 
+    @Test
+    public void queryFailsWhenPredicateFieldIsUsedInTermSearch() {
+        ValidatePredicateSearcher searcher = new ValidatePredicateSearcher();
+        String q = "select * from sources * where predicate_field CONTAINS \"true\";";
+        Result r = doSearch(searcher, q, "predicate-bounds [0..99]");
+        assertEquals(ErrorMessage.createIllegalQuery("Index 'predicate_field' is predicate attribute and can only be used in conjunction with a predicate query operator."), r.hits().getError());
+    }
+
     private static Result doSearch(ValidatePredicateSearcher searcher, String yqlQuery, String command) {
         QueryTree queryTree = new YqlParser(new ParserEnvironment()).parse(new Parsable().setQuery(yqlQuery));
         Query query = new Query();
@@ -53,6 +58,7 @@ public class ValidatePredicateSearcherTestCase {
 
         SearchDefinition searchDefinition = new SearchDefinition("document");
         Index index = new Index("predicate_field");
+        index.setPredicate(true);
         index.addCommand(command);
         searchDefinition.addIndex(index);
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
