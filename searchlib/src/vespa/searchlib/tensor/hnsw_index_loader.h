@@ -8,7 +8,7 @@ namespace search::fileutil { class LoadedBuffer; }
 
 namespace search::tensor {
 
-class HnswGraph;
+struct HnswGraph;
 
 /**
  * Implements loading of HNSW graph structure from binary format.
