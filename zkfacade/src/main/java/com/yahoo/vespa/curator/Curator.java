@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -61,6 +62,9 @@ public class Curator implements AutoCloseable {
     private final String connectionSpec; // May be a subset of the servers in the ensemble
     private final String zooKeeperEnsembleConnectionSpec;
     private final int zooKeeperEnsembleCount;
+
+    // All lock keys, to allow re-entrancy. This will grow forever, but this should be too slow to be a problem
+    private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
 
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
@@ -345,6 +349,14 @@ public class Curator implements AutoCloseable {
         catch (Exception e) {
             throw new RuntimeException("Could not get data at " + path.getAbsolute(), e);
         }
+    }
+
+    /** Create and acquire a re-entrant lock in given path */
+    public Lock lock(Path path, Duration timeout) {
+        create(path);
+        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), this));
+        lock.acquire(timeout);
+        return lock;
     }
 
     /** Returns the curator framework API */

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.curator;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
@@ -10,7 +11,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * A cluster-wide re-entrant mutex which is released on (the last symmetric) close
+ * A cluster-wide re-entrant mutex which is released on (the last symmetric) close.
+ *
+ * Re-entrancy is limited to the instance of this. To ensure re-entrancy callers should access the lock through
+ * {@link Curator#lock(Path, Duration)} instead of constructing this directly.
  *
  * @author bratseth
  */
