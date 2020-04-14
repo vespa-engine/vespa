@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.JSON;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
@@ -32,6 +33,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -107,8 +109,40 @@ public class SystemFlagsDataArchiveTest {
     @Test
     public void throws_on_unknown_field() {
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Failed to reconstruct the original JSON at flags/my-test-flag/main.prod.us-west-1.json, got: {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}");
-        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
+        expectedException.expectMessage("flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: was deserialized to {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}");
+        SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
+    }
+
+    @Test
+    public void remove_comments() {
+        assertTrue(JSON.equals("{\n" +
+                "    \"a\": {\n" +
+                "        \"b\": 1\n" +
+                "    },\n" +
+                "    \"list\": [\n" +
+                "        {\n" +
+                "            \"c\": 2\n" +
+                "        },\n" +
+                "        {\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}",
+                SystemFlagsDataArchive.removeCommentsFromJson("{\n" +
+                "    \"comment\": \"comment a\",\n" +
+                "    \"a\": {\n" +
+                "        \"comment\": \"comment b\",\n" +
+                "        \"b\": 1\n" +
+                "    },\n" +
+                "    \"list\": [\n" +
+                "        {\n" +
+                "            \"comment\": \"comment c\",\n" +
+                "            \"c\": 2\n" +
+                "        },\n" +
+                "        {\n" +
+                "            \"comment\": \"comment d\"\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}")));
     }
 
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {

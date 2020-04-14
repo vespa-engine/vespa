@@ -1,6 +1,9 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.text.JSON;
 import com.yahoo.vespa.flags.FlagId;
@@ -38,6 +41,8 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author bjorncs
  */
 public class SystemFlagsDataArchive {
+
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final Map<FlagId, Map<String, FlagData>> files;
 
@@ -152,13 +157,32 @@ public class SystemFlagsDataArchive {
             if (!directoryDeducedFlagId.equals(flagData.id())) {
                 throw new IllegalArgumentException(
                         String.format("Flag data file with flag id '%s' in directory for '%s'",
-                                      flagData.id(), directoryDeducedFlagId.toString()));
-            } else if (!JSON.equals(flagData.serializeToJson(), rawData)) {
-                throw new IllegalArgumentException("Failed to reconstruct the original JSON at " +
-                        filePath + ", got: " + flagData.serializeToJson());
+                                flagData.id(), directoryDeducedFlagId.toString()));
+            }
+
+            String serializedData = flagData.serializeToJson();
+            String normalizedRawData = removeCommentsFromJson(rawData);
+            if (!JSON.equals(serializedData, normalizedRawData)) {
+                throw new IllegalArgumentException(filePath + " contains unknown non-comment fields: " +
+                        "was deserialized to " + serializedData);
             }
         }
         builder.addFile(filename, flagData);
+    }
+
+    static String removeCommentsFromJson(String json) {
+        JsonNode jsonNode = uncheck(() -> mapper.readTree(json));
+        removeComments(jsonNode);
+        return jsonNode.toString();
+    }
+
+    private static void removeComments(JsonNode node) {
+        if (node instanceof ObjectNode) {
+            ObjectNode objectNode = (ObjectNode) node;
+            objectNode.remove("comment");
+        }
+
+        node.forEach(SystemFlagsDataArchive::removeComments);
     }
 
     private static String toFilePath(FlagId flagId, String filename) {

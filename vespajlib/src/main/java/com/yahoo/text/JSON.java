@@ -69,7 +69,7 @@ public final class JSON {
      *
      * <p>When comparing two numbers of the two JSON strings, the result is only guaranteed to be
      * correct if (a) both are integers (without fraction and exponent) and each fits in a long, or
-     * (b) both are non-integers, were syntactically identical, and fits in a double.</p>
+     * (b) both are non-integers, are syntactically identical, and fits in a double.</p>
      */
     public static boolean equals(String left, String right) {
         JsonNode leftJsonNode = uncheck(() -> mapper.readTree(left));
