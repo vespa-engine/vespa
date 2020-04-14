@@ -10,6 +10,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -41,8 +42,10 @@ public class QueryProfileCompiler {
             Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
             variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
             log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
+            //System.out.println("  Compiling " + in.toString() + " having " + variants.size() + " variants");
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
+                //System.out.println("    Compiling variant " + variant);
                 for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
                     values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
                 }
@@ -71,6 +74,7 @@ public class QueryProfileCompiler {
      */
     private static Set<DimensionBindingForPath> collectVariants(CompoundName path, QueryProfile profile, DimensionBinding currentVariant) {
         Set<DimensionBindingForPath> variants = new HashSet<>();
+
         variants.addAll(collectVariantsFromValues(path, profile.getContent(), currentVariant));
         variants.addAll(collectVariantsInThis(path, profile, currentVariant));
         if (profile instanceof BackedOverridableQueryProfile)
@@ -157,6 +161,7 @@ public class QueryProfileCompiler {
 
                 if (combinedVariant.isInvalid()) continue; // values at this point in the graph are unreachable
 
+                variants.add(new DimensionBindingForPath(combinedVariant, path));
                 variants.addAll(collectVariantsFromValues(path, variant.values(), combinedVariant));
                 for (QueryProfile variantInheritedProfile : variant.inherited())
                     variants.addAll(collectVariants(path, variantInheritedProfile, combinedVariant));
@@ -169,9 +174,6 @@ public class QueryProfileCompiler {
                                                                            Map<String, Object> values,
                                                                            DimensionBinding currentVariant) {
         Set<DimensionBindingForPath> variants = new HashSet<>();
-        if ( ! values.isEmpty())
-            variants.add(new DimensionBindingForPath(currentVariant, path)); // there are actual values for this variant
-
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             if (entry.getValue() instanceof QueryProfile)
                 variants.addAll(collectVariants(path.append(entry.getKey()), (QueryProfile)entry.getValue(), currentVariant));
@@ -202,7 +204,7 @@ public class QueryProfileCompiler {
 
         @Override
         public int hashCode() {
-           return binding.hashCode() + 17*path.hashCode();
+           return binding.hashCode() + 17 * path.hashCode();
         }
 
         @Override
