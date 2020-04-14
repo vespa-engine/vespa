@@ -21,6 +21,7 @@ struct MonitorReply
     uint32_t                  activeParts; // mld
     uint64_t                  activeDocs;
     uint32_t                  flags;
+    bool                      is_blocking_writes;
 
     MonitorReply();
 };
