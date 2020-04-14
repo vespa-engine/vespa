@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "default_nearest_neighbor_index_factory.h"
-#include "distance_functions.h"
 #include "hnsw_index.h"
 #include "random_level_generator.h"
 #include "inv_log_level_generator.h"
