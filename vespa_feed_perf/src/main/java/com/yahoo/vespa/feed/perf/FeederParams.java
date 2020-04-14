@@ -34,6 +34,7 @@ class FeederParams {
     private boolean benchmarkMode = false;
     private int numDispatchThreads = 1;
     private int maxPending = 0;
+    private double timeout = 180.0;
 
     private double windowSizeBackOff = 0.95;
     private double windowDecrementFactor = 1.2;
@@ -100,6 +101,9 @@ class FeederParams {
     public double getWindowResizeRate() {
         return windowResizeRate;
     }
+    public double getTimeout() {
+        return timeout;
+    }
 
     public int getWindowIncrementSize() {
         return windowIncrementSize;
@@ -137,6 +141,7 @@ class FeederParams {
         opts.addOption("b", "mode", true, "Mode for benchmarking.");
         opts.addOption("o", "output", true, "File to write to. Extensions gives format (.xml, .json, .vespa) json will be produced if no extension.");
         opts.addOption("c", "numconnections", true, "Number of connections per host.");
+        opts.addOption("t", "timeout", true, "Timeout for a message in seconds. default = " + timeout);
         opts.addOption("l", "nummessages", true, "Number of messages to send (all is default).");
         opts.addOption("wi", "window_incrementsize", true, "Dynamic window increment step size. default = " + windowIncrementSize);
         opts.addOption("wd", "window_decrementfactor", true, "Dynamic window decrement step size factor. default = " + windowDecrementFactor);
@@ -168,6 +173,9 @@ class FeederParams {
         }
         if (cmd.hasOption('r')) {
             route = Route.parse(cmd.getOptionValue('r').trim());
+        }
+        if (cmd.hasOption("t")) {
+            timeout = Double.valueOf(cmd.getOptionValue("t").trim());
         }
         benchmarkMode =  cmd.hasOption('b');
         if (cmd.hasOption('o')) {
