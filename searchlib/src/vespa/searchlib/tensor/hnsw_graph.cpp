@@ -81,3 +81,9 @@ HnswGraph::histograms() const
 }
 
 } // namespace
+
+namespace vespalib {
+
+template class RcuVectorBase<search::datastore::AtomicEntryRef>;
+
+}
