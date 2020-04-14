@@ -142,14 +142,6 @@ Fixture::openFile()
 }
 
 void
-Fixture::openFileDIO()
-{
-    file.reset(new FastOS_File);
-    file->EnableDirectIO();
-    file->OpenReadWrite("testfile");
-}
-
-void
 Fixture::writeTestString()
 {
     file->WriteBuf(testString, strlen(testString));
@@ -281,6 +273,15 @@ TEST_F("Test that ioerror handler can process write error", Fixture)
 }
 
 
+#ifdef __linux__
+void
+Fixture::openFileDIO()
+{
+    file.reset(new FastOS_File);
+    file->EnableDirectIO();
+    file->OpenReadWrite("testfile");
+}
+
 TEST_F("Test that ioerror handler can process pwrite error", Fixture)
 {
     IOErrorHandler ioeh(f.sf.get());
@@ -313,6 +314,7 @@ TEST_F("Test that ioerror handler can process pwrite error", Fixture)
         TEST_DO(assertHistory(exp, act));
     }
 }
+#endif
 
 }
 
