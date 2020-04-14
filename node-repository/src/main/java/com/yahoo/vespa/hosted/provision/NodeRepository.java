@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
@@ -17,8 +16,7 @@ import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
@@ -130,6 +128,9 @@ public class NodeRepository extends AbstractComponent {
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (State state : State.values())
+            // TODO(mpolden): Add per-node locking. In its current state this may collide with other callers making
+            //                node state changes. Example: A redeployment on another config server which moves a node
+            //                to another state while this is constructed.
             db.writeTo(state, db.getNodes(state), Agent.system, Optional.empty());
     }
 
@@ -763,6 +764,7 @@ public class NodeRepository extends AbstractComponent {
     public Zone zone() { return zone; }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
+    // TODO(mpolden): Make this delegate to CuratorDatabaseClient#lockConfig instead
     public Mutex lock(ApplicationId application) { return db.lock(application); }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */

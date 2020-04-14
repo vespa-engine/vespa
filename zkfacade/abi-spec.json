@@ -85,6 +85,7 @@
       "public java.util.List getChildren(com.yahoo.path.Path)",
       "public java.util.Optional getData(com.yahoo.path.Path)",
       "public java.util.Optional getStat(com.yahoo.path.Path)",
+      "public com.yahoo.vespa.curator.Lock lock(com.yahoo.path.Path, java.time.Duration)",
       "public org.apache.curator.framework.CuratorFramework framework()",
       "public void close()",
       "public java.lang.String zooKeeperEnsembleConnectionSpec()",

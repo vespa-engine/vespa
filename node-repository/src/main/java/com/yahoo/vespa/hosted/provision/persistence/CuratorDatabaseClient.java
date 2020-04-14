@@ -62,6 +62,7 @@ public class CuratorDatabaseClient {
 
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockRoot = root.append("locks");
+    private static final Path configLockRoot = Path.fromString("/config/v2/locks/");
     private static final Path loadBalancersRoot = root.append("loadBalancers");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
@@ -312,13 +313,21 @@ public class CuratorDatabaseClient {
         return root.append(toDir(nodeState)).append(nodeName);
     }
 
-    /** Creates an returns the path to the lock for this application */
+    /** Creates and returns the path to the lock for this application */
     private Path lockPath(ApplicationId application) {
         Path lockPath =
                 lockRoot
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());
+        curatorDatabase.create(lockPath);
+        return lockPath;
+    }
+
+    /** Creates and returns the path to the config server lock for this application */
+    private Path configLockPath(ApplicationId application) {
+        // This must match the lock path used by com.yahoo.vespa.config.server.application.TenantApplications
+        Path lockPath = configLockRoot.append(application.tenant().value()).append(application.serializedForm());
         curatorDatabase.create(lockPath);
         return lockPath;
     }
@@ -354,6 +363,28 @@ public class CuratorDatabaseClient {
             return lock(lockPath(application), timeout);
         }
         catch (UncheckedTimeoutException e) {
+            throw new ApplicationLockException(e);
+        }
+    }
+
+    /**
+     * Acquires the single cluster-global, re-entrant config lock for given application. Note that this is the same lock
+     * that configserver itself takes when modifying applications.
+     *
+     * This lock must be taken when writes to paths owned by this class may happen on both the configserver and
+     * node-repository side. This behaviour is obviously wrong, but since we pass a NestedTransaction across the
+     * configserver and node-repository boundary, the ownership semantics of the transaction (and its operations)
+     * becomes unclear.
+     *
+     * Example of when to use: The config server creates a new transaction and passes the transaction to
+     * {@link com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner}, which appends operations to the
+     * transaction. The config server then commits (writes) the transaction which may include operations that modify
+     * data in paths owned by this class.
+     */
+    public Lock lockConfig(ApplicationId application) {
+        try {
+            return lock(configLockPath(application), defaultLockTimeout);
+        } catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
     }
@@ -525,6 +556,7 @@ public class CuratorDatabaseClient {
         transaction.commit();
     }
 
+    // TODO(mpolden): Remove this and usages after April 2020
     public Lock lockLoadBalancers(ApplicationId application) {
         return lock(lockRoot.append("loadBalancersLock2").append(application.serializedForm()), defaultLockTimeout);
     }
