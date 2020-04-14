@@ -4,9 +4,8 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.List;
 import java.util.Optional;
-
-import static com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer.ALLOCATABLE_HOST_STATES;
 
 /**
  * A node with additional information required to prioritize it for allocation.
@@ -14,6 +13,10 @@ import static com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer.ALLO
  * @author smorgrav
  */
 class PrioritizableNode implements Comparable<PrioritizableNode> {
+
+    /** List of host states ordered by preference (ascending) */
+    private static final List<Node.State> HOST_STATE_PRIORITY =
+            List.of(Node.State.provisioned, Node.State.ready, Node.State.active);
 
     private static final NodeResources zeroResources =
             new NodeResources(0, 0, 0, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
@@ -111,8 +114,8 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (other.node.flavor().cost() < this.node.flavor().cost()) return 1;
 
         // Choose nodes where host is in more desirable state
-        int thisHostStatePri = this.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
-        int otherHostStatePri = other.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
+        int thisHostStatePri = this.parent.map(host -> HOST_STATE_PRIORITY.indexOf(host.state())).orElse(-2);
+        int otherHostStatePri = other.parent.map(host -> HOST_STATE_PRIORITY.indexOf(host.state())).orElse(-2);
         if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
 
         // All else equal choose hostname alphabetically

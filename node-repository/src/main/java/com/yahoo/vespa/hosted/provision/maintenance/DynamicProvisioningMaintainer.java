@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.yolean.Exceptions;
@@ -111,7 +110,7 @@ public class DynamicProvisioningMaintainer extends Maintainer {
         for (Iterator<NodeResources> it = preProvisionCapacity.iterator(); it.hasNext() && !removableHosts.isEmpty();) {
             NodeResources resources = it.next();
             removableHosts.stream()
-                    .filter(host -> NodePrioritizer.ALLOCATABLE_HOST_STATES.contains(host.state()))
+                    .filter(nodeRepository()::canAllocateTenantNodeTo)
                     .filter(host -> hostResourcesCalculator.advertisedResourcesOf(host.flavor()).satisfies(resources))
                     .min(Comparator.comparingInt(n -> n.flavor().cost()))
                     .ifPresent(host -> {
