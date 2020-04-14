@@ -210,7 +210,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
         return new VespaModel(new NullConfigModelRegistry(), deployState, false,
-                              new FileDistributor(deployState.getFileRegistry(), List.of()));
+                              new FileDistributor(deployState.getFileRegistry(), List.of(), deployState.isHosted()));
     }
 
     private void validateWrapExceptions() {

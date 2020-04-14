@@ -21,8 +21,8 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
     private final FileDistributor fileDistributor;
 
     public FileDistributionConfigProducer(AbstractConfigProducer ancestor, FileRegistry fileRegistry,
-                                          List<ConfigServerSpec> configServerSpec) {
-        this(ancestor, new FileDistributor(fileRegistry, configServerSpec));
+                                          List<ConfigServerSpec> configServerSpec, boolean isHosted) {
+        this(ancestor, new FileDistributor(fileRegistry, configServerSpec, isHosted));
     }
 
     private FileDistributionConfigProducer(AbstractConfigProducer parent, FileDistributor fileDistributor) {

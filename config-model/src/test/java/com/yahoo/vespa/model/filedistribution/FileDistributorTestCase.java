@@ -25,7 +25,7 @@ public class FileDistributorTestCase {
     public void fileDistributor() {
         MockHosts hosts = new MockHosts();
 
-        FileDistributor fileDistributor = new FileDistributor(new MockFileRegistry(), List.of());
+        FileDistributor fileDistributor = new FileDistributor(new MockFileRegistry(), List.of(), false);
 
         String file1 = "component/path1";
         String file2 = "component/path2";

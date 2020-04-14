@@ -11,7 +11,10 @@ import com.yahoo.vespa.model.Host;
 import java.util.*;
 
 /**
- * Responsible for directing distribution of files to hosts.
+ * Sends RPC requests to hosts (tenant hosts and config servers) to start download of files. This is used during prepare
+ * of an application. Services themselves will also request files, the work done in this class is done so that hosts can
+ * start downloading files before services gets new config that needs these files. This also tries to make sure that
+ * all config servers (not just the one where the application was deployed) have the files available.
  *
  * @author Tony Vaagenes
  */
@@ -19,13 +22,15 @@ public class FileDistributor {
 
     private final FileRegistry fileRegistry;
     private final List<ConfigServerSpec> configServerSpecs;
+    private final boolean isHosted;
 
     /** A map from file reference to the hosts to which that file reference should be distributed */
     private final Map<FileReference, Set<Host>> filesToHosts = new LinkedHashMap<>();
 
-    public FileDistributor(FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpecs) {
+    public FileDistributor(FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpecs, boolean isHosted) {
         this.fileRegistry = fileRegistry;
         this.configServerSpecs = configServerSpecs;
+        this.isHosted = isHosted;
     }
 
     /**
@@ -87,14 +92,19 @@ public class FileDistributor {
     public void sendDeployedFiles(FileDistribution dbHandler) {
         String fileSourceHost = fileSourceHost();
 
-        getTargetHosts().stream()
-                .filter(host -> ! host.getHostname().equals(fileSourceHost))
-                .forEach(host -> dbHandler.startDownload(host.getHostname(), ConfigProxy.BASEPORT, filesToSendToHost(host)));
-
         // Ask other config servers to download, for redundancy
         configServerSpecs.stream()
                 .filter(spec -> !spec.getHostName().equals(fileSourceHost))
                 .forEach(spec -> dbHandler.startDownload(spec.getHostName(), spec.getConfigServerPort(), allFilesToSend()));
+
+        // Skip starting download for application hosts when on hosted, since this is just a hint and requests for files
+        // will fail until the application is activated (this call is done when preparing an application deployment)
+        // due to authorization of RPC requests on config servers only considering files belonging to active applications
+        if (isHosted) return;
+
+        getTargetHosts().stream()
+                .filter(host -> ! host.getHostname().equals(fileSourceHost))
+                .forEach(host -> dbHandler.startDownload(host.getHostname(), ConfigProxy.BASEPORT, filesToSendToHost(host)));
     }
 
 }
