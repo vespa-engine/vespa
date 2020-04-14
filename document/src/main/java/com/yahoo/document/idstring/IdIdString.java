@@ -47,6 +47,10 @@ public class IdIdString extends IdString {
         super(Scheme.id, namespace, localId);
         this.type = type;
         boolean hasSetLocation = false;
+        if (namespace.length() + type.length() + keyValues.length() + 5 >= IdString.MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC) {
+            throw new IllegalArgumentException("Length of namespace(" + namespace.length() +  ") + doctype(" + type.length() +
+                    ") + key/values(" + keyValues.length() +"), is longer than " + (MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC - 5));
+        }
         for(String pair : keyValues.split(",")) {
             int pos = pair.indexOf('=');
             if (pos == -1) {
