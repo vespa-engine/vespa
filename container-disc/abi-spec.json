@@ -17,7 +17,8 @@
       "public abstract java.lang.String getAccessToken(java.lang.String)",
       "public abstract java.lang.String getAccessToken(java.lang.String, java.util.List)",
       "public abstract java.util.List getIdentityCertificate()",
-      "public abstract java.security.PrivateKey getPrivateKey()"
+      "public abstract java.security.PrivateKey getPrivateKey()",
+      "public abstract java.nio.file.Path trustStorePath()"
     ],
     "fields": []
   },

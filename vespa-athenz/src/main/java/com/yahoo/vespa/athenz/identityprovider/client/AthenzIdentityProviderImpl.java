@@ -219,6 +219,11 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
+    public Path trustStorePath() {
+        return trustStore;
+    }
+
+    @Override
     public List<X509Certificate> getIdentityCertificate() {
         return Collections.singletonList(credentials.getCertificate());
     }

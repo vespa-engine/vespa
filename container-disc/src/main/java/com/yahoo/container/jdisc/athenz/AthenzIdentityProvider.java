@@ -2,6 +2,7 @@
 package com.yahoo.container.jdisc.athenz;
 
 import javax.net.ssl.SSLContext;
+import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -20,4 +21,5 @@ public interface AthenzIdentityProvider {
     String getAccessToken(String domain, List<String> roles);
     List<X509Certificate> getIdentityCertificate();
     PrivateKey getPrivateKey();
+    Path trustStorePath();
 }

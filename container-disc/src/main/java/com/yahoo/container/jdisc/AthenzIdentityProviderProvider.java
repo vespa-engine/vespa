@@ -5,6 +5,7 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 
 import javax.net.ssl.SSLContext;
+import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -75,6 +76,11 @@ public class AthenzIdentityProviderProvider implements Provider<AthenzIdentityPr
 
         @Override
         public PrivateKey getPrivateKey() {
+            throw new UnsupportedOperationException(message);
+        }
+
+        @Override
+        public Path trustStorePath() {
             throw new UnsupportedOperationException(message);
         }
     }
