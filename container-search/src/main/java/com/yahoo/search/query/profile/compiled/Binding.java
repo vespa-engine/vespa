@@ -106,7 +106,7 @@ public class Binding implements Comparable<Binding> {
      * Returns true if all the dimension values in this have the same values
      * in the given context.
      */
-    public boolean matches(Map<String,String> context) {
+    public boolean matches(Map<String, String> context) {
         for (int i = 0; i < dimensions.length; i++) {
             if ( ! dimensionValues[i].equals(context.get(dimensions[i]))) return false;
         }
