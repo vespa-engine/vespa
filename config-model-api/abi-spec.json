@@ -71,17 +71,13 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.io.File, java.lang.String, java.lang.String, java.lang.Long, boolean, java.lang.String, java.lang.Long, long)",
-      "public void <init>(java.lang.String, java.lang.String, java.lang.Long, boolean, java.lang.String, java.lang.String, java.lang.Long, long)",
       "public void <init>(java.lang.String, java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
-      "public java.lang.String getApplicationName()",
       "public java.lang.String getDeployedByUser()",
       "public java.lang.String getDeployPath()",
       "public com.yahoo.config.provision.ApplicationId getApplicationId()",
       "public java.lang.Long getDeployTimestamp()",
       "public java.lang.Long getGeneration()",
       "public boolean isInternalRedeploy()",
-      "public java.lang.String getCheckSum()",
       "public java.lang.String getChecksum()",
       "public long getPreviousActiveGeneration()",
       "public java.lang.String toString()",
