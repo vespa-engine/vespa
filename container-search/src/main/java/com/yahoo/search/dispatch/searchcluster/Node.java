@@ -23,6 +23,7 @@ public class Node {
     private final AtomicLong activeDocuments = new AtomicLong(0);
     private final AtomicLong pingSequence = new AtomicLong(0);
     private final AtomicLong lastPong = new AtomicLong(0);
+    private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
 
     public Node(int key, String hostname, int group) {
         this.key = key;
@@ -70,14 +71,14 @@ public class Node {
     }
 
     /** Updates the active documents on this node */
-    void setActiveDocuments(long activeDocuments) {
-        this.activeDocuments.set(activeDocuments);
-    }
+    void setActiveDocuments(long activeDocuments) { this.activeDocuments.set(activeDocuments); }
 
     /** Returns the active documents on this node. If unknown, 0 is returned. */
-    long getActiveDocuments() {
-        return activeDocuments.get();
-    }
+    long getActiveDocuments() { return activeDocuments.get(); }
+
+    public void setBlockingWrites(boolean isBlockingWrites) { this.isBlockingWrites.set(isBlockingWrites); }
+
+    boolean isBlockingWrites() { return isBlockingWrites.get(); }
 
     @Override
     public int hashCode() { return Objects.hash(hostname, key, pathIndex, group); }

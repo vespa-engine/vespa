@@ -43,7 +43,7 @@ public abstract class InvokerFactory {
      * @param nodes pre-selected list of content nodes
      * @param acceptIncompleteCoverage if some of the nodes are unavailable and this parameter is
      *                                 false, verify that the remaining set of nodes has sufficient coverage
-     * @return Optional containing the SearchInvoker or empty if some node in the
+     * @return the invoker or empty if some node in the
      *         list is invalid and the remaining coverage is not sufficient
      */
     public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
@@ -82,7 +82,7 @@ public abstract class InvokerFactory {
             if ( ! searchCluster.isPartialGroupCoverageSufficient(groupId, success) && !acceptIncompleteCoverage) {
                 return Optional.empty();
             }
-            if(invokers.size() == 0) {
+            if (invokers.size() == 0) {
                 return Optional.of(createCoverageErrorInvoker(nodes, failed));
             }
         }
