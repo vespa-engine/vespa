@@ -23,11 +23,13 @@ distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
 ## don't use it if you don't (really) mean it.
 maxHitsPerNode int default=2147483647
 
-## Probability for getting the correct topK documents.
-## A value of 1.0 will ask all partitions for topK documents.
-## Any value between <0, 1> will use a Student T fith 30 degrees freedom and compute a K value that
-## will give you the topK documents according to this formulae.
+## Probability for getting the K best hits (topK).
+## A value of 1.0 will ask all N partitions for K hits.
+## Any value between <0, 1> will use a Student T with 30 degrees freedom and compute a value Q that
+## will give you the globally K best hits according to this formula with the desired probability.
 ## q = k/n + qT (p',30) x √(k × (1/n) × (1 − 1/n))
+## With a probability of 0.999 and K=200 and N=10 will give a Q of 38, meaning that you only need to fetch 19% compared to
+## default setting of 1.0. This is a significant optimisation with with very little loss in presicion.
 topKProbability double default=1.0
 
 # Is multi-level dispatch configured for this cluster

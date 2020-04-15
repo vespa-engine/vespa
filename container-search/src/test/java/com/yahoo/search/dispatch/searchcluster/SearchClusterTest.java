@@ -8,6 +8,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.MockSearchCluster;
+import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.search.result.ErrorMessage;
 import org.junit.Test;
 
@@ -27,7 +28,6 @@ import static org.junit.Assert.assertTrue;
  * @author baldersheim
  */
 public class SearchClusterTest {
-    private static final double EPSILON = 0.00000000001;
 
     static class State implements AutoCloseable{
 
@@ -333,17 +333,6 @@ public class SearchClusterTest {
         assertFalse(node.isLastReceivedPong(2));
         assertTrue(node.isLastReceivedPong(3));
         assertEquals(3, node.getLastReceivedPongId());
-    }
-
-    @Test
-    public void requireHitsAreEstimatedAccordingToPartitionsAndProbability() {
-        SearchCluster.TopKEstimator estimator = new SearchCluster.TopKEstimator(30, 0.999);
-        assertEquals(91.97368471911312, estimator.estimateExactK(200, 3), EPSILON);
-        assertEquals(92, estimator.estimateK(200, 3));
-        assertEquals(37.96328109101396, estimator.estimateExactK(200, 10), EPSILON);
-        assertEquals(38, estimator.estimateK(200, 10));
-        assertEquals(23.815737601023095, estimator.estimateExactK(200, 20), EPSILON);
-        assertEquals(24, estimator.estimateK(200, 20));
     }
 
 }

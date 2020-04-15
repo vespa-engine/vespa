@@ -10,8 +10,8 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
+import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.vespa.config.search.DispatchConfig;
-import org.apache.commons.math3.distribution.TDistribution;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,24 +41,6 @@ public class SearchCluster implements NodeManager<Node> {
     private final PingFactory pingFactory;
     private final TopKEstimator hitEstimator;
     private long nextLogTime = 0;
-
-    static class TopKEstimator {
-        private final TDistribution studentT;
-        private final double p;
-
-        TopKEstimator(double freedom, double wantedprobability) {
-            this.studentT = new TDistribution(null, freedom);
-            p = wantedprobability;
-        }
-        double estimateExactK(double k, double n) {
-            double variance = k * 1/n * (1 - 1/n);
-            double p_inverse = 1 - (1 - p)/n;
-            return k/n + studentT.inverseCumulativeProbability(p_inverse) * Math.sqrt(variance);
-        }
-        int estimateK(double k, double n) {
-            return (int)Math.ceil(estimateExactK(k, n));
-        }
-    }
 
     /**
      * A search node on this local machine having the entire corpus, which we therefore
@@ -96,9 +78,7 @@ public class SearchCluster implements NodeManager<Node> {
         for (Node node : nodes)
             nodesByHostBuilder.put(node.hostname(), node);
         this.nodesByHost = nodesByHostBuilder.build();
-        hitEstimator = ((0.0 < dispatchConfig.topKProbability()) && (dispatchConfig.topKProbability() < 1.0))
-                ? new TopKEstimator(30.0, dispatchConfig.topKProbability())
-                : null;
+        hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability());
 
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(),
                                                                        size,
@@ -264,9 +244,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     public int estimateHitsToFetch(int wantedHits, int numPartitions) {
-        return ((hitEstimator == null) || (numPartitions <= 1))
-                ? wantedHits
-                : hitEstimator.estimateK(wantedHits, numPartitions);
+        return hitEstimator.estimateK(wantedHits, numPartitions);
     }
 
     public boolean hasInformationAboutAllNodes() {
