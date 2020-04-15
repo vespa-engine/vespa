@@ -127,11 +127,15 @@ public class NodeRepository extends AbstractComponent {
         this.applications = new Applications();
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
-        for (State state : State.values())
-            // TODO(mpolden): Add per-node locking. In its current state this may collide with other callers making
-            //                node state changes. Example: A redeployment on another config server which moves a node
-            //                to another state while this is constructed.
-            db.writeTo(state, db.getNodes(state), Agent.system, Optional.empty());
+        for (var state : State.values()) {
+            for (var node : db.getNodes(state)) {
+                try (var lock = lock(node)) {
+                    var currentNode = db.getNode(node.hostname());
+                    if (currentNode.isEmpty()) continue; // Node was removed during this loop
+                    db.writeTo(currentNode.get().state(), currentNode.get(), Agent.system, Optional.empty());
+                }
+            }
+        }
     }
 
     /** Returns the curator database client used by this */
