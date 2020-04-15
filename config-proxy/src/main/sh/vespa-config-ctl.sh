@@ -153,6 +153,7 @@ case $1 in
             elif ! vespa-ping-configproxy -s $hname
             then
                 echo "failed to ping config proxy $hname" 1>&2
+                kill -3 `pgrep -f -n configproxy`
             fi
 
             echo "look for reason in vespa.log, last part follows..." 1>&2
