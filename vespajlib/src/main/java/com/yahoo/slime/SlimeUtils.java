@@ -104,6 +104,17 @@ public class SlimeUtils {
         return jsonToSlime(json.getBytes(StandardCharsets.UTF_8));
     }
 
+    /** Throws {@link JsonParseException} on invalid JSON. */
+    public static Slime jsonToSlimeOrThrow(String json) {
+        return jsonToSlimeOrThrow(json.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static Slime jsonToSlimeOrThrow(byte[] json) {
+        Slime slime = new Slime();
+        new JsonDecoder().decodeOrThrow(slime, json);
+        return slime;
+    }
+
     public static Optional<String> optionalString(Inspector inspector) {
         return Optional.of(inspector.asString()).filter(s -> !s.isEmpty());
     }

@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
+
 import java.util.Map;
 
 /**
- * Static methods for working with the map textual format which is parsed by {@link MapParser}
+ * Static methods for working with JSON.
  *
  * @author bratseth
  */
@@ -54,6 +57,21 @@ public final class JSON {
                 b.appendCodePoint(codepoint);
         }
         return b != null ? b.toString() : s;
+    }
+
+    /**
+     * Test whether two JSON strings are equal, e.g. the order of fields in an object is irrelevant.
+     *
+     * <p>When comparing two numbers of the two JSON strings, the result is only guaranteed to be
+     * correct if (a) both are integers (without fraction and exponent) and each fits in a long, or
+     * (b) both are non-integers, are syntactically identical, and fits in a double.</p>
+     *
+     * @throws RuntimeException on invalid JSON
+     */
+    public static boolean equals(String left, String right) {
+        Slime leftSlime = SlimeUtils.jsonToSlimeOrThrow(left);
+        Slime rightSlime = SlimeUtils.jsonToSlimeOrThrow(right);
+        return leftSlime.equalTo(rightSlime);
     }
 
 }

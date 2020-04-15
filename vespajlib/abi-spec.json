@@ -2863,7 +2863,8 @@
     ],
     "methods": [
       "public static java.lang.String encode(java.util.Map)",
-      "public static java.lang.String escape(java.lang.String)"
+      "public static java.lang.String escape(java.lang.String)",
+      "public static boolean equals(java.lang.String, java.lang.String)"
     ],
     "fields": []
   },

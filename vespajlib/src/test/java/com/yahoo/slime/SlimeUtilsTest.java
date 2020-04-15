@@ -7,8 +7,10 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -76,6 +78,23 @@ public class SlimeUtilsTest {
         Slime slime = SlimeUtils.jsonToSlime(json);
         assertThat(slime.get().field("foo").asString(), is("foobie"));
         assertTrue(slime.get().field("bar").valid());
+    }
+
+    @Test
+    public void test_json_to_slime_or_throw() {
+        Slime slime = SlimeUtils.jsonToSlimeOrThrow("{\"foo\":\"foobie\",\"bar\":{}}");
+        assertThat(slime.get().field("foo").asString(), is("foobie"));
+        assertTrue(slime.get().field("bar").valid());
+    }
+
+    @Test
+    public void test_invalid_json() {
+        try {
+            SlimeUtils.jsonToSlimeOrThrow("foo");
+            fail();
+        } catch (RuntimeException e) {
+            assertEquals("Unexpected character 'o'", e.getMessage());
+        }
     }
 
 }
