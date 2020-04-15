@@ -17,7 +17,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -43,6 +45,7 @@ class IOThread implements Runnable, AutoCloseable {
     private final int maxInFlightRequests;
     private final long localQueueTimeOut;
     private final GatewayThrottler gatewayThrottler;
+    private final Random random = new Random();
 
     private enum ThreadState { DISCONNECTED, CONNECTED, SESSION_SYNCED };
     private final AtomicInteger wrongSessionDetectedCounter = new AtomicInteger(0);
@@ -188,9 +191,13 @@ class IOThread implements Runnable, AutoCloseable {
             return docsForSendChunk;
         }
         int pendingSize = 1 + resultQueue.getPendingSize();
-        // see if we can get more documents without blocking
 
-        while (chunkSizeBytes < maxChunkSizeBytes && pendingSize < maxInFlightRequests) {
+        // see if we can get more documents without blocking
+        // slightly randomize how much is taken to avoid harmonic interactions leading
+        // to some threads consistently taking more than others
+        int thisMaxChunkSizeBytes = randomize(maxChunkSizeBytes);
+        int thisMaxInFlightRequests = randomize(maxInFlightRequests);
+        while (chunkSizeBytes < thisMaxChunkSizeBytes && pendingSize < thisMaxInFlightRequests) {
             drainFirstDocumentsInQueueIfOld();
             Document document = documentQueue.poll();
             if (document == null) break;
@@ -202,6 +209,11 @@ class IOThread implements Runnable, AutoCloseable {
             log.finest("Chunk has " + docsForSendChunk.size() + " docs with a size " + chunkSizeBytes + " bytes");
         docsReceivedCounter.addAndGet(docsForSendChunk.size());
         return docsForSendChunk;
+    }
+
+    private int randomize(int limit) {
+        double multiplier = 0.75 + 0.25 * random.nextDouble();
+        return Math.max(1, (int)(limit * multiplier));
     }
 
     private void addDocumentsToResultQueue(List<Document> docs) {
