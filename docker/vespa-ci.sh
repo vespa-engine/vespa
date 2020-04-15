@@ -12,7 +12,7 @@ DIR=$(cd "${RELATIVE_DIR}" && pwd)
 cd "${DIR}"
 
 GIT_COMMIT=$1
-DOCKER_IMAGE="vespaengine/vespa-dev:latest"
+DOCKER_IMAGE="vespaengine/vespa-build-centos7:latest"
 INTERNAL_DIR=/vespa
 LOG_PREFIX=vespa-ci-$(date +%Y-%m-%dT%H:%M:%S)
 
