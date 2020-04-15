@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.curator.Curator;
@@ -68,7 +69,7 @@ public class CuratorDatabaseClient {
 
     private final NodeSerializer nodeSerializer;
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
-    private final CuratorDatabase curatorDatabase;
+    private final CuratorDatabase db;
     private final Clock clock;
     private final Zone zone;
     private final CuratorCounter provisionIndexCounter;
@@ -76,26 +77,26 @@ public class CuratorDatabaseClient {
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
-        this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
+        this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
         initZK();
     }
 
     public List<HostName> cluster() {
-        return curatorDatabase.cluster();
+        return db.cluster();
     }
 
     private void initZK() {
-        curatorDatabase.create(root);
+        db.create(root);
         for (Node.State state : Node.State.values())
-            curatorDatabase.create(toPath(state));
-        curatorDatabase.create(inactiveJobsPath());
-        curatorDatabase.create(infrastructureVersionsPath());
-        curatorDatabase.create(osVersionsPath());
-        curatorDatabase.create(dockerImagesPath());
-        curatorDatabase.create(firmwareCheckPath());
-        curatorDatabase.create(loadBalancersRoot);
+            db.create(toPath(state));
+        db.create(inactiveJobsPath());
+        db.create(infrastructureVersionsPath());
+        db.create(osVersionsPath());
+        db.create(dockerImagesPath());
+        db.create(firmwareCheckPath());
+        db.create(loadBalancersRoot);
         provisionIndexCounter.initialize(100);
     }
 
@@ -104,7 +105,7 @@ public class CuratorDatabaseClient {
      */
     public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             if (node.state() != expectedState)
                 throw new IllegalArgumentException(node + " is not in the " + expectedState + " state");
@@ -130,7 +131,7 @@ public class CuratorDatabaseClient {
 
         for (Node node : nodes) {
             Path path = toPath(node.state(), node.hostname());
-            CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+            CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
             curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
         }
 
@@ -200,7 +201,7 @@ public class CuratorDatabaseClient {
 
         List<Node> writtenNodes = new ArrayList<>(nodes.size());
 
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             Node newNode = new Node(node.id(), node.ipConfig(), node.hostname(),
                                     node.parentHostname(), node.flavor(),
@@ -260,7 +261,7 @@ public class CuratorDatabaseClient {
         List<Node> nodes = new ArrayList<>();
         if (states.length == 0)
             states = Node.State.values();
-        CuratorDatabase.Session session = curatorDatabase.getSession();
+        CuratorDatabase.Session session = db.getSession();
         for (Node.State state : states) {
             for (String hostname : session.getChildren(toPath(state))) {
                 Optional<Node> node = getNode(session, hostname, state);
@@ -300,7 +301,7 @@ public class CuratorDatabaseClient {
      * If no states are given this returns the node if it is present in any state.
      */
     public Optional<Node> getNode(String hostname, Node.State ... states) {
-        return getNode(curatorDatabase.getSession(), hostname, states);
+        return getNode(db.getSession(), hostname, states);
     }
 
     private Path toPath(Node.State nodeState) { return root.append(toDir(nodeState)); }
@@ -314,21 +315,22 @@ public class CuratorDatabaseClient {
     }
 
     /** Creates and returns the path to the lock for this application */
-    private Path lockPath(ApplicationId application) {
+    // TODO(mpolden): Remove when all config servers take the new lock
+    private Path legacyLockPath(ApplicationId application) {
         Path lockPath =
                 lockRoot
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());
-        curatorDatabase.create(lockPath);
+        db.create(lockPath);
         return lockPath;
     }
 
-    /** Creates and returns the path to the config server lock for this application */
-    private Path configLockPath(ApplicationId application) {
+    /** Creates and returns the lock path for this application */
+    private Path lockPath(ApplicationId application) {
         // This must match the lock path used by com.yahoo.vespa.config.server.application.TenantApplications
         Path lockPath = configLockRoot.append(application.tenant().value()).append(application.serializedForm());
-        curatorDatabase.create(lockPath);
+        db.create(lockPath);
         return lockPath;
     }
 
@@ -349,26 +351,39 @@ public class CuratorDatabaseClient {
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
     public Lock lockInactive() {
-        return lock(lockRoot.append("unallocatedLock"), defaultLockTimeout);
+        return db.lock(lockRoot.append("unallocatedLock"), defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
-    public Lock lock(ApplicationId application) {
-        return lock(application, defaultLockTimeout);
+    // TODO(mpolden): Remove when all config servers take the new lock
+    public Mutex legacyLock(ApplicationId application) {
+        return legacyLock(application, defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock with the specified timeout for active nodes of this application */
-    public Lock lock(ApplicationId application, Duration timeout) {
+    // TODO(mpolden): Remove when all config servers take the new lock
+    public Mutex legacyLock(ApplicationId application, Duration timeout) {
+        Mutex legacyLock;
+        Mutex lock;
         try {
-            return lock(lockPath(application), timeout);
-        }
-        catch (UncheckedTimeoutException e) {
+            legacyLock = db.lock(legacyLockPath(application), timeout);
+        } catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
+        try {
+            lock = db.lock(lockPath(application), timeout);
+        } catch (UncheckedTimeoutException e) {
+            legacyLock.close();
+            throw new ApplicationLockException(e);
+        }
+        return () -> {
+            lock.close();
+            legacyLock.close();
+        };
     }
 
     /**
-     * Acquires the single cluster-global, re-entrant config lock for given application. Note that this is the same lock
+     * Acquires the single cluster-global, re-entrant lock for given application. Note that this is the same lock
      * that configserver itself takes when modifying applications.
      *
      * This lock must be taken when writes to paths owned by this class may happen on both the configserver and
@@ -381,25 +396,25 @@ public class CuratorDatabaseClient {
      * transaction. The config server then commits (writes) the transaction which may include operations that modify
      * data in paths owned by this class.
      */
-    public Lock lockConfig(ApplicationId application) {
+    public Lock lock(ApplicationId application, Duration timeout) {
         try {
-            return lock(configLockPath(application), defaultLockTimeout);
+            return db.lock(lockPath(application), timeout);
         } catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
     }
 
-    private Lock lock(Path path, Duration timeout) {
-        return curatorDatabase.lock(path, timeout);
+    public Lock lock(ApplicationId application) {
+        return lock(application, defaultLockTimeout);
     }
 
     private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
-        return curatorDatabase.getData(path).filter(data -> data.length > 0).map(mapper);
+        return db.getData(path).filter(data -> data.length > 0).map(mapper);
     }
 
     // Maintenance jobs
     public Lock lockMaintenanceJob(String jobName) {
-        return lock(lockRoot.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
+        return db.lock(lockRoot.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
     }
 
     public Set<String> readInactiveJobs() {
@@ -415,14 +430,14 @@ public class CuratorDatabaseClient {
 
     public void writeInactiveJobs(Set<String> inactiveJobs) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(inactiveJobsPath().getAbsolute(),
                                                          stringSetSerializer.toJson(inactiveJobs)));
         transaction.commit();
     }
     
     public Lock lockInactiveJobs() {
-        return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
+        return db.lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
     private Path inactiveJobsPath() {
@@ -437,14 +452,14 @@ public class CuratorDatabaseClient {
 
     public void writeInfrastructureVersions(Map<NodeType, Version> infrastructureVersions) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(infrastructureVersionsPath().getAbsolute(),
                                                          NodeTypeVersionsSerializer.toJson(infrastructureVersions)));
         transaction.commit();
     }
 
     public Lock lockInfrastructureVersions() {
-        return lock(lockRoot.append("infrastructureVersionsLock"), defaultLockTimeout);
+        return db.lock(lockRoot.append("infrastructureVersionsLock"), defaultLockTimeout);
     }
 
     private Path infrastructureVersionsPath() {
@@ -459,14 +474,14 @@ public class CuratorDatabaseClient {
 
     public void writeOsVersions(Map<NodeType, Version> versions) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(osVersionsPath().getAbsolute(),
                                                          OsVersionsSerializer.toJson(versions)));
         transaction.commit();
     }
 
     public Lock lockOsVersions() {
-        return lock(lockRoot.append("osVersionsLock"), defaultLockTimeout);
+        return db.lock(lockRoot.append("osVersionsLock"), defaultLockTimeout);
     }
 
     private Path osVersionsPath() {
@@ -481,14 +496,14 @@ public class CuratorDatabaseClient {
 
     public void writeDockerImages(Map<NodeType, DockerImage> dockerImages) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(dockerImagesPath().getAbsolute(),
                 NodeTypeDockerImagesSerializer.toJson(dockerImages)));
         transaction.commit();
     }
 
     public Lock lockDockerImages() {
-        return lock(lockRoot.append("dockerImagesLock"), defaultLockTimeout);
+        return db.lock(lockRoot.append("dockerImagesLock"), defaultLockTimeout);
     }
 
     private Path dockerImagesPath() {
@@ -502,7 +517,7 @@ public class CuratorDatabaseClient {
         byte[] data = after.map(instant -> Long.toString(instant.toEpochMilli()).getBytes())
                            .orElse(new byte[0]);
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(firmwareCheckPath().getAbsolute(), data));
         transaction.commit();
     }
@@ -542,7 +557,7 @@ public class CuratorDatabaseClient {
     }
 
     public void writeLoadBalancers(Collection<LoadBalancer> loadBalancers, NestedTransaction transaction) {
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         loadBalancers.forEach(loadBalancer -> {
             curatorTransaction.add(createOrSet(loadBalancerPath(loadBalancer.id()),
                                                LoadBalancerSerializer.toJson(loadBalancer)));
@@ -551,14 +566,14 @@ public class CuratorDatabaseClient {
 
     public void removeLoadBalancer(LoadBalancerId loadBalancer) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.delete(loadBalancerPath(loadBalancer).getAbsolute()));
         transaction.commit();
     }
 
     // TODO(mpolden): Remove this and usages after April 2020
     public Lock lockLoadBalancers(ApplicationId application) {
-        return lock(lockRoot.append("loadBalancersLock2").append(application.serializedForm()), defaultLockTimeout);
+        return db.lock(lockRoot.append("loadBalancersLock2").append(application.serializedForm()), defaultLockTimeout);
     }
 
     private Path loadBalancerPath(LoadBalancerId id) {
@@ -566,14 +581,14 @@ public class CuratorDatabaseClient {
     }
 
     private List<LoadBalancerId> readLoadBalancerIds(Predicate<LoadBalancerId> predicate) {
-        return curatorDatabase.getChildren(loadBalancersRoot).stream()
-                              .map(LoadBalancerId::fromSerializedForm)
-                              .filter(predicate)
-                              .collect(Collectors.toUnmodifiableList());
+        return db.getChildren(loadBalancersRoot).stream()
+                 .map(LoadBalancerId::fromSerializedForm)
+                 .filter(predicate)
+                 .collect(Collectors.toUnmodifiableList());
     }
 
     private Transaction.Operation createOrSet(Path path, byte[] data) {
-        if (curatorDatabase.exists(path)) {
+        if (db.exists(path)) {
             return CuratorOperations.setData(path.getAbsolute(), data);
         }
         return CuratorOperations.create(path.getAbsolute(), data);
