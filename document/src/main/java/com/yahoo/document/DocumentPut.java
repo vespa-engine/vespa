@@ -30,7 +30,8 @@ public class DocumentPut extends DocumentOperation {
 
     /**
      * Copy constructor
-     * @param other DocumentPut to copy
+     *
+     * @param other the DocumentPut to copy
      */
     public DocumentPut(DocumentPut other) {
         super(other);

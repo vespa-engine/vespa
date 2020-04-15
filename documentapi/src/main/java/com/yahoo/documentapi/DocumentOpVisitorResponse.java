@@ -10,6 +10,7 @@ import com.yahoo.document.DocumentOperation;
  * @author Arne H Juul
  */
 public class DocumentOpVisitorResponse extends VisitorResponse {
+
     private DocumentOperation op;
 
     /**
@@ -25,4 +26,5 @@ public class DocumentOpVisitorResponse extends VisitorResponse {
 
     /** @return the document operation */
     public DocumentOperation getDocumentOperation() { return op; }
+
 }

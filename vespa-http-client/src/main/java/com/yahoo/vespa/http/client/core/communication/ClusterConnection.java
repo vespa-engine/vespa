@@ -26,8 +26,8 @@ public class ClusterConnection implements AutoCloseable {
 
     private final List<IOThread> ioThreads = new ArrayList<>();
     private final int clusterId;
-    private static JsonFactory jsonFactory = new JsonFactory();
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private static final JsonFactory jsonFactory = new JsonFactory();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public ClusterConnection(OperationProcessor operationProcessor,
                              FeedParams feedParams,
@@ -58,13 +58,12 @@ public class ClusterConnection implements AutoCloseable {
                 if (connectionParams.isDryRun()) {
                     gatewayConnection = new DryRunGatewayConnection(endpoint);
                 } else {
-                    gatewayConnection = new ApacheGatewayConnection(
-                            endpoint,
-                            feedParams,
-                            cluster.getRoute(),
-                            connectionParams,
-                            new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
-                            operationProcessor.getClientId()
+                    gatewayConnection = new ApacheGatewayConnection(endpoint,
+                                                                    feedParams,
+                                                                    cluster.getRoute(),
+                                                                    connectionParams,
+                                                                    new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
+                                                                    operationProcessor.getClientId()
                     );
                 }
                 if (documentQueue == null) {
@@ -89,10 +88,9 @@ public class ClusterConnection implements AutoCloseable {
     }
 
     public void post(Document document) throws EndpointIOException {
-        String documentIdStr = document.getDocumentId();
         // The same document ID must always go to the same destination
         // In noHandshakeMode this has no effect as the documentQueue is shared between the IOThreads.
-        int hash = documentIdStr.hashCode() & 0x7FFFFFFF;  // Strip sign bit
+        int hash = document.getDocumentId().hashCode() & 0x7FFFFFFF;  // Strip sign bit
         IOThread ioThread = ioThreads.get(hash % ioThreads.size());
         try {
             ioThread.post(document);
@@ -165,4 +163,5 @@ public class ClusterConnection implements AutoCloseable {
     public int hashCode() {
         return clusterId;
     }
+
 }

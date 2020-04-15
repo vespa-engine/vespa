@@ -174,7 +174,6 @@ class IOThread implements Runnable, AutoCloseable {
         return "I/O thread (for " + endpoint + ")";
     }
 
-
     List<Document> getNextDocsForFeeding(long maxWaitUnits, TimeUnit timeUnit) {
         List<Document> docsForSendChunk = new ArrayList<>();
         int chunkSizeBytes = 0;
