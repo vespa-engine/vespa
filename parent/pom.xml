@@ -481,7 +481,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
-                <version>3.6.1</version>
+                <version>${commons.math3.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-cli</groupId>
@@ -760,6 +760,7 @@
         -->
         <curator.version>2.9.1</curator.version>
         <jna.version>4.5.2</jna.version>
+        <commons.math3.version>3.6.1</commons.math3.version>
         <junit.version>5.4.2</junit.version>
         <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
         <maven-bundle-plugin.version>3.5.0</maven-bundle-plugin.version>
