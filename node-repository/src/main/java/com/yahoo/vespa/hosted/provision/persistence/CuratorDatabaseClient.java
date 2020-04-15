@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.curator.Curator;
@@ -355,19 +356,30 @@ public class CuratorDatabaseClient {
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
     // TODO(mpolden): Remove when all config servers take the new lock
-    public Lock legacyLock(ApplicationId application) {
+    public Mutex legacyLock(ApplicationId application) {
         return legacyLock(application, defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock with the specified timeout for active nodes of this application */
     // TODO(mpolden): Remove when all config servers take the new lock
-    public Lock legacyLock(ApplicationId application, Duration timeout) {
+    public Mutex legacyLock(ApplicationId application, Duration timeout) {
+        Mutex legacyLock;
+        Mutex lock;
         try {
-            return lock(legacyLockPath(application), timeout);
-        }
-        catch (UncheckedTimeoutException e) {
+            legacyLock = lock(legacyLockPath(application), timeout);
+        } catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
+        try {
+            lock = lock(lockPath(application), timeout);
+        } catch (UncheckedTimeoutException e) {
+            legacyLock.close();
+            throw new ApplicationLockException(e);
+        }
+        return () -> {
+            lock.close();
+            legacyLock.close();
+        };
     }
 
     /**
