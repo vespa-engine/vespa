@@ -543,7 +543,7 @@ public class Properties implements Cloneable {
     /**
      * Returns a property as a Double
      *
-     * @return the integer value of the name, or null if the property is null
+     * @return the double value of the name, or null if the property is null
      * @throws NumberFormatException if the given parameter exists but have a value which
      *                               is not parseable as a number
      */
@@ -554,7 +554,7 @@ public class Properties implements Cloneable {
     /**
      * Returns a property as a Double
      *
-     * @return the integer value of the name, or null if the property is null
+     * @return the double value of the name, or null if the property is null
      * @throws NumberFormatException if the given parameter exists but have a value which
      *                               is not parseable as a number
      */

@@ -17,6 +17,7 @@ class MockInvoker extends SearchInvoker {
     private final Coverage coverage;
     private Query query;
     private List<Hit> hits;
+    int hitsRequested;
 
     protected MockInvoker(int key, Coverage coverage) {
         super(Optional.of(new Node(key, "?", 0)));
@@ -35,6 +36,7 @@ class MockInvoker extends SearchInvoker {
     @Override
     protected void sendSearchRequest(Query query) throws IOException {
         this.query = query;
+        hitsRequested = query.getHits();
     }
 
     @Override

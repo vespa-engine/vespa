@@ -246,6 +246,9 @@ public class SearchCluster implements NodeManager<Node> {
     public int estimateHitsToFetch(int wantedHits, int numPartitions) {
         return hitEstimator.estimateK(wantedHits, numPartitions);
     }
+    public int estimateHitsToFetch(int wantedHits, int numPartitions, double topKProbability) {
+        return hitEstimator.estimateK(wantedHits, numPartitions, topKProbability);
+    }
 
     public boolean hasInformationAboutAllNodes() {
         return nodesByHost.values().stream().allMatch(node -> node.isWorking() != null);

@@ -9,22 +9,33 @@ import org.apache.commons.math3.distribution.TDistribution;
  */
 public class TopKEstimator {
     private final TDistribution studentT;
-    private final double p;
+    private final double defaultP;
     private final boolean estimate;
 
-    public TopKEstimator(double freedom, double wantedprobability) {
-        this.studentT = new TDistribution(null, freedom);
-        p = wantedprobability;
-        estimate = (0.0 < p) && (p < 1.0);
+    private static boolean needEstimate(double p) {
+        return (0.0 < p) && (p < 1.0);
     }
-    double estimateExactK(double k, double n) {
+    public TopKEstimator(double freedom, double defaultProbability) {
+        this.studentT = new TDistribution(null, freedom);
+        defaultP = defaultProbability;
+        estimate = needEstimate(defaultP);
+    }
+    double estimateExactK(double k, double n, double p) {
         double variance = k * 1/n * (1 - 1/n);
         double p_inverse = 1 - (1 - p)/n;
         return k/n + studentT.inverseCumulativeProbability(p_inverse) * Math.sqrt(variance);
     }
+    double estimateExactK(double k, double n) {
+        return estimateExactK(k, n, defaultP);
+    }
     public int estimateK(int k, int n) {
         return (estimate && n > 1)
-                ? (int)Math.ceil(estimateExactK(k, n))
+                ? (int)Math.ceil(estimateExactK(k, n, defaultP))
+                : k;
+    }
+    public int estimateK(int k, int n, double p) {
+        return (needEstimate(p) && (n > 1))
+                ? (int)Math.ceil(estimateExactK(k, n, p))
                 : k;
     }
 }
