@@ -685,25 +685,6 @@ Proton::prepareRestart()
 
 namespace {
 
-int countOpenFiles()
-{
-    static const char * const fd_dir_name = "/proc/self/fd";
-    int count = 0;
-    DIR *dp = opendir(fd_dir_name);
-    if (dp != nullptr) {
-        struct dirent *ptr;
-        while ((ptr = readdir(dp)) != nullptr) {
-            if (strcmp(".", ptr->d_name) == 0) continue;
-            if (strcmp("..", ptr->d_name) == 0) continue;
-            ++count;
-        }
-        closedir(dp);
-    } else {
-        LOG(warning, "could not scan directory %s: %s", fd_dir_name, strerror(errno));
-    }
-    return count;
-}
-
 void
 updateExecutorMetrics(ExecutorMetrics &metrics,
                       const vespalib::ThreadStackExecutor::Stats &stats)
@@ -730,7 +711,7 @@ Proton::updateMetrics(const vespalib::MonitorGuard &)
         metrics.resourceUsage.memory.set(usageState.memoryState().usage());
         metrics.resourceUsage.memoryUtilization.set(usageState.memoryState().utilization());
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
-        metrics.resourceUsage.openFileDescriptors.set(countOpenFiles());
+        metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
     }
     {

@@ -21,6 +21,10 @@
 #else
 #include <sys/mount.h>
 #endif
+#ifdef __APPLE__
+#include <libproc.h>
+#include <sys/proc_info.h>
+#endif
 #include "file_rw_ops.h"
 
 using fastos::File_RW_Ops;
@@ -496,6 +500,17 @@ int64_t FastOS_UNIX_File::GetFreeDiskSpace (const char *path)
     }
 
     return freeSpace;
+}
+
+int
+FastOS_UNIX_File::count_open_files()
+{
+#ifdef __APPLE__
+    int buffer_size = proc_pidinfo(getpid(), PROC_PIDLISTFDS, 0, nullptr, 0);
+    return buffer_size / sizeof(proc_fdinfo);
+#else
+    return 0;
+#endif
 }
 
 FastOS_UNIX_DirectoryScan::FastOS_UNIX_DirectoryScan(const char *searchPath)
