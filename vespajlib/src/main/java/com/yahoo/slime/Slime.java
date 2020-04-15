@@ -159,11 +159,10 @@ public final class Slime {
     }
 
     /**
-     * Tests whether this is equal to Inspector.
+     * Tests whether the two Inspectors are equal.
      *
-     * Since equality of two Inspectors is subtle, {@link Object#equals(Object)} is not used.
+     * <p>Since equality of two Inspectors is subtle, {@link Object#equals(Object)} is not used.</p>
      *
-     * @param that inspector.
      * @return true if they are equal.
      */
     public boolean equalTo(Slime that) {

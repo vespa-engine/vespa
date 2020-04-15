@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 
 import java.util.Map;
-import java.util.Objects;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Static methods for working with JSON.
@@ -15,8 +12,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author bratseth
  */
 public final class JSON {
-
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     /** No instances */
     private JSON() {}
@@ -70,11 +65,13 @@ public final class JSON {
      * <p>When comparing two numbers of the two JSON strings, the result is only guaranteed to be
      * correct if (a) both are integers (without fraction and exponent) and each fits in a long, or
      * (b) both are non-integers, are syntactically identical, and fits in a double.</p>
+     *
+     * @throws RuntimeException on invalid JSON
      */
     public static boolean equals(String left, String right) {
-        JsonNode leftJsonNode = uncheck(() -> mapper.readTree(left));
-        JsonNode rightJsonNode = uncheck(() -> mapper.readTree(right));
-        return Objects.equals(leftJsonNode, rightJsonNode);
+        Slime leftSlime = SlimeUtils.jsonToSlimeOrThrow(left);
+        Slime rightSlime = SlimeUtils.jsonToSlimeOrThrow(right);
+        return leftSlime.equalTo(rightSlime);
     }
 
 }
