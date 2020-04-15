@@ -1538,7 +1538,9 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
@@ -1553,7 +1555,9 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
