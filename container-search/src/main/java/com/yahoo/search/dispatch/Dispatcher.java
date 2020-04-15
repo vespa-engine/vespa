@@ -50,7 +50,7 @@ public class Dispatcher extends AbstractComponent {
     public static final String DISPATCH = "dispatch";
     private static final String INTERNAL = "internal";
     private static final String PROTOBUF = "protobuf";
-    private static final String TOP_K_PROBABILITY = "top-k-probability";
+    private static final String TOP_K_PROBABILITY = "topKProbability";
 
     private static final String INTERNAL_METRIC = "dispatch_internal";
 
