@@ -182,7 +182,7 @@ void op_tensor_peek(State &state, uint64_t param) {
                            addr.emplace(pos->first, label);
                        },
                        [&](const TensorFunction::Child &) {
-                           double index = round(state.peek(child_cnt++).as_double());
+                           double index = state.peek(child_cnt++).as_double();
                            size_t dim_idx = self.param_type().dimension_index(pos->first);
                            assert(dim_idx != ValueType::Dimension::npos);
                            const auto &param_dim = self.param_type().dimensions()[dim_idx];

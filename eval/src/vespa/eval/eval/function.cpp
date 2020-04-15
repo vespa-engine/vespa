@@ -804,7 +804,7 @@ void parse_tensor_peek(ParseContext &ctx) {
         if (ctx.get() == '(') {
             auto expr = get_expression(ctx);
             if (auto num = nodes::as<nodes::Number>(*expr)) {
-                peek_spec.emplace(dim_name, make_string("%" PRId64, int64_t(round(num->value()))));
+                peek_spec.emplace(dim_name, make_string("%" PRId64, int64_t(num->value())));
             } else {
                 peek_spec.emplace(dim_name, std::move(expr));
             }
