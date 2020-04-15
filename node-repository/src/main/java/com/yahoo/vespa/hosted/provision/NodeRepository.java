@@ -127,15 +127,11 @@ public class NodeRepository extends AbstractComponent {
         this.applications = new Applications();
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
-        for (var state : State.values()) {
-            for (var node : db.getNodes(state)) {
-                try (var lock = lock(node)) {
-                    var currentNode = db.getNode(node.hostname());
-                    if (currentNode.isEmpty()) continue; // Node was removed during this loop
-                    db.writeTo(currentNode.get().state(), currentNode.get(), Agent.system, Optional.empty());
-                }
-            }
-        }
+        for (State state : State.values())
+            // TODO(mpolden): Add per-node locking. In its current state this may collide with other callers making
+            //                node state changes. Example: A redeployment on another config server which moves a node
+            //                to another state while this is constructed.
+            db.writeTo(state, db.getNodes(state), Agent.system, Optional.empty());
     }
 
     /** Returns the curator database client used by this */
@@ -779,10 +775,11 @@ public class NodeRepository extends AbstractComponent {
     public Zone zone() { return zone; }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application) { return db.legacyLock(application); }
+    // TODO(mpolden): Make this delegate to CuratorDatabaseClient#lockConfig instead
+    public Mutex lock(ApplicationId application) { return db.lock(application); }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) { return db.legacyLock(application, timeout); }
+    public Mutex lock(ApplicationId application, Duration timeout) { return db.lock(application, timeout); }
 
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }
