@@ -42,6 +42,7 @@ public abstract class IdString {
     private final String namespace;
     private final String namespaceSpecific;
     private Utf8String cache;
+    // This max unsigned 16 bit integer - 1 as the offset will be length + 1
     static final int MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC = 0xfffe;
 
     /**
