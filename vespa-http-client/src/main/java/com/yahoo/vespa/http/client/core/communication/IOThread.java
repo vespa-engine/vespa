@@ -36,7 +36,6 @@ class IOThread implements Runnable, AutoCloseable {
     private final DocumentQueue documentQueue;
     private final EndpointResultQueue resultQueue;
     private final Thread thread;
-    private final ThreadGroup ioThreadGroup;
     private final int clusterId;
     private final CountDownLatch running = new CountDownLatch(1);
     private final CountDownLatch stopSignal = new CountDownLatch(1);
@@ -74,7 +73,6 @@ class IOThread implements Runnable, AutoCloseable {
         this.maxInFlightRequests = maxInFlightRequests;
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
         this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
-        this.ioThreadGroup = ioThreadGroup;
         thread.setDaemon(true);
         this.localQueueTimeOut = localQueueTimeOut;
         thread.start();
@@ -165,8 +163,9 @@ class IOThread implements Runnable, AutoCloseable {
         log.fine("Session to " + endpoint + " closed.");
     }
 
+    /** For testing only */
     public void post(Document document) throws InterruptedException {
-        documentQueue.put(document, Thread.currentThread().getThreadGroup() == ioThreadGroup);
+        documentQueue.put(document, true);
     }
 
     @Override

@@ -94,7 +94,10 @@ public class Result {
             this.traceMessage = null;
         }
 
-        /** Returns the endpoint from which the result was received. */
+        /**
+         * Returns the endpoint from which the result was received,
+         * or null if this failed before being assigned an endpoint
+         */
         public Endpoint getEndpoint() {
             return endpoint;
         }
@@ -124,16 +127,16 @@ public class Result {
             StringBuilder b = new StringBuilder();
             b.append("Detail ");
             b.append("resultType=").append(resultType);
-            if (exception != null) {
+            if (exception != null)
                 b.append(" exception='").append(Exceptions.toMessageString(exception)).append("'");
-            }
-            if (traceMessage != null && ! traceMessage.isEmpty()) {
+            if (traceMessage != null && ! traceMessage.isEmpty())
                 b.append(" trace='").append(traceMessage).append("'");
-            }
-            b.append(" endpoint=").append(endpoint);
+            if (endpoint != null)
+                b.append(" endpoint=").append(endpoint);
             b.append(" resultTimeLocally=").append(timeStampMillis).append("\n");
             return b.toString();
         }
+
     }
 
     @Override
