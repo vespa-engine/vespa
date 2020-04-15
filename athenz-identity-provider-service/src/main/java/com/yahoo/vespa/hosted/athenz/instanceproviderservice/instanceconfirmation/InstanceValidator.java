@@ -85,11 +85,11 @@ public class InstanceValidator {
             return false;
         }
 
-        log.log(LogLevel.INFO, () -> String.format("Validating instance %s.", providerUniqueId));
+        log.log(LogLevel.DEBUG, () -> String.format("Validating instance %s.", providerUniqueId));
 
         PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion());
         if (signer.hasValidSignature(signedIdentityDocument, publicKey)) {
-            log.log(LogLevel.INFO, () -> String.format("Instance %s is valid.", providerUniqueId));
+            log.log(LogLevel.DEBUG, () -> String.format("Instance %s is valid.", providerUniqueId));
             return true;
         }
         log.log(LogLevel.ERROR, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
@@ -100,7 +100,7 @@ public class InstanceValidator {
     //      We'll have to perform some validation on the instance id and other fields of the attribute map.
     //      Separate between tenant and node certificate as well.
     public boolean isValidRefresh(InstanceConfirmation confirmation) {
-        log.log(LogLevel.INFO, () -> String.format("Accepting refresh for instance with identity '%s', provider '%s', instanceId '%s'.",
+        log.log(LogLevel.DEBUG, () -> String.format("Accepting refresh for instance with identity '%s', provider '%s', instanceId '%s'.",
                                                    new AthenzService(confirmation.domain, confirmation.service).getFullName(),
                                                    confirmation.provider,
                                                    confirmation.attributes.get(SAN_DNS_ATTRNAME)));
