@@ -13,6 +13,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "file_rw_ops.h"
+#include <cstdio>
+#include <cstring>
+#include <system_error>
 
 using fastos::File_RW_Ops;
 
@@ -429,6 +432,27 @@ bool
 FastOS_Linux_File::InitializeClass()
 {
     return FastOS_UNIX_File::InitializeClass();
+}
+
+int
+FastOS_Linux_File::count_open_files()
+{
+    static const char * const fd_dir_name = "/proc/self/fd";
+    int count = 0;
+    DIR *dp = opendir(fd_dir_name);
+    if (dp != nullptr) {
+        struct dirent *ptr;
+        while ((ptr = readdir(dp)) != nullptr) {
+            if ((strcmp(".", ptr->d_name) != 0) && (strcmp("..", ptr->d_name) != 0)) {
+                ++count;
+            }
+        }
+        closedir(dp);
+    } else {
+        std::error_code ec(errno, std::system_category());
+        fprintf(stderr, "could not scan directory %s: %s\n", fd_dir_name, ec.message().c_str());
+    }
+    return count;
 }
 
 #include <vespa/fastos/backtrace.h>

@@ -45,6 +45,7 @@ public:
     static bool InitializeClass();
     static size_t getMaxDirectIOMemAlign();
     static void *allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr);
+    static int count_open_files();
 private:
     ssize_t internalWrite2(const void *buffer, size_t len);
     ssize_t readUnalignedEnd(void *buffer, size_t length, int64_t readOffset);
