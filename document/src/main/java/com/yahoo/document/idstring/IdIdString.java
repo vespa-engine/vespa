@@ -11,11 +11,13 @@ import com.yahoo.text.Utf8;
  * Time: 11:02 AM
  */
 public class IdIdString extends IdString {
-    private String type;
+    private final String type;
     private String group;
     private long location;
     private boolean hasGroup;
     private boolean hasNumber;
+    private static final int SIZE_OF_ID_AND_3_COLONS = 2 + 3; // "id:::"
+    private static final int MAX_LENGTH = IdString.MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC - SIZE_OF_ID_AND_3_COLONS;
 
     public static String replaceType(String id, String typeName) {
         int typeStartPos = id.indexOf(":", 3) + 1;
@@ -47,9 +49,9 @@ public class IdIdString extends IdString {
         super(Scheme.id, namespace, localId);
         this.type = type;
         boolean hasSetLocation = false;
-        if (namespace.length() + type.length() + keyValues.length() + 5 >= IdString.MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC) {
+        if (namespace.length() + type.length() + keyValues.length() >= MAX_LENGTH) {
             throw new IllegalArgumentException("Length of namespace(" + namespace.length() +  ") + doctype(" + type.length() +
-                    ") + key/values(" + keyValues.length() +"), is longer than " + (MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC - 5));
+                    ") + key/values(" + keyValues.length() +"), is longer than " + MAX_LENGTH);
         }
         for(String pair : keyValues.split(",")) {
             int pos = pair.indexOf('=');

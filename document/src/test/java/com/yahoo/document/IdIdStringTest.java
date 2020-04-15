@@ -67,7 +67,7 @@ public class IdIdStringTest {
     }
 
     @Test
-    public void requireThatTooLongPreNamspaceSpecificThrowsWhileParsing() throws Exception {
+    public void requireThatTooLongPreNamespaceSpecificThrowsWhileParsing() throws Exception {
         StringBuilder builder = new StringBuilder("id:");
         for (int i = 0; i < 0x10000; i++) {
             builder.append('n');
@@ -81,7 +81,7 @@ public class IdIdStringTest {
         }
     }
     @Test
-    public void requireThatTooLongPreNamspaceSpecificThrowsOnConstruction() {
+    public void requireThatTooLongPreNamespaceSpecificThrowsOnConstruction() {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < 0x10000; i++) {
             builder.append('n');
