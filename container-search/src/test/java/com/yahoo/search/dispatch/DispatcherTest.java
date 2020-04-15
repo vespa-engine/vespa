@@ -93,7 +93,7 @@ public class DispatcherTest {
     }
 
     @Test
-    public void testGroup1IsSelected() {
+    public void testGroup0IsSelected() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor(cluster, false), cluster, createDispatchConfig(), new MockInvokerFactory(cluster, (n, a) -> true), new MockMetric());
         cluster.pingIterationCompleted();
@@ -103,7 +103,7 @@ public class DispatcherTest {
     }
 
     @Test
-    public void testGroup1IsSkippedWhenItIsBlockingFeed() {
+    public void testGroup0IsSkippedWhenItIsBlockingFeed() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor(cluster, false), cluster, createDispatchConfig(), new MockInvokerFactory(cluster, (n, a) -> true), new MockMetric());
         cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
@@ -115,8 +115,8 @@ public class DispatcherTest {
     }
 
     @Test
-    public void testGroup1IsSelectedWhenMoreAreBlockingFeed() {
-        SearchCluster cluster = new MockSearchCluster("1", 2, 1);
+    public void testGroup0IsSelectedWhenMoreAreBlockingFeed() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor(cluster, false), cluster, createDispatchConfig(), new MockInvokerFactory(cluster, (n, a) -> true), new MockMetric());
         cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
         cluster.group(1).get().nodes().get(0).setBlockingWrites(true);
@@ -124,6 +124,18 @@ public class DispatcherTest {
         assertEquals("Blocking group is used when multiple groups are blocking",
                      0,
                      dispatcher.getSearchInvoker(new Query(), null).distributionKey().get().longValue());
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    public void testGroup0IsSelectedWhenItIsBlockingFeedWhenNoOthers() {
+        SearchCluster cluster = new MockSearchCluster("1", 1, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor(cluster, false), cluster, createDispatchConfig(), new MockInvokerFactory(cluster, (n, a) -> true), new MockMetric());
+        cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
+        cluster.pingIterationCompleted();
+        assertEquals("Blocking group is used when there is no alternative",
+                     0,
+                     (dispatcher.getSearchInvoker(new Query(), null).distributionKey().get()).longValue());
         dispatcher.deconstruct();
     }
 
