@@ -225,6 +225,10 @@ public final class Node {
                         allocation, history, type, reports, modelName, reservedTo);
     }
 
+    public Node withIpConfig(IP.Config ipConfig) {
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
+                allocation, history, type, reports, modelName, reservedTo);
+    }
     /** Returns a copy of this with the reboot generation set to generation */
     public Node withReboot(Generation generation) {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status.withReboot(generation), state,
