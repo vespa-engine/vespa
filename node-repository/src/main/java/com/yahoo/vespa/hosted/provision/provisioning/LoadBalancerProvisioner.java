@@ -52,7 +52,7 @@ public class LoadBalancerProvisioner {
         this.service = service;
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         for (var id : db.readLoadBalancerIds()) {
-            try (var lock = db.lockConfig(id.application())) {
+            try (var lock = db.lock(id.application())) {
                 var loadBalancer = db.readLoadBalancer(id);
                 loadBalancer.ifPresent(db::writeLoadBalancer);
             }
@@ -73,7 +73,7 @@ public class LoadBalancerProvisioner {
         if (requestedNodes.type() != NodeType.tenant) return; // Nothing to provision for this node type
         if (!cluster.type().isContainer()) return; // Nothing to provision for this cluster type
         if (application.instance().isTester()) return; // Do not provision for tester instances
-        try (var lock = db.lockConfig(application)) {
+        try (var lock = db.lock(application)) {
             provision(application, effectiveId(cluster), false, lock);
         }
     }
@@ -90,7 +90,7 @@ public class LoadBalancerProvisioner {
      */
     public void activate(ApplicationId application, Set<ClusterSpec> clusters,
                          @SuppressWarnings("unused") Mutex applicationLock, NestedTransaction transaction) {
-        try (var lock = db.lockConfig(application)) {
+        try (var lock = db.lock(application)) {
             var containerClusters = containerClustersOf(clusters);
             for (var clusterId : containerClusters) {
                 // Provision again to ensure that load balancer instance is re-configured with correct nodes
@@ -108,7 +108,7 @@ public class LoadBalancerProvisioner {
      */
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (var applicationLock = nodeRepository.lock(application)) {
-            try (var lock = db.lockConfig(application)) {
+            try (var lock = db.lock(application)) {
                 deactivate(nodeRepository.loadBalancers(application).asList(), transaction);
             }
         }

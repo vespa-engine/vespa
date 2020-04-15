@@ -323,7 +323,8 @@ public class CuratorDatabaseClient {
     }
 
     /** Creates and returns the path to the lock for this application */
-    private Path lockPath(ApplicationId application) {
+    // TODO(mpolden): Remove when all config servers take the new lock
+    private Path legacyLockPath(ApplicationId application) {
         Path lockPath =
                 CuratorDatabaseClient.lockPath
                 .append(application.tenant().value())
@@ -333,8 +334,8 @@ public class CuratorDatabaseClient {
         return lockPath;
     }
 
-    /** Creates and returns the path to the config server lock for this application */
-    private Path configLockPath(ApplicationId application) {
+    /** Creates and returns the lock path for this application */
+    private Path lockPath(ApplicationId application) {
         // This must match the lock path used by com.yahoo.vespa.config.server.application.TenantApplications
         Path lockPath = configLockPath.append(application.tenant().value()).append(application.serializedForm());
         curatorDatabase.create(lockPath);
@@ -362,14 +363,16 @@ public class CuratorDatabaseClient {
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
-    public Lock lock(ApplicationId application) {
-        return lock(application, defaultLockTimeout);
+    // TODO(mpolden): Remove when all config servers take the new lock
+    public Lock legacyLock(ApplicationId application) {
+        return legacyLock(application, defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock with the specified timeout for active nodes of this application */
-    public Lock lock(ApplicationId application, Duration timeout) {
+    // TODO(mpolden): Remove when all config servers take the new lock
+    public Lock legacyLock(ApplicationId application, Duration timeout) {
         try {
-            return lock(lockPath(application), timeout);
+            return lock(legacyLockPath(application), timeout);
         }
         catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
@@ -377,7 +380,7 @@ public class CuratorDatabaseClient {
     }
 
     /**
-     * Acquires the single cluster-global, re-entrant config lock for given application. Note that this is the same lock
+     * Acquires the single cluster-global, re-entrant lock for given application. Note that this is the same lock
      * that configserver itself takes when modifying applications.
      *
      * This lock must be taken when writes to paths owned by this class may happen on both the configserver and
@@ -390,12 +393,16 @@ public class CuratorDatabaseClient {
      * transaction. The config server then commits (writes) the transaction which may include operations that modify
      * data in paths owned by this class.
      */
-    public Lock lockConfig(ApplicationId application) {
+    public Lock lock(ApplicationId application, Duration timeout) {
         try {
-            return lock(configLockPath(application), defaultLockTimeout);
+            return lock(lockPath(application), timeout);
         } catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
+    }
+
+    public Lock lock(ApplicationId application) {
+        return lock(application, defaultLockTimeout);
     }
 
     // Applications -----------------------------------------------------------
