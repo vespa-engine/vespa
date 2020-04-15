@@ -35,7 +35,7 @@ public class DispatcherTest {
         q.getModel().setSearchPath("1/0"); // second node in first group
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (nodes, a) -> {
             assertEquals(1, nodes.size());
-            assertEquals(2, nodes.get(0).key());
+            assertEquals(1, nodes.get(0).key());
             return true;
         });
         Dispatcher disp = new Dispatcher(new ClusterMonitor(cl, false), cl, createDispatchConfig(), invokerFactory, new MockMetric());
@@ -92,6 +92,53 @@ public class DispatcherTest {
         }
     }
 
+    @Test
+    public void testGroup0IsSelected() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor(cluster, false), cluster, createDispatchConfig(), new MockInvokerFactory(cluster, (n, a) -> true), new MockMetric());
+        cluster.pingIterationCompleted();
+        assertEquals(0,
+                     dispatcher.getSearchInvoker(new Query(), null).distributionKey().get().longValue());
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    public void testGroup0IsSkippedWhenItIsBlockingFeed() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor(cluster, false), cluster, createDispatchConfig(), new MockInvokerFactory(cluster, (n, a) -> true), new MockMetric());
+        cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
+        cluster.pingIterationCompleted();
+        assertEquals("Blocking group is avoided",
+                     1,
+                     (dispatcher.getSearchInvoker(new Query(), null).distributionKey().get()).longValue());
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    public void testGroup0IsSelectedWhenMoreAreBlockingFeed() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor(cluster, false), cluster, createDispatchConfig(), new MockInvokerFactory(cluster, (n, a) -> true), new MockMetric());
+        cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
+        cluster.group(1).get().nodes().get(0).setBlockingWrites(true);
+        cluster.pingIterationCompleted();
+        assertEquals("Blocking group is used when multiple groups are blocking",
+                     0,
+                     dispatcher.getSearchInvoker(new Query(), null).distributionKey().get().longValue());
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    public void testGroup0IsSelectedWhenItIsBlockingFeedWhenNoOthers() {
+        SearchCluster cluster = new MockSearchCluster("1", 1, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor(cluster, false), cluster, createDispatchConfig(), new MockInvokerFactory(cluster, (n, a) -> true), new MockMetric());
+        cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
+        cluster.pingIterationCompleted();
+        assertEquals("Blocking group is used when there is no alternative",
+                     0,
+                     (dispatcher.getSearchInvoker(new Query(), null).distributionKey().get()).longValue());
+        dispatcher.deconstruct();
+    }
+
     interface FactoryStep {
         boolean returnInvoker(List<Node> nodes, boolean acceptIncompleteCoverage);
     }
@@ -119,7 +166,7 @@ public class DispatcherTest {
             boolean nonEmpty = events[step].returnInvoker(nodes, acceptIncompleteCoverage);
             step++;
             if (nonEmpty) {
-                return Optional.of(new MockInvoker(1));
+                return Optional.of(new MockInvoker(nodes.get(0).key()));
             } else {
                 return Optional.empty();
             }
@@ -150,4 +197,5 @@ public class DispatcherTest {
             return null;
         }
     }
+
 }

@@ -91,7 +91,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     public void addMonitoring(ClusterMonitor clusterMonitor) {
-        for (var group : orderedGroups) {
+        for (var group : orderedGroups()) {
             for (var node : group.nodes())
                 clusterMonitor.add(node, true);
         }
@@ -147,8 +147,8 @@ public class SearchCluster implements NodeManager<Node> {
 
     /** Returns the n'th (zero-indexed) group in the cluster if possible */
     public Optional<Group> group(int n) {
-        if (orderedGroups.size() > n) {
-            return Optional.of(orderedGroups.get(n));
+        if (orderedGroups().size() > n) {
+            return Optional.of(orderedGroups().get(n));
         } else {
             return Optional.empty();
         }
@@ -156,13 +156,13 @@ public class SearchCluster implements NodeManager<Node> {
 
     /** Returns the number of nodes per group - size()/groups.size() */
     public int groupSize() {
-        if (groups.size() == 0) return size();
-        return size() / groups.size();
+        if (groups().size() == 0) return size();
+        return size() / groups().size();
     }
 
     public int groupsWithSufficientCoverage() {
         int covered = 0;
-        for (Group g : orderedGroups) {
+        for (Group g : orderedGroups()) {
             if (g.hasSufficientCoverage()) {
                 covered++;
             }
@@ -178,7 +178,7 @@ public class SearchCluster implements NodeManager<Node> {
         if ( localCorpusDispatchTarget.isEmpty()) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
-        Group localSearchGroup = groups.get(localCorpusDispatchTarget.get().group());
+        Group localSearchGroup = groups().get(localCorpusDispatchTarget.get().group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
         // Only use direct dispatch if the local search node is not down
@@ -257,12 +257,15 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private static class PongCallback implements PongHandler {
+
         private final ClusterMonitor<Node> clusterMonitor;
         private final Node node;
+
         PongCallback(Node node, ClusterMonitor<Node> clusterMonitor) {
             this.node = node;
             this.clusterMonitor = clusterMonitor;
         }
+
         @Override
         public void handle(Pong pong) {
             if (pong.badResponse()) {
@@ -270,10 +273,12 @@ public class SearchCluster implements NodeManager<Node> {
             } else {
                 if (pong.activeDocuments().isPresent()) {
                     node.setActiveDocuments(pong.activeDocuments().get());
+                    node.setBlockingWrites(pong.isBlockingWrites());
                 }
                 clusterMonitor.responded(node);
             }
         }
+
     }
 
     /** Used by the cluster monitor to manage node status */
@@ -284,8 +289,8 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void pingIterationCompletedSingleGroup() {
-        Group group = groups.values().iterator().next();
-        group.aggregateActiveDocuments();
+        Group group = groups().values().iterator().next();
+        group.aggregateNodeValues();
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
@@ -295,21 +300,20 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void pingIterationCompletedMultipleGroups() {
-        int numGroups = orderedGroups.size();
+        int numGroups = orderedGroups().size();
         // Update active documents per group and use it to decide if the group should be active
-
         long[] activeDocumentsInGroup = new long[numGroups];
         long sumOfActiveDocuments = 0;
         for(int i = 0; i < numGroups; i++) {
-            Group group = orderedGroups.get(i);
-            group.aggregateActiveDocuments();
+            Group group = orderedGroups().get(i);
+            group.aggregateNodeValues();
             activeDocumentsInGroup[i] = group.getActiveDocuments();
             sumOfActiveDocuments += activeDocumentsInGroup[i];
         }
 
         boolean anyGroupsSufficientCoverage = false;
         for (int i = 0; i < numGroups; i++) {
-            Group group = orderedGroups.get(i);
+            Group group = orderedGroups().get(i);
             long activeDocuments = activeDocumentsInGroup[i];
             long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
             boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments, averageDocumentsInOtherGroups);
@@ -326,7 +330,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     @Override
     public void pingIterationCompleted() {
-        int numGroups = orderedGroups.size();
+        int numGroups = orderedGroups().size();
         if (numGroups == 1) {
             pingIterationCompletedSingleGroup();
         } else {
@@ -357,7 +361,7 @@ public class SearchCluster implements NodeManager<Node> {
      * Calculate whether a subset of nodes in a group has enough coverage
      */
     public boolean isPartialGroupCoverageSufficient(OptionalInt knownGroupId, List<Node> nodes) {
-        if (orderedGroups.size() == 1) {
+        if (orderedGroups().size() == 1) {
             boolean sufficient = nodes.size() >= groupSize() - dispatchConfig.maxNodesDownPerGroup();
             return sufficient;
         }
@@ -366,14 +370,14 @@ public class SearchCluster implements NodeManager<Node> {
             return false;
         }
         int groupId = knownGroupId.getAsInt();
-        Group group = groups.get(groupId);
+        Group group = groups().get(groupId);
         if (group == null) {
             return false;
         }
         int nodesInGroup = group.nodes().size();
         long sumOfActiveDocuments = 0;
         int otherGroups = 0;
-        for (Group g : orderedGroups) {
+        for (Group g : orderedGroups()) {
             if (g.id() != groupId) {
                 sumOfActiveDocuments += g.getActiveDocuments();
                 otherGroups++;

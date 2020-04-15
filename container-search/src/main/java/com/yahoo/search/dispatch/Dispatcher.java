@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
@@ -215,7 +216,7 @@ public class Dispatcher extends AbstractComponent {
         int covered = searchCluster.groupsWithSufficientCoverage();
         int groups = searchCluster.orderedGroups().size();
         int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
-        Set<Integer> rejected = null;
+        Set<Integer> rejected = rejectGroupBlockingFeed(searchCluster.orderedGroups());
         for (int i = 0; i < max; i++) {
             Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
             if (groupInCluster.isEmpty()) break; // No groups available
@@ -242,6 +243,23 @@ public class Dispatcher extends AbstractComponent {
             }
         }
         throw new IllegalStateException("No suitable groups to dispatch query. Rejected: " + rejected);
+    }
+
+    /**
+     * We want to avoid groups blocking feed because their data may be out of date.
+     * If there is a single group blocking feed, we want to reject it.
+     * If multiple groups are blocking feed we should use them anyway as we may not have remaining
+     * capacity otherwise. Same if there are no other groups.
+     *
+     * @return a modifiable set containing the single group to reject, or null otherwise
+     */
+    private Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
+        if (groups.size() == 1) return null;
+        List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).collect(Collectors.toList());
+        if (groupsRejectingFeed.size() != 1) return null;
+        Set<Integer> rejected = new HashSet<>();
+        rejected.add(groupsRejectingFeed.get(0).id());
+        return rejected;
     }
 
 }

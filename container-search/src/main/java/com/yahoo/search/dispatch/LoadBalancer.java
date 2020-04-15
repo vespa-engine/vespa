@@ -134,6 +134,7 @@ public class LoadBalancer {
     }
 
     private static class RoundRobinScheduler implements GroupScheduler {
+
         private int needle = 0;
         private final List<GroupStatus> scoreboard;
 
@@ -204,6 +205,7 @@ public class LoadBalancer {
     }
 
     static class AdaptiveScheduler implements GroupScheduler {
+
         private final Random random;
         private final List<GroupStatus> scoreboard;
 
@@ -251,4 +253,5 @@ public class LoadBalancer {
             return selectGroup(needle, false, rejectedGroups);
         }
     }
+
 }
