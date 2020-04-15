@@ -299,8 +299,6 @@ public class XmlReadingTestCase {
         String queryString="tiled?query=india&queryProfile=myprofile&source.common.intl=tw&source.common.mode=adv";
 
         Query query=new Query(HttpRequest.createTestRequest(queryString, Method.GET), registry.getComponent("myprofile"));
-        for (Map.Entry e : query.properties().listProperties().entrySet())
-            System.out.println(e);
         assertEquals("news",query.properties().listProperties().get("source.common.provider"));
         assertEquals("news",query.properties().get("source.common.provider"));
     }

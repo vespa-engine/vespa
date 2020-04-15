@@ -96,7 +96,7 @@ public class DimensionalValue<VALUE> {
         private VALUE value = null;
 
         /** The minimal binding this holds for */
-        private Binding binding = null;
+        private Binding binding;
 
         public Value(VALUE value, Binding binding) {
             this.value = value;
