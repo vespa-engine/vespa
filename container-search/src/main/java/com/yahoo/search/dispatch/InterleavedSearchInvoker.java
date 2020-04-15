@@ -81,7 +81,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
         int originalHits = query.getHits();
         int originalOffset = query.getOffset();
-        query.setHits(query.getHits() + query.getOffset());
+        query.setHits(searchCluster.estimateHitsToFetch(query.getHits() + query.getOffset(), invokers.size()));
         query.setOffset(0);
 
         for (SearchInvoker invoker : invokers) {

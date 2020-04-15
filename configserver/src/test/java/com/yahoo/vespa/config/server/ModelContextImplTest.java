@@ -84,6 +84,9 @@ public class ModelContextImplTest {
         assertEquals(Optional.empty(), context.wantedDockerImageRepository());
         assertEquals(new Version(7), context.modelVespaVersion());
         assertEquals(new Version(8), context.wantedNodeVespaVersion());
+        assertEquals(1.0, context.properties().defaultTermwiseLimit(), 0.0);
+        assertEquals(1.0, context.properties().defaultTopKProbability(), 0.0);
+        assertFalse(context.properties().useAdaptiveDispatch());
     }
 
 }

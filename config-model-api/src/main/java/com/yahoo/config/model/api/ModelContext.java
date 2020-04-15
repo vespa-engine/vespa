@@ -60,13 +60,20 @@ public interface ModelContext {
         // TODO: Only needed for LbServicesProducerTest
         default boolean useDedicatedNodeForLogserver() { return true; }
 
+        // TODO Revisit in May or June 2020
         boolean useAdaptiveDispatch();
 
         // TODO: Remove after April 2020
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
 
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
+
+        // TODO Revisit in May or June 2020
         double defaultTermwiseLimit();
+
+        // TODO Revisit in May or June 2020
+        double defaultTopKProbability();
+
         boolean useBucketSpaceMetric();
         default boolean useNewAthenzFilter() { return true; } // TODO bjorncs: Remove after end of April
 
