@@ -977,9 +977,9 @@ TEST("require that tensor peek can contain expressions") {
 }
 
 TEST("require that trivial tensor peek number expressions are converted to verbatim labels") {
-    TEST_DO(verify_parse("t{x:(5.7)}", "f(t)(t{x:\"6\"})"));
+    TEST_DO(verify_parse("t{x:(5.7)}", "f(t)(t{x:\"5\"})"));
     TEST_DO(verify_parse("t{x:(5.3)}", "f(t)(t{x:\"5\"})"));
-    TEST_DO(verify_parse("t{x:(-5.7)}", "f(t)(t{x:\"-6\"})"));
+    TEST_DO(verify_parse("t{x:(-5.7)}", "f(t)(t{x:\"-5\"})"));
     TEST_DO(verify_parse("t{x:(-5.3)}", "f(t)(t{x:\"-5\"})"));
 }
 
