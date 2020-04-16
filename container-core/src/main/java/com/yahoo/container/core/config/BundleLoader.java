@@ -9,15 +9,12 @@ import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleRevision;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -56,15 +53,15 @@ public class BundleLoader {
      * Installs the given set of bundles and returns the set of bundles that is no longer used
      * by the application, and should therefore be scheduled for uninstall.
      */
-    public synchronized Set<Bundle> use(List<FileReference> newBundles) {
+    public synchronized Set<Bundle> use(List<FileReference> newFileReferences) {
         // Must be done before allowing duplicates because allowed duplicates affect osgi.getCurrentBundles
-        Set<Bundle> bundlesToUninstall = getObsoleteBundles(newBundles);
+        Set<Bundle> bundlesToUninstall = getObsoleteBundles(newFileReferences);
 
-        Set<FileReference> obsoleteReferences = getObsoleteFileReferences(newBundles);
+        Set<FileReference> obsoleteReferences = getObsoleteFileReferences(newFileReferences);
         allowDuplicateBundles(obsoleteReferences);
         removeInactiveFileReferences(obsoleteReferences);
 
-        install(newBundles);
+        installBundles(newFileReferences);
         startBundles();
 
         bundlesToUninstall.removeAll(allActiveBundles());
@@ -125,7 +122,7 @@ public class BundleLoader {
         fileReferencesToRemove.forEach(reference2Bundles::remove);
     }
 
-    private void install(List<FileReference> references) {
+    private void installBundles(List<FileReference> references) {
         Set<FileReference> bundlesToInstall = new HashSet<>(references);
 
         // This is just an optimization, as installing a bundle with the same location id returns the already installed bundle.
