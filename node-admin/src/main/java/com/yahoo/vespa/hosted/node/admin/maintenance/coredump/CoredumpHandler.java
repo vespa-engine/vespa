@@ -2,6 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -51,6 +56,7 @@ public class CoredumpHandler {
     private final Path doneCoredumpsPath;
     private final String operatorGroupName;
     private final Supplier<String> coredumpIdSupplier;
+    private final Metrics metrics;
 
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
@@ -58,19 +64,20 @@ public class CoredumpHandler {
      * @param operatorGroupName name of the group that will be set as the owner of the processed coredump
      */
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName) {
+                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics) {
         this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-                operatorGroupName, () -> UUID.randomUUID().toString());
+                operatorGroupName, metrics, () -> UUID.randomUUID().toString());
     }
 
     CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Supplier<String> coredumpIdSupplier) {
+                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics, Supplier<String> coredumpIdSupplier) {
         this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.operatorGroupName = operatorGroupName;
+        this.metrics = metrics;
         this.coredumpIdSupplier = coredumpIdSupplier;
     }
 
@@ -88,6 +95,8 @@ public class CoredumpHandler {
         // Check if we have already started to process a core dump or we can enqueue a new core one
         getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
                 .ifPresent(path -> processAndReportSingleCoredump(context, path, nodeAttributesSupplier));
+
+        updateMetrics(context, containerCrashPathOnHost);
     }
 
     /** @return path to directory inside processing directory that contains a core dump file to process */
@@ -180,8 +189,9 @@ public class CoredumpHandler {
         new UnixPath(compressedCoreFile).setGroup(operatorGroupName).setPermissions("rw-r-----");
         Files.delete(coreFile);
 
-        Path newCoredumpDirectory = doneCoredumpsPath.resolve(coredumpDirectory.getFileName());
-        Files.move(coredumpDirectory, newCoredumpDirectory);
+        Path newCoredumpDirectory = doneCoredumpsPath.resolve(context.containerName().asString());
+        uncheck(() -> Files.createDirectories(newCoredumpDirectory));
+        Files.move(coredumpDirectory, newCoredumpDirectory.resolve(coredumpDirectory.getFileName()));
     }
 
     Path findCoredumpFileInProcessingDirectory(Path coredumpProccessingDirectory) {
@@ -194,4 +204,47 @@ public class CoredumpHandler {
                 .orElseThrow(() -> new IllegalStateException(
                         "No coredump file found in processing directory " + coredumpProccessingDirectory));
     }
+
+    void updateMetrics(NodeAgentContext context, Path containerCrashPathOnHost) {
+        Dimensions dimensions = generateDimensions(context);
+
+        // Unprocessed coredumps
+        int numberOfUnprocessedCoredumps = FileFinder.files(containerCrashPathOnHost)
+                .match(nameStartsWith(".").negate())
+                .list().size();
+
+        metrics.declareGauge(Metrics.APPLICATION_NODE, "coredumps.enqueued", dimensions, Metrics.DimensionType.PRETAGGED).sample(numberOfUnprocessedCoredumps);
+
+        // Processed coredumps
+        Path processedCoredumpsPath = doneCoredumpsPath.resolve(context.containerName().asString());
+        int numberOfProcessedCoredumps = FileFinder.files(processedCoredumpsPath)
+                .list().size();
+
+        metrics.declareGauge(Metrics.APPLICATION_NODE, "coredumps.processed", dimensions, Metrics.DimensionType.PRETAGGED).sample(numberOfProcessedCoredumps);
+    }
+
+    private Dimensions generateDimensions(NodeAgentContext context) {
+        NodeSpec node = context.node();
+        ApplicationId owner = node.owner().get();
+        NodeMembership membership = node.membership().get();
+        Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
+                .add("host", node.hostname())
+                .add("flavor", node.flavor())
+                .add("state", node.state().toString())
+                .add("zone", context.zone().getId().value())
+                .add("tenantName", owner.tenant().value())
+                .add("applicationName", owner.application().value())
+                .add("instanceName", owner.instance().value())
+                .add("app", String.join(".", owner.application().value(), owner.instance().value()))
+                .add("applicationId", owner.toFullString())
+                .add("clustertype", membership.clusterType())
+                .add("clusterid", membership.clusterId());
+        node.parentHostname().ifPresent(parent -> dimensionsBuilder.add("parentHostname", parent));
+        node.allowedToBeDown().ifPresent(allowed ->
+                dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
+        node.currentVespaVersion().ifPresent(vespaVersion -> dimensionsBuilder.add("vespaVersion", vespaVersion.toFullString()));
+
+        return dimensionsBuilder.build();
+    }
+
 }
