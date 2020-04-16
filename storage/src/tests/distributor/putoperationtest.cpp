@@ -182,7 +182,7 @@ TEST_F(PutOperationTest, do_not_send_inline_split_if_not_configured) {
               _sender.getCommands(true, true));
 }
 
-TEST_F(PutOperationTest, node_removed_on_reply) {
+TEST_F(PutOperationTest, return_success_if_op_acked_on_all_replicas_even_if_bucket_concurrently_removed_from_db) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     createAndSendSampleDocument(TIMEOUT);
 
@@ -194,14 +194,19 @@ TEST_F(PutOperationTest, node_removed_on_reply) {
 
     getExternalOperationHandler().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x1dd4)), 0);
 
+    // If we get an ACK from the backend nodes, the operation has been persisted OK.
+    // Even if the bucket has been removed from the DB in the meantime (usually would
+    // happen due to ownership changes) there is no reason for us to trigger a client
+    // resend in this scenario.
+    // If a node goes down (as opposed to distributor ownership transfer) and therefore
+    // has its replicas removed from the DB, this by definition has happened-after
+    // the ACK was sent from the node, so returning OK here still maintains the
+    // backend persistence property.
     sendReply(0);
     sendReply(1);
 
     ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
-              "timestamp 100) ReturnCode(BUCKET_DELETED, "
-              "Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000001dd4)) was deleted from nodes [0] "
-              "after message was sent but before it was done. "
-              "Sent to [0,1])",
+              "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
 

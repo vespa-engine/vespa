@@ -150,52 +150,6 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
 }
 
 void
-PersistenceMessageTrackerImpl::checkCopiesDeleted()
-{
-    if ( ! _reply) {
-        return;
-    }
-
-    // Don't check the buckets that have been remapped here, as we will
-    // create them.
-    const auto &bucketSpaceRepo(_manager.getBucketSpaceRepo());
-    for (const auto & entry : _bucketInfo) {
-        const auto &bucketSpace(bucketSpaceRepo.get(entry.first.getBucketSpace()));
-        const auto &bucketDb(bucketSpace.getBucketDatabase());
-        BucketDatabase::Entry dbentry = bucketDb.get(entry.first.getBucketId());
-
-        if (!dbentry.valid()) {
-            continue;
-        }
-
-        std::vector<uint16_t> missing;
-        std::vector<uint16_t> total;
-
-        for (const BucketCopy & bucketCopy : entry.second) {
-            if (dbentry->getNode(bucketCopy.getNode()) == nullptr) {
-                missing.push_back(bucketCopy.getNode());
-            }
-
-            total.push_back(bucketCopy.getNode());
-        }
-
-        if (!missing.empty()) {
-            std::ostringstream msg;
-            msg << entry.first.toString() << " was deleted from nodes ["
-                << commaSeparated(missing)
-                << "] after message was sent but before it was done. Sent to ["
-                << commaSeparated(total)
-                << "]";
-
-            LOG(debug, "%s", msg.str().c_str());
-            _reply->setResult(api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
-                                              msg.str()));
-            break;
-        }
-    }
-}
-
-void
 PersistenceMessageTrackerImpl::addBucketInfoFromReply(
         uint16_t node,
         const api::BucketInfoReply& reply)
@@ -334,7 +288,6 @@ PersistenceMessageTrackerImpl::updateFromReply(
     if (finished()) {
         bool doRevert(shouldRevert());
 
-        checkCopiesDeleted();
         updateDB();
 
         if (!hasSentReply()) {
@@ -345,7 +298,6 @@ PersistenceMessageTrackerImpl::updateFromReply(
         }
     } else if (canSendReplyEarly()) {
         LOG(debug, "Sending reply early because initial redundancy has been reached");
-        checkCopiesDeleted();
         sendReply(sender);
     }
 }
