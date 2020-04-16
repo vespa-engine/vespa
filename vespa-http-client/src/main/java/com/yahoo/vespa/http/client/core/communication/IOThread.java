@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -205,7 +204,7 @@ class IOThread implements Runnable, AutoCloseable {
             chunkSizeBytes += document.size();
             pendingSize++;
         }
-        if (log.isLoggable(Level.FINE))
+        if (log.isLoggable(Level.FINEST))
             log.finest("Chunk has " + docsForSendChunk.size() + " docs with a size " + chunkSizeBytes + " bytes");
         docsReceivedCounter.addAndGet(docsForSendChunk.size());
         return docsForSendChunk;
