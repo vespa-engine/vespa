@@ -39,12 +39,20 @@ char Logger::_hostname[1024] = { '\0'};
 char Logger::_serviceName[1024] = {'\0' };
 ControlFile *Logger::_controlFile = 0;
 
-static inline unsigned long gettid(const void *tid) {
-    return reinterpret_cast<uint64_t>(tid) >> 3;
-}
+namespace {
 
-static inline unsigned long gettid(unsigned long tid) {
-    return tid;
+class GetTid {
+public:
+    unsigned long operator()(const void *tid) const {
+        return reinterpret_cast<uint64_t>(tid) >> 3;
+    }
+    unsigned long operator()(unsigned long tid) const {
+        return tid;
+    }
+};
+
+GetTid gettid;
+
 }
 
 void
