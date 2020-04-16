@@ -63,7 +63,7 @@ public class Group {
     }
 
     void aggregateNodeValues() {
-        activeDocuments.set(nodes.stream().filter(Node::isWorking).mapToLong(Node::getActiveDocuments).sum());
+        activeDocuments.set(nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum());
         isBlockingWrites.set(nodes.stream().anyMatch(node -> node.isBlockingWrites()));
     }
 

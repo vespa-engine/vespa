@@ -40,7 +40,6 @@ public class MockSearchCluster extends SearchCluster {
             List<Node> nodes = new ArrayList<>();
             for (int node = 0; node < nodesPerGroup; node++) {
                 Node n = new Node(distributionKey, "host" + distributionKey, group);
-                n.setWorking(true);
                 nodes.add(n);
                 hostBuilder.put(n.hostname(), n);
                 distributionKey++;
