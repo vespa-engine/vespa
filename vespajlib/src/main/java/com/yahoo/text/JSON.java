@@ -64,7 +64,8 @@ public final class JSON {
      *
      * <p>When comparing two numbers of the two JSON strings, the result is only guaranteed to be
      * correct if (a) both are integers (without fraction and exponent) and each fits in a long, or
-     * (b) both are non-integers, are syntactically identical, and fits in a double.</p>
+     * (b) both are non-integers, fits in a double, and are syntactically identical. Examples
+     * of pairs that may not be equal: 1 and 1.0 (different types), 0.1 and 1e-1, 0.0 and 0.00.</p>
      *
      * @throws RuntimeException on invalid JSON
      */
