@@ -40,13 +40,13 @@ public class Telegraf extends AbstractComponent {
     public Telegraf(TelegrafRegistry telegrafRegistry, TelegrafConfig telegrafConfig) {
         this.telegrafRegistry = telegrafRegistry;
         telegrafRegistry.addInstance(this);
-        writeConfig(telegrafConfig, uncheck(() -> new FileWriter(TELEGRAF_CONFIG_PATH)));
+        writeConfig(telegrafConfig, uncheck(() -> new FileWriter(TELEGRAF_CONFIG_PATH)), TELEGRAF_LOG_FILE_PATH);
         restartTelegraf();
     }
 
-    protected static void writeConfig(TelegrafConfig telegrafConfig, Writer writer) {
+    protected static void writeConfig(TelegrafConfig telegrafConfig, Writer writer, String logFilePath) {
         VelocityContext context = new VelocityContext();
-        context.put("logFilePath", TELEGRAF_LOG_FILE_PATH);
+        context.put("logFilePath", logFilePath);
         context.put("intervalSeconds", telegrafConfig.intervalSeconds());
         context.put("cloudwatchPlugins", telegrafConfig.cloudWatch());
         context.put("protocol", telegrafConfig.isHostedVespa() ? "https" : "http");
