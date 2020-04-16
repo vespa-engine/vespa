@@ -164,7 +164,11 @@ public class SystemFlagsDataArchive {
             String normalizedRawData = removeCommentsFromJson(rawData);
             if (!JSON.equals(serializedData, normalizedRawData)) {
                 throw new IllegalArgumentException(filePath + " contains unknown non-comment fields: " +
-                        "was deserialized to " + serializedData);
+                        "after removing any comment fields the JSON is:\n  " +
+                        normalizedRawData +
+                        "\nbut deserializing this ended up with a JSON that are missing some of the fields:\n  " +
+                        serializedData +
+                        "\nSee https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax");
             }
         }
         builder.addFile(filename, flagData);

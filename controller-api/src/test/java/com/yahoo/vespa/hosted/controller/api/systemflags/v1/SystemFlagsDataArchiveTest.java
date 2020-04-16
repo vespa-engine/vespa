@@ -109,7 +109,12 @@ public class SystemFlagsDataArchiveTest {
     @Test
     public void throws_on_unknown_field() {
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: was deserialized to {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}");
+        expectedException.expectMessage(
+                "flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: after removing any comment fields the JSON is:\n" +
+                "  {\"id\":\"my-test-flag\",\"rules\":[{\"condition\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"foo.com\"]}],\"value\":\"default\"}]}\n" +
+                "but deserializing this ended up with a JSON that are missing some of the fields:\n" +
+                "  {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}\n" +
+                "See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax");
         SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
     }
 
