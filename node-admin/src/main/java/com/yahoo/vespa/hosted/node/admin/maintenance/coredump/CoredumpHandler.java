@@ -92,11 +92,11 @@ public class CoredumpHandler {
                 .maxDepth(1)
                 .deleteRecursively(context);
 
+        updateMetrics(context, containerCrashPathOnHost);
+
         // Check if we have already started to process a core dump or we can enqueue a new core one
         getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
                 .ifPresent(path -> processAndReportSingleCoredump(context, path, nodeAttributesSupplier));
-
-        updateMetrics(context, containerCrashPathOnHost);
     }
 
     /** @return path to directory inside processing directory that contains a core dump file to process */
