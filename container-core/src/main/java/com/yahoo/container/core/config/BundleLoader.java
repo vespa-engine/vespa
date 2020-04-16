@@ -160,9 +160,8 @@ public class BundleLoader {
     /**
      * Cleans up the map of active file references
      */
-    private void removeInactiveFileReferences(List<FileReference> newReferences) {
+    private void removeInactiveFileReferences(Set<FileReference> fileReferencesToRemove) {
         // Clean up the map of active bundles
-        Set<FileReference> fileReferencesToRemove = getObsoleteFileReferences(newReferences);
         fileReferencesToRemove.forEach(reference2Bundles::remove);
     }
 
@@ -174,9 +173,7 @@ public class BundleLoader {
      * bundles installed on the node, and not transferred via file distribution).
      * Such bundles will never have duplicates because they always have the same location id.
      */
-    private void allowDuplicateBundles(List<FileReference> newReferences) {
-        Set<FileReference> obsoleteReferences = getObsoleteFileReferences(newReferences);
-
+    private void allowDuplicateBundles(Set<FileReference> obsoleteReferences) {
         // The bundle at index 0 for each file reference always corresponds to the bundle at the file reference location
         Set<Bundle> allowedDuplicates = obsoleteReferences.stream()
                 .filter(reference -> ! isDiskBundle(reference))
@@ -207,8 +204,9 @@ public class BundleLoader {
         // Must be done before allowing duplicates because allowed duplicates affect osgi.getCurrentBundles
         Set<Bundle> bundlesToUninstall = getObsoleteBundles(newBundles);
 
-        allowDuplicateBundles(newBundles);
-        removeInactiveFileReferences(newBundles);
+        Set<FileReference> obsoleteReferences = getObsoleteFileReferences(newBundles);
+        allowDuplicateBundles(obsoleteReferences);
+        removeInactiveFileReferences(obsoleteReferences);
 
         install(newBundles);
         startBundles();
