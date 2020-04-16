@@ -204,6 +204,33 @@ public class InterleavedSearchInvokerTest {
     private static final List<Double> A5Aux = Arrays.asList(-1.0,11.0,8.5,7.5,-7.0,3.0,2.0);
     private static final List<Double> B5Aux = Arrays.asList(9.0,8.0,-3.0,7.0,6.0,1.0, -1.0);
 
+    private void validateThatTopKProbabilityOverrideTakesEffect(Double topKProbability, int expectedK) throws IOException {
+        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5);
+        query.setHits(8);
+        query.properties().set(Dispatcher.topKProbability, topKProbability);
+        SearchInvoker [] invokers = invoker.invokers().toArray(new SearchInvoker[0]);
+        Result result = invoker.search(query, null);
+        assertEquals(2, invokers.length);
+        assertEquals(expectedK, ((MockInvoker)invokers[0]).hitsRequested);
+        assertEquals(8, result.hits().size());
+        assertEquals(11.0, result.hits().get(0).getRelevance().getScore(), DELTA);
+        assertEquals(9.0, result.hits().get(1).getRelevance().getScore(), DELTA);
+        assertEquals(8.5, result.hits().get(2).getRelevance().getScore(), DELTA);
+        assertEquals(8.0, result.hits().get(3).getRelevance().getScore(), DELTA);
+        assertEquals(7.5, result.hits().get(4).getRelevance().getScore(), DELTA);
+        assertEquals(7.0, result.hits().get(5).getRelevance().getScore(), DELTA);
+        assertEquals(6.0, result.hits().get(6).getRelevance().getScore(), DELTA);
+        assertEquals(3.0, result.hits().get(7).getRelevance().getScore(), DELTA);
+        assertEquals(0, result.getQuery().getOffset());
+        assertEquals(8, result.getQuery().getHits());
+    }
+
+    @Test
+    public void requireThatTopKProbabilityOverrideTakesEffect() throws IOException {
+        validateThatTopKProbabilityOverrideTakesEffect(null, 8);
+        validateThatTopKProbabilityOverrideTakesEffect(0.8, 6);
+    }
+
     @Test
     public void requireThatMergeOfConcreteHitsObeySorting() throws IOException {
         InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5);

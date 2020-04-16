@@ -51,6 +51,7 @@ public class Dispatcher extends AbstractComponent {
     public static final String DISPATCH = "dispatch";
     private static final String INTERNAL = "internal";
     private static final String PROTOBUF = "protobuf";
+    private static final String TOP_K_PROBABILITY = "topKProbability";
 
     private static final String INTERNAL_METRIC = "dispatch_internal";
 
@@ -58,6 +59,9 @@ public class Dispatcher extends AbstractComponent {
 
     /** If enabled, search queries will use protobuf rpc */
     public static final CompoundName dispatchProtobuf = CompoundName.fromComponents(DISPATCH, PROTOBUF);
+
+    /** If set will control computation of how many hits will be fetched from each partition.*/
+    public static final CompoundName topKProbability = CompoundName.fromComponents(DISPATCH, TOP_K_PROBABILITY);
 
     /** A model of the search cluster this dispatches to */
     private final SearchCluster searchCluster;
@@ -80,6 +84,7 @@ public class Dispatcher extends AbstractComponent {
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(INTERNAL, FieldType.booleanType));
         argumentType.addField(new FieldDescription(PROTOBUF, FieldType.booleanType));
+        argumentType.addField(new FieldDescription(TOP_K_PROBABILITY, FieldType.doubleType));
         argumentType.freeze();
     }
 

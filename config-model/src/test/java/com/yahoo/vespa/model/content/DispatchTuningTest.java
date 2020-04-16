@@ -19,11 +19,13 @@ public class DispatchTuningTest {
                 .setDispatchPolicy("round-robin")
                 .setMinGroupCoverage(7.5)
                 .setMinActiveDocsCoverage(12.5)
+                .setTopKProbability(18.3)
                 .build();
         assertEquals(69, dispatch.getMaxHitsPerPartition().intValue());
         assertEquals(7.5, dispatch.getMinGroupCoverage().doubleValue(), 0.0);
         assertEquals(12.5, dispatch.getMinActiveDocsCoverage().doubleValue(), 0.0);
         assertTrue(DispatchTuning.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
+        assertEquals(18.3, dispatch.getTopkProbability(), 0.0);
     }
     @Test
     public void requireThatRandomDispatchWork() {
@@ -52,6 +54,7 @@ public class DispatchTuningTest {
         assertNull(dispatch.getDispatchPolicy());
         assertNull(dispatch.getMinActiveDocsCoverage());
         assertNull(dispatch.getMinGroupCoverage());
+        assertNull(dispatch.getTopkProbability());
     }
 
 }

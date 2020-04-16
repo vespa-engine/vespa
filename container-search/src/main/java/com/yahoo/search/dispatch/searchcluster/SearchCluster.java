@@ -10,6 +10,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
+import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.LinkedHashMap;
@@ -38,6 +39,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final ImmutableList<Group> orderedGroups;
     private final VipStatus vipStatus;
     private final PingFactory pingFactory;
+    private final TopKEstimator hitEstimator;
     private long nextLogTime = 0;
 
     /**
@@ -76,6 +78,7 @@ public class SearchCluster implements NodeManager<Node> {
         for (Node node : nodes)
             nodesByHostBuilder.put(node.hostname(), node);
         this.nodesByHost = nodesByHostBuilder.build();
+        hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability());
 
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(),
                                                                        size,
@@ -238,6 +241,13 @@ public class SearchCluster implements NodeManager<Node> {
             vipStatus.addToRotation(clusterId);
         else
             vipStatus.removeFromRotation(clusterId);
+    }
+
+    public int estimateHitsToFetch(int wantedHits, int numPartitions) {
+        return hitEstimator.estimateK(wantedHits, numPartitions);
+    }
+    public int estimateHitsToFetch(int wantedHits, int numPartitions, double topKProbability) {
+        return hitEstimator.estimateK(wantedHits, numPartitions, topKProbability);
     }
 
     public boolean hasInformationAboutAllNodes() {

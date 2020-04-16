@@ -81,7 +81,12 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
         int originalHits = query.getHits();
         int originalOffset = query.getOffset();
-        query.setHits(query.getHits() + query.getOffset());
+        int neededHits = originalHits + originalOffset;
+        Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
+        int q = (topkProbabilityOverrride != null)
+                ? searchCluster.estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
+                : searchCluster.estimateHitsToFetch(neededHits, invokers.size());
+        query.setHits(q);
         query.setOffset(0);
 
         for (SearchInvoker invoker : invokers) {
@@ -321,4 +326,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     protected LinkedBlockingQueue<SearchInvoker> newQueue() {
         return new LinkedBlockingQueue<>();
     }
+
+    // For testing
+    Collection<SearchInvoker> invokers() { return invokers; }
 }

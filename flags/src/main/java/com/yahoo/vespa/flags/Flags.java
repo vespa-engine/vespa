@@ -148,7 +148,13 @@ public class Flags {
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
-            "Node resource memory in Gb for admin cluster nodes",
+            "Default limit for when to apply termwise query evaluation",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundDoubleFlag DEFAULT_TOP_K_PROBABILITY = defineDoubleFlag(
+            "default-top-k-probability", 1.0,
+            "Default probability that you will get the globally top K documents when merging many partitions.",
             "Takes effect at redeployment",
             APPLICATION_ID);
 

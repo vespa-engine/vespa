@@ -8,6 +8,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.MockSearchCluster;
+import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.search.result.ErrorMessage;
 import org.junit.Test;
 

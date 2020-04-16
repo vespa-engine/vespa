@@ -146,6 +146,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useAdaptiveDispatch;
+        private final double defaultTopKprobability;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final boolean useBucketSpaceMetric;
@@ -181,6 +182,8 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            defaultTopKprobability = Flags.DEFAULT_TOP_K_PROBABILITY.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useBucketSpaceMetric = Flags.USE_BUCKET_SPACE_METRIC.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -237,6 +240,11 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
+
+        @Override
+        public double defaultTopKProbability() {
+            return defaultTopKprobability;
+        }
 
         @Override
         public boolean useBucketSpaceMetric() { return useBucketSpaceMetric; }
