@@ -35,7 +35,8 @@ public class TelegrafTest {
                 .isHostedVespa(true)
                 .build();
         StringWriter stringWriter = new StringWriter();
-        Telegraf.writeConfig(telegrafConfig, stringWriter);
+        String logFilePath = "/path/to/logs/telegraf/telegraf.log";
+        Telegraf.writeConfig(telegrafConfig, stringWriter, logFilePath);
         String expectedConfig = TestUtil.getFileContents( "telegraf-config-with-two-cloudwatch-plugins.txt");
         assertEquals(expectedConfig, stringWriter.toString());
     }
