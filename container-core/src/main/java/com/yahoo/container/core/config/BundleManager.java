@@ -27,7 +27,7 @@ import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX
  * @author Tony Vaagenes
  * @author gjoranv
  */
-public class BundleLoader {
+public class BundleManager {
 
     /* Map of file refs of active bundles (not scheduled for uninstall) to a list of all bundles that were installed
      * (pre-install directive) by the bundle pointed to by the file ref (including itself).
@@ -39,13 +39,13 @@ public class BundleLoader {
      */
     private final Map<FileReference, List<Bundle>> reference2Bundles = new LinkedHashMap<>();
 
-    private final Logger log = Logger.getLogger(BundleLoader.class.getName());
+    private final Logger log = Logger.getLogger(BundleManager.class.getName());
     private final Osgi osgi;
 
     // A custom bundle installer for non-disk bundles, to be used for testing
     private BundleInstaller customBundleInstaller = null;
 
-    public BundleLoader(Osgi osgi) {
+    public BundleManager(Osgi osgi) {
         this.osgi = osgi;
     }
 
@@ -128,7 +128,7 @@ public class BundleLoader {
         // This is just an optimization, as installing a bundle with the same location id returns the already installed bundle.
         bundlesToInstall.removeAll(reference2Bundles.keySet());
 
-        PredicateSplit<FileReference> bundlesToInstall_isDisk = partition(bundlesToInstall, BundleLoader::isDiskBundle);
+        PredicateSplit<FileReference> bundlesToInstall_isDisk = partition(bundlesToInstall, BundleManager::isDiskBundle);
         installBundlesFromDisk(bundlesToInstall_isDisk.trueValues);
         installBundlesFromFileDistribution(bundlesToInstall_isDisk.falseValues);
 

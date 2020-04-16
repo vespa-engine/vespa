@@ -9,7 +9,6 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.FileReference;
-import com.yahoo.container.core.config.testutil.MockOsgiWrapper;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.Container;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
@@ -82,7 +81,7 @@ public class HandlersConfigurerDi {
                                 OsgiFramework osgiFramework) {
 
         this(subscriberFactory, vespaContainer, configId, deconstructor, discInjector,
-             new ContainerAndDiOsgi(osgiFramework, new BundleLoader(new OsgiImpl(osgiFramework))));
+             new ContainerAndDiOsgi(osgiFramework, new BundleManager(new OsgiImpl(osgiFramework))));
     }
 
     // Only public for testing
@@ -102,9 +101,9 @@ public class HandlersConfigurerDi {
     private static class ContainerAndDiOsgi extends OsgiImpl implements OsgiWrapper {
 
         private final OsgiFramework osgiFramework;
-        private final BundleLoader bundleLoader;
+        private final BundleManager bundleLoader;
 
-        public ContainerAndDiOsgi(OsgiFramework osgiFramework, BundleLoader bundleLoader) {
+        public ContainerAndDiOsgi(OsgiFramework osgiFramework, BundleManager bundleLoader) {
             super(osgiFramework);
             this.osgiFramework = osgiFramework;
             this.bundleLoader = bundleLoader;
