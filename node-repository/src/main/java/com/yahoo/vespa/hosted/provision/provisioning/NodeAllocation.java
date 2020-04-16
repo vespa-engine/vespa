@@ -229,12 +229,8 @@ class NodeAllocation {
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.flavor().resources())));
 
         if (! wantToRetire) {
-            if (resize && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired())) {
-                NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
-                node = node.with(new Flavor(requestedNodes.resources().get()
-                        .with(hostResources.diskSpeed())
-                        .with(hostResources.storageType())));
-            }
+            if (resize && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
+                node = resize(node);
 
             if (node.state() != Node.State.active) // reactivated node - make sure its not retired
                 node = node.unretire();
@@ -254,6 +250,13 @@ class NodeAllocation {
         highestIndex.set(Math.max(highestIndex.get(), node.allocation().get().membership().index()));
         nodes.add(prioritizableNode);
         return node;
+    }
+
+    private Node resize(Node node) {
+        NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
+        return node.with(new Flavor(requestedNodes.resources().get()
+                                                  .with(hostResources.diskSpeed())
+                                                  .with(hostResources.storageType())));
     }
 
     private Node setCluster(ClusterSpec cluster, Node node) {
@@ -321,7 +324,9 @@ class NodeAllocation {
         }
         else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
             for (PrioritizableNode node : byIncreasingIndex(nodes)) {
-                if ( node.node.allocation().get().membership().retired() && hasCompatibleFlavor(node)) {
+                if ( node.node.allocation().get().membership().retired() && ( hasCompatibleFlavor(node) || node.isResizable) ) {
+                    if (node.isResizable)
+                        node.node = resize(node.node);
                     node.node = node.node.unretire();
                     if (++deltaRetiredCount == 0) break;
                 }
