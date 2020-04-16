@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
@@ -40,7 +41,7 @@ public class ZKApplicationPackageTest {
     private static final AllocatedHosts ALLOCATED_HOSTS = AllocatedHosts.withHosts(
             Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty(),
                                                Optional.of(Version.fromString("6.0.1")), Optional.empty(),
-                                               Optional.empty(), Optional.of("docker repo"))));
+                                               Optional.empty(), Optional.of(DockerImage.fromString("docker repo")))));
 
     private ConfigCurator configCurator;
 

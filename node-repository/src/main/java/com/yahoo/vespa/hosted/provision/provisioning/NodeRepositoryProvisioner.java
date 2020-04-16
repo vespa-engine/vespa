@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -23,7 +22,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -206,7 +204,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    node.status().vespaVersion(),
                                    nodeAllocation.networkPorts(),
                                    requestedResources == NodeResources.unspecified ? Optional.empty() : Optional.of(requestedResources),
-                                   node.status().dockerImage().map(DockerImage::repository)));
+                                   node.status().dockerImage()));
             if (nodeAllocation.networkPorts().isPresent()) {
                 log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " has port allocations");
             }

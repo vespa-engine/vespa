@@ -4,13 +4,13 @@ package com.yahoo.config.provision.serialization;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -43,7 +43,7 @@ public class AllocatedHostsSerializerTest {
                                Optional.of(ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                                   Optional.of("docker.foo.com:4443/vespa/bar"))),
                                Optional.empty(), Optional.empty(), Optional.empty(),
-                               Optional.of("docker.foo.com:4443/vespa/bar")));
+                               Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))));
         hosts.add(new HostSpec("flavor-from-resources-1",
                                Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4, 1))));
         hosts.add(new HostSpec("flavor-from-resources-2",
