@@ -231,20 +231,17 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                                                                 new DaemonThreadFactory("redeploy apps"));
         // Keep track of deployment per application
         Map<ApplicationId, Future<?>> futures = new HashMap<>();
+        applicationIds.forEach(applicationId -> futures.put(applicationId, executor.submit(() -> {
+            applicationRepository.deployFromLocalActive(applicationId, true /* bootstrap */)
+                    .ifPresent(Deployment::activate);
+        })));
+
         Set<ApplicationId> failedDeployments = new HashSet<>();
-
-        for (ApplicationId appId : applicationIds) {
-            Optional<Deployment> deploymentOptional = applicationRepository.deployFromLocalActive(appId, true /* bootstrap */);
-            if (deploymentOptional.isEmpty()) continue;
-
-            futures.put(appId, executor.submit(deploymentOptional.get()::activate));
-        }
-
         for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
-            ApplicationId app = f.getKey();
             try {
                 f.getValue().get();
             } catch (ExecutionException e) {
+                ApplicationId app = f.getKey();
                 if (e.getCause() instanceof TransientException) {
                     log.log(LogLevel.INFO, "Redeploying " + app +
                             " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));

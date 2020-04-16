@@ -171,14 +171,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** Exposes the session of this for testing only */
     public LocalSession session() { return session; }
 
-    private long validateSessionStatus(LocalSession localSession) {
+    private void validateSessionStatus(LocalSession localSession) {
         long sessionId = localSession.getSessionId();
         if (Session.Status.NEW.equals(localSession.getStatus())) {
             throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is not prepared");
         } else if (Session.Status.ACTIVATE.equals(localSession.getStatus())) {
             throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is already active");
         }
-        return sessionId;
     }
 
     private Transaction deactivateCurrentActivateNew(LocalSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
