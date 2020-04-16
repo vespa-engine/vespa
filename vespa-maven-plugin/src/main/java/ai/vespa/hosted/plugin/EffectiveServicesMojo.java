@@ -2,6 +2,7 @@
 package ai.vespa.hosted.plugin;
 
 import com.yahoo.config.application.XmlPreProcessor;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -48,7 +49,8 @@ public class EffectiveServicesMojo extends AbstractVespaDeploymentMojo {
     }
 
     static String effectiveServices(File servicesFile, ZoneId zone) throws Exception {
-        Document processedServicesXml = new XmlPreProcessor(servicesFile.getParentFile(), servicesFile, zone.environment(), zone.region()).run();
+        Document processedServicesXml = new XmlPreProcessor(servicesFile.getParentFile(), servicesFile,
+                                                            InstanceName.from("default"), zone.environment(), zone.region()).run();
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         Writer writer = new StringWriter();
