@@ -13,7 +13,7 @@ class ElasticSearchParser:
     document_file = None
     mapping_file = None
     application_name = None
-    search_definitions = {}
+    schemas = {}
     path = ""
     _all = True
     all_mappings = {}
@@ -40,10 +40,10 @@ class ElasticSearchParser:
             print(" > Folder '" + self.path + "' already existed")
 
         try:
-            os.makedirs(self.path + "searchdefinitions/", 0o777)
-            print(" > Created folder '" + self.path + "searchdefinitions/" + "'")
+            os.makedirs(self.path + "schemas/", 0o777)
+            print(" > Created folder '" + self.path + "schemas/" + "'")
         except OSError:
-            print(" > Folder '" + self.path + "searchdefinitions/" + "' already existed")
+            print(" > Folder '" + self.path + "schemas/" + "' already existed")
 
         self.parse()
         self.createServices_xml()
@@ -62,17 +62,17 @@ class ElasticSearchParser:
                 _all_enabled = data[index]["mappings"][type]["_all"]["enabled"]
                 if not _all_enabled:
                     self._all = False
-                    print(" > Not all fields in the document type '" + type + "' are searchable. Edit " + self.path + "searchdefinitions/" + type + ".sd to control which fields are searchable")
+                    print(" > Not all fields in the document type '" + type + "' are searchable. Edit " + self.path + "schemas/" + type + ".sd to control which fields are searchable")
             except KeyError:
                 print(" > All fields in the document type '" + type + "' is searchable")
 
             self.walk(mappings, type_mapping, "properties")
 
         unparsed_mapping_file.close()
-        if type not in self.search_definitions:
-            self.search_definitions[type] = True
+        if type not in self.schemas:
+            self.schemas[type] = True
             self.types.append(type)
-            self.createSearchDefinition(type, type_mapping)
+            self.createSchema(type, type_mapping)
 
         # Adding mapping to global map with mappings
         self.all_mappings[type] = type_mapping
@@ -111,8 +111,8 @@ class ElasticSearchParser:
         unparsed_document_file.close()
         print(" > Parsed all documents '" + ", ".join(self.types) + "' at '" + file_path + "'")
 
-    def createSearchDefinition(self, type, type_mapping):
-        file_path = self.path + "searchdefinitions/" + type + ".sd"
+    def createSchema(self, type, type_mapping):
+        file_path = self.path + "schemas/" + type + ".sd"
         new_sd = open(file_path, "w")
         new_sd.write("search " + type + " {\n")
         new_sd.write("    document " + type + " {\n")
@@ -129,7 +129,7 @@ class ElasticSearchParser:
         new_sd.write("    }\n")
         new_sd.write("}\n")
         new_sd.close()
-        print(" > Created search definition for '" + type + "' at '" + file_path + "'")
+        print(" > Created schema for '" + type + "' at '" + file_path + "'")
 
     def createServices_xml(self):
         file_path = self.path + "services.xml"
