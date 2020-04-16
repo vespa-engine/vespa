@@ -72,6 +72,9 @@ public interface ModelContext {
         double defaultTermwiseLimit();
 
         // TODO Revisit in May or June 2020
+        double defaultSoftStartSeconds();
+
+        // TODO Revisit in May or June 2020
         double defaultTopKProbability();
 
         boolean useBucketSpaceMetric();

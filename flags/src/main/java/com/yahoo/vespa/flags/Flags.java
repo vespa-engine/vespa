@@ -152,6 +152,12 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundDoubleFlag DEFAULT_SOFT_START_SECONDS = defineDoubleFlag(
+            "default-soft-start-seconds", 0.0,
+            "Default number of seconds that a soft start shall use",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     public static final UnboundDoubleFlag DEFAULT_TOP_K_PROBABILITY = defineDoubleFlag(
             "default-top-k-probability", 1.0,
             "Default probability that you will get the globally top K documents when merging many partitions.",

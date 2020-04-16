@@ -11,8 +11,7 @@ import com.yahoo.vespa.model.container.ContainerCluster;
  *
  * @author gjoranv
  */
-public class ClusterControllerContainerCluster extends ContainerCluster<ClusterControllerContainer> implements
-        ThreadpoolConfig.Producer
+public class ClusterControllerContainerCluster extends ContainerCluster<ClusterControllerContainer>
 {
     public ClusterControllerContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);

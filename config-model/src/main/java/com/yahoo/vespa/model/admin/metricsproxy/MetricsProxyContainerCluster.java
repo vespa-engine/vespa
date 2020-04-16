@@ -71,7 +71,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         ConsumersConfig.Producer,
         MonitoringConfig.Producer,
         TelegrafConfig.Producer,
-        ThreadpoolConfig.Producer,
         MetricsNodesConfig.Producer
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());

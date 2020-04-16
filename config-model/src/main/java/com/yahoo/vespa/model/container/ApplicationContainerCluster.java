@@ -10,6 +10,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
@@ -68,6 +69,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
+    private final double softStartSeconds;
 
     private Integer memoryPercentage = null;
 
@@ -84,6 +86,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
         addMetricsV2Handler();
         addTestrunnerComponentsIfTester(deployState);
+        softStartSeconds = deployState.getProperties().defaultSoftStartSeconds();
     }
 
     @Override
@@ -246,6 +249,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                         serviceId,
                         ComponentSpecification.fromString(MbusServerProvider.class.getName()),
                         null))));
+    }
+
+    @Override
+    public void getConfig(ThreadpoolConfig.Builder builder) {
+        builder.softStartSeconds(softStartSeconds);
     }
 
     public static class MbusParams {

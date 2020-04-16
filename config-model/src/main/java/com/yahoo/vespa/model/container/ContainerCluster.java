@@ -19,6 +19,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
@@ -99,7 +100,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer {
+        ConfigserverConfig.Producer,
+        ThreadpoolConfig.Producer
+{
 
     /**
      * URI prefix used for internal, usually programmatic, APIs. URIs using this
