@@ -81,7 +81,6 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     private static final String PARTIAL_UPDATE_ASSIGN = "assign";
     private static final String PARTIAL_UPDATE_ADD = "add";
     private static final String PARTIAL_UPDATE_REMOVE = "remove";
-    private static boolean printId;
 
     private static Map<String, String> mapPartialOperationMap;
 
@@ -101,6 +100,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         partialOperationMap.put(UPDATE_MAP_FIELDS, PARTIAL_UPDATE_ASSIGN);
     }
 
+    private final boolean verbose;
     private final String template;
     private final Operation operation;
     private final Properties properties;
@@ -115,7 +115,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         properties = VespaConfiguration.loadProperties(params);
         template = properties.getProperty(PROPERTY_ID_TEMPLATE);
         operation = Operation.fromString(properties.getProperty(PROPERTY_OPERATION, "put"));
-        printId = Boolean.parseBoolean(properties.getProperty(PROPERTY_VERBOSE, "false"));
+        verbose = Boolean.parseBoolean(properties.getProperty(PROPERTY_VERBOSE, "false"));
     }
 
     @Override
@@ -148,7 +148,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             Schema inputSchema = getInputSchema();
             Map<String, Object> fields = TupleTools.tupleMap(inputSchema, tuple);
             String docId = TupleTools.toString(fields, template);
-            if (printId) {
+            if (verbose) {
                 System.out.println("Processing docId: "+ docId);
             }
             // create json
