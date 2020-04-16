@@ -89,17 +89,10 @@ public class BundleLoader {
     }
 
     private void installBundleFromDisk(FileReference reference) {
-        assert(reference.value().startsWith(DISK_BUNDLE_PREFIX));
-        String referenceFileName = reference.value().substring(DISK_BUNDLE_PREFIX.length());
         log.info("Installing bundle from disk with reference '" + reference.value() + "'");
 
-        File file = new File(referenceFileName);
-        if ( ! file.exists()) {
-            throw new IllegalArgumentException("Reference '" + reference.value() + "' not found on disk.");
-        }
-
-        List<Bundle> bundles = osgi.install(file.getAbsolutePath());
-
+        var bundleInstaller = new DiskBundleInstaller();
+        List<Bundle> bundles = bundleInstaller.installBundles(reference, osgi);
         reference2Bundles.put(reference, bundles);
     }
 
@@ -107,18 +100,14 @@ public class BundleLoader {
         for (FileReference reference : bundlesToInstall) {
             try {
                 log.info("Installing bundle with reference '" + reference.value() + "'");
-                List<Bundle> bundles = obtainBundles(reference, fileAcquirer);
+                var bundleInstaller = new FileAcquirerBundleInstaller(fileAcquirer);
+                List<Bundle> bundles = bundleInstaller.installBundles(reference, osgi);
                 reference2Bundles.put(reference, bundles);
             }
             catch(Exception e) {
                 throw new RuntimeException("Could not install bundle '" + reference + "'", e);
             }
         }
-    }
-
-    private List<Bundle> obtainBundles(FileReference reference, FileAcquirer fileAcquirer) throws InterruptedException {
-        File file = fileAcquirer.waitFor(reference, 7, TimeUnit.DAYS);
-        return osgi.install(file.getAbsolutePath());
     }
 
     /**
