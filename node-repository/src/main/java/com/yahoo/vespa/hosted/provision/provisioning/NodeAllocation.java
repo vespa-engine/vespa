@@ -229,7 +229,7 @@ class NodeAllocation {
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.flavor().resources())));
 
         if (! wantToRetire) {
-            if (resize) {
+            if (resize && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired())) {
                 NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
                 node = node.with(new Flavor(requestedNodes.resources().get()
                         .with(hostResources.diskSpeed())
