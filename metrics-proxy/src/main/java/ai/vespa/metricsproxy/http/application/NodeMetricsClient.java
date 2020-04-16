@@ -13,9 +13,11 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import static com.yahoo.log.LogLevel.DEBUG;
@@ -32,6 +34,7 @@ import static java.util.Collections.emptyList;
  * @author gjoranv
  */
 public class NodeMetricsClient {
+
     private static final Logger log = Logger.getLogger(NodeMetricsClient.class.getName());
 
     static final Duration METRICS_TTL = Duration.ofSeconds(30);
@@ -40,7 +43,7 @@ public class NodeMetricsClient {
     private final HttpClient httpClient;
     private final Clock clock;
 
-    private final Map<ConsumerId, Snapshot> snapshots = new HashMap<>();
+    private final Map<ConsumerId, Snapshot> snapshots = new ConcurrentHashMap<>();
     private long snapshotsRetrieved = 0;
 
     NodeMetricsClient(HttpClient httpClient, Node node, Clock clock) {
@@ -79,7 +82,6 @@ public class NodeMetricsClient {
     long snapshotsRetrieved() {
         return snapshotsRetrieved;
     }
-
 
     /**
      * Convenience class for storing a metrics snapshot with its timestamp.

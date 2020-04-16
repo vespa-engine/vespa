@@ -5,12 +5,9 @@
 #include "i_resource_write_filter.h"
 #include "persistence_handler_map.h"
 #include "ipersistencehandler.h"
-#include <vespa/document/bucket/bucketspace.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <mutex>
 #include <shared_mutex>
-#include <unordered_map>
 
 namespace proton {
 
@@ -18,7 +15,7 @@ class IPersistenceEngineOwner;
 
 class PersistenceEngine : public storage::spi::AbstractPersistenceProvider {
 private:
-    using PersistenceHandlerSequence = vespalib::Sequence<IPersistenceHandler *>;
+    using PersistenceHandlerSequence = PersistenceHandlerMap::PersistenceHandlerSequence;
     using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
     using DocumentUpdate = document::DocumentUpdate;
     using Bucket = storage::spi::Bucket;
@@ -43,7 +40,7 @@ private:
     using UpdateResult = storage::spi::UpdateResult;
 
     struct IteratorEntry {
-        PersistenceHandlerSequence::UP handler_sequence;
+        PersistenceHandlerSequence  handler_sequence;
         DocumentIterator it;
         bool in_use;
         std::vector<BucketGuard::UP> bucket_guards;
@@ -75,9 +72,13 @@ private:
     mutable ExtraModifiedBuckets            _extraModifiedBuckets;
     mutable std::shared_timed_mutex         _rwMutex;
 
-    IPersistenceHandler::SP getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const;
-    HandlerSnapshot::UP getHandlerSnapshot() const;
-    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
+    using ReadGuard = std::shared_lock<std::shared_timed_mutex>;
+    using WriteGuard = std::unique_lock<std::shared_timed_mutex>;
+
+    IPersistenceHandler * getHandler(const ReadGuard & guard, document::BucketSpace bucketSpace, const DocTypeName &docType) const;
+    HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard) const;
+    HandlerSnapshot getHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
+    HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard, document::BucketSpace bucketSpace) const;
 
     void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
     ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;
@@ -89,9 +90,8 @@ public:
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);
     ~PersistenceEngine() override;
 
-    IPersistenceHandler::SP putHandler(document::BucketSpace bucketSpace, const DocTypeName &docType,
-                                       const IPersistenceHandler::SP &handler);
-    IPersistenceHandler::SP removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType);
+    IPersistenceHandler::SP putHandler(const WriteGuard &, document::BucketSpace bucketSpace, const DocTypeName &docType, const IPersistenceHandler::SP &handler);
+    IPersistenceHandler::SP removeHandler(const WriteGuard &, document::BucketSpace bucketSpace, const DocTypeName &docType);
 
     // Implements PersistenceProvider
     Result initialize() override;
@@ -121,8 +121,8 @@ public:
     void destroyIterators();
     void propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler);
-    void populateInitialBucketDB(BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
-    std::unique_lock<std::shared_timed_mutex> getWLock() const;
+    void populateInitialBucketDB(const WriteGuard & guard, BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
+    WriteGuard getWLock() const;
 };
 
 }

@@ -117,7 +117,7 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return new RunFilter(JobStatus::firstFailing);
     }
 
-    /** Allows sub-filters for runs of the given kind */
+    /** Allows sub-filters for runs of the indicated kind */
     public class RunFilter {
 
         private final Function<JobStatus, Optional<Run>> which;
@@ -126,47 +126,32 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
             this.which = which;
         }
 
-        /** Returns the subset of jobs where the run of the given type exists */
+        /** Returns the subset of jobs where the run of the indicated type exists */
         public JobList present() {
             return matching(run -> true);
         }
 
-        /** Returns the runs of the given kind, mapped by the given function, as a list. */
+        /** Returns the runs of the indicated kind, mapped by the given function, as a list. */
         public <OtherType> List<OtherType> mapToList(Function<? super Run, OtherType> mapper) {
             return present().mapToList(which.andThen(Optional::get).andThen(mapper));
         }
 
-        /** Returns the runs of the given kind. */
+        /** Returns the runs of the indicated kind. */
         public List<Run> asList() {
             return mapToList(Function.identity());
         }
 
-        /** Returns the subset of jobs where the run of the given type occurred before the given instant */
-        public JobList endedBefore(Instant threshold) {
-            return matching(run -> run.end().orElse(Instant.MAX).isBefore(threshold));
+        /** Returns the subset of jobs where the run of the indicated type ended no later than the given instant */
+        public JobList endedNoLaterThan(Instant threshold) {
+            return matching(run -> ! run.end().orElse(Instant.MAX).isAfter(threshold));
         }
 
-        /** Returns the subset of jobs where the run of the given type occurred after the given instant */
-        public JobList endedAfter(Instant threshold) {
-            return matching(run -> run.end().orElse(Instant.MIN).isAfter(threshold));
-        }
-
-        /** Returns the subset of jobs where the run of the given type occurred before the given instant */
-        public JobList startedBefore(Instant threshold) {
-            return matching(run -> run.start().isBefore(threshold));
-        }
-
-        /** Returns the subset of jobs where the run of the given type occurred after the given instant */
-        public JobList startedAfter(Instant threshold) {
-            return matching(run -> run.start().isAfter(threshold));
-        }
-
-        /** Returns the subset of jobs where the run of the given type was on the given version */
+        /** Returns the subset of jobs where the run of the indicated type was on the given version */
         public JobList on(ApplicationVersion version) {
             return matching(run -> run.versions().targetApplication().equals(version));
         }
 
-        /** Returns the subset of jobs where the run of the given type was on the given version */
+        /** Returns the subset of jobs where the run of the indicated type was on the given version */
         public JobList on(Version version) {
             return matching(run -> run.versions().targetPlatform().equals(version));
         }

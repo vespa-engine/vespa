@@ -15,7 +15,8 @@ MonitorReply::MonitorReply()
       totalParts(),
       activeParts(),
       activeDocs(0),
-      flags()
+      flags(),
+      is_blocking_writes(false)
 { }
 
 }

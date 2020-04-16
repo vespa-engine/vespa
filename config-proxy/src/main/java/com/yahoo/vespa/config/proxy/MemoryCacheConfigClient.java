@@ -18,6 +18,7 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
 
     private final static Logger log = Logger.getLogger(MemoryCacheConfigClient.class.getName());
     private final MemoryCache cache;
+    private final DelayedResponses delayedResponses = new DelayedResponses();
 
     MemoryCacheConfigClient(MemoryCache cache) {
         this.cache = cache;
@@ -60,5 +61,10 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
 
     @Override
     public void updateSubscribers(RawConfig config) {}
+
+    @Override
+    public DelayedResponses delayedResponses() {
+        return delayedResponses;
+    }
 
 }

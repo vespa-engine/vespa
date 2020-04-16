@@ -100,6 +100,10 @@ public:
     IAttributeContext::UP createContext() const override {
         return IAttributeContext::UP(new MyAttributeContext(_attr));
     }
+
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string&) const override {
+        LOG_ABORT("should not be reached");
+    }
 };
 
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {

@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <memory>
-#include <vespa/vespalib/util/stash.h>
 #include "value_type.h"
+#include <vespa/vespalib/util/traits.h>
+#include <memory>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 class Tensor;
 
@@ -40,7 +38,6 @@ public:
     static const ValueType &double_type() { return _type; }
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}
 
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DoubleValue);

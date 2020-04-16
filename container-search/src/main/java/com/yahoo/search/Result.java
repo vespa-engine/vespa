@@ -89,7 +89,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * with a result. It should <b>always</b> be called when adding
      * hits from a result, but there is no constraints on the order of the calls.
      */
-    @SuppressWarnings("deprecation")
     public void mergeWith(Result result) {
         totalHitCount += result.getTotalHitCount();
         deepHitCount += result.getDeepHitCount();

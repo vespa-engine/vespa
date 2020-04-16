@@ -24,6 +24,7 @@ import java.util.List;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID;
+import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.REASON;
 import static ai.vespa.metricsproxy.service.DummyService.METRIC_1;
 
 /**
@@ -61,11 +62,12 @@ public class HttpHandlerTestBase {
     }
 
     protected static MetricsConsumers getMetricsConsumers() {
+        // Must use a whitelisted dimension to avoid it being removed for the MetricsV2Handler
         var defaultConsumerDimension = new ConsumersConfig.Consumer.Metric.Dimension.Builder()
-                .key("consumer-dim").value("default-val");
+                .key(REASON).value("default-val");
 
         var customConsumerDimension = new ConsumersConfig.Consumer.Metric.Dimension.Builder()
-                .key("consumer-dim").value("custom-val");
+                .key(REASON).value("custom-val");
 
         return new MetricsConsumers(new ConsumersConfig.Builder()
                                             .consumer(new ConsumersConfig.Consumer.Builder()

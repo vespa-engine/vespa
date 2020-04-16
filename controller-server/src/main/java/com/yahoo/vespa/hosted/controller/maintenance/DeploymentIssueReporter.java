@@ -19,9 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 
@@ -35,7 +33,7 @@ public class DeploymentIssueReporter extends Maintainer {
 
     static final Duration maxFailureAge = Duration.ofDays(2);
     static final Duration maxInactivity = Duration.ofDays(4);
-    static final Duration upgradeGracePeriod = Duration.ofHours(4);
+    static final Duration upgradeGracePeriod = Duration.ofHours(2);
 
     private final DeploymentIssues deploymentIssues;
 
@@ -53,7 +51,7 @@ public class DeploymentIssueReporter extends Maintainer {
 
     /** Returns the applications to maintain issue status for. */
     private List<Application> applications() {
-        return ApplicationList.from(controller().applications().asList())
+        return ApplicationList.from(controller().applications().readable())
                               .withProjectId()
                               .asList();
     }
@@ -105,16 +103,12 @@ public class DeploymentIssueReporter extends Maintainer {
                            .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
 
-    private User userFor(Tenant tenant) {
-        return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
-    }
-
     /** File an issue for applicationId, if it doesn't already have an open issue associated with it. */
     private void fileDeploymentIssueFor(Application application) {
         try {
             Tenant tenant = ownerOf(application.id());
             tenant.contact().ifPresent(contact -> {
-                User assignee = tenant.type() == Tenant.Type.user ? userFor(tenant) : application.owner().orElse(null);
+                User assignee = application.owner().orElse(null);
                 Optional<IssueId> ourIssueId = application.deploymentIssueId();
                 IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, application.id().defaultInstance(), assignee, contact);
                 store(application.id(), issueId);

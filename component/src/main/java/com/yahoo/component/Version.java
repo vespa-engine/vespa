@@ -3,6 +3,7 @@ package com.yahoo.component;
 
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
+import com.yahoo.text.Utf8String;
 
 import java.nio.ByteBuffer;
 
@@ -28,18 +29,18 @@ import java.nio.ByteBuffer;
  */
 public final class Version implements Comparable<Version> {
 
-    private int major = 0;
-    private int minor = 0;
-    private int micro = 0;
-    private String qualifier = "";
-    private String stringValue;
+    private final int major;
+    private final int minor;
+    private final int micro;
+    private final String qualifier;
+    private final Utf8Array utf8;
 
     /** The empty version */
     public static final Version emptyVersion = new Version();
 
     /** Creates an empty version */
     public Version() {
-        this(0, 0, 0, null);
+        this(0, 0, 0, "");
     }
 
     /**
@@ -50,7 +51,7 @@ public final class Version implements Comparable<Version> {
      *         negative.
      */
     public Version(int major) {
-        this(major, 0, 0, null);
+        this(major, 0, 0, "");
     }
 
     /**
@@ -62,7 +63,7 @@ public final class Version implements Comparable<Version> {
      *         negative.
      */
     public Version(int major, int minor) {
-        this(major, minor, 0, null);
+        this(major, minor, 0, "");
     }
 
     /**
@@ -75,7 +76,7 @@ public final class Version implements Comparable<Version> {
      *         negative.
      */
     public Version(int major, int minor, int micro) {
-        this(major, minor, micro, null);
+        this(major, minor, micro, "");
     }
 
     /**
@@ -93,8 +94,8 @@ public final class Version implements Comparable<Version> {
         this.major = major;
         this.minor = minor;
         this.micro = micro;
-        if (qualifier != null) this.qualifier = qualifier;
-        stringValue = toStringValue();
+        this.qualifier = (qualifier != null) ? qualifier : "";
+        utf8 = new Utf8String(toString());
         verify();
     }
 
@@ -120,19 +121,19 @@ public final class Version implements Comparable<Version> {
     public Version(String versionString) {
         if (! "".equals(versionString)) {
             String[] components=versionString.split("\\."); // Split on dot
-
-            if (components.length > 0)
-                major = Integer.parseInt(components[0]);
-            if (components.length > 1)
-                minor = Integer.parseInt(components[1]);
-            if (components.length > 2)
-                micro = Integer.parseInt(components[2]);
-            if (components.length > 3)
-                qualifier = components[3];
+            major = (components.length > 0) ? Integer.parseInt(components[0]) : 0;
+            minor =  (components.length > 1) ? Integer.parseInt(components[1]) : 0;
+            micro = (components.length > 2) ? Integer.parseInt(components[2]) : 0;
+            qualifier = (components.length > 3) ? components[3] : "";
             if (components.length > 4)
                 throw new IllegalArgumentException("Too many components in '" + versionString + "'");
+        } else {
+            major = 0;
+            minor = 0;
+            micro = 0;
+            qualifier = "";
         }
-        stringValue = toStringValue();
+        utf8 = new Utf8String(versionString);
         verify();
     }
 
@@ -178,16 +179,21 @@ public final class Version implements Comparable<Version> {
                 minor = readInt(bb);
                 if (bb.remaining() > 0) {
                     micro = readInt(bb);
-                    if (bb.remaining() > 0) {
-                        qualifier = Utf8.toString(bb);
-                    }
+                    qualifier = (bb.remaining() > 0) ? Utf8.toString(bb) : "";
+                } else {
+                    micro = 0;
+                    qualifier = "";
                 }
+            } else {
+                minor = 0;
+                micro = 0;
+                qualifier = "";
             }
         } else {
             throw new IllegalArgumentException("Empty version specification");
         }
+        utf8 = versionString;
 
-        stringValue = versionString.toString();
         verify();
     }
 
@@ -270,10 +276,14 @@ public final class Version implements Comparable<Version> {
      * The string representation of a Version specified here is a part of the API and will never change.
      */
     @Override
-    public String toString() { return stringValue; }
+    public String toString() { return toStringValue(); }
+
+    public Utf8Array toUtf8() {
+        return utf8;
+    }
 
     @Override
-    public int hashCode() { return stringValue.hashCode(); }
+    public int hashCode() { return major*3 + minor*5 + micro*7 + qualifier.hashCode()*11; }
 
     /** Returns whether this equals the empty version */
     public boolean isEmpty() { return this.equals(emptyVersion); }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.security.Pkcs10Csr;
+import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
@@ -70,6 +71,16 @@ public class ZtsClientMock implements ZtsClient {
 
     @Override
     public ZToken getRoleToken(AthenzRole athenzRole) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AthenzAccessToken getAccessToken(AthenzDomain domain) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AthenzAccessToken getAccessToken(List<AthenzRole> athenzRole) {
         throw new UnsupportedOperationException();
     }
 

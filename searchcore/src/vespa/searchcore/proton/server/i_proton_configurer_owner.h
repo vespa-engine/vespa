@@ -18,8 +18,8 @@ class DocumentDBConfigOwner;
  */
 class IProtonConfigurerOwner
 {
-    using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
 public:
+    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
     virtual ~IProtonConfigurerOwner() { }
     virtual std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
                                                                  document::BucketSpace bucketSpace,

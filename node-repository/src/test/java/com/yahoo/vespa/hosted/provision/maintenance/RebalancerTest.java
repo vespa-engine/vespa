@@ -1,9 +1,9 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -17,7 +17,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Test;
@@ -46,16 +45,16 @@ public class RebalancerTest {
         NodeResources memResources = new NodeResources(4, 9, 1, 0.1);
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        MetricsReporterTest.TestMetric metric = new MetricsReporterTest.TestMetric();
+        TestMetric metric = new TestMetric();
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
-                cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.fromCount(1, cpuResources), 1),
-                memApp, new MockDeployer.ApplicationContext(memApp, clusterSpec("c"), Capacity.fromCount(1, memResources), 1));
+                cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),
+                memApp, new MockDeployer.ApplicationContext(memApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, memResources))));
         MockDeployer deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
 
         Rebalancer rebalancer = new Rebalancer(deployer,
                                                tester.nodeRepository(),
-                                               new IdentityHostResourcesCalculator(),
+                                               tester.identityHostResourcesCalculator(),
                                                Optional.empty(),
                                                metric,
                                                tester.clock(),
@@ -129,7 +128,7 @@ public class RebalancerTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false);
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
     }
 
     private ApplicationId makeApplicationId(String tenant, String appName) {
@@ -147,15 +146,6 @@ public class RebalancerTest {
         b.addFlavor("cpu", 40, 20, 40, 3, Flavor.Type.BARE_METAL);
         b.addFlavor("mem", 20, 40, 40, 3, Flavor.Type.BARE_METAL);
         return b.build();
-    }
-
-    private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
-
-        @Override
-        public NodeResources availableCapacityOf(NodeResources hostResources) {
-            return hostResources;
-        }
-
     }
 
 }

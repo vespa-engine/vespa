@@ -174,4 +174,16 @@ public final class Text {
         return stripped != null ? stripped.toString() : string;
     }
 
+    /**
+     * Returns a string which is never larger than the given number of characters.
+     * If the string is longer than the given length it will be truncated.
+     * If length is 4 or less the string will be truncated to length.
+     * If length is longer than 4, it will be truncated at length-4 with " ..." added at the end.
+     */
+    public static String truncate(String s, int length) {
+        if (s.length() <= length) return s;
+        if (length <= 4) return s.substring(0, length);
+        return s.substring(0, length - 4) + " ...";
+    }
+
 }

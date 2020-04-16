@@ -25,6 +25,7 @@ import org.apache.commons.cli.Options;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Client using visiting, used by the vespa-visit command line tool.
@@ -572,18 +573,14 @@ public class VdsVisit {
     protected static String resolveClusterRoute(ClusterList clusters, String wantedCluster) {
         if (clusters.getStorageClusters().size() == 0) {
             throw new IllegalArgumentException("Your Vespa cluster does not have any content clusters " +
-                    "declared. Visiting feature is not available.");
+                                               "declared. Visiting feature is not available.");
         }
 
         ClusterDef found = null;
 
-        String names = "";
-        for (ClusterDef c : clusters.getStorageClusters()) {
-            if (!names.isEmpty()) {
-                names += ", ";
-            }
-            names += c.getName();
-        }
+        String names = clusters.getStorageClusters()
+                               .stream().map(c -> "'" + c.getName() + "'")
+                               .collect(Collectors.joining(", "));
         if (wantedCluster != null) {
             for (ClusterDef c : clusters.getStorageClusters()) {
                 if (c.getName().equals(wantedCluster)) {
@@ -592,13 +589,14 @@ public class VdsVisit {
             }
             if (found == null) {
                 throw new IllegalArgumentException("Your vespa cluster contains the content clusters " +
-                        names + ", not " + wantedCluster + ". Please select a valid vespa cluster.");
+                                                   names + ", not '" + wantedCluster +
+                                                   "'. Please select a valid vespa cluster.");
             }
         } else if (clusters.getStorageClusters().size() == 1) {
             found = clusters.getStorageClusters().get(0);
         } else {
             throw new IllegalArgumentException("Your vespa cluster contains the content clusters " +
-                    names + ". Please use the -c option to select one of them as a target for visiting.");
+                                               names + ". Please use the -c option to select one of them as a target for visiting.");
         }
 
         return "[Storage:cluster=" + found.getName() + ";clusterconfigid=" + found.getConfigId() + "]";

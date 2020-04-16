@@ -45,7 +45,7 @@ public class MlModelsTest {
 
     private void verify(VespaModel model) {
         assertEquals("Global models are created (although not used directly here",
-                     4, model.rankProfileList().getRankProfiles().size());
+                     5, model.rankProfileList().getRankProfiles().size());
 
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         model.getSearchClusters().get(0).getConfig(builder);
@@ -71,8 +71,9 @@ public class MlModelsTest {
             "rankingExpression(mnist_softmax_tensorflow).rankingScript: join(reduce(join(rename(rankingExpression(Placeholder), (d0, d1), (d0, d2)), constant(mnist_softmax_saved_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b))\n" +
             "rankingExpression(mnist_softmax_onnx).rankingScript: join(reduce(join(rename(rankingExpression(Placeholder), (d0, d1), (d0, d2)), constant(mnist_softmax_Variable), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_Variable_1), f(a,b)(a + b))\n" +
             "rankingExpression(my_xgboost).rankingScript: if (f29 < -0.1234567, if (!(f56 >= -0.242398), 1.71218, -1.70044), if (f109 < 0.8723473, -1.94071, 1.85965)) + if (!(f60 >= -0.482947), if (f29 < -4.2387498, 0.784718, -0.96853), -6.23624)\n" +
+            "rankingExpression(my_lightgbm).rankingScript: if (!(numerical_2 >= 0.46643291586559305), 2.1594397038037663, if (categorical_2 in [\"k\", \"l\", \"m\"], 2.235297305276056, 2.1792953471546546)) + if (categorical_1 in [\"d\", \"e\"], 0.03070842919354316, if (!(numerical_1 >= 0.5102250691730842), -0.04439151147520909, 0.005117411709368601)) + if (!(numerical_2 >= 0.668665477622446), if (!(numerical_2 >= 0.008118820676863816), -0.15361238490967524, -0.01192330846157292), 0.03499044894987518) + if (!(numerical_1 >= 0.5201391072644542), -0.02141000620783247, if (categorical_1 in [\"a\", \"b\"], -0.004121485787596721, 0.04534090904886873)) + if (categorical_2 in [\"k\", \"l\", \"m\"], if (!(numerical_2 >= 0.27283279016959255), -0.01924803254356527, 0.03643772842347651), -0.02701711918923075)\n" +
             "vespa.rank.firstphase: rankingExpression(firstphase)\n" +
-            "rankingExpression(firstphase).rankingScript: rankingExpression(mnist_tensorflow) + rankingExpression(mnist_softmax_tensorflow) + rankingExpression(mnist_softmax_onnx) + rankingExpression(my_xgboost)\n" +
+            "rankingExpression(firstphase).rankingScript: rankingExpression(mnist_tensorflow) + rankingExpression(mnist_softmax_tensorflow) + rankingExpression(mnist_softmax_onnx) + rankingExpression(my_xgboost) + rankingExpression(my_lightgbm)\n" +
             "vespa.type.attribute.argument: tensor<float>(d0[],d1[784])\n";
 
 }

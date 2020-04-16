@@ -7,8 +7,7 @@
 #include "lazy_params.h"
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace nodes { struct Node; }
 struct TensorEngine;
@@ -88,24 +87,21 @@ public:
 private:
     std::vector<Instruction> _program;
     Stash                    _stash;
-    size_t                   _num_params;
     const TensorEngine      &_tensor_engine;
 
 public:
     typedef std::unique_ptr<InterpretedFunction> UP;
     // for testing; use with care; the tensor function must be kept alive
     InterpretedFunction(const TensorEngine &engine, const TensorFunction &function);
-    InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types);
+    InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types);
     InterpretedFunction(const TensorEngine &engine, const Function &function, const NodeTypes &types)
-        : InterpretedFunction(engine, function.root(), function.num_params(), types) {}
+        : InterpretedFunction(engine, function.root(), types) {}
     InterpretedFunction(InterpretedFunction &&rhs) = default;
     ~InterpretedFunction();
     size_t program_size() const { return _program.size(); }
-    size_t num_params() const { return _num_params; }
     const Value &eval(Context &ctx, const LazyParams &params) const;
     double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

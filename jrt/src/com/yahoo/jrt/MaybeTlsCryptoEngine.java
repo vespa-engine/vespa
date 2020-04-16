@@ -21,14 +21,17 @@ public class MaybeTlsCryptoEngine implements CryptoEngine {
     }
 
     @Override
-    public CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
-        if (isServer) {
-            return new MaybeTlsCryptoSocket(channel, tlsEngine, isServer);
-        } else if (useTlsWhenClient) {
-            return tlsEngine.createCryptoSocket(channel, false);
+    public CryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec) {
+        if (useTlsWhenClient) {
+            return tlsEngine.createClientCryptoSocket(channel, spec);
         } else {
-            return new NullCryptoSocket(channel, isServer);
+            return new NullCryptoSocket(channel, false);
         }
+    }
+
+    @Override
+    public CryptoSocket createServerCryptoSocket(SocketChannel channel) {
+        return new MaybeTlsCryptoSocket(channel, tlsEngine);
     }
 
     @Override

@@ -4,7 +4,7 @@ package com.yahoo.config.subscription;
 /**
  * A type of source of config
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public interface ConfigSource {
 

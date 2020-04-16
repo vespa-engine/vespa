@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
-import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -17,21 +16,29 @@ import com.yahoo.restapi.Uri;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.deployment.JobList;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
+import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
-import java.time.Instant;
-import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * This implements the deployment/v1 API which provides information about the status of Vespa platform and
@@ -89,10 +96,10 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         Cursor platformArray = root.setArray("versions");
         var versionStatus = controller.versionStatus();
         var systemVersion = versionStatus.systemVersion().map(VespaVersion::versionNumber).orElse(Vtag.currentVersion);
-        Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()), systemVersion)
-                                                     .asList().stream()
-                                                     .flatMap(status -> status.instanceJobs().entrySet().stream())
-                                                     .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        var deploymentStatuses = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()), systemVersion);
+        var deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toList()),
+                                                                deploymentStatuses)
+                                                       .stream().collect(toMap(DeploymentStatistics::version, identity()));
         for (VespaVersion version : versionStatus.versions()) {
             Cursor versionObject = platformArray.addObject();
             versionObject.setString("version", version.versionNumber().toString());
@@ -108,40 +115,104 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                 configServerObject.setString("hostname", hostname.value());
             }
 
+            DeploymentStatistics statistics = deploymentStatistics.get(version.versionNumber());
             Cursor failingArray = versionObject.setArray("failingApplications");
-            for (ApplicationId id : version.statistics().failing()) {
-                if (jobs.containsKey(id))
-                    firstFailingOn(version.versionNumber(), jobs.get(id)).ifPresent(firstFailing -> {
-                        Cursor applicationObject = failingArray.addObject();
-                        toSlime(applicationObject, id, request);
-                        applicationObject.setString("failing", firstFailing.id().type().jobName());
-                        applicationObject.setString("status", firstFailing.status().name());
-                    });
+            for (Run run : statistics.failingUpgrades()) {
+                Cursor applicationObject = failingArray.addObject();
+                toSlime(applicationObject, run.id().application(), request);
+                applicationObject.setString("failing", run.id().type().jobName());
+                applicationObject.setString("status", run.status().name());
             }
 
+            var statusByInstance = deploymentStatuses.asList().stream()
+                                                     .flatMap(status -> status.instanceJobs().keySet().stream()
+                                                                              .map(instance -> Map.entry(instance, status)))
+                                                     .collect(toUnmodifiableMap(entry -> entry.getKey(), entry -> entry.getValue()));
+            var jobsByInstance = statusByInstance.entrySet().stream()
+                                                 .collect(toUnmodifiableMap(entry -> entry.getKey(),
+                                                                            entry -> entry.getValue().instanceJobs().get(entry.getKey())));
             Cursor productionArray = versionObject.setArray("productionApplications");
-            for (ApplicationId id : version.statistics().production()) {
-                if (jobs.containsKey(id)) {
-                    int successes = productionSuccessesFor(version.versionNumber(), jobs.get(id));
-                    if (successes == 0) continue; // Just upgraded to a newer version.
-                    Cursor applicationObject = productionArray.addObject();
-                    toSlime(applicationObject, id, request);
-                    applicationObject.setLong("productionJobs", jobs.get(id).production().size());
-                    applicationObject.setLong("productionSuccesses", productionSuccessesFor(version.versionNumber(), jobs.get(id)));
-                }
-            }
+            statistics.productionSuccesses().stream()
+                      .collect(groupingBy(run -> run.id().application()))
+                      .forEach((id, runs) -> {
+                          Cursor applicationObject = productionArray.addObject();
+                          toSlime(applicationObject, id, request);
+                          applicationObject.setLong("productionJobs", jobsByInstance.get(id).production().size());
+                          applicationObject.setLong("productionSuccesses", runs.size());
+                      });
 
             Cursor runningArray = versionObject.setArray("deployingApplications");
-            for (ApplicationId id : version.statistics().deploying()) {
-                if (jobs.containsKey(id))
-                    lastDeployingTo(version.versionNumber(), jobs.get(id)).ifPresent(lastDeploying -> {
-                        Cursor applicationObject = runningArray.addObject();
-                        toSlime(applicationObject, id, request);
-                        applicationObject.setString("running", lastDeploying.id().type().jobName());
-                    });
+            for (Run run : statistics.runningUpgrade()) {
+                Cursor applicationObject = runningArray.addObject();
+                toSlime(applicationObject, run.id().application(), request);
+                applicationObject.setString("running", run.id().type().jobName());
             }
+
+            class RunInfo { //  ヽ༼ຈل͜ຈ༽━☆ﾟ.*･｡ﾟ
+                final Run run;
+                final boolean upgrade;
+                RunInfo(Run run, boolean upgrade) { this.run = run; this.upgrade = upgrade; }
+                @Override public String toString() { return run.id().toString(); }
+            }
+            Cursor instancesArray = versionObject.setArray("applications");
+            Stream.of(statistics.failingUpgrades().stream().map(run -> new RunInfo(run, true)),
+                      statistics.otherFailing().stream().map(run -> new RunInfo(run, false)),
+                      statistics.runningUpgrade().stream().map(run -> new RunInfo(run, true)),
+                      statistics.otherRunning().stream().map(run -> new RunInfo(run, false)),
+                      statistics.productionSuccesses().stream().map(run -> new RunInfo(run, true)))
+                  .flatMap(identity())
+                  .collect(Collectors.groupingBy(run -> run.run.id().application(),
+                                                 LinkedHashMap::new, // Put apps with failing and running jobs first.
+                                                 groupingBy(run -> run.run.id().type(),
+                                                            LinkedHashMap::new,
+                                                            toList())))
+                  .forEach((instance, runs) -> {
+                      var status = statusByInstance.get(instance);
+                      Cursor instanceObject = instancesArray.addObject();
+                      instanceObject.setString("tenant", instance.tenant().value());
+                      instanceObject.setString("application", instance.application().value());
+                      instanceObject.setString("instance", instance.instance().value());
+                      instanceObject.setBool("upgrading", status.application().require(instance.instance()).change().platform().equals(Optional.of(statistics.version())));
+                      status.instanceSteps().get(instance.instance()).blockedUntil(Change.of(statistics.version()))
+                            .ifPresent(until -> instanceObject.setLong("blockedUntil", until.toEpochMilli()));
+                      instanceObject.setString("upgradePolicy", toString(status.application().deploymentSpec().instance(instance.instance())
+                                                                               .map(DeploymentInstanceSpec::upgradePolicy)
+                                                                               .orElse(DeploymentSpec.UpgradePolicy.defaultPolicy)));
+                      Cursor jobsArray = instanceObject.setArray("jobs");
+                      status.jobSteps().forEach((job, jobStatus) -> {
+                          if ( ! job.application().equals(instance)) return;
+                          Cursor jobObject = jobsArray.addObject();
+                          jobObject.setString("name", job.type().jobName());
+                          jobStatus.pausedUntil().ifPresent(until -> jobObject.setLong("pausedUntil", until.toEpochMilli()));
+                          jobStatus.coolingDownUntil(status.application().require(instance.instance()).change())
+                                   .ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
+                      });
+                      Cursor allRunsObject = instanceObject.setObject("allRuns");
+                      Cursor upgradeRunsObject = instanceObject.setObject("upgradeRuns");
+                      runs.forEach((type, rs) -> {
+                          Cursor runObject = allRunsObject.setObject(type.jobName());
+                          Cursor upgradeObject = upgradeRunsObject.setObject(type.jobName());
+                          for (RunInfo run : rs) {
+                              toSlime(runObject, run.run);
+                              if (run.upgrade)
+                                  toSlime(upgradeObject, run.run);
+                          }
+                      });
+                  });
         }
+        JobType.allIn(controller.system()).stream()
+               .filter(job -> ! job.environment().isManuallyDeployed())
+               .map(JobType::jobName).forEach(root.setArray("jobs")::addString);
         return new SlimeJsonResponse(slime);
+    }
+
+    private void toSlime(Cursor jobObject, Run run) {
+        String key = run.hasFailed() ? "failing" : run.hasEnded() ? "success" : "running";
+        Cursor runObject = jobObject.setObject(key);
+        runObject.setLong("number", run.id().number());
+        runObject.setLong("start", run.start().toEpochMilli());
+        run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
+        runObject.setString("status", run.status().name());
     }
 
     private void toSlime(Cursor object, ApplicationId id, HttpRequest request) {
@@ -162,35 +233,6 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             return "default";
         }
         return upgradePolicy.name();
-    }
-
-    // ----------------------------- Utilities to pick out the relevant JobStatus -- filter chains should mirror the ones in VersionStatus
-
-    /** The first upgrade job to fail on this version, for this application */
-    private Optional<Run> firstFailingOn(Version version, JobList jobs) {
-        return jobs.failing()
-                   .not().failingApplicationChange()
-                   .not().withStatus(RunStatus.outOfCapacity)
-                   .lastCompleted().on(version)
-                   .lastCompleted().asList().stream()
-                   .min(Comparator.<Run, Instant>comparing(run -> run.start())
-                                .thenComparing(run -> run.id().type()));
-    }
-
-    /** The number of production jobs with last success on the given version, for this application */
-    private int productionSuccessesFor(Version version, JobList jobs) {
-        return jobs.production()
-                   .lastSuccess().on(version)
-                   .size();
-    }
-
-    /** The last triggered upgrade to this version, for this application */
-    private Optional<Run> lastDeployingTo(Version version, JobList jobs) {
-        return jobs.upgrading()
-                   .lastTriggered().on(version)
-                   .lastTriggered().asList().stream()
-                   .max(Comparator.<Run, Instant>comparing(run -> run.start())
-                                .thenComparing(run -> run.id().type()));
     }
 
 }

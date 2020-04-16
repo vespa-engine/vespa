@@ -5,18 +5,18 @@
   "isCI": false,
   "endpoints": {
     "dev.us-east-1": [
-      "https://us-east-1.dev.my-user"
+      "https://my-user--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/"
     ],
     "prod.us-central-1": [
-      "https://us-central-1.prod.default"
+      "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
     ]
   },
   "zoneEndpoints": {
     "dev.us-east-1": {
-      "default": "https://us-east-1.dev.my-user"
+      "default": "https://my-user--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/"
     },
     "prod.us-central-1": {
-      "default": "https://us-central-1.prod.default"
+      "default": "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
     }
   },
   "clusters": {

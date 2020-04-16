@@ -41,9 +41,14 @@ DocumentOperation::DocumentOperation(Type type, const BucketId &bucketId, const 
 void
 DocumentOperation::assertValidBucketId(const document::DocumentId &docId) const
 {
+   assertValidBucketId(docId.getGlobalId());
+}
+
+void
+DocumentOperation::assertValidBucketId(const document::GlobalId &gid) const
+{
     assert(_bucketId.valid());
     uint8_t bucketUsedBits = _bucketId.getUsedBits();
-    const GlobalId &gid = docId.getGlobalId();
     BucketId verId(gid.convertToBucketId());
     verId.setUsedBits(bucketUsedBits);
     assert(_bucketId.getRawId() == verId.getRawId() ||

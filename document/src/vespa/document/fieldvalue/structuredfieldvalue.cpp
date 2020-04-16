@@ -30,12 +30,6 @@ StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner, cons
 {
 }
 
-StructuredFieldValue::StructuredFieldValue(const DataType &type)
-    : FieldValue(),
-      _type(&type)
-{
-}
-
 void
 StructuredFieldValue::setFieldValue(const Field & field, const FieldValue & value)
 {

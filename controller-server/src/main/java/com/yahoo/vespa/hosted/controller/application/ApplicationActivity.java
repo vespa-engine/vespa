@@ -56,7 +56,7 @@ public class ApplicationActivity {
     public static ApplicationActivity from(Collection<Deployment> deployments) {
         Optional<DeploymentActivity> lastActivityByQuery = lastActivityBy(DeploymentActivity::lastQueried, deployments);
         Optional<DeploymentActivity> lastActivityByWrite = lastActivityBy(DeploymentActivity::lastWritten, deployments);
-        if (!lastActivityByQuery.isPresent() && !lastActivityByWrite.isPresent()) {
+        if (lastActivityByQuery.isEmpty() && lastActivityByWrite.isEmpty()) {
             return none;
         }
         return new ApplicationActivity(lastActivityByQuery.flatMap(DeploymentActivity::lastQueried),

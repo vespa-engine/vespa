@@ -15,15 +15,29 @@
       <slobrok hostalias="rtc-1" />
     </slobroks>
     <metrics>
-      <consumer id="my-consumer">
+
+      <consumer id="cloudwatch-hosted">
         <metric-set id="my-set" />
         <metric id="my-metric"/>
         <metric id="my-metric2" display-name="my-metric3"/>
         <metric display-name="my-metric4" id="my-metric4.avg"/>
+        <cloudwatch region="us-east1" namespace="my-namespace">
+          <credentials access-key-name="my-access-key" secret-key-name="my-secret-key" />
+        </cloudwatch>
       </consumer>
-      <consumer id="my-consumer2">
-        <metric-set id="my-set2" />
+
+      <consumer id="cloudwatch-self-hosted-with-default-auth">
+        <metric-set id="public" />
+        <cloudwatch region="us-east1" namespace="namespace_legal.chars:/#1" />
       </consumer>
+
+      <consumer id="cloudwatch-self-hosted-with-profile">
+        <metric id="my-custom-metric" />
+        <cloudwatch region="us-east1" namespace="another-namespace">
+          <shared-credentials file="/user/.aws/credentials" profile="profile-in-credentials-file" />
+        </cloudwatch>
+      </consumer>
+
     </metrics>
     <logforwarding>
       <splunk deployment-server="foo:8989" client-name="foobar" splunk-home="/opt/splunk" phone-home-interval="900"/>
@@ -76,7 +90,6 @@
           <exclude>
             <binding>http//*/foo/*</binding>
           </exclude>
-          <application>my-app</application>
           <vespa-domain>vespa.vespa.cd</vespa-domain>
         </access-control>
 
@@ -119,6 +132,13 @@
           <certificate-file>/foo/cert</certificate-file>
           <ca-certificates-file>/foo/cacerts</ca-certificates-file>
           <client-authentication>want</client-authentication>
+          <cipher-suites>
+            TLS_AES_128_GCM_SHA256,
+            TLS_AES_256_GCM_SHA384,
+            TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+            TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+          </cipher-suites>
+          <protocols>TLSv1.2,TLSv1.3</protocols>
         </ssl>
       </server>
       <server port="4083" id="sslProvider">

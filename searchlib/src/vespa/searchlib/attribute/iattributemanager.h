@@ -8,7 +8,10 @@
 
 namespace search {
 
-namespace attribute { class AttributeReadGuard; }
+namespace attribute {
+class AttributeReadGuard;
+class ReadableAttributeVector;
+}
 
 /**
  * This is an interface used to access all registered attribute vectors.
@@ -17,11 +20,16 @@ class IAttributeManager : public attribute::IAttributeExecutor {
 public:
     IAttributeManager(const IAttributeManager &) = delete;
     IAttributeManager & operator = (const IAttributeManager &) = delete;
-    typedef std::shared_ptr<IAttributeManager> SP;
-    typedef vespalib::string string;
+    using SP = std::shared_ptr<IAttributeManager>;
+    using string = vespalib::string;
 
     /**
      * Returns a view of the attribute vector with the given name.
+     *
+     * NOTE: this method is deprecated! Prefer using readable_attribute_vector(name) instead,
+     * as that enforces appropriate guards to be taken before accessing the underlying vector.
+     *
+     * TODO remove this when all usages are gone.
      *
      * @param name name of the attribute vector.
      * @return view of the attribute vector or empty view if the attribute vector does not exists.
@@ -52,9 +60,15 @@ public:
     virtual attribute::IAttributeContext::UP createContext() const = 0;
 
     /**
-     * Virtual destructor to allow safe subclassing.
-     **/
-    virtual ~IAttributeManager() {}
+     * Looks up and returns a readable attribute vector shared_ptr with the provided name.
+     * This transparently supports imported attribute vectors.
+     *
+     * @param name name of the attribute vector.
+     * @return The attribute vector, or an empty shared_ptr if no vector was found with the given name.
+     */
+    virtual std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const = 0;
+
+    ~IAttributeManager() override = default;
 protected:
     IAttributeManager() = default;
 };

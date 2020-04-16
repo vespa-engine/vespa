@@ -79,6 +79,8 @@ public abstract class BaseNodeMonitor<T> {
      */
     public abstract void responded();
 
+    /** @deprecated Not used */
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean isIdle() {
         return (now()-respondedAt) >= configuration.getIdleLimit();
     }

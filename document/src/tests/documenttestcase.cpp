@@ -36,7 +36,7 @@ TEST(DocumentTest, testSizeOf)
     EXPECT_EQ(32u, sizeof(vespalib::GrowableByteBuffer));
     EXPECT_EQ(88ul, sizeof(IdString));
     EXPECT_EQ(104ul, sizeof(DocumentId));
-    EXPECT_EQ(232ul, sizeof(Document));
+    EXPECT_EQ(240ul, sizeof(Document));
     EXPECT_EQ(96ul, sizeof(StructFieldValue));
     EXPECT_EQ(16ul, sizeof(StructuredFieldValue));
     EXPECT_EQ(56ul, sizeof(SerializableArray));
@@ -585,7 +585,7 @@ TEST(DocumentTest, testReadSerializedFile)
 
     EXPECT_TRUE(buf2.empty());
     buf2.rp(0);
-    EXPECT_EQ(len - 13, buf2.size()); // Size is smaller as we are merging to one chunk.
+    EXPECT_EQ(len, buf2.size());
 
     doc2.setValue("stringfield", StringFieldValue("hei"));
 

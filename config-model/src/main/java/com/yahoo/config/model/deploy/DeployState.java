@@ -12,10 +12,11 @@ import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -36,9 +37,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
-import com.yahoo.vespa.model.search.SearchDefinition;
+import com.yahoo.vespa.model.search.NamedSchema;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
@@ -62,11 +62,12 @@ public class DeployState implements ConfigDefinitionStore {
     private final DeployLogger logger;
     private final FileRegistry fileRegistry;
     private final DocumentModel documentModel;
-    private final List<SearchDefinition> searchDefinitions;
+    private final List<NamedSchema> schemas;
     private final ApplicationPackage applicationPackage;
     private final Optional<ConfigDefinitionRepo> configDefinitionRepo;
     private final Optional<ApplicationPackage> permanentApplicationPackage;
     private final Optional<Model> previousModel;
+    private final boolean accessLoggingEnabledByDefault;
     private final ModelContext.Properties properties;
     private final Version vespaVersion;
     private final Set<ContainerEndpoint> endpoints;
@@ -76,8 +77,10 @@ public class DeployState implements ConfigDefinitionStore {
     private final ImportedMlModels importedModels;
     private final ValidationOverrides validationOverrides;
     private final Version wantedNodeVespaVersion;
+    private final Optional<String> wantedDockerImageRepo;
     private final Instant now;
     private final HostProvisioner provisioner;
+    private final Provisioned provisioned;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -97,18 +100,21 @@ public class DeployState implements ConfigDefinitionStore {
                         FileRegistry fileRegistry,
                         DeployLogger deployLogger,
                         Optional<HostProvisioner> hostProvisioner,
+                        Provisioned provisioned,
                         ModelContext.Properties properties,
                         Version vespaVersion,
                         Optional<ApplicationPackage> permanentApplicationPackage,
                         Optional<ConfigDefinitionRepo> configDefinitionRepo,
-                        java.util.Optional<Model> previousModel,
+                        Optional<Model> previousModel,
                         Set<ContainerEndpoint> endpoints,
                         Collection<MlModelImporter> modelImporters,
                         Zone zone,
                         QueryProfiles queryProfiles,
                         SemanticRules semanticRules,
                         Instant now,
-                        Version wantedNodeVespaVersion) {
+                        Version wantedNodeVespaVersion,
+                        boolean accessLoggingEnabledByDefault,
+                        Optional<String> wantedDockerImageRepo) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -116,8 +122,10 @@ public class DeployState implements ConfigDefinitionStore {
         this.properties = properties;
         this.vespaVersion = vespaVersion;
         this.previousModel = previousModel;
+        this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
         this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
-        this.searchDefinitions = searchDocumentModel.getSearchDefinitions();
+        this.provisioned = provisioned;
+        this.schemas = searchDocumentModel.getSchemas();
         this.documentModel = searchDocumentModel.getDocumentModel();
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
@@ -137,6 +145,7 @@ public class DeployState implements ConfigDefinitionStore {
 
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
+        this.wantedDockerImageRepo = wantedDockerImageRepo;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -146,6 +155,8 @@ public class DeployState implements ConfigDefinitionStore {
             return new HostsXmlProvisioner(applicationPackage.getHosts());
         }
     }
+
+    public Provisioned provisioned() { return provisioned; }
 
     /** Get the global rank profile registry for this application. */
     public final RankProfileRegistry rankProfileRegistry() { return rankProfileRegistry; }
@@ -157,9 +168,7 @@ public class DeployState implements ConfigDefinitionStore {
     public final Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) {
         if (existingConfigDefs == null) {
             existingConfigDefs = new LinkedHashMap<>();
-            if (configDefinitionRepo.isPresent()) {
-                existingConfigDefs.putAll(createLazyMapping(configDefinitionRepo.get()));
-            }
+            configDefinitionRepo.ifPresent(definitionRepo -> existingConfigDefs.putAll(createLazyMapping(definitionRepo)));
             existingConfigDefs.putAll(applicationPackage.getAllExistingConfigDefs());
         }
         if ( ! existingConfigDefs.containsKey(defKey)) return Optional.empty();
@@ -205,8 +214,8 @@ public class DeployState implements ConfigDefinitionStore {
         return applicationPackage;
     }
 
-    public List<SearchDefinition> getSearchDefinitions() {
-        return searchDefinitions;
+    public List<NamedSchema> getSchemas() {
+        return schemas;
     }
 
     public DocumentModel getDocumentModel() {
@@ -215,6 +224,10 @@ public class DeployState implements ConfigDefinitionStore {
 
     public DeployLogger getDeployLogger() {
         return logger;
+    }
+
+    public boolean getAccessLoggingEnabledByDefault() {
+        return accessLoggingEnabledByDefault;
     }
 
     public FileRegistry getFileRegistry() {
@@ -253,6 +266,8 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
+    public Optional<String> getWantedDockerImageRepo() { return wantedDockerImageRepo; }
+
     public Instant now() { return now; }
 
     public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return properties.endpointCertificateSecrets(); }
@@ -279,6 +294,7 @@ public class DeployState implements ConfigDefinitionStore {
         private FileRegistry fileRegistry = new MockFileRegistry();
         private DeployLogger logger = new BaseDeployLogger();
         private Optional<HostProvisioner> hostProvisioner = Optional.empty();
+        private Provisioned provisioned = new Provisioned();
         private Optional<ApplicationPackage> permanentApplicationPackage = Optional.empty();
         private ModelContext.Properties properties = new TestProperties();
         private Version version = new Version(1, 0, 0);
@@ -289,6 +305,8 @@ public class DeployState implements ConfigDefinitionStore {
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
+        private boolean accessLoggingEnabledByDefault = true;
+        private Optional<String> wantedDockerImageRepo = Optional.empty();
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -307,6 +325,11 @@ public class DeployState implements ConfigDefinitionStore {
 
         public Builder modelHostProvisioner(HostProvisioner modelProvisioner) {
             this.hostProvisioner = Optional.of(modelProvisioner);
+            return this;
+        }
+
+        public Builder provisioned(Provisioned provisioned) {
+            this.provisioned = provisioned;
             return this;
         }
 
@@ -360,6 +383,20 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder wantedDockerImageRepo(Optional<String> dockerImageRepo) {
+            this.wantedDockerImageRepo = dockerImageRepo;
+            return this;
+        }
+
+        /**
+         * Whether access logging is enabled for an application without an accesslog element in services.xml.
+         * True by default.
+         */
+        public Builder accessLoggingEnabledByDefault(boolean accessLoggingEnabledByDefault) {
+            this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
+            return this;
+        }
+
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -375,6 +412,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    fileRegistry,
                                    logger,
                                    hostProvisioner,
+                                   provisioned,
                                    properties,
                                    version,
                                    permanentApplicationPackage,
@@ -386,7 +424,9 @@ public class DeployState implements ConfigDefinitionStore {
                                    queryProfiles,
                                    semanticRules,
                                    now,
-                                   wantedNodeVespaVersion);
+                                   wantedNodeVespaVersion,
+                                   accessLoggingEnabledByDefault,
+                                   wantedDockerImageRepo);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
@@ -399,30 +439,24 @@ public class DeployState implements ConfigDefinitionStore {
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();
-                    String searchName = builder.importReader(reader, readerName, logger);
+                    String topLevelName = builder.importReader(reader, readerName, logger);
                     String sdName = stripSuffix(readerName, ApplicationPackage.SD_NAME_SUFFIX);
-                    names.put(searchName, sdName);
-                    if ( ! sdName.equals(searchName)) {
-                        throw new IllegalArgumentException("Search definition file name ('" + sdName + "') and name of " +
-                                                           "search element ('" + searchName +
+                    names.put(topLevelName, sdName);
+                    if ( ! sdName.equals(topLevelName)) {
+                        throw new IllegalArgumentException("Schema definition file name ('" + sdName + "') and name of " +
+                                                           "top level element ('" + topLevelName +
                                                            "') are not equal for file '" + readerName + "'");
                     }
                 } catch (ParseException e) {
-                    throw new IllegalArgumentException("Could not parse search definition file '" +
-                                                       getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);
+                    throw new IllegalArgumentException("Could not parse sd file '" + reader.getName() + "'", e);
                 } catch (IOException e) {
-                    throw new IllegalArgumentException("Could not read search definition file '" +
-                                                       getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);
+                    throw new IllegalArgumentException("Could not read sd file '" + reader.getName() + "'", e);
                 } finally {
                     closeIgnoreException(reader.getReader());
                 }
             }
             builder.build(! validationParameters.ignoreValidationErrors(), logger);
             return SearchDocumentModel.fromBuilderAndNames(builder, names);
-        }
-
-        private String getSearchDefinitionRelativePath(String name) {
-            return ApplicationPackage.SEARCH_DEFINITIONS_DIR + File.separator + name;
         }
 
         private static String stripSuffix(String nodeName, String postfix) {

@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -343,7 +343,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
         NodeResources resources = new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.any);
 
         List<HostSpec> hosts = tester.prepare(application, cluster, 2, 1, resources);
@@ -360,7 +360,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
         NodeResources resources = new NodeResources(1, 4, 10, 1, requestDiskSpeed);
 
         try {
@@ -382,7 +382,7 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
         NodeResources resources = new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.fast);
 
         List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
@@ -393,7 +393,6 @@ public class DynamicDockerAllocationTest {
                      NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testSwitchingFromLegacyFlavorSyntaxToResourcesDoesNotCauseReallocation() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
@@ -401,13 +400,13 @@ public class DynamicDockerAllocationTest {
         tester.deployZoneApp();
 
         ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
 
-        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromCount(2, Optional.of(NodeResources.fromLegacyName("d-2-8-50")), false, true), 1);
+        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(2, 1, NodeResources.fromLegacyName("d-2-8-50")), false, true));
         tester.activate(application, hosts1);
 
         NodeResources resources = new NodeResources(1.5, 8, 50, 0.3);
-        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.fromCount(2, resources), 1);
+        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(2, 1, resources)));
         tester.activate(application, hosts2);
 
         assertEquals(hosts1, hosts2);
@@ -430,7 +429,7 @@ public class DynamicDockerAllocationTest {
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, node1a.flavor().resources(), Instant.now());
 
-        tester.nodeRepository().addNodes(Collections.singletonList(node1aAllocation));
+        tester.nodeRepository().addNodes(Collections.singletonList(node1aAllocation), Agent.system);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(tester.getCurator()));
         tester.nodeRepository().activate(Collections.singletonList(node1aAllocation), transaction);
         transaction.commit();
@@ -466,7 +465,7 @@ public class DynamicDockerAllocationTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false);
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId)).vespaVersion("6.42").build();
     }
 
 }

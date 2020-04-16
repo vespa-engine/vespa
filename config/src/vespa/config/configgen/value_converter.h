@@ -5,9 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/slime/inspector.h>
 
-namespace config {
-
-namespace internal {
+namespace config::internal {
 
 void requireValid(const vespalib::string & __fieldName, const ::vespalib::slime::Inspector & __inspector);
 
@@ -43,7 +41,4 @@ struct ValueConverter {
     }
 };
 
-} // namespace internal
-
-} // namespace config
-
+}

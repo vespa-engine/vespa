@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -20,21 +21,21 @@ import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
  * @author bratseth
  */
 public class VespaVersion implements Comparable<VespaVersion> {
-    
+
+    private final Version version;
     private final String releaseCommit;
     private final Instant committedAt;
     private final boolean isControllerVersion;
     private final boolean isSystemVersion;
     private final boolean isReleased;
-    private final DeploymentStatistics statistics;
     private final NodeVersions nodeVersions;
     private final Confidence confidence;
 
-    public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant committedAt,
+    public VespaVersion(Version version, String releaseCommit, Instant committedAt,
                         boolean isControllerVersion, boolean isSystemVersion, boolean isReleased,
                         NodeVersions nodeVersions,
                         Confidence confidence) {
-        this.statistics = statistics;
+        this.version = version;
         this.releaseCommit = releaseCommit;
         this.committedAt = committedAt;
         this.isControllerVersion = isControllerVersion;
@@ -48,10 +49,10 @@ public class VespaVersion implements Comparable<VespaVersion> {
         InstanceList all = InstanceList.from(controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())))
                                        .withProductionDeployment();
         // 'production on this': All deployment jobs upgrading to this version have completed without failure
-        InstanceList productionOnThis = all.matching(statistics.production()::contains)
-                                                   .not().failingUpgrade()
-                                                   .not().upgradingTo(statistics.version());
-        InstanceList failingOnThis = all.matching(statistics.failing()::contains);
+        InstanceList productionOnThis = all.matching(instance -> statistics.productionSuccesses().stream().anyMatch(run -> run.id().application().equals(instance)))
+                                           .not().failingUpgrade()
+                                           .not().upgradingTo(statistics.version());
+        InstanceList failingOnThis = all.matching(instance -> statistics.failingUpgrades().stream().anyMatch(run -> run.id().application().equals(instance)));
 
         // 'broken' if any Canary fails
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
@@ -74,7 +75,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
     }
 
     /** Returns the version number of this Vespa version */
-    public Version versionNumber() { return statistics.version(); }
+    public Version versionNumber() { return version; }
 
     /** Returns the sha of the release tag commit for this version in git */
     public String releaseCommit() { return releaseCommit; }
@@ -82,9 +83,6 @@ public class VespaVersion implements Comparable<VespaVersion> {
     /** Returns the time of the release commit */
     public Instant committedAt() { return committedAt; }
     
-    /** Statistics about deployment of this version */
-    public DeploymentStatistics statistics() { return statistics; }
-
     /** Returns whether this is the current version of controllers in this system (the lowest version across all
      * controllers) */
     public boolean isControllerVersion() {

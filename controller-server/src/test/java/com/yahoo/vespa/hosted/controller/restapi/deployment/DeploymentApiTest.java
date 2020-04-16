@@ -65,9 +65,12 @@ public class DeploymentApiTest extends ControllerContainerTest {
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
         productionApp.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
-        failingApp.runJob(JobType.systemTest).failDeployment(JobType.stagingTest);
+        failingApp.failDeployment(JobType.systemTest).failDeployment(JobType.stagingTest);
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
+
+        // Application fails application change
+        productionApp.submit(multiInstancePackage).failDeployment(JobType.systemTest);
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller())));
         tester.assertResponse(authenticatedRequest("http://localhost:8080/deployment/v1/"), new File("root.json"));
@@ -78,7 +81,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
         List<VespaVersion> censored = new ArrayList<>();
         for (VespaVersion version : versionStatus.versions()) {
             if (version.nodeVersions().size() > 0) {
-                version = new VespaVersion(version.statistics(),
+                version = new VespaVersion(version.versionNumber(),
                                            version.releaseCommit(),
                                            version.committedAt(),
                                            version.isControllerVersion(),

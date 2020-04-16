@@ -3,6 +3,10 @@
 #include "check_type.h"
 #include "node_traverser.h"
 #include "node_types.h"
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/classname.h>
+
+using vespalib::make_string_short::fmt;
 
 namespace vespalib::eval {
 namespace nodes {
@@ -13,11 +17,13 @@ class State
 private:
     const std::vector<ValueType>      &_params;
     std::map<const Node *, ValueType> &_type_map;
+    std::vector<vespalib::string>     &_errors;
 
 public:
     State(const std::vector<ValueType> &params,
-          std::map<const Node *, ValueType> &type_map)
-        : _params(params), _type_map(type_map) {}
+          std::map<const Node *, ValueType> &type_map,
+          std::vector<vespalib::string> &errors)
+        : _params(params), _type_map(type_map), _errors(errors) {}
 
     const ValueType &param_type(size_t idx) {
         assert(idx < _params.size());
@@ -33,24 +39,61 @@ public:
         assert(pos != _type_map.end());
         return pos->second;
     }
+    void add_error(const vespalib::string &msg) {
+        _errors.push_back(msg);
+    }
 };
 
 struct TypeResolver : public NodeVisitor, public NodeTraverser {
     State state;
     TypeResolver(const std::vector<ValueType> &params_in,
-                 std::map<const Node *, ValueType> &type_map_out);
+                 std::map<const Node *, ValueType> &type_map_out,
+                 std::vector<vespalib::string> &errors_out);
     ~TypeResolver();
 
     const ValueType &param_type(size_t idx) {
         return state.param_type(idx);
     }
 
-    void bind(const ValueType &type, const Node &node) {
-        state.bind(type, node);
+    void fail(const Node &node, const vespalib::string &msg, bool child_types = true) {
+        auto str = fmt("%s: %s", vespalib::getClassName(node).c_str(), msg.c_str());
+        if (child_types) {
+            str += ", child types: [";
+            for (size_t i = 0; i < node.num_children(); ++i) {
+                if (i > 0) {
+                    str += ", ";
+                }
+                str += state.type(node.get_child(i)).to_spec();
+            }
+            str += "]";
+        }
+        state.add_error(str);
+        state.bind(ValueType::error_type(), node);
+    }
+
+    void bind(const ValueType &type, const Node &node, bool check_error = true) {
+        if (check_error && type.is_error()) {
+            fail(node, "type resolving failed");
+        } else {
+            state.bind(type, node);
+        }
     }
 
     const ValueType &type(const Node &node) {
         return state.type(node);
+    }
+
+    void import_errors(const NodeTypes &types) {
+        for (const auto &err: types.errors()) {
+            state.add_error(fmt("[lambda]: %s", err.c_str()));
+        }
+    }
+
+    void import_types(const NodeTypes &types) {
+        types.each([&](const Node &node, const ValueType &type)
+                   {
+                       state.bind(type, node);
+                   });
     }
 
     //-------------------------------------------------------------------------
@@ -58,7 +101,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     bool check_error(const Node &node) {
         for (size_t i = 0; i < node.num_children(); ++i) {
             if (type(node.get_child(i)).is_error()) {
-                bind(ValueType::error_type(), node);
+                bind(ValueType::error_type(), node, false);
                 return true;
             }
         }
@@ -80,7 +123,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         bind(ValueType::double_type(), node);
     }
     void visit(const Symbol &node) override {
-        bind(param_type(node.id()), node);
+        bind(param_type(node.id()), node, false);
     }
     void visit(const String &node) override {
         bind(ValueType::double_type(), node);
@@ -93,7 +136,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
                                type(node.false_expr())), node);
     }
     void visit(const Error &node) override {
-        bind(ValueType::error_type(), node);
+        bind(ValueType::error_type(), node, false);
     }
     void visit(const TensorMap &node) override { resolve_op1(node); }
     void visit(const TensorJoin &node) override { resolve_op2(node); }
@@ -102,12 +145,33 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
                               type(node.get_child(1))), node);
     }
     void visit(const TensorReduce &node) override {
-        const ValueType &child = type(node.get_child(0));
-        bind(child.reduce(node.dimensions()), node);
+        auto my_type = type(node.get_child(0)).reduce(node.dimensions());
+        if (my_type.is_error()) {
+            auto str = fmt("aggr: %s, dimensions: [",
+                           AggrNames::name_of(node.aggr())->c_str());
+            size_t i = 0;
+            for (const auto &dimension: node.dimensions()) {
+                if (i++ > 0) {
+                    str += ",";
+                }
+                str += dimension;
+            }
+            str += "]";
+            fail(node, str);
+        } else {
+            bind(my_type, node);
+        }
     }
     void visit(const TensorRename &node) override {
-        const ValueType &child = type(node.get_child(0));
-        bind(child.rename(node.from(), node.to()), node);
+        auto my_type = type(node.get_child(0)).rename(node.from(), node.to());
+        if (my_type.is_error()) {
+            auto str = fmt("%s -> %s",
+                           TensorRename::flatten(node.from()).c_str(),
+                           TensorRename::flatten(node.to()).c_str());
+            fail(node, str);
+        } else {
+            bind(my_type, node);
+        }
     }
     void visit(const TensorConcat &node) override {
         bind(ValueType::concat(type(node.get_child(0)),
@@ -116,9 +180,28 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const TensorCreate &node) override {
         for (size_t i = 0; i < node.num_children(); ++i) {
             if (!type(node.get_child(i)).is_double()) {
-                return bind(ValueType::error_type(), node);
+                return fail(node, fmt("non-double child at index %zu", i), false);
             }
         }
+        bind(node.type(), node);
+    }
+    void visit(const TensorLambda &node) override {
+        std::vector<ValueType> arg_types;
+        for (const auto &dim: node.type().dimensions()) {
+            (void) dim;
+            arg_types.push_back(ValueType::double_type());
+        }
+        for (size_t binding: node.bindings()) {
+            arg_types.push_back(param_type(binding));
+        }
+        NodeTypes lambda_types(node.lambda(), arg_types);
+        const ValueType &lambda_type = lambda_types.get_type(node.lambda().root());
+        if (!lambda_type.is_double()) {
+            import_errors(lambda_types);
+            return fail(node, fmt("lambda function has non-double result type: %s",
+                                  lambda_type.to_spec().c_str()), false);
+        }
+        import_types(lambda_types);
         bind(node.type(), node);
     }
     void visit(const TensorPeek &node) override {
@@ -128,20 +211,22 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
             dimensions.push_back(dim.first);
             if (dim.second.is_expr()) {
                 if (!type(*dim.second.expr).is_double()) {
-                    return bind(ValueType::error_type(), node);
+                    return fail(node, fmt("non-double label expression for dimension %s", dim.first.c_str()));
                 }
             } else {
                 size_t dim_idx = param_type.dimension_index(dim.first);
                 if (dim_idx == ValueType::Dimension::npos) {
-                    return bind(ValueType::error_type(), node);
+                    return fail(node, fmt("dimension not in param: %s", dim.first.c_str()));
                 }
                 const auto &param_dim = param_type.dimensions()[dim_idx];
                 if (param_dim.is_indexed()) {
                     if (!is_number(dim.second.label)) {
-                        return bind(ValueType::error_type(), node);
+                        return fail(node, fmt("non-numeric label for dimension %s: '%s'",
+                                        dim.first.c_str(), dim.second.label.c_str()));
                     }
                     if (as_number(dim.second.label) >= param_dim.size) {
-                        return bind(ValueType::error_type(), node);
+                        return fail(node, fmt("out-of-bounds label for dimension %s: %s",
+                                        dim.first.c_str(), dim.second.label.c_str()));
                     }
                 }
             }
@@ -204,12 +289,33 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
 };
 
 TypeResolver::TypeResolver(const std::vector<ValueType> &params_in,
-                           std::map<const Node *, ValueType> &type_map_out)
-    : state(params_in, type_map_out)
+                           std::map<const Node *, ValueType> &type_map_out,
+                           std::vector<vespalib::string> &errors_out)
+    : state(params_in, type_map_out, errors_out)
 {
 }
 
 TypeResolver::~TypeResolver() {}
+
+struct TypeExporter : public NodeTraverser {
+    const std::map<const Node *, ValueType> &parent_type_map;
+    std::map<const Node *, ValueType> &exported_type_map;
+    size_t missing_cnt;
+    TypeExporter(const std::map<const Node *, ValueType> &parent_type_map_in,
+                 std::map<const Node *, ValueType> &exported_type_map_out)
+        : parent_type_map(parent_type_map_in),
+          exported_type_map(exported_type_map_out),
+          missing_cnt(0) {}
+    bool open(const Node &) override { return true; }
+    void close(const Node &node) override {
+        auto pos = parent_type_map.find(&node);
+        if (pos != parent_type_map.end()) {
+            exported_type_map.emplace(&node, pos->second);
+        } else {
+            ++missing_cnt;
+        }
+    }
+};
 
 } // namespace vespalib::eval::nodes::<unnamed>
 } // namespace vespalib::eval::nodes
@@ -225,8 +331,22 @@ NodeTypes::NodeTypes(const Function &function, const std::vector<ValueType> &inp
       _type_map()
 {
     assert(input_types.size() == function.num_params());
-    nodes::TypeResolver resolver(input_types, _type_map);
+    nodes::TypeResolver resolver(input_types, _type_map, _errors);
     function.root().traverse(resolver);
+}
+
+NodeTypes::~NodeTypes() = default;
+
+NodeTypes
+NodeTypes::export_types(const nodes::Node &root) const
+{
+    NodeTypes exported_types;
+    nodes::TypeExporter exporter(_type_map, exported_types._type_map);
+    root.traverse(exporter);
+    if (exporter.missing_cnt > 0) {
+        exported_types._errors.push_back(fmt("[export]: %zu nodes had missing types", exporter.missing_cnt));
+    }
+    return exported_types;
 }
 
 const ValueType &

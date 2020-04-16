@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/common/feature.h>
 
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -39,6 +40,7 @@ using namespace search::fef;
 using namespace search::features;
 using namespace search::fef::test;
 using search::feature_t;
+using vespalib::make_string_short::fmt;
 
 typedef FeatureNameBuilder FNB;
 
@@ -477,10 +479,20 @@ RankSetupTest::testCompilation()
         rs.setFirstPhaseRank(oss.str());
         EXPECT_TRUE(!rs.compile());
     }
-    { // cycle
+    { // short cycle
         RankSetup rs(_factory, _indexEnv);
         // c(c,4,2) -> c(c,3,2) -> c(c,2,2) -> c(c,1,2) -> c(c,2,2)
         rs.setFirstPhaseRank("chain(cycle,4,2)");
+        EXPECT_TRUE(!rs.compile());
+    }
+    { // cycle with max back-trace
+        RankSetup rs(_factory, _indexEnv);
+        rs.setFirstPhaseRank(fmt("chain(cycle,%d,2)", BlueprintResolver::MAX_TRACE_SIZE));
+        EXPECT_TRUE(!rs.compile());
+    }
+    { // cycle with max+1 back-trace (skip 2)
+        RankSetup rs(_factory, _indexEnv);
+        rs.setFirstPhaseRank(fmt("chain(cycle,%d,2)", BlueprintResolver::MAX_TRACE_SIZE + 1));
         EXPECT_TRUE(!rs.compile());
     }
 }

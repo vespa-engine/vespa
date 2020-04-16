@@ -41,7 +41,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             QueryConnector * qc = dynamic_cast<QueryConnector *> (qn.get());
             NearQueryNode * nqn = dynamic_cast<NearQueryNode *> (qc);
             if (nqn) {
-                nqn->distance(queryRep.getArg1());
+                nqn->distance(queryRep.getNearDistance());
             }
             if ((type == ParseItem::ITEM_WEAK_AND) ||
                 (type == ParseItem::ITEM_WEIGHTED_SET) ||

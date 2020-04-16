@@ -1,76 +1,67 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import com.yahoo.concurrent.CachedThreadPoolWithFallback;
 
-class Connector {
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
-    private class Run implements Runnable {
-        public void run() {
+class Connector implements AutoCloseable {
+
+    private static final Object globalLock = new Object();
+    private static CachedThreadPoolWithFallback globalExecutor = null;
+    private static long usages = 0;
+
+    private static CachedThreadPoolWithFallback acquire() {
+        synchronized (globalLock) {
+            if (globalExecutor == null) {
+                globalExecutor = new CachedThreadPoolWithFallback("jrt.connector", 1, 64, 1L, TimeUnit.SECONDS);
+            }
+            usages++;
+            return globalExecutor;
+        }
+    }
+
+    private static void release(CachedThreadPoolWithFallback executor) {
+        synchronized (globalLock) {
+            assert executor == globalExecutor;
+            usages--;
+            if (usages == 0) {
+                globalExecutor.close();
+                globalExecutor = null;
+            }
+        }
+    }
+
+    private final AtomicReference<CachedThreadPoolWithFallback> executor;
+
+    Connector() {
+        executor = new AtomicReference<>(acquire());
+    }
+
+    private void connect(Connection conn) {
+        conn.transportThread().addConnection(conn.connect());
+    }
+
+    public void connectLater(Connection conn) {
+        Executor executor = this.executor.get();
+        if (executor != null) {
             try {
-                Connector.this.run();
-            } catch (Throwable problem) {
-                parent.handleFailure(problem, Connector.this);
-            }
-        }
-    }
-
-    private Thread      thread = new Thread(new Run(), "<jrt-connector>");
-    private Transport   parent;
-    private ThreadQueue connectQueue = new ThreadQueue();
-    private boolean     done = false;
-    private boolean     exit = false;
-
-    public Connector(Transport parent) {
-        this.parent = parent;
-        thread.setDaemon(true);
-        thread.start();
-    }
-
-    public void connectLater(Connection c) {
-        if ( ! connectQueue.enqueue(c)) {
-            c.transportThread().addConnection(c);
-        }
-    }
-
-    private void run() {
-        try {
-            while (true) {
-                Connection conn = (Connection) connectQueue.dequeue();
-                conn.transportThread().addConnection(conn.connect());
-            }
-        } catch (EndOfQueueException e) {}
-        synchronized (this) {
-            done = true;
-            notifyAll();
-            while (!exit) {
-                try { wait(); } catch (InterruptedException x) {}
-            }
-        }
-    }
-
-    public Connector shutdown() {
-        connectQueue.close();
-        return this;
-    }
-
-    public synchronized void waitDone() {
-        while (!done) {
-            try { wait(); } catch (InterruptedException x) {}
-        }
-    }
-
-    public synchronized Connector exit() {
-        exit = true;
-        notifyAll();
-        return this;
-    }
-
-    public void join() {
-        while (true) {
-            try {
-                thread.join();
+                executor.execute(() -> connect(conn));
                 return;
-            } catch (InterruptedException e) {}
+            } catch (RejectedExecutionException ignored) {
+            }
+        }
+        conn.transportThread().addConnection(conn);
+    }
+
+    @Override
+    public void close() {
+        CachedThreadPoolWithFallback toShutdown = executor.getAndSet(null);
+        if (toShutdown != null) {
+            release(toShutdown);
         }
     }
 }

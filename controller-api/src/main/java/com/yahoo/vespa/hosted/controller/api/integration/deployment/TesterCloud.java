@@ -1,11 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Allows running some predefined tests -- typically remotely.
@@ -15,21 +17,10 @@ import java.util.List;
 public interface TesterCloud {
 
     /** Signals the tester to run its tests. */
-    void startTests(URI testerUrl, Suite suite, byte[] config);
-
-    /** Signals the tester to run its tests. */
-    // TODO: Remove default implementation when implementations have been updated
-    default void startTests(DeploymentId deploymentId, Suite suite, byte[] config) {}
+    void startTests(DeploymentId deploymentId, Suite suite, byte[] config);
 
     /** Returns the log entries from the tester with ids after the given threshold. */
-    List<LogEntry> getLog(URI testerUrl, long after);
-
-    /** Returns the log entries from the tester with ids after the given threshold. */
-    // TODO: Remove default implementation when implementations have been updated
-    default List<LogEntry> getLog(DeploymentId deploymentId, long after) { return List.of(); }
-
-    /** Returns the current status of the tester. */
-    Status getStatus(URI testerUrl);
+    List<LogEntry> getLog(DeploymentId deploymentId, long after);
 
     /** Returns the current status of the tester. */
     Status getStatus(DeploymentId deploymentId);
@@ -38,20 +29,13 @@ public interface TesterCloud {
     boolean ready(URI endpointUrl);
 
     /** Returns whether the test container is ready to serve */
-    boolean testerReady(URI endpointUrl);
+    boolean testerReady(DeploymentId deploymentId);
 
-    /** Returns whether the test container is ready to serve */
-    // TODO: Remove default implementation when implementations have been updated
-    default boolean testerReady(DeploymentId deploymentId) { return false; }
+    /** Returns the IP address of the given host name, if any. */
+    Optional<String> resolveHostName(HostName hostname);
 
-    /** Returns whether the given URL is registered in DNS. */
-    boolean exists(URI endpointUrl);
-
-    /**
-     * Returns whether the given URL is registered in DNS. Always returns true,
-     * as endpoints are not use in this case
-     */
-    default boolean exists(DeploymentId deploymentId) { return true; }
+    /** Returns the host name of the given CNAME, if any. */
+    Optional<HostName> resolveCname(HostName hostName);
 
     enum Status {
 

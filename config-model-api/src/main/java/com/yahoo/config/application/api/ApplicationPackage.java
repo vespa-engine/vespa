@@ -36,8 +36,6 @@ import java.util.jar.JarFile;
  * The class hides detail as to whether the source is local files or ZooKeeper
  * data in config server.
  *
- * Anyone wanting to access application data should use this interface.
- *
  * @author Vegard Havdal
  */
 public interface ApplicationPackage {
@@ -47,7 +45,8 @@ public interface ApplicationPackage {
     String HOSTS = "hosts.xml";
     String SERVICES = "services.xml";
 
-    Path SEARCH_DEFINITIONS_DIR = Path.fromString("searchdefinitions");
+    Path SCHEMAS_DIR = Path.fromString("schemas");
+    Path SEARCH_DEFINITIONS_DIR = Path.fromString("searchdefinitions"); // Legacy addition to schemas
     String COMPONENT_DIR = "components";
     String SEARCHCHAINS_DIR = "search/chains";
     String DOCPROCCHAINS_DIR = "docproc/chains";
@@ -168,7 +167,7 @@ public interface ApplicationPackage {
     }
 
     /**
-     * Returns inforamtion about a file
+     * Returns information about a file
      *
      * @param relativePath the relative path of the file within this application package.
      * @return information abut the file, returned whether or not the file exists
@@ -206,23 +205,26 @@ public interface ApplicationPackage {
     Reader getRankingExpression(String name);
 
     /**
-     * Returns the name-payload pairs of any sd files under path/searchdefinitions/ in the given jar bundle
-     * @param bundle The jar file, which will be closed afterwards by this method.
-     * @param path For example 'complex/'
+     * Returns the name-payload pairs of any sd files under path/schemas and path/searchdefinitions/
+     * in the given jar bundle.
+     *
+     * @param bundle the jar file, which will be closed afterwards by this method
+     * @param path for example 'complex/'
      * @return map of the SD payloads
      * @throws IOException if it is reading sd files fails
      */
     static Map<String, String> getBundleSdFiles(String path, JarFile bundle) throws IOException {
-        Map<String,String> ret = new LinkedHashMap<>();
+        Map<String, String> schemas = new LinkedHashMap<>();
         for (Enumeration<JarEntry> e = bundle.entries(); e.hasMoreElements();) {
-            JarEntry je=e.nextElement();
-            if (je.getName().startsWith(path+SEARCH_DEFINITIONS_DIR+"/") && je.getName().endsWith(SD_NAME_SUFFIX)) {
-                String contents = IOUtils.readAll(new InputStreamReader(bundle.getInputStream(je)));
-                ret.put(getFileName(je), contents);
+            JarEntry entry = e.nextElement();
+            if ((entry.getName().startsWith(path + SCHEMAS_DIR + "/") || entry.getName().startsWith(path + SEARCH_DEFINITIONS_DIR + "/"))
+                && entry.getName().endsWith(SD_NAME_SUFFIX)) {
+                String contents = IOUtils.readAll(new InputStreamReader(bundle.getInputStream(entry)));
+                schemas.put(getFileName(entry), contents);
             }
         }
         bundle.close();
-        return ret;
+        return schemas;
     }
 
     /**

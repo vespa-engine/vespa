@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/config-attributes.h>
 #include <vespa/fastos/file.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
@@ -24,18 +23,16 @@
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
-#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
-#include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -55,7 +52,7 @@ using proton::initializer::InitializerTask;
 using proton::test::AttributeUtils;
 using proton::test::createInt32Attribute;
 using proton::test::Int32Attribute;
-using search::ForegroundTaskExecutor;
+using vespalib::ForegroundTaskExecutor;
 using search::TuneFileAttributes;
 using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
@@ -215,7 +212,7 @@ struct SequentialAttributeManager
     {
         mgr.addInitializedAttributes(initializer.getInitializedAttributes());
     }
-    ~SequentialAttributeManager() {}
+    ~SequentialAttributeManager() = default;
 };
 
 struct DummyInitializerTask : public InitializerTask
@@ -262,23 +259,33 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
     initializer::TaskRunner taskRunner(executor);
     taskRunner.runTask(initializer);
 }
-ParallelAttributeManager::~ParallelAttributeManager() {}
+ParallelAttributeManager::~ParallelAttributeManager() = default;
 
 TEST_F("require that attributes are added", Fixture)
 {
-    EXPECT_TRUE(f.addAttribute("a1").get() != NULL);
-    EXPECT_TRUE(f.addAttribute("a2").get() != NULL);
+    EXPECT_TRUE(f.addAttribute("a1").get() != nullptr);
+    EXPECT_TRUE(f.addAttribute("a2").get() != nullptr);
     EXPECT_EQUAL("a1", (*f._m.getAttribute("a1"))->getName());
     EXPECT_EQUAL("a1", (*f._m.getAttributeReadGuard("a1", true))->getName());
     EXPECT_EQUAL("a2", (*f._m.getAttribute("a2"))->getName());
     EXPECT_EQUAL("a2", (*f._m.getAttributeReadGuard("a2", true))->getName());
     EXPECT_TRUE(!f._m.getAttribute("not")->valid());
+
+    auto rv = f._m.readable_attribute_vector("a1");
+    ASSERT_TRUE(rv.get() != nullptr);
+    EXPECT_EQUAL("a1", rv->makeReadGuard(true)->attribute()->getName());
+
+    rv = f._m.readable_attribute_vector("a2");
+    ASSERT_TRUE(rv.get() != nullptr);
+    EXPECT_EQUAL("a2", rv->makeReadGuard(true)->attribute()->getName());
+
+    EXPECT_TRUE(f._m.readable_attribute_vector("not_valid").get() == nullptr);
 }
 
 TEST_F("require that predicate attributes are added", Fixture)
 {
     EXPECT_TRUE(f._m.addAttribute({"p1", AttributeUtils::getPredicateConfig()},
-                                  createSerialNum).get() != NULL);
+                                  createSerialNum).get() != nullptr);
     EXPECT_EQUAL("p1", (*f._m.getAttribute("p1"))->getName());
     EXPECT_EQUAL("p1", (*f._m.getAttributeReadGuard("p1", true))->getName());
 }
@@ -376,7 +383,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         AttributeVector::SP a1 = am.addAttribute({"a1", AttributeUtils::getPredicateConfig()}, createSerialNum);
         EXPECT_EQUAL(1u, a1->getNumDocs());
 
-        PredicateAttribute &pa = static_cast<PredicateAttribute &>(*a1);
+        auto &pa = static_cast<PredicateAttribute &>(*a1);
         PredicateIndex &index = pa.getIndex();
         uint32_t doc_id;
         a1->addDoc(doc_id);
@@ -396,7 +403,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         AttributeVector::SP a1 = am.addAttribute({"a1", AttributeUtils::getPredicateConfig()}, createSerialNum); // loaded
         EXPECT_EQUAL(2u, a1->getNumDocs());
 
-        PredicateAttribute &pa = static_cast<PredicateAttribute &>(*a1);
+        auto &pa = static_cast<PredicateAttribute &>(*a1);
         PredicateIndex &index = pa.getIndex();
         uint32_t doc_id;
         a1->addDoc(doc_id);
@@ -746,7 +753,7 @@ TEST_F("require that we can acquire exclusive read access to attribute", Fixture
     EXPECT_TRUE(noneAccessor.get() == nullptr);
 }
 
-TEST_F("require that imported attributes are exposed via attribute context together vi regular attributes", Fixture)
+TEST_F("require that imported attributes are exposed via attribute context together with regular attributes", Fixture)
 {
     f.addAttribute("attr");
     f.addImportedAttribute("imported");
@@ -765,6 +772,17 @@ TEST_F("require that imported attributes are exposed via attribute context toget
     EXPECT_EQUAL(2u, all.size());
     EXPECT_EQUAL("attr", all[0]->getName());
     EXPECT_EQUAL("imported", all[1]->getName());
+}
+
+TEST_F("imported attributes are transparently returned from readable_attribute_vector", Fixture)
+{
+    f.addAttribute("attr");
+    f.addImportedAttribute("imported");
+    f.setImportedAttributes();
+    auto av = f._m.readable_attribute_vector("imported");
+    ASSERT_TRUE(av);
+    auto g = av->makeReadGuard(false);
+    EXPECT_EQUAL("imported", g->attribute()->getName());
 }
 
 TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)

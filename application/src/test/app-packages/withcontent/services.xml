@@ -22,7 +22,7 @@
           </chain>
       </document-processing>
       -->
-
+    <accesslog type="disabled" />
   </container>
 
   <content version="1.0" id="foo">

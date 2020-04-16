@@ -203,6 +203,7 @@ public class DocumentTypeChangeValidatorTest {
                 headerfields,
                 new StructDataType("bodyfields"),
                 new FieldSets(),
+                Collections.emptySet(),
                 Collections.emptySet());
     }
 

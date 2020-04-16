@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
-#include <string.h>
+#include <cstring>
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
@@ -34,7 +34,7 @@ static double hw_l2_sq_dist(const T * af, const T * bf, size_t sz)
 
 template <typename FltType = float>
 struct L2DistCalc {
-    vespalib::hwaccelrated::IAccelrated::UP _hw;
+    const vespalib::hwaccelrated::IAccelrated & _hw;
 
     L2DistCalc() : _hw(vespalib::hwaccelrated::IAccelrated::getAccelrator()) {}
 
@@ -42,16 +42,16 @@ struct L2DistCalc {
     using ConstArr = vespalib::ConstArrayRef<FltType>;
 
     double product(const FltType *v1, const FltType *v2, size_t sz) {
-        return _hw->dotProduct(v1, v2, sz);
+        return _hw.dotProduct(v1, v2, sz);
     }
     double product(ConstArr v1, ConstArr v2) {
         const FltType *p1 = v1.begin();
         const FltType *p2 = v2.begin();
-        return _hw->dotProduct(p1, p2, v1.size());
+        return _hw.dotProduct(p1, p2, v1.size());
     }
     double l2sq(ConstArr vector) {
         const FltType *v = vector.begin();
-        return _hw->dotProduct(v, v, vector.size());
+        return _hw.dotProduct(v, v, vector.size());
     }
     double l2sq_dist(ConstArr v1, ConstArr v2, Arr tmp) {
         for (size_t i = 0; i < v1.size(); ++i) {

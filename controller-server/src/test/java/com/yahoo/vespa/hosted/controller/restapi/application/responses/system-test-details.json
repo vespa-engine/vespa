@@ -83,36 +83,6 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "Endpoints not yet ready."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "--- platform 6.1"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "Found endpoints:"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "- test.us-east-1"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": " |-- https://instance1-t--application1--tenant1.us-east-1.test.vespa:43 (cluster 'default')"
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
         "message": "Tester container successfully installed!"
       }
     ],
@@ -142,6 +112,86 @@
       {
         "at": "(ignore)",
         "type": "info",
+        "message": "######## Details for all nodes ########"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform 6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
         "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
       },
       {
@@ -167,7 +217,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa:43 (cluster 'default')"
+        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
       },
       {
         "at": "(ignore)",
@@ -194,7 +244,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa:43 (cluster 'default')"
+        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
       },
       {
         "at": "(ignore)",
@@ -224,7 +274,7 @@
       }
     ]
   },
-  "lastId": 40,
+  "lastId": 50,
   "steps": {
     "deployTester": {
       "status": "succeeded",

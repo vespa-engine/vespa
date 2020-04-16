@@ -23,6 +23,7 @@ public:
     spi::PersistenceProvider& _provider;
     const spi::Bucket& _bucket;
     spi::Context& _context;
+    uint32_t _n_removed;
 
     UnrevertableRemoveEntryProcessor(
             spi::PersistenceProvider& provider,
@@ -30,7 +31,9 @@ public:
             spi::Context& context)
         : _provider(provider),
           _bucket(bucket),
-          _context(context) {}
+          _context(context),
+          _n_removed(0)
+    {}
 
     void process(spi::DocEntry& entry) override {
         spi::RemoveResult removeResult = _provider.remove(
@@ -45,13 +48,14 @@ public:
                << removeResult.getErrorMessage();
             throw std::runtime_error(ss.str());
         }
+        ++_n_removed;
     }
 };
 
 class StatEntryProcessor : public BucketProcessor::EntryProcessor {
 public:
     std::ostream& ost;
-    StatEntryProcessor(std::ostream& o)
+    explicit StatEntryProcessor(std::ostream& o)
         : ost(o) {};
 
     void process(spi::DocEntry& e) override {
@@ -97,7 +101,9 @@ ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd,
                                 context);
     spi::Result result = _spi.flush(bucket, context);
     uint32_t code = _env.convertErrorCode(result);
-    if (code != 0) {
+    if (code == 0) {
+        tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, processor._n_removed));
+    } else {
         tracker->fail(code, result.getErrorMessage());
     }
 

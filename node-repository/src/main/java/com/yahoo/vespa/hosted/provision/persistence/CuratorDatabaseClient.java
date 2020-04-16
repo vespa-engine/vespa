@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -38,6 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -61,6 +62,7 @@ public class CuratorDatabaseClient {
 
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockRoot = root.append("locks");
+    private static final Path configLockRoot = Path.fromString("/config/v2/locks/");
     private static final Path loadBalancersRoot = root.append("loadBalancers");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
@@ -311,13 +313,21 @@ public class CuratorDatabaseClient {
         return root.append(toDir(nodeState)).append(nodeName);
     }
 
-    /** Creates an returns the path to the lock for this application */
+    /** Creates and returns the path to the lock for this application */
     private Path lockPath(ApplicationId application) {
         Path lockPath =
                 lockRoot
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());
+        curatorDatabase.create(lockPath);
+        return lockPath;
+    }
+
+    /** Creates and returns the path to the config server lock for this application */
+    private Path configLockPath(ApplicationId application) {
+        // This must match the lock path used by com.yahoo.vespa.config.server.application.TenantApplications
+        Path lockPath = configLockRoot.append(application.tenant().value()).append(application.serializedForm());
         curatorDatabase.create(lockPath);
         return lockPath;
     }
@@ -332,6 +342,7 @@ public class CuratorDatabaseClient {
             case provisioned: return "provisioned";
             case ready: return "ready";
             case reserved: return "reserved";
+            case deprovisioned: return "deprovisioned";
             default: throw new RuntimeException("Node state " + state + " does not map to a directory name");
         }
     }
@@ -356,6 +367,28 @@ public class CuratorDatabaseClient {
         }
     }
 
+    /**
+     * Acquires the single cluster-global, re-entrant config lock for given application. Note that this is the same lock
+     * that configserver itself takes when modifying applications.
+     *
+     * This lock must be taken when writes to paths owned by this class may happen on both the configserver and
+     * node-repository side. This behaviour is obviously wrong, but since we pass a NestedTransaction across the
+     * configserver and node-repository boundary, the ownership semantics of the transaction (and its operations)
+     * becomes unclear.
+     *
+     * Example of when to use: The config server creates a new transaction and passes the transaction to
+     * {@link com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner}, which appends operations to the
+     * transaction. The config server then commits (writes) the transaction which may include operations that modify
+     * data in paths owned by this class.
+     */
+    public Lock lockConfig(ApplicationId application) {
+        try {
+            return lock(configLockPath(application), defaultLockTimeout);
+        } catch (UncheckedTimeoutException e) {
+            throw new ApplicationLockException(e);
+        }
+    }
+
     private Lock lock(Path path, Duration timeout) {
         return curatorDatabase.lock(path, timeout);
     }
@@ -364,8 +397,11 @@ public class CuratorDatabaseClient {
         return curatorDatabase.getData(path).filter(data -> data.length > 0).map(mapper);
     }
 
-
     // Maintenance jobs
+    public Lock lockMaintenanceJob(String jobName) {
+        return lock(lockRoot.append("maintenanceJobLocks").append(jobName), defaultLockTimeout);
+    }
+
     public Set<String> readInactiveJobs() {
         try {
             return read(inactiveJobsPath(), stringSetSerializer::fromJson).orElseGet(HashSet::new);
@@ -483,18 +519,16 @@ public class CuratorDatabaseClient {
 
     // Load balancers
     public List<LoadBalancerId> readLoadBalancerIds() {
-        return curatorDatabase.getChildren(loadBalancersRoot).stream()
-                              .map(LoadBalancerId::fromSerializedForm)
-                              .collect(Collectors.toUnmodifiableList());
+        return readLoadBalancerIds((ignored) -> true);
     }
 
-    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {
-        return readLoadBalancerIds().stream()
-                                    .map(this::readLoadBalancer)
-                                    .filter(Optional::isPresent)
-                                    .map(Optional::get)
-                                    .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
-                                                           Collections::unmodifiableMap));
+    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers(Predicate<LoadBalancerId> filter) {
+        return readLoadBalancerIds(filter).stream()
+                                          .map(this::readLoadBalancer)
+                                          .filter(Optional::isPresent)
+                                          .map(Optional::get)
+                                          .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
+                                                                     Collections::unmodifiableMap));
     }
 
     public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
@@ -522,12 +556,20 @@ public class CuratorDatabaseClient {
         transaction.commit();
     }
 
-    public Lock lockLoadBalancers() {
-        return lock(lockRoot.append("loadBalancersLock"), defaultLockTimeout);
+    // TODO(mpolden): Remove this and usages after April 2020
+    public Lock lockLoadBalancers(ApplicationId application) {
+        return lock(lockRoot.append("loadBalancersLock2").append(application.serializedForm()), defaultLockTimeout);
     }
 
     private Path loadBalancerPath(LoadBalancerId id) {
         return loadBalancersRoot.append(id.serializedForm());
+    }
+
+    private List<LoadBalancerId> readLoadBalancerIds(Predicate<LoadBalancerId> predicate) {
+        return curatorDatabase.getChildren(loadBalancersRoot).stream()
+                              .map(LoadBalancerId::fromSerializedForm)
+                              .filter(predicate)
+                              .collect(Collectors.toUnmodifiableList());
     }
 
     private Transaction.Operation createOrSet(Path path, byte[] data) {
@@ -547,4 +589,5 @@ public class CuratorDatabaseClient {
                 .mapToObj(i -> firstProvisionIndex + i)
                 .collect(Collectors.toList());
     }
+
 }

@@ -17,10 +17,9 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeStream;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
-import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -125,7 +124,6 @@ public class UserApiHandler extends LoggingRequestHandler {
         User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
         Set<Role> roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
 
-        ApplicationIdSnapshot snapshot = controller.applicationIdSnapshot();
         Map<TenantName, List<TenantRole>> tenantRolesByTenantName = roles.stream()
                 .flatMap(role -> filterTenantRoles(role).stream())
                 .distinct()
@@ -134,9 +132,10 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         // List of operator roles, currently only one available, but possible to extend
         List<Role> operatorRoles = roles.stream()
-                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator))
+                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator) ||
+                        role.definition().equals(RoleDefinition.hostedSupporter))
+                .sorted(Comparator.comparing(Role::definition))
                 .collect(Collectors.toList());
-
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -155,17 +154,6 @@ public class UserApiHandler extends LoggingRequestHandler {
                     Cursor tenantRolesObject = tenantObject.setArray("roles");
                     tenantRolesByTenantName.getOrDefault(tenant, List.of())
                             .forEach(role -> tenantRolesObject.addString(role.definition().name()));
-
-                    Cursor tenantApplicationsObject = tenantObject.setObject("applications");
-                    snapshot.applications(tenant).stream()
-                            .sorted()
-                            .forEach(application -> {
-                                Cursor applicationObject = tenantApplicationsObject.setObject(application.value());
-                                Cursor applicationInstancesObject = applicationObject.setArray("instances");
-                                snapshot.instances(tenant, application).stream()
-                                        .sorted()
-                                        .forEach(instance -> applicationInstancesObject.addString(instance.value()));
-                            });
                 });
 
         if (!operatorRoles.isEmpty()) {
@@ -347,13 +335,6 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private static String valueOf(Role role) {
         switch (role.definition()) {
-            case tenantOwner:           return "tenantOwner";
-            case tenantAdmin:           return "tenantAdmin";
-            case tenantOperator:        return "tenantOperator";
-            case applicationAdmin:      return "applicationAdmin";
-            case applicationOperator:   return "applicationOperator";
-            case applicationDeveloper:  return "applicationDeveloper";
-            case applicationReader:     return "applicationReader";
             case administrator:         return "administrator";
             case developer:             return "developer";
             case reader:                return "reader";

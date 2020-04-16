@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -98,19 +97,6 @@ public class Supervisor {
         synchronized (methodMapLock) {
             HashMap<String, Method> newMap = new HashMap<>(methodMap());
             newMap.put(method.name(), method);
-            methodMap.setRelease(newMap);
-        }
-    }
-
-    /**
-     * Remove a method from the set of methods held by this Supervisor
-     *
-     * @param methodName name of the method to remove
-     **/
-    public void removeMethod(String methodName) {
-        synchronized (methodMapLock) {
-            HashMap<String, Method> newMap = new HashMap<>(methodMap());
-            newMap.remove(methodName);
             methodMap.setRelease(newMap);
         }
     }

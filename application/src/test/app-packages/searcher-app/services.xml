@@ -12,4 +12,5 @@
 
     </chain>
   </search>
+  <accesslog type="disabled" />
 </container>

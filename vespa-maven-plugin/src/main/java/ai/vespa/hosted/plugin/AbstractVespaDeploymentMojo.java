@@ -12,6 +12,8 @@ import org.apache.maven.plugins.annotations.Parameter;
  */
 public abstract class AbstractVespaDeploymentMojo extends AbstractVespaMojo {
 
+    protected ZoneId zone;
+
     @Parameter(property = "environment")
     protected String environment;
 
@@ -20,13 +22,21 @@ public abstract class AbstractVespaDeploymentMojo extends AbstractVespaMojo {
 
     protected ZoneId zoneOf(String environment, String region) {
         if (region == null)
-            return controller.defaultZone(environment != null ? Environment.from(environment)
-                                                              : Environment.dev);
+            return zone = controller.defaultZone(environment != null ? Environment.from(environment)
+                                                                     : Environment.dev);
 
         if (environment == null)
             throw new IllegalArgumentException("Environment must be specified if region is specified");
 
-        return ZoneId.from(environment, region);
+        return zone = ZoneId.from(environment, region);
+    }
+
+    @Override
+    protected String name() {
+        return super.name() + "." + instance + " in " +
+               (zone != null ? zone.region() + " in " + zone.environment()
+                             : (region == null ? "default region" : region) + " in " +
+                               (environment == null ? "default environment (dev)" : environment));
     }
 
 }

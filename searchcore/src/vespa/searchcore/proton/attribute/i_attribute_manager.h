@@ -10,11 +10,11 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/serialnum.h>
 
-namespace search {
-    class IDestructorCallback;
-    class ISequencedTaskExecutor;
-}
+namespace search { class IDestructorCallback;}
+
 namespace search::attribute { class IAttributeFunctor; }
+
+namespace vespalib { class ISequencedTaskExecutor; }
 
 namespace proton {
 
@@ -72,7 +72,7 @@ struct IAttributeManager : public search::IAttributeManager
      */
     virtual const IAttributeFactory::SP &getFactory() const = 0;
 
-    virtual search::ISequencedTaskExecutor &getAttributeFieldWriter() const = 0;
+    virtual vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const = 0;
 
     /*
      * Get pointer to named writable attribute.  If attribute isn't

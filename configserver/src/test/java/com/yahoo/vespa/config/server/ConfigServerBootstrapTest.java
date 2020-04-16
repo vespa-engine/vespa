@@ -12,6 +12,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -235,6 +236,7 @@ public class ConfigServerBootstrapTest {
 
     private VipStatus createVipStatus(StateMonitor stateMonitor) {
         return new VipStatus(new QrSearchersConfig.Builder().build(),
+                             new VipStatusConfig.Builder().build(),
                              new ClustersStatus(),
                              stateMonitor);
     }

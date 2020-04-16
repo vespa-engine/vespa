@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "stringbase.h"
 #include "attributevector.hpp"
+#include "load_utils.h"
 #include "readerbase.h"
+#include "stringbase.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/array.hpp>
 
@@ -231,10 +232,7 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     _regex()
 {
     if (isRegex()) {
-        try {
-            _regex = std::regex(_queryTerm->getTerm(), std::regex::icase);
-        } catch (std::regex_error &) {
-        }
+        _regex = vespalib::Regex::from_pattern(_queryTerm->getTerm(), vespalib::Regex::Options::IgnoreCase);
     }
 }
 
@@ -319,7 +317,7 @@ bool StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
 bool
 StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
 {
-    fileutil::LoadedBuffer::UP udatBuffer(loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
 
     bool hasIdx(attrReader.hasIdx());
     size_t numDocs(0);

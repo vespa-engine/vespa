@@ -17,10 +17,10 @@ class RemoveOperation  : public SequencedOperation
 public:
     RemoveOperation(DistributorComponent& manager,
                     DistributorBucketSpace &bucketSpace,
-                    const std::shared_ptr<api::RemoveCommand> & msg,
+                    std::shared_ptr<api::RemoveCommand> msg,
                     PersistenceOperationMetricSet& metric,
                     SequencingHandle sequencingHandle = SequencingHandle());
-    ~RemoveOperation();
+    ~RemoveOperation() override;
 
     void onStart(DistributorMessageSender& sender) override;
     const char* getName() const override { return "remove"; };

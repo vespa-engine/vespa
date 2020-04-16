@@ -14,11 +14,14 @@ import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpTrace;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URI;
 
+import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,6 +54,15 @@ public class JDiscHttpServletTest {
         assertThat(driver.close(), is(true));
     }
 
+    @Test
+    public void requireThatServerResponds405ToUnknownMethods() throws IOException {
+        TestDriver driver = TestDrivers.newInstance(newEchoHandler());
+        final URI uri = driver.client().newUri("/status.html");
+        driver.client().execute(new UnknownMethodHttpRequest(uri))
+                .expectStatusCode(is(METHOD_NOT_ALLOWED));
+        assertThat(driver.close(), is(true));
+    }
+
     private static RequestHandler newEchoHandler() {
         return new AbstractRequestHandler() {
 
@@ -59,5 +71,10 @@ public class JDiscHttpServletTest {
                 return handler.handleResponse(new Response(OK));
             }
         };
+    }
+
+    private static class UnknownMethodHttpRequest extends HttpRequestBase {
+        UnknownMethodHttpRequest(URI uri) { setURI(uri); }
+        @Override public String getMethod() { return "UNKNOWN_METHOD"; }
     }
 }

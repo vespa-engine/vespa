@@ -10,6 +10,7 @@ public enum NodeState {
     inactive,
     dirty,
     failed,
-    parked;
+    parked,
+    deprovisioned;
 
 }

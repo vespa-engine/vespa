@@ -90,8 +90,6 @@
             container-disc-jar-with-dependencies.jar,
             vespajlib.jar
           </discPreInstallBundle>
-          <bundleActivator>com.yahoo.container.standalone.StandaloneContainerActivator</bundleActivator>
-          <jdiscPrivilegedActivator>true</jdiscPrivilegedActivator>
         </configuration>
       </plugin>
       <plugin>

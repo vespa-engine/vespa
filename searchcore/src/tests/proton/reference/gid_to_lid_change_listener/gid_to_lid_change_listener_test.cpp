@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
@@ -49,13 +49,13 @@ struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory
 struct Fixture
 {
     std::shared_ptr<ReferenceAttribute> _attr;
-    search::SequencedTaskExecutor _writer;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _writer;
     MonitoredRefCount _refCount;
     std::unique_ptr<GidToLidChangeListener>  _listener;
 
     Fixture()
         : _attr(std::make_shared<ReferenceAttribute>("test", Config(BasicType::REFERENCE))),
-          _writer(1),
+          _writer(vespalib::SequencedTaskExecutor::create(1)),
           _refCount(),
           _listener()
     {
@@ -91,7 +91,7 @@ struct Fixture
     }
 
     void allocListener() {
-        _listener = std::make_unique<GidToLidChangeListener>(_writer, _attr, _refCount, "test", "testdoc");
+        _listener = std::make_unique<GidToLidChangeListener>(*_writer, _attr, _refCount, "test", "testdoc");
     }
 
     void notifyPutDone(const GlobalId &gid, uint32_t referencedDoc) {

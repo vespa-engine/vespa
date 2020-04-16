@@ -2,14 +2,17 @@
 package com.yahoo.vespa.athenz.client.zts;
 
 import com.yahoo.security.Pkcs10Csr;
+import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
+import com.yahoo.vespa.athenz.client.zts.bindings.AccessTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.AwsTemporaryCredentialsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityRefreshRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityResponseEntity;
@@ -36,6 +39,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -143,6 +147,33 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
         return execute(request, response -> {
             RoleTokenResponseEntity roleTokenResponseEntity = readEntity(response, RoleTokenResponseEntity.class);
             return roleTokenResponseEntity.token;
+        });
+    }
+
+    @Override
+    public AthenzAccessToken getAccessToken(AthenzDomain domain) {
+        return this.getAccessTokenImpl(List.of(new AthenzResourceName(domain, "domain")));
+    }
+
+    @Override
+    public AthenzAccessToken getAccessToken(List<AthenzRole> athenzRole) {
+        List<AthenzResourceName> athenzResourceNames = athenzRole.stream()
+                .map(AthenzRole::toResourceName)
+                .collect(toList());
+        return this.getAccessTokenImpl(athenzResourceNames);
+    }
+
+    private AthenzAccessToken getAccessTokenImpl(List<AthenzResourceName> resources) {
+        URI uri = ztsUrl.resolve("oauth2/token");
+        RequestBuilder requestBuilder = RequestBuilder.post(uri)
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addParameter("grant_type", "client_credentials")
+                .addParameter("scope", resources.stream().map(AthenzResourceName::toResourceNameString).collect(Collectors.joining(" ")));
+
+        HttpUriRequest request = requestBuilder.build();
+        return execute(request, response -> {
+            AccessTokenResponseEntity accessTokenResponseEntity = readEntity(response, AccessTokenResponseEntity.class);
+            return accessTokenResponseEntity.accessToken();
         });
     }
 

@@ -10,6 +10,14 @@ using ParamRepo = EvalFixture::ParamRepo;
 
 namespace {
 
+std::shared_ptr<Function const> verify_function(std::shared_ptr<Function const> fun) {
+    if (fun->has_error()) {
+        fprintf(stderr, "eval_fixture: function parse failed: %s\n", fun->get_error().c_str());
+    }
+    ASSERT_TRUE(!fun->has_error());
+    return fun;
+}
+
 NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
     std::vector<ValueType> param_types;
     for (size_t i = 0; i < function.num_params(); ++i) {
@@ -83,6 +91,19 @@ std::vector<Value::CREF> get_refs(const std::vector<Value::UP> &values) {
 
 } // namespace vespalib::eval::test
 
+void
+EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const
+{
+    for (size_t i = 0; i < _function->num_params(); ++i) {
+        auto pos = param_repo.map.find(_function->param_name(i));
+        ASSERT_TRUE(pos != param_repo.map.end());
+        bool allow_tampering = allow_mutable && pos->second.is_mutable;
+        if (!allow_tampering) {
+            ASSERT_EQUAL(pos->second.value, _engine.to_spec(*_param_values[i]));
+        }
+    }
+}
+
 EvalFixture::EvalFixture(const TensorEngine &engine,
                          const vespalib::string &expr,
                          const ParamRepo &param_repo,
@@ -90,7 +111,7 @@ EvalFixture::EvalFixture(const TensorEngine &engine,
                          bool allow_mutable)
     : _engine(engine),
       _stash(),
-      _function(Function::parse(expr)),
+      _function(verify_function(Function::parse(expr))),
       _node_types(get_types(*_function, param_repo)),
       _mutable_set(get_mutable(*_function, param_repo)),
       _plain_tensor_function(make_tensor_function(_engine, _function->root(), _node_types, _stash)),
@@ -104,6 +125,7 @@ EvalFixture::EvalFixture(const TensorEngine &engine,
 {
     auto result_type = ValueType::from_spec(_result.type());
     ASSERT_TRUE(!result_type.is_error());
+    TEST_DO(detect_param_tampering(param_repo, allow_mutable));
 }
 
 const TensorSpec

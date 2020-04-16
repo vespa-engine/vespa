@@ -22,7 +22,7 @@ import java.util.Map;
 public interface Metric {
 
     /**
-     * <p>Set a metric value. This is typically used with histogram-type metrics.</p>
+     * Set a metric value. This is typically used with histogram-type metrics.
      *
      * @param key The name of the metric to modify.
      * @param val The value to assign to the named metric.
@@ -31,28 +31,28 @@ public interface Metric {
     void set(String key, Number val, Context ctx);
 
     /**
-     * <p>Add to a metric value. This is typically used with counter-type metrics.</p>
+     * Add to a metric value. This is typically used with counter-type metrics.
      *
-     * @param key The name of the metric to modify.
-     * @param val The value to add to the named metric.
-     * @param ctx The context to further describe this entry.
+     * @param key the name of the metric to modify
+     * @param val the value to add to the named metric
+     * @param ctx the context to further describe this entry
      */
     void add(String key, Number val, Context ctx);
 
     /**
-     * <p>Creates a {@link MetricConsumer}-specific {@link Context} object that encapsulates the given properties. The
+     * Creates a {@link MetricConsumer}-specific {@link Context} object that encapsulates the given properties. The
      * returned Context object should be passed along every future call to {@link #set(String, Number, Context)} and
-     * {@link #add(String, Number, Context)} where the properties match those given here.</p>
+     * {@link #add(String, Number, Context)} where the properties match those given here.
      *
-     * @param properties The properties to incorporate in the context.
-     * @return The created context.
+     * @param properties the properties to incorporate in the context
+     * @return the created context
      */
     Context createContext(Map<String, ?> properties);
 
     /**
-     * <p>Declares the interface for the arbitrary context object to pass to both the {@link
+     * Declares the interface for the arbitrary context object to pass to both the {@link
      * #set(String, Number, Context)} and {@link #add(String, Number, Context)} methods. This is intentionally empty so
-     * that implementations can vary.</p>
+     * that implementations can vary.
      */
     interface Context {
 

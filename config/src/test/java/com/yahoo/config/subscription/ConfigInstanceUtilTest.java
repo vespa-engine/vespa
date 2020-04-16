@@ -22,7 +22,6 @@ import static com.yahoo.foo.FunctionTestConfig.*;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ConfigInstanceUtilTest {
 

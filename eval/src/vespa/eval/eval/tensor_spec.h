@@ -66,8 +66,8 @@ public:
     TensorSpec(const TensorSpec &);
     TensorSpec & operator = (const TensorSpec &);
     ~TensorSpec();
-    TensorSpec &add(const Address &address, double value) {
-        auto res = _cells.emplace(address, value);
+    TensorSpec &add(Address address, double value) {
+        auto res = _cells.emplace(std::move(address), value);
         if (!res.second) {
             res.first->second.value += value;
         }

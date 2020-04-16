@@ -30,7 +30,7 @@ public interface FeedClient extends AutoCloseable {
      * produced faster than the can be handled. Transient failured are retried internally by this client.
      * Exactly one callback will always be received for each (completed) call to this.
      *
-     * @param documentId the document id of the document.
+     * @param documentId the document id of the document
      * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
      */
     default void stream(String documentId, CharSequence documentData) {
@@ -43,7 +43,7 @@ public interface FeedClient extends AutoCloseable {
      * produced faster than the can be handled. Transient failured are retried internally by this client.
      * Exactly one callback will always be received for each (completed) call to this.
      *
-     * @param documentId the document id of the document.
+     * @param documentId the document id of the document
      * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
      * @param context a context object which will be accessible in the result of the callback, or null if none
      */
@@ -57,7 +57,7 @@ public interface FeedClient extends AutoCloseable {
      * produced faster than the can be handled. Transient failured are retried internally by this client.
      * Exactly one callback will always be received for each (completed) call to this.
      *
-     * @param documentId the document id of the document.
+     * @param documentId the document id of the document
      * @param operationId the id to use for this operation, or null to let the client decide an operation id.
      *                    This id must be unique for every operation. Passing the operation id allows clients
      *                    to prepare to receive a response for it before issuing the operation to the client.
@@ -74,9 +74,9 @@ public interface FeedClient extends AutoCloseable {
     void close();
 
     /**
-     * Returns stats about the cluster.
+     * Returns stats about the cluster
      * 
-     * @return JSON string with information about cluster.
+     * @return JSON string with information about cluster
      */
     String getStatsAsJson();
 
@@ -132,7 +132,7 @@ public interface FeedClient extends AutoCloseable {
          * Document specific errors will be reported back through {@link #onCompletion(String, Result)}.
          *
          * @see FeedEndpointException
-         * @param exception An exception specifying endpoint and cause. See {@link FeedEndpointException} for details.
+         * @param exception an exception specifying endpoint and cause. See {@link FeedEndpointException} for details.
          */
         default void onEndpointException(FeedEndpointException exception) {}
 

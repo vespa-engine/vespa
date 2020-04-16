@@ -4,8 +4,7 @@
 #include <ostream>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 vespalib::string
 Bucket::toString() const {
@@ -30,5 +29,4 @@ operator<<(std::ostream& os, const Bucket& bucket) {
     return os << bucket.toString();
 }
 
-} // spi
-} // storage
+}

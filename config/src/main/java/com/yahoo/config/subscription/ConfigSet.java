@@ -10,7 +10,7 @@ import com.yahoo.vespa.config.ConfigKey;
 /**
  * Config source as a programmatically built set of {@link com.yahoo.config.ConfigInstance}s
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class ConfigSet implements ConfigSource {
     private final Map<ConfigKey<?>, ConfigInstance.Builder> configs = new ConcurrentHashMap<>();

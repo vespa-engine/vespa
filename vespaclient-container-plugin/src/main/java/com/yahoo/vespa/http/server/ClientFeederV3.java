@@ -53,12 +53,11 @@ class ClientFeederV3 {
     private final Metric metric;
     private Instant prevOpsPerSecTime = Instant.now();
     private double operationsForOpsPerSec = 0d;
-
     private final Object monitor = new Object();
     private final StreamReaderV3 streamReaderV3;
     private final AtomicInteger ongoingRequests = new AtomicInteger(0);
-    private String hostName;
-    private AtomicInteger threadsAvailableForFeeding;
+    private final String hostName;
+    private final AtomicInteger threadsAvailableForFeeding;
 
     ClientFeederV3(
             ReferencedResource<SharedSourceSession> sourceSession,

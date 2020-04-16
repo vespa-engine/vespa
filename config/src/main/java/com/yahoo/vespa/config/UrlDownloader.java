@@ -47,7 +47,7 @@ public class UrlDownloader {
                 Request request = new Request("frt.rpc.ping");
                 target.invokeSync(request, 5.0);
                 if (! request.isError()) {
-                    log.log(LogLevel.DEBUG, "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
+                    log.log(LogLevel.DEBUG, () -> "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
                     return;
                 } else {
                     target.close();
@@ -78,7 +78,7 @@ public class UrlDownloader {
             request.parameters().add(new StringValue(urlReference.value()));
 
             double rpcTimeout = Math.min(timeLeft, 60 * 60.0);
-            log.log(LogLevel.DEBUG, "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
+            log.log(LogLevel.DEBUG, () -> "InvokeSync waitFor " + urlReference + " with " + rpcTimeout + " seconds timeout");
             target.invokeSync(request, rpcTimeout);
 
             if (request.checkReturnTypes("s")) {

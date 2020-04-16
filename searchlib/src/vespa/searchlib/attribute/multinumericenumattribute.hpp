@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include "multinumericenumattribute.h"
-#include "loadednumericvalue.h"
 #include "attributeiterators.hpp"
-#include <vespa/searchlib/util/fileutil.hpp>
+#include "load_utils.h"
+#include "loadednumericvalue.h"
+#include "multinumericenumattribute.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/util/fileutil.hpp>
 
 namespace search {
 
@@ -52,7 +53,7 @@ template <typename B, typename M>
 bool
 MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
 {
-    LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
 
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     uint64_t numValues = attrReader.getNumValues();

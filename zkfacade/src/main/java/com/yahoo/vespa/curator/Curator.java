@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -48,27 +49,26 @@ import java.util.logging.Logger;
  */
 public class Curator implements AutoCloseable {
 
-    private static final Logger logger = Logger.getLogger(Curator.class.getName());
-
-    private static final int ZK_SESSION_TIMEOUT = 30000;
-    private static final int ZK_CONNECTION_TIMEOUT = 30000;
-
-    private static final int BASE_SLEEP_TIME = 1000; //ms
+    private static final Logger LOG = Logger.getLogger(Curator.class.getName());
+    private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
+    private static final Duration ZK_SESSION_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration ZK_CONNECTION_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
     private static final int MAX_RETRIES = 10;
-
-    private static final File zkClientConfigFile = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
 
     protected final RetryPolicy retryPolicy;
 
     private final CuratorFramework curatorFramework;
     private final String connectionSpec; // May be a subset of the servers in the ensemble
-
     private final String zooKeeperEnsembleConnectionSpec;
     private final int zooKeeperEnsembleCount;
 
+    // All lock keys, to allow re-entrancy. This will grow forever, but this should be too slow to be a problem
+    private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
+
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
-        return new Curator(connectionSpec, connectionSpec, Optional.of(zkClientConfigFile));
+        return new Curator(connectionSpec, connectionSpec, Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
     // For testing only, use Optional.empty for clientConfigFile parameter to create default zookeeper client config
@@ -80,7 +80,7 @@ public class Curator implements AutoCloseable {
     // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
     public Curator(ConfigserverConfig configserverConfig, VespaZooKeeperServer server) {
-        this(configserverConfig, Optional.of(zkClientConfigFile));
+        this(configserverConfig, Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
     Curator(ConfigserverConfig configserverConfig, Optional<File> clientConfigFile) {
@@ -93,8 +93,8 @@ public class Curator implements AutoCloseable {
                 (retryPolicy) -> CuratorFrameworkFactory
                         .builder()
                         .retryPolicy(retryPolicy)
-                        .sessionTimeoutMs(ZK_SESSION_TIMEOUT)
-                        .connectionTimeoutMs(ZK_CONNECTION_TIMEOUT)
+                        .sessionTimeoutMs((int) ZK_SESSION_TIMEOUT.toMillis())
+                        .connectionTimeoutMs((int) ZK_CONNECTION_TIMEOUT.toMillis())
                         .connectString(connectionSpec)
                         .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
                         .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
@@ -105,7 +105,7 @@ public class Curator implements AutoCloseable {
                       String zooKeeperEnsembleConnectionSpec,
                       Function<RetryPolicy, CuratorFramework> curatorFactory) {
         this(connectionSpec, zooKeeperEnsembleConnectionSpec, curatorFactory,
-                new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES));
+                new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES));
     }
 
     private Curator(String connectionSpec,
@@ -193,7 +193,7 @@ public class Curator implements AutoCloseable {
 
     /** For internal use; prefer creating a {@link CuratorCounter} */
     public DistributedAtomicLong createAtomicCounter(String path) {
-        return new DistributedAtomicLong(curatorFramework, path, new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES));
+        return new DistributedAtomicLong(curatorFramework, path, new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES));
     }
 
     /** For internal use; prefer creating a {@link com.yahoo.vespa.curator.Lock} */
@@ -204,9 +204,9 @@ public class Curator implements AutoCloseable {
     private void addLoggingListener() {
         curatorFramework.getConnectionStateListenable().addListener((curatorFramework, connectionState) -> {
             switch (connectionState) {
-                case SUSPENDED: logger.info("ZK connection state change: SUSPENDED"); break;
-                case RECONNECTED: logger.info("ZK connection state change: RECONNECTED"); break;
-                case LOST: logger.warning("ZK connection state change: LOST"); break;
+                case SUSPENDED: LOG.info("ZK connection state change: SUSPENDED"); break;
+                case RECONNECTED: LOG.info("ZK connection state change: RECONNECTED"); break;
+                case LOST: LOG.warning("ZK connection state change: LOST"); break;
             }
         });
     }
@@ -349,6 +349,14 @@ public class Curator implements AutoCloseable {
         catch (Exception e) {
             throw new RuntimeException("Could not get data at " + path.getAbsolute(), e);
         }
+    }
+
+    /** Create and acquire a re-entrant lock in given path */
+    public Lock lock(Path path, Duration timeout) {
+        create(path);
+        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), this));
+        lock.acquire(timeout);
+        return lock;
     }
 
     /** Returns the curator framework API */

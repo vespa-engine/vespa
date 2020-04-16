@@ -96,6 +96,7 @@ public:
     static Error TranslateError(const int osError);
     static std::string getErrorString(const int osError);
     static int64_t GetFreeDiskSpace (const char *path);
+    static int count_open_files();
 };
 
 #include <dirent.h>

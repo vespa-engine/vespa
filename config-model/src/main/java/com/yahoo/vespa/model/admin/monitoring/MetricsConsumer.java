@@ -2,8 +2,12 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Represents an arbitrary metric consumer
@@ -13,12 +17,15 @@ import java.util.Objects;
  */
 @Immutable
 public class MetricsConsumer {
+
     private final String id;
     private final MetricSet metricSet;
 
+    private final List<CloudWatch> cloudWatches = new ArrayList<>();
+
     /**
-     * @param id The consumer
-     * @param metricSet  The metrics for this consumer
+     * @param id the consumer
+     * @param metricSet the metrics for this consumer
      */
     public MetricsConsumer(String id, MetricSet metricSet) {
         this.id = Objects.requireNonNull(id, "A consumer must have a non-null id.");;
@@ -36,6 +43,14 @@ public class MetricsConsumer {
      */
     public Map<String, Metric> getMetrics() {
         return metricSet.getMetrics();
+    }
+
+    public void addCloudWatch(CloudWatch cloudWatch) {
+        cloudWatches.add(cloudWatch);
+    }
+
+    public List<CloudWatch> cloudWatches() {
+        return unmodifiableList(cloudWatches);
     }
 
 }

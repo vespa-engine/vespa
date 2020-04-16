@@ -36,7 +36,7 @@ MemoryDataStoreTest::testMemoryDataStore()
 void
 MemoryDataStoreTest::testVariableSizeVector()
 {
-    VariableSizeVector v(256);
+    VariableSizeVector v(20000, 5*20000);
     for (size_t i(0); i < 10000; i++) {
         asciistream os;
         os << i;

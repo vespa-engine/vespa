@@ -95,17 +95,6 @@ public class RestApiTest {
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"rebootGeneration\":4");
 
-        // POST deactivation of a maintenance job
-        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
-                                   new byte[0], Request.Method.POST),
-                       "{\"message\":\"Deactivated job 'NodeFailer'\"}");
-        // GET a list of all maintenance jobs
-        assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
-        // DELETE deactivation of a maintenance job
-        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
-                                   new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Re-activated job 'NodeFailer'\"}");
-
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.8.1") + "," + // test with only 1 ip address
@@ -124,7 +113,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.254.8") + "]").getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST), 400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add provisioned host host8.yahoo.com: A node with this name already exists\"}");
 
         // DELETE a provisioned node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host9.yahoo.com",
@@ -218,9 +207,6 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"wantToRetire\": true}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                        Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
-                "{\"message\":\"Updated host4.yahoo.com\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"currentVespaVersion\": \"6.43.0\",\"currentDockerImage\": \"docker-registry.domain.tld:8080/dist/vespa:6.45.0\"}"), Request.Method.PATCH),
                         "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
@@ -229,6 +215,9 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                        Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
+                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "\"modelName\":\"foo\"");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"modelName\": null}"), Request.Method.PATCH),
@@ -240,6 +229,32 @@ public class RestApiTest {
                 .suspend(new HostName("host4.yahoo.com"));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
+    }
+
+    @Test
+    public void maintenance_requests() throws Exception {
+        // POST deactivation of a maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
+                                   new byte[0], Request.Method.POST),
+                       "{\"message\":\"Deactivated job 'NodeFailer'\"}");
+        // GET a list of all maintenance jobs
+        assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
+
+        // DELETE deactivation of a maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
+                                   new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Re-activated job 'NodeFailer'\"}");
+
+        // POST run of a maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/run/PeriodicApplicationMaintainer",
+                                   new byte[0], Request.Method.POST),
+                       "{\"message\":\"Executed job 'PeriodicApplicationMaintainer'\"}");
+
+        // POST run of unknown maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/run/foo",
+                                   new byte[0], Request.Method.POST),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such job 'foo'\"}");
     }
 
     @Test
@@ -363,7 +378,7 @@ public class RestApiTest {
                 "{\"message\":\"Updated host12.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host12.yahoo.com", new byte[0], Request.Method.PUT),
                 400,
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Node host12.yahoo.com cannot be readied because it has " +
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"provisioned host host12.yahoo.com cannot be readied because it has " +
                         "hard failures: [diskSpace reported 1970-01-01T00:00:00.002Z: " + msg + "]\"}");
     }
 
@@ -428,7 +443,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
                        400,
-                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make host1.yahoo.com available for new allocation, must be in state dirty, but was in failed\"}");
+                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make failed host host1.yahoo.com allocated to tenant1.application1.instance1 as 'container/id1/0/0' available for new allocation as it is not in state [dirty]\"}");
 
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host1.yahoo.com",
@@ -444,7 +459,7 @@ public class RestApiTest {
                        "{\"message\":\"Moved host2.yahoo.com to parked\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make host2.yahoo.com available for new allocation, must be in state dirty, but was in parked\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make parked host host2.yahoo.com allocated to tenant2.application2.instance2 as 'content/id2/0/0' available for new allocation as it is not in state [dirty]\"}");
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
@@ -461,7 +476,7 @@ public class RestApiTest {
         // Attempt to DELETE allocated node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Failed to delete host4.yahoo.com: Node is currently allocated and cannot be removed: allocated to tenant3.application3.instance3 as 'content/id3/0/0'\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"active child node host4.yahoo.com allocated to tenant3.application3.instance3 as 'content/id3/0/0' is currently allocated and cannot be removed\"}");
 
         // PUT current restart generation with string instead of long
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
@@ -483,7 +498,7 @@ public class RestApiTest {
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.254.1", "::254:1") + "," +
                                     asNodeJson("host8.yahoo.com", "large-variant", "127.0.253.1", "::253:1") + "]").getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST), 400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add nodes: provisioned host host8.yahoo.com is duplicated in the argument list\"}");
 
         // Attempt to PATCH field not relevant for child node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2",
@@ -541,11 +556,13 @@ public class RestApiTest {
                                 "    \"actualCpuCores\": {" +
                                 "      \"createdMillis\": 1, " +
                                 "      \"description\": \"Actual number of CPU cores (2) differs from spec (4)\"," +
+                                "      \"type\": \"HARD_FAIL\"," +
                                 "      \"value\":2" +
                                 "    }," +
                                 "    \"diskSpace\": {" +
                                 "      \"createdMillis\": 2, " +
                                 "      \"description\": \"Actual disk space (2TB) differs from spec (3TB)\"," +
+                                "      \"type\": \"HARD_FAIL\"," +
                                 "      \"details\": {" +
                                 "        \"inGib\": 3," +
                                 "        \"disks\": [\"/dev/sda1\", \"/dev/sdb3\"]" +

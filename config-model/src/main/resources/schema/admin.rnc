@@ -82,8 +82,25 @@ Metrics = element metrics {
         element metric {
             attribute id { xsd:Name } &
             attribute display-name { xsd:Name }?
-        }*
+        }* &
+        Cloudwatch?
     }+
+}
+
+Cloudwatch = element cloudwatch {
+    attribute region { xsd:Name } &
+    attribute namespace { xsd:string { pattern = "[\w_\-/#:\.]+" } } &
+    (
+      element credentials {
+            attribute access-key-name { xsd:Name } &
+            attribute secret-key-name { xsd:Name }
+      }
+      |
+      element shared-credentials {
+          attribute file { string } &
+          attribute profile { xsd:Name }?
+      }
+    )?
 }
 
 ClusterControllers = element cluster-controllers {

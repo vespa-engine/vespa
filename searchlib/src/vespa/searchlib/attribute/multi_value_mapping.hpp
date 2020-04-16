@@ -42,9 +42,9 @@ template <typename EntryT, typename RefT>
 void
 MultiValueMapping<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
 {
-    ConstArrayRef oldValues = _store.get(_indices[docId]);
+    auto oldValues = _store.get_writable(_indices[docId]);
     assert(oldValues.size() == values.size());
-    EntryT *dst = const_cast<EntryT *>(&oldValues[0]);
+    EntryT *dst = &oldValues[0];
     for (auto &src : values) {
         *dst = src;
         ++dst;

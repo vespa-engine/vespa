@@ -216,15 +216,31 @@ public class DeployTester {
         return deployApp(applicationPath, vespaVersion, Instant.now());
     }
 
+
+    /**
+     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
+     */
+    public PrepareResult deployApp(String applicationPath, String vespaVersion, String dockerImageRepository) {
+        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder();
+        if (vespaVersion != null)
+            paramsBuilder.vespaVersion(vespaVersion);
+
+        return deployApp(applicationPath, Instant.now(), paramsBuilder.dockerImageRepository(dockerImageRepository));
+    }
+
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public PrepareResult deployApp(String applicationPath, String vespaVersion, Instant now)  {
-        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder()
-                .applicationId(applicationId)
+        return deployApp(applicationPath, now, new PrepareParams.Builder().vespaVersion(vespaVersion));
+    }
+
+    /**
+     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
+     */
+    public PrepareResult deployApp(String applicationPath, Instant now, PrepareParams.Builder paramsBuilder)  {
+         paramsBuilder.applicationId(applicationId)
                 .timeoutBudget(new TimeoutBudget(clock, Duration.ofSeconds(60)));
-        if (vespaVersion != null)
-            paramsBuilder.vespaVersion(vespaVersion);
 
         return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build(), false, now);
     }
@@ -283,8 +299,14 @@ public class DeployTester {
         }
 
         @Override
+        @Deprecated // TODO: Remove after April 2020
         public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-            return hostProvisioner.prepare(cluster, capacity, groups, logger);
+            return hostProvisioner.prepare(cluster, capacity.withGroups(groups), logger);
+        }
+
+        @Override
+        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+            return hostProvisioner.prepare(cluster, capacity, logger);
         }
 
         @Override

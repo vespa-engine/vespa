@@ -21,6 +21,7 @@ public class Group {
     private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
     private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
+    private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
 
     public Group(int id, List<Node> nodes) {
         this.id = id;
@@ -61,21 +62,16 @@ public class Group {
         return nodesUp;
     }
 
-    void aggregateActiveDocuments() {
-        long activeDocumentsInGroup = 0;
-        for (Node node : nodes) {
-            if (node.isWorking() == Boolean.TRUE) {
-                activeDocumentsInGroup += node.getActiveDocuments();
-            }
-        }
-        activeDocuments.set(activeDocumentsInGroup);
-
+    void aggregateNodeValues() {
+        activeDocuments.set(nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum());
+        isBlockingWrites.set(nodes.stream().anyMatch(node -> node.isBlockingWrites()));
     }
 
     /** Returns the active documents on this node. If unknown, 0 is returned. */
-    long getActiveDocuments() {
-        return this.activeDocuments.get();
-    }
+    long getActiveDocuments() { return activeDocuments.get(); }
+
+    /** Returns whether any node in this group is currently blocking write operations */
+    public boolean isBlockingWrites() { return isBlockingWrites.get(); }
 
     public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
         boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);

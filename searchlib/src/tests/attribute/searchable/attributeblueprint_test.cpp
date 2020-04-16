@@ -100,6 +100,10 @@ public:
     void asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override {
         assert(!"Not implemented");
     }
+
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string&) const override {
+        return _attribute_vector;
+    }
 };
 
 constexpr uint32_t DOCID_LIMIT = 3;
@@ -291,13 +295,15 @@ public:
         request_ctx.set_query_tensor("query_tensor", tensor_spec);
     }
     Blueprint::UP create_blueprint() {
-        query::NearestNeighborTerm term("query_tensor", attr_name, 0, Weight(0), 7);
+        query::NearestNeighborTerm term("query_tensor", attr_name, 0, Weight(0), 7, true, 33);
         return source.createBlueprint(request_ctx, FieldSpec(attr_name, 0, 0), term);
     }
 };
 
 void
-expect_nearest_neighbor_blueprint(const vespalib::string& attribute_tensor_type_spec, const TensorSpec& query_tensor)
+expect_nearest_neighbor_blueprint(const vespalib::string& attribute_tensor_type_spec,
+                                  const TensorSpec& query_tensor,
+                                  const TensorSpec& converted_query_tensor)
 {
     NearestNeighborFixture f(make_tensor_attribute(field, attribute_tensor_type_spec));
     f.set_query_tensor(query_tensor);
@@ -305,7 +311,7 @@ expect_nearest_neighbor_blueprint(const vespalib::string& attribute_tensor_type_
     auto result = f.create_blueprint();
     const auto& nearest = as_type<NearestNeighborBlueprint>(*result);
     EXPECT_EQ(attribute_tensor_type_spec, nearest.get_attribute_tensor().getTensorType().to_spec());
-    EXPECT_EQ(query_tensor, DefaultTensorEngine::ref().to_spec(nearest.get_query_tensor()));
+    EXPECT_EQ(converted_query_tensor, DefaultTensorEngine::ref().to_spec(nearest.get_query_tensor()));
     EXPECT_EQ(7u, nearest.get_target_num_hits());
 }
 
@@ -314,10 +320,12 @@ TEST(AttributeBlueprintTest, nearest_neighbor_blueprint_is_created_by_attribute_
     TensorSpec x_2_double = TensorSpec("tensor(x[2])").add({{"x", 0}}, 3).add({{"x", 1}}, 5);
     TensorSpec x_2_float = TensorSpec("tensor<float>(x[2])").add({{"x", 0}}, 3).add({{"x", 1}}, 5);
 
-    expect_nearest_neighbor_blueprint("tensor(x[2])", x_2_double);
-    expect_nearest_neighbor_blueprint("tensor<float>(x[2])", x_2_float);
-    expect_nearest_neighbor_blueprint("tensor(x[2])", x_2_float);
-    expect_nearest_neighbor_blueprint("tensor<float>(x[2])", x_2_double);
+    // same cell type:
+    expect_nearest_neighbor_blueprint("tensor(x[2])", x_2_double, x_2_double);
+    expect_nearest_neighbor_blueprint("tensor<float>(x[2])", x_2_float, x_2_float);
+    // convert cell type:
+    expect_nearest_neighbor_blueprint("tensor(x[2])", x_2_float, x_2_double);
+    expect_nearest_neighbor_blueprint("tensor<float>(x[2])", x_2_double, x_2_float);
 }
 
 void

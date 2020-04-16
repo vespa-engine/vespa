@@ -4,11 +4,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.logging.Logger;
 
 /**
  * Provides status and control over running maintenance jobs.

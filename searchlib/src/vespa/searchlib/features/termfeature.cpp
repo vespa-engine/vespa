@@ -4,15 +4,14 @@
 #include "utils.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 TermExecutor::TermExecutor(const search::fef::IQueryEnvironment &env,
                            uint32_t termId) :
@@ -21,7 +20,7 @@ TermExecutor::TermExecutor(const search::fef::IQueryEnvironment &env,
     _connectedness(util::lookupConnectedness(env, termId)),
     _significance(0)
 {
-    if (_termData != NULL) {
+    if (_termData != nullptr) {
         feature_t fallback = util::getSignificance(*_termData);
         _significance = util::lookupSignificance(env, termId, fallback);
     }
@@ -30,7 +29,7 @@ TermExecutor::TermExecutor(const search::fef::IQueryEnvironment &env,
 void
 TermExecutor::execute(uint32_t)
 {
-    if (_termData == NULL) { // this query term is not present in the query
+    if (_termData == nullptr) { // this query term is not present in the query
         outputs().set_number(0, 0.0f); // connectedness
         outputs().set_number(1, 0.0f); // significance (1 - frequency)
         outputs().set_number(2, 0.0f); // weight
@@ -76,7 +75,7 @@ TermBlueprint::setup(const search::fef::IIndexEnvironment &,
 search::fef::Blueprint::UP
 TermBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new TermBlueprint());
+    return std::make_unique<TermBlueprint>();
 }
 
 search::fef::FeatureExecutor &
@@ -85,4 +84,4 @@ TermBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespali
     return stash.create<TermExecutor>(env, _termId);
 }
 
-}}
+}

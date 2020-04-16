@@ -4,7 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/common/documentsummary.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
@@ -149,9 +149,9 @@ void Test::testSearch(Searchable &source,
 void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     Schema schema = getSchema();
     vespalib::ThreadStackExecutor sharedExecutor(2, 0x10000);
-    search::SequencedTaskExecutor indexFieldInverter(2);
-    search::SequencedTaskExecutor indexFieldWriter(2);
-    MemoryIndex memory_index(schema, MockFieldLengthInspector(), indexFieldInverter, indexFieldWriter);
+    auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(2);
+    auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(2);
+    MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
     DocBuilder doc_builder(schema);
 
     Document::UP doc = buildDocument(doc_builder, doc_id1, word1);
@@ -160,7 +160,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     doc = buildDocument(doc_builder, doc_id2, word2);
     memory_index.insertDocument(doc_id2, *doc.get());
     memory_index.commit(std::shared_ptr<search::IDestructorCallback>());
-    indexFieldWriter.sync();
+    indexFieldWriter->sync();
 
     testSearch(memory_index, word1, doc_id1);
     testSearch(memory_index, word2, doc_id2);

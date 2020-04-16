@@ -58,28 +58,26 @@ ControlFile::ensureHeader()
     int wantsLen = strlen(fileHeader);
     int len = read(fd, &buf, wantsLen);
     if (len != wantsLen || memcmp(fileHeader, buf, wantsLen) != 0) {
-        if (len) {
-	    if (ftruncate(fd, 0) != 0) {
-		perror("log::ControlFile ftruncate failed");
-	    }
+        if (ftruncate(fd, 0) != 0) {
+            perror("log::ControlFile ftruncate failed");
         }
         lseek(fd, 0, SEEK_SET);
         ssize_t nbw = write(fd, fileHeader, wantsLen);
-	if (nbw != wantsLen) {
-	    perror("log::ControlFile write(A) failed");
-	}
+        if (nbw != wantsLen) {
+            perror("log::ControlFile write(A) failed");
+        }
 
-        char spaces[_maxPrefix + 1];
+        char spaces[_maxPrefix + 3];
         memset(spaces, ' ', sizeof spaces);
         spaces[sizeof(spaces) - 1] = '\0';
 
         char buf2[sizeof(spaces) + 100];
         snprintf(buf2, sizeof buf2, "Prefix: \n%s\n", spaces);
-	wantsLen = strlen(buf2);
+        wantsLen = strlen(buf2);
         nbw = write(fd, buf2, wantsLen);
-	if (nbw != wantsLen) {
-	    perror("log::ControlFile write(B) failed");
-	}
+        if (nbw != wantsLen) {
+            perror("log::ControlFile write(B) failed");
+        }
 
     }
 }
@@ -88,10 +86,10 @@ void
 ControlFile::flush()
 {
     if (_mapBase != NULL) {
-	if (msync(_mapBase, 0, MS_SYNC) != 0) {
-	    LOG(warning, "msync of log control file failed: %s",
-		strerror(errno));
-	}
+        if (msync(_mapBase, 0, MS_SYNC) != 0) {
+            LOG(warning, "msync of log control file failed: %s",
+                strerror(errno));
+        }
     }
 }
 
@@ -259,32 +257,31 @@ ControlFile::getLevels(const char *name)
 
     //  Append whatever is in buf, excluding the initial newline, and
     //  up to 3 more spaces to get the entire file length to be aligned.
-    int fileLength = _fileBacking.size();
+    int oldFileLength = _fileBacking.size();
     char *appendedString = buf + 1;
-    int newLength = fileLength + strlen(appendedString);
+    int newLength = oldFileLength + strlen(appendedString);
     unsigned int padding = static_cast<unsigned int>(-newLength) & 3u;
     strcat(appendedString, &padSpaces[3 - padding]);
-
-    char *baseAddr = _mapBase + fileLength + strlen(appendedString);
+    int prefix_len = strlen(appendedString);
 
     strncat(appendedString, inheritLevels, Logger::NUM_LOGLEVELS*sizeof(int));
     strcat(appendedString, "\n");
 
     int len = strlen(appendedString);
-
-    int fd = _fileBacking.fd();
-    lseek(fd, (off_t)fileLength, SEEK_SET);
-    int wlen = write(_fileBacking.fd(), appendedString, len);
+    int fd = open(_fileName, O_WRONLY | O_APPEND);
+    int wlen = write(fd, appendedString, len);
+    oldFileLength = lseek(fd, (off_t)0, SEEK_CUR) - wlen;
+    close(fd);
     if (wlen != len) {
         _fileBacking.unlock();
         LOG(error, "Writing to control file '%s' fails (%d/%d bytes): %s",
             _fileName, wlen, len, strerror(errno));
         return reinterpret_cast<unsigned int *>(inheritLevels);
     } else {
-        _fileSize += wlen;
+        _fileSize = _fileBacking.size();
     }
 
-    if (fileLength + wlen > _mappedSize) {
+    if (_fileSize > _mappedSize) {
         if (!extendMapping()) {
             _fileBacking.unlock(); // just for sure
             LOG(error, "Failed to extend mapping of '%s', losing runtime "
@@ -292,9 +289,8 @@ ControlFile::getLevels(const char *name)
             return defaultLevels();
         }
     }
-
+    char *baseAddr = _mapBase + oldFileLength + prefix_len;
     _fileBacking.unlock();
-
     return reinterpret_cast<unsigned int *>(baseAddr);
 }
 

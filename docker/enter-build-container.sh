@@ -10,7 +10,7 @@ fi
 DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 cd $DIR
 
-DOCKER_IMAGE="vespaengine/vespa-dev:latest"
+DOCKER_IMAGE="vespaengine/vespa-build-centos7:latest"
 
 docker pull ${DOCKER_IMAGE}
 docker run -ti --rm -v $(pwd)/..:/vespa --entrypoint /vespa/docker/build/enter-build-container-internal.sh "$DOCKER_IMAGE"

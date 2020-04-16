@@ -291,7 +291,6 @@ void
 Group::Value::addChild(Group * child)
 {
     const size_t sz(getChildrenSize());
-    assert(sz < 0xffffff);
     if (_children == nullptr) {
         _children = new ChildP[4];
     } else if ((sz >=4) && vespalib::Optimized::msbIdx(sz) == vespalib::Optimized::lsbIdx(sz)) {
@@ -631,11 +630,12 @@ Group::Value::visitMembers(vespalib::ObjectVisitor &visitor) const {
 }
 
 Group::Value::Value() :
-    _packedLength(0),
-    _tag(-1),
     _aggregationResults(nullptr),
     _children(nullptr),
     _childInfo(),
+    _childrenLength(0),
+    _tag(-1),
+    _packedLength(0),
     _orderBy()
 {
     memset(_orderBy, 0, sizeof(_orderBy));
@@ -643,11 +643,12 @@ Group::Value::Value() :
 }
 
 Group::Value::Value(const Value & rhs) :
-    _packedLength(rhs._packedLength),
-    _tag(rhs._tag),
     _aggregationResults(nullptr),
     _children(nullptr),
     _childInfo(),
+    _childrenLength(rhs._childrenLength),
+    _tag(rhs._tag),
+    _packedLength(rhs._packedLength),
     _orderBy()
 {
     _childInfo._childMap = nullptr;
@@ -671,11 +672,12 @@ Group::Value::Value(const Value & rhs) :
 }
 
 Group::Value::Value(Value && rhs) noexcept :
-    _packedLength(rhs._packedLength),
-    _tag(rhs._tag),
     _aggregationResults(rhs._aggregationResults),
     _children(rhs._children),
     _childInfo(rhs._childInfo),
+    _childrenLength(rhs._childrenLength),
+    _tag(rhs._tag),
+    _packedLength(rhs._packedLength),
     _orderBy()
 {
     memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
@@ -688,8 +690,9 @@ Group::Value::Value(Value && rhs) noexcept :
 
 Group::Value &
 Group::Value::operator =(Value && rhs) noexcept {
-    _packedLength = rhs._packedLength;
+    _childrenLength = rhs._childrenLength;
     _tag = rhs._tag;
+    _packedLength = rhs._packedLength;
     _aggregationResults = rhs._aggregationResults;
     _children = rhs._children;
     _childInfo = rhs._childInfo;
@@ -729,6 +732,7 @@ Group::Value::swap(Value & rhs)
         memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
         memcpy(rhs._orderBy, tmp, sizeof(_orderBy));
     }
+    std::swap(_childrenLength, rhs._childrenLength);
     std::swap(_tag, rhs._tag);
     std::swap(_packedLength, rhs._packedLength);
 }

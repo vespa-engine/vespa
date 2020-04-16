@@ -42,7 +42,7 @@ public:
         : _name(name), _reply(reply)
     {}
 
-    virtual DocsumReply::UP getDocsums(const DocsumRequest &request) override {
+    DocsumReply::UP getDocsums(const DocsumRequest &request) override {
         return (request.useRootSlime())
                ? std::make_unique<DocsumReply>(createSlimeReply(request.hits.size()))
                : createOldDocSum(request);
@@ -62,7 +62,7 @@ public:
     }
 
     DocsumReply::UP createOldDocSum(const DocsumRequest &request) {
-        DocsumReply::UP retval(new DocsumReply());
+        auto retval = std::make_unique<DocsumReply>();
         for (size_t i = 0; i < request.hits.size(); i++) {
             const DocsumRequest::Hit &h = request.hits[i];
             DocsumReply::Docsum docsum;
@@ -74,11 +74,8 @@ public:
         return retval;
     }
 
-    virtual search::engine::SearchReply::UP match(
-            const ISearchHandler::SP &,
-            const search::engine::SearchRequest &,
-            vespalib::ThreadBundle &) const override {
-        return SearchReply::UP(new SearchReply);
+    SearchReply::UP match(const SearchRequest &, vespalib::ThreadBundle &) const override {
+        return std::make_unique<SearchReply>();
     }
 };
 
@@ -90,8 +87,7 @@ private:
 
 public:
     MyDocsumClient();
-
-    ~MyDocsumClient();
+    ~MyDocsumClient() override;
 
     void getDocsumsDone(DocsumReply::UP reply) override {
         std::lock_guard<std::mutex> guard(_lock);
@@ -111,19 +107,19 @@ public:
     }
 };
 
-MyDocsumClient::MyDocsumClient() {}
+MyDocsumClient::MyDocsumClient() = default;
 
-MyDocsumClient::~MyDocsumClient() {}
+MyDocsumClient::~MyDocsumClient() = default;
 
 DocsumRequest::UP
 createRequest(size_t num = 1) {
-    DocsumRequest::UP r(new DocsumRequest());
+    auto r = std::make_unique<DocsumRequest>();
     if (num == 1) {
         r->hits.emplace_back(GlobalId("aaaaaaaaaaaa"));
     } else {
         for (size_t i = 0; i < num; i++) {
             vespalib::string s = vespalib::make_string("aaaaaaaaaaa%c", char('a' + i % 26));
-            r->hits.push_back(GlobalId(s.c_str()));
+            r->hits.emplace_back(GlobalId(s.c_str()));
         }
     }
     return r;
@@ -132,7 +128,7 @@ createRequest(size_t num = 1) {
 TEST("requireThatGetDocsumsExecute") {
     int numSummaryThreads = 2;
     SummaryEngine engine(numSummaryThreads);
-    ISearchHandler::SP handler(new MySearchHandler);
+    auto handler = std::make_shared<MySearchHandler>();
     DocTypeName dtnvfoo("foo");
     engine.putSearchHandler(dtnvfoo, handler);
 
@@ -140,9 +136,9 @@ TEST("requireThatGetDocsumsExecute") {
     { // async call when engine running
         DocsumRequest::Source request(createRequest());
         DocsumReply::UP reply = engine.getDocsums(std::move(request), client);
-        EXPECT_TRUE(reply.get() == NULL);
+        EXPECT_FALSE(reply);
         reply = client.getReply(10000);
-        EXPECT_TRUE(reply.get() != NULL);
+        EXPECT_TRUE(reply);
         EXPECT_EQUAL(1u, reply->docsums.size());
         EXPECT_EQUAL(10u, reply->docsums[0].docid);
         EXPECT_EQUAL(GlobalId("aaaaaaaaaaaa"), reply->docsums[0].gid);
@@ -152,7 +148,7 @@ TEST("requireThatGetDocsumsExecute") {
     { // sync call when engine closed
         DocsumRequest::Source request(createRequest());
         DocsumReply::UP reply = engine.getDocsums(std::move(request), client);
-        EXPECT_TRUE(reply.get() != NULL);
+        EXPECT_TRUE(reply);
     }
 }
 
@@ -161,23 +157,23 @@ TEST("requireThatHandlersAreStored") {
     DocTypeName dtnvbar("bar");
     int numSummaryThreads = 2;
     SummaryEngine engine(numSummaryThreads);
-    ISearchHandler::SP h1(new MySearchHandler("foo"));
-    ISearchHandler::SP h2(new MySearchHandler("bar"));
-    ISearchHandler::SP h3(new MySearchHandler("baz"));
+    auto h1 = std::make_shared<MySearchHandler>("foo");
+    auto h2 = std::make_shared<MySearchHandler>("bar");
+    auto h3 = std::make_shared<MySearchHandler>("baz");
     // not found
-    EXPECT_TRUE(engine.getSearchHandler(dtnvfoo).get() == NULL);
-    EXPECT_TRUE(engine.removeSearchHandler(dtnvfoo).get() == NULL);
+    EXPECT_FALSE(engine.getSearchHandler(dtnvfoo));
+    EXPECT_FALSE(engine.removeSearchHandler(dtnvfoo));
     // put & get
-    EXPECT_TRUE(engine.putSearchHandler(dtnvfoo, h1).get() == NULL);
+    EXPECT_FALSE(engine.putSearchHandler(dtnvfoo, h1));
     EXPECT_EQUAL(engine.getSearchHandler(dtnvfoo).get(), h1.get());
-    EXPECT_TRUE(engine.putSearchHandler(dtnvbar, h2).get() == NULL);
+    EXPECT_FALSE(engine.putSearchHandler(dtnvbar, h2));
     EXPECT_EQUAL(engine.getSearchHandler(dtnvbar).get(), h2.get());
     // replace
     EXPECT_TRUE(engine.putSearchHandler(dtnvfoo, h3).get() == h1.get());
     EXPECT_EQUAL(engine.getSearchHandler(dtnvfoo).get(), h3.get());
     // remove
     EXPECT_EQUAL(engine.removeSearchHandler(dtnvfoo).get(), h3.get());
-    EXPECT_TRUE(engine.getSearchHandler(dtnvfoo).get() == NULL);
+    EXPECT_FALSE(engine.getSearchHandler(dtnvfoo));
 }
 
 bool
@@ -196,9 +192,9 @@ TEST("requireThatCorrectHandlerIsUsed") {
     DocTypeName dtnvbar("bar");
     DocTypeName dtnvbaz("baz");
     SummaryEngine engine(1);
-    ISearchHandler::SP h1(new MySearchHandler("foo", "foo reply"));
-    ISearchHandler::SP h2(new MySearchHandler("bar", "bar reply"));
-    ISearchHandler::SP h3(new MySearchHandler("baz", "baz reply"));
+    auto h1 = std::make_shared<MySearchHandler>("foo", "foo reply");
+    auto h2 = std::make_shared<MySearchHandler>("bar", "bar reply");
+    auto h3 = std::make_shared<MySearchHandler>("baz", "baz reply");
     engine.putSearchHandler(dtnvfoo, h1);
     engine.putSearchHandler(dtnvbar, h2);
     engine.putSearchHandler(dtnvbaz, h3);
@@ -369,7 +365,7 @@ public:
 Server::Server()
     : BaseServer(),
       engine(2),
-      handler(new MySearchHandler("slime", stringref(buf.GetDrainPos(), buf.GetUsedLen()))),
+      handler(std::make_shared<MySearchHandler>("slime", stringref(buf.GetDrainPos(), buf.GetUsedLen()))),
       docsumBySlime(engine),
       docsumByRPC(docsumBySlime)
 {
@@ -377,7 +373,7 @@ Server::Server()
     engine.putSearchHandler(dtnvfoo, handler);
 }
 
-Server::~Server() {}
+Server::~Server() = default;
 
 vespalib::string
 getAnswer(size_t num) {

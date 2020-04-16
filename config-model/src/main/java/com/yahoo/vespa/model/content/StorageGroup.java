@@ -376,6 +376,10 @@ public class StorageGroup {
          *                            specified using a group count attribute.
          * <li>Neither element is present: Create a single node.
          * </ul>
+         *
+         * Note: DO NOT change allocation behaviour to allow version X and Y of the config-model to allocate a different
+         * set of nodes. Such changes must be guarded by a common condition (e.g. feature flag) so the behaviour can be
+         * changed simultaneously for all active config models.
          */
         private GroupBuilder collectGroup(boolean isHosted, Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
             StorageGroup group = new StorageGroup(

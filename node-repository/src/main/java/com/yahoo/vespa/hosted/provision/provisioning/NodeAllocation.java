@@ -100,7 +100,6 @@ class NodeAllocation {
         List<Node> accepted = new ArrayList<>();
         for (PrioritizableNode node : nodesPrioritized) {
             Node offered = node.node;
-
             if (offered.allocation().isPresent()) {
                 ClusterMembership membership = offered.allocation().get().membership();
                 if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
@@ -390,4 +389,5 @@ class NodeAllocation {
             return count;
         }
     }
+
 }

@@ -62,6 +62,7 @@ public class DocumentManager {
             }
         }
     }
+
     private void buildConfig(Collection<AnnotationType> types, DocumentmanagerConfig.Builder builder) {
         for (AnnotationType type : types) {
             DocumentmanagerConfig.Annotationtype.Builder atb = new DocumentmanagerConfig.Annotationtype.Builder();
@@ -110,6 +111,7 @@ public class DocumentManager {
                 doc.inherits(new Datatype.Documenttype.Inherits.Builder().name(inherited.getName()));
             }
             buildConfig(dt.getFieldSets(), doc);
+            buildImportedFieldsConfig(dt.getImportedFieldNames(), doc);
         } else if (type instanceof TemporaryStructuredDataType) {
             //Ignored
         } else if (type instanceof StructDataType) {
@@ -162,6 +164,14 @@ public class DocumentManager {
 
     private void buildConfig(FieldSet fs, Datatype.Documenttype.Builder doc) {
         doc.fieldsets(fs.getName(), new Datatype.Documenttype.Fieldsets.Builder().fields(fs.getFieldNames()));
+    }
+
+    private void buildImportedFieldsConfig(Collection<String> fieldNames, Datatype.Documenttype.Builder builder) {
+        for (String fieldName : fieldNames) {
+            var ib = new DocumentmanagerConfig.Datatype.Documenttype.Importedfield.Builder();
+            ib.name(fieldName);
+            builder.importedfield(ib);
+        }
     }
 
 }

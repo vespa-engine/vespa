@@ -1,43 +1,53 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing;
 
+import com.google.common.collect.Sets;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Test;
 
-import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -50,10 +60,9 @@ public class RoutingPoliciesTest {
     private final ZoneId zone2 = ZoneId.from("prod", "us-central-1");
     private final ZoneId zone3 = ZoneId.from("prod", "us-east-3");
 
-    private final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .region(zone1.region())
-            .region(zone2.region())
-            .build();
+    private final ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                                                     .region(zone2.region())
+                                                                                     .build();
 
     @Test
     public void global_routing_policies() {
@@ -62,7 +71,7 @@ public class RoutingPoliciesTest {
         var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
         int clustersPerZone = 2;
         int numberOfDeployments = 2;
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0")
@@ -72,7 +81,7 @@ public class RoutingPoliciesTest {
         tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1, zone2);
 
         // Creates alias records
-        context1.submit(applicationPackage).deploy();
+        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context1.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
         tester.assertTargets(context1.instanceId(), EndpointId.of("r1"), 0, zone1);
         tester.assertTargets(context1.instanceId(), EndpointId.of("r2"), 1, zone1, zone2);
@@ -81,7 +90,7 @@ public class RoutingPoliciesTest {
                      tester.policiesOf(context1.instance().id()).size());
 
         // Applications gains a new deployment
-        ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
+        ApplicationPackage applicationPackage2 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
@@ -91,7 +100,7 @@ public class RoutingPoliciesTest {
                 .build();
         numberOfDeployments++;
         tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone3);
-        context1.submit(applicationPackage2).deploy();
+        context1.submit(applicationPackage2).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         // Endpoints are updated to contain cluster in new deployment
         tester.assertTargets(context1.instanceId(), EndpointId.of("r0"), 0, zone1, zone2, zone3);
@@ -101,22 +110,22 @@ public class RoutingPoliciesTest {
         // Another application is deployed with a single cluster and global endpoint
         var endpoint4 = "r0.app2.tenant1.global.vespa.oath.cloud";
         tester.provisionLoadBalancers(1, context2.instanceId(), zone1, zone2);
-        var applicationPackage3 = new ApplicationPackageBuilder()
+        var applicationPackage3 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0")
                 .build();
-        context2.submit(applicationPackage3).deploy();
+        context2.submit(applicationPackage3).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context2.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
 
         // All endpoints for app1 are removed
-        ApplicationPackage applicationPackage4 = new ApplicationPackageBuilder()
+        ApplicationPackage applicationPackage4 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
                 .allow(ValidationId.globalEndpointChange)
                 .build();
-        context1.submit(applicationPackage4).deploy();
+        context1.submit(applicationPackage4).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context1.instanceId(), EndpointId.of("r0"), 0);
         tester.assertTargets(context1.instanceId(), EndpointId.of("r1"), 0);
         tester.assertTargets(context1.instanceId(), EndpointId.of("r2"), 0);
@@ -136,7 +145,7 @@ public class RoutingPoliciesTest {
         // Deploy application
         int clustersPerZone = 2;
         tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1, zone2);
-        context1.submit(applicationPackage).deploy();
+        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         // Deployment creates records and policies for all clusters in all zones
         Set<String> expectedRecords = Set.of(
@@ -149,13 +158,13 @@ public class RoutingPoliciesTest {
         assertEquals(4, tester.policiesOf(context1.instanceId()).size());
 
         // Next deploy does nothing
-        context1.submit(applicationPackage).deploy();
+        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(4, tester.policiesOf(context1.instanceId()).size());
 
         // Add 1 cluster in each zone and deploy
         tester.provisionLoadBalancers(clustersPerZone + 1, context1.instanceId(), zone1, zone2);
-        context1.submit(applicationPackage).deploy();
+        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -169,7 +178,7 @@ public class RoutingPoliciesTest {
 
         // Deploy another application
         tester.provisionLoadBalancers(clustersPerZone, context2.instanceId(), zone1, zone2);
-        context2.submit(applicationPackage).deploy();
+        context2.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -182,12 +191,12 @@ public class RoutingPoliciesTest {
                 "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
         );
-        assertEquals(expectedRecords, tester.recordNames());
+        assertEquals(expectedRecords.stream().sorted().collect(Collectors.toList()), tester.recordNames().stream().sorted().collect(Collectors.toList()));
         assertEquals(4, tester.policiesOf(context2.instanceId()).size());
 
         // Deploy removes cluster from app1
         tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1, zone2);
-        context1.submit(applicationPackage).deploy();
+        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -224,11 +233,11 @@ public class RoutingPoliciesTest {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
 
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region().value())
                 .endpoint("r0", "c0")
                 .build();
-        context.submit(applicationPackage).deploy();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         var endpoint = "r0.app1.tenant1.global.vespa.oath.cloud";
         assertEquals(endpoint + " points to c0 in all regions",
@@ -237,22 +246,6 @@ public class RoutingPoliciesTest {
         assertTrue("No rotations assigned", context.application().instances().values().stream()
                                                    .map(Instance::rotations)
                                                    .allMatch(List::isEmpty));
-    }
-
-    @Test
-    public void cluster_endpoints_resolve_from_policies() {
-        var tester = new RoutingPoliciesTester();
-        var context = tester.newDeploymentContext("tenant1", "app1", "default");
-        tester.provisionLoadBalancers(3, context.instanceId(), zone1);
-        context.submit(applicationPackage).deploy();
-        tester.controllerTester().serviceRegistry().routingGeneratorMock().putEndpoints(context.deploymentIdIn(zone1), Collections.emptyList());
-        assertEquals(Map.of(ClusterSpec.Id.from("c0"),
-                            URI.create("https://c0.app1.tenant1.us-west-1.vespa.oath.cloud/"),
-                            ClusterSpec.Id.from("c1"),
-                            URI.create("https://c1.app1.tenant1.us-west-1.vespa.oath.cloud/"),
-                            ClusterSpec.Id.from("c2"),
-                            URI.create("https://c2.app1.tenant1.us-west-1.vespa.oath.cloud/")),
-                     tester.controllerTester().controller().applications().clusterEndpoints(context.deploymentIdIn(zone1)));
     }
 
     @Test
@@ -265,8 +258,7 @@ public class RoutingPoliciesTest {
         var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
         tester.controllerTester().serviceRegistry().zoneRegistry()
               .setZones(zoneApi)
-              .setDirectlyRouted(zoneApi);
-        tester.provisionLoadBalancers(1, context.instanceId(), zone);
+              .exclusiveRoutingIn(zoneApi);
 
         // Deploy to dev
         tester.controllerTester().controller().applications().deploy(context.instanceId(), zone, Optional.of(emptyApplicationPackage), DeployOptions.none());
@@ -275,7 +267,7 @@ public class RoutingPoliciesTest {
 
         // Routing policy is created and DNS is updated
         assertEquals(1, tester.policiesOf(context.instanceId()).size());
-        assertEquals(Set.of("c0.app1.tenant1.us-east-1.dev.vespa.oath.cloud"), tester.recordNames());
+        assertEquals(Set.of("app1.tenant1.us-east-1.dev.vespa.oath.cloud"), tester.recordNames());
     }
 
     @Test
@@ -288,19 +280,19 @@ public class RoutingPoliciesTest {
         var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
         tester.controllerTester().serviceRegistry().zoneRegistry()
               .setZones(zoneApi)
-              .setDirectlyRouted(zoneApi);
-
+              .exclusiveRoutingIn(zoneApi);
+        var prodRecords = Set.of("app1.tenant1.us-central-1.vespa.oath.cloud", "app1.tenant1.us-west-1.vespa.oath.cloud");
+        assertEquals(prodRecords, tester.recordNames());
 
         // Deploy to dev under different instance
         var devInstance = context.application().id().instance("user");
-        tester.provisionLoadBalancers(1, devInstance, zone);
         tester.controllerTester().controller().applications().deploy(devInstance, zone, Optional.of(applicationPackage), DeployOptions.none());
         assertEquals("DeploymentSpec is persisted", applicationPackage.deploymentSpec(), context.application().deploymentSpec());
         context.flushDnsUpdates();
 
         // Routing policy is created and DNS is updated
         assertEquals(1, tester.policiesOf(devInstance).size());
-        assertEquals(Set.of("c0.user.app1.tenant1.us-east-1.dev.vespa.oath.cloud"), tester.recordNames());
+        assertEquals(Sets.union(prodRecords, Set.of("user.app1.tenant1.us-east-1.dev.vespa.oath.cloud")), tester.recordNames());
     }
 
     @Test
@@ -310,12 +302,12 @@ public class RoutingPoliciesTest {
 
         // Initial load balancer is provisioned
         tester.provisionLoadBalancers(1, context.instanceId(), zone1);
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .build();
 
         // Application is deployed
-        context.submit(applicationPackage).deploy();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         var expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud"
         );
@@ -334,10 +326,10 @@ public class RoutingPoliciesTest {
                                             newHostname,
                                             LoadBalancer.State.active,
                                             Optional.of("dns-zone-1"));
-        tester.controllerTester().configServer().addLoadBalancers(zone1, List.of(loadBalancer));
+        tester.controllerTester().configServer().putLoadBalancers(zone1, List.of(loadBalancer));
 
         // Application redeployment preserves DNS record
-        context.submit(applicationPackage).deploy();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(1, tester.policiesOf(context.instanceId()).size());
         assertEquals("CNAME points to current load blancer", newHostname.value() + ".",
@@ -351,13 +343,13 @@ public class RoutingPoliciesTest {
 
         // Provision load balancers and deploy application
         tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
                 .endpoint("r1", "c0", zone1.region().value(), zone2.region().value())
                 .build();
-        context.submit(applicationPackage).deploy();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         // Global DNS record is created
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
@@ -386,7 +378,7 @@ public class RoutingPoliciesTest {
         assertEquals(Instant.EPOCH, policy2.status().globalRouting().changedAt());
 
         // Next deployment does not affect status
-        context.submit(applicationPackage).deploy();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone2);
@@ -405,24 +397,24 @@ public class RoutingPoliciesTest {
         assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().globalRouting().changedAt());
 
         // Deployment is set out through a new deployment.xml
-        var applicationPackage2 = new ApplicationPackageBuilder()
+        var applicationPackage2 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region(), false)
                 .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
                 .endpoint("r1", "c0", zone1.region().value(), zone2.region().value())
                 .build();
-        context.submit(applicationPackage2).deploy();
+        context.submit(applicationPackage2).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1);
 
         // ... back in
-        var applicationPackage3 = new ApplicationPackageBuilder()
+        var applicationPackage3 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
                 .endpoint("r1", "c0", zone1.region().value(), zone2.region().value())
                 .build();
-        context.submit(applicationPackage3).deploy();
+        context.submit(applicationPackage3).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1, zone2);
     }
@@ -435,14 +427,14 @@ public class RoutingPoliciesTest {
         var contexts = List.of(context1, context2);
 
         // Deploy applications
-        var applicationPackage = new ApplicationPackageBuilder()
+        var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .endpoint("default", "c0", zone1.region().value(), zone2.region().value())
                 .build();
         for (var context : contexts) {
             tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
-            context.submit(applicationPackage).deploy();
+            context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
             tester.assertTargets(context.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
         }
 
@@ -482,6 +474,112 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
         tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
     }
+
+    @Test
+    public void non_production_deployment_is_not_registered_in_global_endpoint() {
+        var tester = new RoutingPoliciesTester(SystemName.Public);
+
+        // Configure the system to use the same region for test, staging and prod
+        var sharedRegion = RegionName.from("aws-us-east-1c");
+        var prodZone = ZoneId.from(Environment.prod, sharedRegion);
+        var stagingZone = ZoneId.from(Environment.staging, sharedRegion);
+        var testZone = ZoneId.from(Environment.test, sharedRegion);
+        var zones = List.of(ZoneApiMock.from(prodZone),
+                            ZoneApiMock.from(stagingZone),
+                            ZoneApiMock.from(testZone));
+        tester.controllerTester().zoneRegistry()
+              .setZones(zones)
+              .setRoutingMethod(zones, RoutingMethod.exclusive);
+        tester.controllerTester().configServer().bootstrap(List.of(prodZone, stagingZone, testZone),
+                                                           SystemApplication.all());
+
+        var context = tester.tester.newDeploymentContext();
+        var endpointId = EndpointId.of("r0");
+        var applicationPackage = applicationPackageBuilder()
+                .trustDefaultCertificate()
+                .region(sharedRegion)
+                .endpoint(endpointId.id(), "default")
+                .build();
+
+        // Application starts deployment
+        context = context.submit(applicationPackage);
+        for (var testJob : List.of(JobType.systemTest, JobType.stagingTest)) {
+            context = context.runJob(testJob);
+            // Since runJob implicitly tears down the deployment and immediately deletes DNS records associated with the
+            // deployment, we consume only one DNS update at a time here
+            do {
+                context = context.flushDnsUpdates(1);
+                tester.assertTargets(context.instanceId(), endpointId, 0);
+            } while (!tester.recordNames().isEmpty());
+        }
+
+        // Deployment completes
+        context.completeRollout();
+        tester.assertTargets(context.instanceId(), endpointId, 0, prodZone);
+    }
+
+    @Test
+    public void changing_global_routing_status_never_removes_all_members() {
+        var tester = new RoutingPoliciesTester();
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+
+        // Provision load balancers and deploy application
+        tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
+        var applicationPackage = applicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("r0", "c0", zone1.region().value(), zone2.region().value())
+                .build();
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+
+        // Global DNS record is created, pointing to all configured zones
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // Global routing status is overridden for one deployment
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.out,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
+
+        // Setting other deployment out implicitly sets all deployments in
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone2), GlobalRouting.Status.out,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // One inactive deployment is put back in. Global DNS record now points to the only active deployment
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.in,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
+
+        // Setting zone (containing active deployment) out puts all deployments in
+        tester.routingPolicies().setGlobalRoutingStatus(zone1, GlobalRouting.Status.out);
+        context.flushDnsUpdates();
+        assertEquals(GlobalRouting.Status.out, tester.routingPolicies().get(zone1).globalRouting().status());
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // Setting zone back in removes the currently inactive deployment
+        tester.routingPolicies().setGlobalRoutingStatus(zone1, GlobalRouting.Status.in);
+        context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
+
+        // Inactive deployment is set in
+        tester.routingPolicies().setGlobalRoutingStatus(context.deploymentIdIn(zone2), GlobalRouting.Status.in,
+                                                        GlobalRouting.Agent.tenant);
+        context.flushDnsUpdates();
+        for (var policy : tester.routingPolicies().get(context.instanceId()).values()) {
+            assertSame(GlobalRouting.Status.in, policy.status().globalRouting().status());
+        }
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+    }
+
+    /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
+    private static ApplicationPackageBuilder applicationPackageBuilder() {
+        return new ApplicationPackageBuilder()
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION);
+    }
     
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
@@ -503,11 +601,15 @@ public class RoutingPoliciesTest {
         private final DeploymentTester tester;
 
         public RoutingPoliciesTester() {
-            this(new DeploymentTester());
+            this(SystemName.main);
+        }
+
+        public RoutingPoliciesTester(SystemName system) {
+            this(new DeploymentTester(new ControllerTester(new ServiceRegistryMock(system))));
         }
 
         public RoutingPolicies routingPolicies() {
-            return tester.controllerTester().controller().applications().routingPolicies();
+            return tester.controllerTester().controller().routing().policies();
         }
 
         public DeploymentContext newDeploymentContext(String tenant, String application, String instance) {
@@ -520,12 +622,14 @@ public class RoutingPoliciesTest {
 
         public RoutingPoliciesTester(DeploymentTester tester) {
             this.tester = tester;
+            // Make all zones directly routed
+            tester.controllerTester().zoneRegistry().exclusiveRoutingIn(tester.controllerTester().zoneRegistry().zones().all().zones());
         }
 
         private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, ZoneId... zones) {
             for (ZoneId zone : zones) {
                 tester.configServer().removeLoadBalancers(application, zone);
-                tester.configServer().addLoadBalancers(zone, createLoadBalancers(zone, application, clustersPerZone));
+                tester.configServer().putLoadBalancers(zone, createLoadBalancers(zone, application, clustersPerZone));
             }
         }
 
@@ -555,12 +659,12 @@ public class RoutingPoliciesTest {
         }
 
         private void assertTargets(ApplicationId application, EndpointId endpointId, int loadBalancerId, ZoneId ...zone) {
-            var prefix = "";
-            if (!endpointId.equals(EndpointId.defaultId())) {
-                prefix = endpointId.id() + ".";
-            }
-            var endpoint = prefix + application.application().value() + "." + application.tenant().value() +
-                           ".global.vespa.oath.cloud";
+            var endpoint = tester.controller().routing().endpointsOf(application)
+                                 .named(endpointId)
+                                 .targets(List.of(zone))
+                                 .primary()
+                                 .map(Endpoint::dnsName)
+                                 .orElse("<none>");
             var zoneTargets = Arrays.stream(zone)
                                     .map(z -> "lb-" + loadBalancerId + "--" + application.serializedForm() + "--" +
                                               z.value() + "/dns-zone-1/" + z.value())

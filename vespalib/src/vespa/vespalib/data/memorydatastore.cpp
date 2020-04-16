@@ -15,9 +15,7 @@ MemoryDataStore::MemoryDataStore(Alloc && initialAlloc, Lock * lock) :
     _buffers.emplace_back(std::move(initialAlloc));
 }
 
-MemoryDataStore::~MemoryDataStore()
-{
-}
+MemoryDataStore::~MemoryDataStore() = default;
 
 MemoryDataStore::Reference
 MemoryDataStore::push_back(const void * data, const size_t sz)
@@ -40,15 +38,14 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
     return ref;
 }
 
-VariableSizeVector::VariableSizeVector(size_t initialSize) :
+VariableSizeVector::VariableSizeVector(size_t initialCount, size_t initialBufferSize) :
     _vector(),
-    _store(Alloc::alloc(initialSize))
+    _store(Alloc::alloc(initialBufferSize))
 {
+    _vector.reserve(initialCount);
 }
 
-VariableSizeVector::~VariableSizeVector()
-{
-}
+VariableSizeVector::~VariableSizeVector() = default;
 
 VariableSizeVector::Reference
 VariableSizeVector::push_back(const void * data, const size_t sz)

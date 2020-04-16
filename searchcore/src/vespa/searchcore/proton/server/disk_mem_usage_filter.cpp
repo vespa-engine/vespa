@@ -163,7 +163,7 @@ DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
       _listeners()
 { }
 
-DiskMemUsageFilter::~DiskMemUsageFilter() { }
+DiskMemUsageFilter::~DiskMemUsageFilter() = default;
 
 void
 DiskMemUsageFilter::setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in)

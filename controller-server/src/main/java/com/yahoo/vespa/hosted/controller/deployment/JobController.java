@@ -3,12 +3,10 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -28,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -38,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -49,6 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -57,6 +56,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
@@ -75,8 +75,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class JobController {
 
-    private static final int historyLength = 64;
-    private static final Duration maxHistoryAge = Duration.ofDays(60);
+    public static final int historyLength = 64;
+    public static final Duration maxHistoryAge = Duration.ofDays(60);
 
     private final Controller controller;
     private final CuratorDb curator;
@@ -85,7 +85,7 @@ public class JobController {
     private final Badges badges;
     private final JobMetrics metric;
 
-    private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
+    private final AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
     public JobController(Controller controller) {
         this.controller = controller;
@@ -182,16 +182,8 @@ public class JobController {
             if (step.isEmpty())
                 return run;
 
-            Optional<URI> testerEndpoint = testerEndpoint(id);
-            if (testerEndpoint.isEmpty())
-                return run;
-
-            List<LogEntry> entries;
-            ZoneId zone = id.type().zone(controller.system());
-            if (useConfigServerForTesterAPI(zone))
-                entries = cloud.getLog(new DeploymentId(id.application(), zone), run.lastTestLogEntry());
-            else
-                entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
+            List<LogEntry> entries = cloud.getLog(new DeploymentId(id.tester().id(), id.type().zone(controller.system())),
+                                                  run.lastTestLogEntry());
             if (entries.isEmpty())
                 return run;
 
@@ -205,16 +197,9 @@ public class JobController {
         locked(id, run -> run.with(testerCertificate));
     }
 
-    /** Returns a list of all applications which have registered. */
-    public List<TenantAndApplicationId> applications() {
-        return copyOf(controller.applications().asList().stream()
-                                .map(Application::id)
-                                .iterator());
-    }
-
     /** Returns a list of all instances of applications which have registered. */
     public List<ApplicationId> instances() {
-        return copyOf(controller.applications().asList().stream()
+        return copyOf(controller.applications().readable().stream()
                                 .flatMap(application -> application.instances().values().stream())
                                 .map(Instance::id)
                                 .iterator());
@@ -322,8 +307,10 @@ public class JobController {
     private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
         return new DeploymentStatus(application,
                                     DeploymentStatus.jobsFor(application, controller.system()).stream()
-                                                    .collect(toUnmodifiableMap(job -> job,
-                                                                               job -> jobStatus(job))),
+                                                    .collect(toMap(job -> job,
+                                                                   job -> jobStatus(job),
+                                                                   (j1, j2) -> { throw new IllegalArgumentException("Duplicate key " + j1.id()); },
+                                                                   LinkedHashMap::new)),
                                     controller.system(),
                                     systemVersion,
                                     controller.clock().instant());
@@ -366,7 +353,9 @@ public class JobController {
                      old = oldEntries.next()) {
 
                     // Make sure we keep the last success and the first failing
-                    if (successes == 1 && old.getValue().status() == RunStatus.success) {
+                    if (     successes == 1
+                        &&   old.getValue().status() == RunStatus.success
+                        && ! old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
                         oldEntries.next();
                         continue;
                     }
@@ -422,31 +411,24 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
-        if ( ! type.environment().isManuallyDeployed() && versions.targetApplication().isUnknown())
-            throw new IllegalArgumentException("Target application must be a valid reference.");
+        start(id, type, versions, JobProfile.of(type));
+    }
 
-        controller.applications().lockApplicationIfPresent(TenantAndApplicationId.from(id), application -> {
-            locked(id, type, __ -> {
-                Optional<Run> last = last(id, type);
-                if (last.flatMap(run -> active(run.id())).isPresent())
-                    throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
+    /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
+    public void start(ApplicationId id, JobType type, Versions versions, JobProfile profile) {
+        locked(id, type, __ -> {
+            Optional<Run> last = last(id, type);
+            if (last.flatMap(run -> active(run.id())).isPresent())
+                throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
-                RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-                curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant()));
-                metric.jobStarted(newId.job());
-            });
+            RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
+            curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant(), profile));
+            metric.jobStarted(newId.job());
         });
     }
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
-        if ( ! type.environment().isManuallyDeployed())
-            throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
-
-        if (   controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-            && controller.applications().getApplication(TenantAndApplicationId.from(id)).isEmpty())
-            controller.applications().createApplication(TenantAndApplicationId.from(id), Optional.empty());
-
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
@@ -455,13 +437,21 @@ public class JobController {
         });
 
         last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
-        locked(id, type, __ -> {
-            controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
-            start(id, type, new Versions(platform.orElse(controller.systemVersion()),
-                                         ApplicationVersion.unknown,
-                                         Optional.empty(),
-                                         Optional.empty()));
 
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
+            controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
+            start(id,
+                  type,
+                  new Versions(platform.orElse(applicationPackage.deploymentSpec().majorVersion()
+                                                                 .flatMap(controller.applications()::lastCompatibleVersion)
+                                                                 .orElseGet(controller::systemVersion)),
+                               ApplicationVersion.unknown,
+                               Optional.empty(),
+                               Optional.empty()),
+                  JobProfile.development);
+        });
+
+        locked(id, type, __ -> {
             runner.get().accept(last(id, type).get());
         });
     }
@@ -506,12 +496,17 @@ public class JobController {
                });
     }
 
+    // TODO(mpolden): Eliminate duplication in this and ApplicationController#deactivate
     public void deactivateTester(TesterId id, JobType type) {
+        var zone = type.zone(controller.system());
         try {
-            controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
-        }
-        catch (NotFoundException ignored) {
+            controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), zone));
+        } catch (NotFoundException ignored) {
             // Already gone -- great!
+        } finally {
+            // Passing an empty DeploymentSpec here is fine as it's used for registering global endpoint names, and
+            // tester instances have none.
+            controller.routing().policies().refresh(id.id(), DeploymentSpec.empty, zone);
         }
     }
 
@@ -539,21 +534,12 @@ public class JobController {
                                     .collect(toList()));
     }
 
-    /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
-    Optional<URI> testerEndpoint(RunId id) {
-        DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        return controller.applications().getDeploymentEndpoints(testerId)
-                         .stream().findAny()
-                         .or(() -> controller.applications().routingPolicies().get(testerId).values().stream()
-                                             .findAny()
-                                             .map(policy -> policy.endpointIn(controller.system()).url()));
-    }
-
     private void prunePackages(TenantAndApplicationId id) {
         controller.applications().lockApplicationIfPresent(id, application -> {
             application.get().productionDeployments().values().stream()
                        .flatMap(List::stream)
                        .map(Deployment::applicationVersion)
+                       .filter(version -> ! version.isUnknown())
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
@@ -589,11 +575,6 @@ public class JobController {
 
             action.accept(new LockedStep(lock, step));
         }
-    }
-
-    private boolean useConfigServerForTesterAPI(ZoneId zoneId) {
-        BooleanFlag useConfigServerForTesterAPI = Flags.USE_CONFIG_SERVER_FOR_TESTER_API_CALLS.bindTo(controller.flagSource());
-        return useConfigServerForTesterAPI.with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value();
     }
 
 }

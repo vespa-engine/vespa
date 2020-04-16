@@ -27,10 +27,10 @@ import static org.junit.Assert.*;
  */
 public class CloudEventReporterTest {
 
-    private ControllerTester tester = new ControllerTester();
-    private ZoneApiMock nonAwsZone = createZone("prod.zone3", "region-1", "other");
-    private ZoneApiMock awsZone1 = createZone("prod.zone1", "region-1", "aws");
-    private ZoneApiMock awsZone2 = createZone("prod.zone2", "region-2", "aws");
+    private final ControllerTester tester = new ControllerTester();
+    private final ZoneApiMock nonAwsZone = createZone("prod.zone3", "region-1", "other");
+    private final ZoneApiMock awsZone1 = createZone("prod.zone1", "region-1", "aws");
+    private final ZoneApiMock awsZone2 = createZone("prod.zone2", "region-2", "aws");
 
 
     /**

@@ -3,5 +3,6 @@ vespa_add_library(fbench_httpclient STATIC
     SOURCES
     httpclient.cpp
     DEPENDS
+    fbench_util
     fastos
 )

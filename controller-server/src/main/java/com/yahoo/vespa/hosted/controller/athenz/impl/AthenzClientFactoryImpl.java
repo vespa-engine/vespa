@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.athenz.impl;
 
 import com.google.inject.Inject;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zms.DefaultZmsClient;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
@@ -47,6 +46,11 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
     @Override
     public ZtsClient createZtsClient() {
         return new DefaultZtsClient(URI.create(config.ztsUrl()), identityProvider);
+    }
+
+    @Override
+    public boolean cacheLookups() {
+        return true;
     }
 
 }

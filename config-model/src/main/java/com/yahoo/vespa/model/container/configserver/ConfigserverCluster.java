@@ -9,6 +9,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.StatisticsConfig;
+import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
@@ -29,7 +30,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         ZookeeperServerConfig.Producer,
         ConfigserverConfig.Producer,
         StatisticsConfig.Producer,
-        HealthMonitorConfig.Producer {
+        HealthMonitorConfig.Producer,
+        VipStatusConfig.Producer {
     private final CloudConfigOptions options;
     private ContainerCluster containerCluster;
 
@@ -116,8 +118,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         }
 
         builder.serverId(HostName.getLocalhost());
-        if (!containerCluster.getHttp().getHttpServer().getConnectorFactories().isEmpty()) {
-            builder.httpport(containerCluster.getHttp().getHttpServer().getConnectorFactories().get(0).getListenPort());
+        if (!containerCluster.getHttp().getHttpServer().get().getConnectorFactories().isEmpty()) {
+            builder.httpport(containerCluster.getHttp().getHttpServer().get().getConnectorFactories().get(0).getListenPort());
         }
         if (options.useVespaVersionInRequest().isPresent()) {
             builder.useVespaVersionInRequest(options.useVespaVersionInRequest().get());
@@ -178,4 +180,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         builder.snapshot_interval(60.0);
     }
 
+    @Override
+    public void getConfig(VipStatusConfig.Builder builder) {
+        builder.initiallyInRotation(false);
+    }
 }

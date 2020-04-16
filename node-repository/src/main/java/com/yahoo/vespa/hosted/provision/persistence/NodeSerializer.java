@@ -20,7 +20,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.Type;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -103,6 +103,7 @@ public class NodeSerializer {
     private static final String removableKey = "removable";
     // Saved as part of allocation instead of serviceId, since serviceId serialized form is not easily extendable.
     private static final String wantedVespaVersionKey = "wantedVespaVersion";
+    private static final String wantedDockerImageRepoKey = "wantedDockerImageRepo";
 
     // History event fields
     private static final String historyEventTypeKey = "type";
@@ -186,6 +187,7 @@ public class NodeSerializer {
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
         object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
+        allocation.membership().cluster().dockerImageRepo().ifPresent(repo -> object.setString(wantedDockerImageRepoKey, repo));
         allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
     }
 
@@ -306,12 +308,18 @@ public class NodeSerializer {
 
     private ClusterMembership clusterMembershipFromSlime(Inspector object) {
         return ClusterMembership.from(object.field(serviceIdKey).asString(), 
-                                      versionFromSlime(object.field(wantedVespaVersionKey)).get());
+                                      versionFromSlime(object.field(wantedVespaVersionKey)).get(),
+                                      dockerImageRepoFromSlime(object.field(wantedDockerImageRepoKey)));
     }
 
     private Optional<Version> versionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(Version.fromString(object.asString()));
+    }
+
+    private Optional<String> dockerImageRepoFromSlime(Inspector object) {
+        if ( ! object.valid() || object.asString().isEmpty()) return Optional.empty();
+        return Optional.of(object.asString());
     }
 
     private Optional<DockerImage> dockerImageFromSlime(Inspector object) {
@@ -358,6 +366,7 @@ public class NodeSerializer {
     private History.Event.Type eventTypeFromString(String eventTypeString) {
         switch (eventTypeString) {
             case "provisioned" : return History.Event.Type.provisioned;
+            case "deprovisioned" : return History.Event.Type.deprovisioned;
             case "readied" : return History.Event.Type.readied;
             case "reserved" : return History.Event.Type.reserved;
             case "activated" : return History.Event.Type.activated;
@@ -379,6 +388,7 @@ public class NodeSerializer {
     private String toString(History.Event.Type nodeEventType) {
         switch (nodeEventType) {
             case provisioned : return "provisioned";
+            case deprovisioned : return "deprovisioned";
             case readied : return "readied";
             case reserved : return "reserved";
             case activated : return "activated";
@@ -409,6 +419,7 @@ public class NodeSerializer {
             case "InactiveExpirer" : return Agent.InactiveExpirer;
             case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
             case "ReservationExpirer" : return Agent.ReservationExpirer;
+            case "DynamicProvisioningMaintainer" : return Agent.DynamicProvisioningMaintainer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
@@ -424,6 +435,7 @@ public class NodeSerializer {
             case InactiveExpirer : return "InactiveExpirer";
             case ProvisionedExpirer : return "ProvisionedExpirer";
             case ReservationExpirer : return "ReservationExpirer";
+            case DynamicProvisioningMaintainer : return "DynamicProvisioningMaintainer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

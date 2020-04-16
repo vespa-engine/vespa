@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.google.inject.Inject;
@@ -16,7 +16,10 @@ import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.hosted.provision.Node.State;
+import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
@@ -50,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -75,10 +79,10 @@ import java.util.stream.Stream;
  * @author bratseth
  */
 // Node state transitions:
-// 1) (new) - > provisioned -> (dirty ->) ready -> reserved -> active -> inactive -> dirty -> ready
+// 1) (new) | deprovisioned - > provisioned -> (dirty ->) ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved | parked
 // 3) reserved -> dirty
-// 3) * -> failed | parked -> dirty | active | (removed)
+// 3) * -> failed | parked -> dirty | active | deprovisioned
 // Nodes have an application assigned when in states reserved, active and inactive.
 // Nodes might have an application assigned in dirty.
 public class NodeRepository extends AbstractComponent {
@@ -93,6 +97,7 @@ public class NodeRepository extends AbstractComponent {
     private final FirmwareChecks firmwareChecks;
     private final DockerImages dockerImages;
     private final JobControl jobControl;
+    private final Applications applications;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -119,17 +124,21 @@ public class NodeRepository extends AbstractComponent {
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
         this.jobControl = new JobControl(db);
+        this.applications = new Applications();
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
-        for (Node.State state : Node.State.values())
+        for (State state : State.values())
+            // TODO(mpolden): Add per-node locking. In its current state this may collide with other callers making
+            //                node state changes. Example: A redeployment on another config server which moves a node
+            //                to another state while this is constructed.
             db.writeTo(state, db.getNodes(state), Agent.system, Optional.empty());
     }
 
     /** Returns the curator database client used by this */
     public CuratorDatabaseClient database() { return db; }
 
-    /** Returns the Docker image to use for nodes in this */
-    public DockerImage dockerImage(NodeType nodeType) { return dockerImages.dockerImageFor(nodeType); }
+    /** Returns the Docker image to use for given node */
+    public DockerImage dockerImage(Node node) { return dockerImages.dockerImageFor(node.type()); }
 
     /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }
@@ -149,6 +158,9 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the status of maintenance jobs managed by this. */
     public JobControl jobControl() { return jobControl; }
 
+    /** Returns this node repo's view of the applications deployed to it */
+    public Applications applications() { return applications; }
+
     // ---------------- Query API ----------------------------------------------------------------
 
     /**
@@ -158,7 +170,7 @@ public class NodeRepository extends AbstractComponent {
      * @param inState the states the node may be in. If no states are given, it will be returned from any state
      * @return the node, or empty if it was not found in any of the given states
      */
-    public Optional<Node> getNode(String hostname, Node.State ... inState) {
+    public Optional<Node> getNode(String hostname, State ... inState) {
         return db.getNode(hostname, inState);
     }
 
@@ -168,7 +180,7 @@ public class NodeRepository extends AbstractComponent {
      * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
      * @return the node, or empty if it was not found in any of the given states
      */
-    public List<Node> getNodes(Node.State ... inState) {
+    public List<Node> getNodes(State ... inState) {
         return new ArrayList<>(db.getNodes(inState));
     }
     /**
@@ -178,13 +190,18 @@ public class NodeRepository extends AbstractComponent {
      * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
      * @return the node, or empty if it was not found in any of the given states
      */
-    public List<Node> getNodes(NodeType type, Node.State ... inState) {
+    public List<Node> getNodes(NodeType type, State ... inState) {
         return db.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
 
     /** Returns a filterable list of all nodes in this repository */
     public NodeList list() {
         return NodeList.copyOf(getNodes());
+    }
+
+    /** Returns a filterable list of all nodes of an application */
+    public NodeList list(ApplicationId application) {
+        return NodeList.copyOf(getNodes(application));
     }
 
     /** Returns a locked list of all nodes in this repository */
@@ -194,17 +211,26 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns a filterable list of all load balancers in this repository */
     public LoadBalancerList loadBalancers() {
-        return LoadBalancerList.copyOf(database().readLoadBalancers().values());
+        return loadBalancers((ignored) -> true);
     }
 
-    public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }
-    public List<Node> getInactive() { return db.getNodes(Node.State.inactive); }
-    public List<Node> getFailed() { return db.getNodes(Node.State.failed); }
+    /** Returns a filterable list of load balancers belonging to given application */
+    public LoadBalancerList loadBalancers(ApplicationId application) {
+        return loadBalancers((id) -> id.application().equals(application));
+    }
+
+    private LoadBalancerList loadBalancers(Predicate<LoadBalancerId> predicate) {
+        return LoadBalancerList.copyOf(db.readLoadBalancers(predicate).values());
+    }
+
+    public List<Node> getNodes(ApplicationId id, State ... inState) { return db.getNodes(id, inState); }
+    public List<Node> getInactive() { return db.getNodes(State.inactive); }
+    public List<Node> getFailed() { return db.getNodes(State.failed); }
 
     /**
      * Returns the ACL for the node (trusted nodes, networks and ports)
      */
-    private NodeAcl getNodeAcl(Node node, NodeList candidates, LoadBalancerList loadBalancers) {
+    private NodeAcl getNodeAcl(Node node, NodeList candidates) {
         Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
         Set<Integer> trustedPorts = new LinkedHashSet<>();
         Set<String> trustedNetworks = new LinkedHashSet<>();
@@ -221,10 +247,10 @@ public class NodeRepository extends AbstractComponent {
         candidates.parentOf(node).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
-            loadBalancers.owner(allocation.owner()).asList().stream()
-                         .map(LoadBalancer::instance)
-                         .map(LoadBalancerInstance::networks)
-                         .forEach(trustedNetworks::addAll);
+            loadBalancers(allocation.owner()).asList().stream()
+                                             .map(LoadBalancer::instance)
+                                             .map(LoadBalancerInstance::networks)
+                                             .forEach(trustedNetworks::addAll);
         });
 
         switch (node.type()) {
@@ -240,7 +266,7 @@ public class NodeRepository extends AbstractComponent {
                 node.allocation().ifPresent(allocation ->
                         trustedNodes.addAll(candidates.parentsOf(candidates.owner(allocation.owner()).asList()).asList()));
 
-                if (node.state() == Node.State.ready) {
+                if (node.state() == State.ready) {
                     // Tenant nodes in state ready, trust:
                     // - All tenant nodes in zone. When a ready node is allocated to a an application there's a brief
                     //   window where current ACLs have not yet been applied on the node. To avoid service disruption
@@ -271,14 +297,14 @@ public class NodeRepository extends AbstractComponent {
                 // Controllers:
                 // - port 4443 (HTTPS + Athenz) from the world
                 // - port 443 (HTTPS + Okta) from the world
+                // - port 80 (HTTP) from the world - for redirect to HTTPS/443 only
                 trustedPorts.add(4443);
                 trustedPorts.add(443);
+                trustedPorts.add(80);
                 break;
 
             default:
-                throw new IllegalArgumentException(
-                        String.format("Don't know how to create ACL for node [hostname=%s type=%s]",
-                                      node.hostname(), node.type()));
+                illegal("Don't know how to create ACL for " + node + " of type " + node.type());
         }
 
         return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
@@ -293,13 +319,12 @@ public class NodeRepository extends AbstractComponent {
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
         NodeList candidates = list();
-        LoadBalancerList loadBalancers = loadBalancers();
         if (children) {
             return candidates.childrenOf(node).asList().stream()
-                             .map(childNode -> getNodeAcl(childNode, candidates, loadBalancers))
+                             .map(childNode -> getNodeAcl(childNode, candidates))
                              .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
         }
-        return Collections.singletonList(getNodeAcl(node, candidates, loadBalancers));
+        return Collections.singletonList(getNodeAcl(node, candidates));
     }
 
     public NodeFlavors getAvailableFlavors() {
@@ -311,9 +336,8 @@ public class NodeRepository extends AbstractComponent {
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
     public Node createNode(String openStackId, String hostname, IP.Config ipConfig, Optional<String> parentHostname,
                            Flavor flavor, Optional<TenantName> reservedTo, NodeType type) {
-        if (ipConfig.primary().isEmpty()) { // TODO: Remove this. Only test code hits this path
+        if (ipConfig.primary().isEmpty()) // TODO: Remove this. Only test code hits this path
             ipConfig = ipConfig.with(nameResolver.getAllByNameOrThrow(hostname));
-        }
         return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, reservedTo, type);
     }
 
@@ -324,38 +348,55 @@ public class NodeRepository extends AbstractComponent {
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
     public List<Node> addDockerNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
-            if (!node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
-                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": This is not a docker node");
-            }
-            if (!node.allocation().isPresent()) {
-                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": Docker containers needs to be allocated");
-            }
+            if ( ! node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))
+                illegal("Cannot add " + node + ": This is not a docker node");
+            if ( ! node.allocation().isPresent())
+                illegal("Cannot add " + node + ": Docker containers needs to be allocated");
             Optional<Node> existing = getNode(node.hostname());
             if (existing.isPresent())
-                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists (" +
-                                                   existing.get() + ", " + existing.get().history() + "). Node to be added: " +
-                                                   node + ", " + node.history());
+                illegal("Cannot add " + node + ": A node with this name already exists (" +
+                        existing.get() + ", " + existing.get().history() + "). Node to be added: " +
+                        node + ", " + node.history());
         }
-        return db.addNodesInState(nodes.asList(), Node.State.reserved);
+        return db.addNodesInState(nodes.asList(), State.reserved);
     }
 
-    /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
-    public List<Node> addNodes(List<Node> nodes) {
+    /**
+     * Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes.
+     * If any of the nodes already exists in the deprovisioned state, the new node will be merged
+     * with the history of that node.
+     */
+    public List<Node> addNodes(List<Node> nodes, Agent agent) {
         try (Mutex lock = lockUnallocated()) {
+            List<Node> nodesToAdd =  new ArrayList<>();
+            List<Node> nodesToRemove = new ArrayList<>();
             for (int i = 0; i < nodes.size(); i++) {
                 var node = nodes.get(i);
-                var message = "Cannot add " + node.hostname() + ": A node with this name already exists";
 
-                // Check for existing node
-                if (getNode(node.hostname()).isPresent()) throw new IllegalArgumentException(message);
-
-                // Check for duplicates in given list
+                // Check for duplicates
                 for (int j = 0; j < i; j++) {
-                    var other = nodes.get(j);
-                    if (node.equals(other)) throw new IllegalArgumentException(message);
+                    if (node.equals(nodes.get(j)))
+                        illegal("Cannot add nodes: " + node + " is duplicated in the argument list");
                 }
+
+                Optional<Node> existing = getNode(node.hostname());
+                if (existing.isPresent()) {
+                    if (existing.get().state() != State.deprovisioned)
+                        illegal("Cannot add " + node + ": A node with this name already exists");
+                    node = node.with(existing.get().history());
+                    node = node.with(existing.get().reports());
+                    node = node.with(node.status().withFailCount(existing.get().status().failCount()));
+                    if (existing.get().status().firmwareVerifiedAt().isPresent())
+                        node = node.with(node.status().withFirmwareVerifiedAt(existing.get().status().firmwareVerifiedAt().get()));
+                    nodesToRemove.add(existing.get());
+                }
+
+                nodesToAdd.add(node);
             }
-            return db.addNodesInState(IP.Config.verify(nodes, list(lock)), Node.State.provisioned);
+            List<Node> resultingNodes = new ArrayList<>();
+            resultingNodes.addAll(db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), State.provisioned));
+            db.removeNodes(nodesToRemove);
+            return resultingNodes;
         }
     }
 
@@ -364,13 +405,13 @@ public class NodeRepository extends AbstractComponent {
         try (Mutex lock = lockUnallocated()) {
             List<Node> nodesWithResetFields = nodes.stream()
                     .map(node -> {
-                        if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
-                            throw new IllegalArgumentException("Can not set " + node + " ready. It is not provisioned or dirty.");
+                        if (node.state() != State.provisioned && node.state() != State.dirty)
+                            illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
                         return node.with(node.status().withWantToRetire(false).withWantToDeprovision(false));
                     })
                     .collect(Collectors.toList());
 
-            return db.writeTo(Node.State.ready, nodesWithResetFields, agent, Optional.of(reason));
+            return db.writeTo(State.ready, nodesWithResetFields, agent, Optional.of(reason));
         }
     }
 
@@ -378,18 +419,18 @@ public class NodeRepository extends AbstractComponent {
         Node nodeToReady = getNode(hostname).orElseThrow(() ->
                 new NoSuchNodeException("Could not move " + hostname + " to ready: Node not found"));
 
-        if (nodeToReady.state() == Node.State.ready) return nodeToReady;
+        if (nodeToReady.state() == State.ready) return nodeToReady;
         return setReady(Collections.singletonList(nodeToReady), agent, reason).get(0);
     }
 
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
     public List<Node> reserve(List<Node> nodes) { 
-        return db.writeTo(Node.State.reserved, nodes, Agent.application, Optional.empty()); 
+        return db.writeTo(State.reserved, nodes, Agent.application, Optional.empty());
     }
 
     /** Activate nodes. This method does <b>not</b> lock the node repository */
     public List<Node> activate(List<Node> nodes, NestedTransaction transaction) {
-        return db.writeTo(Node.State.active, nodes, Agent.application, Optional.empty(), transaction);
+        return db.writeTo(State.active, nodes, Agent.application, Optional.empty(), transaction);
     }
 
     /**
@@ -409,7 +450,7 @@ public class NodeRepository extends AbstractComponent {
 
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex lock = lock(application)) {
-            deactivate(db.getNodes(application, Node.State.reserved, Node.State.active), transaction);
+            deactivate(db.getNodes(application, State.reserved, State.active), transaction);
         }
     }
 
@@ -419,7 +460,7 @@ public class NodeRepository extends AbstractComponent {
      * This method does <b>not</b> lock
      */
     public List<Node> deactivate(List<Node> nodes, NestedTransaction transaction) {
-        return db.writeTo(Node.State.inactive, nodes, Agent.application, Optional.empty(), transaction);
+        return db.writeTo(State.inactive, nodes, Agent.application, Optional.empty(), transaction);
     }
 
     /** Move nodes to the dirty state */
@@ -434,7 +475,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws IllegalArgumentException if the node has hardware failure
      */
     public Node setDirty(Node node, Agent agent, String reason) {
-        return db.writeTo(Node.State.dirty, node, agent, Optional.of(reason));
+        return db.writeTo(State.dirty, node, agent, Optional.of(reason));
     }
 
     public List<Node> dirtyRecursively(String hostname, Agent agent, String reason) {
@@ -445,23 +486,20 @@ public class NodeRepository extends AbstractComponent {
                 (nodeToDirty.type().isDockerHost() ?
                         Stream.concat(list().childrenOf(hostname).asList().stream(), Stream.of(nodeToDirty)) :
                         Stream.of(nodeToDirty))
-                .filter(node -> node.state() != Node.State.dirty)
+                .filter(node -> node.state() != State.dirty)
                 .collect(Collectors.toList());
 
         List<String> hostnamesNotAllowedToDirty = nodesToDirty.stream()
-                .filter(node -> node.state() != Node.State.provisioned)
-                .filter(node -> node.state() != Node.State.failed)
-                .filter(node -> node.state() != Node.State.parked)
+                .filter(node -> node.state() != State.provisioned)
+                .filter(node -> node.state() != State.failed)
+                .filter(node -> node.state() != State.parked)
                 .map(Node::hostname)
                 .collect(Collectors.toList());
-        if (!hostnamesNotAllowedToDirty.isEmpty()) {
-            throw new IllegalArgumentException("Could not deallocate " + hostname + ": " +
-                    String.join(", ", hostnamesNotAllowedToDirty) + " must be in either provisioned, failed or parked state");
-        }
+        if ( ! hostnamesNotAllowedToDirty.isEmpty())
+            illegal("Could not deallocate " + nodeToDirty + ": " +
+                    hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked]");
 
-        return nodesToDirty.stream()
-                .map(node -> setDirty(node, agent, reason))
-                .collect(Collectors.toList());
+        return nodesToDirty.stream().map(node -> setDirty(node, agent, reason)).collect(Collectors.toList());
     }
 
     /**
@@ -471,7 +509,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node fail(String hostname, Agent agent, String reason) {
-        return move(hostname, true, Node.State.failed, agent, Optional.of(reason));
+        return move(hostname, true, State.failed, agent, Optional.of(reason));
     }
 
     /**
@@ -480,7 +518,7 @@ public class NodeRepository extends AbstractComponent {
      * @return List of all the failed nodes in their new state
      */
     public List<Node> failRecursively(String hostname, Agent agent, String reason) {
-        return moveRecursively(hostname, Node.State.failed, agent, Optional.of(reason));
+        return moveRecursively(hostname, State.failed, agent, Optional.of(reason));
     }
 
     /**
@@ -490,7 +528,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node park(String hostname, boolean keepAllocation, Agent agent, String reason) {
-        return move(hostname, keepAllocation, Node.State.parked, agent, Optional.of(reason));
+        return move(hostname, keepAllocation, State.parked, agent, Optional.of(reason));
     }
 
     /**
@@ -499,7 +537,7 @@ public class NodeRepository extends AbstractComponent {
      * @return List of all the parked nodes in their new state
      */
     public List<Node> parkRecursively(String hostname, Agent agent, String reason) {
-        return moveRecursively(hostname, Node.State.parked, agent, Optional.of(reason));
+        return moveRecursively(hostname, State.parked, agent, Optional.of(reason));
     }
 
     /**
@@ -509,10 +547,10 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node reactivate(String hostname, Agent agent, String reason) {
-        return move(hostname, true, Node.State.active, agent, Optional.of(reason));
+        return move(hostname, true, State.active, agent, Optional.of(reason));
     }
 
-    private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
+    private List<Node> moveRecursively(String hostname, State toState, Agent agent, Optional<String> reason) {
         List<Node> moved = list().childrenOf(hostname).asList().stream()
                                          .map(child -> move(child, toState, agent, reason))
                                          .collect(Collectors.toList());
@@ -521,7 +559,7 @@ public class NodeRepository extends AbstractComponent {
         return moved;
     }
 
-    private Node move(String hostname, boolean keepAllocation, Node.State toState, Agent agent, Optional<String> reason) {
+    private Node move(String hostname, boolean keepAllocation, State toState, Agent agent, Optional<String> reason) {
         Node node = getNode(hostname).orElseThrow(() ->
                 new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
 
@@ -532,17 +570,16 @@ public class NodeRepository extends AbstractComponent {
         return move(node, toState, agent, reason);
     }
 
-    private Node move(Node node, Node.State toState, Agent agent, Optional<String> reason) {
+    private Node move(Node node, State toState, Agent agent, Optional<String> reason) {
         if (toState == Node.State.active && ! node.allocation().isPresent())
-            throw new IllegalArgumentException("Could not set " + node.hostname() + " active. It has no allocation.");
+            illegal("Could not set " + node + " active. It has no allocation.");
 
         try (Mutex lock = lock(node)) {
-            if (toState == Node.State.active) {
-                for (Node currentActive : getNodes(node.allocation().get().owner(), Node.State.active)) {
+            if (toState == State.active) {
+                for (Node currentActive : getNodes(node.allocation().get().owner(), State.active)) {
                     if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
                         && node.allocation().get().membership().index() == currentActive.allocation().get().membership().index())
-                        throw new IllegalArgumentException("Could not move " + node + " to active:" +
-                                                           "It has the same cluster and index as an existing node");
+                        illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
                 }
             }
             return db.writeTo(toState, node, agent, reason);
@@ -556,20 +593,17 @@ public class NodeRepository extends AbstractComponent {
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
         if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
-            if (node.state() != Node.State.dirty) {
-                throw new IllegalArgumentException(
-                        "Cannot make " + hostname + " available for new allocation, must be in state dirty, but was in " + node.state());
-            }
+            if (node.state() != State.dirty)
+                illegal("Cannot make " + node  + " available for new allocation as it is not in state [dirty]");
             return removeRecursively(node, true).get(0);
         }
 
-        if (node.state() == Node.State.ready) return node;
+        if (node.state() == State.ready) return node;
 
         Node parentHost = node.parentHostname().flatMap(this::getNode).orElse(node);
         List<String> failureReasons = NodeFailer.reasonsToFailParentHost(parentHost);
-        if (!failureReasons.isEmpty()) {
-            throw new IllegalArgumentException("Node " + hostname + " cannot be readied because it has hard failures: " + failureReasons);
-        }
+        if ( ! failureReasons.isEmpty())
+            illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
 
         return setReady(Collections.singletonList(node), agent, reason).get(0);
     }
@@ -577,7 +611,7 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Removes all the nodes that are children of hostname before finally removing the hostname itself.
      *
-     * @return List of all the nodes that have been removed
+     * @return a List of all the nodes that have been removed or (for hosts) deprovisioned
      */
     public List<Node> removeRecursively(String hostname) {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
@@ -586,60 +620,55 @@ public class NodeRepository extends AbstractComponent {
 
     public List<Node> removeRecursively(Node node, boolean force) {
         try (Mutex lock = lockUnallocated()) {
-            List<Node> removed = new ArrayList<>();
+            requireRemovable(node, false, force);
 
-             if (node.type().isDockerHost()) {
-                 list().childrenOf(node).asList().stream()
-                       .filter(child -> force || canRemove(child, true))
-                       .forEach(removed::add);
-             }
-
-            if (force || canRemove(node, false)) removed.add(node);
-            db.removeNodes(removed);
-
-            return removed;
-        } catch (RuntimeException e) {
-            throw new IllegalArgumentException("Failed to delete " + node.hostname(), e);
+            if (node.type() == NodeType.host) {
+                List<Node> children = list().childrenOf(node).asList();
+                children.forEach(child -> requireRemovable(child, true, force));
+                db.removeNodes(children);
+                List<Node> removed = new ArrayList<>(children);
+                if (zone.cloud().value().equals("aws"))
+                    db.removeNodes(List.of(node));
+                else
+                    move(node, State.deprovisioned, Agent.system, Optional.empty());
+                removed.add(node);
+                return removed;
+            }
+            else {
+                db.removeNodes(List.of(node));
+                return List.of(node);
+            }
         }
     }
 
     /**
-     * Returns whether given node can be removed. Removal is allowed if:
-     *  Tenant node: node is unallocated
-     *  Non-Docker-container node: iff in state provisioned|failed|parked
-     *  Docker-container-node:
-     *    If only removing the container node: node in state ready
-     *    If also removing the parent node: child is in state provisioned|failed|parked|dirty|ready
+     * Throws if the given node cannot be removed. Removal is allowed if:
+     *  - Tenant node: node is unallocated
+     *  - Non-Docker-container node: iff in state provisioned|failed|parked
+     *  - Docker-container-node:
+     *      If only removing the container node: node in state ready
+     *      If also removing the parent node: child is in state provisioned|failed|parked|dirty|ready
      */
-    private boolean canRemove(Node node, boolean deletingAsChild) {
-        if (node.type() == NodeType.tenant && node.allocation().isPresent()) {
-            throw new IllegalArgumentException("Node is currently allocated and cannot be removed: " +
-                                               node.allocation().get());
+    private void requireRemovable(Node node, boolean removingAsChild, boolean force) {
+        if (force) return;
+
+        if (node.type() == NodeType.tenant && node.allocation().isPresent())
+            illegal(node + " is currently allocated and cannot be removed");
+
+        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !removingAsChild) {
+            if (node.state() != State.ready)
+                illegal(node + " can not be removed as it is not in the state [ready]");
         }
-        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
-            if (node.state() != Node.State.ready) {
-                throw new IllegalArgumentException(
-                        String.format("Docker container %s can only be removed when in ready state", node.hostname()));
-            }
-
-        } else if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
-            Set<Node.State> legalStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked,
-                                                     Node.State.dirty, Node.State.ready);
-
-            if (! legalStates.contains(node.state())) {
-                throw new IllegalArgumentException(String.format("Child node %s can only be removed from following states: %s",
-                        node.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
-            }
-        } else {
-            Set<Node.State> legalStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked);
-
-            if (! legalStates.contains(node.state())) {
-                throw new IllegalArgumentException(String.format("Node %s can only be removed from following states: %s",
-                        node.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
-            }
+        else if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) { // removing a child node
+            Set<State> legalStates = EnumSet.of(State.provisioned, State.failed, State.parked, State.dirty, State.ready);
+            if ( ! legalStates.contains(node.state()))
+                illegal(node + " can not be removed as it is not in the states " + legalStates);
         }
-
-        return true;
+        else { // a host
+            Set<State> legalStates = EnumSet.of(State.provisioned, State.failed, State.parked);
+            if (! legalStates.contains(node.state()))
+                illegal(node + " can not be removed as it is not in the states " + legalStates);
+        }
     }
 
     /**
@@ -648,7 +677,9 @@ public class NodeRepository extends AbstractComponent {
      * @return the nodes in their new state.
      */
     public List<Node> restart(NodeFilter filter) {
-        return performOn(StateFilter.from(Node.State.active, filter), (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()), lock));
+        return performOn(StateFilter.from(State.active, filter),
+                         (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
+                                               lock));
     }
 
     /**
@@ -726,6 +757,17 @@ public class NodeRepository extends AbstractComponent {
         return resultingNodes;
     }
 
+    public boolean canAllocateTenantNodeTo(Node host) {
+        if (!host.type().canRun(NodeType.tenant)) return false;
+
+        // Do not allocate to hosts we want to retire or are currently retiring
+        if (host.status().wantToRetire() || host.allocation().map(alloc -> alloc.membership().retired()).orElse(false))
+            return false;
+
+        if (!zone.cloud().value().equals("aws")) return host.state() == State.active;
+        else return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
+    }
+
     /** Returns the time keeper of this system */
     public Clock clock() { return clock; }
 
@@ -733,6 +775,7 @@ public class NodeRepository extends AbstractComponent {
     public Zone zone() { return zone; }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
+    // TODO(mpolden): Make this delegate to CuratorDatabaseClient#lockConfig instead
     public Mutex lock(ApplicationId application) { return db.lock(application); }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
@@ -744,6 +787,10 @@ public class NodeRepository extends AbstractComponent {
     /** Acquires the appropriate lock for this node */
     public Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
+    }
+
+    private void illegal(String message) {
+        throw new IllegalArgumentException(message);
     }
 
 }

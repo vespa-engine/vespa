@@ -3,13 +3,19 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
@@ -27,6 +33,8 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast2;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApSoutheast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionAwsUsEast1a;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCdAwsUsEast1a;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCdUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -57,7 +65,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentTriggerTest {
 
-    private final DeploymentTester tester = new DeploymentTester();
+    private DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testTriggerFailing() {
@@ -965,7 +973,7 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
 
-        tester.atMondayMorning().clock().advance(Duration.ofDays(5)); // Inside block window for second instance.
+        tester.atMondayMorning().clock().advance(Duration.ofDays(5)); // Inside revision block window for second, conservative instance.
         Version version = Version.fromString("8.1");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
@@ -973,16 +981,18 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app2.instance().change());
         assertEquals(Change.empty(), app3.instance().change());
 
-        // Upgrade instance 1; a failure allows an application change to accompany the upgrade.
+        // Upgrade instance 1; a failure in any instance allows an application change to accompany the upgrade.
         // The new platform won't roll out to the conservative instance until the normal one is upgraded.
-        app1.failDeployment(systemTest);
+        app2.failDeployment(systemTest);
         app1.submit(applicationPackage);
         assertEquals(Change.of(version).with(app1.application().latestVersion().get()), app1.instance().change());
-        app1.runJob(systemTest)
-            .jobAborted(stagingTest)
+        app2.runJob(systemTest);
+        app1.jobAborted(stagingTest)
             .runJob(stagingTest)
             .runJob(productionUsWest1)
             .runJob(productionUsEast3);
+        app1.runJob(stagingTest);   // Tests with only the outstanding application change.
+        app2.runJob(systemTest);    // Tests with only the outstanding application change.
         tester.clock().advance(Duration.ofHours(2));
         app1.runJob(productionEuWest1);
         tester.clock().advance(Duration.ofHours(1));
@@ -997,9 +1007,7 @@ public class DeploymentTriggerTest {
         app1.runJob(testUsEast3);
         app1.runJob(productionApSoutheast1);
 
-        app2.runJob(systemTest)     // Testing outstanding revision.
-            .runJob(stagingTest);   // Testing outstanding revision.
-
+        // Confidence rises to high, for the new version, and instance 2 starts to upgrade.
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
@@ -1009,14 +1017,13 @@ public class DeploymentTriggerTest {
         assertEquals(Change.of(version), app2.instance().change());
         assertEquals(Change.empty(), app3.instance().change());
 
-        app2.runJob(systemTest)     // Explicitly defined for this instance.
-            .runJob(stagingTest)    // Never completed successfully with just the upgrade.
+        app1.runJob(stagingTest);   // Never completed successfully with just the upgrade.
+        app2.runJob(systemTest)     // Never completed successfully with just the upgrade.
             .runJob(productionEuWest1)
-            .failDeployment(testEuWest1)
-            .runJob(systemTest);    // Testing outstanding revision with currently deployed (upgraded) platform.
+            .failDeployment(testEuWest1);
 
+        // Instance 2 failed the last job, and now exist block window, letting application change roll out with the upgrade.
         tester.clock().advance(Duration.ofDays(1)); // Leave block window for revisions.
-        app2.abortJob(testEuWest1);
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
         assertEquals(0, tester.jobs().active().size());
@@ -1065,6 +1072,60 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         tester.outstandingChangeDeployer().run();
         assertEquals(Change.of(app.lastSubmission().get()), app.instance().change());
+    }
+
+    @Test
+    public void mixedDirectAndPipelineJobsInProduction() {
+        ApplicationPackage cdPackage = new ApplicationPackageBuilder().region("cd-us-central-1")
+                                                                      .region("cd-aws-us-east-1a")
+                                                                      .build();
+        ServiceRegistryMock services = new ServiceRegistryMock();
+        var zones = List.of(ZoneApiMock.fromId("test.cd-us-central-1"),
+                            ZoneApiMock.fromId("staging.cd-us-central-1"),
+                            ZoneApiMock.fromId("prod.cd-us-central-1"),
+                            ZoneApiMock.fromId("prod.cd-aws-us-east-1a"));
+        services.zoneRegistry()
+                .setSystemName(SystemName.cd)
+                .setZones(zones)
+                .setRoutingMethod(zones, RoutingMethod.shared);
+        tester = new DeploymentTester(new ControllerTester(services));
+        tester.configServer().bootstrap(services.zoneRegistry().zones().all().ids(), SystemApplication.values());
+        tester.controllerTester().upgradeSystem(Version.fromString("6.1"));
+        tester.controllerTester().computeVersionStatus();
+        var app = tester.newDeploymentContext();
+
+        app.runJob(productionCdUsCentral1, cdPackage);
+        app.submit(cdPackage);
+        app.runJob(systemTest);
+        // Staging test requires unknown initial version, and is broken.
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
+        app.runJob(productionCdUsCentral1)
+           .abortJob(stagingTest) // Complete failing run.
+           .runJob(stagingTest)
+           .runJob(productionCdAwsUsEast1a);
+
+        app.runJob(productionCdUsCentral1, cdPackage);
+        var version = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version);
+        tester.upgrader().maintain();
+        // System and staging tests both require unknown versions, and are broken.
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
+        app.runJob(productionCdUsCentral1)
+           .abortJob(systemTest)
+           .abortJob(stagingTest)
+           .runJob(systemTest)
+           .runJob(stagingTest)
+           .runJob(productionCdAwsUsEast1a);
+
+        app.runJob(productionCdUsCentral1, cdPackage);
+        app.submit(cdPackage);
+        app.runJob(systemTest);
+        // Staging test requires unknown initial version, and is broken.
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
+        app.runJob(productionCdUsCentral1)
+           .jobAborted(stagingTest)
+           .runJob(stagingTest)
+           .runJob(productionCdAwsUsEast1a);
     }
 
 }

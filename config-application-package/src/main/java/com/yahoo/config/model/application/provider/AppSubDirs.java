@@ -59,8 +59,7 @@ public class AppSubDirs {
         return configDefs.first;
     }
 
-    public File searchdefinitions() {
-        return searchdefinitions.first;
-    }
+    @Deprecated // Remove after March 2020
+    public File searchdefinitions() { return searchdefinitions.first; }
 
 }

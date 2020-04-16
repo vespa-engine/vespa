@@ -46,7 +46,7 @@ public:
     void getAttributeListAll(std::vector<search::AttributeGuard> &) const override;
     void pruneRemovedFields(search::SerialNum serialNum) override;
     const IAttributeFactory::SP &getFactory() const override;
-    search::ISequencedTaskExecutor & getAttributeFieldWriter() const override;
+    vespalib::ISequencedTaskExecutor & getAttributeFieldWriter() const override;
 
     search::AttributeVector * getWritableAttribute(const vespalib::string &name) const override;
     const std::vector<search::AttributeVector *> & getWritableAttributes() const override;
@@ -54,6 +54,7 @@ public:
     ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
     void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
     const ImportedAttributesRepo *getImportedAttributes() const override;
+    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
 
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
 };

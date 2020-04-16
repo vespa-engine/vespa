@@ -2,13 +2,12 @@
 package com.yahoo.vespa.hosted.controller.routing;
 
 import com.google.common.collect.ImmutableSortedSet;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.EndpointList;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -69,13 +68,12 @@ public class RoutingPolicy {
     }
 
     /** Returns the endpoint of this */
-    public Endpoint endpointIn(SystemName system) {
-        return Endpoint.of(id.owner()).target(id.cluster(), id.zone()).on(Port.tls()).directRouting().in(system);
-    }
-
-    /** Returns global endpoints which this is a member of */
-    public EndpointList globalEndpointsIn(SystemName system) {
-        return EndpointList.of(endpoints.stream().map(endpointId -> globalEndpointOf(id.owner(), endpointId, system)));
+    public Endpoint endpointIn(SystemName system, RoutingMethod routingMethod) {
+        return Endpoint.of(id.owner())
+                       .target(id.cluster(), id.zone())
+                       .on(Port.fromRoutingMethod(routingMethod))
+                       .routingMethod(routingMethod)
+                       .in(system);
     }
 
     @Override
@@ -96,11 +94,6 @@ public class RoutingPolicy {
         return String.format("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
                              dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
                              id.zone().value());
-    }
-
-    /** Creates a global endpoint for given application */
-    public static Endpoint globalEndpointOf(ApplicationId application, EndpointId endpointId, SystemName system) {
-        return Endpoint.of(application).named(endpointId).on(Port.tls()).directRouting().in(system);
     }
 
 }

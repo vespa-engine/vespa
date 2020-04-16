@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -41,7 +40,7 @@ public class LogFileHandler extends StreamHandler {
     private String filePattern = "./log.%T";  // default to current directory, ms time stamp
     private long nextRotationTime = 0;
     private FileOutputStream currentOutputStream = null;
-    private String fileName;
+    private volatile String fileName;
     private String symlinkName = null;
     private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
     private LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");

@@ -16,12 +16,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -59,7 +57,7 @@ class NodesResponse extends HttpResponse {
         this.nodeParentUrl = toNodeParentUrl(request);
         filter = NodesApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
-        this.orchestrator = orchestrator.getNodeStatuses();
+        this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
 
         slime = new Slime();
@@ -159,7 +157,8 @@ class NodesResponse extends HttpResponse {
             toSlime(allocation.membership(), object.setObject("membership"));
             object.setLong("restartGeneration", allocation.restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
-            object.setString("wantedDockerImage", dockerImageFor(node.type()).withTag(allocation.membership().cluster().vespaVersion()).asString());
+            object.setString("wantedDockerImage", allocation.membership().cluster().dockerImage()
+                    .orElseGet(() -> nodeRepository.dockerImage(node).withTag(allocation.membership().cluster().vespaVersion()).asString()));
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
             toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
@@ -220,20 +219,14 @@ class NodesResponse extends HttpResponse {
         object.setString("storageType", serializer.toString(resources.storageType()));
     }
 
-    // Hack: For non-docker noder, return current docker image as default prefix + current Vespa version
+    // Hack: For non-docker nodes, return current docker image as default prefix + current Vespa version
     // TODO: Remove current + wanted docker image from response for non-docker types
     private Optional<DockerImage> currentDockerImage(Node node) {
         return node.status().dockerImage()
-                .or(() -> Optional.of(node)
-                        .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
-                        .flatMap(n -> n.status().vespaVersion()
-                                .map(version -> dockerImageFor(n.type()).withTag(version))));
-    }
-
-    // Docker hosts are not running in an image, but return the image of the node type running on it anyway,
-    // this allows the docker host to pre-download the (likely) image its node will run
-    private DockerImage dockerImageFor(NodeType nodeType) {
-        return nodeRepository.dockerImage(nodeType.isDockerHost() ? nodeType.childNodeType() : nodeType);
+                   .or(() -> Optional.of(node)
+                                     .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                                     .flatMap(n -> n.status().vespaVersion()
+                                                    .map(version -> nodeRepository.dockerImage(n).withTag(version))));
     }
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {

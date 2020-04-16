@@ -29,7 +29,7 @@ public class LZ4ConfigResponseFactory implements ConfigResponseFactory {
         String configMd5 = ConfigUtils.getMd5(rawPayload);
         CompressionInfo info = CompressionInfo.create(CompressionType.LZ4, rawPayload.getByteLength());
         Utf8Array compressed = new Utf8Array(compressor.compress(rawPayload.getBytes()));
-        return new SlimeConfigResponse(compressed, defFile, generation, internalRedeploy, configMd5, info);
+        return new SlimeConfigResponse(compressed, generation, internalRedeploy, configMd5, info);
     }
 
 }

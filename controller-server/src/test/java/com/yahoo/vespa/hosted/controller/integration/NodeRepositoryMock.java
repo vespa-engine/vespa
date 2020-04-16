@@ -208,7 +208,10 @@ public class NodeRepositoryMock implements NodeRepository {
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {
         modifyNodes(deployment, hostName, node -> {
             assert node.wantedVersion().equals(version);
-            return new Node.Builder(node).currentVersion(version).build();
+            return new Node.Builder(node)
+                    .currentVersion(version)
+                    .currentDockerImage(node.wantedDockerImage())
+                    .build();
         });
     }
 

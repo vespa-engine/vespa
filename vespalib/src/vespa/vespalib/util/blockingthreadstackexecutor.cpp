@@ -39,10 +39,4 @@ BlockingThreadStackExecutor::~BlockingThreadStackExecutor()
     cleanup();
 }
 
-void
-BlockingThreadStackExecutor::setTaskLimit(uint32_t taskLimit)
-{
-    internalSetTaskLimit(taskLimit);
-}
-
 } // namespace vespalib

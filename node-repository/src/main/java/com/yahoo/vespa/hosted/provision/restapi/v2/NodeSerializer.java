@@ -22,6 +22,7 @@ public class NodeSerializer {
             case "provisioned": return Node.State.provisioned;
             case "ready": return Node.State.ready;
             case "reserved": return Node.State.reserved;
+            case "deprovisioned": return Node.State.deprovisioned;
             default: throw new IllegalArgumentException("Unknown node state '" + state + "'");
         }
     }
@@ -36,6 +37,7 @@ public class NodeSerializer {
             case provisioned: return "provisioned";
             case ready: return "ready";
             case reserved: return "reserved";
+            case deprovisioned: return "deprovisioned";
             default: throw new IllegalArgumentException("Unknown node state '" + state + "'");
         }
     }

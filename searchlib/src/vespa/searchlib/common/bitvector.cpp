@@ -165,7 +165,7 @@ BitVector::countInterval(Index start, Index end) const
         ++endw;
     }
     if (startw < endw) {
-        res += IAccelrated::getAccelrator()->populationCount(bitValues + startw, endw - startw);
+        res += IAccelrated::getAccelrator().populationCount(bitValues + startw, endw - startw);
     }
     if (partialEnd) {
         res += Optimized::popCount(bitValues[endw] & ~endBits(last));
@@ -178,7 +178,7 @@ void
 BitVector::orWith(const BitVector & right)
 {
     verifyContains(*this, right);
-    IAccelrated::getAccelrator()->orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+    IAccelrated::getAccelrator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
 
     repairEnds();
     invalidateCachedCount();
@@ -201,7 +201,7 @@ BitVector::andWith(const BitVector & right)
 {
     verifyContains(*this, right);
 
-    IAccelrated::getAccelrator()->andBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+    IAccelrated::getAccelrator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
 
     setGuardBit();
     invalidateCachedCount();
@@ -213,7 +213,7 @@ BitVector::andNotWith(const BitVector& right)
 {
     verifyContains(*this, right);
 
-    IAccelrated::getAccelrator()->andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+    IAccelrated::getAccelrator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
 
     setGuardBit();
     invalidateCachedCount();
@@ -221,7 +221,7 @@ BitVector::andNotWith(const BitVector& right)
 
 void
 BitVector::notSelf() {
-    IAccelrated::getAccelrator()->notBit(getActiveStart(), getActiveBytes());
+    IAccelrated::getAccelrator().notBit(getActiveStart(), getActiveBytes());
     setGuardBit();
     invalidateCachedCount();
 }

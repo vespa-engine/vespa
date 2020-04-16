@@ -85,7 +85,7 @@ private:
         DocumentStoreCacheStats() : total(), readySubDb(), notReadySubDb(), removedSubDb() {}
     };
 
-    using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
+    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using StatusReportUP = std::unique_ptr<StatusReport>;
     using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;
@@ -112,6 +112,7 @@ private:
     DocumentDBConfig::SP          _activeConfigSnapshot;
     int64_t                       _activeConfigSnapshotGeneration;
     SerialNum                     _activeConfigSnapshotSerialNum;
+    const bool                    _validateAndSanitizeDocStore;
 
     vespalib::Gate                _initGate;
 
@@ -368,8 +369,7 @@ public:
     virtual SerialNum getNewestFlushedSerial();
 
     std::unique_ptr<search::engine::SearchReply>
-    match(const ISearchHandler::SP &searchHandler,
-          const search::engine::SearchRequest &req,
+    match(const search::engine::SearchRequest &req,
           vespalib::ThreadBundle &threadBundle) const;
 
     std::unique_ptr<search::engine::DocsumReply>

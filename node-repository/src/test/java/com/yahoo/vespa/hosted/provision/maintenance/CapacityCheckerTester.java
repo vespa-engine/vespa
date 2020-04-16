@@ -24,6 +24,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -173,14 +174,13 @@ public class CapacityCheckerTester {
     void createNodes(int childrenPerHost, int numDistinctChildren, List<NodeResources> childResources,
                      int numHosts, NodeResources hostExcessCapacity, int hostExcessIps,
                      int numEmptyHosts, NodeResources emptyHostExcessCapacity, int emptyHostExcessIps) {
-        cleanRepository();
         List<NodeModel> possibleChildren = createDistinctChildren(numDistinctChildren, childResources);
 
         List<Node> nodes = new ArrayList<>();
         nodes.addAll(createHostsWithChildren(childrenPerHost, possibleChildren, numHosts, hostExcessCapacity, hostExcessIps));
         nodes.addAll(createEmptyHosts(numHosts, numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps));
 
-        nodeRepository.addNodes(nodes);
+        nodeRepository.addNodes(nodes, Agent.system);
         updateCapacityChecker();
     }
 
@@ -252,7 +252,8 @@ public class CapacityCheckerTester {
         if (nodeModel.membership != null && nodeModel.owner != null) {
             membership = ClusterMembership.from(
                     nodeModel.membership.toString(),
-                    Version.fromString(nodeModel.wantedVespaVersion));
+                    Version.fromString(nodeModel.wantedVespaVersion),
+                    Optional.empty());
             owner = ApplicationId.from(nodeModel.owner.tenant, nodeModel.owner.application, nodeModel.owner.instance);
         }
 
@@ -273,7 +274,7 @@ public class CapacityCheckerTester {
         }
     }
 
-    public void restoreNodeRepositoryFromJsonFile(Path path) throws IOException {
+    public void populateNodeRepositoryFromJsonFile(Path path) throws IOException {
         byte[] jsonData = Files.readAllBytes(path);
         ObjectMapper om = new ObjectMapper();
 
@@ -287,15 +288,8 @@ public class CapacityCheckerTester {
             nodes.add(createNodeFromModel(nmod));
         }
 
-        nodeRepository.addNodes(nodes);
+        nodeRepository.addNodes(nodes, Agent.system);
         updateCapacityChecker();
     }
 
-    void cleanRepository() {
-        nodeRepository.getNodes(NodeType.host).forEach(n -> nodeRepository.removeRecursively(n, true));
-        nodeRepository.getNodes().forEach(n -> nodeRepository.removeRecursively(n, true));
-        if (nodeRepository.getNodes().size() != 0) {
-            throw new IllegalStateException("Cleaning repository didn't remove all nodes! [" + nodeRepository.getNodes().size() + "]");
-        }
-    }
 }

@@ -68,6 +68,7 @@ vespa_define_module(
     src/tests/aggregator
     src/tests/alignment
     src/tests/attribute
+    src/tests/attribute/attribute_header
     src/tests/attribute/attribute_operation
     src/tests/attribute/attributefilewriter
     src/tests/attribute/attributemanager
@@ -90,6 +91,7 @@ vespa_define_module(
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute
     src/tests/attribute/reference_attribute
+    src/tests/attribute/save_target
     src/tests/attribute/searchable
     src/tests/attribute/searchcontext
     src/tests/attribute/sourceselector
@@ -99,11 +101,9 @@ vespa_define_module(
     src/tests/bitvector
     src/tests/bytecomplens
     src/tests/common/bitvector
-    src/tests/common/foregroundtaskexecutor
     src/tests/common/location
     src/tests/common/matching_elements
     src/tests/common/resultset
-    src/tests/common/sequencedtaskexecutor
     src/tests/common/struct_field_mapper
     src/tests/common/summaryfeatures
     src/tests/diskindex/bitvector
@@ -134,6 +134,8 @@ vespa_define_module(
     src/tests/features/item_raw_score
     src/tests/features/max_reduce_prod_join_replacer
     src/tests/features/native_dot_product
+    src/tests/features/nns_closeness
+    src/tests/features/nns_distance
     src/tests/features/ranking_expression
     src/tests/features/raw_score
     src/tests/features/subqueries
@@ -210,6 +212,9 @@ vespa_define_module(
     src/tests/sortspec
     src/tests/stringenum
     src/tests/tensor/dense_tensor_store
+    src/tests/tensor/distance_functions
+    src/tests/tensor/hnsw_index
+    src/tests/tensor/hnsw_saver
     src/tests/transactionlog
     src/tests/transactionlogstress
     src/tests/true

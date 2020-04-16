@@ -39,7 +39,7 @@ public class ResponseHandlerToApplicationResponseWrapper implements ResponseHand
                 });
     }
 
-    private class SimpleContentChannel implements ContentChannel {
+    private static class SimpleContentChannel implements ContentChannel {
 
         private final Queue<ByteBuffer> buffers = new ConcurrentLinkedQueue<>();
         private final AtomicBoolean closed = new AtomicBoolean(false);

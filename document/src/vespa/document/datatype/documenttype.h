@@ -12,9 +12,11 @@
 #pragma once
 
 #include <vespa/document/datatype/structdatatype.h>
-
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <map>
+#include <set>
 
 namespace document {
 
@@ -25,12 +27,17 @@ class DocumentType : public StructuredDataType {
 public:
     class FieldSet {
     public:
-        typedef std::set<vespalib::string> Fields;
-        FieldSet() : _name(), _fields() {}
-        FieldSet(const vespalib::string & name) : _name(name), _fields() {}
-        FieldSet(const vespalib::string & name, const Fields & fields) : _name(name), _fields(fields) {}
-        const vespalib::string & getName() const { return _name; }
-        const Fields & getFields() const { return _fields; }
+        using Fields = std::set<vespalib::string>;
+        FieldSet() = default;
+        explicit FieldSet(const vespalib::string & name) : _name(name), _fields() {}
+        FieldSet(const vespalib::string & name, Fields fields) : _name(name), _fields(std::move(fields)) {}
+        FieldSet(const FieldSet&) = default;
+        FieldSet& operator=(const FieldSet&) = default;
+        FieldSet(FieldSet&&) noexcept = default;
+        FieldSet& operator=(FieldSet&&) noexcept = default;
+
+        const vespalib::string & getName() const noexcept { return _name; }
+        const Fields & getFields() const noexcept { return _fields; }
         FieldSet & add(vespalib::string & field) {
             _fields.insert(field);
             return *this;
@@ -39,28 +46,31 @@ public:
         vespalib::string _name;
         Fields           _fields;
     };
-    typedef std::map<vespalib::string, FieldSet> FieldSetMap;
+    using FieldSetMap = std::map<vespalib::string, FieldSet>;
+    using ImportedFieldNames = vespalib::hash_set<vespalib::string>;
+
     std::vector<const DocumentType *> _inheritedTypes;
-    StructDataType::SP _ownedFields;
-    const StructDataType* _fields;
-    FieldSetMap _fieldSets;
+    StructDataType::SP                _ownedFields;
+    const StructDataType*             _fields;
+    FieldSetMap                       _fieldSets;
+    ImportedFieldNames                _imported_field_names;
 
 public:
-    typedef std::unique_ptr<DocumentType> UP;
-    typedef std::shared_ptr<DocumentType> SP;
+    using UP = std::unique_ptr<DocumentType>;
+    using SP = std::shared_ptr<DocumentType>;
 
     DocumentType();
     DocumentType(vespalib::stringref name, int32_t id);
     DocumentType(vespalib::stringref name, int32_t id,
                  const StructDataType& fields);
 
-    DocumentType(vespalib::stringref name);
+    explicit DocumentType(vespalib::stringref name);
     DocumentType(vespalib::stringref name,
                  const StructDataType& fields);
 
-    ~DocumentType();
+    ~DocumentType() override;
 
-    const StructDataType& getFieldsType() const { return *_fields; }
+    const StructDataType& getFieldsType() const noexcept { return *_fields; }
 
     void addField(const Field&);
 
@@ -89,8 +99,15 @@ public:
     Field::Set getFieldSet() const override;
     DocumentType* clone() const override;
 
-    DocumentType & addFieldSet(const vespalib::string & name, const FieldSet::Fields & fields);
+    DocumentType & addFieldSet(const vespalib::string & name, FieldSet::Fields fields);
     const FieldSet * getFieldSet(const vespalib::string & name) const;
+
+    const ImportedFieldNames& imported_field_names() const noexcept {
+        return _imported_field_names;
+    }
+    bool has_imported_field_name(const vespalib::string& name) const noexcept;
+    // Ideally the type would be immutable, but this is how it's built today.
+    void add_imported_field_name(const vespalib::string& name);
 
     DECLARE_IDENTIFIABLE(DocumentType);
 };

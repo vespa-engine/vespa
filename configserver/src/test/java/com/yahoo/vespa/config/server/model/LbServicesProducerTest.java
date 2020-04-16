@@ -16,7 +16,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
@@ -39,7 +38,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -56,7 +54,7 @@ public class LbServicesProducerTest {
     private static final Set<ContainerEndpoint> endpoints = Set.of(
             new ContainerEndpoint("mydisc", List.of("rotation-1", "rotation-2"))
     );
-    private InMemoryFlagSource flagSource;
+    private InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final boolean useGlobalServiceId;
 
     @Parameterized.Parameters
@@ -66,7 +64,6 @@ public class LbServicesProducerTest {
 
     public LbServicesProducerTest(boolean useGlobalServiceId) {
         this.useGlobalServiceId = useGlobalServiceId;
-        this.flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.GENERATE_ROUTING_CONFIG_FOR_TESTER_APPLICATIONS.id(), true);
     }
 
     @Test
@@ -148,7 +145,6 @@ public class LbServicesProducerTest {
 
     @Test
     public void testRoutingConfigForTesterApplication() throws IOException, SAXException {
-        flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.GENERATE_ROUTING_CONFIG_FOR_TESTER_APPLICATIONS.id(), false);
         assumeFalse(useGlobalServiceId);
 
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
@@ -161,15 +157,6 @@ public class LbServicesProducerTest {
         assertNull(getLbServicesConfig(Zone.defaultZone(), testModel)
                            .tenants("foo")
                            .applications("baz:prod:default:custom-t"));
-
-        // When flag is to true routing config should be generated for tester app
-        flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.GENERATE_ROUTING_CONFIG_FOR_TESTER_APPLICATIONS.id(), true);
-        testModel = createTestModel(new DeployState.Builder());
-        conf = getLbServicesConfig(Zone.defaultZone(), testModel);
-        assertNotNull(conf);
-        services = conf.tenants("foo").applications("baz:prod:default:custom-t").hosts("foo.baz.yahoo.com").services(QRSERVER.serviceName);
-        assertThat(services.servicealiases().size(), is(1));
-        assertThat(services.endpointaliases().size(), is(2));
     }
 
     private Map<TenantName, Set<ApplicationInfo>> randomizeApplications(Map<TenantName, Set<ApplicationInfo>> testModel, int seed) {

@@ -83,7 +83,7 @@ public final class Node {
         this.reservedTo = Objects.requireNonNull(reservedTo, "reservedTo cannot be null");
 
         if (state == State.active)
-            requireNonEmpty(ipConfig.primary(), "An active node must have at least one valid IP address");
+            requireNonEmpty(ipConfig.primary(), "Active node " + hostname + " must have at least one valid IP address");
 
         if (parentHostname.isPresent()) {
             if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
@@ -375,8 +375,6 @@ public final class Node {
                        .deviation();
     }
 
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -392,15 +390,15 @@ public final class Node {
 
     @Override
     public String toString() {
-        return state + " node " +
+        return state +
+               ( parentHostname.isPresent() ? " child node " : " host " ) +
                hostname +
-               (allocation.map(allocation1 -> " " + allocation1).orElse("")) +
-               (parentHostname.map(parent -> " [on: " + parent + "]").orElse(""));
+               ( allocation.isPresent() ? " " + allocation.get() : "");
     }
 
     public enum State {
 
-        /** This node has been requested (from OpenStack) but is not yet ready for use */
+        /** This host has been requested (from OpenStack) but is not yet ready for use */
         provisioned,
 
         /** This node is free and ready for use */
@@ -426,12 +424,20 @@ public final class Node {
          * This state follows the same rules as failed except that it will never be automatically moved out of
          * this state.
          */
-        parked;
+        parked,
+
+        /** This host has previously been in use but is now removed. */
+        deprovisioned;
 
         /** Returns whether this is a state where the node is assigned to an application */
         public boolean isAllocated() {
-            return this == reserved || this == active || this == inactive || this == failed || this == parked;
+            return allocatedStates().contains(this);
         }
+
+        public static Set<State> allocatedStates() {
+            return Set.of(reserved, active, inactive, failed, parked);
+        }
+
     }
 
     /** The mean and mean deviation (squared difference) of a bunch of numbers */

@@ -197,7 +197,7 @@ public:
     DocumentProtocol(const LoadTypeSet& loadTypes,
                      std::shared_ptr<const document::DocumentTypeRepo> repo,
                      const string &configId = "");
-    ~DocumentProtocol();
+    ~DocumentProtocol() override;
 
     /**
      * Adds a new routable factory to this protocol. This method is thread-safe, and may be invoked on a

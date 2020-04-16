@@ -22,11 +22,11 @@ private:
     // (note that child expression order is inverted by the stack)
     std::vector<std::pair<int64_t,size_t>> _spec;
 public:
-    DenseTensorPeekFunction(std::vector<Child> children, const std::vector<std::pair<int64_t,size_t>> &spec);
+    DenseTensorPeekFunction(std::vector<Child> children, std::vector<std::pair<int64_t,size_t>> spec);
     ~DenseTensorPeekFunction();
     const eval::ValueType &result_type() const override { return eval::DoubleValue::double_type(); }
     void push_children(std::vector<Child::CREF> &children) const override;
-    eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };

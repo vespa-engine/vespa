@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import org.junit.Test;
 
 import java.util.List;
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
-public class DeriverTestCase extends SearchDefinitionTestCase {
+public class DeriverTestCase extends SchemaTestCase {
 
     @Test
     public void testDeriveDocManager() {

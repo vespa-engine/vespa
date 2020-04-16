@@ -10,7 +10,7 @@ import java.util.List;
  * This class represents a path into a document, that can be used to iterate through the document and extract the field
  * values you're interested in.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class FieldPath implements Iterable<FieldPathEntry> {
 

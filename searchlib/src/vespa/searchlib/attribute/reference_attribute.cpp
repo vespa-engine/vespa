@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributesaver.h"
+#include "load_utils.h"
 #include "readerbase.h"
 #include "reference_attribute.h"
 #include "reference_attribute_saver.h"
@@ -223,7 +224,7 @@ ReferenceAttribute::onLoad()
     uint64_t numValues(0);
     numValues = attrReader.getEnumCount();
     numDocs = numValues;
-    fileutil::LoadedBuffer::UP udatBuffer(loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     const GenericHeader &header = udatBuffer->getHeader();
     uint32_t uniqueValueCount = extractUniqueValueCount(header);
     assert(uniqueValueCount * sizeof(GlobalId) == udatBuffer->size());

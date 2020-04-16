@@ -10,7 +10,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.net.URI;
 import java.security.Principal;
@@ -68,7 +67,6 @@ public class TenantSerializer {
 
         switch (tenant.type()) {
             case athenz: toSlime((AthenzTenant) tenant, tenantObject); break;
-            case user:   toSlime((UserTenant) tenant, tenantObject);   break;
             case cloud:  toSlime((CloudTenant) tenant, tenantObject);  break;
             default:     throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
@@ -79,13 +77,6 @@ public class TenantSerializer {
         tenantObject.setString(athenzDomainField, tenant.domain().getName());
         tenantObject.setString(propertyField, tenant.property().id());
         tenant.propertyId().ifPresent(propertyId -> tenantObject.setString(propertyIdField, propertyId.id()));
-        tenant.contact().ifPresent(contact -> {
-            Cursor contactCursor = tenantObject.setObject(contactField);
-            writeContact(contact, contactCursor);
-        });
-    }
-
-    private void toSlime(UserTenant tenant, Cursor tenantObject) {
         tenant.contact().ifPresent(contact -> {
             Cursor contactCursor = tenantObject.setObject(contactField);
             writeContact(contact, contactCursor);
@@ -117,7 +108,6 @@ public class TenantSerializer {
 
         switch (type) {
             case athenz: return athenzTenantFrom(tenantObject);
-            case user:   return userTenantFrom(tenantObject);
             case cloud:  return cloudTenantFrom(tenantObject);
             default:     throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
@@ -130,12 +120,6 @@ public class TenantSerializer {
         Optional<PropertyId> propertyId = SlimeUtils.optionalString(tenantObject.field(propertyIdField)).map(PropertyId::new);
         Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
         return new AthenzTenant(name, domain, property, propertyId, contact);
-    }
-
-    private UserTenant userTenantFrom(Inspector tenantObject) {
-        TenantName name = TenantName.from(tenantObject.field(nameField).asString());
-        Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
-        return new UserTenant(name, contact);
     }
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
@@ -205,7 +189,6 @@ public class TenantSerializer {
     private static Tenant.Type typeOf(String value) {
         switch (value) {
             case "athenz": return Tenant.Type.athenz;
-            case "user":   return Tenant.Type.user;
             case "cloud":  return Tenant.Type.cloud;
             default: throw new IllegalArgumentException("Unknown tenant type '" + value + "'.");
         }
@@ -214,7 +197,6 @@ public class TenantSerializer {
     private static String valueOf(Tenant.Type type) {
         switch (type) {
             case athenz: return "athenz";
-            case user:   return "user";
             case cloud:  return "cloud";
             default: throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }

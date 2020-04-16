@@ -1002,14 +1002,14 @@ public class DeploymentSpecTest {
     public void notificationsDefault() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "   <notifications when=\"failing-commit\">" +
-                "      <email role=\"author\"/>" +
+                "   <notifications>" +
+                "      <email role=\"author\" when=\"failing\"/>" +
                 "      <email address=\"mary@dev\"/>" +
                 "   </notifications>" +
                 "   <instance id='instance1'>" +
                 "      <notifications when=\"failing\">" +
                 "         <email role=\"author\"/>" +
-                "         <email address=\"john@operator\"/>" +
+                "         <email address=\"john@operator\" when=\"failing-commit\"/>" +
                 "      </notifications>" +
                 "   </instance>" +
                 "   <instance id='instance2'>" +
@@ -1020,9 +1020,13 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         DeploymentInstanceSpec instance1 = spec.requireInstance("instance1");
         assertEquals(Set.of(author), instance1.notifications().emailRolesFor(failing));
-        assertEquals(Set.of("john@operator"), instance1.notifications().emailAddressesFor(failing));
+        assertEquals(Set.of(), instance1.notifications().emailAddressesFor(failing));
+        assertEquals(Set.of(author), instance1.notifications().emailRolesFor(failingCommit));
+        assertEquals(Set.of("john@operator"), instance1.notifications().emailAddressesFor(failingCommit));
 
         DeploymentInstanceSpec instance2 = spec.requireInstance("instance2");
+        assertEquals(Set.of(author), instance2.notifications().emailRolesFor(failing));
+        assertEquals(Set.of(), instance2.notifications().emailAddressesFor(failing));
         assertEquals(Set.of(author), instance2.notifications().emailRolesFor(failingCommit));
         assertEquals(Set.of("mary@dev"), instance2.notifications().emailAddressesFor(failingCommit));
     }

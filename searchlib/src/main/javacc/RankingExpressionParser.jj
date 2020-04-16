@@ -598,21 +598,21 @@ TensorFunctionNode tensorXwPlusB() :
 TensorFunctionNode tensorArgmax() :
 {
     ExpressionNode tensor;
-    String dimension;
+    List<String> dimensions = null;
 }
 {
-    <ARGMAX> <LBRACE> tensor = expression() <COMMA> dimension = identifier() <RBRACE>
-    { return new TensorFunctionNode(new Argmax(TensorFunctionNode.wrap(tensor), dimension)); }
+    <ARGMAX> <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
+    { return new TensorFunctionNode(new Argmax(TensorFunctionNode.wrap(tensor), dimensions)); }
 }
 
 TensorFunctionNode tensorArgmin() :
 {
     ExpressionNode tensor;
-    String dimension;
+    List<String> dimensions = null;
 }
 {
-    <ARGMIN> <LBRACE> tensor = expression() <COMMA> dimension = identifier() <RBRACE>
-    { return new TensorFunctionNode(new Argmin(TensorFunctionNode.wrap(tensor), dimension)); }
+    <ARGMIN> <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
+    { return new TensorFunctionNode(new Argmin(TensorFunctionNode.wrap(tensor), dimensions)); }
 }
 
 LambdaFunctionNode lambdaFunction() :

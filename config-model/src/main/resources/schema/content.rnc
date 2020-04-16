@@ -57,11 +57,14 @@ PersistenceThread = element thread {
 
 ## Declare which storage threads each disk should have.
 PersistenceThreads = element persistence-threads {
+  ## The number of threads to create
+  attribute count { xsd:integer }? &
+  ## All of the below settings are deprecated.
   ## Operations with priority worse than this can be blocked
   attribute highest-priority-to-block { xsd:string } ? &
   ## Operations with priority better than this can block others
   attribute lowest-priority-to-block-others { xsd:string } ? &
-  Thread+
+  Thread*
 }
 
 MinNodeRatioPerGroup = element min-node-ratio-per-group {
@@ -82,6 +85,7 @@ DispatchTuning = element dispatch {
     element dispatch-policy { string "round-robin" | string "adaptive" | string "random" }? &
     element min-group-coverage { xsd:double }? &
     element min-active-docs-coverage { xsd:double }? &
+    element top-k-probability { xsd:double }? &
     element use-local-node { string "true" | string "false" }?
 }
 
@@ -218,11 +222,11 @@ ContentNodes = element nodes {
     attribute vespamalloc-debug-stacktrace { xsd:string }? &
     (
       (
-        attribute count { xsd:positiveInteger } &
+        attribute count { xsd:positiveInteger | xsd:string } &
         attribute flavor { xsd:string }? &
         attribute required { xsd:boolean }? &
         attribute docker-image { xsd:string }? &
-        attribute groups { xsd:positiveInteger }?
+        attribute groups { xsd:positiveInteger | xsd:string }?
       )
       |
       ContentNode +
@@ -263,12 +267,12 @@ Group = element group {
         |
         (
             element nodes {
-                attribute count { xsd:positiveInteger } &
+                attribute count { xsd:positiveInteger | xsd:string  } &
                 attribute flavor { xsd:string }? &
                 attribute required { xsd:boolean }? &
                 attribute exclusive { xsd:boolean }? &
                 attribute docker-image { xsd:string }? &
-                attribute groups { xsd:positiveInteger }?
+                attribute groups { xsd:positiveInteger | xsd:string  }?
             }
         )
         |

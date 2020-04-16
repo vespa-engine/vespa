@@ -5,6 +5,7 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructuredDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Deriver of indexschema config containing information of all index fields with name and data type.
+ * Deriver of indexschema config containing information of all text index fields with name and data type.
  *
  * @author geirst
  */
@@ -44,9 +45,14 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         super.derive(search);
     }
 
+    private boolean isTensorField(ImmutableSDField field) {
+        return field.getDataType() instanceof TensorDataType;
+    }
+
     private void deriveIndexFields(ImmutableSDField field, Search search) {
-        if (!field.doesIndexing() &&
-            !field.isIndexStructureField())
+        // Note: Indexes for tensor fields are NOT part of the index schema for text fields.
+        if ((!field.doesIndexing() && !field.isIndexStructureField()) ||
+                isTensorField(field))
         {
             return;
         }
@@ -138,11 +144,10 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
             return Collections.singletonList(field);
         }
         if (fieldType instanceof ArrayDataType) {
-            boolean header = field.isHeader();
             List<Field> ret = new LinkedList<>();
-            Field innerField = new Field(field.getName(), ((ArrayDataType)fieldType).getNestedType(), header);
+            Field innerField = new Field(field.getName(), ((ArrayDataType)fieldType).getNestedType());
             for (Field flatField : flattenField(innerField)) {
-                ret.add(new Field(flatField.getName(), DataType.getArray(flatField.getDataType()), header));
+                ret.add(new Field(flatField.getName(), DataType.getArray(flatField.getDataType())));
             }
             return ret;
         }

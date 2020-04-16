@@ -246,6 +246,7 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value_when_inp
     expect_filtered("array_in_doc", {0, 1, 2}, "[{'name':'a','weight':3},"
                                                "{'name':'b','weight':5},"
                                                "{'name':'c','weight':7}]");
+    expect_filtered("array_in_doc", {0, 1, 100}, "[]");
 }
 
 TEST_F(MatchedElementsFilterTest, struct_field_mapper_is_setup_for_array_field_value)
@@ -276,6 +277,7 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value_when_input
     expect_filtered("map_in_doc", {0, 1, 2}, "[{'key':'a','value':{'name':'a','weight':3}},"
                                              "{'key':'b','value':{'name':'b','weight':5}},"
                                              "{'key':'c','value':{'name':'c','weight':7}}]");
+    expect_filtered("map_in_doc", {0, 1, 100}, "[]");
 }
 
 TEST_F(MatchedElementsFilterTest, struct_field_mapper_is_setup_for_map_field_value)

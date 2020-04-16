@@ -1,5 +1,5 @@
 {
-  "routingType": "policy",
+  "routingMethod": "exclusive",
   "environment": "prod",
   "region": "us-west-1",
   "status": "out",

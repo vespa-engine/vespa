@@ -44,13 +44,14 @@ class RpcClient implements Client {
 
         // The current shared connection. This will be recycled when it becomes invalid.
         // All access to this must be synchronized
-        private Target target = null;
+        private Target target;
 
         public RpcNodeConnection(String hostname, int port, Supervisor supervisor) {
             this.supervisor = supervisor;
             this.hostname = hostname;
             this.port = port;
             description = "rpc node connection to " + hostname + ":" + port;
+            target = supervisor.connect(new Spec(hostname, port));
         }
 
         @Override
@@ -79,17 +80,16 @@ class RpcClient implements Client {
         private void invokeAsync(Request req, double timeout, RequestWaiter waiter) {
             // TODO: Consider replacing this by a watcher on the target
             synchronized(this) { // ensure we have exactly 1 valid connection across threads
-                if (target == null || ! target.isValid())
+                if (! target.isValid()) {
                     target = supervisor.connect(new Spec(hostname, port));
+                }
             }
             target.invokeAsync(req, timeout, waiter);
         }
 
         @Override
         public void close() {
-            if (target != null) {
-                target.close();
-            }
+            target.close();
         }
 
         @Override

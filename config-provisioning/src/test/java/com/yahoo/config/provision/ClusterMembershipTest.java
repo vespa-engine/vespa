@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import org.junit.Test;
+
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -16,59 +17,80 @@ public class ClusterMembershipTest {
 
     @Test
     public void testContainerServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
         assertContainerService(ClusterMembership.from(cluster, 3));
     }
 
     @Test
-    public void testContainerInstanceWithOptionalParts() {
+    public void testSerializationWithOptionalParts() {
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired", Vtag.currentVersion);
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired", Vtag.currentVersion, Optional.empty());
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            assertEquals(instance, serialized);
             assertTrue(instance.retired());
             assertTrue(instance.cluster().isExclusive());
+            assertFalse(instance.cluster().combinedId().isPresent());
+            assertTrue(instance.cluster().dockerImageRepo().isEmpty());
         }
-
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive", Vtag.currentVersion);
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive", Vtag.currentVersion, Optional.empty());
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            assertEquals(instance, serialized);
             assertFalse(instance.retired());
             assertTrue(instance.cluster().isExclusive());
+            assertFalse(instance.cluster().combinedId().isPresent());
+            assertTrue(instance.cluster().dockerImageRepo().isEmpty());
+        }
+        {
+            Optional<String> dockerImageRepo = Optional.of("docker.foo.com:4443/vespa/bar");
+            ClusterMembership instance = ClusterMembership.from("combined/id1/4/37/exclusive/containerId1", Vtag.currentVersion, dockerImageRepo);
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, dockerImageRepo);
+            assertEquals(instance, serialized);
+            assertFalse(instance.retired());
+            assertTrue(instance.cluster().isExclusive());
+            assertEquals(ClusterSpec.Id.from("containerId1"), instance.cluster().combinedId().get());
+            assertEquals(dockerImageRepo.get(), instance.cluster().dockerImageRepo().get());
         }
     }
 
     @Test
     public void testServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
         assertContentService(ClusterMembership.from(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithGroup() {
-        ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               ClusterSpec.Group.from(4), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
+                .group(ClusterSpec.Group.from(4))
+                .vespaVersion("6.42")
+                .build();
         assertContentServiceWithGroup(ClusterMembership.from(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithGroupFromString() {
-        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37", Vtag.currentVersion));
+        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37", Vtag.currentVersion, Optional.empty()));
     }
 
     @Test
     public void testServiceInstanceWithRetire() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
         assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithGroupAndRetire() {
-        ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               ClusterSpec.Group.from(4), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
+                .group(ClusterSpec.Group.from(4))
+                .vespaVersion("6.42")
+                .build();
         assertContentServiceWithGroupAndRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithGroupAndRetireFromString() {
-        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired", Vtag.currentVersion));
+        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired", Vtag.currentVersion, Optional.empty()));
     }
 
     private void assertContainerService(ClusterMembership instance) {

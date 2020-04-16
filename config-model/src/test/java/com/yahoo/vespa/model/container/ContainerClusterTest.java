@@ -97,6 +97,7 @@ public class ContainerClusterTest {
         cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
         assertEquals(expectedMemoryPercentage, qsC.jvm().heapSizeAsPercentageOfPhysicalMemory());
+        assertEquals(0, qsC.jvm().compressedClassSpaceSize());
     }
 
     @Test
@@ -156,6 +157,7 @@ public class ContainerClusterTest {
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
         assertEquals(32, qrStartConfig.jvm().minHeapsize());
         assertEquals(512, qrStartConfig.jvm().heapsize());
+        assertEquals(32, qrStartConfig.jvm().compressedClassSpaceSize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
 
         ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
@@ -197,6 +199,34 @@ public class ContainerClusterTest {
         String empty = container.getJvmOptions();
         container.setJvmOptions(null);
         assertEquals(empty, container.getJvmOptions());
+    }
+
+    @Test
+    public void requireThatSoftStartSecondsCanBeControlledByProperties() {
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setSoftStartSeconds(300.0))
+                .build();
+        MockRoot root = new MockRoot("foo", state);
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+
+        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
+        cluster.getConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(300.0, threadpoolConfig.softStartSeconds(), 0.0);
+    }
+
+    @Test
+    public void requireThatDefaultThreadPoolConfigIsSane() {
+        MockRoot root = new MockRoot("foo");
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+
+        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
+        cluster.getConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(0.0, threadpoolConfig.softStartSeconds(), 0.0);
     }
 
     @Test

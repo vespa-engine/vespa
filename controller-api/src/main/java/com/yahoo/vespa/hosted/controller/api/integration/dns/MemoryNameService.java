@@ -45,7 +45,7 @@ public class MemoryNameService implements NameService {
                              .map(target -> new Record(Record.Type.ALIAS, name, target.asData()))
                              .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
-        removeRecords(findRecords(Record.Type.ALIAS, name));
+        removeRecords(records);
         records.forEach(this::add);
         return records;
     }
@@ -68,8 +68,23 @@ public class MemoryNameService implements NameService {
 
     @Override
     public List<Record> findRecords(Record.Type type, RecordData data) {
+        if (type == Record.Type.ALIAS && data.asString().contains("/")) {
+            // Validate the same expectation as of a real name service
+            throw new IllegalArgumentException("Finding " + Record.Type.ALIAS + " record by data should only include " +
+                                               "the FQDN name");
+        }
         return records.stream()
-                      .filter(record -> record.type() == type && record.data().equals(data))
+                      .filter(record -> {
+                          if (record.type() == type) {
+                              if (type == Record.Type.ALIAS) {
+                                  // Unpack ALIAS record and compare FQDN of data part
+                                  return RecordData.fqdn(AliasTarget.from(record.data()).name().value())
+                                                   .equals(data);
+                              }
+                              return record.data().equals(data);
+                          }
+                          return false;
+                      })
                       .collect(Collectors.toUnmodifiableList());
     }
 

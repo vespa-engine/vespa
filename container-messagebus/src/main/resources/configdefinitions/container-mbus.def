@@ -2,9 +2,24 @@
 namespace=container.jdisc
 
 #settings for message bus in container
-enabled bool default=false
+
+# Which network port is used
 port int default=0
+
+# Number of connections per target
+numconnectionspertarget int default=1
+
+# Number network threads
+numthreads int default=2
+
+# Optimize for latency, or throughput.
+optimize_for enum {LATENCY, THROUGHPUT} default=LATENCY
+
+# Everying below is deprecated and will go away very soon.
+# Dynamic throttling is used, and works better than anything else.
 maxpendingcount int default=2048
+
+enabled bool default=false
 #maxpendingsize is set in megabytes!
 maxpendingsize int default=100
 

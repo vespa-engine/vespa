@@ -25,6 +25,7 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.VipStatusHandler;
+import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.servlet.ServletConfigConfig;
@@ -46,7 +47,6 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.hamcrest.Matchers;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -65,8 +65,11 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.test.LinePatternMatcher.containsLineWithPattern;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static com.yahoo.vespa.model.container.ContainerCluster.ROOT_HANDLER_BINDING;
+import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -150,7 +153,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    @Ignore // TODO: Enable when turning the port check on
     public void fail_if_http_port_is_not_default_in_hosted_vespa() throws Exception {
         try {
             String servicesXml =
@@ -225,26 +227,49 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(defaultRootHandler.serverBindings(), contains("http://*/"));
 
         JdiscBindingsConfig.Handlers applicationStatusHandler = config.handlers(ApplicationStatusHandler.class.getName());
-        assertThat(applicationStatusHandler.serverBindings(),
-                   contains("http://*/ApplicationStatus"));
+        assertThat(applicationStatusHandler.serverBindings(), contains("http://*/ApplicationStatus"));
 
         JdiscBindingsConfig.Handlers fileRequestHandler = config.handlers(VipStatusHandler.class.getName());
-        assertThat(fileRequestHandler.serverBindings(),
-                   contains("http://*/status.html"));
+        assertThat(fileRequestHandler.serverBindings(), contains("http://*/status.html"));
+
+        JdiscBindingsConfig.Handlers metricsV2Handler = config.handlers(MetricsV2Handler.class.getName());
+        assertThat(metricsV2Handler.serverBindings(), contains("http://*/metrics/v2", "http://*/metrics/v2/*"));
     }
 
     @Test
-    public void default_root_handler_is_disabled_when_user_adds_a_handler_with_same_binding() {
+    public void default_root_handler_binding_can_be_stolen_by_user_configured_handler() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>" +
                         "  <handler id='userRootHandler'>" +
-                        "    <binding>" + ContainerCluster.ROOT_HANDLER_BINDING + "</binding>" +
+                        "    <binding>" + ROOT_HANDLER_BINDING + "</binding>" +
                         "  </handler>" +
                         "</container>");
         createModel(root, clusterElem);
 
+        // The handler is still set up.
         ComponentsConfig.Components userRootHandler = getComponent(componentsConfig(), BindingsOverviewHandler.class.getName());
-        assertThat(userRootHandler, nullValue());
+        assertThat(userRootHandler, notNullValue());
+
+        // .. but it has no bindings
+        var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
+        assertThat(discBindingsConfig.handlers(BindingsOverviewHandler.class.getName()), is(nullValue()));
+    }
+
+    @Test
+    public void reserved_binding_cannot_be_stolen_by_user_configured_handler() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>" +
+                        "  <handler id='userHandler'>" +
+                        "    <binding>" + STATE_HANDLER_BINDING_1 + "</binding>" +
+                        "  </handler>" +
+                        "</container>");
+        try {
+            createModel(root, clusterElem);
+            fail("Expected exception when stealing a reserved binding.");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), is("Binding 'http://*/state/v1' is a reserved Vespa binding " +
+                                                  "and cannot be used by handler: userHandler"));
+        }
     }
 
     @Test
@@ -599,7 +624,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                         .setMultitenant(true)
                         .setHostedVespa(true))
                 .build());
-        assertEquals(1, model.hostSystem().getHosts().size());
+        assertEquals(2, model.hostSystem().getHosts().size());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -784,7 +809,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
 
         // Verify that there are two connectors
-        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().getConnectorFactories();
+        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
         assertEquals(2, connectorFactories.size());
         List<Integer> ports = connectorFactories.stream()
                 .map(ConnectorFactory::getListenPort)

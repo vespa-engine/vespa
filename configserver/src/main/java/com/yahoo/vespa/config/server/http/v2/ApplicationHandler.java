@@ -245,7 +245,6 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static boolean isTesterStartTestsRequest(HttpRequest request) {
-        System.out.println(getBindingMatch(request).groupCount());
         return getBindingMatch(request).groupCount() == 9 &&
                request.getUri().getPath().contains("/tester/run/");
     }

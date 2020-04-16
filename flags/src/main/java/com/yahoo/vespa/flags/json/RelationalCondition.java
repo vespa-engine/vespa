@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
-import java.util.List;
 import java.util.function.Predicate;
 
 /**

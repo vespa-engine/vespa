@@ -31,14 +31,17 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
         }
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.AND;
     }
 
+    @Override
     public String getName() {
         return "SAND";
     }
 
+    @Override
     public String getIndexName() {
         if (getItemCount() == 0) {
             return "";
@@ -54,4 +57,5 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
             i.next().setWeight(w);
         }
     }
+
 }

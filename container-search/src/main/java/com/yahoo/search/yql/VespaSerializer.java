@@ -701,7 +701,18 @@ public class VespaSerializer {
             destination.append(leafAnnotations(item));
             comma(destination, initLen);
             int targetNumHits = item.getTargetNumHits();
-            destination.append("\"targetNumHits\": ").append(targetNumHits);
+            annotationKey(destination, "targetNumHits").append(targetNumHits);
+            int explore = item.getHnswExploreAdditionalHits();
+            if (explore != 0) {
+                comma(destination, initLen);
+                String key = YqlParser.HNSW_EXPLORE_ADDITIONAL_HITS;
+                annotationKey(destination, key).append(explore);
+            }
+            boolean allow_approx = item.getAllowApproximate();
+            if (! allow_approx) {
+                comma(destination, initLen);
+                annotationKey(destination, "approximate").append(allow_approx);
+            }
             destination.append("}]");
             destination.append(NEAREST_NEIGHBOR).append('(');
             destination.append(item.getIndexName()).append(", ");
@@ -1345,6 +1356,11 @@ public class VespaSerializer {
         else {
             return false;
         }
+    }
+
+    private static StringBuilder annotationKey(StringBuilder annotation, String val) {
+        annotation.append("\"").append(val).append("\": ");
+        return annotation;
     }
 
     private static void comma(StringBuilder annotation, int initLen) {

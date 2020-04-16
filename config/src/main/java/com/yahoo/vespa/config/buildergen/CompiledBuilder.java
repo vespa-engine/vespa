@@ -7,7 +7,6 @@ import com.yahoo.config.ConfigInstance;
  * Represents a builder that can be instantiated.
  *
  * @author Ulf Lilleengen
- * @since 5.2
  */
 public interface CompiledBuilder {
     <BUILDER extends ConfigInstance.Builder> BUILDER newInstance();

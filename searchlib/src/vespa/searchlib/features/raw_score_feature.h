@@ -10,7 +10,7 @@ class RawScoreExecutor : public fef::FeatureExecutor
 {
 private:
     std::vector<fef::TermFieldHandle> _handles;
-    const fef::MatchData                     *_md;
+    const fef::MatchData             *_md;
 
     void handle_bind_match_data(const fef::MatchData &md) override;
 public:

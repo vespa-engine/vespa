@@ -59,14 +59,14 @@ Stash::do_alloc(size_t size)
     }
 }
 
-Stash::Stash(size_t chunk_size)
+Stash::Stash(size_t chunk_size) noexcept
     : _chunks(nullptr),
       _cleanup(nullptr),
       _chunk_size(std::max(size_t(4096), chunk_size))
 {
 }
 
-Stash::Stash(Stash &&rhs)
+Stash::Stash(Stash &&rhs) noexcept
     : _chunks(rhs._chunks),
       _cleanup(rhs._cleanup),
       _chunk_size(rhs._chunk_size)
@@ -76,7 +76,7 @@ Stash::Stash(Stash &&rhs)
 }
 
 Stash &
-Stash::operator=(Stash &&rhs)
+Stash::operator=(Stash &&rhs) noexcept
 {
     stash::run_cleanup(_cleanup);
     stash::free_chunks(_chunks);

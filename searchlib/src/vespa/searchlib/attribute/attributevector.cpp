@@ -266,79 +266,6 @@ const IEnumStore* AttributeVector::getEnumStoreBase() const { return nullptr; }
 IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }
 
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openFile(const char *suffix)
-{
-    BaseName::string fileName(getBaseFileName());
-    fileName += suffix;
-    return FileUtil::openFile(fileName);
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openDAT()
-{
-    return openFile(".dat");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openIDX()
-{
-    return openFile(".idx");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openWeight()
-{
-    return openFile(".weight");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openUDAT()
-{
-    return openFile(".dat");
-}
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadDAT()
-{
-    return loadFile(".dat");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadIDX()
-{
-    return loadFile(".idx");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadWeight()
-{
-    return loadFile(".weight");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadUDAT()
-{
-    return loadFile(".udat");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadFile(const char *suffix)
-{
-    BaseName::string fileName(getBaseFileName());
-    fileName += suffix;
-    return FileUtil::loadFile(fileName);
-}
-
-
 bool
 AttributeVector::save(vespalib::stringref fileName)
 {
@@ -379,19 +306,19 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, vespalib::stringref file
 attribute::AttributeHeader
 AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
     return attribute::AttributeHeader(fileName,
-                                   getConfig().basicType(),
-                                   getConfig().collectionType(),
-                                   getConfig().basicType().type() == BasicType::Type::TENSOR
-                                      ? getConfig().tensorType()
-                                      : vespalib::eval::ValueType::error_type(),
-                                   getEnumeratedSave(),
-                                   getConfig().predicateParams(),
-                                   getCommittedDocIdLimit(),
-                                   getFixedWidth(),
-                                   getUniqueValueCount(),
-                                   getTotalValueCount(),
-                                   getCreateSerialNum(),
-                                   getVersion());
+                                      getConfig().basicType(),
+                                      getConfig().collectionType(),
+                                      (getConfig().basicType().type() == BasicType::Type::TENSOR
+                                       ? getConfig().tensorType()
+                                       : vespalib::eval::ValueType::error_type()),
+                                      getEnumeratedSave(),
+                                      getConfig().predicateParams(),
+                                      getConfig().hnsw_index_params(),
+                                      getCommittedDocIdLimit(),
+                                      getUniqueValueCount(),
+                                      getTotalValueCount(),
+                                      getCreateSerialNum(),
+                                      getVersion());
 }
 
 void AttributeVector::onSave(IAttributeSaveTarget &)

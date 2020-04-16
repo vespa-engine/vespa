@@ -65,7 +65,7 @@ public class RotationStatusUpdaterTest {
                 .region(zone1.region().value())
                 .region(zone2.region().value())
                 .region(zone3.region().value())
-                .endpoint("default", "default", "us-east-3", "us-west-1")
+                .endpoint("default", "foo", "us-east-3", "us-west-1")
                 .endpoint("eu", "default", "eu-west-1")
                 .build();
         context.submit(applicationPackage)

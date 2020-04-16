@@ -4,15 +4,21 @@
 
 #include "basictype.h"
 #include "collectiontype.h"
+#include "hnsw_index_params.h"
 #include "predicate_params.h"
-#include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchcommon/common/compaction_strategy.h>
+#include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/eval/eval/value_type.h>
+#include <optional>
 
 namespace search::attribute {
 
-class Config
-{
+/**
+ * Configuration for an attribute vector.
+ *
+ * Used to determine which implementation to instantiate.
+ */
+class Config {
 public:
     Config();
     Config(BasicType bt, CollectionType ct = CollectionType::SINGLE,
@@ -29,6 +35,7 @@ public:
     bool huge()                           const { return _huge; }
     const PredicateParams &predicateParams() const { return _predicateParams; }
     vespalib::eval::ValueType tensorType() const { return _tensorType; }
+    const std::optional<HnswIndexParams>& hnsw_index_params() const { return _hnsw_index_params; }
 
     /**
      * Check if attribute posting list can consist of a bitvector in
@@ -58,6 +65,10 @@ public:
     Config & setPredicateParams(const PredicateParams &v) { _predicateParams = v; return *this; }
     Config & setTensorType(const vespalib::eval::ValueType &tensorType_in) {
         _tensorType = tensorType_in;
+        return *this;
+    }
+    Config& set_hnsw_index_params(const HnswIndexParams& params) {
+        _hnsw_index_params = params;
         return *this;
     }
 
@@ -107,6 +118,7 @@ private:
     CompactionStrategy _compactionStrategy;
     PredicateParams    _predicateParams;
     vespalib::eval::ValueType _tensorType;
+    std::optional<HnswIndexParams> _hnsw_index_params;
 };
 
 }

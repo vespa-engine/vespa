@@ -55,7 +55,7 @@ public class ArtifactRepositoryMock extends AbstractComponent implements Artifac
         return Objects.hash(applicationId, applicationVersion);
     }
 
-    private class Artifact {
+    private static class Artifact {
 
         private final byte[] data;
         private int hits = 0;

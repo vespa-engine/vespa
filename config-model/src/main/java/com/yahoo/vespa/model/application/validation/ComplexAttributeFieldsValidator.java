@@ -33,7 +33,7 @@ public class ComplexAttributeFieldsValidator extends Validator {
                 continue;
             }
             SearchCluster searchCluster = (SearchCluster) cluster;
-            for (AbstractSearchCluster.SearchDefinitionSpec spec : searchCluster.getLocalSDS()) {
+            for (AbstractSearchCluster.SchemaSpec spec : searchCluster.getLocalSDS()) {
                 validateComplexFields(searchCluster.getClusterName(), spec.getSearchDefinition().getSearch());
             }
         }

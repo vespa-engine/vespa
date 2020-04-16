@@ -13,9 +13,9 @@ namespace fef {
  * the low-level eval library. A feature can either be a simple number
  * represented by a double or a polymorph value represented with an
  * object. The ranking framework itself will mostly care about the
- * representation (number/object) and not the specific type, hence the
- * implicit cast to bool. The type function is used to extract the
- * underlying type and is only allowed for features that are objects.
+ * representation (number/object) and not the specific type. The type
+ * function is used to extract the underlying type and is only allowed
+ * for features that are objects.
  **/
 class FeatureType {
 private:
@@ -26,8 +26,8 @@ private:
     FeatureType(TYPE_UP type_in) : _type(std::move(type_in)) {}
 public:
     FeatureType(const FeatureType &rhs);
+    FeatureType(FeatureType &&rhs) = default;
     bool is_object() const { return (_type.get() != nullptr); }
-    operator bool() const { return is_object(); }
     const TYPE &type() const;
     static const FeatureType &number() { return _number; }
     static FeatureType object(const TYPE &type_in);

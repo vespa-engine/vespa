@@ -4,7 +4,6 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 #include "dense_tensor_view.h"
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace vespalib::tensor {
 
@@ -20,7 +19,6 @@ public:
         size_t lhs_size;
         size_t common_size;
         size_t rhs_size;
-        hwaccelrated::IAccelrated::UP hw;
         Self(const eval::ValueType &result_type_in,
              size_t lhs_size_in, size_t common_size_in, size_t rhs_size_in);
         ~Self();
@@ -52,7 +50,7 @@ public:
     bool lhs_common_inner() const { return _lhs_common_inner; }
     bool rhs_common_inner() const { return _rhs_common_inner; }
 
-    eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };

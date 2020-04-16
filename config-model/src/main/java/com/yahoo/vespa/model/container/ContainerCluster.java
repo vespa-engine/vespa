@@ -19,6 +19,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
@@ -99,7 +100,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer {
+        ConfigserverConfig.Producer,
+        ThreadpoolConfig.Producer
+{
 
     /**
      * URI prefix used for internal, usually programmatic, APIs. URIs using this
@@ -111,14 +114,19 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public static final String APPLICATION_STATUS_HANDLER_CLASS = "com.yahoo.container.handler.observability.ApplicationStatusHandler";
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
-    public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
     public static final String LOG_HANDLER_CLASS = com.yahoo.container.handler.LogHandler.class.getName();
     public static final String DEFAULT_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.DefaultLinguisticsProvider";
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
+    public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
+    public static final String STATE_HANDLER_BINDING_1 = "http://*" + StateHandler.STATE_API_ROOT;
+    public static final String STATE_HANDLER_BINDING_2 = STATE_HANDLER_BINDING_1 + "/*";
+
     public static final String ROOT_HANDLER_PATH = "/";
     public static final String ROOT_HANDLER_BINDING = "http://*" + ROOT_HANDLER_PATH;
+
+    public static final String VIP_HANDLER_BINDING = "http://*/status.html";
 
     private final String name;
 
@@ -200,29 +208,16 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void addMetricStateHandler() {
         Handler<AbstractConfigProducer<?>> stateHandler = new Handler<>(
                 new ComponentModel(STATE_HANDLER_CLASS, null, null, null));
-        stateHandler.addServerBindings("http://*" + StateHandler.STATE_API_ROOT,
-                                       "http://*" + StateHandler.STATE_API_ROOT + "/*");
+        stateHandler.addServerBindings(STATE_HANDLER_BINDING_1, STATE_HANDLER_BINDING_2);
         addComponent(stateHandler);
     }
 
     public void addDefaultRootHandler() {
-        if (hasHandlerWithBinding(ROOT_HANDLER_BINDING))
-            return;
-
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getFromStrings(
                         BINDINGS_OVERVIEW_HANDLER_CLASS, null, null), null));  // null bundle, as the handler is in container-disc
         handler.addServerBindings(ROOT_HANDLER_BINDING);
         addComponent(handler);
-    }
-
-    private boolean hasHandlerWithBinding(String binding) {
-        Collection<Handler<?>> handlers = getHandlers();
-        for (Handler handler : handlers) {
-            if (handler.getServerBindings().contains(binding))
-                return true;
-        }
-        return false;
     }
 
     public void addApplicationStatusHandler() {
@@ -235,7 +230,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void addVipHandler() {
         Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
-        vipHandler.addServerBindings("http://*/status.html");
+        vipHandler.addServerBindings(VIP_HANDLER_BINDING);
         addComponent(vipHandler);
     }
 
@@ -484,6 +479,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         builder.jvm
                 .verbosegc(false)
                 .availableProcessors(2)
+                .compressedClassSpaceSize(32)
                 .minHeapsize(32)
                 .heapsize(512)
                 .heapSizeAsPercentageOfPhysicalMemory(0)

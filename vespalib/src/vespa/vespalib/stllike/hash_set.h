@@ -8,7 +8,7 @@
 
 namespace vespalib {
 
-template< typename K, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>, typename M=hashtable_base::prime_modulator>
+template< typename K, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>, typename M=hashtable_base::and_modulator>
 class hash_set
 {
 private:
@@ -42,6 +42,7 @@ public:
     template<typename InputIt>
     void insert(InputIt first, InputIt last);
     void erase(const K & key);
+    size_t count(const K & key) const        { return _ht.find(key) != end() ? 1 : 0; }
     iterator find(const K & key)             { return _ht.find(key); }
     const_iterator find(const K & key) const { return _ht.find(key); }
 

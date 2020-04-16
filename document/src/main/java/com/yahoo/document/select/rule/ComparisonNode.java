@@ -144,9 +144,9 @@ public class ComparisonNode implements ExpressionNode {
                 return new ResultList(Result.INVALID);
             }
         } else if (oLeft instanceof AttributeNode.VariableValueList) {
-            return evaluateListAndSingle((AttributeNode.VariableValueList)oLeft, oRight);
+            return evaluateLhsListAndRhsSingle((AttributeNode.VariableValueList)oLeft, oRight);
         } else if (oRight instanceof AttributeNode.VariableValueList) {
-            return evaluateListAndSingle((AttributeNode.VariableValueList)oRight, oLeft);
+            return evaluateLhsSingleAndRhsList(oLeft, (AttributeNode.VariableValueList)oRight);
         }
         return new ResultList(evaluateBool(oLeft, oRight));
     }
@@ -197,7 +197,7 @@ public class ComparisonNode implements ExpressionNode {
         }
     }
 
-    private ResultList evaluateListAndSingle(AttributeNode.VariableValueList lhs, Object rhs) {
+    private ResultList evaluateLhsListAndRhsSingle(AttributeNode.VariableValueList lhs, Object rhs) {
         if (rhs == null && lhs == null) {
             return new ResultList(Result.TRUE);
         }
@@ -209,6 +209,24 @@ public class ComparisonNode implements ExpressionNode {
         ResultList retVal = new ResultList();
         for (ResultList.VariableValue value : lhs) {
             Result result = evaluateBool(value.getValue(), rhs);
+            retVal.add((FieldPathIteratorHandler.VariableMap)value.getVariables().clone(), result);
+        }
+
+        return retVal;
+    }
+
+    private ResultList evaluateLhsSingleAndRhsList(Object lhs, AttributeNode.VariableValueList rhs) {
+        if (rhs == null && lhs == null) {
+            return new ResultList(Result.TRUE);
+        }
+
+        if (rhs == null || lhs == null) {
+            return new ResultList(Result.FALSE);
+        }
+
+        ResultList retVal = new ResultList();
+        for (ResultList.VariableValue value : rhs) {
+            Result result = evaluateBool(lhs, value.getValue());
             retVal.add((FieldPathIteratorHandler.VariableMap)value.getVariables().clone(), result);
         }
 

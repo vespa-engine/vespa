@@ -10,9 +10,11 @@ import java.util.Set;
 
 /**
  * Policies for REST APIs in the controller. A policy is only considered when defined in a {@link Role}.
- * A policy describes a set of {@link Privilege}s, which are valid for a set of {@link SystemName}s.
- * A policy is evaluated by an {@link Enforcer}, which holds the {@link SystemName} the evaluation is done in.
- * A policy is evaluated with a {@link Context}, which may limit it to a specific {@link TenantName} or {@link ApplicationName}.
+ *
+ * - A policy describes a set of {@link Privilege}s, which are valid for a set of {@link SystemName}s.
+ * - A policy is evaluated by an {@link Enforcer}, which holds the {@link SystemName} the evaluation is done in.
+ * - A policy is evaluated in a {@link Context}, which may limit it to a specific {@link TenantName} or
+ *   {@link ApplicationName}.
  *
  * @author mpolden
  */
@@ -22,6 +24,11 @@ enum Policy {
     operator(Privilege.grant(Action.all())
                       .on(PathGroup.all())
                       .in(SystemName.all())),
+
+    /** Full access to everything. */
+    supporter(Privilege.grant(Action.read)
+                       .on(PathGroup.all())
+                       .in(SystemName.all())),
 
     /** Full access to user management for a tenant in select systems. */
     tenantManager(Privilege.grant(Action.all())
@@ -42,6 +49,11 @@ enum Policy {
     tenantCreate(Privilege.grant(Action.create)
                           .on(PathGroup.tenant)
                           .in(SystemName.main, SystemName.cd, SystemName.dev)), // TODO SystemName.all()
+
+    /** Access to create a tenant in public */
+    tenantCreatePublic(Privilege.grant(Action.create)
+                                .on(PathGroup.tenant)
+                                .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Full access to tenant information and settings. */
     tenantDelete(Privilege.grant(Action.delete)
@@ -93,11 +105,6 @@ enum Policy {
                                    .on(PathGroup.developmentDeployment, PathGroup.developmentRestart)
                                    .in(SystemName.all())),
 
-    /** Full access to application production deployments. */
-    productionDeployment(Privilege.grant(Action.all())
-                                  .on(PathGroup.productionDeployment)
-                                  .in(SystemName.all())),
-
     /** Read access to all application deployments. */
     deploymentRead(Privilege.grant(Action.read)
                             .on(PathGroup.developmentDeployment, PathGroup.productionDeployment)
@@ -107,11 +114,6 @@ enum Policy {
     submission(Privilege.grant(Action.all())
                         .on(PathGroup.submission)
                         .in(SystemName.all())),
-
-    /** Full access to the additional tasks needed for continuous deployment. */
-    deploymentPipeline(Privilege.grant(Action.all()) // TODO remove when everyone is on new pipeline.
-                                .on(PathGroup.buildService, PathGroup.productionRestart)
-                                .in(SystemName.all())),
 
     /** Read access to all information in select systems. */
     classifiedRead(Privilege.grant(Action.read)
@@ -135,7 +137,12 @@ enum Policy {
     /** Access to /system-flags/v1/dryrun. */
     systemFlagsDryrun(Privilege.grant(Action.update)
                                   .on(PathGroup.systemFlagsDryrun)
-                                  .in(SystemName.all()));
+                                  .in(SystemName.all())),
+
+    /** Access to /payment/notification */
+    paymentProcessor(Privilege.grant(Action.create)
+                                .on(PathGroup.paymentProcessor)
+                                .in(SystemName.PublicCd));
 
     private final Set<Privilege> privileges;
 

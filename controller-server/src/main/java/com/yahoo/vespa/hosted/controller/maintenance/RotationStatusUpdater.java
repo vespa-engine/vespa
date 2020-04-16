@@ -44,9 +44,9 @@ public class RotationStatusUpdater extends Maintainer {
         var failures = new AtomicInteger(0);
         var attempts = new AtomicInteger(0);
         var lastException = new AtomicReference<Exception>(null);
-        var instancesWithRotations = ApplicationList.from(applications.asList()).hasRotation().asList().stream()
-                .flatMap(application -> application.instances().values().stream())
-                .filter(instance -> ! instance.rotations().isEmpty());
+        var instancesWithRotations = ApplicationList.from(applications.readable()).hasRotation().asList().stream()
+                                                    .flatMap(application -> application.instances().values().stream())
+                                                    .filter(instance -> ! instance.rotations().isEmpty());
 
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         var pool = new ForkJoinPool(applicationsToUpdateInParallel);
@@ -82,7 +82,7 @@ public class RotationStatusUpdater extends Maintainer {
     private RotationStatus getStatus(Instance instance) {
         var statusMap = new LinkedHashMap<RotationId, RotationStatus.Targets>();
         for (var assignedRotation : instance.rotations()) {
-            var rotation = applications.rotationRepository().getRotation(assignedRotation.rotationId());
+            var rotation = controller().routing().rotations().getRotation(assignedRotation.rotationId());
             if (rotation.isEmpty()) continue;
             var targets = service.getHealthStatus(rotation.get().name()).entrySet().stream()
                                  .collect(Collectors.toMap(Map.Entry::getKey, (kv) -> from(kv.getValue())));

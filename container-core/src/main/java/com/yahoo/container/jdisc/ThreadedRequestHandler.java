@@ -17,6 +17,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.log.LogLevel;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,7 +79,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         this.allowAsyncResponse = allowAsyncResponse;
     }
 
-    private Metric.Context contextFor(Request request) {
+    Metric.Context contextFor(Request request, Map<String, String> extraDimensions) {
         BindingMatch match = request.getBindingMatch();
         if (match == null) return null;
         UriPattern matched = match.matched();
@@ -91,8 +92,16 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         if (endpoint != null) {
             dimensions.put("endpoint", endpoint);
         }
+        URI uri = request.getUri();
+        dimensions.put("scheme", uri.getScheme());
+        dimensions.put("port", Integer.toString(uri.getPort()));
+        String handlerClassName = getClass().getName();
+        dimensions.put("handler-name", handlerClassName);
+        dimensions.putAll(extraDimensions);
         return this.metric.createContext(dimensions);
     }
+
+    private Metric.Context contextFor(Request request) { return contextFor(request, Map.of()); }
 
     /**
      * Handles a request by assigning a worker thread to it.

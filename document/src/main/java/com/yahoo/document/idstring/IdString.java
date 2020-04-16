@@ -42,6 +42,8 @@ public abstract class IdString {
     private final String namespace;
     private final String namespaceSpecific;
     private Utf8String cache;
+    // This max unsigned 16 bit integer - 1 as the offset will be length + 1
+    static final int MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC = 0xfffe;
 
     /**
      * Creates a IdString based on the given document id string.
@@ -115,6 +117,8 @@ public abstract class IdString {
             colonPos = id.indexOf(":", currPos);
             if (colonPos < 0) {
                 throw new IllegalArgumentException("Unparseable id '" + id + "': Key/value section missing");
+            } else if (colonPos >= MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC) {
+                throw new IllegalArgumentException("Document id prior to the namespace specific part, " + colonPos + ", is longer than " + MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC + " id: " + id);
             }
             String keyValues = id.substring(currPos, colonPos);
 

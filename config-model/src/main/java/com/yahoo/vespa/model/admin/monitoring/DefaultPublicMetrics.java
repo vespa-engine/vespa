@@ -20,10 +20,12 @@ import static java.util.Collections.singleton;
  */
 public class DefaultPublicMetrics {
 
+    public static final String DEFAULT_METRIC_SET_ID = "default";
+
     public static MetricSet defaultPublicMetricSet = createMetricSet();
 
     private static MetricSet createMetricSet() {
-        return new MetricSet("public",
+        return new MetricSet(DEFAULT_METRIC_SET_ID,
                              getAllMetrics(),
                              singleton(defaultVespaMetricSet));
     }
@@ -84,6 +86,7 @@ public class DefaultPublicMetrics {
 
         metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.docs_reranked.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.average"));
 

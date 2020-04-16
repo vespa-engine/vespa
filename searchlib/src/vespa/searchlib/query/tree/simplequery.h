@@ -105,8 +105,10 @@ struct SimpleRegExpTerm : RegExpTerm {
 };
 struct SimpleNearestNeighborTerm : NearestNeighborTerm {
     SimpleNearestNeighborTerm(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
-                              int32_t id, Weight weight, uint32_t target_num_hits)
-        : NearestNeighborTerm(query_tensor_name, field_name, id, weight, target_num_hits)
+                              int32_t id, Weight weight, uint32_t target_num_hits,
+                              bool allow_approximate, uint32_t explore_additional_hits)
+        : NearestNeighborTerm(query_tensor_name, field_name, id, weight,
+                              target_num_hits, allow_approximate, explore_additional_hits)
     {}
 };
 

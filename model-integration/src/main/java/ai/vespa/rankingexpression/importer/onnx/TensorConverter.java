@@ -37,12 +37,14 @@ class TensorConverter {
                 case BOOL: return new RawBoolValues(tensorProto);
                 case FLOAT: return new RawFloatValues(tensorProto);
                 case DOUBLE: return new RawDoubleValues(tensorProto);
+                case INT32: return new RawIntValues(tensorProto);
                 case INT64: return new RawLongValues(tensorProto);
             }
         } else {
             switch (tensorProto.getDataType()) {
                 case FLOAT: return new FloatValues(tensorProto);
                 case DOUBLE: return new DoubleValues(tensorProto);
+                case INT32: return new IntValues(tensorProto);
                 case INT64: return new LongValues(tensorProto);
             }
         }
@@ -96,6 +98,17 @@ class TensorConverter {
         @Override int size() { return size; }
     }
 
+    private static class RawIntValues extends RawValues {
+        private final IntBuffer values;
+        private final int size;
+        RawIntValues(Onnx.TensorProto tensorProto) {
+            values = bytes(tensorProto).asIntBuffer();
+            size = values.remaining();
+        }
+        @Override double get(int i) { return values.get(i); }
+        @Override int size() { return size; }
+    }
+
     private static class RawLongValues extends RawValues {
         private final LongBuffer values;
         private final int size;
@@ -123,6 +136,15 @@ class TensorConverter {
         }
         @Override double get(int i) { return tensorProto.getDoubleData(i); }
         @Override int size() { return tensorProto.getDoubleDataCount(); }
+    }
+
+    private static class IntValues extends Values {
+        private final Onnx.TensorProto tensorProto;
+        IntValues(Onnx.TensorProto tensorProto) {
+            this.tensorProto = tensorProto;
+        }
+        @Override double get(int i) { return tensorProto.getInt32Data(i); }
+        @Override int size() { return tensorProto.getInt32DataCount(); }
     }
 
     private static class LongValues extends Values {

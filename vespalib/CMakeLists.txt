@@ -30,6 +30,7 @@ vespa_define_module(
     src/tests/component
     src/tests/compress
     src/tests/compression
+    src/tests/crypto
     src/tests/data/databuffer
     src/tests/data/input_reader
     src/tests/data/lz4_encode_decode
@@ -57,6 +58,7 @@ vespa_define_module(
     src/tests/gencnt
     src/tests/guard
     src/tests/host_name
+    src/tests/hwaccelrated
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
     src/tests/latch
@@ -130,6 +132,7 @@ vespa_define_module(
     src/tests/util/generationhandler_stress
     src/tests/util/md5
     src/tests/util/rcuvector
+    src/tests/util/reusable_set
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/websocket
@@ -139,6 +142,7 @@ vespa_define_module(
     src/vespa/vespalib
     src/vespa/vespalib/btree
     src/vespa/vespalib/component
+    src/vespa/vespalib/crypto
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/datastore
@@ -151,6 +155,7 @@ vespa_define_module(
     src/vespa/vespalib/net/tls/impl
     src/vespa/vespalib/objects
     src/vespa/vespalib/portal
+    src/vespa/vespalib/regex
     src/vespa/vespalib/stllike
     src/vespa/vespalib/test
     src/vespa/vespalib/testkit

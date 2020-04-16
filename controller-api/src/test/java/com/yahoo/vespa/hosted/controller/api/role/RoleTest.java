@@ -2,12 +2,12 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import org.junit.Test;
 
 import java.net.URI;
+import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -30,6 +30,34 @@ public class RoleTest {
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/os/v1/bar")));
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/status/environment/")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/status/environment/prod")));
+        assertTrue(mainEnforcer.allows(role, Action.create, URI.create("/routing/v1/inactive/environment/prod/region/us-north-1")));
+    }
+
+    @Test
+    public void supporter_membership() {
+        Role role = Role.hostedSupporter();
+
+        // No create update or delete
+        assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
+        assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/controller/v1/foo")));
+        assertFalse(mainEnforcer.allows(role, Action.update, URI.create("/os/v1/bar")));
+        assertFalse(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
+        assertFalse(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
+
+        // But reads is ok (but still only for valid paths)
+        assertFalse(mainEnforcer.allows(role, Action.read, URI.create("/not/explicitly/defined")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/os/v1/bar")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t1/application/a1")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
+
+        // Check that we are allowed to create tenants in public
+        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1")));
     }
 
     @Test
@@ -48,67 +76,11 @@ public class RoleTest {
 
     @Test
     public void build_service_membership() {
-        Role role = Role.tenantPipeline(TenantName.from("t1"), ApplicationName.from("a1"));
+        Role role = Role.buildService(TenantName.from("t1"), ApplicationName.from("a1"));
         assertFalse(publicEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
         assertFalse(publicEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
-        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/jobreport")));
+        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/submit")));
         assertFalse("No global read access", publicEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
-    }
-
-    @Test
-    public void athenz_user_membership() {
-        Role role = Role.athenzUser(TenantName.from("t8"), ApplicationName.from("a6"), InstanceName.from("i1"));
-        assertTrue(mainEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/deploy/some-job")));
-        assertTrue(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
-        assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/prod/region/r1")));
-    }
-
-    @Test
-    public void implications() {
-        TenantName tenant1 = TenantName.from("t1");
-        ApplicationName application1 = ApplicationName.from("a1");
-        TenantName tenant2 = TenantName.from("t2");
-        ApplicationName application2 = ApplicationName.from("a2");
-
-        Role tenantOwner1 = Role.tenantOwner(tenant1);
-        Role tenantAdmin1 = Role.tenantAdmin(tenant1);
-        Role tenantAdmin2 = Role.tenantAdmin(tenant2);
-        Role tenantOperator1 = Role.tenantOperator(tenant1);
-        Role applicationAdmin11 = Role.applicationAdmin(tenant1, application1);
-        Role applicationOperator11 = Role.applicationOperator(tenant1, application1);
-        Role applicationDeveloper11 = Role.applicationDeveloper(tenant1, application1);
-        Role applicationReader11 = Role.applicationReader(tenant1, application1);
-        Role applicationReader12 = Role.applicationReader(tenant1, application2);
-        Role applicationReader22 = Role.applicationReader(tenant2, application2);
-
-        assertFalse(tenantOwner1.implies(tenantOwner1));
-        assertTrue(tenantOwner1.implies(tenantAdmin1));
-        assertFalse(tenantOwner1.implies(tenantAdmin2));
-        assertTrue(tenantOwner1.implies(tenantOperator1));
-        assertTrue(tenantOwner1.implies(applicationAdmin11));
-        assertTrue(tenantOwner1.implies(applicationReader11));
-        assertTrue(tenantOwner1.implies(applicationReader12));
-        assertFalse(tenantOwner1.implies(applicationReader22));
-
-        assertFalse(tenantAdmin1.implies(tenantOwner1));
-        assertFalse(tenantAdmin1.implies(tenantAdmin2));
-        assertTrue(tenantAdmin1.implies(applicationDeveloper11));
-
-        assertFalse(tenantOperator1.implies(applicationReader11));
-
-        assertFalse(applicationAdmin11.implies(tenantAdmin1));
-        assertFalse(applicationAdmin11.implies(tenantOperator1));
-        assertTrue(applicationAdmin11.implies(applicationOperator11));
-        assertTrue(applicationAdmin11.implies(applicationDeveloper11));
-        assertTrue(applicationAdmin11.implies(applicationReader11));
-        assertFalse(applicationAdmin11.implies(applicationReader12));
-        assertFalse(applicationAdmin11.implies(applicationReader22));
-
-        assertFalse(applicationOperator11.implies(applicationDeveloper11));
-        assertTrue(applicationOperator11.implies(applicationReader11));
-
-        assertFalse(applicationDeveloper11.implies(applicationOperator11));
-        assertTrue(applicationDeveloper11.implies(applicationReader11));
     }
 
     @Test
@@ -133,13 +105,42 @@ public class RoleTest {
         Action action = Action.update;
         assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, deployUri));
         assertTrue(mainEnforcer.allows(Role.hostedOperator(), action, deployUri));
+        assertFalse(mainEnforcer.allows(Role.hostedSupporter(), action, deployUri));
         assertFalse(mainEnforcer.allows(Role.systemFlagsDryrunner(), action, deployUri));
         assertFalse(mainEnforcer.allows(Role.everyone(), action, deployUri));
 
         URI dryrunUri = URI.create("/system-flags/v1/dryrun");
         assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, dryrunUri));
         assertTrue(mainEnforcer.allows(Role.hostedOperator(), action, dryrunUri));
+        assertFalse(mainEnforcer.allows(Role.hostedSupporter(), action, dryrunUri));
         assertTrue(mainEnforcer.allows(Role.systemFlagsDryrunner(), action, dryrunUri));
         assertFalse(mainEnforcer.allows(Role.everyone(), action, dryrunUri));
     }
+
+    @Test
+    public void routing() {
+        var tenantUrl = URI.create("/routing/v1/status/tenant/t1");
+        var applicationUrl = URI.create("/routing/v1/status/tenant/t1/application/a1");
+        var instanceUrl = URI.create("/routing/v1/status/tenant/t1/application/a1/instance/i1");
+        var deploymentUrl = URI.create("/routing/v1/status/tenant/t1/application/a1/instance/i1/environment/prod/region/us-north-1");
+        // Read
+        for (var url : List.of(tenantUrl, applicationUrl, instanceUrl, deploymentUrl)) {
+            var allowedRole = Role.reader(TenantName.from("t1"));
+            var disallowedRole = Role.reader(TenantName.from("t2"));
+            assertTrue(allowedRole + " can read " + url, mainEnforcer.allows(allowedRole, Action.read, url));
+            assertFalse(disallowedRole + " cannot read " + url, mainEnforcer.allows(disallowedRole, Action.read, url));
+        }
+
+        // Write
+        {
+            var url = URI.create("/routing/v1/inactive/tenant/t1/application/a1/instance/i1/environment/prod/region/us-north-1");
+            var allowedRole = Role.developer(TenantName.from("t1"));
+            var disallowedRole = Role.developer(TenantName.from("t2"));
+            assertTrue(allowedRole + " can override status at " + url, mainEnforcer.allows(allowedRole, Action.create, url));
+            assertTrue(allowedRole + " can clear status at " + url, mainEnforcer.allows(allowedRole, Action.delete, url));
+            assertFalse(disallowedRole + " cannot override status at " + url, mainEnforcer.allows(disallowedRole, Action.create, url));
+            assertFalse(disallowedRole + " cannot clear status at " + url, mainEnforcer.allows(disallowedRole, Action.delete, url));
+        }
+    }
+
 }

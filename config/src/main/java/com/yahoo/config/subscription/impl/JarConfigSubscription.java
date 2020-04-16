@@ -21,7 +21,7 @@ import com.yahoo.vespa.config.ConfigPayload;
 /**
  * Subscription to use when config id is jar:.../foo.jar[!/pathInJar/]
  *
- * @author vegardh
+ * @author Vegard Havdal
  * @author gjoranv
  */
 public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
@@ -33,8 +33,8 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     // jar:configs/app.jar!/configs/
     JarConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, String jarName, String path) {
         super(key, subscriber);
-        this.jarName=jarName;
-        this.path=path;
+        this.jarName = jarName;
+        this.path = path;
     }
 
     @Override
@@ -43,17 +43,18 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             // Not supporting changing the payload for jar
             return true;
         }
-        if (zipEntry==null) {
+        if (zipEntry == null) {
             // First time polled
-            JarFile jarFile = null;
+            JarFile jarFile;
             try {
                 jarFile = new JarFile(jarName);
             } catch (IOException e) {
                 throw new IllegalArgumentException(e);
             }
             zipEntry = getEntry(jarFile, path);
-            if (zipEntry==null) throw new IllegalArgumentException("Config '" + key.getName() + "' not found in '" + jarName + "!/" + path + "'.");
-            T config = null;
+            if (zipEntry == null)
+                throw new IllegalArgumentException("Config '" + key.getName() + "' not found in '" + jarName + "!/" + path + "'.");
+            T config;
             try {
                 ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readAll(new InputStreamReader(jarFile.getInputStream(zipEntry), StandardCharsets.UTF_8)).split("\n")));
                 config = payload.toInstance(configClass, key.getConfigId());
@@ -78,6 +79,7 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         }
         return false;
     }
+
     /**
      * Returns the entry corresponding to the ConfigInstance's defName/Version in the given directory in
      * the given JarFile.

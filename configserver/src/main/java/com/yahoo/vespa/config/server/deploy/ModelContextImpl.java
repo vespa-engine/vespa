@@ -12,8 +12,10 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
@@ -40,8 +42,11 @@ public class ModelContextImpl implements ModelContext {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final FileRegistry fileRegistry;
     private final Optional<HostProvisioner> hostProvisioner;
+    private final Provisioned provisioned;
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
+
+    private final Optional<String> wantedDockerImageRepository;
 
     /** The version of Vespa we are building a model for */
     private final Version modelVespaVersion;
@@ -62,8 +67,10 @@ public class ModelContextImpl implements ModelContext {
                             ConfigDefinitionRepo configDefinitionRepo,
                             FileRegistry fileRegistry,
                             Optional<HostProvisioner> hostProvisioner,
+                            Provisioned provisioned,
                             ModelContext.Properties properties,
                             Optional<File> appDir,
+                            Optional<String> wantedDockerImageRepository,
                             Version modelVespaVersion,
                             Version wantedNodeVespaVersion) {
         this.applicationPackage = applicationPackage;
@@ -73,8 +80,10 @@ public class ModelContextImpl implements ModelContext {
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileRegistry = fileRegistry;
         this.hostProvisioner = hostProvisioner;
+        this.provisioned = provisioned;
         this.properties = properties;
         this.appDir = appDir;
+        this.wantedDockerImageRepository = wantedDockerImageRepository;
         this.modelVespaVersion = modelVespaVersion;
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
     }
@@ -97,6 +106,9 @@ public class ModelContextImpl implements ModelContext {
     public Optional<HostProvisioner> hostProvisioner() { return hostProvisioner; }
 
     @Override
+    public Provisioned provisioned() { return provisioned; }
+
+    @Override
     public DeployLogger deployLogger() { return deployLogger; }
 
     @Override
@@ -110,6 +122,9 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public Optional<File> appDir() { return appDir; }
+
+    @Override
+    public Optional<String> wantedDockerImageRepository() { return wantedDockerImageRepository; }
 
     @Override
     public Version modelVespaVersion() { return modelVespaVersion; }
@@ -131,9 +146,13 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useAdaptiveDispatch;
+        private final double defaultTopKprobability;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
+        private final double defaultSoftStartSeconds;
         private final boolean useBucketSpaceMetric;
+        private final String proxyProtocol;
+        private final Optional<AthenzDomain> athenzDomain;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -147,7 +166,8 @@ public class ModelContextImpl implements ModelContext {
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
                           FlagSource flagSource,
-                          Optional<EndpointCertificateSecrets> endpointCertificateSecrets) {
+                          Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
+                          Optional<AthenzDomain> athenzDomain) {
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -164,8 +184,15 @@ public class ModelContextImpl implements ModelContext {
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            defaultSoftStartSeconds = Flags.DEFAULT_SOFT_START_SECONDS.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            defaultTopKprobability = Flags.DEFAULT_TOP_K_PROBABILITY.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useBucketSpaceMetric = Flags.USE_BUCKET_SPACE_METRIC.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.athenzDomain = athenzDomain;
         }
 
         @Override
@@ -218,7 +245,27 @@ public class ModelContextImpl implements ModelContext {
         public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
 
         @Override
+        public double defaultSoftStartSeconds() {
+            return 0;
+        }
+
+        @Override
+        public double defaultTopKProbability() {
+            return defaultTopKprobability;
+        }
+
+        @Override
         public boolean useBucketSpaceMetric() { return useBucketSpaceMetric; }
+
+        @Override
+        public boolean useNewAthenzFilter() { return true; }
+
+        @Override
+        public String proxyProtocol() { return proxyProtocol; }
+
+        @Override
+        public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
+
     }
 
 }

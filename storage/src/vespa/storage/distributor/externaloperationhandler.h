@@ -13,11 +13,11 @@
 
 namespace storage {
 
-class DistributorMetricSet;
 class PersistenceOperationMetricSet;
 
 namespace distributor {
 
+class DistributorMetricSet;
 class Distributor;
 class MaintenanceOperationGenerator;
 class DirectDispatchSender;

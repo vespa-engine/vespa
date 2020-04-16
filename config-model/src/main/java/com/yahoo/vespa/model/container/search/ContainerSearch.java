@@ -58,7 +58,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private void initializeDispatchers(Collection<AbstractSearchCluster> searchClusters) {
         for (AbstractSearchCluster searchCluster : searchClusters) {
             if ( ! ( searchCluster instanceof IndexedSearchCluster)) continue;
-            owningCluster.addComponent(new DispatcherComponent((IndexedSearchCluster)searchCluster));
+            var dispatcher = new DispatcherComponent((IndexedSearchCluster)searchCluster);
+            owningCluster.addComponent(dispatcher);
         }
     }
 
@@ -130,7 +131,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	    AbstractSearchCluster sys = findClusterWithId(searchClusters, i);
     		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
     				name(sys.getClusterName());
-    		for (AbstractSearchCluster.SearchDefinitionSpec spec : sys.getLocalSDS()) {
+    		for (AbstractSearchCluster.SchemaSpec spec : sys.getLocalSDS()) {
     			scB.searchdef(spec.getSearchDefinition().getName());
     		}
     		scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));

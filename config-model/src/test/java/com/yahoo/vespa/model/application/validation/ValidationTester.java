@@ -6,6 +6,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -32,7 +33,7 @@ import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SEARCHDEF
  */
 public class ValidationTester {
 
-    private final HostProvisioner hostProvisioner;
+    private final InMemoryProvisioner hostProvisioner;
 
     /** Creates a validation tester with 1 node available */
     public ValidationTester() {
@@ -45,7 +46,7 @@ public class ValidationTester {
     }
 
     /** Creates a validation tester with a given host provisioner */
-    public ValidationTester(HostProvisioner hostProvisioner) {
+    public ValidationTester(InMemoryProvisioner hostProvisioner) {
         this.hostProvisioner = hostProvisioner;
     }
 
@@ -63,9 +64,10 @@ public class ValidationTester {
                                                              Environment environment,
                                                              String validationOverrides) {
         Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
+        Provisioned provisioned = hostProvisioner.startProvisionedRecording();
         ApplicationPackage newApp = new MockApplicationPackage.Builder()
                 .withServices(services)
-                .withSearchDefinitions(ImmutableList.of(MUSIC_SEARCHDEFINITION, BOOK_SEARCHDEFINITION))
+                .withSchemas(ImmutableList.of(MUSIC_SEARCHDEFINITION, BOOK_SEARCHDEFINITION))
                 .withValidationOverrides(validationOverrides)
                 .build();
         VespaModelCreatorWithMockPkg newModelCreator = new VespaModelCreatorWithMockPkg(newApp);
@@ -77,6 +79,7 @@ public class ValidationTester {
                                                              .applicationPackage(newApp)
                                                              .properties(new TestProperties().setHostedVespa(true))
                                                              .modelHostProvisioner(hostProvisioner)
+                                                             .provisioned(provisioned)
                                                              .now(now);
         if (previousModel != null)
             deployStateBuilder.previousModel(previousModel);

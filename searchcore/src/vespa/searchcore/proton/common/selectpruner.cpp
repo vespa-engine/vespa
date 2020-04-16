@@ -12,6 +12,7 @@
 #include <vespa/document/select/invalidconstant.h>
 #include <vespa/document/select/valuenodes.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
 using document::select::And;
@@ -97,10 +98,7 @@ SelectPruner::SelectPruner(const SelectPruner *rhs)
 }
 
 
-SelectPruner::~SelectPruner()
-{
-}
-
+SelectPruner::~SelectPruner() = default;
 
 void
 SelectPruner::visitAndBranch(const And &expr)
@@ -395,7 +393,6 @@ SelectPruner::visitIdValueNode(const IdValueNode &expr)
     CloningVisitor::visitIdValueNode(expr);
 }
 
-
 void
 SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
 {
@@ -406,32 +403,33 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     const document::DocumentType *docType = _repo.getDocumentType(_docType);
     bool complex = false; // Cannot handle attribute if complex expression
     vespalib::string name = SelectUtils::extractFieldName(expr, complex);
-    try {
-        std::unique_ptr<Field> fp(new Field(docType->getField(name)));
-        if (!fp) {
+    const bool is_imported = docType->has_imported_field_name(name);
+    if (complex || !is_imported) {
+        try {
+            std::unique_ptr<Field> fp(new Field(docType->getField(name)));
+            if (!fp) {
+                setInvalidVal();
+                return;
+            }
+        } catch (FieldNotFoundException &) {
             setInvalidVal();
             return;
         }
-    } catch (FieldNotFoundException &) {
-        setInvalidVal();
-        return;
-    }
-    try {
-        FieldPath path;
-        docType->buildFieldPath(path, expr.getFieldName());
-    } catch (vespalib::IllegalArgumentException &) {
-        setInvalidVal();
-        return;
-    } catch (FieldNotFoundException &) {
-        setInvalidVal();
-        return;
+        try {
+            FieldPath path;
+            docType->buildFieldPath(path, expr.getFieldName());
+        } catch (vespalib::IllegalArgumentException &) {
+            setInvalidVal();
+            return;
+        } catch (FieldNotFoundException &) {
+            setInvalidVal();
+            return;
+        }
     }
     _constVal = false;
     if (!_hasFields) {
         // If we're working on removed document sub db then we have no fields.
-        _constVal = true;
-        _valueNode.reset(new NullValueNode());
-        _priority = NullValPriority;
+        set_null_value_node();
         return;
     }
     
@@ -440,13 +438,18 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     bool svAttr = false;
     bool attrField = false;
     if (_amgr != nullptr) {
-        AttributeGuard::UP ag(_amgr->getAttribute(name));
-        if (ag->valid()) {
+        auto attr = _amgr->readable_attribute_vector(name);
+        if (attr) {
             attrField = true;
-            auto av(ag->getSP());
-            if (av->getCollectionType() == CollectionType::SINGLE && !complex) {
+            auto ag = attr->makeReadGuard(false);
+            if ((ag->attribute()->getCollectionType() == CollectionType::SINGLE) && !complex) {
                 svAttr = true;
             }
+        } else if (is_imported) {
+            // Imported field present in document config but not yet in attribute config.
+            // Treat as missing (null) in document, as this matches behavior elsewhere in the pipeline.
+            set_null_value_node();
+            return;
         }
     }
     if (!_hasDocuments && !svAttr) {
@@ -538,6 +541,13 @@ SelectPruner::setInvalidConst()
     _node.reset(new InvalidConstant("invalid"));
 }
 
+void
+SelectPruner::set_null_value_node()
+{
+    _constVal = true;
+    _valueNode = std::make_unique<NullValueNode>();
+    _priority = NullValPriority;
+}
 
 void
 SelectPruner::setTernaryConst(bool val)

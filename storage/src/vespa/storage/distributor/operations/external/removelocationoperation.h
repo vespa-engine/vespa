@@ -17,9 +17,9 @@ class RemoveLocationOperation  : public Operation
 public:
     RemoveLocationOperation(DistributorComponent& manager,
                             DistributorBucketSpace &bucketSpace,
-                            const std::shared_ptr<api::RemoveLocationCommand> & msg,
+                            std::shared_ptr<api::RemoveLocationCommand> msg,
                             PersistenceOperationMetricSet& metric);
-    ~RemoveLocationOperation();
+    ~RemoveLocationOperation() override;
 
 
     static int getBucketId(DistributorComponent& manager,

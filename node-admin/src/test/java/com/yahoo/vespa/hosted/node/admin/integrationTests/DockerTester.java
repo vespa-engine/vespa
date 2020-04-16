@@ -7,7 +7,6 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
@@ -76,28 +75,22 @@ public class DockerTester implements AutoCloseable {
 
         TerminalImpl terminal = new TerminalImpl(command -> new TestChildProcess2(0, ""));
 
-        NodeSpec hostSpec = new NodeSpec.Builder()
-                .hostname(HOST_HOSTNAME.value())
-                .state(NodeState.active)
-                .type(NodeType.host)
-                .flavor("default")
-                .wantedRestartGeneration(1L)
-                .currentRestartGeneration(1L)
-                .build();
+        NodeSpec hostSpec = NodeSpec.Builder.testSpec(HOST_HOSTNAME.value()).type(NodeType.host).build();
         nodeRepository.updateNodeRepositoryNode(hostSpec);
 
+        Clock clock = Clock.systemUTC();
+        Metrics metrics = new Metrics();
         FileSystem fileSystem = TestFileSystem.create();
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, terminal, ipAddresses, flagSource);
 
-        Metrics metrics = new Metrics();
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) -> new NodeAgentImpl(
                 contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource,
-                Optional.empty(), Optional.empty(), Optional.empty());
-        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, Clock.systemUTC(), Duration.ofMillis(10), Duration.ZERO);
+                Optional.empty(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1));
+        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
                 new NodeAgentContextImpl.Builder(nodeSpec).acl(acl).pathToContainerStorageFromFileSystem(fileSystem).build();
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeAgentContextFactory, nodeRepository, orchestrator,
-                nodeAdmin, HOST_HOSTNAME, Clock.systemUTC());
+                nodeAdmin, HOST_HOSTNAME, clock);
 
         loopThread = new Thread(() -> {
             nodeAdminStateUpdater.start();

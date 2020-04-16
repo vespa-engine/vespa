@@ -3,7 +3,6 @@
 #include "dense_tensor.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/eval/eval/operation.h>
 
 using vespalib::eval::TensorSpec;
 

@@ -202,7 +202,7 @@ public class RestApiTest {
 
     // Get logs through some hackish fetch method. Logs is something the mocked backend write.
     String getLog() throws IOException {
-        // The mocked backend will throw a runtime exception wtih a log if delete is called three times..
+        // The mocked backend will throw a runtime exception with a log if delete is called three times..
         Request request = new Request("http://localhost:" + getFirstListenPort() + remove_test_uri);
         HttpDelete delete = new HttpDelete(request.getUri());
         doRest(delete);

@@ -29,7 +29,7 @@ public:
     ByteBuffer& operator=(ByteBuffer &&) = default;
 
     ByteBuffer() : ByteBuffer(nullptr, 0) { }
-    ~ByteBuffer();
+    ~ByteBuffer() = default;
 
     /**
      * Create a buffer with the given content.
@@ -37,7 +37,12 @@ public:
      * @param buffer The buffer to represent.
      * @param len The length of the buffer
      */
-    ByteBuffer(const char* buffer, uint32_t len);
+    ByteBuffer(const char* buffer, uint32_t len)
+        : _buffer(const_cast<char *>(buffer)),
+          _len(len),
+          _pos(0),
+          _ownedBuffer()
+    { }
 
     /**
      * Create a buffer with the given content.

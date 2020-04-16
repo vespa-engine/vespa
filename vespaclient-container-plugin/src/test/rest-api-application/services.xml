@@ -2,6 +2,8 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <container version="1.0" jetty="true">
 
+    <accesslog type="disabled"/>
+
     <handler id="com.yahoo.document.restapi.resource.RestApiWithTestDocumentHandler" bundle="integration-test">
         <binding>http://*/document/v1/*</binding>
     </handler>

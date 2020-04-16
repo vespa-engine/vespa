@@ -79,7 +79,7 @@ Chunk::Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc) :
     os >> _lastSerial;
 }
 
-Chunk::~Chunk() { }
+Chunk::~Chunk() = default;
 
 vespalib::ConstBufferRef
 Chunk::getLid(uint32_t lid) const

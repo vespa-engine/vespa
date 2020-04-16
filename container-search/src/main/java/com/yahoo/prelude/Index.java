@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude;
 
-
 import com.yahoo.language.process.StemMode;
 
 import java.util.ArrayList;
@@ -9,7 +8,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 
 /**
  * Information about configured settings of a field or field collection (an actual index or not) in a search definition.
@@ -26,6 +24,7 @@ import java.util.Set;
 public class Index {
 
     public static class Attribute {
+
         private boolean tokenizedContent = false;
         public final String name;
 
@@ -64,6 +63,7 @@ public class Index {
     private boolean normalize = false;
     private boolean literalBoost = false;
     private boolean numerical = false;
+    private boolean predicate = false;
     private long predicateUpperBound = Long.MAX_VALUE;
     private long predicateLowerBound = Long.MIN_VALUE;
 
@@ -73,8 +73,8 @@ public class Index {
     private boolean isNGram = false;
     private int gramSize = 2;
 
-    /** Whether implicit phrases should lead to a phrase item or an and item */
-    private boolean phraseSegmenting = true;
+    /** Whether implicit phrases should lead to a phrase item or an and item. */
+    private Boolean phraseSegmenting = false;
 
     /** The string terminating an exact token in this index, or null to use the default (space) */
     private String exactTerminator = null;
@@ -182,6 +182,8 @@ public class Index {
             setLiteralBoost(true);
         } else if (commandString.equals("numerical")) {
             setNumerical(true);
+        } else if (commandString.equals("predicate")) {
+            setPredicate(true);
         } else if (commandString.startsWith("predicate-bounds ")) {
             setPredicateBounds(commandString.substring(17));
         } else if (commandString.equals("phrase-segmenting")) {
@@ -207,20 +209,12 @@ public class Index {
         }
     }
 
-    /**
-     * Whether terms in this field are lower cased when indexing.
-     *
-     * @param lowercase true if terms are lowercased
-     */
+    /** Sets whether terms in this field are lowercased when indexing. */
     public void setLowercase(boolean lowercase) {
         this.lowercase = lowercase;
     }
 
-    /**
-     * Whether terms in this field are lower cased when indexing.
-     *
-     * @return true if terms are lowercased
-     */
+    /** Returns whether terms in this field are lowercased when indexing. */
     public boolean isLowercase() {
         return lowercase;
     }
@@ -312,6 +306,10 @@ public class Index {
     public void setNumerical(boolean numerical) { this.numerical = numerical; }
 
     public boolean isNumerical() { return numerical; }
+
+    public void setPredicate(boolean isPredicate) { this.predicate = isPredicate; }
+
+    public boolean isPredicate() { return predicate; }
 
     public long getPredicateUpperBound() { return predicateUpperBound; }
 

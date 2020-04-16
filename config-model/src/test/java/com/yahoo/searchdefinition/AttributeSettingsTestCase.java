@@ -25,7 +25,7 @@ import static org.junit.Assert.*;
  *
  * @author  bratseth
  */
-public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
+public class AttributeSettingsTestCase extends SchemaTestCase {
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();

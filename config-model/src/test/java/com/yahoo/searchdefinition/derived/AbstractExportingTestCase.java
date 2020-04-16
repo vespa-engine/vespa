@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
@@ -19,22 +21,27 @@ import java.io.IOException;
  *
  * @author bratseth
  */
-public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase {
+public abstract class AbstractExportingTestCase extends SchemaTestCase {
 
     private static final String tempDir = "temp/";
     private static final String searchDefRoot = "src/test/derived/";
 
-    private DerivedConfiguration derive(String dirName, String searchDefinitionName) throws IOException, ParseException {
+    private DerivedConfiguration derive(String dirName, String searchDefinitionName, TestProperties properties) throws IOException, ParseException {
         File toDir = new File(tempDir + dirName);
         toDir.mkdirs();
         deleteContent(toDir);
 
         SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/");
-        return derive(dirName, searchDefinitionName, builder);
+        return derive(dirName, searchDefinitionName, properties, builder);
     }
 
-    private DerivedConfiguration derive(String dirName, String searchDefinitionName, SearchBuilder builder) throws IOException {
+    private DerivedConfiguration derive(String dirName,
+                                        String searchDefinitionName,
+                                        TestProperties properties,
+                                        SearchBuilder builder) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
+                                                               new BaseDeployLogger(),
+                                                               properties,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
                                                                new ImportedMlModels());
@@ -53,6 +60,7 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         String path = exportConfig(name, config);
         DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), new DocumentmanagerConfig.Builder()), path);
         DerivedConfiguration.exportDocuments(new DocumentTypes().produce(builder.getModel(), new DocumenttypesConfig.Builder()), path);
+        DerivedConfiguration.exportQueryProfiles(builder.getQueryProfileRegistry(), path);
         return config;
     }
 
@@ -76,7 +84,11 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
     }
 
     protected DerivedConfiguration assertCorrectDeriving(String dirName, String searchDefinitionName) throws IOException, ParseException {
-        DerivedConfiguration derived = derive(dirName, searchDefinitionName);
+        return assertCorrectDeriving(dirName, searchDefinitionName, new TestProperties());
+    }
+
+    protected DerivedConfiguration assertCorrectDeriving(String dirName, String searchDefinitionName, TestProperties properties) throws IOException, ParseException {
+        DerivedConfiguration derived = derive(dirName, searchDefinitionName, properties);
         assertCorrectConfigFiles(dirName);
         return derived;
     }
@@ -87,7 +99,7 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
      */
     protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, String dirName) throws IOException {
         builder.build();
-        DerivedConfiguration derived = derive(dirName, null, builder);
+        DerivedConfiguration derived = derive(dirName, null, new TestProperties(), builder);
         assertCorrectConfigFiles(dirName);
         return derived;
     }

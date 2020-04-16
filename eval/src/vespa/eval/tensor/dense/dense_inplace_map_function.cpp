@@ -1,16 +1,15 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_inplace_map_function.h"
-#include "dense_tensor.h"
 #include "dense_tensor_view.h"
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/tensor.h>
 
 namespace vespalib::tensor {
 
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::TensorEngine;
 using eval::as;
 using namespace eval::tensor_function;
 
@@ -44,7 +43,7 @@ DenseInplaceMapFunction::~DenseInplaceMapFunction()
 }
 
 eval::InterpretedFunction::Instruction
-DenseInplaceMapFunction::compile_self(Stash &) const
+DenseInplaceMapFunction::compile_self(const TensorEngine &, Stash &) const
 {
     auto op = select_1<MyInplaceMapOp>(result_type().cell_type());
     return eval::InterpretedFunction::Instruction(op, (uint64_t)function());

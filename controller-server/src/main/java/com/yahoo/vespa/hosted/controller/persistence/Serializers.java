@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.slime.Inspector;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 
 import java.time.Instant;
 import java.util.Optional;

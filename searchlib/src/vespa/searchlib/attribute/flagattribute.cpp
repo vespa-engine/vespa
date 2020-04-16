@@ -89,7 +89,7 @@ FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
     if (numValues > 0)
         _bitVectorSize = numDocs;
 
-    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(TT)) == 0);
     vespalib::ConstArrayRef<TT> map(reinterpret_cast<const TT *>(udatBuffer->buffer()),
                                     udatBuffer->size() / sizeof(TT));

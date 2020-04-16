@@ -5,7 +5,6 @@
 #include "docsumstate.h"
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
@@ -40,7 +39,7 @@ AttrDFW::vec(const GetDocsumsState & s) const {
 class SingleAttrDFW : public AttrDFW
 {
 public:
-    SingleAttrDFW(const vespalib::string & attrName) :
+    explicit SingleAttrDFW(const vespalib::string & attrName) :
         AttrDFW(attrName)
     { }
     void insertField(uint32_t docid, GetDocsumsState *state, ResType type, Inserter &target) override;
@@ -55,7 +54,6 @@ bool SingleAttrDFW::isDefaultValue(uint32_t docid, const GetDocsumsState * state
 void
 SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type, Inserter &target)
 {
-    const char *s="";
     const IAttributeVector & v = vec(*state);
     switch (type) {
     case RES_INT: {
@@ -116,13 +114,13 @@ SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type
     case RES_FEATUREDATA:
     case RES_LONG_STRING:
     case RES_STRING: {
-        s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
+        const char *s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
         target.insertString(vespalib::Memory(s));
         break;
     }
     case RES_LONG_DATA:
     case RES_DATA: {
-        s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
+        const char *s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
         target.insertData(vespalib::Memory(s));
         break;
     }
@@ -138,7 +136,7 @@ SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type
 class MultiAttrDFW : public AttrDFW
 {
 public:
-    MultiAttrDFW(const vespalib::string & attrName) : AttrDFW(attrName) {}
+    explicit MultiAttrDFW(const vespalib::string & attrName) : AttrDFW(attrName) {}
     void insertField(uint32_t docid, GetDocsumsState *state, ResType type, Inserter &target) override;
 
 };

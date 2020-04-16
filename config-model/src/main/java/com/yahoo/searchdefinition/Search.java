@@ -288,7 +288,7 @@ public class Search implements ImmutableSearch {
     /**
      * Adds an extra field of this search definition not contained in a document
      *
-     * @param field to add to the searchdefinitions list of external fields.
+     * @param field to add to the schemas list of external fields
      */
     public void addExtraField(SDField field) {
         if (fields.containsKey(field.getName())) {
@@ -383,7 +383,7 @@ public class Search implements ImmutableSearch {
      * Consolidates a set of index settings for the same index into one
      *
      * @param indices The list of indexes to consolidate.
-     * @return The consolidated index
+     * @return the consolidated index
      */
     private Index consolidateIndices(List<Index> indices) {
         Index first = indices.get(0);

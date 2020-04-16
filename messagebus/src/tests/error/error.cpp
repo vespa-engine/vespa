@@ -18,8 +18,6 @@
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
 RoutingSpec getRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
@@ -28,10 +26,7 @@ RoutingSpec getRouting() {
                   .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("error_test");
+TEST("error_test") {
 
     Slobrok     slobrok;
     TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
@@ -51,30 +46,31 @@ Test::Main()
     ASSERT_TRUE(pxyNet.waitSlobrok("test/dst/session"));
 
     for (int i = 0; i < 5; i++) {
-        ASSERT_TRUE(ss->send(SimpleMessage::UP(new SimpleMessage("test message")), "test").isAccepted());
+        ASSERT_TRUE(ss->send(std::make_unique<SimpleMessage>("test message"), "test").isAccepted());
         Message::UP msg = pxy.getMessage();
-        ASSERT_TRUE(msg.get() != 0);
+        ASSERT_TRUE(msg);
         is->forward(std::move(msg));
 
         msg = dst.getMessage();
-        ASSERT_TRUE(msg.get() != 0);
-        Reply::UP reply(new EmptyReply());
+        ASSERT_TRUE(msg);
+        Reply::UP reply = std::make_unique<EmptyReply>();
         msg->swapState(*reply);
         reply->addError(Error(ErrorCode::APP_FATAL_ERROR, "fatality"));
         ds->reply(std::move(reply));
 
         reply = pxy.getReply();
-        ASSERT_TRUE(reply.get() != 0);
+        ASSERT_TRUE(reply);
         ASSERT_EQUAL(reply->getNumErrors(), 1u);
         EXPECT_EQUAL(reply->getError(0).getService(), "test/dst/session");
         reply->addError(Error(ErrorCode::APP_FATAL_ERROR, "fatality"));
         is->forward(std::move(reply));
 
         reply = src.getReply();
-        ASSERT_TRUE(reply.get() != 0);
+        ASSERT_TRUE(reply);
         ASSERT_EQUAL(reply->getNumErrors(), 2u);
         EXPECT_EQUAL(reply->getError(0).getService(), "test/dst/session");
         EXPECT_EQUAL(reply->getError(1).getService(), "test/pxy/session");
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

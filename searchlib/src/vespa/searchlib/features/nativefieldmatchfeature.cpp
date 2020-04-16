@@ -7,11 +7,11 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 const uint32_t NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH(std::numeric_limits<uint32_t>::max());
 
@@ -95,9 +95,7 @@ NativeFieldMatchBlueprint::NativeFieldMatchBlueprint() :
 {
 }
 
-NativeFieldMatchBlueprint::~NativeFieldMatchBlueprint()
-{
-}
+NativeFieldMatchBlueprint::~NativeFieldMatchBlueprint() = default;
 
 void
 NativeFieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
@@ -110,7 +108,7 @@ NativeFieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
 Blueprint::UP
 NativeFieldMatchBlueprint::createInstance() const
 {
-    return Blueprint::UP(new NativeFieldMatchBlueprint());
+    return std::make_unique<NativeFieldMatchBlueprint>();
 }
 
 bool
@@ -175,11 +173,10 @@ NativeFieldMatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib
 {
     NativeFieldMatchExecutor &native = stash.create<NativeFieldMatchExecutor>(env, _params);
     if (native.empty()) {
-        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
+        return stash.create<SingleZeroValueExecutor>();
     } else {
         return native;
     }
 }
 
-} // namespace features
-} // namespace search
+}

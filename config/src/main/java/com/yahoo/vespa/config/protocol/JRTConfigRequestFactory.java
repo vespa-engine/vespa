@@ -6,20 +6,17 @@ import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.util.*;
+import java.util.Optional;
 
 /**
  * To hide JRT implementations.
  *
  * @author Ulf Lilleengen
- * @since 5.3
  */
 public class JRTConfigRequestFactory {
 
-    public static final String VESPA_CONFIG_PROTOCOL_VERSION = "VESPA_CONFIG_PROTOCOL_VERSION"; // Unused, but should be used if we add a new version
     private static final CompressionType compressionType = getCompressionType();
     private static final String VESPA_CONFIG_PROTOCOL_COMPRESSION = "VESPA_CONFIG_PROTOCOL_COMPRESSION";
-    public static final String VESPA_VERSION = "VESPA_VERSION";
 
     public static <T extends ConfigInstance> JRTClientConfigRequest createFromSub(JRTConfigSubscription<T> sub) {
         // TODO: Get trace from caller
@@ -29,18 +26,6 @@ public class JRTConfigRequestFactory {
     public static JRTClientConfigRequest createFromRaw(RawConfig config, long serverTimeout) {
         // TODO: Get trace from caller
         return JRTClientConfigRequestV3.createFromRaw(config, serverTimeout, Trace.createNew(), compressionType, getVespaVersion());
-    }
-
-    public static String getProtocolVersion() {
-        return "3";
-    }
-
-    static String getProtocolVersion(String env, String alternateEnv, String property) {
-        return ConfigUtils.getEnvValue("3", env, alternateEnv, property);
-    }
-
-    public static Set<Long> supportedProtocolVersions() {
-        return Collections.singleton(3L);
     }
 
     public static CompressionType getCompressionType() {
@@ -54,10 +39,6 @@ public class JRTConfigRequestFactory {
     }
 
     static Optional<VespaVersion> getVespaVersion() {
-        final String envValue = ConfigUtils.getEnvValue("", System.getenv(VESPA_VERSION), System.getProperty(VESPA_VERSION));
-        if (envValue != null && !envValue.isEmpty()) {
-            return Optional.of(VespaVersion.fromString(envValue));
-        }
         return Optional.of(getCompiledVespaVersion());
     }
 

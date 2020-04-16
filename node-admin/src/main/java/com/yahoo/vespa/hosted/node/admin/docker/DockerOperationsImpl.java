@@ -66,6 +66,9 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withHostName(context.node().hostname())
                 .withResources(containerResources)
                 .withManagedBy(MANAGER_NAME)
+                // The inet6 option is needed to prefer AAAA records with gethostbyname(3), used by (at least) a yca package
+                // TODO: Try to remove this
+                .withDnsOption("inet6")
                 .withUlimit("nofile", 262_144, 262_144)
                 // The nproc aka RLIMIT_NPROC resource limit works as follows:
                 //  - A process has a (soft) nproc limit, either inherited by the parent or changed with setrlimit(2).
@@ -81,9 +84,12 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_ADMIN")  // Needed for perf
                 .withAddCapability("SYS_NICE");  // Needed for set_mempolicy to work
 
-        if (context.node().membership().map(NodeMembership::clusterType).map("content"::equalsIgnoreCase).orElse(false)) {
-            command.withSecurityOpts("seccomp=unconfined");
-        }
+        // Proxy and controller require new privileges to bind port 443
+        if (context.nodeType() != NodeType.proxy && context.nodeType() != NodeType.controller)
+            command.withSecurityOpt("no-new-privileges");
+
+        if (context.node().membership().map(NodeMembership::clusterType).map("content"::equalsIgnoreCase).orElse(false))
+            command.withSecurityOpt("seccomp=unconfined");
 
         DockerNetworking networking = context.dockerNetworking();
         command.withNetworkMode(networking.getDockerNetworkMode());
@@ -289,7 +295,9 @@ public class DockerOperationsImpl implements DockerOperations {
         } else if (context.nodeType() == NodeType.tenant)
             paths.add(varLibSia);
 
-        paths.forEach(path -> command.withVolume(context.pathOnHostFromPathInNode(path), path));
+        paths.forEach(path -> command.withVolume(
+                context.pathOnHostFromPathInNode(path),
+                context.rewritePathInNodeForWantedDockerImage(path)));
 
 
         // Shared paths

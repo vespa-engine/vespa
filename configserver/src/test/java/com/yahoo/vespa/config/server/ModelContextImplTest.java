@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -20,6 +21,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -45,6 +47,7 @@ public class ModelContextImplTest {
                 new StaticConfigDefinitionRepo(),
                 new MockFileRegistry(),
                 Optional.empty(),
+                new Provisioned(),
                 new ModelContextImpl.Properties(
                         ApplicationId.defaultId(),
                         true,
@@ -58,10 +61,12 @@ public class ModelContextImplTest {
                         false,
                         false,
                         flagSource,
-                        null),
+                        null,
+                        Optional.empty()),
                 Optional.empty(),
-                new Version(6), 
-                new Version(6));
+                Optional.empty(),
+                new Version(7),
+                new Version(8));
         assertTrue(context.applicationPackage() instanceof MockApplicationPackage);
         assertFalse(context.hostProvisioner().isPresent());
         assertFalse(context.permanentApplicationPackage().isPresent());
@@ -75,6 +80,13 @@ public class ModelContextImplTest {
         assertFalse(context.properties().hostedVespa());
         assertThat(context.properties().endpoints(), equalTo(endpoints));
         assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
+
+        assertEquals(Optional.empty(), context.wantedDockerImageRepository());
+        assertEquals(new Version(7), context.modelVespaVersion());
+        assertEquals(new Version(8), context.wantedNodeVespaVersion());
+        assertEquals(1.0, context.properties().defaultTermwiseLimit(), 0.0);
+        assertEquals(1.0, context.properties().defaultTopKProbability(), 0.0);
+        assertFalse(context.properties().useAdaptiveDispatch());
     }
 
 }

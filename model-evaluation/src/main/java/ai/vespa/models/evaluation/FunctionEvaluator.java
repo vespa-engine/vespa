@@ -2,6 +2,7 @@
 package ai.vespa.models.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -58,6 +59,21 @@ public class FunctionEvaluator {
      */
     public FunctionEvaluator bind(String name, double value) {
         return bind(name, Tensor.Builder.of(TensorType.empty).cell(value).build());
+    }
+
+    /**
+     * Binds the given variable referred in this expression to the given value.
+     * String values are not yet supported in tensors.
+     *
+     * @param name the variable to bind
+     * @param value the value this becomes bound to
+     * @return this for chaining
+     */
+    public FunctionEvaluator bind(String name, String value) {
+        if (evaluated)
+            throw new IllegalStateException("Cannot bind a new value in a used evaluator");
+        context.put(name, new StringValue(value));
+        return this;
     }
 
     /**

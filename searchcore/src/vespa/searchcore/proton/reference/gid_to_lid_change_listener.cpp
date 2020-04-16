@@ -3,10 +3,9 @@
 #include "gid_to_lid_change_listener.h"
 #include <future>
 
-
 namespace proton {
 
-GidToLidChangeListener::GidToLidChangeListener(search::ISequencedTaskExecutor &attributeFieldWriter,
+GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                                std::shared_ptr<search::attribute::ReferenceAttribute> attr,
                                                MonitoredRefCount &refCount,
                                                const vespalib::string &name,

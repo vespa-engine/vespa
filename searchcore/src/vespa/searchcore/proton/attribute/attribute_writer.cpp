@@ -13,7 +13,6 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -22,7 +21,8 @@ LOG_SETUP(".proton.attribute.attribute_writer");
 using namespace document;
 using namespace search;
 using search::attribute::ImportedAttributeVector;
-using ExecutorId = search::ISequencedTaskExecutor::ExecutorId;
+using vespalib::ISequencedTaskExecutor;
+using ExecutorId = vespalib::ISequencedTaskExecutor::ExecutorId;
 
 namespace proton {
 
@@ -361,7 +361,7 @@ public:
           _immediateCommit(immediateCommit),
           _onWriteDone(onWriteDone)
     {}
-    ~BatchRemoveTask() override {}
+    ~BatchRemoveTask() override = default;
     void run() override {
         for (auto field : _writeCtx.getFields()) {
             auto &attr = field.getAttribute();
@@ -469,9 +469,9 @@ AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid, bool immed
     }
 }
 
-AttributeWriter::AttributeWriter(const proton::IAttributeManager::SP &mgr)
-    : _mgr(mgr),
-      _attributeFieldWriter(mgr->getAttributeFieldWriter()),
+AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
+    : _mgr(std::move(mgr)),
+      _attributeFieldWriter(_mgr->getAttributeFieldWriter()),
       _writeContexts(),
       _dataType(nullptr),
       _hasStructFieldAttribute(false),

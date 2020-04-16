@@ -74,7 +74,7 @@ lrucache_map<P>::lrucache_map(size_t maxElems) :
 { }
 
 template< typename P >
-lrucache_map<P>::~lrucache_map() { }
+lrucache_map<P>::~lrucache_map() = default;
 
 template< typename P >
 void
@@ -263,14 +263,17 @@ lrucache_map<P>::operator [] (const K & key)
 }
 
 template< typename P >
-typename lrucache_map<P>::internal_iterator
+typename P::Value *
 lrucache_map<P>::findAndRef(const K & key)
 {
     internal_iterator found = HashTable::find(key);
     if (found != HashTable::end()) {
-        ref(found);
+        if (size()*2 > capacity()) {
+            ref(found);
+        }
+        return &found->second._value;
     }
-    return found;
+    return nullptr;
 }
 
 }

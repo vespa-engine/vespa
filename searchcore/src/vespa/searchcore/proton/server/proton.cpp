@@ -32,6 +32,7 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/net/state_server.h>
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -594,10 +595,10 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         auto persistenceHandler = std::make_shared<PersistenceHandlerProxy>(ret);
         if (!_isInitializing) {
             _persistenceEngine->propagateSavedClusterState(bucketSpace, *persistenceHandler);
-            _persistenceEngine->populateInitialBucketDB(bucketSpace, *persistenceHandler);
+            _persistenceEngine->populateInitialBucketDB(persistenceWGuard, bucketSpace, *persistenceHandler);
         }
         // TODO: Fix race with new cluster state setting.
-        _persistenceEngine->putHandler(bucketSpace, docTypeName, persistenceHandler);
+        _persistenceEngine->putHandler(persistenceWGuard, bucketSpace, docTypeName, persistenceHandler);
     }
     auto searchHandler = std::make_shared<SearchHandlerProxy>(ret);
     _summaryEngine->putSearchHandler(docTypeName, searchHandler);
@@ -628,8 +629,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
         {
             // Not allowed to get to service layer to call pause().
             std::unique_lock<std::shared_timed_mutex> persistenceWguard(_persistenceEngine->getWLock());
-            IPersistenceHandler::SP oldHandler;
-            oldHandler = _persistenceEngine->removeHandler(old->getBucketSpace(), docTypeName);
+            IPersistenceHandler::SP  oldHandler = _persistenceEngine->removeHandler(persistenceWguard, old->getBucketSpace(), docTypeName);
             if (_initComplete && oldHandler) {
                 // TODO: Fix race with bucket db modifying ops.
                 _persistenceEngine->grabExtraModifiedBuckets(old->getBucketSpace(), *oldHandler);
@@ -662,6 +662,7 @@ Proton::ping(MonitorRequest::UP request, MonitorClient & client)
     ret.timestamp = (_matchEngine->isOnline()) ? 42 : 0;
     ret.activeDocs = (_matchEngine->isOnline()) ? getNumActiveDocs() : 0;
     ret.activeDocsRequested = request->reportActiveDocs;
+    ret.is_blocking_writes = !_diskMemUsageSampler->writeFilter().acceptWriteOperation();
     return reply;
 }
 
@@ -683,25 +684,6 @@ Proton::prepareRestart()
 }
 
 namespace {
-
-int countOpenFiles()
-{
-    static const char * const fd_dir_name = "/proc/self/fd";
-    int count = 0;
-    DIR *dp = opendir(fd_dir_name);
-    if (dp != nullptr) {
-        struct dirent *ptr;
-        while ((ptr = readdir(dp)) != nullptr) {
-            if (strcmp(".", ptr->d_name) == 0) continue;
-            if (strcmp("..", ptr->d_name) == 0) continue;
-            ++count;
-        }
-        closedir(dp);
-    } else {
-        LOG(warning, "could not scan directory %s: %s", fd_dir_name, strerror(errno));
-    }
-    return count;
-}
 
 void
 updateExecutorMetrics(ExecutorMetrics &metrics,
@@ -729,7 +711,7 @@ Proton::updateMetrics(const vespalib::MonitorGuard &)
         metrics.resourceUsage.memory.set(usageState.memoryState().usage());
         metrics.resourceUsage.memoryUtilization.set(usageState.memoryState().utilization());
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
-        metrics.resourceUsage.openFileDescriptors.set(countOpenFiles());
+        metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
     }
     {

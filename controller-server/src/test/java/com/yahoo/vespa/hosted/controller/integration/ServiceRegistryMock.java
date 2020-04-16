@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.google.inject.Inject;
@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
@@ -21,8 +21,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportCons
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
@@ -42,9 +40,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
-    private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock(RoutingGeneratorMock.TEST_ENDPOINTS);
     private final MockMailer mockMailer = new MockMailer();
-    private final ApplicationCertificateMock applicationCertificateMock = new ApplicationCertificateMock();
+    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
     private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
     private final MockIssueHandler mockIssueHandler = new MockIssueHandler();
@@ -55,7 +52,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockBilling mockBilling = new MockBilling();
     private final MockAwsEventFetcher mockAwsEventFetcher = new MockAwsEventFetcher();
     private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
-    private final MockTesterCloud mockTesterCloud = new MockTesterCloud();
+    private final MockTesterCloud mockTesterCloud;
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockTenantCost mockTenantCost = new MockTenantCost();
@@ -64,6 +61,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
         this.configServerMock = new ConfigServerMock(zoneRegistryMock);
+        this.mockTesterCloud = new MockTesterCloud(nameService());
     }
 
     @Inject
@@ -91,18 +89,13 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public RoutingGenerator routingGenerator() {
-        return routingGeneratorMock;
-    }
-
-    @Override
     public MockMailer mailer() {
         return mockMailer;
     }
 
     @Override
-    public ApplicationCertificateMock applicationCertificateProvider() {
-        return applicationCertificateMock;
+    public EndpointCertificateMock endpointCertificateProvider() {
+        return endpointCertificateMock;
     }
 
     @Override
@@ -192,28 +185,16 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         return configServerMock;
     }
 
-    public MemoryNameService nameServiceMock() {
-        return memoryNameService;
-    }
-
     public MemoryGlobalRoutingService globalRoutingServiceMock() {
         return memoryGlobalRoutingService;
-    }
-
-    public RoutingGeneratorMock routingGeneratorMock() {
-        return routingGeneratorMock;
     }
 
     public MockContactRetriever contactRetrieverMock() {
         return mockContactRetriever;
     }
 
-    public ArtifactRepositoryMock artifactRepositoryMock() {
-        return artifactRepositoryMock;
-    }
-
-    public ApplicationCertificateMock applicationCertificateMock() {
-        return applicationCertificateMock;
+    public EndpointCertificateMock endpointCertificateMock() {
+        return endpointCertificateMock;
     }
 
 }

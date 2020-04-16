@@ -4,15 +4,11 @@
 #include "predicate_attribute.h"
 #include "singlesmallnumericattribute.h"
 #include "reference_attribute.h"
-#include "attributevector.hpp"
 #include "singlenumericattribute.hpp"
 #include "singlestringattribute.h"
 #include "singleboolattribute.h"
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.create_single_std");
 
 namespace search {
 
@@ -22,55 +18,42 @@ AttributeVector::SP
 AttributeFactory::createSingleStd(stringref name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
-    AttributeVector::SP ret;
     switch(info.basicType().type()) {
     case BasicType::BOOL:
-        ret.reset(new SingleBoolAttribute(name, info.getGrowStrategy()));
-        break;
+        return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy());
     case BasicType::UINT2:
-        ret.reset(new SingleValueSemiNibbleNumericAttribute(name, info.getGrowStrategy()));
-        break;
+        return std::make_shared<SingleValueSemiNibbleNumericAttribute>(name, info.getGrowStrategy());
     case BasicType::UINT4:
-        ret.reset(new SingleValueNibbleNumericAttribute(name, info.getGrowStrategy()));
-        break;
+        return std::make_shared<SingleValueNibbleNumericAttribute>(name, info.getGrowStrategy());
     case BasicType::INT8:
-        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t> >(name, info));
-        break;
+        return std::make_shared<SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t>>>(name, info);
     case BasicType::INT16:
         // XXX: Unneeded since we don't have short document fields in java.
-        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int16_t> >(name, info));
-        break;
+        return std::make_shared<SingleValueNumericAttribute<IntegerAttributeTemplate<int16_t>>>(name, info);
     case BasicType::INT32:
-        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t> >(name, info));
-        break;
+        return std::make_shared<SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t>>>(name, info);
     case BasicType::INT64:
-        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t> >(name, info));
-        break;
+        return std::make_shared<SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t>>>(name, info);
     case BasicType::FLOAT:
-        ret.reset(new SingleValueNumericAttribute<FloatingPointAttributeTemplate<float> >(name, info));
-        break;
+        return std::make_shared<SingleValueNumericAttribute<FloatingPointAttributeTemplate<float>>>(name, info);
     case BasicType::DOUBLE:
-        ret.reset(new SingleValueNumericAttribute<FloatingPointAttributeTemplate<double> >(name, info));
-        break;
+        return std::make_shared<SingleValueNumericAttribute<FloatingPointAttributeTemplate<double>>>(name, info);
     case BasicType::STRING:
-        ret.reset(new SingleValueStringAttribute(name, info));
-        break;
+        return std::make_shared<SingleValueStringAttribute>(name, info);
     case BasicType::PREDICATE:
-        ret.reset(new PredicateAttribute(name, info));
-        break;
+        return std::make_shared<PredicateAttribute>(name, info);
     case BasicType::TENSOR:
         if (info.tensorType().is_dense()) {
-            ret.reset(new tensor::DenseTensorAttribute(name, info));
+            return std::make_shared<tensor::DenseTensorAttribute>(name, info);
         } else {
-            ret.reset(new tensor::GenericTensorAttribute(name, info));
+            return std::make_shared<tensor::GenericTensorAttribute>(name, info);
         }
-        break;
     case BasicType::REFERENCE:
-        ret = std::make_shared<attribute::ReferenceAttribute>(name, info);
-        break;
+        return std::make_shared<attribute::ReferenceAttribute>(name, info);
     default:
         break;
     }
-    return ret;
+    return AttributeVector::SP();
 }
+
 }  // namespace search

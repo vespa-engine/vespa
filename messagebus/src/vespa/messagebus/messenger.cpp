@@ -33,7 +33,7 @@ public:
     }
 
     ~MessageTask() {
-        if (_msg.get() != nullptr) {
+        if (_msg) {
             _msg->discard();
         }
     }
@@ -43,7 +43,7 @@ public:
     }
 
     uint8_t priority() const override {
-        if (_msg.get() != nullptr) {
+        if (_msg) {
             return _msg->priority();
         }
 
@@ -65,7 +65,7 @@ public:
     }
 
     ~ReplyTask() {
-        if (_reply.get() != nullptr) {
+        if (_reply) {
             _reply->discard();
         }
     }
@@ -75,7 +75,7 @@ public:
     }
 
     uint8_t priority() const override {
-        if (_reply.get() != nullptr) {
+        if (_reply) {
             return _reply->priority();
         }
 
@@ -206,7 +206,7 @@ Messenger::Run(FastOS_ThreadInterface *thread, void *arg)
                 _queue.pop();
             }
         }
-        if (task.get() != nullptr) {
+        if (task) {
             try {
                 task->run();
             } catch (const std::exception &e) {
@@ -223,16 +223,14 @@ Messenger::Run(FastOS_ThreadInterface *thread, void *arg)
 void
 Messenger::addRecurrentTask(ITask::UP task)
 {
-    ITask::UP add(new AddRecurrentTask(_children, std::move(task)));
-    enqueue(std::move(add));
+    enqueue(std::make_unique<AddRecurrentTask>(_children, std::move(task)));
 }
 
 void
 Messenger::discardRecurrentTasks()
 {
     vespalib::Gate gate;
-    ITask::UP task(new DiscardRecurrentTasks(gate, _children));
-    enqueue(std::move(task));
+    enqueue(std::make_unique<DiscardRecurrentTasks>(gate, _children));
     gate.await();
 }
 
@@ -248,13 +246,13 @@ Messenger::start()
 void
 Messenger::deliverMessage(Message::UP msg, IMessageHandler &handler)
 {
-    enqueue(ITask::UP(new MessageTask(std::move(msg), handler)));
+    enqueue(std::make_unique<MessageTask>(std::move(msg), handler));
 }
 
 void
 Messenger::deliverReply(Reply::UP reply, IReplyHandler &handler)
 {
-    enqueue(ITask::UP(new ReplyTask(std::move(reply), handler)));
+    enqueue(std::make_unique<ReplyTask>(std::move(reply), handler));
 }
 
 void
@@ -273,7 +271,7 @@ void
 Messenger::sync()
 {
     vespalib::Gate gate;
-    enqueue(ITask::UP(new SyncTask(gate)));
+    enqueue(std::make_unique<SyncTask>(gate));
     gate.await();
 }
 

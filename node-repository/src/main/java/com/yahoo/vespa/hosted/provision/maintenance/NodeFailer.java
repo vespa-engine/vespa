@@ -21,7 +21,6 @@ import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 
@@ -265,7 +264,7 @@ public class NodeFailer extends Maintainer {
 
     private boolean nodeSuspended(Node node) {
         try {
-            return orchestrator.getNodeStatus(new HostName(node.hostname())) == HostStatus.ALLOWED_TO_BE_DOWN;
+            return orchestrator.getNodeStatus(new HostName(node.hostname())).isSuspended();
         } catch (HostNameNotFoundException e) {
             // Treat it as not suspended
             return false;

@@ -55,7 +55,7 @@ public:
     const IAttributeFactory::SP &getFactory() const override {
         HDR_ABORT("should not be reached");
     }
-    search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
+    vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
         HDR_ABORT("should not be reached");
     }
     search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
@@ -77,6 +77,9 @@ public:
     }
     void asyncForAttribute(const vespalib::string & name, std::unique_ptr<IAttributeFunctor> func) const override {
         _mock.asyncForAttribute(name, std::move(func));
+    }
+    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override {
+        return _mock.readable_attribute_vector(name);
     }
 };
 

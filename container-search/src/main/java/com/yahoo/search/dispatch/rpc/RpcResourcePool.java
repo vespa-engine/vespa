@@ -2,6 +2,9 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.ComponentId;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.compress.Compressor.Compression;
@@ -23,7 +26,7 @@ import java.util.Random;
  *
  * @author ollivir
  */
-public class RpcResourcePool {
+public class RpcResourcePool extends AbstractComponent {
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     public final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
 
@@ -33,13 +36,15 @@ public class RpcResourcePool {
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, NodeConnectionPool> nodeConnectionPools;
 
-    public RpcResourcePool(Map<Integer, NodeConnection> nodeConnections) {
+    RpcResourcePool(Map<Integer, NodeConnection> nodeConnections) {
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
         nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(Collections.singletonList(connection))));
         this.nodeConnectionPools = builder.build();
     }
 
+    @Inject
     public RpcResourcePool(DispatchConfig dispatchConfig) {
+        super();
         var client = new RpcClient(dispatchConfig.numJrtTransportThreads());
 
         // Create rpc node connection pools indexed by the node distribution key
@@ -73,7 +78,9 @@ public class RpcResourcePool {
         }
     }
 
-    public void release() {
+    @Override
+    public void deconstruct() {
+        super.deconstruct();
         nodeConnectionPools.values().forEach(NodeConnectionPool::release);
     }
 

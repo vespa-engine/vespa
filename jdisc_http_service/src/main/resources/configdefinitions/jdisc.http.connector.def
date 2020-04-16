@@ -81,6 +81,12 @@ ssl.caCertificate                   string default=""
 # Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
 ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
 
+# List of enabled cipher suites. JDisc will use Vespa default if empty.
+ssl.enabledCipherSuites[]           string
+
+# List of enabled TLS protocol versions. JDisc will use Vespa default if empty.
+ssl.enabledProtocols[]              string
+
 # Enforce TLS client authentication for https requests at the http layer.
 # Intended to be used with connectors with optional client authentication enabled.
 # 401 status code is returned for requests from non-authenticated clients.
@@ -94,3 +100,21 @@ healthCheckProxy.enable        bool    default=false
 
 # Which port to proxy
 healthCheckProxy.port          int     default=8080
+
+# Enable PROXY protocol V1/V2 support (only for https connectors).
+proxyProtocol.enabled          bool    default=false
+
+# Allow https in parallel with proxy protocol
+proxyProtocol.mixedMode        bool    default=false
+
+# Redirect all requests to https port
+secureRedirect.enabled         bool    default=false
+
+# Target port for redirect
+secureRedirect.port            int     default=443
+
+# Maximum number of request per connection before server marks connections as non-persistent. Set to '0' to disable.
+maxRequestsPerConnection       int     default=0
+
+# Maximum number of seconds a connection can live before it's marked as non-persistent. Set to '0' to disable.
+maxConnectionLife              double  default=0.0

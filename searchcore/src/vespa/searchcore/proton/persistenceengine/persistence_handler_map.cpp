@@ -20,15 +20,15 @@ PersistenceHandlerMap::putHandler(document::BucketSpace bucketSpace,
     return _map[bucketSpace].putHandler(docType, handler);
 }
 
-IPersistenceHandler::SP
+IPersistenceHandler *
 PersistenceHandlerMap::getHandler(document::BucketSpace bucketSpace,
                                   const DocTypeName &docType) const
 {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
-        return itr->second.getHandler(docType);
+        return itr->second.getHandlerPtr(docType);
     }
-    return IPersistenceHandler::SP();
+    return nullptr;
 }
 
 IPersistenceHandler::SP
@@ -42,7 +42,7 @@ PersistenceHandlerMap::removeHandler(document::BucketSpace bucketSpace,
     return IPersistenceHandler::SP();
 }
 
-HandlerSnapshot::UP
+HandlerSnapshot
 PersistenceHandlerMap::getHandlerSnapshot() const
 {
     std::vector<IPersistenceHandler::SP> handlers;
@@ -52,47 +52,17 @@ PersistenceHandlerMap::getHandlerSnapshot() const
         }
     }
     size_t handlersSize = handlers.size();
-    return std::make_unique<HandlerSnapshot>
-            (std::make_unique<DocTypeToHandlerMap::Snapshot>(std::move(handlers)),
-             handlersSize);
+    return HandlerSnapshot(DocTypeToHandlerMap::Snapshot(std::move(handlers)), handlersSize);
 }
 
-namespace {
-
-struct EmptySequence : public vespalib::Sequence<IPersistenceHandler *> {
-    virtual bool valid() const override { return false; }
-    virtual IPersistenceHandler *get() const override { return nullptr; }
-    virtual void next() override { }
-    static EmptySequence::UP make() { return std::make_unique<EmptySequence>(); }
-};
-
-}
-
-HandlerSnapshot::UP
+HandlerSnapshot
 PersistenceHandlerMap::getHandlerSnapshot(document::BucketSpace bucketSpace) const
 {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
-        return std::make_unique<HandlerSnapshot>(itr->second.snapshot(), itr->second.size());
+        return HandlerSnapshot(itr->second.snapshot(), itr->second.size());
     }
-    return std::make_unique<HandlerSnapshot>(EmptySequence::make(), 0);
-}
-
-namespace {
-
-class SequenceOfOne : public vespalib::Sequence<IPersistenceHandler *> {
-private:
-    bool _done;
-    IPersistenceHandler *_value;
-public:
-    SequenceOfOne(IPersistenceHandler *value) : _done(false), _value(value) {}
-
-    virtual bool valid() const override { return !_done; }
-    virtual IPersistenceHandler *get() const override { return _value; }
-    virtual void next() override { _done = true; }
-    static SequenceOfOne::UP make(IPersistenceHandler *value) { return std::make_unique<SequenceOfOne>(value); }
-};
-
+    return HandlerSnapshot();
 }
 
 }

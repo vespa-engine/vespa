@@ -38,9 +38,9 @@ public class ModelGeneratorTest {
 
     @Test
     public void toApplicationModel() throws Exception {
-        ModelGenerator modelGenerator = new ModelGenerator();
-
         Zone zone = new Zone(Environment.from(ENVIRONMENT), RegionName.from(REGION));
+        ModelGenerator modelGenerator = new ModelGenerator(zone);
+
 
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
         when(slobrokMonitorManager.getStatus(any(), any(), any(), any()))
@@ -49,7 +49,6 @@ public class ModelGeneratorTest {
         ServiceModel serviceModel =
                 modelGenerator.toServiceModel(
                         getExampleApplicationInfos(),
-                        zone,
                         slobrokMonitorManager);
 
         Map<ApplicationInstanceReference,

@@ -544,7 +544,7 @@ requireThatAttributeManagerCanBeReconfigured(Fixture &f)
     f.basicReconfig(10);
     std::vector<AttributeGuard> attributes;
     f.getAttributeManager()->getAttributeList(attributes);
-    assertAttributes2(attributes);
+    TEST_DO(assertAttributes2(attributes));
 }
 
 TEST_F("require that attribute manager can be reconfigured", FastAccessFixture)
@@ -743,13 +743,13 @@ struct DocumentHandler
         op.setSerialNum(serialNum);
         return op;
     }
-    RemoveOperation createRemove(const DocumentId &docId, Timestamp timestamp, SerialNum serialNum)
+    RemoveOperationWithDocId createRemove(const DocumentId &docId, Timestamp timestamp, SerialNum serialNum)
     {
         const document::GlobalId &gid = docId.getGlobalId();
         BucketId bucket = gid.convertToBucketId();
         bucket.setUsedBits(BUCKET_USED_BITS);
         bucket = bucket.stripUnused();
-        RemoveOperation op(bucket, timestamp, docId);
+        RemoveOperationWithDocId op(bucket, timestamp, docId);
         op.setSerialNum(serialNum);
         return op;
     }
@@ -791,13 +791,13 @@ assertAttribute(const AttributeGuard &attr, const vespalib::string &name, uint32
 void
 assertAttribute1(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum)
 {
-    assertAttribute(attr, "attr1", 3, 22, 44, createSerialNum, lastSerialNum);
+    TEST_DO(assertAttribute(attr, "attr1", 3, 22, 44, createSerialNum, lastSerialNum));
 }
 
 void
 assertAttribute2(const AttributeGuard &attr, SerialNum createSerialNum, SerialNum lastSerialNum)
 {
-    assertAttribute(attr, "attr2", 3, 33, 55, createSerialNum, lastSerialNum);
+    TEST_DO(assertAttribute(attr, "attr2", 3, 33, 55, createSerialNum, lastSerialNum));
 }
 
 TEST_F("require that fast-access attributes are populated during feed", FastAccessOnlyFixture)
@@ -833,8 +833,8 @@ requireThatAttributesArePopulatedDuringReprocessing(FixtureType &f)
         std::vector<AttributeGuard> attrs;
         f.getAttributeManager()->getAttributeList(attrs);
         EXPECT_EQUAL(2u, attrs.size());
-        assertAttribute1(attrs[0], CFG_SERIAL, 40);
-        assertAttribute2(attrs[1], 40, 40);
+        TEST_DO(assertAttribute1(attrs[0], CFG_SERIAL, 40));
+        TEST_DO(assertAttribute2(attrs[1], 40, 40));
     }
 }
 
@@ -883,7 +883,7 @@ TEST_F("require that lid allocation uses lowest free lid", StoreOnlyFixture)
     DocumentHandler<StoreOnlyFixture> handler(f);
     Document::UP doc;
     PutOperation putOp;
-    RemoveOperation rmOp;
+    RemoveOperationWithDocId rmOp;
     MoveOperation moveOp;
 
     doc = handler.createEmptyDoc(1);

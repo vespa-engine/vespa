@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -39,9 +38,6 @@ public class ContactInformationMaintainer extends Maintainer {
                 switch (tenant.type()) {
                     case athenz: tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant ->
                             tenants.store(lockedTenant.with(contactRetriever.getContact(lockedTenant.get().propertyId()))));
-                        return;
-                    case user: tenants.lockIfPresent(tenant.name(), LockedTenant.User.class, lockedTenant ->
-                            tenants.store(lockedTenant.with(contactRetriever.getContact(Optional.empty()))));
                         return;
                     case cloud: return;
                     default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");

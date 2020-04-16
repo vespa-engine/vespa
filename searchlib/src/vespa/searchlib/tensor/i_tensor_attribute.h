@@ -9,6 +9,7 @@ class MutableDenseTensorView;
 class Tensor;
 }
 namespace vespalib::eval { class ValueType; }
+namespace vespalib::slime { struct Inserter; }
 
 namespace search::tensor {
 
@@ -25,6 +26,12 @@ public:
     virtual std::unique_ptr<Tensor> getEmptyTensor() const = 0;
     virtual void getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const = 0;
     virtual vespalib::eval::ValueType getTensorType() const = 0;
+
+    /**
+     * Gets custom state for this tensor attribute by inserting it into the given Slime inserter.
+     * This function is only called by the writer thread or when the writer thread is blocked.
+     */
+    virtual void get_state(const vespalib::slime::Inserter& inserter) const = 0;
 };
 
 }  // namespace search::tensor

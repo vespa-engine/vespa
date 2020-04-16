@@ -23,6 +23,7 @@ public class DomTuningDispatchBuilder {
             return builder.build();
         }
         builder.setMaxHitsPerPartition(dispatchElement.childAsInteger("max-hits-per-partition"));
+        builder.setTopKProbability(dispatchElement.childAsDouble("top-k-probability"));
         builder.setDispatchPolicy(dispatchElement.childAsString("dispatch-policy"));
         builder.setMinGroupCoverage(dispatchElement.childAsDouble("min-group-coverage"));
         builder.setMinActiveDocsCoverage(dispatchElement.childAsDouble("min-active-docs-coverage"));

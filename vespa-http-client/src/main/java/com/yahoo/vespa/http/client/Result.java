@@ -34,11 +34,7 @@ public class Result {
     public Result(Document document, Collection<Detail> values, StringBuilder localTrace) {
         this.document = document;
         this.details = Collections.unmodifiableList(new ArrayList<>(values));
-        boolean totalSuccess = true;
-        for (Detail d : details) {
-            if (d.getResultType() != ResultType.OPERATION_EXECUTED) {totalSuccess = false; }
-        }
-        this.success = totalSuccess;
+        this.success = details.stream().allMatch(d -> d.getResultType() == ResultType.OPERATION_EXECUTED);
         this.localTrace = localTrace == null ? null : localTrace.toString();
     }
 
@@ -70,18 +66,12 @@ public class Result {
 
     public List<Detail> getDetails() { return details; }
 
-    /**
-     * Checks if operation has been set up with local tracing.
-     *
-     * @return true if operation has local trace.
-     */
+    /** Returns whether the operation has been set up with local tracing */
     public boolean hasLocalTrace() {
         return localTrace != null;
     }
 
-    /**
-     * Information in a Result for a single operation sent to a single endpoint.
-     */
+    /** Information in a Result for a single operation sent to a single endpoint. */
     public static final class Detail {
 
         private final ResultType resultType;
@@ -105,43 +95,29 @@ public class Result {
         }
 
         /**
-         * Returns the endpoint from which the result was received.
-         *
-         * @return the endpoint from which the result was received.
+         * Returns the endpoint from which the result was received,
+         * or null if this failed before being assigned an endpoint
          */
         public Endpoint getEndpoint() {
             return endpoint;
         }
 
-        /**
-         * Check if operation was successful.
-         *
-         * @return true if the operation was successful.
-         */
+        /** Returns whether the operation was successful */
         public boolean isSuccess() {
             return resultType == ResultType.OPERATION_EXECUTED;
         }
 
-        /**
-         * Returns the result of the operation.
-         */
+        /** Returns the result of the operation */
         public ResultType getResultType() {
             return resultType;
         }
 
-        /**
-         * Returns any exception related to this Detail, if unsuccessful. Might be null.
-         *
-         * @return any exception related to this Detail, if unsuccessful. Might be null.
-         */
+        /** Returns any exception related to this Detail, if unsuccessful. Might be null. */
         public Exception getException() {
             return exception;
         }
 
-        /**
-         * Returns trace message if any from gateway.
-         * @return null or trace message.
-         */
+        /** Returns any trace message produces, or null if none */
         public String getTraceMessage() {
             return traceMessage;
         }
@@ -151,26 +127,21 @@ public class Result {
             StringBuilder b = new StringBuilder();
             b.append("Detail ");
             b.append("resultType=").append(resultType);
-            if (exception != null) {
+            if (exception != null)
                 b.append(" exception='").append(Exceptions.toMessageString(exception)).append("'");
-            }
-            if (traceMessage != null && ! traceMessage.isEmpty()) {
+            if (traceMessage != null && ! traceMessage.isEmpty())
                 b.append(" trace='").append(traceMessage).append("'");
-            }
-            b.append(" endpoint=").append(endpoint);
+            if (endpoint != null)
+                b.append(" endpoint=").append(endpoint);
             b.append(" resultTimeLocally=").append(timeStampMillis).append("\n");
             return b.toString();
         }
+
     }
 
     @Override
     public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("Result for '").append(document.getDocumentId());
-        if (localTrace != null) {
-            b.append(localTrace);
-        }
-        return b.toString();
+        return "Result for " + document + " " + (localTrace != null ? localTrace : "");
     }
 
 }

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "imatchhandler.h"
+#include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/statusreport.h>
@@ -50,7 +50,7 @@ public:
      * Frees any allocated resources. this will also stop all internal threads
      * and wait for them to finish. All pending search requests are deleted.
      */
-    ~MatchEngine();
+    ~MatchEngine() override;
 
     /**
      * Observe and reset internal executor stats
@@ -123,13 +123,11 @@ public:
 
     StatusReport::UP reportStatus() const;
 
-    // Implements SearchServer.
     search::engine::SearchReply::UP search(
             search::engine::SearchRequest::Source request,
             search::engine::SearchClient &client) override;
 
-    // Implements vespalib::StateExplorer
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };
 
 } // namespace proton

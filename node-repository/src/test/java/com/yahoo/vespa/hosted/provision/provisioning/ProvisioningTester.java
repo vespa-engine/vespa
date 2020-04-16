@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
@@ -87,7 +88,7 @@ public class ProvisioningTester {
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
-                DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
@@ -127,19 +128,19 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, boolean required, NodeResources resources) {
-        return prepare(application, cluster, Capacity.fromCount(nodeCount, Optional.ofNullable(resources), required, true), groups);
+        return prepare(application, cluster, Capacity.from(new ClusterResources(nodeCount, groups, resources), required, true));
     }
 
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {
-        return prepare(application, cluster, capacity, groups, true);
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
+        return prepare(application, cluster, capacity, true);
     }
 
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups, boolean idempotentPrepare) {
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, boolean idempotentPrepare) {
         Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));
-        List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, groups, provisionLogger);
+        List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, provisionLogger);
         if (idempotentPrepare) { // prepare twice to ensure idempotence
-            List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, groups, provisionLogger);
+            List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, provisionLogger);
             assertEquals(hosts1, hosts2);
         }
         Set<String> newlyActivated = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
@@ -158,9 +159,9 @@ public class ProvisioningTester {
     }
 
     public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()), version, false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString())).vespaVersion(version).build();
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
-        List<HostSpec> hostSpecs = prepare(application, cluster, capacity, 1, true);
+        List<HostSpec> hostSpecs = prepare(application, cluster, capacity, true);
         activate(application, hostSpecs);
     }
 
@@ -230,6 +231,10 @@ public class ProvisioningTester {
                 TenantName.from(UUID.randomUUID().toString()),
                 ApplicationName.from(UUID.randomUUID().toString()),
                 InstanceName.from(UUID.randomUUID().toString()));
+    }
+
+    public ApplicationId makeApplicationId(String applicationName) {
+        return ApplicationId.from("tenant", applicationName, "default");
     }
 
     public List<Node> makeReadyNodes(int n, String flavor) {
@@ -305,7 +310,7 @@ public class ProvisioningTester {
                                                 reservedTo,
                                                 type));
         }
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         return nodes;
     }
 
@@ -328,16 +333,14 @@ public class ProvisioningTester {
             nodes.add(node);
         }
 
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
 
         ConfigServerApplication application = new ConfigServerApplication();
-        List<HostSpec> hosts = prepare(
-                application.getApplicationId(),
-                application.getClusterSpecWithVersion(configServersVersion),
-                application.getCapacity(),
-                1);
+        List<HostSpec> hosts = prepare(application.getApplicationId(),
+                                       application.getClusterSpecWithVersion(configServersVersion),
+                                       application.getCapacity());
         activate(application.getApplicationId(), new HashSet<>(hosts));
         return nodeRepository.getNodes(application.getApplicationId(), Node.State.active);
     }
@@ -400,7 +403,7 @@ public class ProvisioningTester {
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
                                                 new Flavor(flavor), NodeType.tenant));
         }
-        nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         return nodes;
@@ -409,13 +412,23 @@ public class ProvisioningTester {
     public void deployZoneApp() {
         ApplicationId applicationId = makeApplicationId();
         List<HostSpec> list = prepare(applicationId,
-                                             ClusterSpec.request(ClusterSpec.Type.container,
-                                                                 ClusterSpec.Id.from("node-admin"),
-                                                                 Version.fromString("6.42"),
-                                                                 false),
-                                             Capacity.fromRequiredNodeType(NodeType.host),
-                                             1);
+                                      ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build(),
+                                      Capacity.fromRequiredNodeType(NodeType.host));
         activate(applicationId, Set.copyOf(list));
+    }
+
+    public ClusterSpec clusterSpec() {
+        return ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+    }
+
+    public List<Node> deploy(ApplicationId application, Capacity capacity) {
+        return deploy(application, clusterSpec(), capacity);
+    }
+
+    public List<Node> deploy(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
+        List<HostSpec> prepared = prepare(application, cluster, capacity);
+        activate(application, Set.copyOf(prepared));
+        return getNodes(application, Node.State.active).asList();
     }
 
     /** Returns the hosts from the input list which are not retired */
@@ -423,31 +436,10 @@ public class ProvisioningTester {
         return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());
     }
 
-    public void assertNumberOfNodesWithFlavor(List<HostSpec> hostSpecs, String flavor, int expectedCount) {
-        long actualNodesWithFlavor = hostSpecs.stream()
-                .map(HostSpec::hostname)
-                .map(this::getNodeFlavor)
-                .map(Flavor::name)
-                .filter(name -> name.equals(flavor))
-                .count();
-        assertEquals(expectedCount, actualNodesWithFlavor);
-    }
-
     public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
         for (Node node : nodeRepository.getNodes(app)) {
             Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
             assertEquals(node + ": " + explanation, hostFlavor, parent.flavor().name());
-        }
-    }
-
-    public void printFreeResources() {
-        for (Node host : nodeRepository().getNodes(NodeType.host)) {
-            NodeResources free = host.flavor().resources();
-            for (Node child : nodeRepository().getNodes(NodeType.tenant)) {
-                if (child.parentHostname().get().equals(host.hostname()))
-                    free = free.subtract(child.flavor().resources());
-            }
-            System.out.println(host.flavor().name() + " node. Free resources: " + free);
         }
     }
 
@@ -458,11 +450,8 @@ public class ProvisioningTester {
                                                   .count();
     }
 
-    private Flavor getNodeFlavor(String hostname) {
-        return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
-    }
-
     public static final class Builder {
+
         private Curator curator;
         private FlavorsConfig flavorsConfig;
         private Zone zone;
@@ -538,6 +527,24 @@ public class ProvisioningTester {
 
     private static class NullProvisionLogger implements ProvisionLogger {
         @Override public void log(Level level, String message) { }
+    }
+
+    public IdentityHostResourcesCalculator identityHostResourcesCalculator() {
+        return new IdentityHostResourcesCalculator();
+    }
+
+    private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
+
+        @Override
+        public NodeResources realResourcesOf(Node node) {
+            return node.flavor().resources();
+        }
+
+        @Override
+        public NodeResources advertisedResourcesOf(Flavor flavor) {
+            return flavor.resources();
+        }
+
     }
 
 }

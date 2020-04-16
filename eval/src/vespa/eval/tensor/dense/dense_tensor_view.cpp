@@ -138,7 +138,7 @@ joinDenseTensors(const DenseTensorView &lhs, const Tensor &rhs,
                  vespalib::stringref operation,
                  Function &&func)
 {
-    const DenseTensorView *view = dynamic_cast<const DenseTensorView *>(&rhs);
+    auto view = dynamic_cast<const DenseTensorView *>(&rhs);
     if (view) {
         checkDimensions(lhs, *view, operation);
         return joinDenseTensors(lhs, *view, func);
@@ -215,7 +215,7 @@ DenseTensorView::apply(const CellFunction &func) const
 bool
 DenseTensorView::equals(const Tensor &arg) const
 {
-    const DenseTensorView *view = dynamic_cast<const DenseTensorView *>(&arg);
+    auto view = dynamic_cast<const DenseTensorView *>(&arg);
     if (view) {
         return *this == *view;
     }

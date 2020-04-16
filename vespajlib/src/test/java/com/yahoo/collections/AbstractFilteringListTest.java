@@ -48,8 +48,8 @@ public class AbstractFilteringListTest {
         assertEquals(List.of("abc", "cba", "bbb"),
                      list.not().in(MyList.of("ABC", "CBA")).asList());
 
-        assertEquals(List.of("ABC", "abc", "cba", "bbb", "ABC", "aaa"),
-                     list.and(MyList.of("aaa")).asList());
+        assertEquals(List.of("ABC", "abc", "cba", "bbb", "ABC", "aaa", "ABC"),
+                     list.concat(MyList.of("aaa", "ABC")).asList());
     }
 
     private static class MyList extends AbstractFilteringList<String, MyList> {

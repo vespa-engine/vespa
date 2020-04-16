@@ -36,6 +36,7 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -111,6 +112,8 @@ vespalib::string tensor_spec("tensor(x{})");
 std::unique_ptr<Tensor> static_tensor = makeTensor<Tensor>(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
 std::unique_ptr<Tensor> dynamic_tensor = makeTensor<Tensor>(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
 const char zcurve_field[] = "position_field_zcurve";
+const char position_array_field[] = "position_array";
+const char zcurve_array_field[] = "position_array_zcurve";
 const char dyn_field_p[] = "dynamic predicate field";
 const char dyn_arr_field_i[] = "dynamic int array field";
 const char dyn_arr_field_d[] = "dynamic double array field";
@@ -153,7 +156,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
             return std::move(_testDoc);
         }
         const DocumentType *doc_type = r.getDocumentType(doc_type_name);
-        Document::UP doc(new Document(*doc_type, doc_id));
+        auto doc = std::make_unique<Document>(*doc_type, doc_id);
         ASSERT_TRUE(doc.get());
         doc->set(static_field, static_value);
         doc->set(dyn_field_i, static_value);
@@ -208,10 +211,11 @@ document::DocumenttypesConfig getRepoConfig() {
                      .addField(dyn_wset_field_d, Wset(document::DataType::T_DOUBLE))
                      .addField(dyn_wset_field_s, Wset(document::DataType::T_STRING))
                      .addField(dyn_wset_field_n, Wset(document::DataType::T_FLOAT))
-                     .addField(position_field,
-                               PositionDataType::getInstance().getId())
+                     .addField(position_field, PositionDataType::getInstance().getId())
                      .addTensorField(dyn_field_tensor, tensor_spec)
-                     .addField(zcurve_field, document::DataType::T_LONG));
+                     .addField(zcurve_field, document::DataType::T_LONG)
+                     .addField(position_array_field, Array(PositionDataType::getInstance().getId()))
+                     .addField(zcurve_array_field, Array(document::DataType::T_LONG)));
      return builder.config();
 }
 
@@ -359,6 +363,8 @@ struct Fixture {
                 dyn_arr_field_s, dyn_value_s, DataType::STRING, ct);
         addAttribute<FloatingPointAttribute>(
                 dyn_arr_field_n, DataType::FLOAT, ct);
+        addAttribute<IntegerAttribute>(
+                zcurve_array_field, dynamic_zcurve_value, DataType::INT64, ct);
         ct = schema::CollectionType::WEIGHTEDSET;
         addAttribute<IntegerAttribute>(
                 dyn_wset_field_i, dyn_value_i, DataType::INT32, ct);
@@ -484,23 +490,49 @@ void verify_position_field_has_expected_values(Fixture& f) {
 
     FieldValue::UP value = doc->getValue(position_field);
     ASSERT_TRUE(value.get());
-    StructFieldValue *position = dynamic_cast<StructFieldValue *>(value.get());
+    const auto *position = dynamic_cast<StructFieldValue *>(value.get());
     ASSERT_TRUE(position);
     FieldValue::UP x = position->getValue(PositionDataType::FIELD_X);
     FieldValue::UP y = position->getValue(PositionDataType::FIELD_Y);
-    EXPECT_EQUAL(-123096000, static_cast<IntFieldValue&>(*x).getValue());
-    EXPECT_EQUAL(49401000, static_cast<IntFieldValue&>(*y).getValue());
+    EXPECT_EQUAL(-123096000, dynamic_cast<IntFieldValue&>(*x).getValue());
+    EXPECT_EQUAL(49401000, dynamic_cast<IntFieldValue&>(*y).getValue());
 
     checkFieldValue<LongFieldValue>(doc->getValue(zcurve_field), dynamic_zcurve_value);
 }
 
-TEST_F("require that position fields are regenerated from zcurves", Fixture) {
+TEST_F("require that single value position fields are regenerated from zcurves", Fixture) {
     verify_position_field_has_expected_values(f);
 }
 
-TEST_F("zcurve attribute is authoritative for position field existence", Fixture) {
+TEST_F("zcurve attribute is authoritative for single value position field existence", Fixture) {
     f.doc_store._set_position_struct_field = false;
     verify_position_field_has_expected_values(f);
+}
+
+TEST_F("require that array position field value is generated from zcurve array attribute", Fixture) {
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
+    FieldValue::UP value = doc->getValue(position_array_field);
+    ASSERT_TRUE(value.get());
+    const auto* array_value = dynamic_cast<const document::ArrayFieldValue*>(value.get());
+    ASSERT_TRUE(array_value != nullptr);
+    ASSERT_EQUAL(array_value->getNestedType(), document::PositionDataType::getInstance());
+    // Should have two elements prepopulated
+    ASSERT_EQUAL(2u, array_value->size());
+    for (uint32_t i = 0; i < array_value->size(); ++i) {
+        // Magic index-specific value set by collection fixture code.
+        int64_t zcurve_at_pos = ((i == 0) ? dynamic_zcurve_value + 1 : dynamic_zcurve_value);
+        int32_t zx, zy;
+        vespalib::geo::ZCurve::decode(zcurve_at_pos, &zx, &zy);
+
+        const auto *position = dynamic_cast<const StructFieldValue*>(&(*array_value)[i]);
+        ASSERT_TRUE(position != nullptr);
+        FieldValue::UP x = position->getValue(PositionDataType::FIELD_X);
+        FieldValue::UP y = position->getValue(PositionDataType::FIELD_Y);
+        EXPECT_EQUAL(zx, dynamic_cast<IntFieldValue&>(*x).getValue());
+        EXPECT_EQUAL(zy, dynamic_cast<IntFieldValue&>(*y).getValue());
+    }
 }
 
 TEST_F("require that non-existing lid returns null pointer", Fixture) {

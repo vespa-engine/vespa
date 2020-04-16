@@ -21,6 +21,7 @@ public class TransportSecurityOptionsTest {
             .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
             .withCaCertificates(Paths.get("my_cas.pem"))
             .withAcceptedCiphers(com.yahoo.vespa.jdk8compat.List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384" , "TLS_AES_256_GCM_SHA384"))
+            .withHostnameValidationDisabled(true)
             .build();
 
     @Test

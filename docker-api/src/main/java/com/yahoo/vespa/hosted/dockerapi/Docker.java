@@ -52,7 +52,8 @@ public interface Docker {
         CreateContainerCommand withManagedBy(String manager);
         CreateContainerCommand withAddCapability(String capabilityName);
         CreateContainerCommand withDropCapability(String capabilityName);
-        CreateContainerCommand withSecurityOpts(String securityOpt);
+        CreateContainerCommand withSecurityOpt(String securityOpt);
+        CreateContainerCommand withDnsOption(String dnsOption);
         CreateContainerCommand withPrivileged(boolean privileged);
 
         void create();

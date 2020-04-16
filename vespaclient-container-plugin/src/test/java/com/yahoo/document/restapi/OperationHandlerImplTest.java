@@ -94,8 +94,8 @@ public class OperationHandlerImplTest {
             assertThat(e.getResponse().getStatus(), is(400));
             String errorMsg = renderRestApiExceptionAsString(e);
             assertThat(errorMsg, is("{\"errors\":[{\"description\":" +
-                    "\"MISSING_CLUSTER Your vespa cluster contains the content clusters foo2 (configId2), foo (configId)," +
-                    " foo3 (configId2),  not wrong. Please select a valid vespa cluster.\",\"id\":-9}]}"));
+                    "\"MISSING_CLUSTER Your vespa cluster contains the content clusters 'foo2', 'foo'," +
+                    " 'foo3', not 'wrong'. Please select a valid vespa cluster.\",\"id\":-9}]}"));
             return;
         }
         fail("Expected exception");

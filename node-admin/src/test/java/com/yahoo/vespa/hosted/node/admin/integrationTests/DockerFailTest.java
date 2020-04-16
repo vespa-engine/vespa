@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import org.junit.Test;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -24,18 +22,10 @@ public class DockerFailTest {
             final DockerImage dockerImage = DockerImage.fromString("dockerImage");
             final ContainerName containerName = new ContainerName("host1");
             final String hostname = "host1.test.yahoo.com";
-            tester.addChildNodeRepositoryNode(new NodeSpec.Builder()
-                    .hostname(hostname)
+            tester.addChildNodeRepositoryNode(NodeSpec.Builder
+                    .testSpec(hostname)
                     .wantedDockerImage(dockerImage)
                     .currentDockerImage(dockerImage)
-                    .state(NodeState.active)
-                    .type(NodeType.tenant)
-                    .flavor("docker")
-                    .wantedRestartGeneration(1L)
-                    .currentRestartGeneration(1L)
-                    .vcpu(1)
-                    .memoryGb(1)
-                    .diskGb(1)
                     .build());
 
             tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(containerName));

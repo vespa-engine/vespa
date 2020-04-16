@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * Multithread safe class to get and set docker images for given host types.
+ * Multithread safe class to get and set docker images for given node types.
  *
  * @author freva
  */
@@ -49,7 +49,7 @@ public class DockerImages {
 
     private void createCache() {
         this.dockerImages = Suppliers.memoizeWithExpiration(() -> Collections.unmodifiableMap(db.readDockerImages()),
-                cacheTtl.toMillis(), TimeUnit.MILLISECONDS);
+                                                            cacheTtl.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     /** Returns the current docker images for each node type */
@@ -57,9 +57,11 @@ public class DockerImages {
         return dockerImages.get();
     }
 
-    /** Returns the current docker image for given node type, or default */
+    /** Returns the current docker image for given node type, or the type for corresponding child nodes
+     * if it is a Docker host, or default */
     public DockerImage dockerImageFor(NodeType type) {
-        return getDockerImages().getOrDefault(type, defaultImage);
+        NodeType typeToUseForLookup = type.isDockerHost() ? type.childNodeType() : type;
+        return getDockerImages().getOrDefault(typeToUseForLookup, defaultImage);
     }
 
     /** Set the docker image for nodes of given type */
@@ -69,8 +71,8 @@ public class DockerImages {
         }
         try (Lock lock = db.lockDockerImages()) {
             Map<NodeType, DockerImage> dockerImages = db.readDockerImages();
-
-            dockerImage.ifPresentOrElse(image -> dockerImages.put(nodeType, image), () -> dockerImages.remove(nodeType));
+            dockerImage.ifPresentOrElse(image -> dockerImages.put(nodeType, image),
+                                        () -> dockerImages.remove(nodeType));
             db.writeDockerImages(dockerImages);
             createCache(); // Throw away current cache
             log.info("Set docker image for " + nodeType + " nodes to " + dockerImage.map(DockerImage::asString).orElse(null));

@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import java.io.File;
-import java.util.Objects;
-
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+
+import java.util.Objects;
 
 /**
  * A physical host, running a set of services.
@@ -64,10 +63,6 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
     /** Returns the string representation of this Host object. */
     public String toString() {
         return "host '" + getHostname() + "'";
-    }
-
-    @Override
-    public void writeFiles(File directory) {
     }
 
     @Override

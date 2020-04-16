@@ -47,7 +47,7 @@ public class Ranking implements Cloneable {
     public static final String PROPERTIES = "properties";
 
     static {
-        argumentType =new QueryProfileType(RANKING);
+        argumentType = new QueryProfileType(RANKING);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(LOCATION, "string", "location"));
@@ -63,7 +63,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(FEATURES, "query-profile", "rankfeature"));
         argumentType.addField(new FieldDescription(PROPERTIES, "query-profile", "rankproperty"));
         argumentType.freeze();
-        argumentTypeName=new CompoundName(argumentType.getId().getName());
+        argumentTypeName = new CompoundName(argumentType.getId().getName());
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 

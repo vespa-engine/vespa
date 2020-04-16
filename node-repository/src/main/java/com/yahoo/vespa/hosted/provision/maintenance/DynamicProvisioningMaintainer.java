@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
-import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.yolean.Exceptions;
@@ -44,13 +44,15 @@ public class DynamicProvisioningMaintainer extends Maintainer {
     private static final ApplicationId preprovisionAppId = ApplicationId.from("hosted-vespa", "tenant-host", "preprovision");
 
     private final HostProvisioner hostProvisioner;
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabled;
     private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
-    DynamicProvisioningMaintainer(NodeRepository nodeRepository, Duration interval,
-                                  HostProvisioner hostProvisioner, FlagSource flagSource) {
+    DynamicProvisioningMaintainer(NodeRepository nodeRepository, Duration interval, HostProvisioner hostProvisioner,
+                                  HostResourcesCalculator hostResourcesCalculator, FlagSource flagSource) {
         super(nodeRepository, interval);
         this.hostProvisioner = hostProvisioner;
+        this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabled = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
@@ -68,17 +70,14 @@ public class DynamicProvisioningMaintainer extends Maintainer {
     }
 
     void updateProvisioningNodes(NodeList nodes, Mutex lock) {
-        Map<String, Node> provisionedHostsByHostname = nodes.state(Node.State.provisioned).nodeType(NodeType.host)
-                .asList().stream()
-                .collect(Collectors.toMap(Node::hostname, Function.identity()));
-
-        Map<Node, Set<Node>> nodesByProvisionedParent = nodes.asList().stream()
-                .filter(node -> node.parentHostname().map(provisionedHostsByHostname::containsKey).orElse(false))
+        Map<String, Set<Node>> nodesByProvisionedParentHostname = nodes.nodeType(NodeType.tenant).asList().stream()
+                .filter(node -> node.parentHostname().isPresent())
                 .collect(Collectors.groupingBy(
-                        node -> provisionedHostsByHostname.get(node.parentHostname().get()),
+                        node -> node.parentHostname().get(),
                         Collectors.toSet()));
 
-        nodesByProvisionedParent.forEach((host, children) -> {
+        nodes.state(Node.State.provisioned).nodeType(NodeType.host).forEach(host -> {
+            Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
             try {
                 List<Node> updatedNodes = hostProvisioner.provision(host, children);
                 nodeRepository().write(updatedNodes, lock);
@@ -111,8 +110,8 @@ public class DynamicProvisioningMaintainer extends Maintainer {
         for (Iterator<NodeResources> it = preProvisionCapacity.iterator(); it.hasNext() && !removableHosts.isEmpty();) {
             NodeResources resources = it.next();
             removableHosts.stream()
-                    .filter(host -> NodePrioritizer.ALLOCATABLE_HOST_STATES.contains(host.state()))
-                    .filter(host -> host.flavor().resources().satisfies(resources))
+                    .filter(nodeRepository()::canAllocateTenantNodeTo)
+                    .filter(host -> hostResourcesCalculator.advertisedResourcesOf(host.flavor()).satisfies(resources))
                     .min(Comparator.comparingInt(n -> n.flavor().cost()))
                     .ifPresent(host -> {
                         removableHosts.remove(host);
@@ -127,7 +126,7 @@ public class DynamicProvisioningMaintainer extends Maintainer {
                         nodeRepository().database().getProvisionIndexes(1), resources, preprovisionAppId).stream()
                         .map(ProvisionedHost::generateHost)
                         .collect(Collectors.toList());
-                nodeRepository().addNodes(hosts);
+                nodeRepository().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
             } catch (OutOfCapacityException | IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.WARNING, "Failed to pre-provision " + resources + ":" + e.getMessage());
             } catch (RuntimeException e) {

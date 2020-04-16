@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -12,8 +13,10 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -23,7 +26,7 @@ import java.util.function.Function;
  */
 public class OrchestratorMock extends AbstractComponent implements Orchestrator {
 
-    private final Set<HostName> suspendedHosts = new HashSet<>();
+    private final Map<HostName, HostInfo> suspendedHosts = new HashMap<>();
     private final Set<ApplicationId> suspendedApplications = new HashSet<>();
 
     @Override
@@ -33,14 +36,19 @@ public class OrchestratorMock extends AbstractComponent implements Orchestrator 
 
     @Override
     public HostStatus getNodeStatus(HostName hostName) {
-        return suspendedHosts.contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS;
+        HostInfo hostInfo = suspendedHosts.get(hostName);
+        return hostInfo == null ? HostStatus.NO_REMARKS : hostInfo.status();
     }
 
     @Override
-    public Function<HostName, Optional<HostInfo>> getNodeStatuses() {
-        return hostName -> Optional.of(getNodeStatus(hostName))
-                                   .map(status -> status.isSuspended() ? HostInfo.createSuspended(status, Instant.EPOCH)
-                                                                       : HostInfo.createNoRemarks());
+    public HostInfo getHostInfo(ApplicationInstanceReference reference, HostName hostname) {
+        HostInfo hostInfo = suspendedHosts.get(hostname);
+        return hostInfo == null ? HostInfo.createNoRemarks() : hostInfo;
+    }
+
+    @Override
+    public Function<HostName, Optional<HostInfo>> getHostResolver() {
+        return hostName -> Optional.of(suspendedHosts.getOrDefault(hostName, HostInfo.createNoRemarks()));
     }
 
     @Override
@@ -53,7 +61,7 @@ public class OrchestratorMock extends AbstractComponent implements Orchestrator 
 
     @Override
     public void suspend(HostName hostName) {
-        suspendedHosts.add(hostName);
+        suspendedHosts.put(hostName, HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.EPOCH));
     }
 
     @Override
@@ -78,7 +86,7 @@ public class OrchestratorMock extends AbstractComponent implements Orchestrator 
     }
 
     @Override
-    public void acquirePermissionToRemove(HostName hostName) {}
+    public void acquirePermissionToRemove(HostName hostName) { }
 
     @Override
     public void suspendAll(HostName parentHostname, List<HostName> hostNames) {

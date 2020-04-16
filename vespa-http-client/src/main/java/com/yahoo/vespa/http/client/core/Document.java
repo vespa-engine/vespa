@@ -86,4 +86,7 @@ final public class Document {
         return operationId;
     }
 
+    @Override
+    public String toString() { return "document '" + documentId + "'"; }
+
 }

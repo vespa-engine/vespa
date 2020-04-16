@@ -53,6 +53,7 @@ public class IndexedSearchCluster extends SearchCluster
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
     private final boolean useAdaptiveDispatch;
+    private final double defaultTopKProbability;
     private List<SearchNode> searchNodes = new ArrayList<>();
 
     /**
@@ -70,6 +71,7 @@ public class IndexedSearchCluster extends SearchCluster
         unionCfg = new UnionConfiguration(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
         useAdaptiveDispatch = deployState.getProperties().useAdaptiveDispatch();
+        defaultTopKProbability = deployState.getProperties().defaultTopKProbability();
     }
 
     @Override
@@ -154,8 +156,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
         ddbB.inputdoctypename(sdoc.getInputDocType())
-            .configid(sdoc.getConfigId())
-            .visibilitydelay(getVisibilityDelay());
+            .configid(sdoc.getConfigId());
     }
 
     @Override
@@ -196,13 +197,15 @@ public class IndexedSearchCluster extends SearchCluster
             routingSelector = sb.toString();
         }
     }
+
     @Override
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState) {
-        for (SearchDefinitionSpec spec : localSearches) {
+    protected void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState) {
+        for (SchemaSpec spec : localSearches) {
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
             if ( ! (search instanceof DocumentOnlySearch)) {
                 DocumentDatabase db = new DocumentDatabase(this, search.getName(),
-                                                           new DerivedConfiguration(search, deployState.getDeployLogger(),
+                                                           new DerivedConfiguration(search,
+                                                                                    deployState.getDeployLogger(),
                                                                                     deployState.getProperties(),
                                                                                     deployState.rankProfileRegistry(),
                                                                                     deployState.getQueryProfiles().getRegistry(),
@@ -306,7 +309,11 @@ public class IndexedSearchCluster extends SearchCluster
         }
         if (useAdaptiveDispatch)
             builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
-
+        if (tuning.dispatch.getTopkProbability() != null) {
+            builder.topKProbability(tuning.dispatch.getTopkProbability());
+        } else {
+            builder.topKProbability(defaultTopKProbability);
+        }
         if (tuning.dispatch.getMinActiveDocsCoverage() != null)
             builder.minActivedocsPercentage(tuning.dispatch.getMinActiveDocsCoverage());
         if (tuning.dispatch.getMinGroupCoverage() != null)
@@ -334,6 +341,7 @@ public class IndexedSearchCluster extends SearchCluster
             if (searchCoverage.getMaxWaitAfterCoverageFactor() != null)
                 builder.maxWaitAfterCoverageFactor(searchCoverage.getMaxWaitAfterCoverageFactor());
         }
+        builder.warmuptime(5.0);
     }
 
     @Override

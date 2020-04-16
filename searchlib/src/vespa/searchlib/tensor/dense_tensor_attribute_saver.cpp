@@ -1,20 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_attribute_saver.h"
-#include <vespa/vespalib/util/bufferwriter.h>
 #include "dense_tensor_store.h"
+#include "nearest_neighbor_index_saver.h"
+#include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 
 using vespalib::GenerationHandler;
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 namespace {
 
-static const uint8_t tensorIsNotPresent = 0;
-static const uint8_t tensorIsPresent = 1;
+constexpr uint8_t tensorIsNotPresent = 0;
+constexpr uint8_t tensorIsPresent = 1;
 
 }
 
@@ -22,42 +21,60 @@ DenseTensorAttributeSaver::
 DenseTensorAttributeSaver(GenerationHandler::Guard &&guard,
                           const attribute::AttributeHeader &header,
                           RefCopyVector &&refs,
-                          const DenseTensorStore &tensorStore)
+                          const DenseTensorStore &tensorStore,
+                          IndexSaverUP index_saver)
     : AttributeSaver(std::move(guard), header),
       _refs(std::move(refs)),
-      _tensorStore(tensorStore)
+      _tensorStore(tensorStore),
+      _index_saver(std::move(index_saver))
 {
 }
 
+DenseTensorAttributeSaver::~DenseTensorAttributeSaver() = default;
 
-DenseTensorAttributeSaver::~DenseTensorAttributeSaver()
+vespalib::string
+DenseTensorAttributeSaver::index_file_suffix()
 {
+    return "nnidx";
 }
-
 
 bool
 DenseTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 {
-    std::unique_ptr<BufferWriter>
-        datWriter(saveTarget.datWriter().allocBufferWriter());
+    if (_index_saver) {
+        if (!saveTarget.setup_writer(index_file_suffix(), "Binary data file for nearest neighbor index")) {
+            return false;
+        }
+    }
+
+    auto dat_writer = saveTarget.datWriter().allocBufferWriter();
+    save_tensor_store(*dat_writer);
+
+    if (_index_saver) {
+        auto index_writer = saveTarget.get_writer(index_file_suffix()).allocBufferWriter();
+        // Note: Implementation of save() is responsible to call BufferWriter::flush().
+        _index_saver->save(*index_writer);
+    }
+    return true;
+}
+
+void
+DenseTensorAttributeSaver::save_tensor_store(BufferWriter& writer) const
+{
     const uint32_t docIdLimit(_refs.size());
     const uint32_t cellSize = _tensorStore.getCellSize();
     for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
         if (_refs[lid].valid()) {
             auto raw = _tensorStore.getRawBuffer(_refs[lid]);
-            datWriter->write(&tensorIsPresent, sizeof(tensorIsPresent));
+            writer.write(&tensorIsPresent, sizeof(tensorIsPresent));
             size_t numCells = _tensorStore.getNumCells();
             size_t rawLen = numCells * cellSize;
-            datWriter->write(static_cast<const char *>(raw), rawLen);
+            writer.write(static_cast<const char *>(raw), rawLen);
         } else {
-            datWriter->write(&tensorIsNotPresent, sizeof(tensorIsNotPresent));
+            writer.write(&tensorIsNotPresent, sizeof(tensorIsNotPresent));
         }
     }
-    datWriter->flush();
-    return true;
+    writer.flush();
 }
 
-
-}  // namespace search::tensor
-
-}  // namespace search
+}

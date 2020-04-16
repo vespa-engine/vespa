@@ -82,7 +82,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
     }
 
     public void write(Document doc) {
-        write(new Field(doc.getDataType().getName(), 0, doc.getDataType(), true), doc);
+        write(new Field(doc.getDataType().getName(), 0, doc.getDataType()), doc);
     }
 
     @SuppressWarnings("deprecation")

@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
@@ -11,10 +10,13 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
@@ -23,6 +25,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,6 +33,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -146,36 +150,68 @@ public class VersionStatusTest {
         tester.triggerJobs();
 
         // - app1 is in production on version1, but then fails in system test on version2
-        context1.submit(applicationPackage)
-                .timeOutConvergence(systemTest);
+        context1.timeOutConvergence(systemTest);
         // - app2 is partially in production on version1 and partially on version2
-        context2.submit(applicationPackage)
-                .runJob(systemTest)
+        context2.runJob(systemTest)
                 .runJob(stagingTest)
                 .runJob(productionUsWest1)
                 .failDeployment(productionUsEast3);
         // - app3 is in production on version1, but then fails in staging test on version2
-        context3.submit(applicationPackage)
-                .timeOutUpgrade(stagingTest);
+        context3.timeOutUpgrade(stagingTest);
 
+        tester.triggerJobs();
         tester.controllerTester().computeVersionStatus();
         List<VespaVersion> versions = tester.controller().versionStatus().versions();
         assertEquals("The two versions above exist", 2, versions.size());
 
         VespaVersion v1 = versions.get(0);
         assertEquals(version1, v1.versionNumber());
-        assertEquals("No applications are failing on version1.", ImmutableSet.of(), v1.statistics().failing());
-        assertEquals("All applications have at least one active production deployment on version 1.", ImmutableSet.of(context1.instanceId(), context2.instanceId(), context3.instanceId()), v1.statistics().production());
-        assertEquals("No applications have active deployment jobs on version1.", ImmutableSet.of(), v1.statistics().deploying());
+        var statistics = DeploymentStatistics.compute(List.of(version1, version2), tester.deploymentStatuses());
+        var statistics1 = statistics.get(0);
+        assertJobsRun("No runs are failing on version1.",
+                      Map.of(context1.instanceId(), List.of(),
+                             context2.instanceId(), List.of(),
+                             context3.instanceId(), List.of()),
+                      statistics1.failingUpgrades());
+        assertJobsRun("All applications have at least one active production deployment on version 1.",
+                     Map.of(context1.instanceId(), List.of(productionUsWest1, productionUsEast3),
+                            context2.instanceId(), List.of(productionUsEast3),
+                            context3.instanceId(), List.of(productionUsWest1, productionUsEast3)),
+                     statistics1.productionSuccesses());
+        assertEquals("No applications have active deployment jobs on version1.",
+                     List.of(),
+                     statistics1.runningUpgrade());
 
         VespaVersion v2 = versions.get(1);
         assertEquals(version2, v2.versionNumber());
-        assertEquals("All applications have failed on version2 in at least one zone.", ImmutableSet.of(context1.instanceId(), context2.instanceId(), context3.instanceId()), v2.statistics().failing());
-        assertEquals("Only app2 has successfully deployed to production on version2.", ImmutableSet.of(context2.instanceId()), v2.statistics().production());
-        // Should test the below, but can't easily be done with current test framework. This test passes in DeploymentApiTest.
-        // assertEquals("All applications are being retried on version2.", ImmutableSet.of(app1.id(), app2.id(), app3.id()), v2.statistics().deploying());
+        var statistics2 = statistics.get(1);
+        assertJobsRun("All applications have failed on version2 in at least one zone.",
+                     Map.of(context1.instanceId(), List.of(systemTest),
+                            context2.instanceId(), List.of(productionUsEast3),
+                            context3.instanceId(), List.of(stagingTest)),
+                     statistics2.failingUpgrades());
+        assertJobsRun("Only app2 has successfully deployed to production on version2.",
+                      Map.of(context1.instanceId(), List.of(),
+                             context2.instanceId(), List.of(productionUsWest1),
+                             context3.instanceId(), List.of()),
+                     statistics2.productionSuccesses());
+        assertJobsRun("All applications are being retried on version2.",
+                      Map.of(context1.instanceId(), List.of(systemTest, stagingTest),
+                             context2.instanceId(), List.of(productionUsEast3),
+                             context3.instanceId(), List.of(systemTest, stagingTest)),
+                     statistics2.runningUpgrade());
     }
-    
+
+    private static void assertJobsRun(String assertion, Map<ApplicationId, List<JobType>> jobs, List<Run> runs) {
+        assertEquals(assertion,
+                     jobs.entrySet().stream()
+                         .flatMap(entry -> entry.getValue().stream().map(type -> new JobId(entry.getKey(), type)))
+                         .collect(toSet()),
+                     runs.stream()
+                         .map(run -> run.id().job())
+                         .collect(toSet()));
+    }
+
     @Test
     public void testVersionConfidence() {
         DeploymentTester tester = new DeploymentTester().atMondayMorning();
@@ -340,10 +376,7 @@ public class VersionStatusTest {
 
         // Test version order
         List<VespaVersion> versions = tester.controller().versionStatus().versions();
-        assertEquals(3, versions.size());
-        assertEquals("6.2", versions.get(0).versionNumber().toString());
-        assertEquals("6.4", versions.get(1).versionNumber().toString());
-        assertEquals("6.5", versions.get(2).versionNumber().toString());
+        assertEquals(List.of("6.2", "6.4", "6.5"), versions.stream().map(version -> version.versionNumber().toString()).collect(Collectors.toList()));
 
         // Check release status is correct (static data in MockMavenRepository).
         assertTrue(versions.get(0).isReleased());
@@ -379,7 +412,7 @@ public class VersionStatusTest {
 
         // Stale override was removed
         assertFalse("Stale override removed", tester.controller().curator().readConfidenceOverrides()
-                                                    .keySet().contains(version0));
+                                                    .containsKey(version0));
     }
 
     @Test
@@ -516,7 +549,7 @@ public class VersionStatusTest {
                .failDeployment(productionUsWest1);
         tester.controllerTester().computeVersionStatus();
         for (var version : List.of(version0, version1)) {
-            assertOnVersion(version, context.instanceId(), tester.controllerTester());
+            assertOnVersion(version, context.instanceId(), tester);
         }
 
         // System is upgraded and application starts upgrading to next version
@@ -531,14 +564,14 @@ public class VersionStatusTest {
                .failDeployment(productionUsWest1);
         tester.controllerTester().computeVersionStatus();
         for (var version : List.of(version0, version1, version2)) {
-            assertOnVersion(version, context.instanceId(), tester.controllerTester());
+            assertOnVersion(version, context.instanceId(), tester);
         }
 
         // Upgrade succeeds
         context.deployPlatform(version2);
         tester.controllerTester().computeVersionStatus();
         assertEquals(1, tester.controller().versionStatus().versions().size());
-        assertOnVersion(version2, context.instanceId(), tester.controllerTester());
+        assertOnVersion(version2, context.instanceId(), tester);
 
         // System is upgraded and application starts upgrading to next version
         var version3 = Version.fromString("7.4");
@@ -552,17 +585,17 @@ public class VersionStatusTest {
         tester.controllerTester().computeVersionStatus();
         assertEquals(2, tester.controller().versionStatus().versions().size());
         for (var version : List.of(version2, version3)) {
-            assertOnVersion(version, context.instanceId(), tester.controllerTester());
+            assertOnVersion(version, context.instanceId(), tester);
         }
     }
 
-    private void assertOnVersion(Version version, ApplicationId instance, ControllerTester tester) {
+    private void assertOnVersion(Version version, ApplicationId instance, DeploymentTester tester) {
         var vespaVersion = tester.controller().versionStatus().version(version);
         assertNotNull("Statistics for version " + version + " exist", vespaVersion);
-        var statistics = vespaVersion.statistics();
-        assertTrue("Application is on version " + version, statistics.production().contains(instance) ||
-                                                           statistics.failing().contains(instance) ||
-                                                           statistics.deploying().contains(instance));
+        var statistics = DeploymentStatistics.compute(List.of(version), tester.deploymentStatuses()).get(0);
+        assertTrue("Application is on version " + version,
+                   Stream.of(statistics.productionSuccesses(), statistics.failingUpgrades(), statistics.runningUpgrade())
+                         .anyMatch(runs -> runs.stream().anyMatch(run -> run.id().application().equals(instance))));
     }
 
     private static void writeControllerVersion(HostName hostname, Version version, CuratorDb db) {
@@ -571,7 +604,7 @@ public class VersionStatusTest {
 
     private Confidence confidence(Controller controller, Version version) {
         return controller.versionStatus().versions().stream()
-                .filter(v -> v.statistics().version().equals(version))
+                .filter(v -> v.versionNumber().equals(version))
                 .findFirst()
                 .map(VespaVersion::confidence)
                 .orElseThrow(() -> new IllegalArgumentException("Expected to find version: " + version));

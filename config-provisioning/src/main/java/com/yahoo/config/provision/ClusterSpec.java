@@ -21,13 +21,22 @@ public final class ClusterSpec {
     private final Optional<Group> groupId;
     private final Version vespaVersion;
     private boolean exclusive;
+    private final Optional<Id> combinedId;
+    private final Optional<String> dockerImageRepo;
 
-    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive) {
+    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
+                        Optional<Id> combinedId, Optional<String> dockerImageRepo) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
         this.vespaVersion = vespaVersion;
         this.exclusive = exclusive;
+        // TODO(mpolden): Require combinedId to always be present for type combined after April 2020
+        if (type != Type.combined && combinedId.isPresent()) {
+            throw new IllegalArgumentException("combinedId must be empty for cluster of type " + type);
+        }
+        this.combinedId = combinedId;
+        this.dockerImageRepo = dockerImageRepo;
     }
 
     /** Returns the cluster type */
@@ -36,11 +45,22 @@ public final class ClusterSpec {
     /** Returns the cluster id */
     public Id id() { return id; }
 
+    /** Returns the docker image repository part of a docker image we want this cluster to run */
+    public Optional<String> dockerImageRepo() { return dockerImageRepo; }
+
+    /** Returns the docker image (repository + vespa version) we want this cluster to run */
+    public Optional<String> dockerImage() { return dockerImageRepo.map(repo -> repo + ":" + vespaVersion.toFullString()); }
+
     /** Returns the version of Vespa that we want this cluster to run */
     public Version vespaVersion() { return vespaVersion; }
 
     /** Returns the group within the cluster this specifies, or empty to specify the whole cluster */
     public Optional<Group> group() { return groupId; }
+
+    /** Returns the ID of the container cluster that is combined with this. This is only present for combined clusters */
+    public Optional<Id> combinedId() {
+        return combinedId;
+    }
 
     /**
      * Returns whether the physical hosts running the nodes of this application can
@@ -50,24 +70,85 @@ public final class ClusterSpec {
     public boolean isExclusive() { return exclusive; }
 
     public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive);
+        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId, dockerImageRepo);
     }
 
     public ClusterSpec exclusive(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo);
     }
 
-    public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive) {
-        return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive);
+    /** Creates a ClusterSpec when requesting a cluster */
+    public static Builder request(Type type, Id id) {
+        return new Builder(type, id, false);
     }
 
-    public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive) {
-        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive);
+    /** Creates a ClusterSpec for an existing cluster, group id and vespa version needs to be set */
+    public static Builder specification(Type type, Id id) {
+        return new Builder(type, id, true);
+    }
+
+    public static class Builder {
+
+        private final Type type;
+        private final Id id;
+        private final boolean specification;
+
+        private Optional<Group> groupId = Optional.empty();
+        private Optional<String> dockerImageRepo = Optional.empty();
+        private Version vespaVersion;
+        private boolean exclusive = false;
+        private Optional<Id> combinedId = Optional.empty();
+
+        Builder(Type type, Id id, boolean specification) {
+            this.type = type;
+            this.id = id;
+            this.specification = specification;
+        }
+
+        public ClusterSpec build() {
+            if (specification) {
+                if (groupId.isEmpty()) throw new IllegalArgumentException("groupIs is required to be set when creating a ClusterSpec with specification()");
+                if (vespaVersion == null) throw new IllegalArgumentException("vespaVersion is required to be set when creating a ClusterSpec with specification()");
+            } else
+                if (groupId.isPresent()) throw new IllegalArgumentException("groupId is not allowed to be set when creating a ClusterSpec with request()");
+            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo);
+        }
+
+        public Builder group(Group groupId) {
+            this.groupId = Optional.ofNullable(groupId);
+            return this;
+        }
+
+        public Builder vespaVersion(Version vespaVersion) {
+            this.vespaVersion = vespaVersion;
+            return this;
+        }
+
+        public Builder vespaVersion(String vespaVersion) {
+            this.vespaVersion = Version.fromString(vespaVersion);
+            return this;
+        }
+
+        public Builder exclusive(boolean exclusive) {
+            this.exclusive = exclusive;
+            return this;
+        }
+
+        public Builder combinedId(Optional<Id> combinedId) {
+            this.combinedId = combinedId;
+            return this;
+        }
+
+        public Builder dockerImageRepo(Optional<String> dockerImageRepo) {
+            this.dockerImageRepo = dockerImageRepo;
+            return this;
+        }
+
     }
 
     @Override
     public String toString() {
-        return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion;
+        return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion + (dockerImageRepo.map(repo -> " " + repo).orElse(""));
     }
 
     @Override
@@ -82,6 +163,7 @@ public final class ClusterSpec {
         if ( ! other.id.equals(this.id)) return false;
         if ( ! other.groupId.equals(this.groupId)) return false;
         if ( ! other.vespaVersion.equals(this.vespaVersion)) return false;
+        if ( ! other.dockerImageRepo.orElse("").equals(this.dockerImageRepo.orElse(""))) return false;
         return true;
     }
 
@@ -90,8 +172,10 @@ public final class ClusterSpec {
      * are ignored.
      */
     public boolean satisfies(ClusterSpec other) {
-        return other.id.equals(this.id) &&
-               other.type.equals(this.type);
+        if (!other.id.equals(this.id)) return false; // ID mismatch
+        if (other.type.isContent() || this.type.isContent()) // Allow seamless transition between content and combined
+            return other.type.isContent() == this.type.isContent();
+        return other.type.equals(this.type);
     }
 
     /** A cluster type */
@@ -158,7 +242,6 @@ public final class ClusterSpec {
     }
 
     /** Identifier of a group within a cluster */
-    @SuppressWarnings("deprecation")
     public static final class Group {
 
         private final int index;

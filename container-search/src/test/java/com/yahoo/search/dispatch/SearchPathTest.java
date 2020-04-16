@@ -18,6 +18,7 @@ import static org.junit.Assert.assertThat;
  * @author ollivir
  */
 public class SearchPathTest {
+
     @Test
     public void requreThatSearchPathsAreParsedCorrectly() {
         assertThat(SearchPath.fromString("0/0").get().toString(), equalTo("0/0"));
@@ -71,11 +72,11 @@ public class SearchPathTest {
     public void searchPathMustFilterNodesBasedOnDefinition() {
         MockSearchCluster cluster = new MockSearchCluster("a",3, 3);
 
-        assertThat(distKeysAsString(SearchPath.selectNodes("1/1", cluster)), equalTo("5"));
-        assertThat(distKeysAsString(SearchPath.selectNodes("/1", cluster)), equalTo("4,5,6"));
-        assertThat(distKeysAsString(SearchPath.selectNodes("0,1/2", cluster)), equalTo("7,8"));
-        assertThat(distKeysAsString(SearchPath.selectNodes("[1,3>/1", cluster)), equalTo("5,6"));
-        assertThat(distKeysAsString(SearchPath.selectNodes("[1,88>/1", cluster)), equalTo("5,6"));
+        assertThat(distKeysAsString(SearchPath.selectNodes("1/1", cluster)), equalTo("4"));
+        assertThat(distKeysAsString(SearchPath.selectNodes("/1", cluster)), equalTo("3,4,5"));
+        assertThat(distKeysAsString(SearchPath.selectNodes("0,1/2", cluster)), equalTo("6,7"));
+        assertThat(distKeysAsString(SearchPath.selectNodes("[1,3>/1", cluster)), equalTo("4,5"));
+        assertThat(distKeysAsString(SearchPath.selectNodes("[1,88>/1", cluster)), equalTo("4,5"));
     }
 
     private static String distKeysAsString(Collection<Node> nodes) {

@@ -107,13 +107,13 @@ SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
 {
     if (_closed) {
         LOG(warning, "Receiving docsumrequest after engine has been shutdown");
-        DocsumReply::UP ret(new DocsumReply());
+        auto ret = std::make_unique<DocsumReply>();
 
         // TODO: Notify closed.
 
         return ret;
     }
-    vespalib::Executor::Task::UP task(new DocsumTask(*this, std::move(request), client));
+    auto task =std::make_unique<DocsumTask>(*this, std::move(request), client);
     _executor.execute(std::move(task));
     return DocsumReply::UP();
 }
@@ -128,13 +128,13 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         if (searchHandler) {
             reply = searchHandler->getDocsums(*req);
         } else {
-            vespalib::Sequence<ISearchHandler*>::UP snapshot;
+            HandlerMap<ISearchHandler>::Snapshot snapshot;
             {
                 std::lock_guard<std::mutex> guard(_lock);
                 snapshot = _handlers.snapshot();
             }
-            if (snapshot->valid()) {
-                reply = snapshot->get()->getDocsums(*req); // use the first handler
+            if (snapshot.valid()) {
+                reply = snapshot.get()->getDocsums(*req); // use the first handler
             }
         }
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));

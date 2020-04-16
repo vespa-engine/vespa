@@ -8,7 +8,7 @@
 
 Name:           vespa-standalone-container
 Version:        %version
-BuildArch:      noarch
+BuildArch:      x86_64
 Release:        1%{?dist}
 Summary:        Vespa standalone JDisc container
 Group:          Applications/Databases
@@ -72,7 +72,6 @@ cp vespajlib/target/vespajlib.jar "$jars_dir"
 
 # Copy from submodules, so must be done separately
 cp zookeeper-server/zookeeper-server-common/target/zookeeper-server-common-jar-with-dependencies.jar "$jars_dir"
-cp zookeeper-server/zookeeper-server-3.4/target/zookeeper-server-3.4-jar-with-dependencies.jar "$jars_dir"
 cp zookeeper-server/zookeeper-server-3.5/target/zookeeper-server-3.5-jar-with-dependencies.jar "$jars_dir"
 # Symlink to default version
 ln -s zookeeper-server-3.5-jar-with-dependencies.jar "$jars_dir"/zookeeper-server-jar-with-dependencies.jar
@@ -99,22 +98,6 @@ done
 
 %clean
 rm -rf %buildroot
-
-%pre
-getent group vespa >/dev/null || groupadd -r vespa
-getent passwd vespa >/dev/null || \
-    useradd -r -g vespa -d %_prefix -s /sbin/nologin \
-    -c "Create owner of all Vespa data files" vespa
-echo "pathmunge %_prefix/bin" > /etc/profile.d/vespa.sh
-echo "export VESPA_HOME=%_prefix" >> /etc/profile.d/vespa.sh
-chmod +x /etc/profile.d/vespa.sh
-
-%postun
-if [ $1 -eq 0 ]; then # this is an uninstallation
-    rm -f /etc/profile.d/vespa.sh
-    ! getent passwd vespa >/dev/null || userdel vespa
-    ! getent group vespa >/dev/null || groupdel vespa
-fi
 
 %files
 %defattr(-,vespa,vespa,-)

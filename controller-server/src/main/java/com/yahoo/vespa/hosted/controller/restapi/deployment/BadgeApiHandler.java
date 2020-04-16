@@ -18,8 +18,6 @@ import java.net.URI;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.stream.Collectors.joining;
-
 /**
  * This API serves redirects to a badge server.
  * 

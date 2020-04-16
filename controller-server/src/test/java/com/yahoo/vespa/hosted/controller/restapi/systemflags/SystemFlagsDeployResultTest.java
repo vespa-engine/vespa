@@ -27,7 +27,8 @@ public class SystemFlagsDeployResultTest {
                 List.of(
                         FlagDataChange.deleted(flagOne, controllerTarget)),
                 List.of(
-                        OperationError.deleteFailed("delete failed", controllerTarget, flagTwo)));
+                        OperationError.deleteFailed("delete failed", controllerTarget, flagTwo)),
+                List.of());
         WireSystemFlagsDeployResult wire = result.toWire();
 
         assertThat(wire.changes).hasSize(1);
@@ -49,11 +50,13 @@ public class SystemFlagsDeployResultTest {
         SystemFlagsDeployResult resultController =
                 new SystemFlagsDeployResult(
                         List.of(FlagDataChange.deleted(flagOne, controllerTarget)),
-                        List.of(OperationError.deleteFailed("message", controllerTarget, flagTwo)));
+                        List.of(OperationError.deleteFailed("message", controllerTarget, flagTwo)),
+                        List.of());
         SystemFlagsDeployResult resultProdUsWest1 =
                 new SystemFlagsDeployResult(
                         List.of(FlagDataChange.deleted(flagOne, prodUsWest1Target)),
-                        List.of(OperationError.deleteFailed("message", prodUsWest1Target, flagTwo)));
+                        List.of(OperationError.deleteFailed("message", prodUsWest1Target, flagTwo)),
+                        List.of());
 
         var results = List.of(resultController, resultProdUsWest1);
         SystemFlagsDeployResult mergedResult = merge(results);

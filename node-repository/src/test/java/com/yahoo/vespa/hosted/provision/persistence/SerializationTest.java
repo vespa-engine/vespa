@@ -78,7 +78,7 @@ public class SerializationTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
-                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion, Optional.empty()),
                              requestedResources,
                              clock.instant());
         assertEquals(1, node.history().events().size());
@@ -166,7 +166,7 @@ public class SerializationTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
-                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion, Optional.empty()),
                              node.flavor().resources(),
                              clock.instant());
         assertEquals(1, node.history().events().size());
@@ -216,11 +216,11 @@ public class SerializationTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                              ApplicationName.from("myApplication"),
                              InstanceName.from("myInstance")),
-                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion, Optional.empty()),
                              node.flavor().resources(),
                              clock.instant());
 
-        node = node.with(node.status().setFailCount(0));
+        node = node.with(node.status().withFailCount(0));
         Node copy2 = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
         assertEquals(0, copy2.status().failCount());
@@ -401,7 +401,7 @@ public class SerializationTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                 ApplicationName.from("myApplication"),
                 InstanceName.from("myInstance")),
-                ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                ClusterMembership.from("content/myId/0/0", Vtag.currentVersion, Optional.empty()),
                 node.flavor().resources(),
                 clock.instant());
         assertTrue(node.allocation().isPresent());

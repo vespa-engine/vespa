@@ -41,6 +41,7 @@ public class DocumentType extends StructuredDataType {
     private StructDataType bodyType;
     private List<DocumentType> inherits = new ArrayList<>(1);
     private Map<String, Set<Field>> fieldSets = new HashMap<>();
+    private final Set<String> importedFieldNames;
 
     /**
      * Creates a new document type and registers it with the document type manager.
@@ -51,8 +52,7 @@ public class DocumentType extends StructuredDataType {
      * @param name The name of the new document type
      */
     public DocumentType(String name) {
-        this(name, new StructDataType(name + ".header"),
-                   new StructDataType(name + ".body"));
+        this(name, createHeaderStructType(name), createBodyStructType(name));
     }
 
     /**
@@ -65,9 +65,27 @@ public class DocumentType extends StructuredDataType {
      * @param bodyType   The type of the body struct
      */
     public DocumentType(String name, StructDataType headerType, StructDataType bodyType) {
+        this(name, headerType, bodyType, Collections.emptySet());
+    }
+
+    public DocumentType(String name, StructDataType headerType,
+                        StructDataType bodyType, Set<String> importedFieldNames) {
         super(name);
         this.headerType = headerType;
         this.bodyType = bodyType;
+        this.importedFieldNames = Collections.unmodifiableSet(importedFieldNames);
+    }
+
+    public DocumentType(String name, Set<String> importedFieldNames) {
+        this(name, createHeaderStructType(name), createBodyStructType(name), importedFieldNames);
+    }
+
+    private static StructDataType createHeaderStructType(String name) {
+        return new StructDataType(name + ".header");
+    }
+
+    private static StructDataType createBodyStructType(String name) {
+        return new StructDataType(name + ".body");
     }
 
     @Override
@@ -181,8 +199,7 @@ public class DocumentType extends StructuredDataType {
         if (isRegistered()) {
             throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
         }
-        StructDataType struct = (field.isHeader() ? headerType : bodyType);
-        struct.addField(field);
+        headerType.addField(field);
     }
 
     // Do not use, public only for testing
@@ -221,8 +238,8 @@ public class DocumentType extends StructuredDataType {
         if (isRegistered()) {
             throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
         }
-        Field field = new Field(name, type, false);
-        bodyType.addField(field);
+        Field field = new Field(name, type);
+        headerType.addField(field);
         return field;
     }
 
@@ -234,13 +251,9 @@ public class DocumentType extends StructuredDataType {
      * @return The field created
      *         TODO Fix searchdefinition so that exception can be thrown if filed is already registerd
      */
+    @Deprecated
     public Field addHeaderField(String name, DataType type) {
-        if (isRegistered()) {
-            throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
-        }
-        Field field = new Field(name, type, true);
-        headerType.addField(field);
-        return field;
+        return addField(name, type);
     }
 
     /**
@@ -372,6 +385,14 @@ public class DocumentType extends StructuredDataType {
 
     public int getFieldCount() {
         return headerType.getFieldCount() + bodyType.getFieldCount();
+    }
+
+    public Set<String> getImportedFieldNames() {
+        return importedFieldNames;
+    }
+
+    public boolean hasImportedField(String fieldName) {
+        return importedFieldNames.contains(fieldName);
     }
 
     /**

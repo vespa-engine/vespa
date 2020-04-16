@@ -6,6 +6,7 @@
 #include "fieldinfo.h"
 #include <vespa/searchlib/common/feature.h>
 #include <cstring>
+#include <limits>
 
 class MatchDataHeapTest;
 

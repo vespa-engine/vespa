@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Clock;
@@ -154,12 +153,7 @@ public class DeploymentTrigger {
                                  .parallel().map(Supplier::get).reduce(0L, Long::sum);
     }
 
-    /**
-     * Attempts to trigger the given job for the given application and returns the outcome.
-     *
-     * If the build service can not find the given job, or claims it is illegal to trigger it,
-     * the project id is removed from the application owning the job, to prevent further trigger attempts.
-     */
+    /** Attempts to trigger the given job. */
     public void trigger(Job job) {
         log.log(LogLevel.DEBUG, "Triggering " + job);
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
@@ -167,6 +161,18 @@ public class DeploymentTrigger {
             applications().store(application.with(job.applicationId().instance(), instance ->
                     instance.withJobPause(job.jobType, OptionalLong.empty())));
         });
+    }
+
+    /** Force triggering of a job for given instance, with same versions as last run. */
+    public JobId reTrigger(ApplicationId applicationId, JobType jobType) {
+        Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
+        Instance instance = application.require(applicationId.instance());
+        DeploymentStatus status = jobs.deploymentStatus(application);
+        JobId job = new JobId(instance.id(), jobType);
+        JobStatus jobStatus = status.jobs().get(new JobId(applicationId, jobType)).get();
+        Versions versions = jobStatus.lastTriggered().get().versions();
+        trigger(deploymentJob(instance, versions, jobType, jobStatus, clock.instant()));
+        return job;
     }
 
     /** Force triggering of a job for given instance. */
@@ -181,7 +187,7 @@ public class DeploymentTrigger {
         if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(versions));
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), reason, clock.instant()));
+            trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), clock.instant()));
         });
         return List.copyOf(jobs.keySet());
     }
@@ -252,7 +258,7 @@ public class DeploymentTrigger {
 
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
-        return jobs.deploymentStatuses(ApplicationList.from(applications().asList())
+        return jobs.deploymentStatuses(ApplicationList.from(applications().readable())
                                                       .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated.
                                                       .withDeploymentSpec())
                    .withChanges()
@@ -278,7 +284,6 @@ public class DeploymentTrigger {
                                                      versions,
                                                      job.type(),
                                                      status.instanceJobs(job.application().instance()).get(job.type()),
-                                                     "unknown reason",
                                                      readyAt));
                           });
         });
@@ -381,7 +386,7 @@ public class DeploymentTrigger {
 
     // ---------- Version and job helpers ----------
 
-    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, String reason, Instant availableSince) {
+    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, Instant availableSince) {
         return new Job(instance, versions, jobType, availableSince, jobStatus.isOutOfCapacity(), instance.change().application().isPresent());
     }
 
@@ -422,4 +427,3 @@ public class DeploymentTrigger {
     }
 
 }
-

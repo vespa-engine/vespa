@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import org.w3c.dom.Element;
@@ -14,9 +15,13 @@ import org.w3c.dom.Element;
  */
 public class DomClientProviderBuilder extends DomHandlerBuilder {
 
+    public DomClientProviderBuilder(ApplicationContainerCluster cluster) {
+        super(cluster);
+    }
+
     @Override
-    protected Handler doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element clientElement) {
-        Handler<? super Component<?, ?>> client = getHandler(clientElement);
+    protected Handler doBuild(DeployState deployState, AbstractConfigProducer parent, Element clientElement) {
+        Handler<? super Component<?, ?>> client = createHandler(clientElement);
 
         for (Element binding : XML.getChildren(clientElement, "binding"))
             client.addClientBindings(XML.getValue(binding));
@@ -24,7 +29,7 @@ public class DomClientProviderBuilder extends DomHandlerBuilder {
         for (Element serverBinding : XML.getChildren(clientElement, "serverBinding"))
             client.addServerBindings(XML.getValue(serverBinding));
 
-        DomComponentBuilder.addChildren(deployState, ancestor, clientElement, client);
+        DomComponentBuilder.addChildren(deployState, parent, clientElement, client);
 
         return client;
     }

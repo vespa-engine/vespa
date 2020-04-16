@@ -69,6 +69,13 @@ public class NodeFlavorTuningTest {
     }
 
     @Test
+    public void require_that_num_search_threads_and_summary_threads_follow_cores() {
+        ProtonConfig cfg = configFromNumCoresSetting(4.5);
+        assertEquals(5, cfg.numsearcherthreads());
+        assertEquals(5, cfg.numsummarythreads());
+    }
+
+    @Test
     public void require_that_fast_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(true);
         assertEquals(200, cfg.hwinfo().disk().writespeed(), delta);

@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/geo/zcurve.h>
 #include "documentlocations.h"
+#include <vespa/vespalib/geo/zcurve.h>
+
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace common {
+namespace search::common {
 
 class Location : public DocumentLocations
 {
@@ -39,7 +39,7 @@ private:
     int32_t  _x;        /* Query X position */
     int32_t  _y;        /* Query Y position */
     uint32_t _xAspect;      /* X distance multiplier fraction */
-    uint32_t _radius;       /* Radius for euclidian distance */
+    uint32_t _radius;       /* Radius for euclidean distance */
     int32_t  _minx;     /* Min X coordinate */
     int32_t  _maxx;     /* Max X coordinate */
     int32_t  _miny;     /* Min Y coordinate */
@@ -51,5 +51,3 @@ private:
 };
 
 }
-}
-

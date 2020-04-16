@@ -197,9 +197,9 @@ public:
           _dummy(),
           _spec(TEST_PATH("")),
           _configMgr(_spec, getDocTypeName()),
-          _documenttypesConfig(new DocumenttypesConfig()),
+          _documenttypesConfig(std::make_shared<DocumenttypesConfig>()),
           _repo(repo),
-          _tuneFileDocumentDB(new TuneFileDocumentDB()),
+          _tuneFileDocumentDB(std::make_shared<TuneFileDocumentDB>()),
           _hwInfo(),
           _ddb(),
           _aw(),
@@ -774,8 +774,8 @@ Test::requireThatAttributesAreUsed()
                             "bd:[20,30],"
                             "be:[20.2,30.3],"
                             "bf:['bar','baz'],"
-                            "bg:[{item:50,weight:3},{item:40,weight:2}],"
-                            "bh:[{item:40.4,weight:4},{item:50.5,weight:5}],"
+                            "bg:[{item:40,weight:2},{item:50,weight:3}],"
+                            "bh:[{item:50.5,weight:5},{item:40.4,weight:4}],"
                             "bi:[{item:'quux',weight:7},{item:'qux',weight:6}],"
                             "bj:'0x01020178017901016601674008000000000000'}", *rep, 0, true));
     TEST_DO(assertTensor(make_tensor(TensorSpec("tensor(x{},y{})")
@@ -787,7 +787,7 @@ Test::requireThatAttributesAreUsed()
     TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
 
     proton::IAttributeManager::SP attributeManager = dc._ddb->getReadySubDB()->getAttributeManager();
-    search::ISequencedTaskExecutor &attributeFieldWriter = attributeManager->getAttributeFieldWriter();
+    vespalib::ISequencedTaskExecutor &attributeFieldWriter = attributeManager->getAttributeFieldWriter();
     search::AttributeVector *bjAttr = attributeManager->getWritableAttribute("bj");
     auto bjTensorAttr = dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
 

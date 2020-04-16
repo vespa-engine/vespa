@@ -62,25 +62,25 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
     public void testSerializationAllVersions() throws IOException {
 
         DocumentType docInDocType = new DocumentType("docindoc");
-        docInDocType.addField(new Field("stringindocfield", DataType.STRING, false));
+        docInDocType.addField(new Field("stringindocfield", DataType.STRING));
 
         DocumentType docType = new DocumentType("serializetest");
-        docType.addField(new Field("floatfield", DataType.FLOAT, true));
-        docType.addField(new Field("stringfield", DataType.STRING, true));
-        docType.addField(new Field("longfield", DataType.LONG, true));
-        docType.addField(new Field("urifield", DataType.URI, true));
-        docType.addField(new Field("intfield", DataType.INT, false));
-        docType.addField(new Field("rawfield", DataType.RAW, false));
-        docType.addField(new Field("doublefield", DataType.DOUBLE, false));
-        docType.addField(new Field("bytefield", DataType.BYTE, false));
-        docType.addField(new Field("boolfield", DataType.BOOL, false));
+        docType.addField(new Field("floatfield", DataType.FLOAT));
+        docType.addField(new Field("stringfield", DataType.STRING));
+        docType.addField(new Field("longfield", DataType.LONG));
+        docType.addField(new Field("urifield", DataType.URI));
+        docType.addField(new Field("intfield", DataType.INT));
+        docType.addField(new Field("rawfield", DataType.RAW));
+        docType.addField(new Field("doublefield", DataType.DOUBLE));
+        docType.addField(new Field("bytefield", DataType.BYTE));
+        docType.addField(new Field("boolfield", DataType.BOOL));
         DataType arrayOfFloatDataType = new ArrayDataType(DataType.FLOAT);
-        docType.addField(new Field("arrayoffloatfield", arrayOfFloatDataType, false));
+        docType.addField(new Field("arrayoffloatfield", arrayOfFloatDataType));
         DataType arrayOfArrayOfFloatDataType = new ArrayDataType(arrayOfFloatDataType);
-        docType.addField(new Field("arrayofarrayoffloatfield", arrayOfArrayOfFloatDataType, false));
-        docType.addField(new Field("docfield", DataType.DOCUMENT, false));
+        docType.addField(new Field("arrayofarrayoffloatfield", arrayOfArrayOfFloatDataType));
+        docType.addField(new Field("docfield", DataType.DOCUMENT));
         DataType weightedSetDataType = DataType.getWeightedSet(DataType.STRING, false, false);
-        docType.addField(new Field("wsfield", weightedSetDataType, false));
+        docType.addField(new Field("wsfield", weightedSetDataType));
 
         DocumentTypeManager docMan = new DocumentTypeManager();
         docMan.register(docInDocType);

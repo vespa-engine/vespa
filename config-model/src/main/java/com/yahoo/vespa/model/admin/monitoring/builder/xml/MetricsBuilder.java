@@ -42,7 +42,11 @@ public class MetricsBuilder {
             throwIfIllegalConsumerId(metrics, consumerId);
 
             MetricSet metricSet = buildMetricSet(consumerId, consumerElement);
-            metrics.addConsumer(new MetricsConsumer(consumerId, metricSet));
+            var consumer = new MetricsConsumer(consumerId, metricSet);
+            for (Element cloudwatchElement : XML.getChildren(consumerElement, "cloudwatch")) {
+                consumer.addCloudWatch(CloudWatchBuilder.buildCloudWatch(cloudwatchElement, consumer));
+            }
+            metrics.addConsumer(consumer);
         }
         return metrics;
     }
@@ -58,11 +62,11 @@ public class MetricsBuilder {
 
     private MetricSet buildMetricSet(String consumerId, Element consumerElement) {
         List<Metric> metrics = XML.getChildren(consumerElement, "metric").stream()
-                .map(metricElement -> metricFromElement(metricElement))
+                .map(MetricsBuilder::metricFromElement)
                 .collect(Collectors.toCollection(LinkedList::new));
 
         List<MetricSet> metricSets = XML.getChildren(consumerElement, "metric-set").stream()
-                .map(metricSetElement -> availableMetricSets.get(metricSetElement.getAttribute(ID_ATTRIBUTE)))
+                .map(metricSetElement -> getMetricSetOrThrow(metricSetElement.getAttribute(ID_ATTRIBUTE)))
                 .collect(Collectors.toCollection(LinkedList::new));
 
         metricSets.add(defaultVespaMetricSet);
@@ -73,6 +77,11 @@ public class MetricsBuilder {
 
     private static String metricSetId(String consumerName) {
         return "user-metrics-" + consumerName;
+    }
+
+    private MetricSet getMetricSetOrThrow(String id) {
+        if (! availableMetricSets.containsKey(id)) throw new IllegalArgumentException("No such metric-set: " + id);
+        return availableMetricSets.get(id);
     }
 
     private void throwIfIllegalConsumerId(Metrics metrics, String consumerId) {

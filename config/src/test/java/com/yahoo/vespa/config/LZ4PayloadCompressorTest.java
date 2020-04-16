@@ -9,9 +9,9 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.19
  */
 public class LZ4PayloadCompressorTest {
+
     @Test
     public void testCompression() {
         assertCompression("hei hallo der");
@@ -23,8 +23,7 @@ public class LZ4PayloadCompressorTest {
         LZ4PayloadCompressor compressor = new LZ4PayloadCompressor();
         byte[] data = Utf8.toBytes(input);
         byte[] compressed = compressor.compress(data);
-        byte[] output = new byte[data.length];
-        compressor.decompress(compressed, output);
+        byte[] output = compressor.decompress(compressed, data.length);
         assertThat(data, is(output));
     }
 }

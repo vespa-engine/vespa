@@ -47,7 +47,6 @@ public class LoadTester {
     protected Supervisor supervisor = new Supervisor(transport);
     private List<ConfigKey<?>> configs = new ArrayList<>();
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs = new HashMap<>();
-    private long protocolVersion = Long.parseLong(JRTConfigRequestFactory.getProtocolVersion());
     private CompressionType compressionType = JRTConfigRequestFactory.getCompressionType();
 
     /**
@@ -261,13 +260,9 @@ public class LoadTester {
         private JRTClientConfigRequest getRequest(ConfigKey<?> reqKey, String[] defContent) {
             if (defContent == null) defContent = new String[0];
             final long serverTimeout = 1000;
-            if (protocolVersion == 3) {
-                return JRTClientConfigRequestV3.createWithParams(reqKey, DefContent.fromList(Arrays.asList(defContent)),
-                                                                 "unknown", "", 0, serverTimeout, Trace.createDummy(),
-                                                                 compressionType, Optional.empty());
-            } else {
-                throw new RuntimeException("Unsupported protocol version" + protocolVersion);
-            }
+            return JRTClientConfigRequestV3.createWithParams(reqKey, DefContent.fromList(Arrays.asList(defContent)),
+                                                             "unknown", "", 0, serverTimeout, Trace.createDummy(),
+                                                             compressionType, Optional.empty());
         }
 
         private Target connect(Spec spec) {

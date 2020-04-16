@@ -242,7 +242,9 @@ public class VdsVisitTestCase {
         try {
             VdsVisit.resolveClusterRoute(clusterList, "borkbork");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Your vespa cluster contains the content clusters storage, not borkbork."));
+            assertEquals("Your vespa cluster contains the content clusters 'storage', not 'borkbork'. " +
+                         "Please select a valid vespa cluster.",
+                         e.getMessage());
         }
     }
 

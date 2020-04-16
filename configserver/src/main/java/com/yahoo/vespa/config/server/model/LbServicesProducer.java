@@ -9,9 +9,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 
@@ -36,18 +34,17 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
-    private final BooleanFlag use4443Upstream;
-    private final BooleanFlag generateConfigForTesterApplications;
+    private final BooleanFlag nginxUpstreamProxyProtocol;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
-        this.use4443Upstream = Flags.USE_4443_UPSTREAM.bindTo(flagSource);
-        this.generateConfigForTesterApplications = Flags.GENERATE_ROUTING_CONFIG_FOR_TESTER_APPLICATIONS.bindTo(flagSource);
+        this.nginxUpstreamProxyProtocol = Flags.NGINX_UPSTREAM_PROXY_PROTOCOL.bindTo(flagSource);
     }
 
     @Override
     public void getConfig(LbServicesConfig.Builder builder) {
+        builder.nginxUpstreamProxyProtocol(nginxUpstreamProxyProtocol.value());
         models.keySet().stream()
                 .sorted()
                 .forEach(tenant -> {
@@ -65,10 +62,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     }
 
     private boolean generateRoutingConfig(ApplicationId applicationId) {
-        if (!applicationId.instance().isTester()) return true;
-        return generateConfigForTesterApplications.with(FetchVector.Dimension.ZONE_ID,
-                                                        ZoneId.from(zone.environment().value(), zone.region().value()).value())
-                .value();
+        return ( ! applicationId.instance().isTester());
     }
 
     private String createLbAppIdKey(ApplicationId applicationId) {
@@ -78,8 +72,6 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private LbServicesConfig.Tenants.Applications.Builder getAppConfig(ApplicationInfo app) {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
         ab.activeRotation(getActiveRotation(app));
-        ab.use4443Upstream(
-                use4443Upstream.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value());
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
                 .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));

@@ -58,6 +58,11 @@
       "url": "http://localhost:8080/nodes/v2/state/parked",
       "nodes": [
       ]
+    },
+    "deprovisioned": {
+      "url": "http://localhost:8080/nodes/v2/state/deprovisioned",
+      "nodes": [
+      ]
     }
   }
 }

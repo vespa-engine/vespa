@@ -74,15 +74,15 @@ void VespaDocumentDeserializer::readDocument(Document &value) {
     if (type) {
         Document::verifyIdAndType(value.getId(), type);
         value.setType(*type);
-        value.clear();
         value.setLastModified(0);
+    } else {
+        value.getFields().reset();
     }
     value.setRepo(_repo.getDocumentTypeRepo());
 
     FixedTypeRepo repo(_repo.getDocumentTypeRepo(), value.getType());
     VarScope<FixedTypeRepo> repo_scope(_repo, repo);
     uint32_t chunkCount = getChunkCount(content_code);
-    value.getFields().reset();
     for (uint32_t i = 0; i < chunkCount; ++i) {
         readStructNoReset(value.getFields());
     }

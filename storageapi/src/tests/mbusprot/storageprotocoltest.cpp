@@ -20,7 +20,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
 
@@ -105,11 +105,10 @@ std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
 
 }
 
-// TODO replace with INSTANTIATE_TEST_SUITE_P on newer gtest versions
-INSTANTIATE_TEST_CASE_P(MultiVersionTest, StorageProtocolTest,
-                        Values(vespalib::Version(6, 240, 0),
-                               vespalib::Version(7, 41, 19)),
-                        version_as_gtest_string);
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(MultiVersionTest, StorageProtocolTest,
+                                     Values(vespalib::Version(6, 240, 0),
+                                            vespalib::Version(7, 41, 19)),
+                                     version_as_gtest_string);
 
 namespace {
     mbus::Message::UP lastCommand;
@@ -522,8 +521,15 @@ TEST_P(StorageProtocolTest, remove_location) {
     EXPECT_EQ("id.group == \"mygroup\"", cmd2->getDocumentSelection());
     EXPECT_EQ(_bucket, cmd2->getBucket());
 
-    auto reply = std::make_shared<RemoveLocationReply>(*cmd2);
+    uint32_t n_docs_removed = 12345;
+    auto reply = std::make_shared<RemoveLocationReply>(*cmd2, n_docs_removed);
     auto reply2 = copyReply(reply);
+    if (GetParam().getMajor() == 7) {
+        // Statistics are only available for protobuf-enabled version.
+        EXPECT_EQ(n_docs_removed, reply2->documents_removed());
+    } else {
+        EXPECT_EQ(0, reply2->documents_removed());
+    }
 }
 
 TEST_P(StorageProtocolTest, create_visitor) {

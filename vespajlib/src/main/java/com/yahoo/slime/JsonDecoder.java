@@ -3,10 +3,8 @@ package com.yahoo.slime;
 
 import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
-import org.w3c.dom.CharacterData;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 
 /**
  * A port of the C++ json decoder intended to be fast.
@@ -43,6 +41,17 @@ public class JsonDecoder {
             slime.wrap("partial_result");
             slime.get().setData("offending_input", in.getOffending());
             slime.get().setString("error_message", in.getErrorMessage());
+        }
+        return slime;
+    }
+
+    /** Decode bytes as a UTF-8 JSON into Slime, or throw {@link JsonParseException} on invalid JSON. */
+    public Slime decodeOrThrow(Slime slime, byte[] bytes) {
+        in = new BufferedInput(bytes);
+        next();
+        decodeValue(slimeInserter.adjust(slime));
+        if (in.failed()) {
+            throw new JsonParseException(in);
         }
         return slime;
     }

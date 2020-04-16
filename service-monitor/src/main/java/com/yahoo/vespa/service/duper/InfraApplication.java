@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
  * @author freva
  */
 public abstract class InfraApplication implements InfraApplicationApi {
+
     private static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
 
     private final ApplicationId applicationId;
@@ -74,7 +75,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
 
     @Override
     public ClusterSpec getClusterSpecWithVersion(Version version) {
-        return ClusterSpec.request(clusterSpecType, clusterSpecId, version, true);
+        return ClusterSpec.request(clusterSpecType, clusterSpecId).vespaVersion(version).exclusive(true).build();
     }
 
     public ClusterSpec.Type getClusterSpecType() {

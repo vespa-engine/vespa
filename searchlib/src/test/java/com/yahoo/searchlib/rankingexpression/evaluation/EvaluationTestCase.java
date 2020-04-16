@@ -386,6 +386,56 @@ public class EvaluationTestCase {
         // tensor result dimensions are given from argument dimensions, not the resulting values
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
         tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");
+
+    }
+
+    @Test
+    public void testTake() {
+        EvaluationTester tester = new EvaluationTester();
+
+        // numpy.take(a, indices, axis) with tensors.
+
+        // 1 dim input, 1 dim indices
+        tester.assertEvaluates("tensor(d0[3]):[1, 3, 5]",
+                "tensor(d0[3])(tensor0{a0:(tensor1{indices0:(d0)})})",
+                "tensor(a0[6]):[1, 2, 3, 4, 5, 6]",
+                "tensor(indices0[3]):[0, 2, 4]");
+
+        // 1 dim input, 1 dim indices - negative indices
+        tester.assertEvaluates("tensor(d0[3]):[1, 5, 3]",
+                "tensor(d0[3])(tensor0{a0:(fmod(6 + tensor1{indices0:(d0)}, 6) ) })",
+                "tensor(a0[6]):[1, 2, 3, 4, 5, 6]",
+                "tensor(indices0[3]):[0, -2, -4]");
+
+        // 2 dim input, 1 dim indices - axis 0
+        tester.assertEvaluates("tensor(d0[4],d1[2]):[5, 6, 3, 4, 1, 2, 5, 6]",
+                "tensor(d0[4],d1[2])(tensor0{a0:(tensor1{indices0:(d0)}),a1:(d1)})",
+                "tensor(a0[3],a1[2]):[1, 2, 3, 4, 5, 6]",
+                "tensor(indices0[4]):[2, 1, 0, 2]");
+
+        // 1 dim input, 2 dim indices - axis 0
+        tester.assertEvaluates("tensor(d0[2],d1[2]):[1, 2, 4, 6]",
+                "tensor(d0[2],d1[2])(tensor0{a0:(tensor1{indices0:(d0),indices1:(d1)}) })",
+                "tensor(a0[6]):[1, 2, 3, 4, 5, 6]",
+                "tensor(indices0[2],indices1[2]):[0, 1, 3, 5]");
+
+        // 2 dim input, 2 dim indices - axis 0
+        tester.assertEvaluates("tensor(d0[2],d1[2],d2[2]):[1,2,3,4,3,4,5,6]",
+                "tensor(d0[2],d1[2],d2[2])(tensor0{a0:(tensor1{indices0:(d0),indices1:(d1)}),a1:(d2)})",
+                "tensor(a0[3],a1[2]):[1, 2, 3, 4, 5, 6]",
+                "tensor(indices0[2],indices1[2]):[0, 1, 1, 2]");
+
+        // 2 dim input, 1 dim indices - axis 1
+        tester.assertEvaluates("tensor(d0[3],d1[4]):[1,2,1,2,3,4,3,4,5,6,5,6]",
+                "tensor(d0[3],d1[4])(tensor0{a0:(d0), a1:(tensor1{indices0:(d1)}) })",
+                "tensor(a0[3],a1[2]):[1, 2, 3, 4, 5, 6]",
+                "tensor(indices0[4]):[0, 1, 0, 1]");
+
+        // 2 dim input, 2 dim indices - axis 1
+        tester.assertEvaluates("tensor(d0[3],d1[1],d2[2]):[1,3,4,6,7,9]",
+                "tensor(d0[3],d1[1],d2[2])(tensor0{a0:(d0), a1:(tensor1{indices0:(d1),indices1:(d2)}) })",  // can add an if
+                "tensor(a0[3],a1[3]):[1, 2, 3, 4, 5, 6, 7, 8, 9]",
+                "tensor(indices0[1],indices1[2]):[0, 2]");
     }
 
     @Test

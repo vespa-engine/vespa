@@ -54,9 +54,15 @@ FNET_Transport::resolve_async(const vespalib::string &spec,
 }
 
 vespalib::CryptoSocket::UP
-FNET_Transport::create_crypto_socket(vespalib::SocketHandle socket, bool is_server)
+FNET_Transport::create_client_crypto_socket(vespalib::SocketHandle socket, const vespalib::SocketSpec &spec)
 {
-    return _crypto_engine->create_crypto_socket(std::move(socket), is_server);
+    return _crypto_engine->create_client_crypto_socket(std::move(socket), spec);
+}
+
+vespalib::CryptoSocket::UP
+FNET_Transport::create_server_crypto_socket(vespalib::SocketHandle socket)
+{
+    return _crypto_engine->create_server_crypto_socket(std::move(socket));
 }
 
 FNET_TransportThread *

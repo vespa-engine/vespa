@@ -63,12 +63,15 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
             throw e;
         }
         catch (Exception e) {
-            throw new MojoExecutionException("Execution failed for application '" + id + "':", e);
+            throw new MojoExecutionException("Execution failed for application " + name() + ":", e);
         }
     }
 
     /** Override this in subclasses, instead of {@link #execute()}. */
     protected abstract void doExecute() throws Exception;
+
+    /** Return the name of the relevant entity, e.g., application with or without instance. */
+    protected String name() { return tenant + "." + application; }
 
     protected void setup() {
         tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"));

@@ -10,6 +10,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
+#include <random>
 
 #include <vespa/log/log.h>
 LOG_SETUP("multibitvectoriterator_test");
@@ -52,6 +53,14 @@ private:
     BitVector * getBV(size_t index, bool inverted) {
         return inverted ? _bvs_inverted[index].get() : _bvs[index].get();
     }
+    void fixup_bitvectors() {
+        // Restore from inverted bitvectors after tampering
+        for (int i = 0; i < 3; ++i) {
+            if (_bvs_inverted[i]->testBit(1)) {
+                _bvs[i]->clearBit(1);
+            }
+        }
+    }
     std::vector< BitVector::UP > _bvs;
     std::vector< BitVector::UP > _bvs_inverted;
 };
@@ -61,12 +70,12 @@ Test::~Test() = default;
 
 void Test::setup()
 {
-    srand(7);
+    std::minstd_rand rnd(341);
     for(size_t i(0); i < 3; i++) {
         _bvs.push_back(BitVector::create(10000));
         BitVector & bv(*_bvs.back());
         for (size_t j(0); j < bv.size(); j++) {
-            int r = rand();
+            int r = rnd();
             if (r & 0x1) {
                 bv.setBit(j);
             }
@@ -132,7 +141,7 @@ Test::testAndWith(bool invert)
         s->initFullRange();
         H firstHits3 = seekNoReset(*s, 1, 130);
         H lastHits3 = seekNoReset(*s, 130, _bvs[0]->size());
-        //These constants will change if srand(7) is changed.
+        //These constants will change if rnd(341) is changed.
         EXPECT_EQUAL(30u, firstHits2.size());
         EXPECT_EQUAL(19u, firstHits3.size());
         EXPECT_EQUAL(1234u, lastHits2F.size());
@@ -208,6 +217,7 @@ Test::testBug7163266()
         EXPECT_TRUE(ms->needUnpack(i));
     }
     EXPECT_TRUE(ms->needUnpack(28)); // NB: force unpack all
+    fixup_bitvectors();
 }
 
 template<typename T>
@@ -240,6 +250,7 @@ Test::testThatOptimizePreservesUnpack()
     EXPECT_TRUE(ms != nullptr);
     EXPECT_EQUAL(2u, ms->getChildren().size());
     verifySelectiveUnpack(*s, tfmd);
+    fixup_bitvectors();
 }
 
 void

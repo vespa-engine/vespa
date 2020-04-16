@@ -146,11 +146,13 @@ public class VespaModelFactory implements ModelFactory {
             .properties(modelContext.properties())
             .vespaVersion(version())
             .modelHostProvisioner(createHostProvisioner(modelContext))
+            .provisioned(modelContext.provisioned())
             .endpoints(modelContext.properties().endpoints())
             .modelImporters(modelImporters)
             .zone(zone)
             .now(clock.instant())
-            .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
+            .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
+            .wantedDockerImageRepo(modelContext.wantedDockerImageRepository());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build(validationParameters);
     }

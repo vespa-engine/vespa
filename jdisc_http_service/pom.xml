@@ -86,6 +86,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-client</artifactId>
+      <version>${jetty.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.cthul</groupId>
       <artifactId>cthul-matchers</artifactId>
       <scope>test</scope>

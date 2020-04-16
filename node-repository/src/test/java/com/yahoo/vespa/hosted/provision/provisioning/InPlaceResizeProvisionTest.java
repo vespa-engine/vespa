@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -11,7 +10,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -52,12 +50,11 @@ public class InPlaceResizeProvisionTest {
     private static final NodeResources mediumResources = new NodeResources(4, 8, 16, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
     private static final NodeResources largeResources = new NodeResources(8, 16, 32, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
-    private static final ClusterSpec container1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Version.fromString("7.157.9"), false);
-    private static final ClusterSpec container2 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container2"), Version.fromString("7.157.9"), false);
-    private static final ClusterSpec content1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("content1"), Version.fromString("7.157.9"), false);
+    private static final ClusterSpec container1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1")).vespaVersion("7.157.9").build();
+    private static final ClusterSpec container2 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container2")).vespaVersion("7.157.9").build();
+    private static final ClusterSpec content1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("content1")).vespaVersion("7.157.9").build();
 
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
-            .withBooleanFlag(Flags.ENABLE_IN_PLACE_RESIZE.id(), true);
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
             .flagSource(flagSource)
             .zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
@@ -157,17 +154,6 @@ public class InPlaceResizeProvisionTest {
             initialHostnames.remove(node.hostname());
         });
         assertTrue("All initial nodes should still be allocated to the application", initialHostnames.isEmpty());
-    }
-
-    @Test(expected = OutOfCapacityException.class)
-    public void no_in_place_resize_if_flag_not_set() {
-        flagSource.withBooleanFlag(Flags.ENABLE_IN_PLACE_RESIZE.id(), false);
-        addParentHosts(4, mediumResources.with(fast).with(local));
-
-        new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
-        assertClusterSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
-
-        new PrepareHelper(tester, app).prepare(container1, 4, 1, smallResources);
     }
 
 

@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.TenantName;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Collections;
 import java.util.List;

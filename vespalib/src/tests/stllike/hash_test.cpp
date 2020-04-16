@@ -32,7 +32,7 @@ namespace {
 TEST("test that hashValue gives expected response")
 {
     const char * s("abcdefghi");
-    EXPECT_EQUAL(7045194595191919248ul, vespalib::hashValue(s));
+    EXPECT_EQUAL(2878261200250560019ul, vespalib::hashValue(s));
     EXPECT_EQUAL(vespalib::hashValue(s), vespalib::hashValue(s, strlen(s)));
     EXPECT_NOT_EQUAL(vespalib::hashValue(s), vespalib::hashValue(s, strlen(s)-1));
 }
@@ -356,6 +356,9 @@ TEST("test hash set find")
     EXPECT_TRUE(*set.find(S(1)) == S(1));
     auto cit = set.find<uint32_t>(7);
     EXPECT_TRUE(*cit == S(7));
+
+    EXPECT_EQUAL(1u, set.count(S(7)));
+    EXPECT_EQUAL(0u, set.count(S(10007)));
 }
 
 TEST("test hash set range constructor")

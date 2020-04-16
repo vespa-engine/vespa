@@ -397,10 +397,10 @@ public:
     // them to be ready to use. Also keep in mind that creating a rank
     // program is cheap while setting it up is more expensive.
 
-    RankProgram::UP create_first_phase_program() const { return RankProgram::UP(new RankProgram(_first_phase_resolver)); }
-    RankProgram::UP create_second_phase_program() const { return RankProgram::UP(new RankProgram(_second_phase_resolver)); }
-    RankProgram::UP create_summary_program() const { return RankProgram::UP(new RankProgram(_summary_resolver)); }
-    RankProgram::UP create_dump_program() const { return RankProgram::UP(new RankProgram(_dumpResolver)); }
+    RankProgram::UP create_first_phase_program() const { return std::make_unique<RankProgram>(_first_phase_resolver); }
+    RankProgram::UP create_second_phase_program() const { return std::make_unique<RankProgram>(_second_phase_resolver); }
+    RankProgram::UP create_summary_program() const { return std::make_unique<RankProgram>(_summary_resolver); }
+    RankProgram::UP create_dump_program() const { return std::make_unique<RankProgram>(_dumpResolver); }
 
     /**
      * Here you can do some preprocessing. State must be stored in the IObjectStore.

@@ -346,28 +346,11 @@ public:
         (void) tfmda;
         return _sc->createIterator(&_tfmd, strict);
     }
-    const search::AttributeVector::SearchContext & getSearchContext() const { return *_sc; }
 private:
     search::SingleBoolAttribute     _a;
     search::AttributeVector::SearchContext::UP _sc;
     mutable TermFieldMatchData _tfmd;
 };
-
-TEST("test bool attribute searchcontext") {
-    SimpleResult a;
-    a.addHit(5).addHit(17).addHit(30);
-    auto bp = std::make_unique<DummySingleValueBitNumericAttributeBlueprint>(a);
-    const search::AttributeVector::SearchContext & sc = bp->getSearchContext();
-    EXPECT_FALSE(sc.matches(7));
-    EXPECT_TRUE(sc.matches(17));
-    int32_t weight(0);
-    EXPECT_FALSE(sc.matches(7, weight));
-    EXPECT_EQUAL(0, weight);
-    EXPECT_TRUE(sc.matches(17, weight));
-    EXPECT_EQUAL(1, weight);
-    EXPECT_FALSE(sc.matches(27, weight));
-    EXPECT_EQUAL(0, weight);
-}
 
 
 TEST("testAndNot") {

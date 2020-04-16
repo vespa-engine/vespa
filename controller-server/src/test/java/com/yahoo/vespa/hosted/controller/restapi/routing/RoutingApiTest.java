@@ -2,10 +2,15 @@
 package com.yahoo.vespa.hosted.controller.restapi.routing;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
@@ -13,7 +18,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertNotEquals;
 
@@ -34,19 +38,104 @@ public class RoutingApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void policy_based_routing() {
-        var context = deploymentTester.newDeploymentContext();
-
-        // Deploy application
+    public void discovery() {
+        // Deploy
+        var context = deploymentTester.newDeploymentContext("t1", "a1", "default");
         var westZone = ZoneId.from("prod", "us-west-1");
         var eastZone = ZoneId.from("prod", "us-east-3");
         var applicationPackage = new ApplicationPackageBuilder()
                 .region(westZone.region())
                 .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
                 .build();
         context.submit(applicationPackage).deploy();
-        context.addRoutingPolicy(westZone, true);
-        context.addRoutingPolicy(eastZone, true);
+
+        // GET root
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/", "",
+                                              Request.Method.GET),
+                              new File("discovery/root.json"));
+
+        // GET tenant
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1", "",
+                                              Request.Method.GET),
+                              new File("discovery/tenant.json"));
+
+        // GET application
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1/application/a1/",
+                                              "",
+                                              Request.Method.GET),
+                              new File("discovery/application.json"));
+
+        // GET instance
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1/application/a1/instance/default/",
+                                              "",
+                                              Request.Method.GET),
+                              new File("discovery/instance.json"));
+
+        // GET environment
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/", "",
+                                              Request.Method.GET),
+                              new File("discovery/environment.json"));
+    }
+
+    @Test
+    public void recursion() {
+        var context1 = deploymentTester.newDeploymentContext("t1", "a1", "default");
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+        var package1 = new ApplicationPackageBuilder()
+                .region(westZone.region())
+                .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .build();
+        context1.submit(package1).deploy();
+
+        var context2 = deploymentTester.newDeploymentContext("t1", "a2", "default");
+        var package2 = new ApplicationPackageBuilder()
+                .region(westZone.region())
+                .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .build();
+        context2.submit(package2).deploy();
+
+        // GET tenant recursively
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1?recursive=true", "",
+                                              Request.Method.GET),
+                              new File("recursion/tenant.json"));
+
+        // GET application recursively
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1/application/a1?recursive=true", "",
+                                              Request.Method.GET),
+                              new File("recursion/application.json"));
+
+        // GET instance recursively
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1/application/a1/instance/default?recursive=true", "",
+                                              Request.Method.GET),
+                              new File("recursion/application.json"));
+
+        // GET environment recursively
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment?recursive=true", "",
+                                              Request.Method.GET),
+                              new File("recursion/environment.json"));
+    }
+
+    @Test
+    public void exclusive_routing() {
+        var context = deploymentTester.newDeploymentContext();
+        // Zones support direct routing
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+        deploymentTester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(westZone),
+                                                                              ZoneApiMock.from(eastZone));
+        // Deploy application
+        var applicationPackage = new ApplicationPackageBuilder()
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                .region(westZone.region())
+                .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .build();
+        context.submit(applicationPackage).deploy();
 
         // GET initial deployment status
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
@@ -56,7 +145,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets deployment out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/deployment-status-out.json"));
@@ -64,7 +153,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets deployment in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/deployment-status-in.json"));
@@ -77,7 +166,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets zone out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/zone-status-out.json"));
@@ -85,16 +174,14 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets zone in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/zone-status-in.json"));
     }
 
     @Test
-    public void rotation_based_routing() {
-        // No zones support direct routing
-        deploymentTester.controllerTester().zoneRegistry().setDirectlyRouted(Set.of());
+    public void shared_routing() {
         // Deploy application
         var context = deploymentTester.newDeploymentContext();
         var westZone = ZoneId.from("prod", "us-west-1");
@@ -102,7 +189,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         var applicationPackage = new ApplicationPackageBuilder()
                 .region(westZone.region())
                 .region(eastZone.region())
-                .endpoint("default", "qrs", eastZone.region().value(), westZone.region().value())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
                 .build();
         context.submit(applicationPackage).deploy();
 
@@ -116,7 +203,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets deployment out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/deployment-status-out.json"));
@@ -124,7 +211,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets deployment in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/deployment-status-in.json"));
@@ -137,7 +224,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets zone out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/zone-status-out.json"));
@@ -145,15 +232,33 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets zone in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for deployments in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/zone-status-in.json"));
+    }
 
-        // TODO(mpolden): Remove the following once a zone supports either of routing policy and rotation
+    // TODO(mpolden): Remove this once a zone supports either of routing policy and rotation
+    @Test
+    public void mixed_routing() {
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+
+        // One zone supports multiple routing methods
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(westZone),
+                                                                            RoutingMethod.shared,
+                                                                            RoutingMethod.exclusive);
+
+        // Deploy application
+        var context = deploymentTester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(westZone.region())
+                .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .build();
+        context.submit(applicationPackage).deploy();
 
         // GET status with both policy and rotation assigned
-        context.addRoutingPolicy(westZone, true);
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("multi-status-initial.json"));
@@ -161,7 +266,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // POST sets deployment out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'out'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to OUT\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("multi-status-out.json"));
@@ -169,7 +274,7 @@ public class RoutingApiTest extends ControllerContainerTest {
         // DELETE sets deployment in
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to 'in'\"}");
+                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to IN\"}");
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("multi-status-in.json"));

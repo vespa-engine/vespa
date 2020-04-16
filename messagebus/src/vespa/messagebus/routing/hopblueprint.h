@@ -84,14 +84,6 @@ public:
     bool getIgnoreResult() const { return _ignoreResult; }
 
     /**
-     * Sets whether or not to ignore the result when routing through this hop.
-     *
-     * @param ignoreResult Whether or not to ignore the result.
-     * @return This, to allow chaining.
-     */
-    HopBlueprint &setIgnoreResult(bool ignoreResult);
-
-    /**
      * Returns a string representation of this.
      *
      * @return The string.

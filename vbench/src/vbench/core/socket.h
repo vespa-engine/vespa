@@ -52,7 +52,7 @@ struct ServerSocket {
     Stream::UP accept(CryptoEngine &crypto) {
         vespalib::SocketHandle handle = server_socket.accept();
         if (handle.valid()) {
-            return std::make_unique<Socket>(SyncCryptoSocket::create(crypto, std::move(handle), true));
+            return std::make_unique<Socket>(SyncCryptoSocket::create_server(crypto, std::move(handle)));
         } else {
             return Stream::UP();
         }

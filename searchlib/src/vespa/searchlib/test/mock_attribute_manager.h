@@ -28,6 +28,7 @@ public:
     IAttributeContext::UP createContext() const override;
     void addAttribute(const vespalib::string &name, const AttributeVector::SP &attr);
     void addAttribute(const AttributeVector::SP &attr);
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
 };
 
 }

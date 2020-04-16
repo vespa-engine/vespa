@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import org.junit.Test;
 
@@ -31,7 +28,7 @@ public class RebootTest {
     @Test
     public void test() {
         try (DockerTester tester = new DockerTester()) {
-            tester.addChildNodeRepositoryNode(createNodeRepositoryNode());
+            tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
 
             tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
 
@@ -45,18 +42,5 @@ public class RebootTest {
                     eq(new ContainerName("host1")), eq("root"), eq(OptionalLong.empty()), eq(NODE_PROGRAM), eq("stop"));
             assertTrue(tester.nodeAdmin.setFrozen(true));
         }
-    }
-
-    private NodeSpec createNodeRepositoryNode() {
-        return new NodeSpec.Builder()
-                .hostname(hostname)
-                .wantedDockerImage(dockerImage)
-                .state(NodeState.active)
-                .type(NodeType.tenant)
-                .flavor("docker")
-                .currentVespaVersion(Version.fromString("6.50.0"))
-                .wantedRestartGeneration(1L)
-                .currentRestartGeneration(1L)
-                .build();
     }
 }

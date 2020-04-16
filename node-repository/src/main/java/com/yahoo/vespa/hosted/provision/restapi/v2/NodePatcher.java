@@ -6,12 +6,13 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -30,12 +31,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
-import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
+import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 
 /**
  * A class which can take a partial JSON node/v2 node JSON structure and apply it to a node object.
@@ -46,21 +48,17 @@ import static com.yahoo.config.provision.NodeResources.StorageType.local;
 public class NodePatcher {
 
     private static final String WANT_TO_RETIRE = "wantToRetire";
-    private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
 
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
-    private final LockedNodeList nodes;
+    private final Supplier<LockedNodeList> nodes;
     private final Clock clock;
 
     private Node node;
-    private List<Node> children;
-    private boolean childrenModified = false;
 
-    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, LockedNodeList nodes, Clock clock) {
+    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, Supplier<LockedNodeList> nodes, Clock clock) {
         this.nodeFlavors = nodeFlavors;
         this.node = node;
-        this.children = node.type().isDockerHost() ? nodes.childrenOf(node).asList() : List.of();
         this.nodes = nodes;
         this.clock = clock;
         try {
@@ -76,6 +74,7 @@ public class NodePatcher {
      * children that must be updated in a consistent manner.
      */
     public List<Node> apply() {
+        List<Node> patchedNodes = new ArrayList<>();
         inspector.traverse((String name, Inspector value) -> {
             try {
                 node = applyField(node, name, value);
@@ -84,23 +83,20 @@ public class NodePatcher {
             }
 
             try {
-                children = applyFieldRecursive(children, name, value);
-                childrenModified = true;
+                patchedNodes.addAll(applyFieldRecursive(name, value));
             } catch (IllegalArgumentException e) {
                 // Non recursive field, ignore
             }
         } );
+        patchedNodes.add(node);
 
-        List<Node> nodes = childrenModified ? new ArrayList<>(children) : new ArrayList<>();
-        nodes.add(node);
-
-        return nodes;
+        return patchedNodes;
     }
 
-    private List<Node> applyFieldRecursive(List<Node> childNodes, String name, Inspector value) {
+    private List<Node> applyFieldRecursive(String name, Inspector value) {
         switch (name) {
             case WANT_TO_RETIRE:
-            case WANT_TO_DEPROVISION:
+                List<Node> childNodes = node.type().isDockerHost() ? nodes.get().childrenOf(node).asList() : List.of();
                 return childNodes.stream()
                         .map(child -> applyField(child, name, value))
                         .collect(Collectors.toList());
@@ -128,18 +124,20 @@ public class NodePatcher {
             case "currentFirmwareCheck":
                 return node.withFirmwareVerifiedAt(Instant.ofEpochMilli(asLong(value)));
             case "failCount" :
-                return node.with(node.status().setFailCount(asLong(value).intValue()));
+                return node.with(node.status().withFailCount(asLong(value).intValue()));
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().with(asStringSet(value))), nodes);
+                return IP.Config.verify(node.with(node.ipConfig().with(asStringSet(value))), nodes.get());
             case "additionalIpAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), nodes);
+                return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), nodes.get());
             case WANT_TO_RETIRE :
                 return node.withWantToRetire(asBoolean(value), Agent.operator, clock.instant());
-            case WANT_TO_DEPROVISION :
+            case "wantToDeprovision" :
+                if (node.type() != NodeType.host && asBoolean(value))
+                    throw new IllegalArgumentException("wantToDeprovision can only be set for hosts");
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "reports" :
                 return nodeWithPatchedReports(node, value);
@@ -172,22 +170,42 @@ public class NodePatcher {
     }
 
     private Node nodeWithPatchedReports(Node node, Inspector reportsInspector) {
+        Node patchedNode;
         // "reports": null clears the reports
-        if (reportsInspector.type() == Type.NIX) return node.with(new Reports());
+        if (reportsInspector.type() == Type.NIX) {
+            patchedNode = node.with(new Reports());
+        } else {
+            var reportsBuilder = new Reports.Builder(node.reports());
+            reportsInspector.traverse((ObjectTraverser) (reportId, reportInspector) -> {
+                if (reportInspector.type() == Type.NIX) {
+                    // ... "reports": { "reportId": null } clears the report "reportId"
+                    reportsBuilder.clearReport(reportId);
+                } else {
+                    // ... "reports": { "reportId": {...} } overrides the whole report "reportId"
+                    reportsBuilder.setReport(Report.fromSlime(reportId, reportInspector));
+                }
+            });
+            patchedNode = node.with(reportsBuilder.build());
+        }
 
-        var reportsBuilder = new Reports.Builder(node.reports());
+        boolean hadHardFailReports = node.reports().getReports().stream()
+                .anyMatch(r -> r.getType() == Report.Type.HARD_FAIL);
+        boolean hasHardFailReports = patchedNode.reports().getReports().stream()
+                .anyMatch(r -> r.getType() == Report.Type.HARD_FAIL);
 
-        reportsInspector.traverse((ObjectTraverser) (reportId, reportInspector) -> {
-            if (reportInspector.type() == Type.NIX) {
-                // ... "reports": { "reportId": null } clears the report "reportId"
-                reportsBuilder.clearReport(reportId);
-            } else {
-                // ... "reports": { "reportId": {...} } overrides the whole report "reportId"
-                reportsBuilder.setReport(Report.fromSlime(reportId, reportInspector));
-            }
-        });
+        // If this patch resulted in going from not having HARD_FAIL report to having one, or vice versa
+        if (hadHardFailReports != hasHardFailReports) {
+            // Do not automatically change wantToDeprovision when
+            // 1. Transitioning to having a HARD_FAIL report and being in state failed:
+            //    To allow operators manually unset before the host is parked and deleted.
+            // 2. When in parked state: Deletion is imminent, possibly already underway
+            if ((hasHardFailReports && node.state() == Node.State.failed) || node.state() == Node.State.parked)
+                return patchedNode;
 
-        return node.with(reportsBuilder.build());
+            patchedNode = patchedNode.with(patchedNode.status().withWantToDeprovision(hasHardFailReports));
+        }
+
+        return patchedNode;
     }
 
     private Set<String> asStringSet(Inspector field) {

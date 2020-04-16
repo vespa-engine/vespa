@@ -6,6 +6,7 @@
 
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
 #include <boost/algorithm/string/replace.hpp>
 
 #include <vespa/log/log.h>
@@ -120,9 +121,7 @@ ForeachBlueprint::ForeachBlueprint() :
 {
 }
 
-ForeachBlueprint::~ForeachBlueprint()
-{
-}
+ForeachBlueprint::~ForeachBlueprint() = default;
 
 void
 ForeachBlueprint::visitDumpFeatures(const IIndexEnvironment &,
@@ -171,13 +170,13 @@ ForeachBlueprint::setup(const IIndexEnvironment & env,
 Blueprint::UP
 ForeachBlueprint::createInstance() const
 {
-    return Blueprint::UP(new ForeachBlueprint());
+    return std::make_unique<ForeachBlueprint>();
 }
 
 FeatureExecutor &
 ForeachBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    if (_executorCreator.get() != NULL) {
+    if (_executorCreator) {
         return _executorCreator->create(_num_inputs, stash);
     }
     return stash.create<SingleZeroValueExecutor>();

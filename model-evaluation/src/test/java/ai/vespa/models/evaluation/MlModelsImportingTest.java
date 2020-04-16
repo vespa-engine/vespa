@@ -25,7 +25,7 @@ public class MlModelsImportingTest {
     public void testImportingModels() {
         ModelTester tester = new ModelTester("src/test/resources/config/models/");
 
-        assertEquals(4, tester.models().size());
+        assertEquals(5, tester.models().size());
 
         // TODO: When we get type information in Models, replace the evaluator.context().names() check below by that
         {
@@ -47,7 +47,24 @@ public class MlModelsImportingTest {
         }
 
         {
+            Model lightgbm = tester.models().get("lightgbm_regression");
 
+            // Function
+            assertEquals(1, lightgbm.functions().size());
+            ExpressionFunction function = tester.assertFunction("lightgbm_regression",
+                    "(optimized sum of condition trees of size 480 bytes)",
+                    lightgbm);
+            assertEquals("tensor()", function.returnType().get().toString());
+            assertEquals("categorical_1, categorical_2, numerical_1, numerical_2", commaSeparated(function.arguments()));
+            function.arguments().forEach(arg -> assertEquals(TensorType.empty, function.argumentTypes().get(arg)));
+
+            // Evaluator
+            FunctionEvaluator evaluator = lightgbm.evaluatorOf();
+            assertEquals("categorical_1, categorical_2, numerical_1, numerical_2", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
+            assertEquals(1.91300868202, evaluator.evaluate().sum().asDouble(), delta);
+        }
+
+        {
             Model onnxMnistSoftmax = tester.models().get("mnist_softmax");
 
             // Function

@@ -5,7 +5,7 @@
 #include "memory_index.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
@@ -44,6 +44,7 @@ using queryeval::EmptyBlueprint;
 using queryeval::FieldSpec;
 using queryeval::IRequestContext;
 using queryeval::Searchable;
+using vespalib::ISequencedTaskExecutor;
 
 }
 

@@ -327,7 +327,7 @@ public class ApplicationApiImplTest {
     private void verifyStorageNodesAllowedToBeDown(
             ApplicationApi applicationApi, HostName... hostNames) {
         List<HostName> actualStorageNodes =
-                applicationApi.getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder().stream()
+                applicationApi.getSuspendedStorageNodesInGroupInReverseClusterOrder().stream()
                 .map(storageNode -> storageNode.hostName())
                 .collect(Collectors.toList());
         assertEquals(Arrays.asList(hostNames), actualStorageNodes);

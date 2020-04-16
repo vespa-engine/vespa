@@ -25,10 +25,7 @@ public class FieldSet {
     public FieldSet addFieldName(String field) { fieldNames.add(field); return this; }
     public Set<String> getFieldNames() { return fieldNames; }
     public Set<ImmutableSDField> fields() { return fields; }
-
-    public Set<String> queryCommands() {
-        return queryCommands;
-    }
+    public Set<String> queryCommands() { return queryCommands; }
 
     public void setMatching(Matching matching) {
         this.matching = matching;

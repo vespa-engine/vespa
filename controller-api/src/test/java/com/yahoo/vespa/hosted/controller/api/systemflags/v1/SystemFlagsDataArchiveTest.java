@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.JSON;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.FlagData;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedInputStream;
@@ -27,9 +29,11 @@ import java.net.URI;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -42,6 +46,9 @@ public class SystemFlagsDataArchiveTest {
 
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Rule
+    public final ExpectedException expectedException = ExpectedException.none();
 
     private static FlagsTarget mainControllerTarget = FlagsTarget.forController(SYSTEM);
     private static FlagsTarget prodUsWestCfgTarget = createConfigserverTarget(Environment.prod, "us-west-1");
@@ -82,6 +89,65 @@ public class SystemFlagsDataArchiveTest {
         assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, prodUsWestCfgTarget, "main.prod.us-west-1");
         assertNoFlagData(archive, FLAG_WITH_EMPTY_DATA, prodUsEast3CfgTarget);
         assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, devUsEast1CfgTarget, "main");
+    }
+
+    @Test
+    public void throws_exception_on_non_json_file() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Only JSON files are allowed in 'flags/' directory (found 'flags/my-test-flag/file-name-without-dot-json')");
+        SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-invalid-file-name/"));
+    }
+
+    @Test
+    public void throws_exception_on_unknown_file() {
+        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-file-name/"));
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json");
+        archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget));
+    }
+
+    @Test
+    public void throws_on_unknown_field() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(
+                "flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: after removing any comment fields the JSON is:\n" +
+                "  {\"id\":\"my-test-flag\",\"rules\":[{\"condition\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"foo.com\"]}],\"value\":\"default\"}]}\n" +
+                "but deserializing this ended up with a JSON that are missing some of the fields:\n" +
+                "  {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}\n" +
+                "See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax");
+        SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
+    }
+
+    @Test
+    public void remove_comments() {
+        assertTrue(JSON.equals("{\n" +
+                "    \"a\": {\n" +
+                "        \"b\": 1\n" +
+                "    },\n" +
+                "    \"list\": [\n" +
+                "        {\n" +
+                "            \"c\": 2\n" +
+                "        },\n" +
+                "        {\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}",
+                SystemFlagsDataArchive.removeCommentsFromJson("{\n" +
+                "    \"comment\": \"comment a\",\n" +
+                "    \"a\": {\n" +
+                "        \"comment\": \"comment b\",\n" +
+                "        \"b\": 1\n" +
+                "    },\n" +
+                "    \"list\": [\n" +
+                "        {\n" +
+                "            \"comment\": \"comment c\",\n" +
+                "            \"c\": 2\n" +
+                "        },\n" +
+                "        {\n" +
+                "            \"comment\": \"comment d\"\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}")));
     }
 
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {

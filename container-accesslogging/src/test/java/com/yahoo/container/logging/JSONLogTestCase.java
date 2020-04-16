@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URI;
 
 import static org.junit.Assert.assertEquals;
@@ -65,6 +67,36 @@ public class JSONLogTestCase {
             "\"coverage\":{\"coverage\":100,\"documents\":100}" +
             "}" +
             "}";
+
+        assertEquals(expectedOutput, new JSONFormatter(entry).format());
+    }
+
+    @Test
+    public void test_json_of_trace() throws IOException {
+        TraceNode root = new TraceNode("root", 7);
+        AccessLogEntry entry = newAccessLogEntry("test");
+        entry.setTrace(root);
+
+        String expectedOutput =
+                "{\"ip\":\"152.200.54.243\"," +
+                "\"time\":920880005.023," +
+                "\"duration\":0.122," +
+                "\"responsesize\":9875," +
+                "\"code\":200," +
+                "\"method\":\"GET\"," +
+                "\"uri\":\"?query=test\"," +
+                "\"version\":\"HTTP/1.1\"," +
+                "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
+                "\"host\":\"localhost\"," +
+                "\"scheme\":null," +
+                "\"localport\":0," +
+                "\"trace\":{\"timestamp\":0,\"message\":\"root\"}," +
+                "\"search\":{" +
+                "\"totalhits\":1234," +
+                "\"hits\":0," +
+                "\"coverage\":{\"coverage\":100,\"documents\":100}" +
+                "}" +
+                "}";
 
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
     }

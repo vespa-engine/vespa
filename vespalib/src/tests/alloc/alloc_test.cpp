@@ -155,7 +155,7 @@ void ensureRoomForExtension(const Alloc & buf, Alloc & reserved) {
     // So in order to verify this we first mmap a reserved area that we unmap
     // before we test extension.
     if (reserved.get() > buf.get()) {
-        EXPECT_EQUAL(reserved.get(), static_cast<const char *>(buf.get()) + buf.size());
+        EXPECT_EQUAL(reserved.get(), static_cast<const void *>(static_cast<const char *>(buf.get()) + buf.size()));
         {
             Alloc().swap(reserved);
         }
@@ -166,14 +166,15 @@ void verifyNoExtensionWhenNoRoom(Alloc & buf, Alloc & reserved, size_t sz) {
     if (reserved.get() > buf.get()) {
         // Normally mmapping starts at the top and grows down in address space.
         // Then there is no room to extend the last mapping.
-        EXPECT_EQUAL(reserved.get(), static_cast<const char *>(buf.get()) + buf.size());
+        EXPECT_EQUAL(reserved.get(), static_cast<const void *>(static_cast<const char *>(buf.get()) + buf.size()));
         TEST_DO(verifyExtension(buf, sz, sz));
     } else {
-        EXPECT_EQUAL(buf.get(), static_cast<const char *>(reserved.get()) + reserved.size());
+        EXPECT_EQUAL(buf.get(), static_cast<const void *>(static_cast<const char *>(reserved.get()) + reserved.size()));
         TEST_DO(verifyExtension(reserved, sz, sz));
     }
 }
 
+#ifdef __linux__
 TEST("auto alloced mmap alloc can be extended if room") {
     static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE*2;
     Alloc reserved = Alloc::alloc(SZ);
@@ -207,6 +208,7 @@ TEST("mmap alloc can not be extended if no room") {
 
     TEST_DO(verifyNoExtensionWhenNoRoom(buf, reserved, 4096));
 }
+#endif
 
 TEST("heap alloc can not be shrinked") {
     Alloc buf = Alloc::allocHeap(101);

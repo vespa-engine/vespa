@@ -2,13 +2,17 @@
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -18,6 +22,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -130,16 +135,55 @@ public class NodeRepositoryTest {
 
         // Should be OK to delete host2 as both host2 and its only child, node20, are in state provisioned
         tester.nodeRepository().removeRecursively("host2");
-        assertEquals(4, tester.nodeRepository().getNodes().size());
+        assertEquals(5, tester.nodeRepository().getNodes().size());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host2").get().state());
 
         // Now node10 is in provisioned, set node11 to failed and node12 to ready, and it should be OK to delete host1
         tester.nodeRepository().fail("node11", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().setReady("node12", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().removeRecursively("node12"); // Remove one of the children first instead
-        assertEquals(3, tester.nodeRepository().getNodes().size());
-
+        assertEquals(4, tester.nodeRepository().getNodes().size());
         tester.nodeRepository().removeRecursively("host1");
-        assertEquals(0, tester.nodeRepository().getNodes().size());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host1").get().state());
+    }
+
+    @Test
+    public void relevant_information_from_deprovisioned_hosts_are_merged_into_readded_host() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        Instant testStart = tester.nodeRepository().clock().instant();
+
+        tester.clock().advance(Duration.ofSeconds(1));
+        tester.addNode("id1", "host1", "default", NodeType.host);
+        tester.addNode("id2", "host2", "default", NodeType.host);
+        assertFalse(tester.nodeRepository().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+
+        // Set host 1 properties and deprovision it
+        Node host1 = tester.nodeRepository().getNode("host1").get();
+        host1 = host1.withWantToRetire(true, Agent.system, tester.nodeRepository().clock().instant());
+        host1 = host1.with(host1.status().withWantToDeprovision(true));
+        host1 = host1.withFirmwareVerifiedAt(tester.clock().instant());
+        host1 = host1.with(host1.status().withIncreasedFailCount());
+        host1 = host1.with(host1.reports().withReport(Report.basicReport("id", Report.Type.HARD_FAIL, tester.clock().instant(), "Test report")));
+        tester.nodeRepository().write(host1, tester.nodeRepository().lock(host1));
+        tester.nodeRepository().removeRecursively("host1");
+
+        // Host 1 is deprovisioned and unwanted properties are cleared
+        host1 = tester.nodeRepository().getNode("host1").get();
+        assertEquals(Node.State.deprovisioned, host1.state());
+        assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+
+        // Adding it again preserves some information from the deprovisioned host and removes it
+        tester.addNode("id2", "host1", "default", NodeType.host);
+        host1 = tester.nodeRepository().getNode("host1").get();
+        assertEquals("This is the newly added node", "id2", host1.id());
+        assertFalse("The old 'host1' is removed",
+                    tester.nodeRepository().getNode("host1", Node.State.deprovisioned).isPresent());
+        assertFalse("Not transferred from deprovisioned host", host1.status().wantToRetire());
+        assertFalse("Not transferred from deprovisioned host", host1.status().wantToDeprovision());
+        assertTrue("Transferred from deprovisioned host", host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+        assertTrue("Transferred from deprovisioned host", host1.status().firmwareVerifiedAt().isPresent());
+        assertEquals("Transferred from deprovisioned host", 1, host1.status().failCount());
+        assertEquals("Transferred from deprovisioned host", 1, host1.reports().getReports().size());
     }
 
     @Test

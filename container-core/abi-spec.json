@@ -11,6 +11,23 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.handler.ClustersStatus$Require": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.container.handler.ClustersStatus$Require[] values()",
+      "public static com.yahoo.container.handler.ClustersStatus$Require valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.container.handler.ClustersStatus$Require ONE",
+      "public static final enum com.yahoo.container.handler.ClustersStatus$Require ALL"
+    ]
+  },
   "com.yahoo.container.handler.ClustersStatus": {
     "superClass": "com.yahoo.component.AbstractComponent",
     "interfaces": [],
@@ -23,7 +40,8 @@
       "public void setReceiveTrafficByDefault(boolean)",
       "public void setUp(java.lang.Object)",
       "public void setDown(java.lang.Object)",
-      "public boolean containerShouldReceiveTraffic()"
+      "public boolean containerShouldReceiveTraffic()",
+      "public boolean containerShouldReceiveTraffic(com.yahoo.container.handler.ClustersStatus$Require)"
     ],
     "fields": []
   },
@@ -154,6 +172,7 @@
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig)",
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder maxthreads(int)",
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder maxThreadExecutionTimeSeconds(int)",
+      "public com.yahoo.container.handler.ThreadpoolConfig$Builder softStartSeconds(double)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -191,7 +210,8 @@
       "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig$Builder)",
       "public int maxthreads()",
-      "public int maxThreadExecutionTimeSeconds()"
+      "public int maxThreadExecutionTimeSeconds()",
+      "public double softStartSeconds()"
     ],
     "fields": [
       "public static final java.lang.String CONFIG_DEF_MD5",
@@ -230,6 +250,7 @@
       "public void <init>(com.yahoo.container.QrSearchersConfig)",
       "public void <init>(com.yahoo.container.handler.ClustersStatus)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus)",
+      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus)",
       "public void setInRotation(java.lang.Boolean)",
@@ -851,6 +872,56 @@
       "public abstract java.lang.String getMimeType()",
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
       "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.cloud.Environment": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static ai.vespa.cloud.Environment[] values()",
+      "public static ai.vespa.cloud.Environment valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum ai.vespa.cloud.Environment dev",
+      "public static final enum ai.vespa.cloud.Environment perf",
+      "public static final enum ai.vespa.cloud.Environment test",
+      "public static final enum ai.vespa.cloud.Environment staging",
+      "public static final enum ai.vespa.cloud.Environment prod"
+    ]
+  },
+  "ai.vespa.cloud.SystemInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.cloud.config.ConfigserverConfig)",
+      "public void <init>(ai.vespa.cloud.Zone)",
+      "public ai.vespa.cloud.Zone zone()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.cloud.Zone": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(ai.vespa.cloud.Environment, java.lang.String)",
+      "public ai.vespa.cloud.Environment environment()",
+      "public java.lang.String region()",
+      "public java.lang.String toString()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public static ai.vespa.cloud.Zone from(java.lang.String)"
     ],
     "fields": []
   }

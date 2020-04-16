@@ -27,7 +27,9 @@ public class ClusterSizeReductionValidatorTest {
             fail("Expected exception due to cluster size reduction");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("cluster-size-reduction: Size reduction in 'default' is too large. Current size: 30, new size: 14. New size must be at least 50% of the current size. " +
+            assertEquals("cluster-size-reduction: Size reduction in 'default' is too large: " +
+                         "New min size must be at least 50% of the current min size. " +
+                         "Current size: 30, new size: 14. " +
                          ValidationOverrides.toAllowMessage(ValidationId.clusterSizeReduction),
                          Exceptions.toMessageString(expected));
         }

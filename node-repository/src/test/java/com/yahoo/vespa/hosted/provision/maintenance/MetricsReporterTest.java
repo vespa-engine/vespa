@@ -10,6 +10,10 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.test.ManualClock;
+import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.applicationmodel.ApplicationInstance;
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
@@ -26,11 +30,12 @@ import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +43,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +53,24 @@ import static org.mockito.Mockito.when;
  * @author smorgrav
  */
 public class MetricsReporterTest {
+
+    private final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
+    private final ApplicationInstanceReference reference = mock(ApplicationInstanceReference.class);
+
+    @Before
+    public void setUp() {
+        // On the serviceModel returned by serviceMonitor.getServiceModelSnapshot(),
+        // 2 methods should be used by MetricsReporter:
+        //  - getServiceInstancesByHostName() -> empty Map
+        //  - getApplication() which is mapped to a dummy ApplicationInstanceReference and
+        //    used for lookup.
+        ServiceModel serviceModel = mock(ServiceModel.class);
+        when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
+        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
+        ApplicationInstance applicationInstance = mock(ApplicationInstance.class);
+        when(serviceModel.getApplication(any())).thenReturn(Optional.of(applicationInstance));
+        when(applicationInstance.reference()).thenReturn(reference);
+    }
 
     @Test
     public void test_registered_metric() {
@@ -56,9 +81,9 @@ public class MetricsReporterTest {
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            true);
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
-        nodeRepository.addNodes(List.of(node));
+        nodeRepository.addNodes(List.of(node), Agent.system);
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
-        nodeRepository.addNodes(List.of(hostNode));
+        nodeRepository.addNodes(List.of(hostNode), Agent.system);
 
         Map<String, Number> expectedMetrics = new HashMap<>();
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
@@ -69,6 +94,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.inactiveHosts", 0);
         expectedMetrics.put("hostedVespa.dirtyHosts", 0);
         expectedMetrics.put("hostedVespa.failedHosts", 0);
+        expectedMetrics.put("hostedVespa.deprovisionedHosts", 0);
         expectedMetrics.put("hostedVespa.pendingRedeployments", 42);
         expectedMetrics.put("hostedVespa.docker.totalCapacityDisk", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityMem", 0.0);
@@ -83,15 +109,16 @@ public class MetricsReporterTest {
         expectedMetrics.put("wantToRetire", 0);
         expectedMetrics.put("wantToDeprovision", 0);
         expectedMetrics.put("failReport", 0);
-        expectedMetrics.put("allowedToBeDown", 0);
+        expectedMetrics.put("allowedToBeDown", 1);
+        expectedMetrics.put("suspended", 1);
+        expectedMetrics.put("suspendedSeconds", 123L);
         expectedMetrics.put("numberOfServices", 0L);
 
+        ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
+
         Orchestrator orchestrator = mock(Orchestrator.class);
-        ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
-        ServiceModel serviceModel = mock(ServiceModel.class);
-        when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
-        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
+        when(orchestrator.getHostInfo(eq(reference), any())).thenReturn(
+                HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)));
 
         TestMetric metric = new TestMetric();
         MetricsReporter metricsReporter = new MetricsReporter(
@@ -100,8 +127,8 @@ public class MetricsReporterTest {
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1)
-        );
+                Duration.ofMinutes(1),
+                clock);
         metricsReporter.maintain();
 
         assertEquals(expectedMetrics, metric.values);
@@ -121,7 +148,7 @@ public class MetricsReporterTest {
 
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
                                       Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
-        nodeRepository.addNodes(List.of(dockerHost));
+        nodeRepository.addNodes(List.of(dockerHost), Agent.system);
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
@@ -135,22 +162,23 @@ public class MetricsReporterTest {
         container2 = container2.with(allocation(Optional.of("app2"), container2).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockUnallocated()));
 
+        NestedTransaction transaction = new NestedTransaction();
+        nodeRepository.activate(nodeRepository.getNodes(NodeType.host), transaction);
+        transaction.commit();
+
         Orchestrator orchestrator = mock(Orchestrator.class);
-        ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
-        when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostInfo.createNoRemarks()));
-        ServiceModel serviceModel = mock(ServiceModel.class);
-        when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
-        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
+        when(orchestrator.getHostInfo(eq(reference), any())).thenReturn(HostInfo.createNoRemarks());
 
         TestMetric metric = new TestMetric();
+        ManualClock clock = new ManualClock();
         MetricsReporter metricsReporter = new MetricsReporter(
                 nodeRepository,
                 metric,
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1)
-        );
+                Duration.ofMinutes(1),
+                clock);
         metricsReporter.maintain();
 
         assertEquals(0, metric.values.get("hostedVespa.readyHosts")); // Only tenants counts
@@ -185,79 +213,13 @@ public class MetricsReporterTest {
     private Optional<Allocation> allocation(Optional<String> tenant, Node owner) {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
-                                                   ClusterMembership.from("container/id1/0/3", new Version()),
+                                                   ClusterMembership.from("container/id1/0/3", new Version(), Optional.empty()),
                                                    owner.flavor().resources(),
                                                    Generation.initial(),
                                                    false);
             return Optional.of(allocation);
         }
         return Optional.empty();
-    }
-
-    public static class TestMetric implements Metric {
-
-        public Map<String, Number> values = new HashMap<>();
-        public Map<String, List<Context>> context = new HashMap<>();
-
-        @Override
-        public void set(String key, Number val, Context ctx) {
-            values.put(key, val);
-            if (ctx != null) {
-                //Create one context pr value added - copy the context to not have side effects
-                TestContext kontekst = (TestContext)createContext(((TestContext) ctx).properties);
-                if (!context.containsKey(key)) {
-                    context.put(key, new ArrayList<>());
-                }
-                kontekst.setValue(val);
-                context.get(key).add(kontekst);
-            }
-        }
-
-        @Override
-        public void add(String key, Number val, Context ctx) {
-            values.put(key, val);
-            if (ctx != null) {
-                //Create one context pr value added - copy the context to not have side effects
-                TestContext copy = (TestContext) createContext(((TestContext) ctx).properties);
-                if (!context.containsKey(key)) {
-                    context.put(key, new ArrayList<>());
-                }
-                copy.setValue(val);
-                context.get(key).add(copy);
-            }
-        }
-
-        @Override
-        public Context createContext(Map<String, ?> properties) {
-            return new TestContext(properties);
-        }
-
-        double sumDoubleValues(String key, Context sumContext) {
-            double sum = 0.0;
-            for(Context c : context.get(key)) {
-                TestContext tc = (TestContext) c;
-                if (tc.value instanceof Double && tc.properties.equals(((TestContext) sumContext).properties)) {
-                    sum += (double) tc.value;
-                }
-            }
-            return sum;
-        }
-
-        /**
-         * Context where the propertymap is not shared - but unique to each value.
-         */
-        private static class TestContext implements Context{
-            Number value;
-            Map<String, ?> properties;
-
-            public TestContext(Map<String, ?> properties) {
-                this.properties = properties;
-            }
-
-            public void setValue(Number value) {
-                this.value = value;
-            }
-        }
     }
 
 }

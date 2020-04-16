@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
@@ -52,7 +53,7 @@ public class DockerProvisioningTest {
         Version wantedVespaVersion = Version.fromString("6.39");
         int nodeCount = 7;
         List<HostSpec> hosts = tester.prepare(application1,
-                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
                                               nodeCount, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
@@ -63,7 +64,7 @@ public class DockerProvisioningTest {
         // Upgrade Vespa version on nodes
         Version upgradedWantedVespaVersion = Version.fromString("6.40");
         List<HostSpec> upgradedHosts = tester.prepare(application1,
-                                                      ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), upgradedWantedVespaVersion, false),
+                                                      ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(upgradedWantedVespaVersion).build(),
                                                       nodeCount, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(upgradedHosts));
         NodeList upgradedNodes = tester.getNodes(application1, Node.State.active);
@@ -85,7 +86,7 @@ public class DockerProvisioningTest {
         Version wantedVespaVersion = Version.fromString("6.39");
         int nodeCount = 7;
         List<HostSpec> nodes = tester.prepare(application1,
-                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
                 nodeCount, 1, dockerFlavor);
         try {
             tester.activate(application1, new HashSet<>(nodes));
@@ -94,13 +95,13 @@ public class DockerProvisioningTest {
 
         // Activate the zone-app, thereby allocating the parents
         List<HostSpec> hosts = tester.prepare(zoneApplication,
-                ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("zone-app"), wantedVespaVersion, false),
-                Capacity.fromRequiredNodeType(NodeType.host), 1);
+                ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("zone-app")).vespaVersion(wantedVespaVersion).build(),
+                Capacity.fromRequiredNodeType(NodeType.host));
         tester.activate(zoneApplication, hosts);
 
         // Try allocating tenants again
         nodes = tester.prepare(application1,
-                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
                 nodeCount, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(nodes));
 
@@ -124,14 +125,14 @@ public class DockerProvisioningTest {
 
         Version wantedVespaVersion = Version.fromString("6.39");
         List<HostSpec> nodes = tester.prepare(application2_1,
-                                              ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                                              ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
                                               6, 1, resources);
         assertHostSpecParentReservation(nodes, Optional.empty(), tester); // We do not get nodes on hosts reserved to tenant1
         tester.activate(application2_1, nodes);
 
         try {
             tester.prepare(application2_2,
-                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
                            5, 1, resources);
             fail("Expected exception");
         }
@@ -140,7 +141,7 @@ public class DockerProvisioningTest {
         }
 
         nodes = tester.prepare(application1_1,
-                               ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent"), wantedVespaVersion, false),
+                               ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
                               10, 1, resources);
         assertHostSpecParentReservation(nodes, Optional.of(tenant1), tester);
         tester.activate(application1_1, nodes);
@@ -262,7 +263,9 @@ public class DockerProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
         tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost");
 
-        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false), 1, 1, dockerFlavor);
+        List<HostSpec> hosts = tester.prepare(application1,
+                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion("6.42").build(),
+                                              1, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
@@ -279,8 +282,9 @@ public class DockerProvisioningTest {
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost1");
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost2");
 
-            List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"),
-                                                                                    Version.fromString("6.42"), false), 2, 1,
+            List<HostSpec> hosts = tester.prepare(application1,
+                                                  ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion("6.42").build(),
+                                                  2, 1,
                                                   dockerFlavor.with(NodeResources.StorageType.remote));
         }
         catch (OutOfCapacityException e) {
@@ -294,9 +298,8 @@ public class DockerProvisioningTest {
 
     private void prepareAndActivate(ApplicationId application, int nodeCount, boolean exclusive, ProvisioningTester tester) {
         Set<HostSpec> hosts = new HashSet<>(tester.prepare(application,
-                                            ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.39"), exclusive),
-                                            Capacity.fromCount(nodeCount, Optional.of(dockerFlavor), false, true),
-                                            1));
+                                            ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer")).vespaVersion("6.39").exclusive(exclusive).build(),
+                                            Capacity.from(new ClusterResources(nodeCount, 1, dockerFlavor), false, true)));
         tester.activate(application, hosts);
     }
 

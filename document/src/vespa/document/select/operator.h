@@ -88,7 +88,27 @@ public:
     // Delegates to Value::globCompare
     ResultList compare(const Value& a, const Value& b) const override;
     ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
-    vespalib::string convertToRegex(vespalib::stringref globpattern) const;
+    /**
+     * Converts a standard glob expression into a regular expression string,
+     * supporting the following glob semantics:
+     *   '*' matches 0-n arbitrary characters
+     *   '?' matches exactly 1 arbitrary character
+     * This code simplifies the resulting regex as much as possible to help
+     * minimize the number of possible catastrophic backtracking cases that
+     * can be triggered by wildcard regexes.
+     *
+     * The following simplifications are currently performed:
+     *   - ''      -> /^$/   (empty string match)
+     *   '*'       -> //     (any string match)
+     *   - '*foo*' -> /foo/  (substring match)
+     *   - '*foo'  -> /foo$/ (suffix match)
+     *   - 'foo*'  -> /^foo/ (prefix match)
+     *   - collapsing runs of consecutive '*' wildcards into a single
+     *     wildcard. *** is identical to ** which is identical to * etc,
+     *     as all these match 0-n characters each. This also works with
+     *     simplification, i.e. '***foo***' -> /foo/ and '***' -> //
+     */
+    static vespalib::string convertToRegex(vespalib::stringref globpattern);
     static bool containsVariables(vespalib::stringref expression);
 
     static const GlobOperator GLOB;

@@ -6,6 +6,8 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 namespace search::features {
 
@@ -168,7 +170,7 @@ JaroWinklerDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
 search::fef::Blueprint::UP
 JaroWinklerDistanceBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new JaroWinklerDistanceBlueprint());
+    return std::make_unique<JaroWinklerDistanceBlueprint>();
 }
 
 search::fef::FeatureExecutor &

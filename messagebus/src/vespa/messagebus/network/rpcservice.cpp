@@ -5,42 +5,37 @@
 
 namespace mbus {
 
-RPCService::RPCService(const Mirror &mirror,
-                       const string &pattern) :
-    _mirror(mirror),
-    _pattern(pattern),
-    _addressIdx(random()),
-    _addressGen(0),
-    _addressList()
-{ }
-
-RPCService::~RPCService() {}
-
-RPCServiceAddress::UP
-RPCService::resolve()
+RPCService::RPCService(const Mirror &mirror, const string &pattern) :
+    _serviceName(),
+    _connectionSpec()
 {
-    if (_pattern.find("tcp/") == 0) {
-        size_t pos = _pattern.find_last_of('/');
-        if (pos != string::npos && pos < _pattern.size() - 1) {
-            RPCServiceAddress::UP ret(new RPCServiceAddress(
-                            _pattern,
-                            _pattern.substr(0, pos)));
-            if (!ret->isMalformed()) {
-                return ret;
+    if (pattern.find("tcp/") == 0) {
+        size_t pos = pattern.find_last_of('/');
+        if (pos != string::npos && pos < pattern.size() - 1) {
+            RPCServiceAddress test(pattern, pattern.substr(0, pos));
+            if ( ! test.isMalformed()) {
+                _serviceName = pattern;
+                _connectionSpec = pattern.substr(0, pos);
             }
         }
     } else {
-        if (_addressGen != _mirror.updates()) {
-            _addressGen = _mirror.updates();
-            _addressList = _mirror.lookup(_pattern);
+        Mirror::SpecList addressList = mirror.lookup(pattern);
+        if (!addressList.empty()) {
+            assert(addressList.size() == 1); //TODO URGENT remove assert after a few factory runs.
+            const auto &entry = addressList.front();
+            _serviceName = entry.first;
+            _connectionSpec = entry.second;
         }
-        if (!_addressList.empty()) {
-            _addressIdx = (_addressIdx + 1) % _addressList.size();
-            const AddressList::value_type &entry = _addressList[_addressIdx];
-            return RPCServiceAddress::UP(new RPCServiceAddress(
-                            entry.first,
-                            entry.second));
-        }
+    }
+}
+
+RPCService::~RPCService() = default;
+
+RPCServiceAddress::UP
+RPCService::make_address()
+{
+    if ( !_serviceName.empty()) {
+        return std::make_unique<RPCServiceAddress>(_serviceName, _connectionSpec);
     }
     return RPCServiceAddress::UP();
 }

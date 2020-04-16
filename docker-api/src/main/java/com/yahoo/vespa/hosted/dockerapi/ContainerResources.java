@@ -124,4 +124,8 @@ public class ContainerResources {
     public ContainerResources withMemoryBytes(long memoryBytes) {
         return new ContainerResources(cpus, cpuShares, memoryBytes);
     }
+
+    public ContainerResources withUnlimitedCpus() {
+        return new ContainerResources(0, 0, memoryBytes);
+    }
 }

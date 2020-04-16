@@ -24,10 +24,18 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClusterConnection implements AutoCloseable {
 
+    private static final JsonFactory jsonFactory = new JsonFactory();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private final List<IOThread> ioThreads = new ArrayList<>();
     private final int clusterId;
-    private static JsonFactory jsonFactory = new JsonFactory();
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private final ThreadGroup ioThreadGroup;
+
+    /** The shared queue of document operations the io threads will take from */
+    private final DocumentQueue documentQueue;
+
+    /** The single endpoint this sends to, or null if it will send to multiple endpoints */
+    private final Endpoint singleEndpoint;
 
     public ClusterConnection(OperationProcessor operationProcessor,
                              FeedParams feedParams,
@@ -37,16 +45,17 @@ public class ClusterConnection implements AutoCloseable {
                              int clientQueueSizePerCluster,
                              ScheduledThreadPoolExecutor timeoutExecutor) {
         if (cluster.getEndpoints().isEmpty())
-            throw new IllegalArgumentException("Cannot feed to empty cluster.");
+            throw new IllegalArgumentException("At least a single endpoint is required in " + cluster);
 
         this.clusterId = clusterId;
         int totalNumberOfEndpointsInThisCluster = cluster.getEndpoints().size() * connectionParams.getNumPersistentConnectionsPerEndpoint();
-        if (totalNumberOfEndpointsInThisCluster == 0) return;
-
-        // Lower than 1 does not make any sense.
+        if (totalNumberOfEndpointsInThisCluster == 0)
+            throw new IllegalArgumentException("At least 1 persistent connection per endpoint is required in " + cluster);
         int maxInFlightPerSession = Math.max(1, feedParams.getMaxInFlightRequests() / totalNumberOfEndpointsInThisCluster);
 
-        DocumentQueue documentQueue = null;
+        documentQueue = new DocumentQueue(clientQueueSizePerCluster);
+        ioThreadGroup = operationProcessor.getIoThreadGroup();
+        singleEndpoint = cluster.getEndpoints().size() == 1 ? cluster.getEndpoints().get(0) : null;
         for (Endpoint endpoint : cluster.getEndpoints()) {
             EndpointResultQueue endpointResultQueue = new EndpointResultQueue(operationProcessor,
                                                                               endpoint,
@@ -58,17 +67,13 @@ public class ClusterConnection implements AutoCloseable {
                 if (connectionParams.isDryRun()) {
                     gatewayConnection = new DryRunGatewayConnection(endpoint);
                 } else {
-                    gatewayConnection = new ApacheGatewayConnection(
-                            endpoint,
-                            feedParams,
-                            cluster.getRoute(),
-                            connectionParams,
-                            new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
-                            operationProcessor.getClientId()
+                    gatewayConnection = new ApacheGatewayConnection(endpoint,
+                                                                    feedParams,
+                                                                    cluster.getRoute(),
+                                                                    connectionParams,
+                                                                    new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
+                                                                    operationProcessor.getClientId()
                     );
-                }
-                if (documentQueue == null) {
-                    documentQueue = new DocumentQueue(clientQueueSizePerCluster);
                 }
                 IOThread ioThread = new IOThread(operationProcessor.getIoThreadGroup(),
                                                  endpointResultQueue,
@@ -89,15 +94,10 @@ public class ClusterConnection implements AutoCloseable {
     }
 
     public void post(Document document) throws EndpointIOException {
-        String documentIdStr = document.getDocumentId();
-        // The same document ID must always go to the same destination
-        // In noHandshakeMode this has no effect as the documentQueue is shared between the IOThreads.
-        int hash = documentIdStr.hashCode() & 0x7FFFFFFF;  // Strip sign bit
-        IOThread ioThread = ioThreads.get(hash % ioThreads.size());
         try {
-            ioThread.post(document);
-        } catch (Throwable t) {
-            throw new EndpointIOException(ioThread.getEndpoint(), "While sending", t);
+            documentQueue.put(document, Thread.currentThread().getThreadGroup() == ioThreadGroup);
+        } catch (Throwable t) { // InterruptedException if shutting down, IllegalStateException if already shut down
+            throw new EndpointIOException(singleEndpoint, "While sending", t);
         }
     }
 
@@ -165,4 +165,5 @@ public class ClusterConnection implements AutoCloseable {
     public int hashCode() {
         return clusterId;
     }
+
 }

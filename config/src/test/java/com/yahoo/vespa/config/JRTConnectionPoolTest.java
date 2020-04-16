@@ -70,7 +70,7 @@ public class JRTConnectionPoolTest {
 
     // Tests that the number of times each connection is used is close to equal
     private void assertConnectionDistributionIsFair(Map<String, Integer> connectionsUsedPerHost) {
-        double devianceDueToRandomSourceSelection = 0.13;
+        double devianceDueToRandomSourceSelection = 0.14;
         final int size = 1000;
         int minHostCount = (int) (size/2 * (1 - devianceDueToRandomSourceSelection));
         int maxHostCount = (int) (size/2 * (1 + devianceDueToRandomSourceSelection));

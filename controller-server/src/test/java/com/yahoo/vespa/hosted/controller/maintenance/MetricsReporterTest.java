@@ -256,7 +256,7 @@ public class MetricsReporterTest {
                          tester.configServer().nodeRepository().list(zone1.getId(), SystemApplication.configServer.id()).stream()
                                .map(Node::wantedVersion).min(Comparator.naturalOrder()).get());
             tester.configServer().setVersion(SystemApplication.configServer.id(), zone1.getId(), version, 1);
-            tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            tester.clock().advance(Duration.ofMinutes(60).plus(Duration.ofSeconds(1)));
             tester.computeVersionStatus();
             reporter.maintain();
             assertEquals(2, getNodesFailingUpgrade());
@@ -278,7 +278,7 @@ public class MetricsReporterTest {
         var cloud = CloudName.defaultName();
         tester.zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(zone));
         var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                                        new JobControl(tester.curator()), CloudName.defaultName());;
+                                        new JobControl(tester.curator()), CloudName.defaultName());
         var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
                                                        new JobControl(tester.controller().curator()));
         tester.configServer().bootstrap(List.of(zone.getId()), SystemApplication.configServerHost, SystemApplication.tenantHost);

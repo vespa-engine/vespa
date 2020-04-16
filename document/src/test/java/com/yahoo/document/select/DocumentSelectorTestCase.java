@@ -8,10 +8,13 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -26,20 +29,24 @@ import static org.junit.Assert.fail;
  */
 public class DocumentSelectorTestCase {
 
+    @Rule
+    public final ExpectedException exceptionRule = ExpectedException.none();
+
     private static DocumentTypeManager manager = new DocumentTypeManager();
 
     @Before
     public void setUp() {
-        DocumentType type = new DocumentType("test");
-        type.addHeaderField("hint", DataType.INT);
-        type.addHeaderField("hfloat", DataType.FLOAT);
-        type.addHeaderField("hstring", DataType.STRING);
+        var importedFields = new HashSet<>(List.of("my_imported_field"));
+        DocumentType type = new DocumentType("test", importedFields);
+        type.addField("hint", DataType.INT);
+        type.addField("hfloat", DataType.FLOAT);
+        type.addField("hstring", DataType.STRING);
         type.addField("content", DataType.STRING);
 
         StructDataType mystruct = new StructDataType("mystruct");
-        mystruct.addField(new Field("key", DataType.INT, false));
-        mystruct.addField(new Field("value", DataType.STRING, false));
-        type.addHeaderField("mystruct", mystruct);
+        mystruct.addField(new Field("key", DataType.INT));
+        mystruct.addField(new Field("value", DataType.STRING));
+        type.addField("mystruct", mystruct);
 
         ArrayDataType structarray = new ArrayDataType(mystruct);
         type.addField("structarray", structarray);
@@ -75,6 +82,7 @@ public class DocumentSelectorTestCase {
         assertParse("id.hash() > 0");
         assertParse("id.namespace.hash() > 0");
         assertParse("music.artist = \"*\"");
+        assertParse("music.artist = \"&\"");
         assertParse("music.artist.lowercase() = \"*\"");
         assertParse("music_.artist = \"*\"");
         assertParse("music_foo.artist = \"*\"");
@@ -332,6 +340,7 @@ public class DocumentSelectorTestCase {
         documents.add(createDocument("id:myspace:test:n=2345:mail2", 15, 1.0f, "bar", "baz"));
         documents.add(createDocument("id:myspace:test:g=mygroup:qux", 15, 1.0f, "quux", "corge"));
         documents.add(createDocument("id:myspace:test::missingint", null, 2.0f, null, "bar"));
+        documents.add(createDocument("id:myspace:test::ampersand", null, 2.0f, null, "&"));
 
         // Add some array/struct info to doc 1
         Struct sval = new Struct(documents.get(1).getDocument().getField("mystruct").getDataType());
@@ -476,6 +485,8 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.FALSE, evaluate("test.hstring == test.content", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.hstring == test.content", documents.get(2)));
         assertEquals(Result.TRUE, evaluate("test.hint + 1 > 13", documents.get(1)));
+        assertEquals(Result.FALSE, evaluate("test.content = \"&\"", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.content = \"&\"", documents.get(7)));
         // Case where field is not present (i.e. null) is defined for (in)equality comparisons, but
         // not for other relations.
         DocumentPut doc1234 = documents.get(6);
@@ -697,6 +708,44 @@ public class DocumentSelectorTestCase {
     }
 
     @Test
+    public void using_non_commutative_comparison_operator_with_field_value_is_well_defined() throws ParseException {
+        var documents = createDocs();
+        // Doc 0 contains 24 in `hint` field.
+        assertEquals(Result.FALSE, evaluate("25 <= test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("24 <= test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("25 > test.hint", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("24 > test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("24 >= test.hint", documents.get(0)));
+
+        assertEquals(Result.FALSE, evaluate("test.hint <= 23", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint <= 24", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint > 23", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.hint > 24", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint >= 24", documents.get(0)));
+    }
+
+    @Test
+    public void imported_field_references_are_treated_as_valid_field_with_missing_value() throws ParseException {
+        var documents = createDocs();
+        assertEquals(Result.TRUE, evaluate("test.my_imported_field == null", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.my_imported_field != null", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.my_imported_field", documents.get(0)));
+        // Only (in)equality operators are well defined for null values; everything else becomes Invalid.
+        assertEquals(Result.INVALID, evaluate("test.my_imported_field > 0", documents.get(0)));
+    }
+
+    @Test
+    public void imported_fields_only_supported_for_simple_expressions() throws ParseException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        // TODO we should probably handle this case specially and give a better exception message
+        exceptionRule.expectMessage("Field 'my_imported_field' not found in type datatype test");
+
+        var documents = createDocs();
+        // Nested field access is NOT considered a simple expression.
+        evaluate("test.my_imported_field.foo", documents.get(0));
+    }
+
+    @Test
     public void testTicket1769674() {
         assertParseError("music.uri=\"junk",
                          "Lexical error at line -1, column 17.  Encountered: <EOF> after : \"\\\"junk\"");
@@ -829,7 +878,6 @@ public class DocumentSelectorTestCase {
         } catch (ParseException e) {
             fail("The expression '" + expressionString + "' should assertEquals ok.");
         } catch (RuntimeException e) {
-            System.err.println("Error was : " + e);
             assertTrue(e.getMessage().length() >= expectedError.length());
             assertEquals(expectedError, e.getMessage().substring(0, expectedError.length()));
         }

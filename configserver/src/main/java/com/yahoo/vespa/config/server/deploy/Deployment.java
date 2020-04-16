@@ -4,10 +4,9 @@ package com.yahoo.vespa.config.server.deploy;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -25,7 +24,6 @@ import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -49,12 +47,18 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Duration timeout;
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
-    
+
+    /** The repository part of docker image this application should run on. Version is separate from image repo */
+    Optional<String> dockerImageRepository;
+
     /** The Vespa version this application should run on */
     private final Version version;
 
     /** True if this deployment is done to bootstrap the config server */
     private final boolean isBootstrap;
+
+    /** The (optional) Athenz domain this application should use */
+    private final Optional<AthenzDomain> athenzDomain;
 
     private boolean prepared = false;
     
@@ -64,9 +68,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private boolean ignoreSessionStaleFailure = false;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
-                       Optional<Provisioner> hostProvisioner, Tenant tenant,
-                       Duration timeout, Clock clock, boolean prepared, boolean validate, Version version,
-                       boolean isBootstrap) {
+                       Optional<Provisioner> hostProvisioner, Tenant tenant, Duration timeout,
+                       Clock clock, boolean prepared, boolean validate, boolean isBootstrap) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.hostProvisioner = hostProvisioner;
@@ -75,23 +78,24 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.clock = clock;
         this.prepared = prepared;
         this.validate = validate;
-        this.version = version;
+        this.dockerImageRepository = session.getDockerImageRepository();
+        this.version = session.getVespaVersion();
         this.isBootstrap = isBootstrap;
+        this.athenzDomain = session.getAthenzDomain();
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> hostProvisioner, Tenant tenant,
-                                        Duration timeout, Clock clock, boolean validate, Version version,
-                                        boolean isBootstrap) {
-        return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, false, validate, version, isBootstrap);
+                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
+        return new Deployment(session, applicationRepository, hostProvisioner, tenant, timeout, clock, false,
+                              validate, isBootstrap);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> hostProvisioner, Tenant tenant,
                                       Duration timeout, Clock clock, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, true, true, session.getVespaVersion(), isBootstrap);
+                              timeout, clock, true, true, isBootstrap);
     }
 
     public void setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
@@ -105,16 +109,14 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.prepareMillis")) {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
-            session.prepare(logger,
-                            new PrepareParams.Builder().applicationId(session.getApplicationId())
-                                                       .timeoutBudget(timeoutBudget)
-                                                       .ignoreValidationErrors(!validate)
-                                                       .vespaVersion(version.toString())
-                                                       .isBootstrap(isBootstrap)
-                                                       .build(),
-                            Optional.empty(),
-                            tenant.getPath(),
-                            clock.instant());
+            PrepareParams.Builder params = new PrepareParams.Builder().applicationId(session.getApplicationId())
+                    .timeoutBudget(timeoutBudget)
+                    .ignoreValidationErrors(!validate)
+                    .vespaVersion(version.toString())
+                    .isBootstrap(isBootstrap);
+            dockerImageRepository.ifPresent(params::dockerImageRepository);
+            athenzDomain.ifPresent(params::athenzDomain);
+            session.prepare(logger, params.build(), Optional.empty(), tenant.getPath(), clock.instant());
             this.prepared = true;
         }
     }
@@ -129,10 +131,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
             ApplicationId applicationId = session.getApplicationId();
+            LocalSession previousActiveSession;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
                 validateSessionStatus(session);
                 NestedTransaction transaction = new NestedTransaction();
-                transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(applicationId), session, ignoreSessionStaleFailure));
+                previousActiveSession = applicationRepository.getActiveSession(applicationId);
+                transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, ignoreSessionStaleFailure));
                 hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
                 transaction.commit();
             }
@@ -147,8 +151,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             log.log(LogLevel.INFO, session.logPre() + "Session " + session.getSessionId() +
                                    " activated successfully using " +
-                                   (hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner") +
+                                   (hostProvisioner.isPresent() ? hostProvisioner.get().getClass().getSimpleName() : "no host provisioner") +
                                    ". Config generation " + session.getMetaData().getGeneration() +
+                                   (previousActiveSession != null ? ". Activated session based on previous active session " + previousActiveSession.getSessionId() : "") +
                                    ". File references used: " + applicationRepository.getFileReferences(applicationId));
         }
     }
@@ -166,14 +171,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** Exposes the session of this for testing only */
     public LocalSession session() { return session; }
 
-    private long validateSessionStatus(LocalSession localSession) {
+    private void validateSessionStatus(LocalSession localSession) {
         long sessionId = localSession.getSessionId();
         if (Session.Status.NEW.equals(localSession.getStatus())) {
             throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is not prepared");
         } else if (Session.Status.ACTIVATE.equals(localSession.getStatus())) {
             throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is already active");
         }
-        return sessionId;
     }
 
     private Transaction deactivateCurrentActivateNew(LocalSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {

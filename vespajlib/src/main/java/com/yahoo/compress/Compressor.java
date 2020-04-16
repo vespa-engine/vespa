@@ -3,8 +3,12 @@ package com.yahoo.compress;
 
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
+import net.jpountz.lz4.LZ4FastDecompressor;
+import net.jpountz.lz4.LZ4SafeDecompressor;
+
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Random;
 
 /**
  * Compressor which can compress and decompress in various formats.
@@ -19,7 +23,7 @@ public class Compressor {
     private final double compressionThresholdFactor;
     private final int compressMinSizeBytes;
 
-    private final LZ4Factory factory = LZ4Factory.fastestInstance();
+    private static final LZ4Factory factory = LZ4Factory.fastestInstance();
 
     /** Creates a compressor with default settings. */
     public Compressor() {
@@ -29,6 +33,10 @@ public class Compressor {
     /** Creates a compressor with a default compression type. */
     public Compressor(CompressionType type) {
         this(type, 9, 0.95, 0);
+    }
+
+    public Compressor(CompressionType type, int level) {
+        this(type, level, 0.95, 0);
     }
 
     /**
@@ -79,14 +87,16 @@ public class Compressor {
             case LZ4:
                 int dataSize = uncompressedSize.isPresent() ? uncompressedSize.get() : data.length;
                 if (dataSize < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
-                LZ4Compressor compressor = level < 7 ? factory.fastCompressor() : factory.highCompressor();
-                byte[] compressedData = compressor.compress(data, 0, dataSize);
+                byte[] compressedData = getCompressor().compress(data, 0, dataSize);
                 if (compressedData.length + 8 >= dataSize * compressionThresholdFactor)
                     return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
                 return new Compression(CompressionType.LZ4, dataSize, compressedData);
             default:
                 throw new IllegalArgumentException(requestedCompression + " is not supported");
         }
+    }
+    private LZ4Compressor getCompressor() {
+        return level < 7 ? factory.fastCompressor() : factory.highCompressor();
     }
     /** Compresses some data using the requested compression type */
     public Compression compress(CompressionType requestedCompression, byte[] data) { return compress(requestedCompression, data, Optional.empty()); }
@@ -131,6 +141,39 @@ public class Compressor {
     /** Decompresses some data */
     public byte[] decompress(Compression compression) {
         return decompress(compression.type(), compression.data(), 0, compression.uncompressedSize(), Optional.empty());
+    }
+
+    public byte[] compressUnconditionally(byte[] input) {
+        return getCompressor().compress(input);
+    }
+
+    public byte [] decompressUnconditionally(byte[] input, int srcOffset, int uncompressedLen) {
+        if (input.length > 0) {
+            return factory.fastDecompressor().decompress(input, srcOffset, uncompressedLen);
+        }
+        return new byte[0];
+    }
+
+    public long warmup(double seconds) {
+        byte [] input = new byte[0x4000];
+        new Random().nextBytes(input);
+        long timeDone = System.nanoTime() + (long)(seconds*1000000000);
+        long compressedBytes = 0;
+        byte [] decompressed = new byte [input.length];
+        LZ4FastDecompressor fastDecompressor = factory.fastDecompressor();
+        LZ4SafeDecompressor safeDecompressor = factory.safeDecompressor();
+        LZ4Compressor fastCompressor = factory.fastCompressor();
+        LZ4Compressor highCompressor = factory.highCompressor();
+        while (System.nanoTime() < timeDone) {
+            byte [] compressedFast = fastCompressor.compress(input);
+            byte [] compressedHigh = highCompressor.compress(input);
+            fastDecompressor.decompress(compressedFast, decompressed);
+            fastDecompressor.decompress(compressedHigh, decompressed);
+            safeDecompressor.decompress(compressedFast, decompressed);
+            safeDecompressor.decompress(compressedHigh, decompressed);
+            compressedBytes += compressedFast.length + compressedHigh.length;
+        }
+        return compressedBytes;
     }
 
     public static class Compression {

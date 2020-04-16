@@ -4,6 +4,7 @@ package com.yahoo.config.provision.serialization;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NetworkPorts;
@@ -37,7 +38,12 @@ public class AllocatedHostsSerializerTest {
         hosts.add(new HostSpec("with-aliases",
                                List.of("alias1", "alias2")));
         hosts.add(new HostSpec("allocated",
-                               Optional.of(ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1")))));
+                               List.of(),
+                               Optional.empty(),
+                               Optional.of(ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                                  Optional.of("docker.foo.com:4443/vespa/bar"))),
+                               Optional.empty(), Optional.empty(), Optional.empty(),
+                               Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))));
         hosts.add(new HostSpec("flavor-from-resources-1",
                                Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4, 1))));
         hosts.add(new HostSpec("flavor-from-resources-2",
@@ -72,6 +78,7 @@ public class AllocatedHostsSerializerTest {
             assertEquals(expectedHost.networkPorts(), deserializedHost.networkPorts());
             assertEquals(expectedHost.aliases(), deserializedHost.aliases());
             assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
+            assertEquals(expectedHost.dockerImageRepo(), deserializedHost.dockerImageRepo());
         }
     }
 

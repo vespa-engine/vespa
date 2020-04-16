@@ -6,12 +6,11 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
@@ -19,7 +18,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * The API controllers use when communicating with config servers.
@@ -32,9 +30,7 @@ public interface ConfigServer {
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
-                               Set<ContainerEndpoint> containerEndpoints, Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                               byte[] content);
+    PreparedApplication deploy(DeploymentData deployment);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 
@@ -44,7 +40,9 @@ public interface ConfigServer {
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
 
-    Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
+    Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath);
+
+    String getClusterControllerStatus(DeploymentId deployment, String restPath);
 
     /**
      * Gets the Vespa logs of the given deployment.
@@ -111,15 +109,12 @@ public interface ConfigServer {
     TesterCloud.Status getTesterStatus(DeploymentId deployment);
 
     /** Starts tests on tester node */
-    // TODO: Remove default implementation when implemented in internal repo
-    default String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config) { return "Tests started"; }
+    String startTests(DeploymentId deployment, TesterCloud.Suite suite, byte[] config);
 
     /** Gets log from tester node */
-    // TODO: Remove default implementation when implemented in internal repo
-    default List<LogEntry> getTesterLog(DeploymentId deployment, long after) { return List.of(); }
+    List<LogEntry> getTesterLog(DeploymentId deployment, long after);
 
     /** Is tester node ready */
-    // TODO: Remove default implementation when implemented in internal repo
-    default boolean isTesterReady(DeploymentId deployment) { return false; }
+    boolean isTesterReady(DeploymentId deployment);
 
 }

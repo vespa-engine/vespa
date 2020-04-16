@@ -287,7 +287,9 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount,
             request.ranking.c_str());
     }
-    my_stats.queryCollateralTime(vespalib::to_s(total_matching_time.elapsed()) - my_stats.queryLatencyAvg());
+    double querySetupTime = vespalib::to_s(total_matching_time.elapsed()) - my_stats.queryLatencyAvg();
+    my_stats.queryCollateralTime(querySetupTime); // TODO: Remove in Vespa 8
+    my_stats.querySetupTime(querySetupTime);
     {
         vespalib::duration duration = request.getTimeUsed();
         std::lock_guard<std::mutex> guard(_statsLock);

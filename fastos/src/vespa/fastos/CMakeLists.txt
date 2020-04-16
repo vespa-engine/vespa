@@ -4,6 +4,7 @@ vespa_add_library(fastos_objects OBJECT
     app.cpp
     backtrace.c
     file.cpp
+    file_rw_ops.cpp
     linux_file.cpp
     process.cpp
     thread.cpp

@@ -49,6 +49,9 @@ public class CloudEventReporter extends Maintainer {
         for (var awsRegion : zonesByCloudNativeRegion.keySet()) {
             List<CloudEvent> events = eventFetcher.getEvents(awsRegion);
             for (var event : events) {
+                log.info(String.format("Retrieved event %s, affecting the following instances: %s",
+                        event.instanceEventId,
+                        event.affectedInstances));
                 List<String> deprovisionedHosts = deprovisionHosts(awsRegion, event);
                 submitIssue(event, deprovisionedHosts);
             }

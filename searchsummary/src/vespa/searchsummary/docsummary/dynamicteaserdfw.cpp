@@ -257,11 +257,11 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
                 rc = SkipItem(&iterator);
             break;
         case search::ParseItem::ITEM_NEAR:
-            if (!v->VisitNEAR(&item, iterator.getArity(),iterator.getArg1()))
+            if (!v->VisitNEAR(&item, iterator.getArity(),iterator.getNearDistance()))
                 rc = SkipItem(&iterator);
             break;
         case search::ParseItem::ITEM_ONEAR:
-            if (!v->VisitWITHIN(&item, iterator.getArity(),iterator.getArg1()))
+            if (!v->VisitWITHIN(&item, iterator.getArity(),iterator.getNearDistance()))
                 rc = SkipItem(&iterator);
             break;
         // Unhandled items are just ignored by juniper

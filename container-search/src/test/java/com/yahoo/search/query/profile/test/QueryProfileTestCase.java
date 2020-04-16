@@ -326,14 +326,14 @@ public class QueryProfileTestCase {
         assertEquals("mormor-model.b", annetBarnMap.get("venn.model.b"));
     }
 
-    /** Tests that dots are followed when setting overridability */
+    /** Dots are followed when setting overridability */
     @Test
     public void testInstanceOverridable() {
         QueryProfile profile = new QueryProfile("root/unoverridableIndex");
         profile.set("model.defaultIndex","default", null);
         profile.setOverridable("model.defaultIndex", false,null);
 
-        assertFalse(profile.isDeclaredOverridable("model.defaultIndex",null).booleanValue());
+        assertFalse(profile.isDeclaredOverridable("model.defaultIndex",null));
 
         // Parameters should be ignored
         Query query = new Query(HttpRequest.createTestRequest("?model.defaultIndex=title", Method.GET), profile.compile(null));
@@ -345,7 +345,7 @@ public class QueryProfileTestCase {
         assertEquals("de", query.getModel().getLanguage().languageCode());
     }
 
-    /** Tests that dots are followed when setting overridability...also with variants */
+    /** Dots are followed when setting overridability, also with variants */
     @Test
     public void testInstanceOverridableWithVariants() {
         QueryProfile profile = new QueryProfile("root/unoverridableIndex");
@@ -504,7 +504,8 @@ public class QueryProfileTestCase {
         p.set("a","a-value", null);
         p.set("a.b","a.b-value", null);
         Map<String, Object> values = p.compile(null).listValues("a");
-        assertEquals(1, values.size());
+        assertEquals(2, values.size());
+        p.set("a","a-value", null);
         assertEquals("a.b-value", values.get("b"));
     }
 

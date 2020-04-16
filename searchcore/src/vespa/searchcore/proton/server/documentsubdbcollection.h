@@ -26,6 +26,7 @@ namespace searchcorespi {
 }
 
 namespace proton {
+
 class DocumentDBConfig;
 struct DocumentDBTaggedMetrics;
 class MaintenanceController;
@@ -41,6 +42,8 @@ class IDocumentSubDBOwner;
 class IDocumentSubDB;
 class IDocumentRetriever;
 class ReconfigParams;
+class RemoveDocumentsOperation;
+class FeedHandler;
 
 namespace matching {
     class QueryLimiter;
@@ -163,6 +166,7 @@ public:
     double getReprocessingProgress() const;
     void close();
     void tearDownReferences(IDocumentDBReferenceResolver &resolver);
+    void validateDocStore(FeedHandler & feedHandler, SerialNum serialNum);
 };
 
 } // namespace proton

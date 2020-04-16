@@ -20,9 +20,6 @@ public:
 
     uint32_t getExecuteCnt() const { return _executeCnt; }
 
-    /**
-     * Implements IThreadService
-     */
     vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) override {
         ++_executeCnt;
         return _service.execute(std::move(task));
@@ -34,10 +31,22 @@ public:
         _service.sync();
         return *this;
     }
+    ThreadServiceObserver &shutdown() override {
+        _service.shutdown();
+        return *this;
+    }
     bool isCurrentThread() const override {
         return _service.isCurrentThread();
     }
     size_t getNumThreads() const override { return _service.getNumThreads(); }
+
+    Stats getStats() override {
+        return _service.getStats();
+    }
+
+    void setTaskLimit(uint32_t taskLimit) override {
+        _service.setTaskLimit(taskLimit);
+    }
 
 };
 

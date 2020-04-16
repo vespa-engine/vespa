@@ -35,7 +35,7 @@
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.45.0",
   "failCount": 1,
   "wantToRetire": true,
-  "wantToDeprovision": true,
+  "wantToDeprovision": false,
   "history": [
     {
       "event": "provisioned",

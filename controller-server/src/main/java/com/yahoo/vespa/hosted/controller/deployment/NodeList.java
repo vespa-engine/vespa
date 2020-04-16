@@ -30,7 +30,7 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
                                  .map(node -> new NodeWithServices(node,
                                                                    parentsByHostName.get(node.parentHostname().get()),
                                                                    services.wantedGeneration(),
-                                                                   servicesByHostName.get(node.hostname())))
+                                                                   servicesByHostName.getOrDefault(node.hostname(), List.of())))
                                  .collect(Collectors.toList()),
                             false,
                             services.wantedGeneration());

@@ -8,7 +8,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
@@ -35,9 +34,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.log.JavaUtilLog;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceReference;
 
 import javax.management.remote.JMXServiceURL;
 import javax.servlet.DispatcherType;
@@ -45,10 +41,8 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
 import java.net.MalformedURLException;
-import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -114,6 +108,13 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         String URI_LENGTH = "jdisc.http.request.uri_length";
         String CONTENT_SIZE = "jdisc.http.request.content_size";
+
+        String SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.missing_client_cert";
+        String SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.expired_client_cert";
+        String SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.invalid_client_cert";
+        String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS = "jdisc.http.ssl.handshake.failure.incompatible_protocols";
+        String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS = "jdisc.http.ssl.handshake.failure.incompatible_ciphers";
+        String SSL_HANDSHAKE_FAILURE_UNKNOWN = "jdisc.http.ssl.handshake.failure.unknown";
     }
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
@@ -134,7 +135,6 @@ public class JettyHttpServer extends AbstractServerProvider {
             final FilterBindings filterBindings,
             final ComponentRegistry<ConnectorFactory> connectorFactories,
             final ComponentRegistry<ServletHolder> servletHolders,
-            final OsgiFramework osgiFramework,
             final FilterInvoker filterInvoker,
             final AccessLog accessLog) {
         super(container);
@@ -150,12 +150,9 @@ public class JettyHttpServer extends AbstractServerProvider {
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 
-        List<ConnectorConfig> connectorConfigs = new ArrayList<>();
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
-            connectorConfigs.add(connectorConfig);
-            ServerSocketChannel preBoundChannel = getChannelFromServiceLayer(connectorConfig.listenPort(), osgiFramework.bundleContext());
-            server.addConnector(connectorFactory.createConnector(metric, server, preBoundChannel));
+            server.addConnector(connectorFactory.createConnector(metric, server));
             listenedPorts.add(connectorConfig.listenPort());
         }
 
@@ -245,10 +242,13 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         servletContextHandler.addServlet(jdiscServlet, "/*");
 
-        var proxyHandler = new HealthCheckProxyHandler(connectors);
-        proxyHandler.setHandler(servletContextHandler);
-
         List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
+        var secureRedirectHandler = new SecuredRedirectHandler(connectorConfigs);
+        secureRedirectHandler.setHandler(servletContextHandler);
+
+        var proxyHandler = new HealthCheckProxyHandler(connectors);
+        proxyHandler.setHandler(secureRedirectHandler);
+
         var authEnforcer = new TlsClientAuthenticationEnforcer(connectorConfigs);
         authEnforcer.setHandler(proxyHandler);
 
@@ -279,25 +279,6 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private static String getDisplayName(List<Integer> ports) {
         return ports.stream().map(Object::toString).collect(Collectors.joining(":"));
-    }
-
-    private ServerSocketChannel getChannelFromServiceLayer(int listenPort, BundleContext bundleContext) {
-        log.log(Level.FINE, "Retrieving channel for port " + listenPort + " from " + bundleContext.getClass().getName());
-        Collection<ServiceReference<ServerSocketChannel>> refs;
-        final String filter = "(port=" + listenPort + ")";
-        try {
-            refs = bundleContext.getServiceReferences(ServerSocketChannel.class, filter);
-        } catch (InvalidSyntaxException e) {
-            throw new IllegalStateException("OSGi framework rejected filter " + filter, e);
-        }
-        if (refs.isEmpty()) {
-            return null;
-        }
-        if (refs.size() != 1) {
-            throw new IllegalStateException("Got more than one service reference for " + ServerSocketChannel.class + " port " + listenPort + ".");
-        }
-        ServiceReference<ServerSocketChannel> ref = refs.iterator().next();
-        return bundleContext.getService(ref);
     }
 
     private static ExecutorService newJanitor(ThreadFactory factory) {

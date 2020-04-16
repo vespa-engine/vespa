@@ -3,15 +3,9 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * List for filtering deployment status of applications, for inspection and decision making.
@@ -48,14 +42,14 @@ public class DeploymentStatusList extends AbstractFilteringList<DeploymentStatus
 
     private static boolean failingUpgradeToVersionSince(JobList jobs, Version version, Instant threshold) {
         return ! jobs.not().failingApplicationChange()
-                     .firstFailing().endedBefore(threshold)
+                     .firstFailing().endedNoLaterThan(threshold)
                      .lastCompleted().on(version)
                      .isEmpty();
     }
 
     private static boolean failingApplicationChangeSince(JobList jobs, Instant threshold) {
         return ! jobs.failingApplicationChange()
-                     .firstFailing().endedBefore(threshold)
+                     .firstFailing().endedNoLaterThan(threshold)
                      .isEmpty();
     }
 

@@ -1,5 +1,5 @@
 {
-  "routingType": "rotation",
+  "routingMethod": "shared",
   "environment": "prod",
   "region": "us-west-1",
   "status": "out",

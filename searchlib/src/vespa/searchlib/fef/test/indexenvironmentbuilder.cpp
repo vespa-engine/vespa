@@ -3,14 +3,11 @@
 #include <vespa/searchcommon/common/datatype.h>
 #include "indexenvironmentbuilder.h"
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 IndexEnvironmentBuilder::IndexEnvironmentBuilder(IndexEnvironment &env) :
     _env(env)
 {
-    // empty
 }
 
 IndexEnvironmentBuilder &
@@ -34,6 +31,4 @@ IndexEnvironmentBuilder::addField(const FieldType &type,
     return *this;
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

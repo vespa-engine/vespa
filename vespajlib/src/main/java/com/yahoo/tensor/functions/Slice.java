@@ -230,7 +230,7 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
         @Override
         public String toString() {
-            return toString(null);
+            return toString(ToStringContext.empty());
         }
 
         public String toString(ToStringContext context) {

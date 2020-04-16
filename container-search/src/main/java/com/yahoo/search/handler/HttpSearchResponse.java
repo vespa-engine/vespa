@@ -23,6 +23,7 @@ import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.query.context.QueryContext;
+import com.yahoo.yolean.trace.TraceNode;
 
 /**
  * Wrap the result of a query as an HTTP response.
@@ -36,8 +37,13 @@ public class HttpSearchResponse extends ExtendedResponse {
     private final Renderer<Result> rendererCopy;
     private final Timing timing;
     private final HitCounts hitCounts;
+    private final TraceNode trace;
 
     public HttpSearchResponse(int status, Result result, Query query, Renderer renderer) {
+        this(status, result, query, renderer, null);
+    }
+
+    HttpSearchResponse(int status, Result result, Query query, Renderer renderer, TraceNode trace) {
         super(status);
         this.query = query;
         this.result = result;
@@ -45,6 +51,7 @@ public class HttpSearchResponse extends ExtendedResponse {
 
         this.timing = SearchResponse.createTiming(query, result);
         this.hitCounts = SearchResponse.createHitCounts(query, result);
+        this.trace = trace;
         populateHeaders(headers(), result.getHeaders(false));
     }
 
@@ -107,6 +114,9 @@ public class HttpSearchResponse extends ExtendedResponse {
     @Override
     public void populateAccessLogEntry(final AccessLogEntry accessLogEntry) {
         super.populateAccessLogEntry(accessLogEntry);
+        if (trace != null) {
+            accessLogEntry.setTrace(trace);
+        }
         populateAccessLogEntry(accessLogEntry, getHitCounts());
     }
 

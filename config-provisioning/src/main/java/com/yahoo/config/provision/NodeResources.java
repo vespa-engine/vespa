@@ -10,6 +10,8 @@ import java.util.Objects;
  */
 public class NodeResources {
 
+    public static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
+
     public enum DiskSpeed {
 
         fast, // Has/requires SSD disk or similar speed
@@ -112,37 +114,43 @@ public class NodeResources {
     public StorageType storageType() { return storageType; }
 
     public NodeResources withVcpu(double vcpu) {
+        if (vcpu == this.vcpu) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withMemoryGb(double memoryGb) {
+        if (memoryGb == this.memoryGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withDiskGb(double diskGb) {
+        if (diskGb == this.diskGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withBandwidthGbps(double bandwidthGbps) {
+        if (bandwidthGbps == this.bandwidthGbps) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
-    // TODO: Remove after November 2019
-    public NodeResources withDiskSpeed(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
-    }
-
-    public NodeResources with(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
+    public NodeResources with(DiskSpeed diskSpeed) {
+        if (diskSpeed == this.diskSpeed) return this;
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources with(StorageType storageType) {
+        if (storageType == this.storageType) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     /** Returns this with disk speed and storage type set to any */
     public NodeResources justNumbers() {
         return with(NodeResources.DiskSpeed.any).with(StorageType.any);
+    }
+
+    /** Returns this with all numbers set to 0 */
+    public NodeResources justNonNumbers() {
+        return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0);
     }
 
     public NodeResources subtract(NodeResources other) {
@@ -196,10 +204,11 @@ public class NodeResources {
 
     @Override
     public String toString() {
-        return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
-               (bandwidthGbps > 0 ? ", bandwidth: " + bandwidthGbps + " Gbps" : "") +
-               ( ! diskSpeed.isDefault() ? ", disk speed: " + diskSpeed : "") +
-               ( ! storageType.isDefault() ? ", storage type: " + storageType : "") + "]";
+        return String.format("[vcpu: %1$.1f, memory: %2$.1f Gb, disk %3$.1f Gb" +
+                            (bandwidthGbps > 0 ? ", bandwidth: %4$.1f Gbps" : "") +
+                            ( ! diskSpeed.isDefault() ? ", disk speed: " + diskSpeed : "") +
+                            ( ! storageType.isDefault() ? ", storage type: " + storageType : "") + "]",
+                            vcpu, memoryGb, diskGb, bandwidthGbps);
     }
 
     /** Returns true if all the resources of this are the same or larger than the given resources */

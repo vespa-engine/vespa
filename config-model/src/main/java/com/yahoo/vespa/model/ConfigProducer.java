@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.List;
-import java.util.Map;
-
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
 import com.yahoo.config.model.producer.UserConfigRepo;
+
+import java.io.PrintStream;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Interface that should be implemented by all config producing modules
@@ -33,17 +31,6 @@ public interface ConfigProducer extends com.yahoo.config.ConfigInstance.Producer
 
     /** Returns a List of all Services that are descendants to this ConfigProducer */
     List<Service> getDescendantServices();
-
-    /**
-     * Writes files that need to be written.  The files will usually
-     * only be written when the Vespa model is generated through the
-     * deploy-application script.
-     * This is primarily intended for debugging.
-     * 
-     * @param directory directory to write files to
-     * @throws java.io.IOException if writing fails
-     */
-    void writeFiles(File directory) throws IOException;
 
     /**
      * Dump the three of config producers to the specified stream.

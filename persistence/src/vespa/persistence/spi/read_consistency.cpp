@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "read_consistency.h"
-#include <iostream>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.spi.read_consistency");
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 std::ostream&
 operator<<(std::ostream& os, ReadConsistency consistency)
@@ -24,6 +23,4 @@ operator<<(std::ostream& os, ReadConsistency consistency)
     return os;
 }
 
-} // spi
-} // storage
-
+}

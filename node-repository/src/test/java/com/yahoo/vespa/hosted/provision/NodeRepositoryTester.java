@@ -25,10 +25,9 @@ public class NodeRepositoryTester {
 
     private final NodeFlavors nodeFlavors;
     private final NodeRepository nodeRepository;
-    private final Clock clock;
+    private final ManualClock clock;
     private final MockCurator curator;
-    
-    
+
     public NodeRepositoryTester() {
         nodeFlavors = new NodeFlavors(createConfig());
         clock = new ManualClock();
@@ -50,13 +49,13 @@ public class NodeRepositoryTester {
     public Node addNode(String id, String hostname, String flavor, NodeType type) {
         Node node = nodeRepository.createNode(id, hostname, Optional.empty(), 
                                               nodeFlavors.getFlavorOrThrow(flavor), type);
-        return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
+        return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
     }
 
     public Node addNode(String id, String hostname, String parentHostname, String flavor, NodeType type) {
         Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
-                nodeFlavors.getFlavorOrThrow(flavor), type);
-        return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
+                                              nodeFlavors.getFlavorOrThrow(flavor), type);
+        return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
     }
 
     /**
@@ -76,5 +75,7 @@ public class NodeRepositoryTester {
         b.addFlavor("docker", 1., 2., 50, 1, Flavor.Type.DOCKER_CONTAINER).cost(1);
         return b.build();
     }
+
+    public ManualClock clock() { return clock; }
 
 }

@@ -3,6 +3,7 @@
 #include "general_result.h"
 #include "resultconfig.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/datatype.h>
 #include <zlib.h>
 #include <cassert>
 
@@ -96,7 +97,13 @@ std::unique_ptr<document::FieldValue>
 GeneralResult::get_field_value(const vespalib::string& field_name) const
 {
     if (_document != nullptr) {
-        return _document->getValue(field_name);
+        const document::Field & field = _document->getField(field_name);
+        auto value(field.getDataType().createFieldValue());
+        if (value) {
+            if (_document->getValue(field, *value)) {
+                return value;
+            }
+        }
     }
     return std::unique_ptr<document::FieldValue>();
 }

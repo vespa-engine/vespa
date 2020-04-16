@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TransientException;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -14,6 +15,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.Closeable;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -28,20 +30,41 @@ class MaintenanceDeployment implements Closeable {
     private static final Logger log = Logger.getLogger(MaintenanceDeployment.class.getName());
 
     private final ApplicationId application;
+    private final Metric metric;
     private final Optional<Mutex> lock;
     private final Optional<Deployment> deployment;
 
     private boolean closed = false;
 
-    public MaintenanceDeployment(ApplicationId application, Deployer deployer, NodeRepository nodeRepository) {
+    public MaintenanceDeployment(ApplicationId application,
+                                 Deployer deployer,
+                                 Metric metric,
+                                 NodeRepository nodeRepository) {
         this.application = application;
-        lock = tryLock(application, nodeRepository);
-        deployment = tryDeployment(lock, application, deployer, nodeRepository);
+        this.metric = metric;
+        Optional<Mutex> lock = tryLock(application, nodeRepository);
+        try {
+            deployment = tryDeployment(lock, application, deployer, nodeRepository);
+            this.lock = lock;
+            lock = Optional.empty();
+        } finally {
+            lock.ifPresent(Mutex::close);
+        }
     }
 
     /** Return whether this is - as yet - functional and can be used to carry out the deployment */
     public boolean isValid() {
         return deployment.isPresent();
+    }
+
+    /**
+     * Returns the application lock held by this, or empty if it is not held.
+     *
+     * @throws IllegalStateException id this is called when closed
+     */
+    public Optional<Mutex> applicationLock() {
+        if (closed) throw new IllegalStateException(this + " is closed");
+        return lock;
     }
 
     public boolean prepare() {
@@ -53,16 +76,18 @@ class MaintenanceDeployment implements Closeable {
     }
 
     private boolean doStep(Runnable action) {
-        if (closed) throw new IllegalStateException("Deployment of '" + application + "' is closed");
+        if (closed) throw new IllegalStateException(this + "' is closed");
         if ( ! isValid()) return false;
         try {
             action.run();
             return true;
         } catch (TransientException e) {
+            metric.add("maintenanceDeployment.transientFailure", 1, metric.createContext(Map.of()));
             log.log(LogLevel.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
                                    Exceptions.toMessageString(e));
             return false;
         } catch (RuntimeException e) {
+            metric.add("maintenanceDeployment.failure", 1, metric.createContext(Map.of()));
             log.log(LogLevel.WARNING, "Exception on maintenance deploy of " + application, e);
             return false;
         }
@@ -91,6 +116,11 @@ class MaintenanceDeployment implements Closeable {
     public void close() {
         lock.ifPresent(l -> l.close());
         closed = true;
+    }
+
+    @Override
+    public String toString() {
+        return "deployment of " + application;
     }
 
 }

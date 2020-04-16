@@ -2,12 +2,12 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.google.inject.Inject;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -84,6 +84,12 @@ public class MockIssueHandler implements IssueHandler {
     }
 
     @Override
+    public boolean addWatcher(IssueId issueId, String watcher) {
+        issues.get(issueId).addWatcher(watcher);
+        return true;
+    }
+
+    @Override
     public Optional<User> escalate(IssueId issueId, Contact contact) {
         List<List<User>> contacts = getContactUsers(contact);
         Optional<User> assignee = assigneeOf(issueId);
@@ -131,7 +137,7 @@ public class MockIssueHandler implements IssueHandler {
         issues.get(issueId).updated = clock.instant();
     }
 
-    private class PropertyInfo {
+    private static class PropertyInfo {
 
         private List<List<User>> contacts = Collections.emptyList();
         private URI issueUrl = URI.create("issues.tld");
@@ -146,17 +152,21 @@ public class MockIssueHandler implements IssueHandler {
         private Instant updated;
         private boolean open;
         private User assignee;
+        private List<String> watchers;
 
         private MockIssue(Issue issue) {
             this.issue = issue;
             this.updated = clock.instant();
             this.open = true;
             this.assignee = issue.assignee().orElse(null);
+            this.watchers = new ArrayList<>();
         }
 
         public Issue issue() { return issue; }
         public User assignee() { return assignee; }
         public boolean isOpen() { return open; }
+        public List<String> watchers() { return List.copyOf(watchers); }
+        public void addWatcher(String watcher) { watchers.add(watcher); }
 
     }
 

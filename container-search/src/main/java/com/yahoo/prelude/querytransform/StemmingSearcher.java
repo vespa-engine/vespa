@@ -188,13 +188,10 @@ public class StemmingSearcher extends Searcher {
             return (Item) w;
         }
 
-        if (context.isCJK) {
-            composite = chooseCompositeForCJK(current,
-                                              ((Item) current).getParent(),
-                                              indexName);
-        } else {
-            composite = phraseSegment(current, indexName);
-        }
+        if (context.isCJK)
+            composite = chooseCompositeForCJK(current, ((Item) current).getParent(), indexName);
+        else
+            composite = chooseComposite(current, ((Item) current).getParent(), indexName);
 
         for (StemList segment : segments) {
             TaggableItem w = singleWordSegment(current, segment, index, substring, context.insidePhrase);
@@ -331,39 +328,34 @@ public class StemmingSearcher extends Searcher {
         }
     }
 
+    private CompositeItem chooseComposite(BlockItem current, CompositeItem parent, String indexName) {
+        if (parent instanceof PhraseItem || current instanceof PhraseSegmentItem)
+            return createPhraseSegment(current, indexName);
+        else
+            return createAndSegment(current);
+
+    }
+
     private CompositeItem chooseCompositeForCJK(BlockItem current, CompositeItem parent, String indexName) {
-        CompositeItem composite;
-        if (current.getSegmentingRule() == SegmentingRule.LANGUAGE_DEFAULT) {
-            if (parent instanceof PhraseItem || current instanceof PhraseSegmentItem) {
-                composite = phraseSegment(current, indexName);
-            } else
-                composite = createAndSegment(current);
-        } else {
-            switch (current.getSegmentingRule()) {
-            case PHRASE:
-                composite = phraseSegment(current, indexName);
-                break;
-            case BOOLEAN_AND:
-                composite = createAndSegment(current);
-                break;
+        if (current.getSegmentingRule() == SegmentingRule.LANGUAGE_DEFAULT)
+            return chooseComposite(current, parent, indexName);
+
+        switch (current.getSegmentingRule()) { // TODO: Why for CJK only? The segmentingRule says nothing about being for CJK only
+            case PHRASE: return createPhraseSegment(current, indexName);
+            case BOOLEAN_AND: return createAndSegment(current);
             default:
-                throw new IllegalArgumentException(
-                        "Unknown segmenting rule: "
-                                + current.getSegmentingRule()
-                                + ". This is a bug in Vespa, as the implementation has gotten out of sync."
-                                + " Please create a ticket as soon as possible.");
-            }
+                throw new IllegalArgumentException("Unknown segmenting rule: " + current.getSegmentingRule() +
+                                                   ". This is a bug in Vespa, as the implementation has gotten out of sync." +
+                                                   " Please create a ticket as soon as possible.");
         }
-        return composite;
     }
 
     private AndSegmentItem createAndSegment(BlockItem current) {
         return new AndSegmentItem(current.stringValue(), true, true);
     }
 
-    private CompositeItem phraseSegment(BlockItem current, String indexName) {
-        CompositeItem composite;
-        composite = new PhraseSegmentItem(current.getRawWord(), current.stringValue(), true, true);
+    private CompositeItem createPhraseSegment(BlockItem current, String indexName) {
+        CompositeItem composite = new PhraseSegmentItem(current.getRawWord(), current.stringValue(), true, true);
         composite.setIndexName(indexName);
         return composite;
     }

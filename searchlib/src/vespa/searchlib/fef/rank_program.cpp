@@ -3,15 +3,18 @@
 #include "rank_program.h"
 #include "featureoverrider.h"
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 #include <algorithm>
 #include <cassert>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".fef.rankprogram");
 
 using vespalib::Stash;
 
 namespace search::fef {
 
 using MappedValues = std::map<const NumberOrObject *, LazyValue>;
-using ValueSet = std::set<const NumberOrObject *>;
 
 namespace {
 
@@ -42,7 +45,7 @@ struct OverrideVisitor : public IPropertiesVisitor
     {
         auto pos = feature_map.find(key);
         if (pos != feature_map.end()) {
-            overrides.push_back(Override(pos->second, vespalib::locale::c::strtod(values.get().c_str(), nullptr)));
+            overrides.emplace_back(pos->second, vespalib::locale::c::strtod(values.get().c_str(), nullptr));
         }
     }
 };
@@ -136,7 +139,7 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
     for (const auto &entry: features) {
         const auto &name = entry.first;
         auto ref = entry.second;
-        bool is_object = specs[ref.executor].output_types[ref.output];
+        bool is_object = specs[ref.executor].output_types[ref.output].is_object();
         FeatureExecutor *executor = _executors[ref.executor];
         const NumberOrObject *raw_value = executor->outputs().get_raw(ref.output);
         LazyValue lazy_value = check_const(raw_value) ? LazyValue(raw_value) : LazyValue(raw_value, executor);
@@ -153,7 +156,7 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
 }
 
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
-    : _resolver(resolver),
+    : _resolver(std::move(resolver)),
       _hot_stash(32768),
       _cold_stash(),
       _executors(),
@@ -162,7 +165,7 @@ RankProgram::RankProgram(BlueprintResolver::SP resolver)
 {
 }
 
-RankProgram::~RankProgram() {}
+RankProgram::~RankProgram() = default;
 
 void
 RankProgram::setup(const MatchData &md,
@@ -175,6 +178,8 @@ RankProgram::setup(const MatchData &md,
     auto override_end = overrides.end();
 
     const auto &specs = _resolver->getExecutorSpecs();
+    _executors.reserve(specs.size());
+    _is_const.resize(specs.size()*2); // Reserve space in hashmap for executors to be const
     for (uint32_t i = 0; i < specs.size(); ++i) {
         vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(specs[i].output_types.size());
         StashSelector stash(_hot_stash, _cold_stash);
@@ -211,11 +216,27 @@ RankProgram::setup(const MatchData &md,
     }
     for (const auto &seed_entry: _resolver->getSeedMap()) {
         auto seed = seed_entry.second;
-        if (specs[seed.executor].output_types[seed.output]) {
+        if (specs[seed.executor].output_types[seed.output].is_object()) {
             unbox(seed, md);
         }
     }
     assert(_executors.size() == specs.size());
+    LOG(debug, "Num executors = %ld, hot stash = %ld, cold stash = %ld, match data fields = %d",
+               _executors.size(), _hot_stash.count_used(), _cold_stash.count_used(), md.getNumTermFields());
+    if (LOG_WOULD_LOG(debug)) {
+        vespalib::hash_map<vespalib::string, size_t> executorStats;
+        for (const FeatureExecutor * executor : _executors) {
+            vespalib::string name = executor->getClassName();
+            if (executorStats.find(name) == executorStats.end()) {
+                executorStats[name] = 1;
+            } else {
+                executorStats[name]++;
+            }
+        }
+        for (const auto & stat : executorStats) {
+            LOG(debug, "There are %ld executors of type %s", stat.second, stat.first.c_str());
+        }
+    }
 }
 
 FeatureResolver

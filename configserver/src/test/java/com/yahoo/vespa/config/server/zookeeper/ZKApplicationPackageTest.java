@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
@@ -39,7 +40,8 @@ public class ZKApplicationPackageTest {
     private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
     private static final AllocatedHosts ALLOCATED_HOSTS = AllocatedHosts.withHosts(
             Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty(),
-                                               Optional.of(com.yahoo.component.Version.fromString("6.0.1")))));
+                                               Optional.of(Version.fromString("6.0.1")), Optional.empty(),
+                                               Optional.empty(), Optional.of(DockerImage.fromString("docker repo")))));
 
     private ConfigCurator configCurator;
 
@@ -59,7 +61,7 @@ public class ZKApplicationPackageTest {
         assertTrue(Pattern.compile(".*<alias>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getHosts())).matches());
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getFile(Path.fromString("services.xml")).createReader())).matches());
         DeployState deployState = new DeployState.Builder().applicationPackage(zkApp).build();
-        assertEquals(deployState.getSearchDefinitions().size(), 5);
+        assertEquals(deployState.getSchemas().size(), 5);
         assertEquals(zkApp.searchDefinitionContents().size(), 5);
         assertEquals(IOUtils.readAll(zkApp.getRankingExpression("foo.expression")), "foo()+1\n");
         assertEquals(zkApp.getFiles(Path.fromString(""), "xml").size(), 3);
@@ -80,6 +82,8 @@ public class ZKApplicationPackageTest {
         assertThat(Utf8.toString(toJson(readInfo)), is(Utf8.toString(toJson(ALLOCATED_HOSTS))));
         assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
         assertEquals("6.0.1", readInfo.getHosts().iterator().next().version().get().toString());
+        // TODO: Enable when dockerImageRepo is written to zk
+        //assertEquals("docker repo", readInfo.getHosts().iterator().next().dockerImageRepo().get());
         assertTrue(zkApp.getDeployment().isPresent());
         assertEquals("mydisc", DeploymentSpec.fromXml(zkApp.getDeployment().get()).requireInstance("default").globalServiceId().get());
     }
@@ -87,7 +91,7 @@ public class ZKApplicationPackageTest {
     private void feed(ConfigCurator zk, File dirToFeed) throws IOException {
         assertTrue(dirToFeed.isDirectory());
         zk.feedZooKeeper(dirToFeed, "/0" + ConfigCurator.USERAPP_ZK_SUBPATH, null, true);
-        String metaData = "{\"deploy\":{\"user\":\"foo\",\"from\":\"bar\",\"timestamp\":1},\"application\":{\"name\":\"foo\",\"checksum\":\"abc\",\"generation\":4,\"previousActiveGeneration\":3}}";
+        String metaData = "{\"deploy\":{\"user\":\"foo\",\"from\":\"bar\",\"timestamp\":1},\"application\":{\"id\":\"foo:foo:default\",\"checksum\":\"abc\",\"generation\":4,\"previousActiveGeneration\":3}}";
         zk.putData("/0", ConfigCurator.META_ZK_PATH, metaData);
         zk.putData("/0/" + ZKApplicationPackage.fileRegistryNode + "/3.0.0", "dummyfiles");
         zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode, toJson(ALLOCATED_HOSTS));

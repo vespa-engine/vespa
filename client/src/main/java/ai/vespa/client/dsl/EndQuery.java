@@ -177,7 +177,7 @@ public class EndQuery {
         } else if (others.isEmpty()) {
             sb.append("order by ").append(orderStr);
         } else {
-            sb.append("order by ").append(orderStr).append(", ").append(others);
+            sb.append("order by ").append(orderStr).append(" ").append(others);
         }
 
         if (groupQueryStr != null) {

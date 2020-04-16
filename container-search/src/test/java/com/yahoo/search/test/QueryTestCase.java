@@ -16,6 +16,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.IndexedItem;
@@ -45,6 +46,8 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -342,6 +345,61 @@ public class QueryTestCase {
         profile.set("timeout", 318, (QueryProfileRegistry)null);
         Query q = new Query(QueryTestCase.httpEncode("/search?timeout=500"), profile.compile(null));
         assertEquals(500000L, q.getTimeout());
+    }
+
+    @Test
+    public void testQueryProfileClearAndSet() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("b", "b-value", null);
+        Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+        assertEquals("b-value", q.properties().get("b"));
+        assertContains(q.properties().listProperties("b"), "b-value");
+
+        q.properties().set("b", null, null);
+        assertContains(q.properties().listProperties("b"), (Object)null);
+
+        q.properties().set("b", "b-value", null);
+        assertEquals("b-value", q.properties().get("b"));
+        assertContains(q.properties().listProperties("b"), "b-value");
+    }
+
+    @Test
+    public void testQueryProfileClearValue() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("a", "a-value", null);
+        profile.set("b", "b-value", null);
+        profile.set("b.c", "b.c-value", null);
+        profile.set("b.d", "b.d-value", null);
+        Query q = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+        assertEquals("a-value", q.properties().get("a"));
+        assertEquals("b-value", q.properties().get("b"));
+        assertEquals("b.c-value", q.properties().get("b.c"));
+        assertEquals("b.d-value", q.properties().get("b.d"));
+        assertContains(q.properties().listProperties("b"), "b-value", "b.c-value", "b.d-value");
+
+        q.properties().set("a", null, null);
+        assertEquals(null, q.properties().get("a"));
+
+        q.properties().set("b", null, null);
+        assertEquals(null, q.properties().get("b"));
+        assertEquals("b.c-value", q.properties().get("b.c"));
+        assertEquals("b.d-value", q.properties().get("b.d"));
+        assertContains(q.properties().listProperties("b"), null, "b.c-value", "b.d-value");
+
+        q.properties().set("b", "b-value", null);
+        q.properties().set("b.e", "b.e-value", null);
+        q.properties().set("b.f", "b.f-value", null);
+        assertEquals("b-value", q.properties().get("b"));
+        assertEquals("b.e-value", q.properties().get("b.e"));
+        assertContains(q.properties().listProperties("b"), "b-value", "b.c-value", "b.d-value", "b.e-value", "b.f-value");
+
+        q.properties().clearAll("b");
+        assertEquals(null, q.properties().get("b"));
+        assertEquals(null, q.properties().get("b.c"));
+        assertEquals(null, q.properties().get("b.d"));
+        assertEquals(null, q.properties().get("b.e"));
+        assertEquals(null, q.properties().get("b.f"));
+        assertContains(q.properties().listProperties("b"), (Object)null);
     }
 
     @Test
@@ -884,12 +942,12 @@ public class QueryTestCase {
     @Test
     public void testImplicitPhraseIsDefault() {
         Query query = new Query(httpEncode("?query=it's fine"));
-        assertEquals("AND 'it s' fine", query.getModel().getQueryTree().toString());
+        assertEquals("AND (SAND it s) fine", query.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testImplicitPhrase() {
-        Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
 
         SearchDefinition test = new SearchDefinition("test");
         Index myField = new Index("myfield");
@@ -899,12 +957,12 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
-        assertEquals("AND myfield:'it s' myfield:fine", query.getModel().getQueryTree().toString());
+        assertEquals("AND myfield:'it s' myfield:\"a b\" myfield:c", query.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testImplicitAnd() {
-        Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
 
         SearchDefinition test = new SearchDefinition("test");
         Index myField = new Index("myfield");
@@ -914,7 +972,57 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
-        assertEquals("AND (SAND myfield:it myfield:s) myfield:fine", query.getModel().getQueryTree().toString());
+        assertEquals("AND (SAND myfield:it myfield:s) myfield:a myfield:b myfield:c", query.getModel().getQueryTree().toString());
+        // 'it' and 's' should have connectivity 1
+        AndItem root = (AndItem)query.getModel().getQueryTree().getRoot();
+        AndSegmentItem sand = (AndSegmentItem)root.getItem(0);
+        WordItem it = (WordItem)sand.getItem(0);
+        assertEquals("it", it.getWord());
+        WordItem s = (WordItem)sand.getItem(1);
+        assertEquals("s", s.getWord());
+        assertEquals(s, it.getConnectedItem());
+        assertEquals(1.0, it.getConnectivity(), 0.00000001);
+    }
+
+    @Test
+    public void testImplicitAndConnectivity() {
+        SearchDefinition test = new SearchDefinition("test");
+        Index myField = new Index("myfield");
+        myField.addCommand("phrase-segmenting false");
+        test.addIndex(myField);
+        IndexModel indexModel = new IndexModel(test);
+
+        {
+            Query query = new Query(httpEncode("?query=myfield:b.c.d"));
+            query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+            assertEquals("AND myfield:b myfield:c myfield:d", query.getModel().getQueryTree().toString());
+            AndItem root = (AndItem) query.getModel().getQueryTree().getRoot();
+            WordItem b = (WordItem) root.getItem(0);
+            WordItem c = (WordItem) root.getItem(1);
+            WordItem d = (WordItem) root.getItem(2);
+            assertEquals(c, b.getConnectedItem());
+            assertEquals(1.0, b.getConnectivity(), 0.00000001);
+            assertEquals(d, c.getConnectedItem());
+            assertEquals(1.0, c.getConnectivity(), 0.00000001);
+        }
+
+        {
+            Query query = new Query(httpEncode("?query=myfield:a myfield:b.c.d myfield:e"));
+            query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+            assertEquals("AND myfield:a myfield:b myfield:c myfield:d myfield:e", query.getModel().getQueryTree().toString());
+            AndItem root = (AndItem) query.getModel().getQueryTree().getRoot();
+            WordItem a = (WordItem) root.getItem(0);
+            WordItem b = (WordItem) root.getItem(1);
+            WordItem c = (WordItem) root.getItem(2);
+            WordItem d = (WordItem) root.getItem(3);
+            WordItem e = (WordItem) root.getItem(4);
+            assertNull(a.getConnectedItem());
+            assertEquals(c, b.getConnectedItem());
+            assertEquals(1.0, b.getConnectivity(), 0.00000001);
+            assertEquals(d, c.getConnectedItem());
+            assertEquals(1.0, c.getConnectivity(), 0.00000001);
+            assertNull(d.getConnectedItem());
+        }
     }
 
     @Test
@@ -983,6 +1091,19 @@ public class QueryTestCase {
         q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, indexFacts, mockLinguistics)));
         q.getModel().getQueryTree(); // cause parsing
         assertEquals(expectedDetectionText, mockLinguistics.detector.lastDetectionText);
+    }
+
+    private void assertContains(Map<String, Object> properties, Object ... expectedValues) {
+        if (expectedValues == null) {
+            assertEquals(1, properties.size());
+            assertTrue("Contains value null", properties.containsValue(null));
+        }
+        else {
+            assertEquals(properties + " contains values " + Arrays.toString(expectedValues),
+                         expectedValues.length, properties.size());
+            for (Object expectedValue : expectedValues)
+                assertTrue("Contains value " + expectedValue, properties.containsValue(expectedValue));
+        }
     }
 
     /** A linguistics instance which records the last language detection text passed to it */

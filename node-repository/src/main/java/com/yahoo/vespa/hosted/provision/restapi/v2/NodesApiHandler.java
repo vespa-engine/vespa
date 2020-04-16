@@ -20,8 +20,8 @@ import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -51,7 +51,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.config.SlimeUtils.optionalString;
+import static com.yahoo.slime.SlimeUtils.optionalString;
 
 /**
  * The implementation of the /nodes/v2 API.
@@ -145,11 +145,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePATCH(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
+            // TODO: Node is fetched outside of lock, might change after getting lock
             Node node = nodeFromRequest(request);
             try (var lock = nodeRepository.lock(node)) {
-                var patchedNode = new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository.list(lock),
-                                                  nodeRepository.clock()).apply();
-                nodeRepository.write(patchedNode, lock);
+                var patchedNodes = new NodePatcher(nodeFlavors, request.getData(), node, () -> nodeRepository.list(lock),
+                                                   nodeRepository.clock()).apply();
+                nodeRepository.write(patchedNodes, lock);
             }
             return new MessageResponse("Updated " + node.hostname());
         }
@@ -175,9 +176,15 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
         }
         if (path.matches("/nodes/v2/maintenance/inactive/{job}")) return setJobActive(path.get("job"), false);
+        if (path.matches("/nodes/v2/maintenance/run/{job}")) return runJob(path.get("job"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return requestFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+    }
+
+    private HttpResponse runJob(String job) {
+        nodeRepository.jobControl().run(job);
+        return new MessageResponse("Executed job '" + job + "'");
     }
 
     private HttpResponse handleDELETE(HttpRequest request) {
@@ -201,7 +208,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     public int addNodes(InputStream jsonStream) {
         List<Node> nodes = createNodesFromSlime(toSlime(jsonStream).get());
-        return nodeRepository.addNodes(nodes).size();
+        return nodeRepository.addNodes(nodes, Agent.operator).size();
     }
 
     private Slime toSlime(InputStream jsonStream) {

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.provision;
 
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -23,10 +24,12 @@ public class ProvisionerAdapter implements HostProvisioner {
 
     private final Provisioner provisioner;
     private final ApplicationId applicationId;
+    private final Provisioned provisioned;
 
-    public ProvisionerAdapter(Provisioner provisioner, ApplicationId applicationId) {
+    public ProvisionerAdapter(Provisioner provisioner, ApplicationId applicationId, Provisioned provisioned) {
         this.provisioner = provisioner;
         this.applicationId = applicationId;
+        this.provisioned = provisioned;
     }
 
     @Override
@@ -36,8 +39,18 @@ public class ProvisionerAdapter implements HostProvisioner {
     }
 
     @Override
+    @Deprecated // TODO: Remove after April 2020
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-        return provisioner.prepare(applicationId, cluster, capacity, groups, logger);
+        provisioned.add(cluster.id(), capacity);
+        return provisioner.prepare(applicationId, cluster, capacity.withGroups(groups), logger);
     }
+
+    @Override
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+        provisioned.add(cluster.id(), capacity);
+        return provisioner.prepare(applicationId, cluster, capacity, logger);
+    }
+
+
 
 }

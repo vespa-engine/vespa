@@ -11,24 +11,15 @@ HopBlueprint::HopBlueprint(const HopSpec &spec) :
 {
     Hop hop = Hop::parse(spec.getSelector());
     for (uint32_t i = 0; i < hop.getNumDirectives(); ++i) {
-        _selector.push_back(hop.getDirective(i));
+        _selector.emplace_back(hop.getDirectiveSP(i));
     }
     std::vector<string> lst;
     for (uint32_t i = 0; i < spec.getNumRecipients(); ++i) {
-        lst.push_back(spec.getRecipient(i));
+        lst.emplace_back(spec.getRecipient(i));
     }
-    for (std::vector<string>::iterator it = lst.begin();
-         it != lst.end(); ++it)
-    {
-        _recipients.push_back(Hop::parse(*it));
+    for (const string & recipient : lst) {
+        _recipients.emplace_back(Hop::parse(recipient));
     }
-}
-
-HopBlueprint &
-HopBlueprint::setIgnoreResult(bool ignoreResult)
-{
-    _ignoreResult = ignoreResult;
-    return *this;
 }
 
 string

@@ -41,7 +41,7 @@ public class FieldOperationApplierForStructs extends FieldOperationApplier {
                 }
                 if (structUsedByField.getName().equals(structType.getName())) {
                     //this field is using this type!!
-                    field.populateWithStructFields(sdoc, field.getName(), field.getDataType(), field.isHeader(), 0);
+                    field.populateWithStructFields(sdoc, field.getName(), field.getDataType(), 0);
                     field.populateWithStructMatching(sdoc, field.getName(), field.getDataType(), field.getMatching());
                 }
             }

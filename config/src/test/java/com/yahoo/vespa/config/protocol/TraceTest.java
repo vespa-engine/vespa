@@ -9,7 +9,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.3
  */
 public class TraceTest {
 
@@ -58,4 +57,5 @@ public class TraceTest {
         assertTrue(trace2Str.contains("barbaz"));
         assertTrue(trace2Str.contains("quux"));
     }
+
 }

@@ -27,7 +27,10 @@ public class GlobalRouting {
         this.changedAt = Objects.requireNonNull(changedAt, "changedAt must be non-null");
     }
 
-    /** The current status of this */
+    /**
+     * The wanted status of this. The system will try to set this status, but there are constraints that may lead to
+     * the effective status not matching this. See {@link RoutingPolicies}.
+     */
     public Status status() {
         return status;
     }

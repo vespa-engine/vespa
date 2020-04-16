@@ -7,13 +7,21 @@
 namespace proton {
 
 using ProtonConfig = ThreadingServiceConfig::ProtonConfig;
+using OptimizeFor = vespalib::Executor::OptimizeFor;
+
 
 ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
                                                uint32_t defaultTaskLimit_,
-                                               uint32_t semiUnboundTaskLimit_)
+                                               uint32_t semiUnboundTaskLimit_,
+                                               OptimizeFor optimize_,
+                                               uint32_t kindOfWatermark_,
+                                               vespalib::duration reactionTime_)
     : _indexingThreads(indexingThreads_),
       _defaultTaskLimit(defaultTaskLimit_),
-      _semiUnboundTaskLimit(semiUnboundTaskLimit_)
+      _semiUnboundTaskLimit(semiUnboundTaskLimit_),
+      _optimize(optimize_),
+      _kindOfWatermark(kindOfWatermark_),
+      _reactionTime(reactionTime_)
 {
 }
 
@@ -22,9 +30,23 @@ namespace {
 uint32_t
 calculateIndexingThreads(uint32_t cfgIndexingThreads, double concurrency, const HwInfo::Cpu &cpuInfo)
 {
-    double scaledCores = cpuInfo.cores() * concurrency;
+    // We are capping at 12 threads to reduce cost of waking up threads
+    // to achieve a better throughput.
+    // TODO: Fix this in a simpler/better way.
+    double scaledCores = std::min(12.0, cpuInfo.cores() * concurrency);
     uint32_t indexingThreads = std::max((uint32_t)std::ceil(scaledCores / 3), cfgIndexingThreads);
     return std::max(indexingThreads, 1u);
+}
+
+OptimizeFor
+selectOptimization(ProtonConfig::Indexing::Optimize optimize) {
+    using CfgOptimize = ProtonConfig::Indexing::Optimize;
+    switch (optimize) {
+        case CfgOptimize::LATENCY: return OptimizeFor::LATENCY;
+        case CfgOptimize::THROUGHPUT: return OptimizeFor::THROUGHPUT;
+        case CfgOptimize::ADAPTIVE: return OptimizeFor::ADAPTIVE;
+    }
+    return OptimizeFor::LATENCY;
 }
 
 }
@@ -34,7 +56,15 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
 {
     uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing.threads, concurrency, cpuInfo);
     return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
-                                  (cfg.indexing.semiunboundtasklimit / indexingThreads));
+                                  (cfg.indexing.semiunboundtasklimit / indexingThreads),
+                                  selectOptimization(cfg.indexing.optimize),
+                                  cfg.indexing.kindOfWatermark,
+                                  vespalib::from_s(cfg.indexing.reactiontime));
+}
+
+ThreadingServiceConfig
+ThreadingServiceConfig::make(uint32_t indexingThreads) {
+    return ThreadingServiceConfig(indexingThreads, 100, 1000, OptimizeFor::LATENCY, 0, 10ms);
 }
 
 }

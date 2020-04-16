@@ -243,7 +243,6 @@ struct MyLog
 struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
                                  public MyLog
 {
-    using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
     vespalib::ThreadStackExecutor _executor;
     std::map<DocTypeName, std::shared_ptr<MyDocumentDBConfigOwner>> _dbs;
 
@@ -254,9 +253,9 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
           _dbs()
     {
     }
-    virtual ~MyProtonConfigurerOwner() { }
+    ~MyProtonConfigurerOwner() { }
 
-    virtual std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
+    std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
                                                                  document::BucketSpace bucketSpace,
                                                                  const vespalib::string &configId,
                                                                  const std::shared_ptr<BootstrapConfig> &bootstrapConfig,
@@ -275,14 +274,14 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
         _log.push_back(os.str());
         return db;
     }
-    virtual void removeDocumentDB(const DocTypeName &docTypeName) override {
+    void removeDocumentDB(const DocTypeName &docTypeName) override {
         ASSERT_FALSE(_dbs.find(docTypeName) == _dbs.end());
         _dbs.erase(docTypeName);
         std::ostringstream os;
         os << "remove db " << docTypeName.getName();
         _log.push_back(os.str());
     }
-    virtual void applyConfig(const std::shared_ptr<BootstrapConfig> &bootstrapConfig) override {
+    void applyConfig(const std::shared_ptr<BootstrapConfig> &bootstrapConfig) override {
         std::ostringstream os;
         os << "apply config " << bootstrapConfig->getGeneration();
         _log.push_back(os.str());

@@ -11,9 +11,10 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/interlock.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/threaded_compactable_lid_space.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -73,7 +74,7 @@ search::SerialNum estimateShrinkSerialNum(const AttributeVector &attr)
     return std::max(attr.getStatus().getLastSyncToken(), serialNum);
 }
 
-std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, search::ISequencedTaskExecutor &attributeFieldWriter, AttributeDiskLayout &diskLayout)
+std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, vespalib::ISequencedTaskExecutor &attributeFieldWriter, AttributeDiskLayout &diskLayout)
 {
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
@@ -237,8 +238,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const vespalib::string &documentSubDbName,
                                    const TuneFileAttributes &tuneFileAttributes,
                                    const FileHeaderContext &fileHeaderContext,
-                                   search::ISequencedTaskExecutor &
-                                   attributeFieldWriter,
+                                   vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
@@ -261,8 +261,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const vespalib::string &documentSubDbName,
                                    const search::TuneFileAttributes &tuneFileAttributes,
                                    const search::common::FileHeaderContext &fileHeaderContext,
-                                   search::ISequencedTaskExecutor &
-                                   attributeFieldWriter,
+                                   vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                    const IAttributeFactory::SP &factory,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
@@ -547,7 +546,7 @@ AttributeManager::pruneRemovedFields(search::SerialNum serialNum)
     }
 }
 
-search::ISequencedTaskExecutor &
+vespalib::ISequencedTaskExecutor &
 AttributeManager::getAttributeFieldWriter() const
 {
     return _attributeFieldWriter;
@@ -611,6 +610,16 @@ void
 AttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes)
 {
     _importedAttributes = std::move(attributes);
+}
+
+std::shared_ptr<search::attribute::ReadableAttributeVector>
+AttributeManager::readable_attribute_vector(const string& name) const
+{
+    auto attribute = findAttribute(name);
+    if (attribute || !_importedAttributes) {
+        return attribute;
+    }
+    return _importedAttributes->get(name);
 }
 
 } // namespace proton

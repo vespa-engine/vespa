@@ -17,6 +17,7 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 
+import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -74,6 +76,11 @@ public abstract class ControllerHttpClient {
     /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
     public static ControllerHttpClient withSignatureKey(URI endpoint, Path privateKeyFile, ApplicationId id) {
         return new SigningControllerHttpClient(endpoint, privateKeyFile, id);
+    }
+
+    /** Creates an HTTP client against the given endpoint, which uses the given SSL context for authentication. */
+    public static ControllerHttpClient withSSLContext(URI endpoint, SSLContext sslContext) {
+        return new MutualTlsControllerHttpClient(endpoint, sslContext);
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
@@ -125,7 +132,7 @@ public abstract class ControllerHttpClient {
 
     /** Returns the Vespa version to compile against, for a hosted Vespa application. This is its lowest runtime version. */
     public String compileVersion(ApplicationId id) {
-        return toInspector(send(request(HttpRequest.newBuilder(applicationPath(id.tenant(), id.application()))
+        return toInspector(send(request(HttpRequest.newBuilder(compileVersionPath(id.tenant(), id.application()))
                                                    .timeout(Duration.ofSeconds(20)),
                                         GET)))
                 .field("compileVersion").asString();
@@ -141,8 +148,34 @@ public abstract class ControllerHttpClient {
     /** Returns the sorted list of log entries after the given after from the deployment job of the given ids. */
     public DeploymentLog deploymentLog(ApplicationId id, ZoneId zone, long run, long after) {
         return toDeploymentLog(send(request(HttpRequest.newBuilder(runPath(id, zone, run, after))
-                                                       .timeout(Duration.ofSeconds(10)),
+                                                       .timeout(Duration.ofMinutes(2)),
                                             GET)));
+    }
+
+    /** Follows the given deployment job until it is done, or this thread is interrupted, at which point the current status is returned. */
+    public DeploymentLog followDeploymentUntilDone(ApplicationId id, ZoneId zone, long run,
+                                                   Consumer<DeploymentLog.Entry> out) {
+        long last = -1;
+        DeploymentLog log = null;
+        while (true) {
+            DeploymentLog update = deploymentLog(id, zone, run, last);
+            for (DeploymentLog.Entry entry : update.entries())
+                out.accept(entry);
+            log = (log == null ? update : log.updatedWith(update));
+            last = log.last().orElse(last);
+
+            if ( ! log.isActive())
+                break;
+
+            try {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        return log;
     }
 
     /** Returns the sorted list of log entries from the deployment job of the given ids. */
@@ -177,6 +210,10 @@ public abstract class ControllerHttpClient {
 
     private URI applicationPath(TenantName tenant, ApplicationName application) {
         return concatenated(tenantPath(tenant), "application", application.value());
+    }
+
+    private URI compileVersionPath(TenantName tenant, ApplicationName application) {
+        return concatenated(applicationPath(tenant, application), "compile-version");
     }
 
     private URI instancePath(ApplicationId id) {
@@ -384,25 +421,29 @@ public abstract class ControllerHttpClient {
     /** Client that uses a given key / certificate identity to authenticate to the remote controller. */
     private static class MutualTlsControllerHttpClient extends ControllerHttpClient {
 
+        private MutualTlsControllerHttpClient(URI endpoint, SSLContext sslContext) {
+            super(endpoint, HttpClient.newBuilder().sslContext(sslContext));
+        }
+
         private MutualTlsControllerHttpClient(URI endpoint, PrivateKey privateKey, List<X509Certificate> certs) {
-            super(endpoint,
-                  HttpClient.newBuilder()
-                            .sslContext(new SslContextBuilder().withKeyStore(privateKey, certs).build()));
+            this(endpoint, new SslContextBuilder().withKeyStore(privateKey, certs).build());
         }
 
     }
 
+
     private static DeploymentLog.Status valueOf(String status) {
         switch (status) {
-            case "running":             return DeploymentLog.Status.running;
-            case "aborted":             return DeploymentLog.Status.aborted;
-            case "error":               return DeploymentLog.Status.error;
-            case "testFailure":         return DeploymentLog.Status.testFailure;
-            case "outOfCapacity":       return DeploymentLog.Status.outOfCapacity;
-            case "installationFailed":  return DeploymentLog.Status.installationFailed;
-            case "deploymentFailed":    return DeploymentLog.Status.deploymentFailed;
-            case "success":             return DeploymentLog.Status.success;
-            default:                    throw new IllegalArgumentException("Unexpected status '" + status + "'");
+            case "running":                    return DeploymentLog.Status.running;
+            case "aborted":                    return DeploymentLog.Status.aborted;
+            case "error":                      return DeploymentLog.Status.error;
+            case "testFailure":                return DeploymentLog.Status.testFailure;
+            case "outOfCapacity":              return DeploymentLog.Status.outOfCapacity;
+            case "installationFailed":         return DeploymentLog.Status.installationFailed;
+            case "deploymentFailed":           return DeploymentLog.Status.deploymentFailed;
+            case "endpointCertificateTimeout": return DeploymentLog.Status.endpointCertificateTimeout;
+            case "success":                    return DeploymentLog.Status.success;
+            default: throw new IllegalArgumentException("Unexpected status '" + status + "'");
         }
     }
 

@@ -35,6 +35,7 @@ public class SslContextBuilder {
     private TrustManagerFactory trustManagerFactory = TrustManagerUtils::createDefaultX509TrustManager;
     private KeyManagerFactory keyManagerFactory = KeyManagerUtils::createDefaultX509KeyManager;
     private X509ExtendedKeyManager keyManager;
+    private X509ExtendedTrustManager trustManager;
 
     public SslContextBuilder() {}
 
@@ -121,15 +122,25 @@ public class SslContextBuilder {
         return this;
     }
 
+    /**
+     * Note: Callee is responsible for configuring the trust manager.
+     *       Any truststore configured by {@link #withTrustStore(KeyStore)} or the other overloads will be ignored.
+     */
+    public SslContextBuilder withTrustManager(X509ExtendedTrustManager trustManager) {
+        this.trustManager = trustManager;
+        return this;
+    }
+
     public SSLContext build() {
         try {
             SSLContext sslContext = SSLContext.getInstance(TlsContext.SSL_CONTEXT_VERSION);
-            TrustManager[] trustManagers = new TrustManager[] { trustManagerFactory.createTrustManager(trustStoreSupplier.get()) };
+            X509ExtendedTrustManager trustManager = this.trustManager != null
+                    ? this.trustManager
+                    : trustManagerFactory.createTrustManager(trustStoreSupplier.get());
             X509ExtendedKeyManager keyManager = this.keyManager != null
                     ? this.keyManager
                     : keyManagerFactory.createKeyManager(keyStoreSupplier.get(), keyStorePassword);
-            KeyManager[] keyManagers = new KeyManager[] {keyManager};
-            sslContext.init(keyManagers, trustManagers, null);
+            sslContext.init(new KeyManager[] {keyManager}, new TrustManager[] {trustManager}, null);
             return sslContext;
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);

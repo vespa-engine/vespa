@@ -15,6 +15,7 @@ vespa_define_module(
 
     TESTS
     src/test
+    src/test/authority
 )
 
 vespa_install_script(util/resultfilter.pl vespa-fbench-result-filter.pl bin)

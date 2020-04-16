@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
@@ -72,6 +73,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      *                       and assigns to this SettableOptional such that it can be used after this method returns
      */
     public List<MODELRESULT> buildModels(ApplicationId applicationId,
+                                         Optional<String> dockerImageRepository,
                                          Version wantedNodeVespaVersion,
                                          ApplicationPackage applicationPackage,
                                          SettableOptional<AllocatedHosts> allocatedHosts,
@@ -104,8 +106,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             int majorVersion = majorVersions.get(i);
             try {
                 allApplicationModels.addAll(buildModelVersions(keepMajorVersion(majorVersion, versions),
-                                                               applicationId, wantedNodeVespaVersion, applicationPackage,
-                                                               allocatedHosts, now, buildLatestModelForThisMajor, majorVersion));
+                                                               applicationId, dockerImageRepository, wantedNodeVespaVersion,
+                                                               applicationPackage, allocatedHosts, now,
+                                                               buildLatestModelForThisMajor, majorVersion));
                 buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
             }
             catch (OutOfCapacityException | ApplicationLockException | TransientException e) {
@@ -146,6 +149,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     // versions is the set of versions for one particular major version
     private List<MODELRESULT> buildModelVersions(Set<Version> versions,
                                                  ApplicationId applicationId,
+                                                 Optional<String> wantedDockerImageRepository,
                                                  Version wantedNodeVespaVersion,
                                                  ApplicationPackage applicationPackage,
                                                  SettableOptional<AllocatedHosts> allocatedHosts,
@@ -160,6 +164,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest.get()),
                                                                applicationPackage,
                                                                applicationId,
+                                                               wantedDockerImageRepository,
                                                                wantedNodeVespaVersion,
                                                                allocatedHosts.asOptional(),
                                                                now);
@@ -182,6 +187,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
                                                  applicationPackage,
                                                  applicationId,
+                                                 wantedDockerImageRepository,
                                                  wantedNodeVespaVersion,
                                                  allocatedHosts.asOptional(),
                                                  now);
@@ -192,8 +198,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 // config models (which is always true for manually deployed zones)
                 if (allApplicationVersions.size() > 0 && allApplicationVersions.get(0).getModel().skipOldConfigModels(now))
                     log.log(LogLevel.INFO, applicationId + ": Skipping old version (due to validation override)");
-                else
+                else {
+                    log.log(LogLevel.ERROR, applicationId + ": Failed to build version " + version);
                     throw e;
+                }
             }
         }
         return allApplicationVersions;
@@ -236,9 +244,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
-                                                     ApplicationId applicationId, 
-                                                     Version wantedNodeVespaVersion,
-                                                     Optional<AllocatedHosts> allocatedHosts,
+                                                     ApplicationId applicationId, Optional<String> dockerImageRepository,
+                                                     Version wantedNodeVespaVersion, Optional<AllocatedHosts> allocatedHosts,
                                                      Instant now);
 
     /**
@@ -246,15 +253,17 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      * returns empty otherwise, which may either mean that no hosts are allocated or that we are running
      * non-hosted and should default to use hosts defined in the application package, depending on context
      */
-    Optional<HostProvisioner> createStaticProvisioner(Optional<AllocatedHosts> allocatedHosts, ModelContext.Properties properties) {
+    Optional<HostProvisioner> createStaticProvisioner(Optional<AllocatedHosts> allocatedHosts,
+                                                      ApplicationId applicationId,
+                                                      Provisioned provisioned) {
         if (hosted && allocatedHosts.isPresent())
-            return Optional.of(new StaticProvisioner(allocatedHosts.get(), createNodeRepositoryProvisioner(properties).get()));
+            return Optional.of(new StaticProvisioner(allocatedHosts.get(), createNodeRepositoryProvisioner(applicationId, provisioned).get()));
         return Optional.empty();
     }
 
-    Optional<HostProvisioner> createNodeRepositoryProvisioner(ModelContext.Properties properties) {
+    Optional<HostProvisioner> createNodeRepositoryProvisioner(ApplicationId applicationId, Provisioned provisioned) {
         return hostProvisionerProvider.getHostProvisioner().map(
-                provisioner -> new ProvisionerAdapter(provisioner, properties.applicationId()));
+                provisioner -> new ProvisionerAdapter(provisioner, applicationId, provisioned));
     }
 
 }

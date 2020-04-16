@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
-import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 
 /**
@@ -104,7 +103,7 @@ public class Upgrader extends Maintainer {
 
     /** Returns a list of all production application instances, except those which are pinned, which we should not manipulate here. */
     private InstanceList instances() {
-        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().asList())))
+        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())))
                            .withProductionDeployment()
                            .unpinned();
     }

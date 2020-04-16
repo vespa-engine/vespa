@@ -342,11 +342,10 @@ public class ApplicationRepositoryTest {
                                                           new MockTesterClient(),
                                                           actual);
         deployApp(testAppLogServerWithContainer);
-        Map<String, ?> context = Map.of("tenant", "test1",
-                                        "application", "testapp",
-                                        "instance", "default",
-                                        "environment", "prod",
-                                        "region", "default");
+        Map<String, ?> context = Map.of("applicationId", "test1.testapp.default",
+                                        "tenantName", "test1",
+                                        "app", "testapp.default",
+                                        "zone", "prod.default");
         MockMetric expected = new MockMetric();
         expected.set("deployment.prepareMillis", 0L, expected.createContext(context));
         expected.set("deployment.activateMillis", 0L, expected.createContext(context));

@@ -35,7 +35,7 @@ public class SystemFlagsHandler extends LoggingRequestHandler {
                               Executor executor,
                               AccessLog accessLog) {
         super(executor, accessLog);
-        this.deployer = new SystemFlagsDeployer(identityProvider, FlagsTarget.getAllTargetsInSystem(zoneRegistry));
+        this.deployer = new SystemFlagsDeployer(identityProvider, zoneRegistry.system(), FlagsTarget.getAllTargetsInSystem(zoneRegistry));
     }
 
     @Override

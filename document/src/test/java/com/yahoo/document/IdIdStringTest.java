@@ -2,9 +2,11 @@
 package com.yahoo.document;
 
 import com.yahoo.document.idstring.IdIdString;
+import com.yahoo.document.idstring.IdString;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -50,6 +52,7 @@ public class IdIdStringTest {
             new IdIdString("namespace", "type", "illegal=key", "foo");
             fail();
         } catch (IllegalArgumentException e) {
+            assertEquals("Illegal key 'illegal'", e.getMessage());
         }
     }
 
@@ -59,6 +62,35 @@ public class IdIdStringTest {
             new IdIdString("namespace", "type", "illegal-pair", "foo");
             fail();
         } catch (IllegalArgumentException e) {
+            assertEquals("Illegal key-value pair 'illegal-pair'", e.getMessage());
+        }
+    }
+
+    @Test
+    public void requireThatTooLongPreNamespaceSpecificThrowsWhileParsing() throws Exception {
+        StringBuilder builder = new StringBuilder("id:");
+        for (int i = 0; i < 0x10000; i++) {
+            builder.append('n');
+        }
+        builder.append(":type::namespacespecificpart_01");
+        try {
+            IdString.createIdString(builder.toString());
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Document id prior to the namespace specific part, 65545, is longer than 65534", e.getMessage().substring(0, 77));
+        }
+    }
+    @Test
+    public void requireThatTooLongPreNamespaceSpecificThrowsOnConstruction() {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 0x10000; i++) {
+            builder.append('n');
+        }
+        try {
+            new IdIdString(builder.toString(), "type", "", "namespacespecificpart_01");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Length of namespace(65536) + doctype(4) + key/values(0), is longer than 65529", e.getMessage());
         }
     }
 

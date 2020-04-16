@@ -5,7 +5,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
@@ -18,7 +18,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Mathias Mølster Lidal
  */
-public class BoldingTestCase extends SearchDefinitionTestCase {
+public class BoldingTestCase extends SchemaTestCase {
 
     @Test
     public void testBoldingNonString() throws IOException, ParseException {

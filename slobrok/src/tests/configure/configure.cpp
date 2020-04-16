@@ -6,6 +6,7 @@
 #include <vespa/slobrok/server/slobrokserver.h>
 #include <vespa/config/config.h>
 #include <vespa/config-slobroks.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <sstream>
@@ -21,9 +22,6 @@ using slobrok::api::RegisterAPI;
 using slobrok::ConfigShim;
 using slobrok::SlobrokServer;
 using slobrok::ConfiguratorFactory;
-
-TEST_SETUP(Test);
-
 
 std::string
 createSpec(int port)
@@ -92,10 +90,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
     return false;
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("configure_test");
+TEST("configure_test") {
 
     fnet::frt::StandaloneFRT orb1;
     fnet::frt::StandaloneFRT orb2;
@@ -213,5 +208,10 @@ Test::Main()
     serverOne.stop();
     serverTwo.stop();
 
-    TEST_DONE();
+    orb4.supervisor().GetTransport()->ShutDown(true);
+    orb3.supervisor().GetTransport()->ShutDown(true);
+    orb2.supervisor().GetTransport()->ShutDown(true);
+    orb1.supervisor().GetTransport()->ShutDown(true);
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }
