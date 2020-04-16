@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 /**
  * @author hmusum
  */
-public class LogserverContainerCluster extends ContainerCluster<LogserverContainer> implements ThreadpoolConfig.Producer {
+public class LogserverContainerCluster extends ContainerCluster<LogserverContainer> {
 
     public LogserverContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState);

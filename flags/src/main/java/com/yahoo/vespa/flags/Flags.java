@@ -119,7 +119,7 @@ public class Flags {
             "use-adaptive-dispatch", false,
             "Should adaptive dispatch be used over round robin",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
             "reboot-interval-in-days", 30,
@@ -150,13 +150,19 @@ public class Flags {
             "default-term-wise-limit", 1.0,
             "Default limit for when to apply termwise query evaluation",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundDoubleFlag DEFAULT_SOFT_START_SECONDS = defineDoubleFlag(
+            "default-soft-start-seconds", 0.0,
+            "Default number of seconds that a soft start shall use",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag DEFAULT_TOP_K_PROBABILITY = defineDoubleFlag(
             "default-top-k-probability", 1.0,
             "Default probability that you will get the globally top K documents when merging many partitions.",
             "Takes effect at redeployment",
-            APPLICATION_ID);
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag HOST_HARDENING = defineFeatureFlag(
             "host-hardening", false,

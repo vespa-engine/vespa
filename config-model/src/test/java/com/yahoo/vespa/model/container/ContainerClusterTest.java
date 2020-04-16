@@ -202,6 +202,34 @@ public class ContainerClusterTest {
     }
 
     @Test
+    public void requireThatSoftStartSecondsCanBeControlledByProperties() {
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setSoftStartSeconds(300.0))
+                .build();
+        MockRoot root = new MockRoot("foo", state);
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+
+        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
+        cluster.getConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(300.0, threadpoolConfig.softStartSeconds(), 0.0);
+    }
+
+    @Test
+    public void requireThatDefaultThreadPoolConfigIsSane() {
+        MockRoot root = new MockRoot("foo");
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+
+        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
+        cluster.getConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(0.0, threadpoolConfig.softStartSeconds(), 0.0);
+    }
+
+    @Test
     public void requireThatRoutingProviderIsDisabledForNonHosted() {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(false)).build();
         MockRoot root = new MockRoot("foo", state);
