@@ -3,6 +3,7 @@ package com.yahoo.config.provision.serialization;
 
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
@@ -139,7 +140,7 @@ public class AllocatedHostsSerializer {
                             optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
                             NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
                             nodeResourcesFromSlime(object.field(requestedResourcesKey)),
-                            optionalString(object.field(hostSpecDockerImageRepoKey)));
+                            optionalDockerImage(object.field(hostSpecDockerImageRepoKey)));
     }
 
     private static List<String> aliasesFromSlime(Inspector object) {
@@ -215,4 +216,10 @@ public class AllocatedHostsSerializer {
         if ( ! inspector.valid()) return Optional.empty();
         return Optional.of(inspector.asString());
     }
+
+    private static Optional<DockerImage> optionalDockerImage(Inspector inspector) {
+        if ( ! inspector.valid()) return Optional.empty();
+        return Optional.of(DockerImage.fromString(inspector.asString()));
+    }
+
 }

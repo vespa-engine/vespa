@@ -29,7 +29,7 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<Version> version;
 
-    private final Optional<String> dockerImageRepo;
+    private final Optional<DockerImage> dockerImageRepo;
 
     private final Optional<NetworkPorts> networkPorts;
 
@@ -79,14 +79,14 @@ public class HostSpec implements Comparable<HostSpec> {
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<Version> version,
                     Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources,
-                    Optional<String> dockerImageRepo) {
+                    Optional<DockerImage> dockerImageRepo) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         this.hostname = hostname;
         this.aliases = List.copyOf(aliases);
         this.flavor = flavor;
         this.membership = membership;
-        this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");;
-        this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");;
+        this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");
+        this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");
         this.requestedResources = Objects.requireNonNull(requestedResources, "RequestedResources cannot be null");
         this.dockerImageRepo = Objects.requireNonNull(dockerImageRepo, "Docker image repo cannot be null but can be empty");
     }
@@ -111,7 +111,7 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Returns the requested resources leading to this host being provisioned, or empty if not known */
     public Optional<NodeResources> requestedResources() { return requestedResources; }
 
-    public Optional<String> dockerImageRepo() { return dockerImageRepo; }
+    public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     public HostSpec withPorts(Optional<NetworkPorts> ports) {
         return new HostSpec(hostname, aliases, flavor, membership, version, ports, requestedResources, dockerImageRepo);
