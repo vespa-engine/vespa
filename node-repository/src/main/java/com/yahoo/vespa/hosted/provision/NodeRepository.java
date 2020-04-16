@@ -630,7 +630,7 @@ public class NodeRepository extends AbstractComponent {
                 if (zone.cloud().value().equals("aws"))
                     db.removeNodes(List.of(node));
                 else {
-                    node = node.withIpConfig(IP.Config.EMPTY);
+                    node = node.with(IP.Config.EMPTY);
                     move(node, State.deprovisioned, Agent.system, Optional.empty());
                 }
                 removed.add(node);
