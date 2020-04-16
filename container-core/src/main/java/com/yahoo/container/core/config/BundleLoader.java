@@ -25,7 +25,7 @@ import static com.yahoo.collections.PredicateSplit.partition;
 import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX;
 
 /**
- * Manages the set of installed 3rd-party component bundles.
+ * Manages the set of installed and active/inactive bundles.
  *
  * @author Tony Vaagenes
  * @author gjoranv
@@ -50,6 +50,79 @@ public class BundleLoader {
 
     public BundleLoader(Osgi osgi) {
         this.osgi = osgi;
+    }
+
+    /**
+     * Installs the given set of bundles and returns the set of bundles that is no longer used
+     * by the application, and should therefore be scheduled for uninstall.
+     */
+    public synchronized Set<Bundle> use(List<FileReference> newBundles) {
+        // Must be done before allowing duplicates because allowed duplicates affect osgi.getCurrentBundles
+        Set<Bundle> bundlesToUninstall = getObsoleteBundles(newBundles);
+
+        Set<FileReference> obsoleteReferences = getObsoleteFileReferences(newBundles);
+        allowDuplicateBundles(obsoleteReferences);
+        removeInactiveFileReferences(obsoleteReferences);
+
+        install(newBundles);
+        startBundles();
+
+        bundlesToUninstall.removeAll(allActiveBundles());
+        log.info("Bundles to schedule for uninstall: " + bundlesToUninstall);
+
+        log.info(installedBundlesMessage());
+        return bundlesToUninstall;
+    }
+
+    /**
+     * Returns the bundles that are not assumed to be retained by the new application generation.
+     * Note that at this point we don't yet know the full set of new bundles, because of the potential
+     * pre-install directives in the new bundles. However, only "disk bundles" (file:) can be listed
+     * in the pre-install directive, so we know about all the obsolete application bundles.
+     */
+    private Set<Bundle> getObsoleteBundles(List<FileReference> newReferences) {
+        Set<Bundle> bundlesToRemove = new HashSet<>(osgi.getCurrentBundles());
+
+        for (FileReference fileReferenceToKeep : newReferences) {
+            if (reference2Bundles.containsKey(fileReferenceToKeep)) {
+                bundlesToRemove.removeAll(reference2Bundles.get(fileReferenceToKeep));
+            }
+        }
+        bundlesToRemove.removeAll(osgi.getInitialBundles());
+        return bundlesToRemove;
+    }
+
+
+    private Set<FileReference> getObsoleteFileReferences(List<FileReference> newReferences) {
+        Set<FileReference> obsoleteReferences = new HashSet<>(reference2Bundles.keySet());
+        obsoleteReferences.removeAll(newReferences);
+        return obsoleteReferences;
+    }
+
+    /**
+     * Allow duplicates (bsn+version) for each bundle that corresponds to obsolete file references,
+     * and avoid allowing duplicates for bundles that were installed via the
+     * X-JDisc-Preinstall-Bundle directive. These bundles are always "disk bundles" (library
+     * bundles installed on the node, and not transferred via file distribution).
+     * Such bundles will never have duplicates because they always have the same location id.
+     */
+    private void allowDuplicateBundles(Set<FileReference> obsoleteReferences) {
+        // The bundle at index 0 for each file reference always corresponds to the bundle at the file reference location
+        Set<Bundle> allowedDuplicates = obsoleteReferences.stream()
+                .filter(reference -> ! isDiskBundle(reference))
+                .map(reference -> reference2Bundles.get(reference).get(0))
+                .collect(Collectors.toSet());
+
+        log.info(() -> allowedDuplicates.isEmpty() ? "" : "Adding bundles to allowed duplicates: " + allowedDuplicates);
+        osgi.allowDuplicateBundles(allowedDuplicates);
+    }
+
+    /**
+     * Cleans up the map of active file references
+     */
+    private void removeInactiveFileReferences(Set<FileReference> fileReferencesToRemove) {
+        // Clean up the map of active bundles
+        fileReferencesToRemove.forEach(reference2Bundles::remove);
     }
 
     private void install(List<FileReference> references) {
@@ -141,83 +214,10 @@ public class BundleLoader {
         return (bundleRevision.getTypes() & BundleRevision.TYPE_FRAGMENT) != 0;
     }
 
-    /**
-     * Returns the bundles that are not assumed to be retained by the new application generation.
-     * Note that at this point we don't yet know the full set of new bundles, because of the potential
-     * pre-install directives in the new bundles. However, only "disk bundles" (file:) can be listed
-     * in the pre-install directive, so we know about all the obsolete application bundles.
-     */
-    private Set<Bundle> getObsoleteBundles(List<FileReference> newReferences) {
-        Set<Bundle> bundlesToRemove = new HashSet<>(osgi.getCurrentBundles());
-
-        for (FileReference fileReferenceToKeep : newReferences) {
-            if (reference2Bundles.containsKey(fileReferenceToKeep)) {
-                bundlesToRemove.removeAll(reference2Bundles.get(fileReferenceToKeep));
-            }
-        }
-        bundlesToRemove.removeAll(osgi.getInitialBundles());
-        return bundlesToRemove;
-    }
-
-    /**
-     * Cleans up the map of active file references
-     */
-    private void removeInactiveFileReferences(Set<FileReference> fileReferencesToRemove) {
-        // Clean up the map of active bundles
-        fileReferencesToRemove.forEach(reference2Bundles::remove);
-    }
-
-
-    /**
-     * Allow duplicates (bsn+version) for each bundle that corresponds to obsolete file references,
-     * and avoid allowing duplicates for bundles that were installed via the
-     * X-JDisc-Preinstall-Bundle directive. These bundles are always "disk bundles" (library
-     * bundles installed on the node, and not transferred via file distribution).
-     * Such bundles will never have duplicates because they always have the same location id.
-     */
-    private void allowDuplicateBundles(Set<FileReference> obsoleteReferences) {
-        // The bundle at index 0 for each file reference always corresponds to the bundle at the file reference location
-        Set<Bundle> allowedDuplicates = obsoleteReferences.stream()
-                .filter(reference -> ! isDiskBundle(reference))
-                .map(reference -> reference2Bundles.get(reference).get(0))
-                .collect(Collectors.toSet());
-
-        log.info(() -> allowedDuplicates.isEmpty() ? "" : "Adding bundles to allowed duplicates: " + allowedDuplicates);
-        osgi.allowDuplicateBundles(allowedDuplicates);
-    }
-
-    private Set<FileReference> getObsoleteFileReferences(List<FileReference> newReferences) {
-        Set<FileReference> obsoleteReferences = new HashSet<>(reference2Bundles.keySet());
-        obsoleteReferences.removeAll(newReferences);
-        return obsoleteReferences;
-    }
-
     private Set<Bundle> allActiveBundles() {
         return reference2Bundles.keySet().stream()
                 .flatMap(reference -> reference2Bundles.get(reference).stream())
                 .collect(Collectors.toSet());
-    }
-
-    /**
-     * Installs the given set of bundles and returns the set of bundles that is no longer used
-     * by the application, and should therefore be scheduled for uninstall.
-     */
-    public synchronized Set<Bundle> use(List<FileReference> newBundles) {
-        // Must be done before allowing duplicates because allowed duplicates affect osgi.getCurrentBundles
-        Set<Bundle> bundlesToUninstall = getObsoleteBundles(newBundles);
-
-        Set<FileReference> obsoleteReferences = getObsoleteFileReferences(newBundles);
-        allowDuplicateBundles(obsoleteReferences);
-        removeInactiveFileReferences(obsoleteReferences);
-
-        install(newBundles);
-        startBundles();
-
-        bundlesToUninstall.removeAll(allActiveBundles());
-        log.info("Bundles to schedule for uninstall: " + bundlesToUninstall);
-
-        log.info(installedBundlesMessage());
-        return bundlesToUninstall;
     }
 
     private String installedBundlesMessage() {
@@ -238,4 +238,5 @@ public class BundleLoader {
     List<FileReference> getActiveFileReferences() {
         return new ArrayList<>(reference2Bundles.keySet());
     }
+
 }
