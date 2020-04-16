@@ -96,9 +96,9 @@ public class FileReceiver {
             try {
                 Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
             } catch (IOException e) {
-                log.log(LogLevel.ERROR, "Failed writing to file(" + inprogressFile.toPath() + "): " + e.getMessage(), e);
+                log.log(LogLevel.ERROR, "Failed writing to file (" + inprogressFile.toPath() + "): " + e.getMessage(), e);
                 inprogressFile.delete();
-                throw new RuntimeException("Failed writing to file(" + inprogressFile.toPath() + "): ", e);
+                throw new RuntimeException("Failed writing to file (" + inprogressFile.toPath() + "): ", e);
             }
             currentFileSize += part.length;
             currentPartId++;
@@ -114,7 +114,6 @@ public class FileReceiver {
                 // Unpack if necessary
                 if (fileType == FileReferenceData.Type.compressed) {
                     File decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
-                    log.log(LogLevel.DEBUG, () -> "Archived file, unpacking " + inprogressFile + " to " + decompressedDir);
                     CompressedFileReference.decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 } else {
@@ -256,7 +255,7 @@ public class FileReceiver {
             retval = 1;
         }
         double completeness = (double) session.currentFileSize / (double) session.fileSize;
-        log.log(LogLevel.DEBUG, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
+        log.log(LogLevel.SPAM, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
         downloader.setDownloadStatus(reference, completeness);
         req.returnValues().add(new Int32Value(retval));
     }

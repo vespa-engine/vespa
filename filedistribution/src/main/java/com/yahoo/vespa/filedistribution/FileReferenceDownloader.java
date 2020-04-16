@@ -12,11 +12,11 @@ import com.yahoo.vespa.config.ConnectionPool;
 
 import java.io.File;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,12 +54,12 @@ public class FileReferenceDownloader {
         new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
     }
 
-    private void startDownload(Duration timeout, FileReferenceDownload fileReferenceDownload) {
+    private void startDownload(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        long end = System.currentTimeMillis() + timeout.toMillis();
+        Instant end = Instant.now().plus(downloadTimeout);
         boolean downloadStarted = false;
         int retryCount = 0;
-        while ((System.currentTimeMillis() < end) && !downloadStarted) {
+        do {
             try {
                 if (startDownloadRpc(fileReferenceDownload, retryCount)) {
                     downloadStarted = true;
@@ -69,7 +69,7 @@ public class FileReferenceDownloader {
                 }
             }
             catch (InterruptedException e) { /* ignored */}
-        }
+        } while (Instant.now().isBefore(end) && !downloadStarted);
 
         if ( !downloadStarted) {
             fileReferenceDownload.future().completeExceptionally(new RuntimeException("Failed getting file reference '" + fileReference.value() + "'"));
@@ -86,7 +86,7 @@ public class FileReferenceDownloader {
             downloads.put(fileReference, fileReferenceDownload);
             downloadStatus.put(fileReference, 0.0);
         }
-        downloadExecutor.submit(() -> startDownload(downloadTimeout, fileReferenceDownload));
+        downloadExecutor.submit(() -> startDownload(fileReferenceDownload));
     }
 
     void completedDownloading(FileReference fileReference, File file) {
@@ -116,10 +116,10 @@ public class FileReferenceDownloader {
         request.parameters().add(new StringValue(fileReference));
         request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
 
-        execute(request, connection);
+        connection.invokeSync(request, (double) rpcTimeout.getSeconds());
         Level logLevel = (retryCount > 0 ? LogLevel.INFO : LogLevel.DEBUG);
         if (validateResponse(request)) {
-            log.log(logLevel, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
+            log.log(logLevel, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
             if (request.returnValues().get(0).asInt32() == 0) {
                 log.log(logLevel, () -> "Found file reference '" + fileReference + "' available at " + connection.getAddress());
                 return true;
@@ -129,8 +129,9 @@ public class FileReferenceDownloader {
                 return false;
             }
         } else {
-            log.log(logLevel, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
-                    ", error code: " + request.errorCode() + ", set error for connection and use another for next request");
+            log.log(logLevel, () -> "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
+            ", error code: " + request.errorCode() + ", set error for spec, use another spec for next request" +
+            ", retry count " + retryCount);
             connectionPool.setError(connection, request.errorCode());
             return false;
         }
@@ -146,10 +147,6 @@ public class FileReferenceDownloader {
         synchronized (downloads) {
             return downloads.get(fileReference);
         }
-    }
-
-    private void execute(Request request, Connection connection) {
-        connection.invokeSync(request, (double) rpcTimeout.getSeconds());
     }
 
     private boolean validateResponse(Request request) {
