@@ -217,7 +217,10 @@ public class CoredumpHandlerTest {
     public void report_enqueued_and_processed_metrics() throws IOException {
         Files.createFile(crashPathInContainer.resolve("dump-1"));
         Files.createFile(crashPathInContainer.resolve("dump-2"));
-        Files.createFile(doneCoredumpsPath.resolve("container-123").resolve("dump-3"));
+        Files.createFile(crashPathInContainer.resolve("hs_err_pid2.log"));
+        new UnixPath(doneCoredumpsPath.resolve("container-123").resolve("dump-3-folder").resolve("dump-3"))
+                .createParents()
+                .createNewFile();
 
         coredumpHandler.updateMetrics(context, crashPathInContainer);
         List<DimensionMetrics> updatedMetrics = metrics.getMetricsByType(Metrics.DimensionType.PRETAGGED);
@@ -229,7 +232,6 @@ public class CoredumpHandlerTest {
 
     @Before
     public void setup() throws IOException {
-        Files.createDirectories(donePath.resolve("container-123"));
         Files.createDirectories(crashPathInContainer);
     }
 

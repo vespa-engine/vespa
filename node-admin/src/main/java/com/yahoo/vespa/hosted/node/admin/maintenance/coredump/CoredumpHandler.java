@@ -211,13 +211,16 @@ public class CoredumpHandler {
         // Unprocessed coredumps
         int numberOfUnprocessedCoredumps = FileFinder.files(containerCrashPathOnHost)
                 .match(nameStartsWith(".").negate())
+                .match(nameMatches(HS_ERR_PATTERN).negate())
+                .maxDepth(1)
                 .list().size();
 
         metrics.declareGauge(Metrics.APPLICATION_NODE, "coredumps.enqueued", dimensions, Metrics.DimensionType.PRETAGGED).sample(numberOfUnprocessedCoredumps);
 
         // Processed coredumps
         Path processedCoredumpsPath = doneCoredumpsPath.resolve(context.containerName().asString());
-        int numberOfProcessedCoredumps = FileFinder.files(processedCoredumpsPath)
+        int numberOfProcessedCoredumps = FileFinder.directories(processedCoredumpsPath)
+                .maxDepth(1)
                 .list().size();
 
         metrics.declareGauge(Metrics.APPLICATION_NODE, "coredumps.processed", dimensions, Metrics.DimensionType.PRETAGGED).sample(numberOfProcessedCoredumps);
