@@ -84,7 +84,6 @@ private:
     bool hasSentReply() const { return _reply.get() == 0; }
     bool shouldRevert() const;
     void sendReply(MessageSender& sender);
-    void checkCopiesDeleted();
     void updateFailureResult(const api::BucketInfoReply& reply);
     void handleCreateBucketReply(api::BucketInfoReply& reply, uint16_t node);
     void handlePersistenceReply(api::BucketInfoReply& reply, uint16_t node);
