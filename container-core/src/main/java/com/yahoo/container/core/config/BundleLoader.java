@@ -43,6 +43,9 @@ public class BundleLoader {
     private final Logger log = Logger.getLogger(BundleLoader.class.getName());
     private final Osgi osgi;
 
+    // A custom bundle installer for non-disk bundles, to be used for testing
+    private BundleInstaller customBundleInstaller = null;
+
     public BundleLoader(Osgi osgi) {
         this.osgi = osgi;
     }
@@ -81,7 +84,9 @@ public class BundleLoader {
             FileAcquirer fileAcquirer = Container.get().getFileAcquirer();
             boolean hasFileDistribution = (fileAcquirer != null);
             if (hasFileDistribution) {
-                installWithFileDistribution(bundlesToInstall, fileAcquirer);
+                installWithFileDistribution(bundlesToInstall, new FileAcquirerBundleInstaller(fileAcquirer));
+            } else if (customBundleInstaller != null) {
+                installWithFileDistribution(bundlesToInstall, customBundleInstaller);
             } else {
                 log.warning("Can't retrieve bundles since file distribution is disabled.");
             }
@@ -96,11 +101,10 @@ public class BundleLoader {
         reference2Bundles.put(reference, bundles);
     }
 
-    private void installWithFileDistribution(List<FileReference> bundlesToInstall, FileAcquirer fileAcquirer) {
+    private void installWithFileDistribution(List<FileReference> bundlesToInstall, BundleInstaller bundleInstaller) {
         for (FileReference reference : bundlesToInstall) {
             try {
                 log.info("Installing bundle with reference '" + reference.value() + "'");
-                var bundleInstaller = new FileAcquirerBundleInstaller(fileAcquirer);
                 List<Bundle> bundles = bundleInstaller.installBundles(reference, osgi);
                 reference2Bundles.put(reference, bundles);
             }
@@ -223,6 +227,11 @@ public class BundleLoader {
         sb.setLength(sb.length() - 2);
         sb.append("}");
         return sb.toString();
+    }
+
+    // Only for testing
+    void useCustomBundleInstaller(BundleInstaller bundleInstaller) {
+        customBundleInstaller = bundleInstaller;
     }
 
 }
