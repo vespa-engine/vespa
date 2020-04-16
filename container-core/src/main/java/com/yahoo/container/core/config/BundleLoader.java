@@ -10,8 +10,10 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleRevision;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -232,4 +234,8 @@ public class BundleLoader {
         customBundleInstaller = bundleInstaller;
     }
 
+    // Only for testing
+    List<FileReference> getActiveFileReferences() {
+        return new ArrayList<>(reference2Bundles.keySet());
+    }
 }

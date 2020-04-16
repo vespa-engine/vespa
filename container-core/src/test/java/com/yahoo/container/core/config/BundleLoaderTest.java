@@ -38,9 +38,14 @@ public class BundleLoaderTest {
         bundleLoader.use(List.of(BUNDLE_1_REF));
         assertEquals(1, osgi.getInstalledBundles().size());
 
+        // The bundle is installed and started
         TestBundle installedBundle = (TestBundle)osgi.getInstalledBundles().get(0);
         assertEquals(BUNDLE_1.getSymbolicName(), installedBundle.getSymbolicName());
         assertTrue(installedBundle.started);
+
+        // The file reference is active
+        assertEquals(1, bundleLoader.getActiveFileReferences().size());
+        assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
     }
 
     @Test
@@ -60,6 +65,12 @@ public class BundleLoaderTest {
         assertEquals(2, osgi.getCurrentBundles().size());
         assertEquals(BUNDLE_1.getSymbolicName(), osgi.getCurrentBundles().get(0).getSymbolicName());
         assertEquals(BUNDLE_2.getSymbolicName(), osgi.getCurrentBundles().get(1).getSymbolicName());
+
+
+        // Both file references are active
+        assertEquals(2, bundleLoader.getActiveFileReferences().size());
+        assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
+        assertEquals(BUNDLE_2_REF, bundleLoader.getActiveFileReferences().get(1));
     }
 
     @Test
@@ -79,6 +90,10 @@ public class BundleLoaderTest {
         // Only bundle-2 is current
         assertEquals(1, osgi.getCurrentBundles().size());
         assertEquals(BUNDLE_2.getSymbolicName(), osgi.getCurrentBundles().get(0).getSymbolicName());
+
+        // Only the bundle-2 file reference is active
+        assertEquals(1, bundleLoader.getActiveFileReferences().size());
+        assertEquals(BUNDLE_2_REF, bundleLoader.getActiveFileReferences().get(0));
     }
 
 
