@@ -214,7 +214,7 @@ public class ProtobufSerialization {
         for (var replyHit : protobuf.getHitsList()) {
             LeanHit hit = (replyHit.getSortData().isEmpty())
                     ? new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance())
-                    : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getSortData().toByteArray());
+                    : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance(), replyHit.getSortData().toByteArray());
             result.getLeanHits().add(hit);
         }
 
