@@ -47,11 +47,6 @@ class OverrideProcessor implements PreProcessor {
     private static final String ENVIRONMENT_ATTRIBUTE = "environment";
     private static final String REGION_ATTRIBUTE = "region";
 
-    // TODO: Remove after September 2019
-    public OverrideProcessor(Environment environment, RegionName region) {
-        this(InstanceName.from("default"), environment, region);
-    }
-
     public OverrideProcessor(InstanceName instance, Environment environment, RegionName region) {
         this.instance = instance;
         this.environment = environment;
