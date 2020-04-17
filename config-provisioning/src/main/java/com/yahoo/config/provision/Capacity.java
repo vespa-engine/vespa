@@ -21,6 +21,8 @@ public final class Capacity {
     private final NodeType type;
 
     private Capacity(ClusterResources min, ClusterResources max, boolean required, boolean canFail, NodeType type) {
+        validate(min);
+        validate(max);
         if (max.smallerThan(min))
             throw new IllegalArgumentException("The max capacity must be larger than the min capacity, but got min " +
                                                min + " and max " + max);
@@ -29,6 +31,13 @@ public final class Capacity {
         this.required = required;
         this.canFail = canFail;
         this.type = type;
+    }
+
+    private static void validate(ClusterResources resources) {
+        if (resources.nodes() == 0 && resources.groups() == 0) return; // unspecified
+        if (resources.nodes() % resources.groups() != 0)
+            throw new IllegalArgumentException("The number of nodes (" + resources.nodes() +
+                                               ") must be divisible by the number of groups (" + resources.groups() + ")");
     }
 
     /** Returns the number of nodes requested */
