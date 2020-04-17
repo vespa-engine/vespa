@@ -37,22 +37,22 @@ public class ContactInformationMaintainerTest {
 
     @Test
     public void updates_contact_information() {
-        long propertyId = 1;
-        TenantName name = tester.createTenant("tenant1", "domain1", propertyId);
-        Supplier<AthenzTenant> tenant = () -> (AthenzTenant) tester.controller().tenants().require(name);
-        assertFalse("No contact information initially", tenant.get().contact().isPresent());
+        PropertyId propertyId1 = new PropertyId("1");
+        PropertyId propertyId2 = new PropertyId("2");
+        TenantName name1 = tester.createTenant("tenant1", "domain1", 1L);
+        TenantName name2 = tester.createTenant("zenant1", "domain2", 2L);
+        Supplier<AthenzTenant> tenant1 = () -> (AthenzTenant) tester.controller().tenants().require(name1);
+        Supplier<AthenzTenant> tenant2 = () -> (AthenzTenant) tester.controller().tenants().require(name2);
+        assertFalse("No contact information initially", tenant1.get().contact().isPresent());
+        assertFalse("No contact information initially", tenant2.get().contact().isPresent());
 
         Contact contact = testContact();
-        registerContact(propertyId, contact);
-        maintainer.run();
+        tester.serviceRegistry().contactRetriever().addContact(propertyId1, () -> { throw new RuntimeException("ERROR"); });
+        tester.serviceRegistry().contactRetriever().addContact(propertyId2, () -> contact);
+        maintainer.maintain();
 
-        assertTrue("Contact information added", tenant.get().contact().isPresent());
-        assertEquals(contact, tenant.get().contact().get());
-    }
-
-    private void registerContact(long propertyId, Contact contact) {
-        PropertyId p = new PropertyId(String.valueOf(propertyId));
-        tester.serviceRegistry().contactRetrieverMock().addContact(p, contact);
+        assertEquals("No contact information added due to error", Optional.empty(), tenant1.get().contact());
+        assertEquals("Contact information added", Optional.of(contact), tenant2.get().contact());
     }
 
     private static Contact testContact() {
