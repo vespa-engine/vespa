@@ -52,7 +52,7 @@ public class InPlaceResizeProvisionTest {
 
     private static final ClusterSpec container1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1")).vespaVersion("7.157.9").build();
     private static final ClusterSpec container2 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container2")).vespaVersion("7.157.9").build();
-    private static final ClusterSpec content1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("content1")).vespaVersion("7.157.9").build();
+    private static final ClusterSpec content1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion("7.157.9").build();
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
@@ -167,8 +167,13 @@ public class InPlaceResizeProvisionTest {
         new PrepareHelper(tester, app).prepare(container1, 4, 1, resources).activate();
         assertSizeAndResources(container1, 4, resources);
 
-        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
         // No resizing since it would initially (before redistribution) lead to too few resources:
+        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
+        assertSizeAndResources(listCluster(container1).retired(), 4, resources);
+        assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
+
+        // Redeploying the same capacity should also not lead to any resizing
+        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
         assertSizeAndResources(listCluster(container1).retired(), 4, resources);
         assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
     }
@@ -214,7 +219,7 @@ public class InPlaceResizeProvisionTest {
 
     private void assertSizeAndResources(NodeList nodes, int size, NodeResources resources) {
         assertEquals(size, nodes.size());
-        assertTrue(nodes.stream().allMatch(n -> n.flavor().resources().equals(resources)));
+        nodes.forEach(n -> assertEquals(resources, n.flavor().resources()));
     }
 
     private NodeList listCluster(ClusterSpec cluster) {

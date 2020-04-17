@@ -145,6 +145,18 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         return node.id();
     }
 
+    @Override
+    public int hashCode() {
+        return node.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof PrioritizableNode)) return false;
+        return this.node.equals(((PrioritizableNode)other).node);
+    }
+
     static class Builder {
 
         public final Node node;
