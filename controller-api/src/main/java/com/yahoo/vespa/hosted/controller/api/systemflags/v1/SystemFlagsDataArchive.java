@@ -4,9 +4,13 @@ package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.text.JSON;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
+import com.yahoo.vespa.flags.json.DimensionHelper;
 import com.yahoo.vespa.flags.json.FlagData;
 
 import java.io.BufferedInputStream;
@@ -22,8 +26,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -153,7 +160,8 @@ public class SystemFlagsDataArchive {
         if (rawData.isBlank()) {
             flagData = new FlagData(directoryDeducedFlagId);
         } else {
-            flagData = FlagData.deserialize(rawData);
+            String normalizedRawData = normalizeJson(rawData);
+            flagData = FlagData.deserialize(normalizedRawData);
             if (!directoryDeducedFlagId.equals(flagData.id())) {
                 throw new IllegalArgumentException(
                         String.format("Flag data file with flag id '%s' in directory for '%s'",
@@ -161,7 +169,6 @@ public class SystemFlagsDataArchive {
             }
 
             String serializedData = flagData.serializeToJson();
-            String normalizedRawData = removeCommentsFromJson(rawData);
             if (!JSON.equals(serializedData, normalizedRawData)) {
                 throw new IllegalArgumentException(filePath + " contains unknown non-comment fields: " +
                         "after removing any comment fields the JSON is:\n  " +
@@ -174,19 +181,42 @@ public class SystemFlagsDataArchive {
         builder.addFile(filename, flagData);
     }
 
-    static String removeCommentsFromJson(String json) {
-        JsonNode jsonNode = uncheck(() -> mapper.readTree(json));
-        removeComments(jsonNode);
-        return jsonNode.toString();
+    static String normalizeJson(String json) {
+        JsonNode root = uncheck(() -> mapper.readTree(json));
+        removeCommentsRecursively(root);
+        verifyValues(root);
+        return root.toString();
     }
 
-    private static void removeComments(JsonNode node) {
+    private static void verifyValues(JsonNode root) {
+        var cursor = new JsonAccessor(root);
+        cursor.get("rules").forEachArrayElement(rule -> rule.get("conditions").forEachArrayElement(condition -> {
+            var dimension = condition.get("dimension");
+            if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.APPLICATION_ID))) {
+                condition.get("values").forEachArrayElement(conditionValue -> {
+                    String applicationIdString = conditionValue.asString()
+                            .orElseThrow(() -> new IllegalArgumentException("Non-string application ID: " + conditionValue));
+                    // Throws exception if not recognized
+                    ApplicationId.fromSerializedForm(applicationIdString);
+                });
+            } else if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.NODE_TYPE))) {
+                condition.get("values").forEachArrayElement(conditionValue -> {
+                    String nodeTypeString = conditionValue.asString()
+                            .orElseThrow(() -> new IllegalArgumentException("Non-string node type: " + conditionValue));
+                    // Throws exception if not recognized
+                    NodeType.valueOf(nodeTypeString);
+                });
+            }
+        }));
+    }
+
+    private static void removeCommentsRecursively(JsonNode node) {
         if (node instanceof ObjectNode) {
             ObjectNode objectNode = (ObjectNode) node;
             objectNode.remove("comment");
         }
 
-        node.forEach(SystemFlagsDataArchive::removeComments);
+        node.forEach(SystemFlagsDataArchive::removeCommentsRecursively);
     }
 
     private static String toFilePath(FlagId flagId, String filename) {
@@ -209,5 +239,45 @@ public class SystemFlagsDataArchive {
             return new SystemFlagsDataArchive(copy);
         }
 
+    }
+
+    private static class JsonAccessor {
+        private final JsonNode jsonNode;
+
+        public JsonAccessor(JsonNode jsonNode) {
+            this.jsonNode = jsonNode;
+        }
+
+        public JsonAccessor get(String fieldName) {
+            if (jsonNode == null) {
+                return this;
+            } else {
+                return new JsonAccessor(jsonNode.get(fieldName));
+            }
+        }
+
+        public Optional<String> asString() {
+            return jsonNode != null && jsonNode.isTextual() ? Optional.of(jsonNode.textValue()) : Optional.empty();
+        }
+
+        public void forEachArrayElement(Consumer<JsonAccessor> consumer) {
+            if (jsonNode != null && jsonNode.isArray()) {
+                jsonNode.forEach(jsonNodeElement -> consumer.accept(new JsonAccessor(jsonNodeElement)));
+            }
+        }
+
+        public void removeCommentRecursively() {
+
+        }
+
+        /** Returns true if this (JsonNode) is a string and equal to value. */
+        public boolean isEqualTo(String value) {
+            return jsonNode != null && jsonNode.isTextual() && Objects.equals(jsonNode.textValue(), value);
+        }
+
+        @Override
+        public String toString() {
+            return jsonNode == null ? "undefined" : jsonNode.toString();
+        }
     }
 }

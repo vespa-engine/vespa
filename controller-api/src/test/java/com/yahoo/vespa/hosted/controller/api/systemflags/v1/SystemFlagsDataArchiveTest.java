@@ -33,7 +33,9 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bjorncs
@@ -132,7 +134,7 @@ public class SystemFlagsDataArchiveTest {
                 "        }\n" +
                 "    ]\n" +
                 "}",
-                SystemFlagsDataArchive.removeCommentsFromJson("{\n" +
+                SystemFlagsDataArchive.normalizeJson("{\n" +
                 "    \"comment\": \"comment a\",\n" +
                 "    \"a\": {\n" +
                 "        \"comment\": \"comment b\",\n" +
@@ -148,6 +150,54 @@ public class SystemFlagsDataArchiveTest {
                 "        }\n" +
                 "    ]\n" +
                 "}")));
+    }
+
+    @Test
+    public void normalize_json_fail_on_invalid_application() {
+        try {
+            SystemFlagsDataArchive.normalizeJson("{\n" +
+                    "    \"id\": \"foo\",\n" +
+                    "    \"rules\": [\n" +
+                    "        {\n" +
+                    "            \"conditions\": [\n" +
+                    "                {\n" +
+                    "                    \"type\": \"whitelist\",\n" +
+                    "                    \"dimension\": \"application\",\n" +
+                    "                    \"values\": [ \"a.b.c\" ]\n" +
+                    "                }\n" +
+                    "            ],\n" +
+                    "            \"value\": true\n" +
+                    "        }\n" +
+                    "    ]\n" +
+                    "}\n");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Application ids must be on the form tenant:application:instance, but was a.b.c", e.getMessage());
+        }
+    }
+
+    @Test
+    public void normalize_json_fail_on_invalid_node_type() {
+        try {
+            SystemFlagsDataArchive.normalizeJson("{\n" +
+                    "    \"id\": \"foo\",\n" +
+                    "    \"rules\": [\n" +
+                    "        {\n" +
+                    "            \"conditions\": [\n" +
+                    "                {\n" +
+                    "                    \"type\": \"whitelist\",\n" +
+                    "                    \"dimension\": \"node-type\",\n" +
+                    "                    \"values\": [ \"footype\" ]\n" +
+                    "                }\n" +
+                    "            ],\n" +
+                    "            \"value\": true\n" +
+                    "        }\n" +
+                    "    ]\n" +
+                    "}\n");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("No enum constant com.yahoo.config.provision.NodeType.footype", e.getMessage());
+        }
     }
 
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {
