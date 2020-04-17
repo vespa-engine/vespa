@@ -54,7 +54,7 @@ public class IdentityDocumentGeneratorTest {
         ApplicationId appid = ApplicationId.from(
                 TenantName.from("tenant"), ApplicationName.from("application"), InstanceName.from("default"));
         Allocation allocation = new Allocation(appid,
-                                               ClusterMembership.from("container/default/0/0", Version.fromString("1.2.3")),
+                                               ClusterMembership.from("container/default/0/0", Version.fromString("1.2.3"), Optional.empty()),
                                                new NodeResources(1, 1, 1, 1),
                                                Generation.initial(),
                                                false);

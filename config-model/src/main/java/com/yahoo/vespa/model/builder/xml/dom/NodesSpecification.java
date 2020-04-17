@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
@@ -21,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.
@@ -209,7 +209,7 @@ public class NodesSpecification {
                 .vespaVersion(version)
                 .exclusive(exclusive)
                 .combinedId(combinedId.map(ClusterSpec.Id::from))
-                .dockerImageRepo(dockerImageRepo)
+                .dockerImageRepository(dockerImageRepo.map(DockerImage::fromString))
                 .build();
         return hostSystem.allocateHosts(cluster, Capacity.from(min, max, required, canFail), logger);
     }
@@ -217,7 +217,7 @@ public class NodesSpecification {
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {
         ModelElement resources = nodesElement.child("resources");
         if (resources != null) {
-            return nodeResourcesFromResorcesElement(resources);
+            return nodeResourcesFromResourcesElement(resources);
         }
         else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
             var flavorResources = NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor"));
@@ -228,7 +228,7 @@ public class NodesSpecification {
         }
     }
 
-    private static Pair<NodeResources, NodeResources> nodeResourcesFromResorcesElement(ModelElement element) {
+    private static Pair<NodeResources, NodeResources> nodeResourcesFromResourcesElement(ModelElement element) {
         Pair<Double, Double> vcpu       = toRange(element.requiredStringAttribute("vcpu"),   .0, Double::parseDouble);
         Pair<Double, Double> memory     = toRange(element.requiredStringAttribute("memory"), .0, s -> parseGbAmount(s, "B"));
         Pair<Double, Double> disk       = toRange(element.requiredStringAttribute("disk"),   .0, s -> parseGbAmount(s, "B"));

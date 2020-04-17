@@ -22,10 +22,10 @@ public final class ClusterSpec {
     private final Version vespaVersion;
     private boolean exclusive;
     private final Optional<Id> combinedId;
-    private final Optional<String> dockerImageRepo;
+    private final Optional<DockerImage> dockerImageRepo;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
-                        Optional<Id> combinedId, Optional<String> dockerImageRepo) {
+                        Optional<Id> combinedId, Optional<DockerImage> dockerImageRepo) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
@@ -36,6 +36,8 @@ public final class ClusterSpec {
             throw new IllegalArgumentException("combinedId must be empty for cluster of type " + type);
         }
         this.combinedId = combinedId;
+        if (dockerImageRepo.isPresent() && dockerImageRepo.get().tag().isPresent())
+            throw new IllegalArgumentException("dockerimageRepo is not allowed to have a tag");
         this.dockerImageRepo = dockerImageRepo;
     }
 
@@ -46,7 +48,7 @@ public final class ClusterSpec {
     public Id id() { return id; }
 
     /** Returns the docker image repository part of a docker image we want this cluster to run */
-    public Optional<String> dockerImageRepo() { return dockerImageRepo; }
+    public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     /** Returns the docker image (repository + vespa version) we want this cluster to run */
     public Optional<String> dockerImage() { return dockerImageRepo.map(repo -> repo + ":" + vespaVersion.toFullString()); }
@@ -94,7 +96,7 @@ public final class ClusterSpec {
         private final boolean specification;
 
         private Optional<Group> groupId = Optional.empty();
-        private Optional<String> dockerImageRepo = Optional.empty();
+        private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
         private Optional<Id> combinedId = Optional.empty();
@@ -139,7 +141,14 @@ public final class ClusterSpec {
             return this;
         }
 
+        @Deprecated
+        // TODO: Remove after 7.208 is oldest version in use
         public Builder dockerImageRepo(Optional<String> dockerImageRepo) {
+            this.dockerImageRepo = dockerImageRepo.map(DockerImage::fromString);
+            return this;
+        }
+
+        public Builder dockerImageRepository(Optional<DockerImage> dockerImageRepo) {
             this.dockerImageRepo = dockerImageRepo;
             return this;
         }
@@ -163,7 +172,7 @@ public final class ClusterSpec {
         if ( ! other.id.equals(this.id)) return false;
         if ( ! other.groupId.equals(this.groupId)) return false;
         if ( ! other.vespaVersion.equals(this.vespaVersion)) return false;
-        if ( ! other.dockerImageRepo.orElse("").equals(this.dockerImageRepo.orElse(""))) return false;
+        if ( ! other.dockerImageRepo.equals(this.dockerImageRepo)) return false;
         return true;
     }
 

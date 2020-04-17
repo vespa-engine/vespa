@@ -87,7 +87,7 @@ public class AllocatedHostsSerializer {
             object.setString(hostSpecMembershipKey, membership.stringValue());
             object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
             membership.cluster().dockerImageRepo().ifPresent(repo -> {
-                object.setString(hostSpecDockerImageRepoKey, repo);
+                object.setString(hostSpecDockerImageRepoKey, repo.repository());
             });
         });
         host.flavor().ifPresent(flavor -> toSlime(flavor, object));
@@ -208,7 +208,7 @@ public class AllocatedHostsSerializer {
         return ClusterMembership.from(object.field(hostSpecMembershipKey).asString(),
                                       com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersionKey).asString()),
                                       object.field(hostSpecDockerImageRepoKey).valid()
-                                              ? Optional.of(object.field(hostSpecDockerImageRepoKey).asString())
+                                              ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
                                               : Optional.empty());
     }
 

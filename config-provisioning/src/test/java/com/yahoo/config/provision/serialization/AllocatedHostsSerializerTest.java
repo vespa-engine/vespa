@@ -41,7 +41,7 @@ public class AllocatedHostsSerializerTest {
                                List.of(),
                                Optional.empty(),
                                Optional.of(ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                                  Optional.of("docker.foo.com:4443/vespa/bar"))),
+                                                                  Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar")))),
                                Optional.empty(), Optional.empty(), Optional.empty(),
                                Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))));
         hosts.add(new HostSpec("flavor-from-resources-1",

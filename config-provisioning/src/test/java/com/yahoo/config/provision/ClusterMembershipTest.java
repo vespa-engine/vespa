@@ -42,7 +42,7 @@ public class ClusterMembershipTest {
             assertTrue(instance.cluster().dockerImageRepo().isEmpty());
         }
         {
-            Optional<String> dockerImageRepo = Optional.of("docker.foo.com:4443/vespa/bar");
+            Optional<DockerImage> dockerImageRepo = Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"));
             ClusterMembership instance = ClusterMembership.from("combined/id1/4/37/exclusive/containerId1", Vtag.currentVersion, dockerImageRepo);
             ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, dockerImageRepo);
             assertEquals(instance, serialized);
