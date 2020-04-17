@@ -237,3 +237,10 @@ use_weak_internal_read_consistency_for_client_gets bool default=false
 ## feature, so it's not required to set that config to true, nor will setting it
 ## to false actually disable the feature.
 enable_metadata_only_fetch_phase_for_inconsistent_updates bool default=false
+
+## If a distributor main thread tick is constantly processing requests or responses
+## originating from other nodes, setting this value above zero will prevent implicit
+## maintenance scans from being done as part of the tick for up to N rounds of ticking.
+## This is to reduce the amount of CPU spent on ideal state calculations and bucket DB
+## accesses when the distributor is heavily loaded with feed operations.
+max_consecutively_inhibited_maintenance_ticks int default=20

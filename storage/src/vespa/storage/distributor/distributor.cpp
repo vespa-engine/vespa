@@ -105,6 +105,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _ownershipSafeTimeCalc(std::make_unique<OwnershipTransferSafeTimePointCalculator>(0s)), // Set by config later
       _db_memory_sample_interval(30s),
       _last_db_memory_sample_time_point(),
+      _inhibited_maintenance_tick_count(0),
       _must_send_updated_host_info(false),
       _use_btree_database(use_btree_database)
 {
@@ -622,7 +623,7 @@ Distributor::signalWorkWasDone()
 }
 
 bool
-Distributor::workWasDone()
+Distributor::workWasDone() const noexcept
 {
     return !_tickResult.waitWanted();
 }
@@ -848,15 +849,37 @@ Distributor::doNonCriticalTick(framework::ThreadIndex)
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     handleStatusRequests();
     startExternalOperations();
-    if (!initializing()) {
+    if (initializing()) {
+        _bucketDBUpdater.resendDelayedMessages();
+        return _tickResult;
+    }
+    // Ordering note: since maintenance inhibiting checks whether startExternalOperations()
+    // did any useful work with incoming data, this check must be performed _after_ the call.
+    if (!should_inhibit_current_maintenance_scan_tick()) {
         scanNextBucket();
         startNextMaintenanceOperation();
         if (isInRecoveryMode()) {
             signalWorkWasDone();
         }
+        mark_maintenance_tick_as_no_longer_inhibited();
+        _bucketDBUpdater.resendDelayedMessages();
+    } else {
+        mark_current_maintenance_tick_as_inhibited();
     }
-    _bucketDBUpdater.resendDelayedMessages();
     return _tickResult;
+}
+
+bool Distributor::should_inhibit_current_maintenance_scan_tick() const noexcept {
+    return (workWasDone() && (_inhibited_maintenance_tick_count
+                              < getConfig().max_consecutively_inhibited_maintenance_ticks()));
+}
+
+void Distributor::mark_current_maintenance_tick_as_inhibited() noexcept {
+    ++_inhibited_maintenance_tick_count;
+}
+
+void Distributor::mark_maintenance_tick_as_no_longer_inhibited() noexcept {
+    _inhibited_maintenance_tick_count = 0;
 }
 
 void

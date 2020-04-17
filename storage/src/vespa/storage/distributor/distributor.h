@@ -233,12 +233,15 @@ private:
     void maybe_update_bucket_db_memory_usage_stats();
     void scanAllBuckets();
     MaintenanceScanner::ScanResult scanNextBucket();
+    bool should_inhibit_current_maintenance_scan_tick() const noexcept;
+    void mark_current_maintenance_tick_as_inhibited() noexcept;
+    void mark_maintenance_tick_as_no_longer_inhibited() noexcept;
     void enableNextConfig();
     void fetchStatusRequests();
     void fetchExternalMessages();
     void startNextMaintenanceOperation();
     void signalWorkWasDone();
-    bool workWasDone();
+    bool workWasDone() const noexcept;
 
     void enterRecoveryMode();
     void leaveRecoveryMode();
@@ -336,6 +339,7 @@ private:
     std::unique_ptr<OwnershipTransferSafeTimePointCalculator> _ownershipSafeTimeCalc;
     std::chrono::steady_clock::duration _db_memory_sample_interval;
     std::chrono::steady_clock::time_point _last_db_memory_sample_time_point;
+    size_t _inhibited_maintenance_tick_count;
     bool _must_send_updated_host_info;
     const bool _use_btree_database;
 };
