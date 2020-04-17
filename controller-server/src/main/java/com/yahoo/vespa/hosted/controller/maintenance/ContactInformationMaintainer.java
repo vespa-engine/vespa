@@ -48,9 +48,9 @@ public class ContactInformationMaintainer extends Maintainer {
                                           (Optional.of(contact).equals(tenant.contact()) ? "un" : "") + "changed");
                             tenants.store(lockedTenant.with(contact));
                         });
-                        return;
+                        break;
                     case cloud:
-                        return;
+                        break;
                     default:
                         throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
                 }
