@@ -80,6 +80,12 @@ bool IntegerAttribute::applyWeight(DocId doc, const FieldValue & fv, const Arith
     return AttributeVector::adjustWeight(_changes, doc, NumericChangeData<largeint_t>(v), wAdjust);
 }
 
+bool IntegerAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust)
+{
+    largeint_t v = fv.getAsLong();
+    return AttributeVector::adjustWeight(_changes, doc, NumericChangeData<largeint_t>(v), wAdjust);
+}
+
 bool IntegerAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
 {
     bool retval(doc < getNumDocs());

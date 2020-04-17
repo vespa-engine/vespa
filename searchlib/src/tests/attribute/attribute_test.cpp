@@ -3,6 +3,7 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -1493,20 +1494,21 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     typedef ArithmeticValueUpdate ArithVU;
     auto & vec = static_cast<VectorType &>(*ptr.get());
 
-    addDocs(ptr, 6);
-    for (uint32_t doc = 0; doc < 6; ++doc) {
+    addDocs(ptr, 7);
+    for (uint32_t doc = 0; doc < 7; ++doc) {
         ASSERT_TRUE(vec.append(doc, initValue.getValue(), 100));
     }
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 6u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 7u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 0u);
 
     EXPECT_TRUE(ptr->apply(0, MapVU(initFieldValue, ArithVU(ArithVU::Add, 10))));
     EXPECT_TRUE(ptr->apply(1, MapVU(initFieldValue, ArithVU(ArithVU::Sub, 10))));
     EXPECT_TRUE(ptr->apply(2, MapVU(initFieldValue, ArithVU(ArithVU::Mul, 10))));
     EXPECT_TRUE(ptr->apply(3, MapVU(initFieldValue, ArithVU(ArithVU::Div, 10))));
+    EXPECT_TRUE(ptr->apply(6, MapVU(initFieldValue, AssignValueUpdate(IntFieldValue(70)))));
     ptr->commit();
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 10u);
-    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 4u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 12u);
+    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 5u);
 
     std::vector<BufferType> buf(2);
     ptr->get(0, &buf[0], 2);
@@ -1517,6 +1519,8 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(buf[0].getWeight(), 1000);
     ptr->get(3, &buf[0], 2);
     EXPECT_EQUAL(buf[0].getWeight(), 10);
+    ptr->get(6, &buf[0], 2);
+    EXPECT_EQUAL(buf[0].getWeight(), 70);
 
     // removeifzero
     EXPECT_TRUE(ptr->apply(4, MapVU(initFieldValue, ArithVU(ArithVU::Sub, 100))));
@@ -1527,8 +1531,8 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
         EXPECT_EQUAL(ptr->get(4, &buf[0], 2), uint32_t(1));
         EXPECT_EQUAL(buf[0].getWeight(), 0);
     }
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 11u);
-    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 5u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 13u);
+    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 6u);
 
     // createifnonexistant
     EXPECT_TRUE(ptr->apply(5, MapVU(nonExistant, ArithVU(ArithVU::Add, 10))));
@@ -1542,18 +1546,18 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
         EXPECT_EQUAL(ptr->get(5, &buf[0], 2), uint32_t(1));
         EXPECT_EQUAL(buf[0].getWeight(), 100);
     }
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 12u);
-    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 6u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 14u);
+    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 7u);
 
 
     // try divide by zero (should be ignored)
     vec.clearDoc(0);
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 13u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 15u);
     ASSERT_TRUE(vec.append(0, initValue.getValue(), 12345));
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 14u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 16u);
     EXPECT_TRUE(ptr->apply(0, MapVU(initFieldValue, ArithVU(ArithVU::Div, 0))));
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 14u);
-    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 6u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 16u);
+    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 7u);
     ptr->commit();
     ptr->get(0, &buf[0], 1);
     EXPECT_EQUAL(buf[0].getWeight(), 12345);

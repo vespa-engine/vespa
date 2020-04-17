@@ -44,6 +44,7 @@ public:
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
     bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
+    bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) override;
     bool findEnum(const char * value, EnumHandle & e) const override = 0;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override = 0;
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override;

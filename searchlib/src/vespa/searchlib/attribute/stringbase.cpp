@@ -309,6 +309,12 @@ bool StringAttribute::applyWeight(DocId doc, const FieldValue & fv, const Arithm
     return AttributeVector::adjustWeight(_changes, doc, StringChangeData(v), wAdjust);
 }
 
+bool StringAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust)
+{
+    vespalib::string v = fv.getAsString();
+    return AttributeVector::adjustWeight(_changes, doc, StringChangeData(v), wAdjust);
+}
+
 bool StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
 {
     return false;

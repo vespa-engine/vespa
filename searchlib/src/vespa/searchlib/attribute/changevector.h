@@ -18,6 +18,7 @@ struct ChangeBase {
         INCREASEWEIGHT,
         MULWEIGHT,
         DIVWEIGHT,
+        SETWEIGHT,
         ADD,
         SUB,
         MUL,

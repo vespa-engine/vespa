@@ -28,6 +28,7 @@ public:
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
     bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
+    bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) override;
     uint32_t clearDoc(DocId doc) override;
 protected:
     const char * getString(DocId doc, char * s, size_t sz) const override;
