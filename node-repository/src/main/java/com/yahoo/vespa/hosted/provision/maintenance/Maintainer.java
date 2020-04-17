@@ -42,7 +42,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
         HostName hostname = HostName.from(com.yahoo.net.HostName.getLocalhost());
         long delay = staggeredDelay(nodeRepository.database().cluster(), hostname, nodeRepository.clock().instant(), interval);
-        service = new ScheduledThreadPoolExecutor(1);
+        service = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, getClass().getSimpleName() + "-worker"));
         service.scheduleAtFixedRate(this, delay, interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name(), this);
     }
