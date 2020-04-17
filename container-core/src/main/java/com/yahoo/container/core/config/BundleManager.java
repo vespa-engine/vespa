@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core.config;
 
 import com.yahoo.collections.PredicateSplit;
@@ -24,8 +24,8 @@ import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX
 /**
  * Manages the set of installed and active/inactive bundles.
  *
- * @author Tony Vaagenes
  * @author gjoranv
+ * @author Tony Vaagenes
  */
 public class BundleManager {
 
