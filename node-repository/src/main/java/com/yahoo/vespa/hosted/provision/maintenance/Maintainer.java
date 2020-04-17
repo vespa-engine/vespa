@@ -114,7 +114,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
         long offset = cluster.indexOf(host) * interval.toMillis() / cluster.size();
         long timeUntilNextRun = Math.floorMod(offset - now.toEpochMilli(), interval.toMillis());
-        return timeUntilNextRun + interval.toMillis() / cluster.size();
+        return timeUntilNextRun;
     }
 
 }
