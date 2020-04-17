@@ -67,6 +67,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     private static final String PROPERTY_CREATE_IF_NON_EXISTENT = "create-if-non-existent";
     private static final String PROPERTY_ID_TEMPLATE = "docid";
     private static final String PROPERTY_OPERATION = "operation";
+    private static final String PROPERTY_VERBOSE = "verbose";
     private static final String BAG_AS_MAP_FIELDS = "bag-as-map-fields";
     private static final String SIMPLE_ARRAY_FIELDS = "simple-array-fields";
     private static final String SIMPLE_OBJECT_FIELDS = "simple-object-fields";
@@ -99,6 +100,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         partialOperationMap.put(UPDATE_MAP_FIELDS, PARTIAL_UPDATE_ASSIGN);
     }
 
+    private final boolean verbose;
     private final String template;
     private final Operation operation;
     private final Properties properties;
@@ -113,6 +115,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
         properties = VespaConfiguration.loadProperties(params);
         template = properties.getProperty(PROPERTY_ID_TEMPLATE);
         operation = Operation.fromString(properties.getProperty(PROPERTY_OPERATION, "put"));
+        verbose = Boolean.parseBoolean(properties.getProperty(PROPERTY_VERBOSE, "false"));
     }
 
     @Override
@@ -145,6 +148,9 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             Schema inputSchema = getInputSchema();
             Map<String, Object> fields = TupleTools.tupleMap(inputSchema, tuple);
             String docId = TupleTools.toString(fields, template);
+            if (verbose) {
+                System.out.println("Processing docId: "+ docId);
+            }
             // create json
             json = create(operation, docId, fields, properties, inputSchema);
             if (json == null || json.length() == 0) {
