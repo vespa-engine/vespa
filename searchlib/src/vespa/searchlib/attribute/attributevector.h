@@ -30,6 +30,7 @@ class FastOS_FileInterface;
 
 namespace document {
     class ArithmeticValueUpdate;
+    class AssignValueUpdate;
     class MapValueUpdate;
     class FieldValue;
 }
@@ -332,6 +333,9 @@ protected:
     template<typename T>
     bool adjustWeight(ChangeVectorT< ChangeTemplate<T> > &changes, DocId doc, const T &v, const ArithmeticValueUpdate &wd);
 
+    template<typename T>
+    bool adjustWeight(ChangeVectorT< ChangeTemplate<T> > &changes, DocId doc, const T &v, const document::AssignValueUpdate &wu);
+
     template <typename T>
     static int32_t
     applyWeightChange(int32_t weight, const ChangeTemplate<T> &weightChange) {
@@ -341,6 +345,8 @@ protected:
             return weight * weightChange._weight;
         } else if (weightChange._type == ChangeBase::DIVWEIGHT) {
             return weight / weightChange._weight;
+        } else if (weightChange._type == ChangeBase::SETWEIGHT) {
+            return weightChange._weight;
         }
         return weight;
     }
@@ -561,6 +567,7 @@ private:
     virtual void onAddDocs(DocId docIdLimit) = 0;
     void divideByZeroWarning();
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);
+    virtual bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust);
     virtual void onSave(IAttributeSaveTarget & saveTarget);
     virtual bool onLoad();
 

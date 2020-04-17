@@ -76,6 +76,12 @@ bool FloatingPointAttribute::applyWeight(DocId doc, const FieldValue & fv, const
     return AttributeVector::adjustWeight(_changes, doc, NumericChangeData<double>(v), wAdjust);
 }
 
+bool FloatingPointAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust)
+{
+    double v = fv.getAsDouble();
+    return AttributeVector::adjustWeight(_changes, doc, NumericChangeData<double>(v), wAdjust);
+}
+
 bool FloatingPointAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
 {
     bool retval(doc < getNumDocs());
