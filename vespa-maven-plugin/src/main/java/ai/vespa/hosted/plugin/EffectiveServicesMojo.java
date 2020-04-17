@@ -44,13 +44,17 @@ public class EffectiveServicesMojo extends AbstractVespaDeploymentMojo {
 
         ZoneId zone = zoneOf(environment, region);
         Path output = Paths.get(outputDirectory).resolve("services-" + zone.environment().value() + "-" + zone.region().value() + ".xml");
-        Files.write(output, effectiveServices(services, zone).getBytes(StandardCharsets.UTF_8));
+        Files.write(output, effectiveServices(services, zone, InstanceName.from(instance)).getBytes(StandardCharsets.UTF_8));
         getLog().info("Effective services for " + zone + " written to " + output);
     }
 
-    static String effectiveServices(File servicesFile, ZoneId zone) throws Exception {
-        Document processedServicesXml = new XmlPreProcessor(servicesFile.getParentFile(), servicesFile,
-                                                            InstanceName.from("default"), zone.environment(), zone.region()).run();
+    static String effectiveServices(File servicesFile, ZoneId zone, InstanceName instance) throws Exception {
+        Document processedServicesXml = new XmlPreProcessor(servicesFile.getParentFile(),
+                                                            servicesFile,
+                                                            instance,
+                                                            zone.environment(),
+                                                            zone.region())
+                .run();
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         Writer writer = new StringWriter();
