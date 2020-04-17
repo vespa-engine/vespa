@@ -323,7 +323,7 @@ class NodeAllocation {
             }
         }
         else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
-            for (PrioritizableNode node : byIncreasingIndex(nodes)) {
+            for (PrioritizableNode node : byUnretiringPriority(nodes)) {
                 if ( node.node.allocation().get().membership().retired() && ( hasCompatibleFlavor(node) || node.isResizable) ) {
                     if (node.isResizable)
                         node.node = resize(node.node);
@@ -337,7 +337,7 @@ class NodeAllocation {
             // Set whether the node is exclusive
             Allocation allocation = node.node.allocation().get();
             node.node = node.node.with(allocation.with(allocation.membership()
-                           .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive()))));
+                                .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive()))));
         }
 
         return nodes.stream().map(n -> n.node).collect(Collectors.toList());
@@ -368,8 +368,12 @@ class NodeAllocation {
         return nodes.stream().sorted(nodeIndexComparator().reversed()).collect(Collectors.toList());
     }
 
-    private List<PrioritizableNode> byIncreasingIndex(Set<PrioritizableNode> nodes) {
-        return nodes.stream().sorted(nodeIndexComparator()).collect(Collectors.toList());
+    /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
+    private List<PrioritizableNode> byUnretiringPriority(Set<PrioritizableNode> nodes) {
+        return nodes.stream()
+                    .sorted(Comparator.comparing((PrioritizableNode n) -> n.node.status().wantToRetire())
+                                      .thenComparing(n -> n.node.allocation().get().membership().index()))
+                    .collect(Collectors.toList());
     }
 
     private Comparator<PrioritizableNode> nodeIndexComparator() {
