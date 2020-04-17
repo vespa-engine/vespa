@@ -66,10 +66,10 @@ public class InPlaceResizeProvisionTest {
         addParentHosts(4, largeResources.with(fast).with(local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
-        assertClusterSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 1, largeResources).activate();
-        assertClusterSizeAndResources(container1, 4, new NodeResources(8, 16, 32, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(8, 16, 32, 1, fast, local));
         assertEquals("No nodes are retired", 0, tester.getNodes(app, Node.State.active).retired().size());
     }
 
@@ -78,10 +78,10 @@ public class InPlaceResizeProvisionTest {
         addParentHosts(4, mediumResources.with(fast).with(local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
-        assertClusterSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 1, smallResources).activate();
-        assertClusterSizeAndResources(container1, 4, new NodeResources(2, 4, 8, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(2, 4, 8, 1, fast, local));
         assertEquals("No nodes are retired", 0, tester.getNodes(app, Node.State.active).retired().size());
     }
 
@@ -94,16 +94,16 @@ public class InPlaceResizeProvisionTest {
                 .prepare(container2, 4, 1, mediumResources)
                 .activate();
         Set<String> container1Hostnames = listCluster(container1).stream().map(Node::hostname).collect(Collectors.toSet());
-        assertClusterSizeAndResources(container1, 4, new NodeResources(2, 4, 8, 1, fast, local));
-        assertClusterSizeAndResources(container2, 4, new NodeResources(4, 8, 16, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(2, 4, 8, 1, fast, local));
+        assertSizeAndResources(container2, 4, new NodeResources(4, 8, 16, 1, fast, local));
 
         new PrepareHelper(tester, app)
                 .prepare(container1, 4, 1, mediumResources)
                 .prepare(container2, 4, 1, smallResources)
                 .activate();
         assertEquals(container1Hostnames, listCluster(container1).stream().map(Node::hostname).collect(Collectors.toSet()));
-        assertClusterSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
-        assertClusterSizeAndResources(container2, 4, new NodeResources(2, 4, 8, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
+        assertSizeAndResources(container2, 4, new NodeResources(2, 4, 8, 1, fast, local));
         assertEquals("No nodes are retired", 0, tester.getNodes(app, Node.State.active).retired().size());
     }
 
@@ -117,7 +117,7 @@ public class InPlaceResizeProvisionTest {
         new PrepareHelper(tester, app)
                 .prepare(container1, 6, 1, largeResources).activate();
         assertTrue(listCluster(container1).stream().map(Node::hostname).collect(Collectors.toSet()).containsAll(initialHostnames));
-        assertClusterSizeAndResources(container1, 6, new NodeResources(8, 16, 32, 1, fast, local));
+        assertSizeAndResources(container1, 6, new NodeResources(8, 16, 32, 1, fast, local));
         assertEquals("No nodes are retired", 0, tester.getNodes(app, Node.State.active).retired().size());
     }
 
@@ -156,13 +156,29 @@ public class InPlaceResizeProvisionTest {
         assertTrue("All initial nodes should still be allocated to the application", initialHostnames.isEmpty());
     }
 
+    /** In this scenario there should be no resizing */
+    @Test
+    public void increase_size_decrease_resources() {
+        addParentHosts(12, largeResources.with(fast));
+
+        NodeResources resources = new NodeResources(4, 8, 16, 1);
+        NodeResources halvedResources = new NodeResources(2, 4, 8, 1);
+
+        new PrepareHelper(tester, app).prepare(container1, 4, 1, resources).activate();
+        assertSizeAndResources(container1, 4, resources);
+
+        new PrepareHelper(tester, app).prepare(container1, 8, 1, halvedResources).activate();
+        // No resizing since it would initially (before redistribution) lead to too few resources:
+        assertSizeAndResources(listCluster(container1).retired(), 4, resources);
+        assertSizeAndResources(listCluster(container1).not().retired(), 8, halvedResources);
+    }
 
     @Test(expected = OutOfCapacityException.class)
     public void cannot_inplace_decrease_resources_while_increasing_cluster_size() {
         addParentHosts(6, mediumResources.with(fast).with(local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
-        assertClusterSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
 
         new PrepareHelper(tester, app).prepare(container1, 6, 1, smallResources);
     }
@@ -172,7 +188,7 @@ public class InPlaceResizeProvisionTest {
         addParentHosts(4, largeResources.with(fast).with(local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
-        assertClusterSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
 
         new PrepareHelper(tester, app).prepare(container1, 2, 1, smallResources);
     }
@@ -182,7 +198,7 @@ public class InPlaceResizeProvisionTest {
         addParentHosts(4, largeResources.with(fast).with(local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
-        assertClusterSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
+        assertSizeAndResources(container1, 4, new NodeResources(4, 8, 16, 1, fast, local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 2, smallResources);
     }
@@ -192,10 +208,13 @@ public class InPlaceResizeProvisionTest {
         tester.prepareAndActivateInfraApplication(infraApp, NodeType.host);
     }
 
-    private void assertClusterSizeAndResources(ClusterSpec cluster, int clusterSize, NodeResources resources) {
-        NodeList nodes = listCluster(cluster);
-        nodes.forEach(node -> assertEquals(node.toString(), node.flavor().resources(), resources));
-        assertEquals(clusterSize, nodes.size());
+    private void assertSizeAndResources(ClusterSpec cluster, int clusterSize, NodeResources resources) {
+        assertSizeAndResources(listCluster(cluster), clusterSize, resources);
+    }
+
+    private void assertSizeAndResources(NodeList nodes, int size, NodeResources resources) {
+        assertEquals(size, nodes.size());
+        assertTrue(nodes.stream().allMatch(n -> n.flavor().resources().equals(resources)));
     }
 
     private NodeList listCluster(ClusterSpec cluster) {
