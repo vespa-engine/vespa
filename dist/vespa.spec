@@ -159,7 +159,7 @@ Requires: vespa-openssl >= 1.1.1c-1
 Requires: vespa-icu >= 65.1.0-1
 Requires: vespa-protobuf >= 3.7.0-4
 Requires: vespa-telegraf >= 1.1.1-1
-%define _vespa_llvm_version 7.0
+%define _vespa_llvm_version 7
 %define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
