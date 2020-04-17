@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -41,6 +42,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         private final String yumCommand;
         private final Pattern commandOutputNoopPattern;
         private final List<YumPackageName> packages;
+        private final List<String> options = new ArrayList<>();
 
         GenericYumCommand(Terminal terminal, String yumCommand, List<YumPackageName> packages, Pattern commandOutputNoopPattern) {
             this.terminal = terminal;
@@ -48,9 +50,28 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             this.packages = packages;
             this.commandOutputNoopPattern = commandOutputNoopPattern;
 
+            switch (yumCommand) {
+                case "install": {
+                    if (packages.size() > 1) options.add("skip_missing_names_on_install=False");
+                    break;
+                }
+                case "upgrade": {
+                    if (packages.size() > 1) options.add("skip_missing_names_on_update=False");
+                    break;
+                }
+                case "remove": break;
+                default: throw new IllegalArgumentException("Unknown yum command: " + yumCommand);
+            }
+
             if (packages.isEmpty() && ! "upgrade".equals(yumCommand)) {
                 throw new IllegalArgumentException("No packages specified");
             }
+        }
+
+        @Override
+        protected void addParametersToCommandLine(CommandLine commandLine) {
+            super.addParametersToCommandLine(commandLine);
+            options.forEach(option -> commandLine.add("--setopt", option));
         }
 
         @Override

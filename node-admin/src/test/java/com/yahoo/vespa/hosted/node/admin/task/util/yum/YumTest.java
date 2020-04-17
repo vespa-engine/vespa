@@ -75,7 +75,7 @@ public class YumTest {
     @Test
     public void testAlreadyInstalled() {
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 package-1 package-2 2>&1",
+                "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
                 "foobar\nNothing to do\n");
 
@@ -88,7 +88,7 @@ public class YumTest {
     @Test
     public void testAlreadyUpgraded() {
         terminal.expectCommand(
-                "yum upgrade --assumeyes package-1 package-2 2>&1",
+                "yum upgrade --assumeyes --setopt skip_missing_names_on_update=False package-1 package-2 2>&1",
                 0,
                 "foobar\nNo packages marked for update\n");
 
@@ -112,7 +112,7 @@ public class YumTest {
     @Test
     public void testInstall() {
         terminal.expectCommand(
-                "yum install --assumeyes package-1 package-2 2>&1",
+                "yum install --assumeyes --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
                 "installing, installing");
 
@@ -124,7 +124,7 @@ public class YumTest {
     @Test
     public void testInstallWithEnablerepo() {
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
+                "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
                 "installing, installing");
 
@@ -210,7 +210,7 @@ public class YumTest {
     @Test(expected = ChildProcessFailureException.class)
     public void testFailedInstall() {
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
+                "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 1,
                 "error");
 
@@ -224,7 +224,7 @@ public class YumTest {
     @Test
     public void testUnknownPackages() {
         terminal.expectCommand(
-                "yum install --assumeyes package-1 package-2 package-3 2>&1",
+                "yum install --assumeyes --setopt skip_missing_names_on_install=False package-1 package-2 package-3 2>&1",
                 0,
                 "Loaded plugins: fastestmirror, langpacks\n" +
                         "Loading mirror speeds from cached hostfile\n" +
