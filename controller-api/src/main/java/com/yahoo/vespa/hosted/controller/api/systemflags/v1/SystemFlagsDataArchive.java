@@ -266,10 +266,6 @@ public class SystemFlagsDataArchive {
             }
         }
 
-        public void removeCommentRecursively() {
-
-        }
-
         /** Returns true if this (JsonNode) is a string and equal to value. */
         public boolean isEqualTo(String value) {
             return jsonNode != null && jsonNode.isTextual() && Objects.equals(jsonNode.textValue(), value);
