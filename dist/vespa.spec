@@ -30,11 +30,11 @@ BuildRequires: centos-release-scl
 %endif
 %endif
 %if 0%{?el7}
-BuildRequires: devtoolset-8-gcc-c++
-BuildRequires: devtoolset-8-libatomic-devel
-BuildRequires: devtoolset-8-binutils
+BuildRequires: devtoolset-9-gcc-c++
+BuildRequires: devtoolset-9-libatomic-devel
+BuildRequires: devtoolset-9-binutils
 BuildRequires: rh-maven35
-%define _devtoolset_enable /opt/rh/devtoolset-8/enable
+%define _devtoolset_enable /opt/rh/devtoolset-9/enable
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
 %endif
 %if 0%{?el8}

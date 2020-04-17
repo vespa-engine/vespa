@@ -83,8 +83,8 @@ When prompted, configure toolchains as follows:
 
     CMake: /usr/bin/cmake3
     Make: /usr/bin/make
-    C Compiler: /opt/rh/devtoolset-8/root/usr/bin/cc
-    C++ Compiler: /opt/rh/devtoolset-8/root/usr/bin/c++
+    C Compiler: /opt/rh/devtoolset-9/root/usr/bin/cc
+    C++ Compiler: /opt/rh/devtoolset-9/root/usr/bin/c++
 
 #### 3. Open the Vespa Project
 Go to *File* -> *Open* and choose &lt;vespa-source>&gt;/CMakeLists.txt.

@@ -48,7 +48,7 @@ mkdir -p "${BUILD_DIR}" || {
 BUILD_DIR=$(realpath "${BUILD_DIR}")
 
 # Build it
-source /opt/rh/devtoolset-8/enable || true
+source /opt/rh/devtoolset-9/enable || true
 cd "${SOURCE_DIR}"
 bash ./bootstrap.sh full
 cd "${BUILD_DIR}"
