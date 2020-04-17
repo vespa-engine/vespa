@@ -5,6 +5,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import org.junit.Test;
@@ -123,6 +124,10 @@ public class NodeRepositoryTest {
         tester.addNode("node20", "node20", "host2", "docker", NodeType.tenant);
         assertEquals(6, tester.nodeRepository().getNodes().size());
 
+        Node node = tester.nodeRepository().getNode("host1").get();
+        IP.Config cfg = new IP.Config(Set.of("127.0.0.1"), Set.of());
+        node = node.with(cfg);
+
         tester.setNodeState("node11", Node.State.active);
 
         try {
@@ -145,6 +150,7 @@ public class NodeRepositoryTest {
         assertEquals(4, tester.nodeRepository().getNodes().size());
         tester.nodeRepository().removeRecursively("host1");
         assertEquals(Node.State.deprovisioned, tester.nodeRepository().getNode("host1").get().state());
+        assertEquals(IP.Config.EMPTY.primary(), tester.nodeRepository().getNode("host1").get().ipConfig().primary());
     }
 
     @Test
