@@ -18,9 +18,6 @@ import com.yahoo.statistics.Statistics;
 public class DocumentProcessingHandlerParameters {
 
     private int maxNumThreads = 0;
-    private double maxConcurrentFactor = 0.2;
-    private double documentExpansionFactor = 20.0;
-    private int containerCoreMemoryMb = 50;
     private DocumentTypeManager documentTypeManager = null;
     private ChainsModel chainsModel = null;
     private SchemaMap schemaMap = null;
@@ -28,22 +25,7 @@ public class DocumentProcessingHandlerParameters {
     private Metric metric = new NullMetric();
     private ContainerDocumentConfig containerDocConfig;
 
-    public DocumentProcessingHandlerParameters() {
-    }
 
-    /**
-     * Returns the number of megabytes of memory reserved for container core classes and data.
-     *
-     * @return the number of megabytes of memory reserved for container core classes and data.
-     */
-    public int getContainerCoreMemoryMb() {
-        return containerCoreMemoryMb;
-    }
-
-    public DocumentProcessingHandlerParameters setContainerCoreMemoryMb(int containerCoreMemoryMb) {
-        this.containerCoreMemoryMb = containerCoreMemoryMb;
-        return this;
-    }
 
     public Metric getMetric() {
         return metric;
@@ -51,36 +33,6 @@ public class DocumentProcessingHandlerParameters {
 
     public DocumentProcessingHandlerParameters setMetric(Metric metric) {
         this.metric = metric;
-        return this;
-    }
-
-    /**
-     * Returns the document expansion factor, i.e.&nbsp;by what factor a serialized and possibly compressed
-     * input document is expected to expand during deserialization, including any temporary memory needed
-     * when processing it.
-     *
-     * @return the document expansion factor.
-     */
-    public double getDocumentExpansionFactor() {
-        return documentExpansionFactor;
-    }
-
-    public DocumentProcessingHandlerParameters setDocumentExpansionFactor(double documentExpansionFactor) {
-        this.documentExpansionFactor = documentExpansionFactor;
-        return this;
-    }
-
-    /**
-     * Returns the max concurrent factor.
-     *
-     * @return the max concurrent factor.
-     */
-    public double getMaxConcurrentFactor() {
-        return maxConcurrentFactor;
-    }
-
-    public DocumentProcessingHandlerParameters setMaxConcurrentFactor(double maxConcurrentFactor) {
-        this.maxConcurrentFactor = maxConcurrentFactor;
         return this;
     }
 
