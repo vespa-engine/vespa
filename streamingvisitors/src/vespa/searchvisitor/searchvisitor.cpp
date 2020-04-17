@@ -357,7 +357,7 @@ SearchVisitorFactory::SearchVisitorFactory(const config::ConfigUri & configUri)
 VisitorEnvironment::UP
 SearchVisitorFactory::makeVisitorEnvironment(StorageComponent&)
 {
-    return VisitorEnvironment::UP(new SearchEnvironment(_configUri));
+    return std::make_unique<SearchEnvironment>(_configUri);
 }
 
 storage::Visitor*

@@ -9,6 +9,27 @@ using namespace search::fef;
 
 namespace search::features {
 
+namespace {
+
+/**
+* Implements the executor for the matchCount feature for index and
+* attribute fields.
+*/
+class MatchCountExecutor : public fef::FeatureExecutor {
+private:
+    std::vector<fef::TermFieldHandle> _handles;
+    const fef::MatchData *_md;
+
+    void handle_bind_match_data(const fef::MatchData &md) override {
+        _md = &md;
+    }
+
+public:
+    MatchCountExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);
+
+    void execute(uint32_t docId) override;
+};
+
 MatchCountExecutor::MatchCountExecutor(uint32_t fieldId, const IQueryEnvironment &env)
     : FeatureExecutor(),
       _handles(),
@@ -23,8 +44,7 @@ MatchCountExecutor::MatchCountExecutor(uint32_t fieldId, const IQueryEnvironment
 }
 
 void
-MatchCountExecutor::execute(uint32_t docId)
-{
+MatchCountExecutor::execute(uint32_t docId) {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
@@ -35,10 +55,6 @@ MatchCountExecutor::execute(uint32_t docId)
     outputs().set_number(0, static_cast<feature_t>(output));
 }
 
-void
-MatchCountExecutor::handle_bind_match_data(const MatchData &md)
-{
-    _md = &md;
 }
 
 MatchCountBlueprint::MatchCountBlueprint() :

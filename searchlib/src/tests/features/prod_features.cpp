@@ -34,6 +34,7 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/termfeature.h>
 #include <vespa/searchlib/features/utils.h>
+#include <vespa/searchlib/features/uniquefeature.h>
 #include <vespa/searchlib/features/weighted_set_parser.hpp>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
@@ -112,6 +113,7 @@ Test::Main()
     TEST_DO(testTerm());                TEST_FLUSH();
     TEST_DO(testTermDistance());        TEST_FLUSH();
     TEST_DO(testUtils());               TEST_FLUSH();
+    TEST_DO(testUnique());              TEST_FLUSH();
 
     TEST_DONE();
     return 0;
@@ -1561,6 +1563,26 @@ Test::testMatchCount()
         EXPECT_TRUE(ft.execute(RankResult().addScore("matchCount(foo)", 2)));
         EXPECT_TRUE(ft.execute(RankResult().addScore("matchCount(baz)", 0)));
     }
+}
+
+void
+Test::testUnique()
+{
+    {
+        UniqueBlueprint bp;
+        EXPECT_TRUE(assertCreateInstance(bp, "unique"));
+        FtFeatureTest ft(_factory, "");
+        StringList params, in, out;
+        FT_SETUP_OK(bp, ft.getIndexEnv(), params, in, out.add("out"));
+        FT_DUMP_EMPTY(_factory, "unique");
+
+        EXPECT_TRUE(assertMatches(0, "x", "a", "matches(foo)"));
+    }
+    FtFeatureTest ft(_factory, "unique");
+    ASSERT_TRUE(ft.setup());
+    EXPECT_TRUE(ft.execute(0x10003,0, 1));
+    EXPECT_TRUE(ft.execute(0x70003,0, 7));
+
 }
 
 void

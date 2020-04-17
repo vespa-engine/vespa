@@ -53,6 +53,7 @@
 #include "termfeature.h"
 #include "terminfofeature.h"
 #include "text_similarity_feature.h"
+#include "uniquefeature.h"
 #include "valuefeature.h"
 
 #include "max_reduce_prod_join_replacer.h"
@@ -121,6 +122,8 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<TermEditDistanceBlueprint>());
     registry.addPrototype(std::make_shared<TermFieldMdBlueprint>());
     registry.addPrototype(std::make_shared<ConstantBlueprint>());
+    registry.addPrototype(std::make_shared<UniqueBlueprint>());
+
 
     // Ranking Expression
     auto replacers = std::make_unique<ListExpressionReplacer>();

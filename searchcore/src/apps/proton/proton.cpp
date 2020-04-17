@@ -124,11 +124,9 @@ public:
     int64_t getGeneration() const override;
 };
 
-ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri &
-                                                     configUri,
+ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri & configUri,
                                                      proton::Proton & proton,
-                                                     PersistenceProvider *
-                                                     downPersistence)
+                                                     PersistenceProvider * downPersistence)
     : ServiceLayerProcess(configUri),
       _proton(proton),
       _metricManager(nullptr),

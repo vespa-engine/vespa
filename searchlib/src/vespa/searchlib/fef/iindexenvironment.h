@@ -120,6 +120,8 @@ public:
      */
     virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const vespalib::string &name) const = 0;
 
+    virtual uint32_t getDistributionKey() const = 0;
+
     /**
      * Virtual destructor to allow safe subclassing.
      **/

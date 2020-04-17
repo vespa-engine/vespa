@@ -2,13 +2,11 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
-#include <map>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <map>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 class RankResult {
 public:
@@ -107,7 +105,4 @@ private:
     double     _epsilon;
 };
 
-} // namespace test
-} // namespace fef
-} // namespace search
-
+}
