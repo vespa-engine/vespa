@@ -28,6 +28,7 @@ public:
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
     bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
+    bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) override;
     uint32_t clearDoc(DocId doc) override;
 protected:
     IntegerAttribute(const vespalib::string & name, const Config & c);

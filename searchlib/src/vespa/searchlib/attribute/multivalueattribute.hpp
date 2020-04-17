@@ -172,7 +172,7 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
                 wset_inserted[data] = current->_weight;
             } else if (current->_type == ChangeBase::REMOVE) {
                 wset_inserted.erase(data);
-            } else if ((current->_type >= ChangeBase::INCREASEWEIGHT) && (current->_type <= ChangeBase::DIVWEIGHT)) {
+            } else if ((current->_type >= ChangeBase::INCREASEWEIGHT) && (current->_type <= ChangeBase::SETWEIGHT)) {
                 auto existing = wset_inserted.find(data);
                 if (existing != wset_inserted.end()) {
                     existing->second = this->applyWeightChange(existing->second, *current);

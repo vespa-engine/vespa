@@ -37,7 +37,7 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, UniqueS
 {
     if (c._type == ChangeBase::APPEND ||
         (this->getInternalCollectionType().createIfNonExistant() &&
-         (c._type >= ChangeBase::INCREASEWEIGHT && c._type <= ChangeBase::DIVWEIGHT)))
+         (c._type >= ChangeBase::INCREASEWEIGHT && c._type <= ChangeBase::SETWEIGHT)))
     {
         EnumIndex idx;
         if (!this->_enumStore.find_index(c._data.raw(), idx)) {
