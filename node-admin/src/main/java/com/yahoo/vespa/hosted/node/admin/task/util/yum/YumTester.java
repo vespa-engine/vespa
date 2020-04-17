@@ -73,6 +73,10 @@ public class YumTester extends Yum {
             StringBuilder cmd = new StringBuilder();
             cmd.append("yum ").append(command).append(" --assumeyes");
             enableRepos.forEach(repo -> cmd.append(" --enablerepo=").append(repo));
+            if ("install".equals(command) && packages.size() > 1)
+                cmd.append(" --setopt skip_missing_names_on_install=False");
+            if ("upgrade".equals(command) && packages.size() > 1)
+                cmd.append(" --setopt skip_missing_names_on_update=False");
             packages.forEach(pkg -> cmd.append(" ").append(pkg.toName()));
             cmd.append(" 2>&1");
 
