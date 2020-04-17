@@ -63,17 +63,13 @@ You do not need to build Vespa to use it, but if you want to contribute you need
 This section explains how to build and test Vespa. To understand where to make changes, see [Code-map.md](Code-map.md).
 Some suggested improvements with pointers to code are in [TODO.md](TODO.md).
 
-### Set up the build environment
+### Development environment
 
-C++ and Java building is supported on CentOS 7. The Java source can also be built on any platform having Java 11 and Maven installed. 
-We recommend using the following environment: [Create C++ / Java dev environment on CentOS using VirtualBox and Vagrant](vagrant/README.md).
-You can also setup CentOS 7 natively and install the following build dependencies:
-
-    sudo yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
-    sudo yum -y install epel-release centos-release-scl yum-utils
-    sudo yum -y install ccache \
-        rpm-build
-    yum-builddep -y <vespa-source>/dist/vespa.spec
+C++ and Java building is supported on CentOS 7.
+The Java source can also be built on any platform having Java 11 and Maven installed.
+Use the following guide to setup a complete development environment using Docker
+for building Vespa, running unit tests and running system tests:
+[Vespa development on CentOS 7](https://github.com/vespa-engine/docker-image-dev#vespa-development-on-centos-7).
 
 ### Build Java modules
 
@@ -82,20 +78,13 @@ You can also setup CentOS 7 natively and install the following build dependencie
     bash bootstrap.sh java
     mvn -T <num-threads> install
 
-### Build C++ modules
+Use this if you only need to build the Java modules, otherwise follow the complete development guide above.
 
-Replace `<build-dir>` with the name of the directory in which you'd like to build Vespa.
-Replace `<source-dir>` with the directory in which you've cloned/unpacked the source tree.
+### Build RPM packages
 
-    bash bootstrap-cpp.sh <source-dir> <build-dir>
-    cd <build-dir>
-    make -j <num-threads>
-    ctest3 -j <num-threads>
+See [Building Vespa RPM](docker/README.md#building-vespa-rpm) for details.
 
-### Create RPM packages
 
-    sh dist.sh VERSION && rpmbuild -ba ~/rpmbuild/SPECS/vespa-VERSION.spec
-    
 ## License
 
 Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
