@@ -38,17 +38,22 @@ public class MaintainerTest {
     @Test
     public void staggering() {
         List<HostName> cluster = List.of(HostName.from("cfg1"), HostName.from("cfg2"), HostName.from("cfg3"));
-        Instant now = Instant.ofEpochMilli(1001);
         Duration interval = Duration.ofMillis(300);
 
-        assertEquals(299, Maintainer.staggeredDelay(cluster, HostName.from("cfg1"), now, interval));
-        assertEquals(399, Maintainer.staggeredDelay(cluster, HostName.from("cfg2"), now, interval));
-        assertEquals(199, Maintainer.staggeredDelay(cluster, HostName.from("cfg3"), now, interval));
+        Instant now = Instant.ofEpochMilli(1000);
+        assertEquals(200, Maintainer.staggeredDelay(cluster, HostName.from("cfg1"), now, interval));
+        assertEquals(  0, Maintainer.staggeredDelay(cluster, HostName.from("cfg2"), now, interval));
+        assertEquals(100, Maintainer.staggeredDelay(cluster, HostName.from("cfg3"), now, interval));
 
-        now = Instant.ofEpochMilli(1101);
+        now = Instant.ofEpochMilli(1001);
         assertEquals(199, Maintainer.staggeredDelay(cluster, HostName.from("cfg1"), now, interval));
         assertEquals(299, Maintainer.staggeredDelay(cluster, HostName.from("cfg2"), now, interval));
-        assertEquals(399, Maintainer.staggeredDelay(cluster, HostName.from("cfg3"), now, interval));
+        assertEquals( 99, Maintainer.staggeredDelay(cluster, HostName.from("cfg3"), now, interval));
+
+        now = Instant.ofEpochMilli(1101);
+        assertEquals( 99, Maintainer.staggeredDelay(cluster, HostName.from("cfg1"), now, interval));
+        assertEquals(199, Maintainer.staggeredDelay(cluster, HostName.from("cfg2"), now, interval));
+        assertEquals(299, Maintainer.staggeredDelay(cluster, HostName.from("cfg3"), now, interval));
 
         assertEquals(300, Maintainer.staggeredDelay(cluster, HostName.from("cfg0"), now, interval));
     }
