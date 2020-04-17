@@ -20,9 +20,6 @@ public class ClusterResources {
     private final NodeResources nodeResources;
 
     public ClusterResources(int nodes, int groups, NodeResources nodeResources) {
-        if (nodes > 0 && groups > 0 && nodes % groups != 0)
-            throw new IllegalArgumentException("The number of nodes (" + nodes +
-                                               ") must be divisible by the number of groups (" + groups + ")");
         this.nodes = nodes;
         this.groups = groups;
         this.nodeResources = Objects.requireNonNull(nodeResources);
