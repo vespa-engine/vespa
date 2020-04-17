@@ -228,20 +228,27 @@ public class CoredumpHandler {
 
     private Dimensions generateDimensions(NodeAgentContext context) {
         NodeSpec node = context.node();
-        ApplicationId owner = node.owner().get();
-        NodeMembership membership = node.membership().get();
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", node.hostname())
                 .add("flavor", node.flavor())
                 .add("state", node.state().toString())
-                .add("zone", context.zone().getId().value())
-                .add("tenantName", owner.tenant().value())
-                .add("applicationName", owner.application().value())
-                .add("instanceName", owner.instance().value())
-                .add("app", String.join(".", owner.application().value(), owner.instance().value()))
-                .add("applicationId", owner.toFullString())
-                .add("clustertype", membership.clusterType())
-                .add("clusterid", membership.clusterId());
+                .add("zone", context.zone().getId().value());
+
+        node.owner().ifPresent(owner ->
+            dimensionsBuilder
+                    .add("tenantName", owner.tenant().value())
+                    .add("applicationName", owner.application().value())
+                    .add("instanceName", owner.instance().value())
+                    .add("app", String.join(".", owner.application().value(), owner.instance().value()))
+                    .add("applicationId", owner.toFullString())
+        );
+
+        node.membership().ifPresent(membership ->
+            dimensionsBuilder
+                    .add("clustertype", membership.clusterType())
+                    .add("clusterid", membership.clusterId())
+        );
+
         node.parentHostname().ifPresent(parent -> dimensionsBuilder.add("parentHostname", parent));
         node.allowedToBeDown().ifPresent(allowed ->
                 dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
