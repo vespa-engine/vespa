@@ -7,13 +7,16 @@ import com.yahoo.osgi.Osgi;
 import org.osgi.framework.Bundle;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * @author gjoranv
  */
 public class FileAcquirerBundleInstaller implements BundleInstaller {
+    private static Logger log = Logger.getLogger(FileAcquirerBundleInstaller.class.getName());
 
     private final FileAcquirer fileAcquirer;
 
@@ -24,7 +27,27 @@ public class FileAcquirerBundleInstaller implements BundleInstaller {
     @Override
     public List<Bundle> installBundles(FileReference reference, Osgi osgi) throws InterruptedException {
         File file = fileAcquirer.waitFor(reference, 7, TimeUnit.DAYS);
+
+        if (notReadable(file)) {
+            // Wait a few sec in case FileAcquirer returns right before the file is actually ready.
+            // This happened on rare occasions due to a (fixed) bug in file distribution.
+            log.warning("Unable to open bundle file with reference '" + reference + "'. Waiting for up to 5 sec.");
+            int retries = 0;
+            while (notReadable(file) && retries < 10) {
+                Thread.sleep(500);
+                retries++;
+            }
+            if (notReadable(file)) {
+                com.yahoo.protect.Process.logAndDie("Shutting down - unable to read bundle file with reference '" + reference
+                                                            + "' and path " + file.getAbsolutePath());
+            }
+        }
+
         return osgi.install(file.getAbsolutePath());
+    }
+
+    private static boolean notReadable(File file) {
+        return ! Files.isReadable(file.toPath());
     }
 
 }
