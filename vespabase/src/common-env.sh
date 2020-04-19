@@ -125,8 +125,6 @@ populate_environment
 
 export LD_LIBRARY_PATH=$VESPA_HOME/lib64
 export MALLOC_ARENA_MAX=1
-export GLIBC_TUNABLES=glibc.elision.enable=1
-export RHEL_GLIBC_TUNABLES=glibc.elision.enable=1
 
 # Maven is needed for tester applications
 prepend_path "$VESPA_HOME/local/maven/bin"
