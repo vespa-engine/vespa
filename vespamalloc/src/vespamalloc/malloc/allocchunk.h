@@ -21,15 +21,15 @@ struct TaggedPtr {
     TaggedPtr(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
 
 #if defined(__x86_64__)
-#define VESPA_USE_ATOMIC_TAGGEDPTR
+    #define VESPA_USE_ATOMIC_TAGGEDPTR
     TaggedPtr load(std::memory_order = std::memory_order_seq_cst) {
-        // Not that this is NOT an atomic load. The current use as the initial load
-        // in a compare_exchange loop is safe as a teader load will just give a retry.
+        // Note that this is NOT an atomic load. The current use as the initial load
+        // in a compare_exchange loop is safe as a teared load will just give a retry.
         return *this;
     }
     void store(TaggedPtr ptr) {
-        // Not that this is NOT an atomic store. The current use is in a unit test as an initial
-        // store before any threads are started. Just done so keep api compability with std::atomic as
+        // Note that this is NOT an atomic store. The current use is in a unit test as an initial
+        // store before any threads are started. Just done so to keep api compatible with std::atomic as
         // that is the preferred implementation..
         *this = ptr;
     }
