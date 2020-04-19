@@ -20,16 +20,53 @@ struct TaggedPtr {
     TaggedPtr() noexcept : _ptr(nullptr), _tag(0) { }
     TaggedPtr(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
 
+#if defined(__x86_64__)
+    #define VESPA_USE_ATOMIC_TAGGEDPTR
+    TaggedPtr load(std::memory_order = std::memory_order_seq_cst) {
+        // Note that this is NOT an atomic load. The current use as the initial load
+        // in a compare_exchange loop is safe as a teared load will just give a retry.
+        return *this;
+    }
+    void store(TaggedPtr ptr) {
+        // Note that this is NOT an atomic store. The current use is in a unit test as an initial
+        // store before any threads are started. Just done so to keep api compatible with std::atomic as
+        // that is the preferred implementation..
+        *this = ptr;
+    }
+    bool
+    compare_exchange_weak(TaggedPtr & oldPtr, TaggedPtr newPtr, std::memory_order, std::memory_order) {
+        char result;
+        __asm__ volatile (
+        "lock ;"
+        "cmpxchg16b %6;"
+        "setz %1;"
+        : "+m" (*this),
+          "=q" (result),
+          "+a" (oldPtr._ptr),
+          "+d" (oldPtr._tag)
+        : "b" (newPtr._ptr),
+          "c" (newPtr._tag)
+        : "cc", "memory"
+        );
+        return result;
+    }
+#endif
+
     void *_ptr;
     size_t _tag;
-};
+} __attribute__ ((aligned (16)));
 
 class AFListBase
 {
 public:
     using HeadPtr = TaggedPtr;
+#ifdef VESPA_USE_ATOMIC_TAGGEDPTR
+    using AtomicHeadPtr = HeadPtr;
+#else
     using AtomicHeadPtr = std::atomic<HeadPtr>;
-    AFListBase() : _next(NULL) { }
+#endif
+
+    AFListBase() : _next(nullptr) { }
     void setNext(AFListBase * csl)           { _next = csl; }
     static void init();
     static void linkInList(AtomicHeadPtr & head, AFListBase * list);
