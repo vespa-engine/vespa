@@ -66,7 +66,11 @@ readOptionalEnvironmentVar(const char * name, size_t defaultValue) {
 
 void initializeEnvironment()
 {
+#ifdef __linux__
     _G_HugeFlags = (getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0;
+#else
+    _G_HugeFlags = 0;
+#endif
     _G_SilenceCoreOnOOM = (getenv("VESPA_SILENCE_CORE_ON_OOM") != nullptr) ? true : false;
     _G_MMapLogLimit = readOptionalEnvironmentVar("VESPA_MMAP_LOG_LIMIT", std::numeric_limits<size_t>::max());
     _G_MMapNoCoreLimit = readOptionalEnvironmentVar("VESPA_MMAP_NOCORE_LIMIT", std::numeric_limits<size_t>::max());
@@ -350,11 +354,13 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
                 _G_hasHugePageFailureJustHappened = false;
             }
         }
+#ifdef __linux__
         if (sz >= _G_MMapNoCoreLimit) {
             if (madvise(buf, sz, MADV_DONTDUMP) != 0) {
                 LOG(warning, "Failed madvise(%p, %ld, MADV_DONTDUMP) = '%s'", buf, sz, FastOS_FileInterface::getLastErrorString().c_str());
             }
         }
+#endif
         if (sz >= _G_MMapLogLimit) {
             LockGuard guard(_G_lock);
             _G_HugeMappings[buf] = MMapInfo(mmapId, sz, stackTrace);
