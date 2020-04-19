@@ -387,8 +387,10 @@ AsciistreamTest::testCreateFromFile()
     EXPECT_EQUAL("", s);
     EXPECT_TRUE(is.eof());
 
+#ifdef __linux__
     is = asciistream::createFromDevice("/proc/stat");
     EXPECT_FALSE(is.eof());
+#endif
 }
 
 void
