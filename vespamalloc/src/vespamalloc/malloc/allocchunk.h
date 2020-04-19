@@ -20,21 +20,28 @@ struct TaggedPtr {
     TaggedPtr() noexcept : _ptr(nullptr), _tag(0) { }
     TaggedPtr(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
 
+    void *_ptr;
+    size_t _tag;
+};
+
 #if defined(__x86_64__)
-    #define VESPA_USE_ATOMIC_TAGGEDPTR
-    TaggedPtr load(std::memory_order = std::memory_order_seq_cst) {
+struct AtomicTaggedPtr {
+    AtomicTaggedPtr() noexcept : _ptr(nullptr), _tag(0) { }
+    AtomicTaggedPtr(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
+
+    AtomicTaggedPtr load(std::memory_order = std::memory_order_seq_cst) {
         // Note that this is NOT an atomic load. The current use as the initial load
         // in a compare_exchange loop is safe as a teared load will just give a retry.
         return *this;
     }
-    void store(TaggedPtr ptr) {
+    void store(AtomicTaggedPtr ptr) {
         // Note that this is NOT an atomic store. The current use is in a unit test as an initial
         // store before any threads are started. Just done so to keep api compatible with std::atomic as
         // that is the preferred implementation..
         *this = ptr;
     }
     bool
-    compare_exchange_weak(TaggedPtr & oldPtr, TaggedPtr newPtr, std::memory_order, std::memory_order) {
+    compare_exchange_weak(AtomicTaggedPtr & oldPtr, AtomicTaggedPtr newPtr, std::memory_order, std::memory_order) {
         char result;
         __asm__ volatile (
         "lock ;"
@@ -50,21 +57,20 @@ struct TaggedPtr {
         );
         return result;
     }
-#endif
 
     void *_ptr;
     size_t _tag;
 } __attribute__ ((aligned (16)));
+#else
+    using AtomicTaggedPtr = TagTaggedPtr;
+#endif
+
 
 class AFListBase
 {
 public:
-    using HeadPtr = TaggedPtr;
-#ifdef VESPA_USE_ATOMIC_TAGGEDPTR
-    using AtomicHeadPtr = HeadPtr;
-#else
-    using AtomicHeadPtr = std::atomic<HeadPtr>;
-#endif
+    using HeadPtr = std::conditional<std::atomic<TaggedPtr>::is_always_lock_free, TaggedPtr, AtomicTaggedPtr>::type;
+    using AtomicHeadPtr = std::conditional<std::atomic<TaggedPtr>::is_always_lock_free, std::atomic<TaggedPtr>, AtomicTaggedPtr>::type;
 
     AFListBase() : _next(nullptr) { }
     void setNext(AFListBase * csl)           { _next = csl; }
