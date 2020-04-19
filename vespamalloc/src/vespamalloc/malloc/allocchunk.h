@@ -62,7 +62,7 @@ struct AtomicTaggedPtr {
     size_t _tag;
 } __attribute__ ((aligned (16)));
 #else
-    using AtomicTaggedPtr = TagTaggedPtr;
+    using AtomicTaggedPtr = TaggedPtr;
 #endif
 
 
