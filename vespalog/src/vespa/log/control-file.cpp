@@ -264,7 +264,12 @@ ControlFile::getLevels(const char *name)
     strcat(appendedString, &padSpaces[3 - padding]);
     int prefix_len = strlen(appendedString);
 
+#pragma GCC diagnostic push
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
     strncat(appendedString, inheritLevels, Logger::NUM_LOGLEVELS*sizeof(int));
+#pragma GCC diagnostic pop
     strcat(appendedString, "\n");
 
     int len = strlen(appendedString);
