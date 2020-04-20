@@ -19,7 +19,11 @@ TEST("simple run, ignore output, timeout") {
 TEST("simple run") {
     std::string out;
     EXPECT_TRUE(SlaveProc::run("echo -n foo", out));
+#ifdef __APPLE__
+    EXPECT_EQUAL(out, "-n foo");
+#else
     EXPECT_EQUAL(out, "foo");
+#endif
 }
 
 TEST("simple run, strip single-line trailing newline") {
