@@ -25,6 +25,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -659,7 +660,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                           ClusterSpec.Id.from(cluster.getName()))
                                                  .vespaVersion(deployState.getWantedNodeVespaVersion())
-                                                 .dockerImageRepo(deployState.getWantedDockerImageRepo())
+                                                 .dockerImageRepository(deployState.getWantedDockerImageRepo().map(DockerImage::fromString))
                                                  .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
             Capacity capacity = Capacity.from(new ClusterResources(nodeCount, 1, NodeResources.unspecified),
@@ -691,7 +692,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
                 .vespaVersion(context.getDeployState().getWantedNodeVespaVersion())
-                .dockerImageRepo(context.getDeployState().getWantedDockerImageRepo())
+                .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo().map(DockerImage::fromString))
                 .build();
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,

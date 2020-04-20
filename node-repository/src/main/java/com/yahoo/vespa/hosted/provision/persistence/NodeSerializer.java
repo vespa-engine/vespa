@@ -187,7 +187,7 @@ public class NodeSerializer {
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
         object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
-        allocation.membership().cluster().dockerImageRepo().ifPresent(repo -> object.setString(wantedDockerImageRepoKey, repo));
+        allocation.membership().cluster().dockerImageRepo().ifPresent(repo -> object.setString(wantedDockerImageRepoKey, repo.repository()));
         allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
     }
 
@@ -317,9 +317,9 @@ public class NodeSerializer {
         return Optional.of(Version.fromString(object.asString()));
     }
 
-    private Optional<String> dockerImageRepoFromSlime(Inspector object) {
+    private Optional<DockerImage> dockerImageRepoFromSlime(Inspector object) {
         if ( ! object.valid() || object.asString().isEmpty()) return Optional.empty();
-        return Optional.of(object.asString());
+        return Optional.of(DockerImage.fromString(object.asString()));
     }
 
     private Optional<DockerImage> dockerImageFromSlime(Inspector object) {
