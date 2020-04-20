@@ -18,7 +18,7 @@ TEST("simple run, ignore output, timeout") {
 
 TEST("simple run") {
     std::string out;
-    EXPECT_TRUE(SlaveProc::run("echo -n foo", out));
+    EXPECT_TRUE(SlaveProc::run("/bin/echo -n foo", out));
     EXPECT_EQUAL(out, "foo");
 }
 
