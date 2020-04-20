@@ -179,10 +179,5 @@ min_merge_completion_ratio double default=1.0
 ## transition logic aims to minimize the window of time where active states diverge.
 enable_two_phase_cluster_state_transitions bool default=false
 
-## Determines which metric will be used to decide whether a content node manages
-## zero buckets, when deciding whether it can be set permanently down (typically
-## to be removed from the application).
-## If true, use vds.datastored.bucket_space.buckets_total (new), otherwise use
-## vds.datastored.alldisks.buckets (legacy).
-## This setting is intended to be used to safely roll out the new metric.
+## Deprecated - not used
 determine_buckets_from_bucket_space_metric bool default=true

@@ -77,7 +77,9 @@ public interface ModelContext {
         // TODO Revisit in May or June 2020
         double defaultTopKProbability();
 
+        // TODO: Remove once there are no Vespa versions below 7.170
         boolean useBucketSpaceMetric();
+
         default boolean useNewAthenzFilter() { return true; } // TODO bjorncs: Remove after end of April
 
         // TODO: Remove after April 2020

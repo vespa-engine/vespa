@@ -102,13 +102,6 @@ public class Flags {
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_BUCKET_SPACE_METRIC = defineFeatureFlag(
-            "use-bucket-space-metric", true,
-            "Whether to use vds.datastored.bucket_space.buckets_total (true) instead of " +
-            "vds.datastored.alldisks.buckets (false, legacy).",
-            "Takes effect on the next deployment of the application",
-            APPLICATION_ID);
-
     public static final UnboundStringFlag TLS_INSECURE_AUTHORIZATION_MODE = defineStringFlag(
             "tls-insecure-authorization-mode", "log_only",
             "TLS insecure authorization mode. Allowed values: ['disable', 'log_only', 'enforce']",

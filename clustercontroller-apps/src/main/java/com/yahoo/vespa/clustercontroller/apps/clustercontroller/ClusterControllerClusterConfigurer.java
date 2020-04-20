@@ -76,7 +76,6 @@ public class ClusterControllerClusterConfigurer {
         options.clusterHasGlobalDocumentTypes = config.cluster_has_global_document_types();
         options.minMergeCompletionRatio = config.min_merge_completion_ratio();
         options.enableTwoPhaseClusterStateActivation = config.enable_two_phase_cluster_state_transitions();
-        options.determineBucketsFromBucketSpaceMetric = config.determine_buckets_from_bucket_space_metric();
     }
 
     private void configure(SlobroksConfig config) {

@@ -61,14 +61,14 @@ public class NodeStateChangeCheckerTest {
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
-        return new NodeStateChangeChecker(minStorageNodesUp, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo(), true);
+        return new NodeStateChangeChecker(minStorageNodesUp, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
     }
 
     private ContentCluster createCluster(Collection<ConfiguredNode> nodes) {
         Distribution distribution = mock(Distribution.class);
         Group group = new Group(2, "to");
         when(distribution.getRootGroup()).thenReturn(group);
-        return new ContentCluster("Clustername", nodes, distribution, minStorageNodesUp, 0.0, true);
+        return new ContentCluster("Clustername", nodes, distribution, minStorageNodesUp, 0.0);
     }
 
     private StorageNodeInfo createStorageNodeInfo(int index, State state) {
@@ -78,7 +78,7 @@ public class NodeStateChangeCheckerTest {
 
         String clusterName = "Clustername";
         Set<ConfiguredNode> configuredNodeIndexes = new HashSet<>();
-        ContentCluster cluster = new ContentCluster(clusterName, configuredNodeIndexes, distribution, minStorageNodesUp, 0.0, true);
+        ContentCluster cluster = new ContentCluster(clusterName, configuredNodeIndexes, distribution, minStorageNodesUp, 0.0);
 
         String rpcAddress = "";
         StorageNodeInfo storageNodeInfo = new StorageNodeInfo(cluster, index, false, rpcAddress, distribution);
@@ -136,7 +136,7 @@ public class NodeStateChangeCheckerTest {
     public void testUnknownStorageNode() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo(), true);
+                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -161,7 +161,7 @@ public class NodeStateChangeCheckerTest {
         ContentCluster cluster = createCluster(createNodes(4));
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo(), true);
+                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);

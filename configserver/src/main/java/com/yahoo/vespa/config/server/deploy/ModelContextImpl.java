@@ -150,7 +150,6 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final double defaultSoftStartSeconds;
-        private final boolean useBucketSpaceMetric;
         private final String proxyProtocol;
         private final Optional<AthenzDomain> athenzDomain;
 
@@ -187,8 +186,6 @@ public class ModelContextImpl implements ModelContext {
             defaultSoftStartSeconds = Flags.DEFAULT_SOFT_START_SECONDS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             defaultTopKprobability = Flags.DEFAULT_TOP_K_PROBABILITY.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.useBucketSpaceMetric = Flags.USE_BUCKET_SPACE_METRIC.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.proxyProtocol = Flags.PROXY_PROTOCOL.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -244,7 +241,6 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
 
-        @Override
         public double defaultSoftStartSeconds() {
             return 0;
         }
@@ -254,8 +250,9 @@ public class ModelContextImpl implements ModelContext {
             return defaultTopKprobability;
         }
 
+        // TODO: Remove
         @Override
-        public boolean useBucketSpaceMetric() { return useBucketSpaceMetric; }
+        public boolean useBucketSpaceMetric() { return true; }
 
         @Override
         public boolean useNewAthenzFilter() { return true; }
